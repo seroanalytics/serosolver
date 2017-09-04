@@ -9,7 +9,7 @@
 	- d.ij vector
  */
 
-void c_model2_sr(int *nin, int *itot, int *nsin, double *x, double *x1, double *titre, 
+void c_model(int *nin, int *itot, int *nsin, double *x, double *x1, double *titre, 
                   double *titrepred, double *dd, double *dd2, int *ntheta, 
                   double *theta, int *inputtestyr)
 {
