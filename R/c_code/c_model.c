@@ -19,7 +19,7 @@ void c_model(int *nin, int *itot, int *nsin, double *x, double *x1, double *titr
 	int n = nin[0]; // length of infection history
 	// int total_inf = itot[0]; // total infections
 	int nsamp = nsin[0]; // number of strains tested against
-	// double T_1 = theta[1];
+	// double T_1 = theta[1]; deprecated
 	double T_2 = theta[2];
 	double wane = theta[3];
 	double mu = theta[0];
@@ -59,7 +59,6 @@ void c_model(int *nin, int *itot, int *nsin, double *x, double *x1, double *titr
 	  
 	  // Make an index for waning
 	  for (m=0;m<n;m++) {
-		  // distanceFromTest[m] = exp(-wane * (j-m )); // Distance from test year 
 		  distanceFromTest[m] = MAX(0, 1 - wane * (j-m) ); // Distance from test year
 	  }
 
@@ -71,14 +70,11 @@ void c_model(int *nin, int *itot, int *nsin, double *x, double *x1, double *titr
 	  }
 	  	    
 		/* Calculate expected titre	- note k indexed from 0 */
-	    /* Note that waning is currently linked with back boosting */
 	    /* dd is long term cross-reaction, dd2 is short-term */
 
 		for (i=0; i<n; i++){
 			x1[i] = maskedInfectionHistory[i] *
-			  // exp(-1.0 * T_2 * ( cumInfectionHistory[i]  - 1.0)) *
 			  MAX(0, 1.0 - T_2 * ( cumInfectionHistory[i]  - 1.0)) * // Antigenic seniority
-			  //(pow(1.0 + T_1 , (total_inf - cumInfectionHistory[i])) ) * REMOVED Tau 1
 			  (mu * dd[k*n+i] + mu2 * dd2[k*n+i] * distanceFromTest[i] );
 		}
 	
@@ -97,6 +93,6 @@ void c_model(int *nin, int *itot, int *nsin, double *x, double *x1, double *titr
 	
 	
 	/* - - - - - - - - - - - - - - - - - - - - - - - - - - - */
-	/* Compare to observed titre*/
+	/* Compare to observed titre - currently done in R */
 
 }

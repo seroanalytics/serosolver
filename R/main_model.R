@@ -1,8 +1,8 @@
 # - - - - - - - - - - - - - - - - - - - - -
+# Main execution code
+#
 # Model of serological dynamics
 # github.com/adamkucharski/serology-model
-#
-# Main execution code
 # - - - - - - - - - - - - - - - - - - - - -
 
 # Load libraries
@@ -48,33 +48,36 @@ antigenic_map = read.csv("../data/antigenic_map.csv") # load antigenic locations
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 
 # Generate simulated data and infer parameters -- simulation parameters are defined in sero_functions.R
-# flu.type defines which dataset format (i.e. test strains, test years) the simulated data will produce
+# Parameters currently specified within the function
 
 kk=1
-simulation.infer(seed_i=kk,mcmc.iterations=5e4, flu.type="H3HN", strain.fix=T,
-                   fit.map=antigenic_map,vp1=0.4,linearFn=T) 
+simulation.infer(seed_i=kk, # Set seed
+                 mcmc.iterations=20,  # MCMC iterations
+                 flu.type="H3HN", # Flu name
+                 fit.map=antigenic_map, # Antigenic map input
+                 fix.param=NULL, # Add noise to input parameters?
+                 vp1=0.4 # Proportion of infection histories to resample each step
+                 ) 
 
 
-
-# Plot convergence for MCMC chains for H3 Vietnam simulated data
-plot.multi.chain.posteriors(burnCut=0.25,flu.type="H3HN",simDat=T,year_test=c(2007:2012),
-                            linearFn=T,loadpick = c(1:4))
+# Plot convergence for MCMC chains for simulated data
+plot.multi.chain.posteriors(burnCut=0.25,
+                            flu.type="H3HN",
+                            simDat=T,
+                            year_test=c(2007:2012),
+                            loadpick = c(1) # Which simulation to plot
+                            )
 
 
 # Plot simulation study posteriors and attack rate comparisons for simulation plots
-for(kk in 1:3){
+for(kk in 1){
   
-  plot.posteriors(simDat=T,loadseed=paste("SIM_",kk,sep=""),flu.type="H3HN",year_test=c(2007:2012),plotmap=F,fr.lim=T,linearFn=T) #H3 Vietnam
-  #plot.posteriors(simDat=T,loadseed=paste("SIM_",kk,sep=""),year_test=c(2009),plotmap=F,fr.lim=T) #H3 FluScape
-  
+  plot.posteriors(simDat=T,loadseed=paste("SIM_",kk,sep=""),flu.type="H3HN",year_test=c(2007:2012),plotmap=F,fr.lim=T)
+
 }
 
 # Plot simulation study titres against inferred model
 kk=1
-plot.posterior.titres(loadseed=paste("SIM_",kk,sep=""),flu.type="H3",simDat=T,year_test=c(2007:2012),btstrap=10,linearFn=T) #H3 Vietnam
-#plot.posterior.titres(loadseed=paste("SIM_",kk,sep=""),flu.type="H3FS",simDat=T,year_test=c(2009),btstrap=10) #H3 FluScape
+plot.posterior.titres(loadseed=paste("SIM_",kk,sep=""),flu.type="H3",simDat=T,year_test=c(2007:2012),btstrap=10)
 
-# Plot estimated vs true attack rates from simulated data (Fig 3B)
-
-plot.multi.true.vs.estimated(burnCut=0.25,flu.type="H3HN",simDat=T,loadpick=c(1:10))
 

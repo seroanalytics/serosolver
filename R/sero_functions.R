@@ -1,8 +1,8 @@
 # - - - - - - - - - - - - - - - - - - - - -
+# Main model functions
+#
 # Model of serological dynamics
 # github.com/adamkucharski/serology-model
-#
-# Model functions
 # - - - - - - - - - - - - - - - - - - - - -
 
 
@@ -19,23 +19,23 @@ compile.c<-function(){
 }
 
 # - - - - - - - - - - - - - - - -
-# Define function for expected titre 
+# Define function to call C for expected titre 
 
 func1 <- function(x,titredat,dd,dd2,theta,testyear_index) {
   if (!is.numeric(x)){stop("argument x must be numeric")}
-  out <- .C("c_model2_sr",
-            n=as.integer(length(x)),
-            itot=as.integer(sum(x)),
-            nsample=as.integer(length(titredat)),
-            x=as.double(x),
-            x1=as.double(rep(0,length(x))),
-            titre=as.double(titredat),
-            titrepred=as.double(rep(0,length(titredat))),
-            dd=as.double(dd),
-            dd2=as.double(dd2),
-            ntheta=as.integer(length(theta)),
-            theta=as.double(theta),
-            inputtestyr=as.integer(testyear_index)
+  out <- .C("c_model",
+            n=as.integer(length(x)), # Number potential infections
+            itot=as.integer(sum(x)), # Total infections
+            nsample=as.integer(length(titredat)), # Number of serological samples
+            x=as.double(x), # Proposed infection history
+            x1=as.double(rep(0,length(x))), # Vector for cumulative infection calc
+            titre=as.double(titredat), # Titre data (not currently used)
+            titrepred=as.double(rep(0,length(titredat))), # Set vector for titre prediction
+            dd=as.double(dd), # Vector for long-term cross-reaction
+            dd2=as.double(dd2), # Vector for short-term cross-reaction
+            ntheta=as.integer(length(theta)), # number of parameters
+            theta=as.double(theta), # Parameter vector
+            inputtestyr=as.integer(testyear_index) # Index of serological test years
   )
   return(out$titrepred)
 }
@@ -45,44 +45,51 @@ func1 <- function(x,titredat,dd,dd2,theta,testyear_index) {
 
 simulate_data<-function(test_years,
                         historytabPost=NULL, # This imposes a particular history
-                        inf_years,strain_years,n_part=20,thetastar=theta0,p.inf=0.2,seedi=1,
-                        roundv=F, # round expected titres to nearest integer?
-                        linD=F, # use linear cross-reaction function?
-                        antigenic.map.in=NULL,pmask=NULL,am.spline=NULL){ # ii=participant | jj=test year
+                        inf_years,
+                        strain_years,
+                        n_part=20,
+                        thetastar=theta0,
+                        p.inf=0.2,
+                        seedi=1,
+                        antigenic.map.in=NULL,
+                        pmask=NULL){
   
-  # DEBUG pickyr=1; test_years=test.yr[pickyr]; historytabPost=hist.sample; thetastar=theta.max; p.inf=0.1; antigenic.map.in=NULL ; linD=T; pmask=NULL
+  # DEBUG pickyr=1; test_years=test.yr[pickyr]; historytabPost=hist.sample; thetastar=theta.max; p.inf=0.1; antigenic.map.in=NULL ; pmask=NULL
   
-  # Make adjustments depending on what is fitted and not
+  # - - - -
+  # DEFINE PARAMETERS
+  # Fix parameters depending on what is fitted and not
   if(sum(pmask=="muShort")>0){thetastar[["muShort"]]=1e-10} # Set short term boosting ~ 0 if waning not fitted
   if(sum(pmask=="map.fit")>0){ thetastar[["sigma"]]=1} # Set cross-reactivity = 1 and don't fit if antigenic map also fitted (to avoid overparameterisation)
   if(sum(pmask=="sigma2")>0){ thetastar[["sigma2"]]=thetastar[["sigma"]] } # Fix equal if sigma same for both 
   
-  # Set year of birth
-  age.yr=sample(1:80,n_part,replace = TRUE)
+  part.n=c(1:n_part) # Store vector of participants
+  age.yr=sample(1:80,n_part,replace = TRUE)  # Set ages
+  test.n=length(test_years)  # Number of years of serological tests
+  inf.n=length(inf_years) # Nuber of potential years of infection
+  nstrains=length(strain_years) # Number of test strains
+  sample.index=strain_years-min(inf_years)+1 # Test strain index relative to infections
+  theta.sim.out=thetastar # Store input theta so can save later
+  historytabSim2=historytabPost # Store input history so can save later
   
-  test.n=length(test_years)
-  inf.n=length(inf_years)
-  nstrains=length(strain_years)
-  sample.index=strain_years-min(inf_years)+1
-  theta.sim.out=thetastar
-  historytabSim2=historytabPost
-  
-  # Check inputs are correct
+  # Check inputs are valid
   if(sum(max(test_years)==inf_years)==0){
     stop("need infection years >= test years")
     return
   }
   
-  # Define antigenic map
+  # Define antigenic map as strains on a line if no input
   if(is.null(antigenic.map.in)){antigenic.map.in=inf_years} # If no specified antigenic map, use linear function by year
   
-  # NOTE HARD CODED FOR LINEAR FUNCTION
-  dmatrix = 1- thetastar[["sigma"]]*outputdmatrix.fromcoord(thetastar[["sigma"]],inf_years,antigenic.map.in,linearD=linD)
-  dmatrix[dmatrix<0]=0
-  dmatrix2 = 1- thetastar[["sigma2"]]*outputdmatrix.fromcoord(thetastar[["sigma2"]],inf_years,antigenic.map.in,linearD=linD)
-  dmatrix2[dmatrix2<0]=0
+  # Define cross-reaction matrices
+  dmatrix = 1- thetastar[["sigma"]]*outputdmatrix.fromcoord(inf_years,antigenic.map.in)
+  dmatrix[dmatrix<0]=0 # Fix negative values at 0
+  dmatrix2 = 1- thetastar[["sigma2"]]*outputdmatrix.fromcoord(inf_years,antigenic.map.in)
+  dmatrix2[dmatrix2<0]=0 # Fix negative values at 0
   
-  #Set per year incidence, to create correlation between participant infection histories
+  # - - - -
+  # SIMULATE ATTACK RATES
+  # Set per year incidence, to create correlation between participant infection histories
   log.sd=1
   if(length(p.inf)==1){
     attack.yr=rlnorm(inf.n,meanlog=log(p.inf)-log.sd^2/2,sdlog=log.sd)
@@ -93,70 +100,64 @@ simulate_data<-function(test_years,
   # Simulate random infection history for each infection year
   if(is.null(historytabPost)){
     historytabSim=matrix(0,ncol=inf.n,nrow=n_part)
-    for(ii in 1:inf.n){
+    for(jj in 1:inf.n){
       #hist0=(runif(inf.n)<attack.yr)+0
-      #alive=((max(test_years)-age.yr[ii])<=inf_years) - ignore age structure in simulations
-      historytabSim[sample(n_part,round(n_part*attack.yr[ii])),ii]=1
+      alive=((max(test_years)-age.yr)<=inf_years[jj]) # Work out who was alive
+      historytabSim[sample(part.n[alive],round(length(part.n[alive])*attack.yr[jj])),jj]=1
     }
   }else{
     historytabSim=historytabPost
   }
   
+  # - - - -
   # Simulate titres for each participant
+  # ii=participant | jj=test year
   
-  test.list=list()
+  test.list=list() # empty list to store values
   
   for(ii in 1:n_part){
     
-    subjectn=ii
-    i.list=list()
-    historyii=historytabSim[ii,]
+    i.list=list() # empty list to store values
+    historyii=historytabSim[ii,] # Pick simulated infection history
     
     for(jj in 1:test.n){
       
       d.ij=dmatrix[sample.index,] # Define cross-immunity matrix for sample strain
-      d_vector=melt(t(d.ij))$value
+      d_vector=melt(t(d.ij))$value # Melt for use in func1()
       
       d.ij2=dmatrix2[sample.index,] # Define cross-immunity matrix for sample strain
-      d_vector2=melt(t(d.ij2))$value
+      d_vector2=melt(t(d.ij2))$value # Melt for use in func1()
       
-      testyr=test_years[jj]
-      testyearI=c(1:inf.n)[inf_years==testyr]
+      testyr=test_years[jj] # Pick test year to simulate
+      testyearI=c(1:inf.n)[inf_years==testyr] # Identify which strains being tested
       
-      expect=func1(historyii,sample.index,d_vector,d_vector2, thetastar,testyearI) # Output expectation
+      expect=func1(historyii,sample.index,d_vector,d_vector2, thetastar,testyearI) # Output expected titre
       
-      #DEBUG
-      #thetastar[["wane"]]=1
-      #func1(historyii,titredat=1,d_vector,d_vector2, thetastar,testyear_index=1) # Output expectation
-      # END DEBUG
+      # Observation model - convert to observed titres
+      titredat=sapply(expect,function(x){ floor( rnorm(1,mean=x,sd=thetastar[["error"]]) ) })
+      titredat[titredat<0]=0
+      titredat=sapply(titredat,function(x){min(x,8)}) # Censor titres at 0
       
-      if(roundv==T){
-        #titredat=sapply(expect,function(x){rpois(1,x)})
-        titredat=sapply(expect,function(x){ floor( rnorm(1,mean=x,sd=thetastar[["error"]]) ) })
-        titredat[titredat<0]=0
-      }else{
-        titredat=expect} # Generate test titre
-      #if(roundv==T){titredat=round(expect)}else{titredat=expect}
-      titredat=sapply(titredat,function(x){min(x,8)})
+      # TO DO - ADD AGE  # FIXTHIS
       
+      # Store outputs
       i.list[[jj]]=rbind(test.year=rep(testyr,nstrains),
                          titredat,
                          strain_years,
-                         sample.index
+                         sample.index,
+                         age.yr[ii]
+                         
       )
     }
-    #i.list[[1]][2,]
-    
     test.list[[ii]]=i.list
   }
-  test.listSim=test.list
+  test.listSim = test.list # Store simulated strain data
   
   # Export data
-  #browser()
   if(is.null(historytabPost)){
-    save(test_years,inf_years,strain_years,n_part,test.listSim,theta.sim.out, age.yr,antigenic.map.in,historytabSim,file=paste("simulation_outputs/Simulated_data_",seedi,".RData",sep=""))
+    save(test_years,inf_years,strain_years,n_part,test.listSim,theta.sim.out, age.yr,antigenic.map.in,historytabSim,file=paste("output_simulation/Simulated_data_",seedi,".RData",sep=""))
   }else{
-    save(test_years,inf_years,strain_years,n_part,test.listSim,theta.sim.out, age.yr,antigenic.map.in,historytabSim2,file=paste("simulation_outputs/Simulated_dataPost_",seedi,".RData",sep=""))
+    save(test_years,inf_years,strain_years,n_part,test.listSim,theta.sim.out, age.yr,antigenic.map.in,historytabSim2,file=paste("output_simulation/Simulated_dataPost_",seedi,".RData",sep=""))
   }
 }
 
@@ -164,35 +165,25 @@ simulate_data<-function(test_years,
 # Inference model ---------------------------------------------------------
 
 # - - - - - - - - - - - - - - - -
-# Calculate cross-reaction matrix from antigenic map data
+# Calculate antigenic distance matrix from antigenic map data
 
-outputdmatrix.fromcoord <- function(thetasigma,inf_years,anti.map.in,linearD=F){ #anti.map.in can be vector or matrix - rows give inf_years, columns give location
+outputdmatrix.fromcoord <- function(inf_years,anti.map.in){ #anti.map.in can be vector or matrix - rows give inf_years, columns give location
 
-  # Check if map is 1D or 2D
-  #if(length(anti.map.in)==length(inf_years)){
-  if(linearD==F){
-    # Exponential decay function
+    # Calculate antigenic distances
     if(is.null(dim(anti.map.in))){ # check if input map is one or 2 dimensions
-      (dmatrix=sapply(anti.map.in,function(x){exp(-thetasigma*abs(anti.map.in-x))}))
-    }else{ # If spline function defined, calculate directly from input
-      (dmatrix=apply(anti.map.in,1,function(x){exp(-thetasigma*sqrt(
-        colSums(apply(anti.map.in,1,function(y){(y-x)^2}))
-        ))}))
-    }
-  }else{
-    # Linear decay function
-    if(is.null(dim(anti.map.in))){ # check if input map is one or 2 dimensions
-      (dmatrix=sapply(anti.map.in,function(x){y=abs(anti.map.in-x); y   })) # DEBUG 1-1*thetasigma* // y[y<0]=0; 
       
-    }else{ # If spline function defined, calculate directly from input
+      # If 1D antigenic 'line' defined, calculate distances directory from input
+      (dmatrix=sapply(anti.map.in,function(x){y=abs(anti.map.in-x); y   })) 
+      
+    }else{ # If 2D antigenic map defined, calculate distances directory from input
       (dmatrix=apply(anti.map.in,1,function(x){y=sqrt(
         
         colSums(apply(anti.map.in,1,function(y){(y-x)^2}))
         
-      ); y # 1-1*thetasigma* //  y[y<0]=0; HAVE REMOVED BASE
+      ); y 
       }))
     }
-  }
+
 }
 
 
@@ -227,15 +218,19 @@ likelihood.titre<-function(expect,titredat,theta){
 # - - - - - - - - - - - - - - - -
 # Calculate likelihood of titres for given participant and test year
 
-estimatelik<-function(ii,jj,historyii,dmatrix,dmatrix2,theta_star,test.list,testyearI){ # ii=participant | jj=test year
+estimatelik<-function(ii,jj,historyii,dmatrix,dmatrix2,theta_star,test.list,testyearI){ 
+  # ii=participant | jj=test year
   
   # jj=jj_year[kk];historyii=as.numeric(history_star[ii,]);testyearI=testyear_index[kk]
   
+  # Extract relevant strain and test ID
   test.II=test.list[[ii]]
   test.jj=test.II[[jj]]
   
-  # Check test data available
-  if(length(test.jj[,1])==1){0}else{
+
+  if(length(test.jj[,1])==1){ # Check test data is available
+    0
+    }else{
     
     # Set up test strains
     test.part=as.numeric(test.jj[4,]) # index of sample strains data available for
@@ -249,9 +244,8 @@ estimatelik<-function(ii,jj,historyii,dmatrix,dmatrix2,theta_star,test.list,test
 
     expect=func1(historyii,titredat,d_vector,d_vector2,theta_star,testyearI) # Output expectation
 
-    lik = likelihood.titre(expect,titredat,theta_star)
+    lik = likelihood.titre(expect,titredat,theta_star) # Calculate likelihood
 
-    
     lik
     
   }
@@ -276,7 +270,6 @@ setuphistIC<-function(ii,jj,inf.n,test.list,testyear_index, test_years, inf_year
     
     # Set up test strains
     titredat=as.numeric(test.jj[2,]) # Define titre data
-    maxt=(titredat==max(titredat))
     
     # Use simple cutoff for titres -- set high titres = 1 in history if >=4
     for(i in 1:length(spyear)){
@@ -284,15 +277,13 @@ setuphistIC<-function(ii,jj,inf.n,test.list,testyear_index, test_years, inf_year
         hist0[(inf_years==spyear[i])]=1
       }
     }
-    
-    #hist0=sample(c(0,1),inf.n,replace=T,prob=c(0.9,0.1)) # Constrain max number of infections to 10% attack rate?
-    
+
   }
   
-  min.range = max(1,testyear_index[1]-10) # Add an infection within past 10 years
+  min.range = max(1,testyear_index[1]-10) # Add an infection within past 10 years (useful for initial sampling)
   inf_index = inf_years-min(inf_years)+1
   inf_pick = sample(c(1:inf.n)[inf_index>=min.range & inf_index<= testyear_index[1]],1)  # pick strain within plausible region to add
-  if(sum(hist0[inf_years < min(test_years)])==0){hist0[inf_pick]=1} # Make sure at least one infection previous to test year
+  if(sum(hist0[inf_years < min(test_years)])==0){hist0[inf_pick]=1} # Make sure at least one infection occurs before earliest test year
   hist0
   
 }
@@ -303,12 +294,12 @@ setuphistIC<-function(ii,jj,inf.n,test.list,testyear_index, test_years, inf_year
 # - - - - - - - - - - - - - - - -
 # Resample infection history in MH algorithm - included ageA input in case needed later
 
-SampleHistory<-function(historyA,pick,inf.n,ageA,inf_years,age.mask){
+SampleHistory<-function(historyA,pick,inf.n,inf_years,age.mask){
 
-  for(ii in pick){
+  for(ii in pick){ # Resample subset of individuals
     
     rand1=runif(1)
-    x=historyA[ii,age.mask[ii]:inf.n]
+    x=historyA[ii,age.mask[ii]:inf.n] # Only resample years individual was alive
     
     infvector=c(1:length(x))
     infvector2=rev(infvector)
@@ -321,7 +312,7 @@ SampleHistory<-function(historyA,pick,inf.n,ageA,inf_years,age.mask){
       }
     }
     
-    # Add new infection
+    # Add infection
     if(rand1>1/3 & rand1<2/3){
       ninfecID=infvector[(as.numeric(x)==0)]
       if(length(ninfecID)>0){
@@ -329,7 +320,7 @@ SampleHistory<-function(historyA,pick,inf.n,ageA,inf_years,age.mask){
       }
     }
     
-    # Move infection
+    # Move infection position
     if(rand1>2/3){
       infectID=infvector[(as.numeric(x)>0)]
       ninfecID=infvector[(as.numeric(x)==0)]
@@ -340,7 +331,7 @@ SampleHistory<-function(historyA,pick,inf.n,ageA,inf_years,age.mask){
       }
     }
 
-    historyA[ii,age.mask[ii]:inf.n]=x
+    historyA[ii,age.mask[ii]:inf.n]=x # Only =1 if individual was alive
     
   } # end loop over individuals
   
@@ -393,7 +384,6 @@ ComputeProbability<-function(marg_likelihood,marg_likelihood_star){
 
 run_mcmc<-function(
   test.yr,
-  test_years,
   inf_years,
   strain_years,
   n_part,
@@ -405,38 +395,38 @@ run_mcmc<-function(
   switch1=2,
   seedi=1,
   pmask=NULL,
-  linD=F, # toggles linear/exponential cross-reactivity function
   antigenic.map.in=NULL, # define specific map structure (or initial structure if fitting)
-  am.spline=NULL, # fit antigenic map along defined spline function
+  age.mask = F, # prevent infection before birth
   flu_type = NULL
   ){
   
   # DEBUG SIMULATION params <<<
    # test.yr=define.year; test.list=test.listSim; theta=theta0;runs=1e2; varpart_prob=vp1;hist.true=historytabSim;  switch1=10; pmask=pmask0;
    
-   # seedi=loadseed; antigenic.map.in = NULL; am.spline = am.spl;  flu_type = flu.type; linD=F
+   # seedi=loadseed; antigenic.map.in = NULL; flu_type = flu.type;
   
   # DEBUG set params <<<
-  # hist.true=NULL; test.yr=c(2009); runs=200; switch1=10; varpart_prob=0.05 ;   seedi=1; linD=F; pmask=NULL ; antigenic.map.in=NULL; flu_type="H3HN"
+  # hist.true=NULL; test.yr=c(2009); runs=200; switch1=10; varpart_prob=0.05 ;   seedi=1; pmask=NULL ; antigenic.map.in=NULL; flu_type="H3HN"
   
   time.1 = Sys.time() # DEBUG TIME 1
   
   if(is.null(antigenic.map.in)){antigenic.map.in=inf_years} # if no input map, assume 1D
-  test.n=length(test_years); inf.n=length(inf_years); nstrains=length(strain_years)
-  sample.index=strain_years-min(inf_years)+1
+  test.n = length(test.yr); inf.n=length(inf_years); nstrains=length(strain_years) # Set up summary parameters
+  sample.index = strain_years-min(inf_years)+1
   test.listPost=test.list
   #historyii=rbinom(inf.n, 1, 0.1) # DEBUG dummy infection history
   
-  # Predefine index variables to speed up code
-  jj_year=match(test.yr,test_years); testyear_index = test.yr - min(inf_years) + 1
+  # Predefine index parameters to speed up code
+  jj_year=c(1:test.n); testyear_index = test.yr - min(inf_years) + 1
   sample.n=length(jj_year)
   
-  # Extract ages and create mask if fitting to FluScape data
-  if(flu_type=="H3FS"){
-    age.list <- array(unlist(test.list),dim=c(5,length(strain_years),n_part))[5,1,]
-    age.mask <- sapply(age.list,function(x){if(is.na(x)){1}else{match(max(min(inf_years),test_years[1]-x),inf_years)  }  })
+  
+  # Extract ages and create mask 
+  if(age.mask==T){  # FIXTHIS
+    age.list = array(unlist(test.list),dim=c(5,length(strain_years),n_part))[5,1,]
+    age.mask = sapply(age.list,function(x){if(is.na(x)){1}else{match(max(min(inf_years),test_years[1]-x),inf_years)  }  })
   }else{
-    age.mask <- rep(1,n_part)
+    age.mask = rep(1,n_part)
   }
 
   
@@ -460,10 +450,9 @@ run_mcmc<-function(
   historytabCollect=historytab
   age.tab=matrix(NA,nrow=n_part,ncol=1)
   map.tab=antigenic.map.in
-  map.tabCollect=list()
   
-  dmatrix0 = outputdmatrix.fromcoord(theta[["sigma"]],inf_years,anti.map.in=map.tab,linearD=linD) # Arrange antigenic map into cross-reaction matrix
-  dmatrix20 = outputdmatrix.fromcoord(theta[["sigma2"]],inf_years,anti.map.in=map.tab,linearD=linD) # Arrange antigenic map into cross-reaction matrix
+  dmatrix0 = outputdmatrix.fromcoord(inf_years,anti.map.in=map.tab) # Arrange antigenic map into cross-reaction matrix
+  dmatrix20 = outputdmatrix.fromcoord(inf_years,anti.map.in=map.tab) # Arrange antigenic map into cross-reaction matrix
   
   # Pick plausible initial conditions -- using all test years
   if(is.null(hist.true)){
@@ -474,7 +463,7 @@ run_mcmc<-function(
       }
       histA=as.numeric(colSums(histIC)>0) # combine all histories
       histA0=histA*0
-      histA0[c(age.mask[ii]:inf.n)]=histA[c(age.mask[ii]:inf.n)]
+      histA0[c(age.mask[ii]:inf.n)]=histA[c(age.mask[ii]:inf.n)] # Remove history before individuals born
       
       historytab[ii,]=histA0
     }
@@ -515,26 +504,18 @@ run_mcmc<-function(
       
       if(sum(pmask=="sigma2")>0){ theta_star[["sigma2"]]=theta_star[["sigma"]] } # Fix equal if sigma same for both 
       
-      #if(sum(pmask=="map.fit")>0){ # check whether to fit antigenic map -- Not identifiable so deprecated
-      #  map_star=SampleAntigenicMap(anti.map.star=map.tab,epsilon.map=epsilon0,inf_years) # resample antigenic map
-      #SampleAntigenicMap(anti.map.star=inf_years,epsilon.map=0.01,inf_years) # sample antigenic map
-      #}else{
       map_star=map.tab
-      #}
-      
-      #age_star = age.tab
       history_star = historytab
       pickA=c(1:n_part)
       
     }else{
       pickA=NULL
       pickA=sample(n_part, ceiling(varpart_prob0*n_part)) # check that not length zero (i.e. at least one person sampled)
-      #age_star = age.tab #SampleAge(pickA,age.tab) #resample age (not for now)
-      history_star = SampleHistory(historytab,pickA,inf.n,age_star,inf_years,age.mask) #resample history
+      history_star = SampleHistory(historytab,pickA,inf.n,inf_years,age.mask) #resample history
       theta_star = thetatab[m,]
     }
 
-    #print(am.spline) # DEBUG
+    # Define cross-reaction matrices with new parameters
     dmatrix =  1-theta_star[["sigma"]] *dmatrix0;  dmatrix[dmatrix<0]=0 # Arrange antigenic map into cross-reaction matrix
     dmatrix2 = 1-theta_star[["sigma2"]]*dmatrix20; dmatrix2[dmatrix2<0]=0 # Arrange antigenic map into cross-reaction matrix
     
@@ -555,7 +536,6 @@ run_mcmc<-function(
     # - - - - - - - - - - - - - - - -
     # Metropolis Hastings step
 
-
     # History sample step
     if( (m %% switch1 != 0) & m>1){
       
@@ -569,20 +549,16 @@ run_mcmc<-function(
       thetatab[m+1,] = thetatab[m,]
       
     } # end history step
-      
-    
-      
+
     # Theta sample step
     if( (m %% switch1==0) | m==1){
       
       # Estimate probability of update
       output_prob = ComputeProbability(sum(likelihoodtab[m,]),sum(lik_val)) 
-      if(is.na(output_prob) & m==1){stop(paste('check initial parameter values',theta_star[["error"]]))}
+      if(is.na(output_prob) & m==1){stop(paste('check initial parameter values',theta_star[["error"]]))} # check initial likelihood is valid
         
       if(runif(1) < output_prob){
-        
         thetatab[m+1,] = theta_star
-        #map.tab = map_star DEPRECATED
         accepttabT=c(accepttabT,1)
         likelihoodtab[m+1,] = lik_val
         
@@ -593,25 +569,22 @@ run_mcmc<-function(
       }
     } # End theta sample step
 
+    # Calculate acceptance rate for theta
     if(m<max(100)){
-      accept_rateT=0.234 # target acceptance rate for theta
-      #accept_rateH=0.234 # target acceptance rate for infection history
+      accept_rateT=0.234 # Target acceptance
     }else{
-      accept_rateT=sum(accepttabT)/length(accepttabT)
-      #accept_rateH=sum(accepttabH)/length(accepttabH)
-      #cov_matrix_thetaA=cov(thetatab[1:m,]) # Include adaptive covariance matrix for MCMC
+      accept_rateT = sum(accepttabT)/length(accepttabT)
     }
 
-    
-    # Store infection history
+    # Store infection history every 20 runs
     if(m %% min(runs,20) ==0){
       historytabCollect=rbind(historytabCollect,historytab)
-      #map.tabCollect[[round(m/20)]]=map.tab DEPRECATED
     }
 
+    # Store outputs every 500 runs
     if(m %% min(runs,500) ==0){
       print(c(m,accept_rateT,varpart_prob0,round(sum(likelihoodtab[m,])))) # DEBUG HERE
-      save(likelihoodtab,thetatab,inf_years,n_part,test.listPost,historytab,historytabCollect,map.tabCollect,age.tab,test.yr,switch1,file=paste("posterior_outputs/outputR_f",paste(test.yr,"_",collapse="",sep=""),"s",seedi,"_lin",linD,".RData",sep=""))
+      save(likelihoodtab,thetatab,inf_years,n_part,test.listPost,historytab,historytabCollect,age.tab,test.yr,switch1,file=paste("output_posterior/outputR_f",paste(test.yr,"_",collapse="",sep=""),"s",seedi,".RData",sep=""))
     }
 
   } #End MCMC runs loop
@@ -624,10 +597,15 @@ run_mcmc<-function(
 # Example simulation and inference ----------------------------------------
 # Generates simulated data and estimates original parameters
 
+simulation.infer <- function(seed_i,
+                             mcmc.iterations=1e3, # MCMC iterations
+                             flu.type="H3HN", # Flu name
+                             vp1=0.2, # Proportion of infection histories to resample each step
+                             fit.map = NULL, # Antigenic map input
+                             fix.param="vary.init" # Add noise to input parameters?
+                             ) {
 
-simulation.infer <- function(seed_i,mcmc.iterations=1e3, strain.fix=T,flu.type="H3HN", vp1=0.2,fit.map = NULL, fix.param="vary.init",linearFn=F) {
-
-  #DEBUG seed_i=1; mcmc.iterations=40; strain.fix=T; flu.type="H3HN"; fix.param ="vary.init"; linearFn= F; vp1 =0.2
+  #DEBUG seed_i=1; mcmc.iterations=40; flu.type="H3HN"; fix.param ="vary.init"; vp1 =0.2; fit.map = antigenic_map
   
   loadseed=paste("SIM_",seed_i,sep="")
   
@@ -641,8 +619,17 @@ simulation.infer <- function(seed_i,mcmc.iterations=1e3, strain.fix=T,flu.type="
   pmask0=c("tau1") # Omit antigenic seniority boosting from model
   
   # Define theta
-  #mu1 = long-term boost / mu2 = short-term boost / tau1 = AGS back-boost  / tau2 = AGS suppression / sigma1 = long-term cross-reactivity / sigma 2 = short-term cross-reactivity
-  thetaSim = c(mu=2,tau1=0.02,tau2=0.05,wane=1,sigma=0.3,muShort=2,error=1,sigma2=0.1) # Note: parameter ordering fixed in C code input
+  #    short-term cross-reactivity
+  thetaSim = c(mu=2, # long-term boost
+               tau1=0.02, # AGS back-boost (deprecated)
+               tau2=0.05, # AGS suppresion
+               wane=1, # waning rate
+               sigma=0.3, # long-term cross-reactivity
+               muShort=2, # short-term boost
+               error=1, # Measurement error
+               sigma2=0.1 # short-term cross-reactivity
+               ) 
+  # Note: parameter ordering fixed in C code input
   
 
   # - - - - - - - - - - - - - - - - - - - - - - - - - - 
@@ -650,26 +637,28 @@ simulation.infer <- function(seed_i,mcmc.iterations=1e3, strain.fix=T,flu.type="
 
   # Simulate annual attack rates based on lognormal
   sd.param = 0.5
-  attack.yr = rlnorm(inf_years.in,meanlog=log(0.15)-sd.param^2/2,sdlog=sd.param)
-  attack.yr[1] = rlnorm(1,meanlog=log(0.5)-(sd.param/2)^2/2,sdlog=(sd.param/2)) # Make first year larger (1968 pandemic)
-  write.csv(attack.yr,paste("simulation_outputs/sim_attackS",seed_i,".csv",sep=""))
+  attack.yr = rlnorm(inf_years.in,meanlog=log(0.15)-sd.param^2/2,sdlog=sd.param) # lognormal random attack rate
+  attack.yr[1] = rlnorm(1,meanlog=log(0.5)-(sd.param/2)^2/2,sdlog=(sd.param/2)) # Make first year larger (i.e. 1968 pandemic)
+  write.csv(attack.yr,paste("output_simulation/sim_attackS",seed_i,".csv",sep="")) # Store outputs
   
   # Simulate titres
   
-  simulate_data(test_years=define.year, # this needs to be vector
-                inf_years=inf_years.in,strain_years=strain_years.in,n_part=npartM, #leave strain years blank to use HaNam strains
-                roundv=T, # Generate integer titre data
-                thetastar=thetaSim,
-                antigenic.map.in = antigenic.map0,
-                #pmask=c("wane","sigma2"), # Specify what is included
-                linD = linearFn,
-                p.inf=attack.yr,seedi=loadseed)
+  simulate_data(test_years=define.year, # Serology test years
+                inf_years=inf_years.in, # Infection years
+                strain_years=strain_years.in, # Test strain years
+                n_part=npartM, # N participants
+                thetastar=thetaSim, # Specific parameter set
+                antigenic.map.in = antigenic.map0, # Specify antigenic map to use
+                #pmask=c("wane","sigma2"), # Specify what parameters to mask
+                p.inf=attack.yr, # Annual attack rate
+                seedi=loadseed # Seed
+                )
   
   # - - - - - - - - - - - - - - - - - - - - - - - - - - - 
   # INFERENCE MODEL
-  # Run MCMC for simulated data set
+  # Run MCMC for above simulated data set
   
-  load(paste("simulation_outputs/Simulated_data_",loadseed,".RData",sep="")) # Load simulation data for inference step that follows
+  load(paste("output_simulation/Simulated_data_",loadseed,".RData",sep="")) # Load simulation data for inference step that follows
   
   # Set initial theta -- add noise for multiple MCMC chains
   theta0=c(mu=NA,tau1=NA,tau2=NA,wane=NA,sigma=NA,muShort=NA,error=NA,sigma2=0.1)
@@ -687,7 +676,6 @@ simulation.infer <- function(seed_i,mcmc.iterations=1e3, strain.fix=T,flu.type="
   # Note: NEED TO RE-INITIALISE DATAFRAME IF REPEAT RUN (i.e. reload dataset above)
   run_mcmc(
     test.yr=define.year,
-    test_years,
     inf_years,
     strain_years,
     n_part,
@@ -700,9 +688,8 @@ simulation.infer <- function(seed_i,mcmc.iterations=1e3, strain.fix=T,flu.type="
     pmask=pmask0, # specify parameters to fix
     seedi=loadseed, # seed ID
     antigenic.map.in = antigenic.map0, # Define random initial map to fit
-    am.spline = NULL, # decide whether to fit antigenic map along "am.spl" spline function
-    flu_type = flu.type, # note which subtype
-    linD=linearFn)
+    flu_type = flu.type # note which subtype
+    )
   
 }
 
