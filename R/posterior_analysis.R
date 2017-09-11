@@ -62,8 +62,8 @@ plot.posteriors<-function(simDat=F,loadseed=1,flu.type="",year_test=c(2007:2012)
   par(mfrow=c(5,2),mar = c(4,4,1,1),mgp=c(1.8,0.6,0))
   colA=rgb(0.8,0.8,0.8)
     
-    param.names = names(theta)
-    param.labels= names(theta)
+    param.names = names(thetaT)
+    param.labels= names(thetaT)
     par(mfcol=c(length(param.names),length(param.names)),mar = c(3,3,1,1),mgp=c(1.8,0.5,0))
     
     thinner.theta=thin.theta[sample(length(thin.theta$mu),1000,replace=T),]
@@ -136,6 +136,7 @@ plot.multi.chain.posteriors<-function(simDat=F,flu.type="H3HN",loadpick=c(1:4),b
   # Load MCMC posteriors
   for(loadseed in loadpick){
   
+    loadseedA=paste("SIM_",loadseed,sep="")
     load(paste("output_posterior/outputR_f",paste(year_test,"_",collapse="",sep=""),"s",loadseedA,".RData",sep=""))
     
     # Define lengths and sizes of inputs
@@ -219,7 +220,7 @@ plot.multi.chain.posteriors<-function(simDat=F,flu.type="H3HN",loadpick=c(1:4),b
   lines(c(burnCut*ltheta/switch1,burnCut*ltheta/switch1),c(0,0.15),col="gray",lty=2)
   if(simDat==T){ lines(c(-1000,runsPOST/switch1),c(theta.true[["tau2"]],theta.true[["tau2"]]),col=Ctrue,lwd=Wtrue) }
   
-  dev.copy(png,paste("plot_outputs/MCMC_chains",ifelse(simDat==T,"SIM",""),"_np",n_part,"_yr",paste(year_test,"_",collapse="",sep=""),loadseed,".png",sep=""),units="cm",width=20,height=10,res=300)
+  dev.copy(png,paste("plot_outputs/MCMC_chains",ifelse(simDat==T,"SIM",""),"_np",n_part,"_yr",paste(year_test,"_",collapse="",sep=""),loadseed,".png",sep=""),units="cm",width=10,height=15,res=300)
   dev.off()
   
   

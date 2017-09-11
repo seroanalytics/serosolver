@@ -459,7 +459,7 @@ run_mcmc<-function(
     for(ii in 1:n_part){
       histIC=NULL
       for(kk in 1:length(jj_year)){
-        histIC=rbind(histIC,setuphistIC(ii,jj_year[kk],inf.n,test.list,testyear_index,test_years, inf_years))
+        histIC=rbind(histIC,setuphistIC(ii,jj_year[kk],inf.n,test.list,testyear_index,test.yr, inf_years))
       }
       histA=as.numeric(colSums(histIC)>0) # combine all histories
       histA0=histA*0

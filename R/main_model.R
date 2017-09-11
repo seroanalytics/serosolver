@@ -48,7 +48,7 @@ antigenic_map = read.csv("../data/antigenic_map.csv") # load antigenic locations
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 
 # Generate simulated data and infer parameters -- simulation parameters are defined in sero_functions.R
-# Parameters currently specified within the function
+# Parameters currently specified within the function (see "sero_functions.R")
 
 kk=1
 simulation.infer(seed_i=kk, # Set seed
