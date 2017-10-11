@@ -142,10 +142,10 @@ simulate_data<-function(test_years,
       
       # Store outputs
       i.list[[jj]]=rbind(test.year=rep(testyr,nstrains),
-                         titredat,
-                         strain_years,
-                         sample.index,
-                         age.yr[ii]
+                         titredat=titredat,
+                         strain_years=strain_years,
+                         sample.index=sample.index,
+                         age.yr=age.yr[ii]
                          
       )
     }
@@ -201,10 +201,10 @@ likelihood.titre<-function(expect,titredat,theta){
   # First sum up titres 0 < . < 8
   p_jkMID =  ( sum( log(  pnorm(as.numeric(titredat[!largett & !smalltt])+1, mean = expect[!largett & !smalltt], sd=theta[["error"]], log = FALSE) 
                      - pnorm(as.numeric(titredat[!largett & !smalltt]), mean = expect[!largett & !smalltt], sd=theta[["error"]], log = FALSE)  ) ) )
-  
+
   # Calculate titres >=8
   p_jkSML = sum( (  pnorm(1, mean = expect[smalltt], sd=theta[["error"]], log = T) ) )
-  
+
   # Calculate titres = 0
   p_jkLRG = sum( (  pnorm(8, mean = expect[largett], sd=theta[["error"]], log = T, lower.tail = F) ) ) 
 

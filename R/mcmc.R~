@@ -1,0 +1,2 @@
+run_MCMC <- function(parTab, data, mcmcPars, filename, CREATE_POSTERIOR_FUNC, PRIOR_FUNC
+                     

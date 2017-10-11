@@ -1,0 +1,64 @@
+#include <Rcpp.h>
+using namespace Rcpp;
+
+#define MAX(a,b) ((a) < (b) ? (b) : (a)) // define MAX function for use later
+  
+
+// Do we want infection history to be a vector of infection times?
+NumericVector infection_model_indiv(NumericVector theta, NumericVector infectionHistory,
+				    NumericVector samplingTimes, NumericVector strainIsolationTimes,
+				    IntegerVector samples){
+  // Extract model parameters
+  double mu = theta["mu"];
+  double mu2 = theta["mu2"];
+  double T_2 = theta["T_2"];
+  double T_1 = theta["T_1"];
+  double wane = theta["wane"];
+
+  // We will need to loop over each strain that *could* be tested
+  int n_strains = strainIsolationTimes.size();
+  int n_samples = n_strains; // n_samples will be the length of the strains vector
+  int n_infections = n_strains; // max number of infections is one for each strain
+
+
+  NumericVector predictedTitre(n_samples);
+  NumericVector cumInfectionHistory(n_infections);
+  NumericVector waning(n_samples);
+
+  // maskedInfection is to ignore strains that circulated after the test
+  double maskedInfection; 
+  double circulation_time;
+
+  /* Check if first isolation time is after the sampling time.
+     if so, then we do not test against this strain
+  */ 
+  circulation_time = strainIsolationTimes[0];
+  if(circulation_time > samplingTime) maskedInfection=0;
+  else maskedInfection = infectionHistory[0];
+
+  /* For strains that circulated before the isolation time,
+     add to cumulative infectoin history
+  */
+  for(int i=1; i < n_strains; ++i){
+
+  // At which time did this strain circulate?
+  // This might change to a range of times in the future
+  circulation_time = strainIsolationTimes[i];
+
+  // If circulated after the sample, then could not have been infected
+  if(circulation_time > samplingTime){
+  maskedInfection=0;
+} else {
+  maskedInfection = infectionHistory[i];
+}
+
+  // Make cumulative infection history
+  cumInfectionHistory[i] = maskedInfection + cumInfectionHistory[i-1];   
+
+  // Get waning rate for this strain
+  waning[i] = MAX(0, 1-wane*(samplingTime-circulation_time));
+}
+  
+  
+  
+}
