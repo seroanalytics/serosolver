@@ -1,0 +1,18 @@
+Package: serosolver
+Title: Inference framework for serological data
+Version: 0.0.1
+Author: Adam Kucharski <james.hay13@imperial.ac.uk>
+Maintainer: Adam Kucharski <Adam.Kucharski@lshtm.ac.uk> James Hay <jameshay218@gmail.com>
+Description: Given a table of serological data for a population, infers the presence and timing of infections based on raised titres.
+License: GPL-3
+LazyData: true
+URL: https://github.com/adamkucharski/sero-solver
+BugReports: https://github.com/adamkucharski/sero-solver/issues
+Suggests:
+    testthat,
+    knitr,
+    rmarkdown
+LinkingTo: Rcpp
+SystemRequirements: C++11
+RoxygenNote: 5.0.1
+VignetteBuilder: knitr

@@ -1,3 +1,4 @@
+#' @export
 simulate_group <- function(n_indiv, theta, infectionHistories,
                            samples, strainIsolationTimes,
                            antigenicMapLong, antigenicMapShort){
@@ -15,7 +16,7 @@ simulate_group <- function(n_indiv, theta, infectionHistories,
     
 }
 
-
+#' @export
 simulate_individual <- function(theta, infectionHistory,
                                 samples, samplingTimes,
                                 strainIsolationTimes,
@@ -39,7 +40,7 @@ simulate_individual <- function(theta, infectionHistory,
     dat[,3] <- titres
     return(dat)
 }
-
+#' @export
 add_noise <- function(y, theta){
     noise_y <- floor(rnorm(length(y), mean=y, sd=theta["error"]))
     noise_y[noise_y < 0] <- 0
@@ -47,14 +48,14 @@ add_noise <- function(y, theta){
     return(noise_y)    
 }
 
-
+#' @export
 simulate_attack_rates <- function(infectionYears,meanPar=0.15,sdPar=0.5, 
                                   largeFirstYear=FALSE,bigYearMean=0.5){
     attack_year <- rlnorm(infectionYears, meanlog=log(meanPar)-sdPar^2/2,sdlog=sdPar)
     if(largeFirstYear) attack_year[1] <- rlnorm(1,meanlog=log(bigYearMean)-(sdPar/2)^2/2,sdlog=sdPar/2)
     return(attack_year)
 }
-
+#' @export
 simulate_infection_histories <- function(pInf, infSD, strainIsolationTimes, samplingTimes, ages){
     n_strains <- length(pInf)
     n_indiv <- length(ages)
@@ -70,7 +71,7 @@ simulate_infection_histories <- function(pInf, infSD, strainIsolationTimes, samp
     }
     return(infectionHistories)    
 }
-
+#' @export
 simulate_data <- function(parTab, group=1,n_indiv,
                           strainIsolationTimes, samplingTimes,
                           antigenicMap,
@@ -105,7 +106,7 @@ simulate_data <- function(parTab, group=1,n_indiv,
     return(list(data=y,samples=samples, infectionHistories=infHist))
 }
 
-
+#' @export
 outputdmatrix.fromcoord <- function(anti.map.in){ #anti.map.in can be vector or matrix - rows give inf_years, columns give location
     # Calculate antigenic distances
     if(is.null(dim(anti.map.in))){ # check if input map is one or 2 dimensions

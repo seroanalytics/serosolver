@@ -559,6 +559,8 @@ run_mcmc<-function(
         
       if(runif(1) < output_prob){
         thetatab[m+1,] = theta_star
+        ## NOTE
+        ## Should this next line be in if(m %% switch1 == 0) ?
         accepttabT=c(accepttabT,1)
         likelihoodtab[m+1,] = lik_val
         
