@@ -7,9 +7,10 @@
 #' @return a parameter vector of a proposed move. Note that these may fall outside the allowable ranges.
 #' @export
 #' @useDynLib sero-solver
-mvr_proposal <- function(values, fixed, covMat){
+mvr_proposal <- function(values, fixed, covMat, useLog=FALSE){
     proposed <- values
-    proposed[fixed] <- MASS::mvrnorm(n=1,mu=proposed[fixed],Sigma=(5.6644/length(fixed))*covMat)
+    if(!useLog) proposed[fixed] <- MASS::mvrnorm(n=1,mu=proposed[fixed],Sigma=(5.6644/length(fixed))*covMat)
+    else proposed[fixed] <- exp(MASS::mvrnorm(n=1,mu=log(proposed[fixed]),Sigma=(5.6644/length(fixed))*covMat))
     return(proposed)
 }
 
@@ -20,38 +21,63 @@ infection_history_proposal <-function(newInfectionHistories,sampledIndivs,strain
     for(i in sampledIndivs){ # Resample subset of individuals
         rand1=runif(1)
         x=newInfectionHistories[i,ageMask[i]:length(strainIsolationTimes)] # Only resample years individual was alive
-        infvector=c(1:length(x))
-        infvector2=rev(infvector)
-        
         ## Remove infection
         if(rand1<1/3){
-            infectID=infvector[(as.numeric(x)>0)]
+            infectID= which(x>0)
             if(length(infectID)>0){
-                x[sample(c(infectID),1)]=0 # Why double? DEBUG
+                x[sample(infectID,1)]=0 # Why double? DEBUG
             }
         }
         ## Add infection
         if(rand1>1/3 & rand1<2/3){
-            ninfecID=infvector[(as.numeric(x)==0)]
+            ninfecID=which(x==0)
             if(length(ninfecID)>0){
-                x[sample(c(ninfecID),1)]=1
+                x[sample(ninfecID,1)]=1
             }
         }
         ## Move infection position
         if(rand1>2/3){
-            infectID=infvector[(as.numeric(x)>0)]
-            ninfecID=infvector[(as.numeric(x)==0)]
-            
+            infectID=which(x > 0)
+            ninfecID=which(x == 0)
             if(length(infectID)>0 & length(ninfecID)>0){
-                x[sample(c(infectID),1)]=0
-                x[sample(c(ninfecID),1)]=1
+                x[sample(infectID,1)]=0
+                x[sample(ninfecID,1)]=1
             }
         }
+        
         newInfectionHistories[i,ageMask[i]:length(strainIsolationTimes)]=x # Only =1 if individual was alive
     } # end loop over individuals
     newInfectionHistories
 }
 
+sample_indiv <- function(x){
+    rand1=runif(1)
+    
+    ## Remove infection
+    if(rand1<1/3){
+        infectID= which(x>0)
+        if(length(infectID)>0){
+            x[sample(infectID,1)]=0 # Why double? DEBUG
+        }
+    }
+    ## Add infection
+    if(rand1>1/3 & rand1<2/3){
+        ninfecID=which(x==0)
+        if(length(ninfecID)>0){
+            x[sample(ninfecID,1)]=1
+        }
+    }
+    ## Move infection position
+    if(rand1>2/3){
+        infectID=which(x > 0)
+        ninfecID=which(x == 0)
+        if(length(infectID)>0 & length(ninfecID)>0){
+            x[sample(infectID,1)]=0
+            x[sample(ninfecID,1)]=1
+        }
+    }
+    x
+}
 
 
 #' MCMC proposal function
@@ -126,4 +152,12 @@ protect <- function(f){
             -100000
         })
     }
+}
+
+#' @export
+ComputeProbability<-function(marg_likelihood,marg_likelihood_star){
+  # Flat priors on theta => symmetric update probability
+  calc.lik = exp(marg_likelihood_star-marg_likelihood)
+  calc.lik[calc.lik>1]=1 
+  calc.lik
 }

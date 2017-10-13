@@ -13,7 +13,11 @@ individual_likelihood <- function(theta, infectionHistory, samples, samplingTime
     .Call('_serosolver_individual_likelihood', PACKAGE = 'serosolver', theta, infectionHistory, samples, samplingTimes, strainIsolationTimes, antigenicMapLong, antigenicMapShort, titres)
 }
 
-group_likelihood <- function(theta, infectionHistories, samples, samplingTimes, strainIsolationTimes, antigenicMapLong, antigenicMapShort, titres) {
-    .Call('_serosolver_group_likelihood', PACKAGE = 'serosolver', theta, infectionHistories, samples, samplingTimes, strainIsolationTimes, antigenicMapLong, antigenicMapShort, titres)
+group_likelihood_vector <- function(theta, infectionHistories, samples, samplingTimes, strainIsolationTimes, antigenicMapLong, antigenicMapShort, titres) {
+    .Call('_serosolver_group_likelihood_vector', PACKAGE = 'serosolver', theta, infectionHistories, samples, samplingTimes, strainIsolationTimes, antigenicMapLong, antigenicMapShort, titres)
+}
+
+group_likelihood_total <- function(theta, infectionHistories, samples, samplingTimes, strainIsolationTimes, antigenicMapLong, antigenicMapShort, titres) {
+    .Call('_serosolver_group_likelihood_total', PACKAGE = 'serosolver', theta, infectionHistories, samples, samplingTimes, strainIsolationTimes, antigenicMapLong, antigenicMapShort, titres)
 }
 

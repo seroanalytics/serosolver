@@ -103,7 +103,7 @@ simulate_data <- function(parTab, group=1,n_indiv,
     y$titre <- y$titre*sample(c(0,1),nrow(y),prob=c(titreSensoring,1-titreSensoring),replace=TRUE)
     y <- cbind(group=group,y)
     
-    return(list(data=y,samples=samples, infectionHistories=infHist))
+    return(list(data=y,samples=samples, infectionHistories=infHist, ages=ages))
 }
 
 #' @export

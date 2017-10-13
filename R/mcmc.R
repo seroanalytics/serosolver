@@ -63,6 +63,7 @@ run_MCMC <- function(parTab,
         w <- mvrPars[[3]]
     }
 
+    
     ## Setup MCMC chain file with correct column names
     mcmc_chain_file <- paste0(filename,"_chain.csv")
     infectionHistory_file <- paste0(filename,"_infectionHistories.csv")
@@ -72,17 +73,19 @@ run_MCMC <- function(parTab,
 ##############
     strainIsolationTimes <- unique(data$strain)
     samplingTimes <- unique(data$sample)
-    n_strains <- length(strainIsolationTimes)
+    n_strain <- length(strainIsolationTimes)
     n_indiv <- length(unique(data$individual))
     n_groups <- length(unique(data$group))
     individuals <- 1:n_indiv
     groups <- 1:n_groups
+    histiter <- histaccepted <- histreset <- integer(n_indiv)
     
     ## Create posterior calculating function
-    posterior_simp <- protect(CREATE_POSTERIOR_FUNC(parTab,data,antigenicMap,
-                                                    sampingInformation,
+    posterior_simp <- protect(CREATE_POSTERIOR_FUNC(parTab,data,
+                                                    samplingInformation,
+                                                    antigenicMap,
                                                     PRIOR_FUNC,...))
-   
+
 ###############
     ## Create age mask
     ## Note that ages for all groups must be from same reference point
@@ -104,11 +107,12 @@ run_MCMC <- function(parTab,
 ######################
     ## Setup initial conditions
     infectionHistories <- setup_infection_histories(data, strainIsolationTimes, ageMask)
-    
+
     ## Initial likelihood
     #### NOTE
     #### IT MIGHT BE A BIT TOO SLOW PASSING INFECTION HISTORIES AS A MATRIX EACH ITERATION
-    probab <- posterior_simp(current_pars,infectionHistories)
+    probabs <- posterior_simp(current_pars,infectionHistories)
+    probab <- sum(probabs)
 ###############
     
 ####################
@@ -118,34 +122,34 @@ run_MCMC <- function(parTab,
     opt_chain <- matrix(nrow=adaptive_period,ncol=unfixed_par_length)
 
     ## Create empty chain to store "save_block" iterations at a time
-    save_chain <- empty_save_chain <- matrix(nrow=save_block,ncol=param_length+2+misc_length)
+    save_chain <- empty_save_chain <- matrix(nrow=save_block,ncol=param_length+2)
 
     ## Set up initial csv file
-    chain_colnames <- c("sampno",par_names,misc_colnames,"lnlike")
+    chain_colnames <- c("sampno",par_names,"lnlike")
     tmp_table <- array(dim=c(1,length(chain_colnames)))
     tmp_table <- as.data.frame(tmp_table)
-    tmp_table[1,] <- c(1,current_pars,misc,probab)
+    tmp_table[1,] <- c(1,current_pars,probab)
     colnames(tmp_table) <- chain_colnames
     ## Write starting conditions to file
     write.table(tmp_table,file=mcmc_chain_file,row.names=FALSE,col.names=TRUE,sep=",",append=FALSE)
 
     ## Table for storing infection histories
-    historyTab <- emptyHistTab <- matrix(NA, nrow=n_indiv*(save_block*n_indiv),ncol=n_strains+2)
-    tmp_table <- matrix(NA, nrow=n_indiv,ncol=n_strains+2)
-    tmp_table[1:nindiv,1:n_strain] <- infectionHistories
-    tmp_table[1:nindiv,n_strain+1] <- individuals
-    tmp_table[1:nindiv,n_strain+2] <- 1
+    historyTab <- emptyHistoryTab <- matrix(NA, nrow=save_block*n_indiv,ncol=n_strain+2)
+    tmp_table <- matrix(NA, nrow=n_indiv,ncol=n_strain+2)
+    tmp_table[1:n_indiv,1:n_strain] <- infectionHistories
+    tmp_table[1:n_indiv,n_strain+1] <- individuals
+    tmp_table[1:n_indiv,n_strain+2] <- 1
     colnames(tmp_table) <- c(as.character(strainIsolationTimes),"individual","sampno")
     ## Write starting infectoin histories
-    write.table(tmp_table, infectionHistory_file, row.names=FALSE, col.names=FALSE, sep=",",append=FALSE)
+    write.table(tmp_table, infectionHistory_file, row.names=FALSE, col.names=TRUE, sep=",",append=FALSE)
 
     ## Initial indexing parameters
     no_recorded <- 1
-    no_recorded_infhist <- 1
+    no_recorded_infHist <- 1
     sampno <- 2
     par_i <- 1
     chain_index <- 1
-
+    
 #####################
     ## MCMC ALGORITHM
 #####################
@@ -168,19 +172,23 @@ run_MCMC <- function(parTab,
             } else {
                 ## NOTE
                 ## MIGHT WANT TO USE ADAM'S PROPOSAL FUNCTION
-                proposal <- mvr_proposal(current_pars, unfixed_pars, scale*covMat)
+                proposal <- mvr_proposal(current_pars, unfixed_pars, scale*covMat, TRUE)
                 tempiter <- tempiter + 1
             }
             ## Calculate new likelihood for these parameters
-            new_probab <- posterior_simp(proposal, infectionHistories)
+            new_probabs <- posterior_simp(proposal, infectionHistories)
+            new_probab <- sum(new_probabs)
             ## Otherwise, resample infection history
         } else {
             indivSubSample <- sample(1:n_indiv, ceiling(histSampleProb*n_indiv))
-            newInfectionHistory <- infection_history_proposal(infectionHistories, indivSubSample,
+            newInfectionHistories <- infection_history_proposal(infectionHistories, indivSubSample,
                                                               strainIsolationTimes, ageMask)
             ## Calculate new likelihood with these infection histories
-            new_probab <- posterior_simp(current_pars, newInfectionHistories)
+            new_probabs <- posterior_simp(current_pars, newInfectionHistories)
+            new_probab <- sum(new_probabs)
+            histiter <- histiter + 1
         }
+
 #########################
         ## We could add a function pointer that does the same job as "pmask" - this way it is a bit more
         ## generalised. Shouldn't need to though, thanks to the function pointer idea
@@ -191,24 +199,32 @@ run_MCMC <- function(parTab,
         #############################
         ## Check that all proposed parameters are in allowable range
         ## Skip if any parameters are outside of the allowable range
-        if(!any(proposal[unfixed_pars] < lower_bounds[unfixed_pars] |
-                proposal[unfixed_pars] > upper_bounds[unfixed_pars])){
-            
+        if(i %% switch_sample == 0){
             log_prob <- min(new_probab-probab,0)
-            ## Accept with probability 1 if better, or proportional to
-            ## difference if not
             if(is.finite(log_prob) && log(runif(1)) < log_prob){
-                if(i %% switch_sample == 0){
+                if(!any(proposal[unfixed_pars] < lower_bounds[unfixed_pars] |
+                        proposal[unfixed_pars] > upper_bounds[unfixed_pars])){
+                    
+                    ## Accept with probability 1 if better, or proportional to
+            ## difference if not
                     current_pars <- proposal
                     ## Store acceptances
                     if(is.null(mvrPars)) tempaccepted[j] <- tempaccepted[j] + 1
                     else tempaccepted <- tempaccepted + 1
-                } else {
-                    infectionHistories <- newInfectionHistories
+                    probabs <- new_probabs
+                    probab <- new_probab
                 }
-                probab <- new_probab
             }
+        } else {
+            log_probs <- new_probabs - probabs
+            #message(cat(any(log_probabs > 0), " better history"))
+            log_probs[log_probs > 0] <- 0
+            x <- log(runif(length(log_probs))) < log_probs
+            infectionHistories[x,] <- newInfectionHistories[x,]
+            probabs[x] <- new_probabs[x]
+            histaccepted[x] <- histaccepted[x] + 1
         }
+        
 ##############################
         ## SAVE STEP
 ##############################
@@ -239,6 +255,7 @@ run_MCMC <- function(parTab,
         if(i <= adaptive_period){
             ## Current acceptance rate
             pcur <- tempaccepted/tempiter
+            pcurHist <- histaccepted/histiter
             ## Save each step
             opt_chain[chain_index,] <- current_pars[unfixed_pars]
             ## If in an adaptive step
@@ -265,6 +282,8 @@ run_MCMC <- function(parTab,
                     message(cat("Pcur: ", pcur,sep="\t"))
                     message(cat("Scale: ", scale,sep="\t"))
                 }
+                histiter <- histaccepted <- histreset
+                message(cat("Infection history pcur: ", pcurHist,sep="\t"))
             }
             chain_index <- chain_index + 1
         }
@@ -277,7 +296,7 @@ run_MCMC <- function(parTab,
             save_chain <- empty_save_chain
             no_recorded <- 1
         }
-        if(no_recorded_infHist/n_indiv == save_block){
+        if((no_recorded_infHist-1)/n_indiv == save_block){
             write.table(historyTab[1:(no_recorded_infHist-n_indiv),], file=infectionHistory_file,
                         col.names=FALSE,row.names=FALSE,sep=",",append=TRUE)
             historyTab <- emptyHistoryTab

@@ -142,11 +142,54 @@ double individual_likelihood(NumericVector theta, NumericVector infectionHistory
 }
 
 //[[Rcpp::export]]
-double group_likelihood(NumericVector theta, 
-			NumericMatrix infectionHistories, IntegerVector samples,
-			NumericVector samplingTimes, NumericVector strainIsolationTimes,
-			NumericVector antigenicMapLong, NumericVector antigenicMapShort, 
-			NumericVector titres){
+NumericVector group_likelihood_vector(NumericVector theta, 
+				      NumericMatrix infectionHistories, IntegerVector samples,
+				      NumericVector samplingTimes, NumericVector strainIsolationTimes,
+				      NumericVector antigenicMapLong, NumericVector antigenicMapShort, 
+				      NumericVector titres){
+  int n = infectionHistories.nrow();
+  int n_strains = infectionHistories.ncol();
+  int n_samples = samplingTimes.size();
+  int indiv_length = n_strains*n_samples;
+  NumericVector lnlikes(n);
+
+  IntegerVector tmpSamples(n_samples);
+  
+  // These indices allow us to step through the titre data vector
+  // as if it were a matrix ie. number of rows for each individual
+  // at a time
+  int startIndex = 0;
+  int endIndex = indiv_length-1;
+
+  // There is a matrix that specifies if a sampling time is present
+  // for each individual in each group. These indices allow us to step
+  // through that matrix for each individual at a time
+  int indivSampleIndexStart = 0;
+  int indivSampleIndexEnd = n_samples-1;
+
+  double lnlike = 0;
+
+  for(int i=0; i < n; ++i){
+    // Check if samples exist for this individual at each potential sampling time
+    tmpSamples = samples[Range(indivSampleIndexStart, indivSampleIndexEnd)];
+ 
+    lnlikes[i]= individual_likelihood(theta, infectionHistories(i,_), tmpSamples, samplingTimes, 
+				      strainIsolationTimes, antigenicMapLong, antigenicMapShort, 
+				      titres[Range(startIndex, endIndex)]);
+    startIndex += indiv_length;
+    endIndex += indiv_length;
+
+    indivSampleIndexStart += n_samples;
+    indivSampleIndexEnd += n_samples;
+  }
+  return(lnlikes);  
+}
+//[[Rcpp::export]]
+double group_likelihood_total(NumericVector theta, 
+			      NumericMatrix infectionHistories, IntegerVector samples,
+			      NumericVector samplingTimes, NumericVector strainIsolationTimes,
+			      NumericVector antigenicMapLong, NumericVector antigenicMapShort, 
+			      NumericVector titres){
   int n = infectionHistories.nrow();
   int n_strains = infectionHistories.ncol();
   int n_samples = samplingTimes.size();

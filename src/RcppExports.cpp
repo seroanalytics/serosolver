@@ -52,9 +52,9 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
-// group_likelihood
-double group_likelihood(NumericVector theta, NumericMatrix infectionHistories, IntegerVector samples, NumericVector samplingTimes, NumericVector strainIsolationTimes, NumericVector antigenicMapLong, NumericVector antigenicMapShort, NumericVector titres);
-RcppExport SEXP _serosolver_group_likelihood(SEXP thetaSEXP, SEXP infectionHistoriesSEXP, SEXP samplesSEXP, SEXP samplingTimesSEXP, SEXP strainIsolationTimesSEXP, SEXP antigenicMapLongSEXP, SEXP antigenicMapShortSEXP, SEXP titresSEXP) {
+// group_likelihood_vector
+NumericVector group_likelihood_vector(NumericVector theta, NumericMatrix infectionHistories, IntegerVector samples, NumericVector samplingTimes, NumericVector strainIsolationTimes, NumericVector antigenicMapLong, NumericVector antigenicMapShort, NumericVector titres);
+RcppExport SEXP _serosolver_group_likelihood_vector(SEXP thetaSEXP, SEXP infectionHistoriesSEXP, SEXP samplesSEXP, SEXP samplingTimesSEXP, SEXP strainIsolationTimesSEXP, SEXP antigenicMapLongSEXP, SEXP antigenicMapShortSEXP, SEXP titresSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -66,7 +66,25 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< NumericVector >::type antigenicMapLong(antigenicMapLongSEXP);
     Rcpp::traits::input_parameter< NumericVector >::type antigenicMapShort(antigenicMapShortSEXP);
     Rcpp::traits::input_parameter< NumericVector >::type titres(titresSEXP);
-    rcpp_result_gen = Rcpp::wrap(group_likelihood(theta, infectionHistories, samples, samplingTimes, strainIsolationTimes, antigenicMapLong, antigenicMapShort, titres));
+    rcpp_result_gen = Rcpp::wrap(group_likelihood_vector(theta, infectionHistories, samples, samplingTimes, strainIsolationTimes, antigenicMapLong, antigenicMapShort, titres));
+    return rcpp_result_gen;
+END_RCPP
+}
+// group_likelihood_total
+double group_likelihood_total(NumericVector theta, NumericMatrix infectionHistories, IntegerVector samples, NumericVector samplingTimes, NumericVector strainIsolationTimes, NumericVector antigenicMapLong, NumericVector antigenicMapShort, NumericVector titres);
+RcppExport SEXP _serosolver_group_likelihood_total(SEXP thetaSEXP, SEXP infectionHistoriesSEXP, SEXP samplesSEXP, SEXP samplingTimesSEXP, SEXP strainIsolationTimesSEXP, SEXP antigenicMapLongSEXP, SEXP antigenicMapShortSEXP, SEXP titresSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< NumericVector >::type theta(thetaSEXP);
+    Rcpp::traits::input_parameter< NumericMatrix >::type infectionHistories(infectionHistoriesSEXP);
+    Rcpp::traits::input_parameter< IntegerVector >::type samples(samplesSEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type samplingTimes(samplingTimesSEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type strainIsolationTimes(strainIsolationTimesSEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type antigenicMapLong(antigenicMapLongSEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type antigenicMapShort(antigenicMapShortSEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type titres(titresSEXP);
+    rcpp_result_gen = Rcpp::wrap(group_likelihood_total(theta, infectionHistories, samples, samplingTimes, strainIsolationTimes, antigenicMapLong, antigenicMapShort, titres));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -75,7 +93,8 @@ static const R_CallMethodDef CallEntries[] = {
     {"_serosolver_infection_model_indiv", (DL_FUNC) &_serosolver_infection_model_indiv, 6},
     {"_serosolver_likelihood_titre", (DL_FUNC) &_serosolver_likelihood_titre, 3},
     {"_serosolver_individual_likelihood", (DL_FUNC) &_serosolver_individual_likelihood, 8},
-    {"_serosolver_group_likelihood", (DL_FUNC) &_serosolver_group_likelihood, 8},
+    {"_serosolver_group_likelihood_vector", (DL_FUNC) &_serosolver_group_likelihood_vector, 8},
+    {"_serosolver_group_likelihood_total", (DL_FUNC) &_serosolver_group_likelihood_total, 8},
     {NULL, NULL, 0}
 };
 
