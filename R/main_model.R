@@ -2,7 +2,7 @@
 # Main execution code
 #
 # Model of serological dynamics
-# github.com/adamkucharski/serology-model
+# github.com/adamkucharski/serosolver
 # - - - - - - - - - - - - - - - - - - - - -
 
 # Load libraries
@@ -22,6 +22,9 @@ getDoParWorkers()
 
 
 setwd("~/Documents/serology-model/R/") # set R directory
+if(Sys.info()["user"]=="adamkuchars") { setwd("~/Documents/serosolver/R") }  # set R directory
+
+
 rm(list=ls(all=TRUE)) # Clear environment
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
