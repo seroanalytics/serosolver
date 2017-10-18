@@ -4,9 +4,8 @@ setup_infection_histories<- function(dat, strainIsolationTimes, ageMask){
     n_indiv <- length(unique(dat$individual))
     n_strain <- length(strainIsolationTimes)
     samplingTimes <- unique(dat$sample)
-    strainIsolationTimes <- unique(dat$strain)
     infectionHistories <- matrix(0,nrow=n_indiv,ncol=n_strain)
-
+    
     index <- 1
     ## For each individual
     tmpInfHistIndiv <- matrix(0,nrow=length(samplingTimes),ncol=n_strain)

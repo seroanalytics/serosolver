@@ -23,7 +23,6 @@ run_MCMC <- function(parTab,
                      PRIOR_FUNC,
                      OPT_TUNING,
                      antigenicMap,
-                     samplingInformation,
                      ages=NULL,
                      ...){
     ## Extract MCMC parameters
@@ -71,7 +70,7 @@ run_MCMC <- function(parTab,
 ###############
     ## Extract data parameters
 ##############
-    strainIsolationTimes <- unique(data$strain)
+    strainIsolationTimes <- unique(antigenicMap$inf_years)
     samplingTimes <- unique(data$sample)
     n_strain <- length(strainIsolationTimes)
     n_indiv <- length(unique(data$individual))
@@ -82,7 +81,6 @@ run_MCMC <- function(parTab,
     
     ## Create posterior calculating function
     posterior_simp <- protect(CREATE_POSTERIOR_FUNC(parTab,data,
-                                                    samplingInformation,
                                                     antigenicMap,
                                                     PRIOR_FUNC,...))
 
@@ -113,6 +111,7 @@ run_MCMC <- function(parTab,
     #### IT MIGHT BE A BIT TOO SLOW PASSING INFECTION HISTORIES AS A MATRIX EACH ITERATION
     probabs <- posterior_simp(current_pars,infectionHistories)
     probab <- sum(probabs)
+    print(probab)
 ###############
     
 ####################
@@ -149,7 +148,7 @@ run_MCMC <- function(parTab,
     sampno <- 2
     par_i <- 1
     chain_index <- 1
-    
+
 #####################
     ## MCMC ALGORITHM
 #####################
@@ -185,8 +184,8 @@ run_MCMC <- function(parTab,
                                                               strainIsolationTimes, ageMask)
             ## Calculate new likelihood with these infection histories
             new_probabs <- posterior_simp(current_pars, newInfectionHistories)
-            new_probab <- sum(new_probabs)
-            histiter <- histiter + 1
+            #new_probab <- sum(new_probabs)
+            histiter[indivSubSample] <- histiter[indivSubSample] + 1
         }
 
 #########################
@@ -200,7 +199,13 @@ run_MCMC <- function(parTab,
         ## Check that all proposed parameters are in allowable range
         ## Skip if any parameters are outside of the allowable range
         if(i %% switch_sample == 0){
-            log_prob <- min(new_probab-probab,0)
+            log_prob <- new_probab-probab
+            #if(i %% 100 == 0){
+            #    print(log_prob)
+            #    print(current_pars)
+            #    print(proposal)
+            #}
+            log_prob <- min(log_prob, 0)
             if(is.finite(log_prob) && log(runif(1)) < log_prob){
                 if(!any(proposal[unfixed_pars] < lower_bounds[unfixed_pars] |
                         proposal[unfixed_pars] > upper_bounds[unfixed_pars])){
@@ -216,12 +221,14 @@ run_MCMC <- function(parTab,
                 }
             }
         } else {
-            log_probs <- new_probabs - probabs
+            log_probs <- new_probabs[indivSubSample] - probabs[indivSubSample]
             #message(cat(any(log_probabs > 0), " better history"))
             log_probs[log_probs > 0] <- 0
-            x <- log(runif(length(log_probs))) < log_probs
+            x <- log(runif(length(indivSubSample))) < log_probs
+            x <- indivSubSample[x]
             infectionHistories[x,] <- newInfectionHistories[x,]
             probabs[x] <- new_probabs[x]
+            probab <- sum(probabs)
             histaccepted[x] <- histaccepted[x] + 1
         }
         
@@ -252,10 +259,24 @@ run_MCMC <- function(parTab,
         ## ADAPTIVE PERIOD
 ##############################
         ## If within adaptive period, need to do some adapting!
+        if(i > adaptive_period & i %% opt_freq == 0){
+            pcur <- tempaccepted/tempiter
+            if(is.null(mvrPars)){
+                message(cat("Pcur: ", pcur[unfixed_pars],sep="\t"))
+                message(cat("Step sizes: ", steps[unfixed_pars],sep="\t"))
+                tempaccepted <- tempiter <- reset
+            } else {
+                message(cat("Pcur: ", pcur,sep="\t"))
+                message(cat("Scale: ", scale,sep="\t"))
+                tempiter <- tempaccepted <- 0
+            }
+            pcurHist <- histaccepted/histiter
+            histiter <- histaccepted <- histreset
+            message(cat("Infection history pcur: ", pcurHist,sep="\t"))
+        }
         if(i <= adaptive_period){
             ## Current acceptance rate
             pcur <- tempaccepted/tempiter
-            pcurHist <- histaccepted/histiter
             ## Save each step
             opt_chain[chain_index,] <- current_pars[unfixed_pars]
             ## If in an adaptive step
@@ -282,8 +303,7 @@ run_MCMC <- function(parTab,
                     message(cat("Pcur: ", pcur,sep="\t"))
                     message(cat("Scale: ", scale,sep="\t"))
                 }
-                histiter <- histaccepted <- histreset
-                message(cat("Infection history pcur: ", pcurHist,sep="\t"))
+               
             }
             chain_index <- chain_index + 1
         }

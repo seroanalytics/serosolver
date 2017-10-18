@@ -161,3 +161,11 @@ ComputeProbability<-function(marg_likelihood,marg_likelihood_star){
   calc.lik[calc.lik>1]=1 
   calc.lik
 }
+
+
+toUnitScale <- function(x, min, max){
+    return((x-min)/(max-min))
+}
+fromUnitScale <- function(x,min,max){
+    return(min + (max-min)*x)
+}
