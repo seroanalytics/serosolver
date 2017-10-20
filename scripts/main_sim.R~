@@ -1,0 +1,50 @@
+## Re-estimate simulated data
+library(doMC)
+library(foreach)
+library(serosolver)
+
+## Make up filenames to save output to
+filenames <- c("chains/sim1a","chains/sim2a","chains/sim3a")
+
+## We'll be parallelising a few chains
+registerDoMC(cores=4)
+
+## How many individual to simulate?
+n_indiv <- 500
+
+## Important input parameters and antigenic map
+parTab <- read.csv("~/Documents/Fluscape/serosolver/inputs/parTab.csv",stringsAsFactors=FALSE)
+antigenicMap <- read.csv("~/Documents/Fluscape/serosolver/data/fluscape_map.csv")
+
+## Extract possible infection times
+strainIsolationTimes <- unique(antigenicMap$inf_years)
+
+## When could individuals be sampled, and how many samples?
+samplingTimes <- 2007:2015
+nsamp <- 2
+
+## Ages between 5 and 80, censor 0% of titres
+dat <- simulate_data(parTab,1,n_indiv,strainIsolationTimes,
+                     samplingTimes, nsamp,antigenicMap, 0,0,5,80)
+
+## Extract simulation data
+infectionHistories <- dat[["infectionHistories"]]
+data <- dat[["data"]]
+ages <- dat[["ages"]]
+ages <- data.frame(individuals=1:n_indiv,ages=ages)
+
+## MCMC parameter inputs
+mcmcPars <- c("iterations"=500000,"popt"=0.44,"opt_freq"=1000,"thin"=100,"adaptive_period"=50000,
+              "save_block"=100,"thin2"=1000,"histSampleProb"=0.1,"switch_sample"=2, "burnin"=50000)
+
+
+## Generate random starting points and run
+res <- foreach(x =filenames) %dopar% {
+    startTab <- parTab
+    for(i in 1:nrow(startTab)){
+        if(startTab$fixed[i] == 0){
+            startTab$values[i] <- runif(1,startTab$lower_bound[i],startTab$upper_bound[i])
+        }
+    }
+    run_MCMC(startTab, data, mcmcPars, filename=x,create_post_func, NULL, NULL, 0.2, antigenicMap, ages, startInfHist=NULL)
+}
