@@ -4,14 +4,25 @@
 \alias{mvr_proposal}
 \title{Multivariate proposal function}
 \usage{
-mvr_proposal(values, fixed, covMat)
+mvr_proposal(values, fixed, covMat, covMat0 = NULL, useLog = FALSE,
+  beta = 0.05)
 }
 \arguments{
 \item{values}{the vector of current parameter values}
 
-\item{fixed}{set of flags corresponding to the parameter vector indicating which parameters are fixed}
+\item{fixed}{set of flags corresponding to the parameter vector indicating which parameters are fixed
+Multivariate proposal function
+
+Function used to give multivariate normal proposals for free model parameters.
+Takes into account parameter covariance and ensures Containment condition with beta, if covMat0 (the iedntity matrix) is specified.}
 
 \item{covMat}{the 2D covariance matrix for all of the parameters}
+
+\item{covMat0}{optional, usually the identity matrix for theta}
+
+\item{useLog}{flag. If TRUE, propose on log scale}
+
+\item{beta}{Beta as in Rosenthal and Roberts 2009}
 }
 \value{
 a parameter vector of a proposed move. Note that these may fall outside the allowable ranges.

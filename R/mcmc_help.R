@@ -3,19 +3,47 @@
 #' Given the current parameters and a covariance matrix, returns a vector for a proposed jump from a multivariate normal distribution
 #' @param values the vector of current parameter values
 #' @param fixed set of flags corresponding to the parameter vector indicating which parameters are fixed
+#' Multivariate proposal function
+#'
+#' Function used to give multivariate normal proposals for free model parameters.
+#' Takes into account parameter covariance and ensures Containment condition with beta, if covMat0 (the iedntity matrix) is specified.
 #' @param covMat the 2D covariance matrix for all of the parameters
+#' @param covMat0 optional, usually the identity matrix for theta
+#' @param useLog flag. If TRUE, propose on log scale
+#' @param beta Beta as in Rosenthal and Roberts 2009
 #' @return a parameter vector of a proposed move. Note that these may fall outside the allowable ranges.
 #' @export
-#' @useDynLib sero-solver
-mvr_proposal <- function(values, fixed, covMat, useLog=FALSE){
+#' @useDynLib serosolver
+mvr_proposal <- function(values, fixed, covMat, covMat0 = NULL, useLog=FALSE, beta=0.05){
     proposed <- values
-    if(!useLog) proposed[fixed] <- MASS::mvrnorm(n=1,mu=proposed[fixed],Sigma=(5.6644/length(fixed))*covMat)
-    else proposed[fixed] <- exp(MASS::mvrnorm(n=1,mu=log(proposed[fixed]),Sigma=(5.6644/length(fixed))*covMat))
+    if(is.null(covMat0)){
+        if(!useLog) proposed[fixed] <- MASS::mvrnorm(n=1,mu=proposed[fixed],Sigma=(5.6644/length(fixed))*covMat)
+        else proposed[fixed] <- exp(MASS::mvrnorm(n=1,mu=log(proposed[fixed]),Sigma=(5.6644/length(fixed))*covMat))
+    } else {
+        if(!useLog){
+            proposed[fixed] <-
+                (1-beta)*MASS::mvrnorm(n=1,mu=proposed[fixed],Sigma=(5.6644/length(fixed))*covMat) +
+                beta*MASS::mvrnorm(n=1,mu=proposed[fixed],Sigma=(0.01/length(fixed))*covMat0)
+        } else {
+            proposed[fixed] <-
+                (1-beta)*exp(MASS::mvrnorm(n=1,mu=log(proposed[fixed]),Sigma=(5.6644/length(fixed))*covMat)) +
+                beta*exp(MASS::mvrnorm(n=1,mu=log(proposed[fixed]),Sigma=(0.01/length(fixed))*covMat0))
+        }
+    }
     return(proposed)
 }
 
-
-#' Age mask is a value indicating from which strain index an individual may be infected
+#' Infection history proposal
+#'
+#' Proposes new infection histories for a vector of infection histories, where rows represent individuals and columns represent years. Proposals are either removal, addition or switching of infections.
+#' Also requires the indices of sampled individuals, the vector of strain isolation times, and a vector of age masks (ie. which index of the strainIsolationTimes vector is the first year in which
+#' an individual *could* be infected).
+#' NOTE - MIGHT NEED TO UPDATE THIS FOR GROUPS
+#' @param newInfectionHistories an n*m matrix of 1s & 0s indicating infection histories, where n is individuals and m i strains
+#' @param sampledIndivs the indices of sampled individuals to be receive proposals
+#' @param strainIsolationTimes the vector of strain isolation times in rela time
+#' @param ageMask the vector of indices for each individual specifiying which index of strainIsolationTimes is the first strain each individual coul dhave seen
+#' @return a new matrix matching newInfectionHistories in dimensions with proposed moves
 #' @export
 infection_history_proposal <-function(newInfectionHistories,sampledIndivs,strainIsolationTimes,ageMask){
     for(i in sampledIndivs){ # Resample subset of individuals
@@ -50,6 +78,9 @@ infection_history_proposal <-function(newInfectionHistories,sampledIndivs,strain
     newInfectionHistories
 }
 
+#' Individual infection history sample - for testing
+#'
+#' @export
 sample_indiv <- function(x){
     rand1=runif(1)
     
@@ -90,7 +121,7 @@ sample_indiv <- function(x){
 #' @param index numeric value for the index of the parameter to be moved from the param table and vector
 #' @return the parameter vector after step
 #' @export
-#' @useDynLib sero-solver
+#' @useDynLib serosolver
 univ_proposal <- function(values, lower_bounds, upper_bounds,steps, index){
     mn <- lower_bounds[index]
     mx <- upper_bounds[index]
@@ -128,30 +159,14 @@ univ_proposal <- function(values, lower_bounds, upper_bounds,steps, index){
 #' @param pcur the current acceptance rate
 #' @return the scaled step size
 #' @export
-#' @useDynLib sero-solver
+#' @useDynLib serosolver
 scaletuning <- function(step, popt,pcur){
     if(pcur ==1) pcur <- 0.99
     if(pcur == 0) pcur <- 0.01
     step = (step*qnorm(popt/2))/qnorm(pcur/2)
     if(step > 1) step <- 1
+    step <- max(0.00001, step)
     return(step)
-}
-
-
-#' Protect function
-#'
-#' Wrapper function to protect calls to the posterior function. If posterior does not compute correctly, returns -100000.
-#' @param f the function to be protected
-#' @return the protected function
-#' @export
-#' @useDynLib sero-solver
-protect <- function(f){
-    function(...){
-        tryCatch(f(...),error=function(e){
-            message("caught error: ", e$message)
-            -100000
-        })
-    }
 }
 
 #' @export
@@ -162,10 +177,58 @@ ComputeProbability<-function(marg_likelihood,marg_likelihood_star){
   calc.lik
 }
 
+#' Propose initial infection histories
+#'
+#' Given a matrix of titre data, proposes plausible initial infection histories from which to begin MCMC sampling.
+#' NOTE - MIGHT NEED TO UPDATE THIS FOR GROUPS
+#' @param dat the matrix of titres data with columns for individual, sample, and titre
+#' @param strainIsolationTimes vector of real times for all strains
+#' @param ageMask vector of indices for each individual corresponding to the first index of the strainIsolationTimes vector that each individual could be infected with
+#' @return an nxm matrix of infection histories containing 1s and 0s, where n is the number of individuals and m is the number of potential infecting strains
+#' @export
+setup_infection_histories<- function(dat, strainIsolationTimes, ageMask){
+    # 
+    SAMPLE_PROB <- 0.2
+    n_indiv <- length(unique(dat$individual))
+    n_strain <- length(strainIsolationTimes)
+    samplingTimes <- unique(dat$sample)
+    infectionHistories <- matrix(0,nrow=n_indiv,ncol=n_strain)
+    
+    index <- 1
+    ## For each individual
+    tmpInfHistIndiv <- matrix(0,nrow=length(samplingTimes),ncol=n_strain)
+    for(indiv in unique(dat$individual)){
+        ## For each sampling time
+        index1 <- 1
+        for(sampleTime in unique(dat$sample)){
+            ## For each strain
+            tmpInfHist <- numeric(n_strain)
+            index2 <- 1
+            for(strain in unique(dat$strain)){
+                tmpTitre <- dat[dat$strain == strain &
+                                dat$sample == sampleTime &
+                                dat$individual == indiv,"titre"]
+                tmpInf <- 0
+                # If high titre, set infection presence to 1 with some probability (0.2)
+                if(!is.na(tmpTitre) && (tmpTitre >= 4 & runif(1) > SAMPLE_PROB)){
+                    tmpInf <- 1
+                }
+                tmpInfHist[index2] <- tmpInf
+                index2 <- index2 + 1
+            }
+            tmpInfHistIndiv[index1,] <- tmpInfHist
+            index1 <- index1 + 1
+        }
 
-toUnitScale <- function(x, min, max){
-    return((x-min)/(max-min))
-}
-fromUnitScale <- function(x,min,max){
-    return(min + (max-min)*x)
+        infectionHistories[index,] <- as.numeric(colSums(tmpInfHistIndiv) > 0)
+        ## Add infection at some point in the last 10 years
+        forcedInfection <- which(strainIsolationTimes==sample(strainIsolationTimes[strainIsolationTimes <= sampleTime & strainIsolationTimes >= (sampleTime-10)],1))
+        ## Pick strain within plausible region to add
+        if(sum(infectionHistories[index, which(strainIsolationTimes < sampleTime)])==0) infectionHistories[index, forcedInfection] <- 1
+        ## Make sure that no infections happened before birth
+        if(ageMask[index] > 1) infectionHistories[index, 1:ageMask[index]] <- 0
+        index <- index + 1
+    }
+    infectionHistories
+
 }

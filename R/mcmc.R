@@ -1,67 +1,74 @@
 #' Adaptive Metropolis-within-Gibbs Random Walk Algorithm.
 #'
-#' The Adaptive Metropolis-within-Gibbs algorithm. Given a starting point and the necessary MCMC parameters as set out below, performs a random-walk of the posterior space to produce an MCMC chain that can be used to generate MCMC density and iteration plots. The algorithm undergoes an adaptive period, where it changes the step size of the random walk for each parameter to approach the desired acceptance rate, popt. After this, a burn in period is established, and the algorithm then uses \code{\link{univ_proposal}} or \code{\link{mvr_proposal}} to explore the parameter space, recording the value and posterior value at each step. The MCMC chain is saved in blocks as a .csv file at the location given by filename.
+#' The Adaptive Metropolis-within-Gibbs algorithm. Given a starting point and the necessary MCMC parameters as set out below, performs a random-walk of the posterior space to produce an MCMC chain that can be used to generate MCMC density and iteration plots. The algorithm undergoes an adaptive period, where it changes the step size of the random walk for each parameter to approach the desired acceptance rate, popt. The algorithm then uses \code{\link{univ_proposal}} or \code{\link{mvr_proposal}} to explore parameter space, recording the value and posterior value at each step. The MCMC chain is saved in blocks as a .csv file at the location given by filename. This version of the algorithm is also designed to explore posterior densities for infection histories.
 #' @param parTab the parameter table controlling information such as bounds, initial values etc
-#' @param data the data frame of data to be fitted
-#' @param mcmcPars named vector named vector with parameters for the MCMC procedure. Iterations, popt, opt_freq, thin, burnin, adaptive_period and save_block.
+#' @param data the data frame of data to be fitted. Must have columns: group (index of group); individual (integer ID of individual); samples (numeric time of sample taken); virus (numeric time of when the virus was circulating); titre (integer of titre value against the given virus at that sampling time)
+#' @param mcmcPars named vector named vector with parameters for the MCMC procedure. Iterations (number of post adaptive iterations), popt (desired acceptance rate), opt_freq (after how many iterations do we adapt proposal), thin (save every n iterations), adaptive_period (number of iterations to adapt), save_block (number of post thinning iterations to save at a time), thin2 (infection history thinning), histSampleProb (proportion of inf histories to resample) switch_sample (resample inf histories every n iterations); burnin (number of iterations to run before any adapting).
 #' @param filename the full filepath at which the MCMC chain should be saved. "_chain.csv" will be appended to the end of this, so filename should have no file extensions
 #' @param CREATE_POSTERIOR_FUNC pointer to posterior function used to calculate a likelihood
-#' @param mvrPars a list of parameters if using a multivariate proposal. Must contain an initial covariance matrix, weighting for adapting cov matrix, and an initial scaling parameter (0-1)
-#' @param PRIOR_FUNC user function of prior for model parameters. Should take values, names and local from param_table
+#' @param mvrPars leave NULL to use univariate proposals. Otherwise, a list of parameters if using a multivariate proposal. Must contain an initial covariance matrix, weighting for adapting cov matrix, and an initial scaling parameter (0-1)
+#' @param PRIOR_FUNC user function of prior for model parameters. Should take parameter values only
 #' @param OPT_TUNING constant used to indicate what proportion of the adaptive period should be used to build the covariance matrix, if needed
-#' @param antigenicMap xxxx
-#' @param samplingInformation xxxx
-#' @param ages xxxx
-#' @return a list with: 1) full file path at which the MCMC chain is saved as a .csv file; 2) a full file path at which the infection history chain is saved as a .csv file; 3) the last used covarianec matrix; 4) the last used scale size; 5) the last used step size (if univariate proposals)
+#' @param antigenicMap a data frame of antigenic x and y coordinates. Must have column names: x_coord; y_coord; inf_years 
+#' @param ages data frame of ages and individual IDs for each participant, used to mask infection history proposals. Columns: age, individual. Can be left NULL
+#' @param startInfHist infection history matrix to start MCMC at. Can be left NULL
+#' @param ... other arguments to pass to CREATE_POSTERIOR_FUNC
+#' @return a list with: 1) full file path at which the MCMC chain is saved as a .csv file; 2) a full file path at which the infection history chain is saved as a .csv file; 3) the last used covarianec matrix; 4) the last used scale/step size (if multivariate proposals)
 #' @export
 run_MCMC <- function(parTab,
                      data,
-                     mcmcPars,
-                     filename,
+                     mcmcPars=c("iterations"=10000,"popt"=0.44,"opt_freq"=1000,"thin"=1,"adaptive_period"=5000,
+                                "save_block"=100,"thin2"=10,"histSampleProb"=0.1,"switch_sample"=2, "burnin"=5000),
+                     filename="test",
                      CREATE_POSTERIOR_FUNC,
-                     mvrPars,
-                     PRIOR_FUNC,
-                     OPT_TUNING,
+                     mvrPars=NULL,
+                     PRIOR_FUNC=NULL,
+                     OPT_TUNING=0.1,
                      antigenicMap,
                      ages=NULL,
+                     startInfHist=NULL,
                      ...){
     ## Extract MCMC parameters
-    iterations <- mcmcPars["iterations"]
-    popt <- mcmcPars["popt"]
-    opt_freq<- mcmcPars["opt_freq"]
-    thin <- mcmcPars["thin"]
-    adaptive_period<- mcmcPars["adaptive_period"]
-    save_block <- mcmcPars["save_block"]
-    histTabThin <- mcmcPars["thin2"]
-    histSampleProb <- mcmcPars["histSampleProb"]
-    switch_sample <- mcmcPars["switch_sample"]
-
+    iterations <- mcmcPars["iterations"] # How many iterations to run after adaptive period
+    popt <- mcmcPars["popt"] # Desired optimal acceptance rate
+    opt_freq<- mcmcPars["opt_freq"] # How often to adjust step size
+    thin <- mcmcPars["thin"] # Save only every nth iterations for theta sampling
+    adaptive_period<- mcmcPars["adaptive_period"] # How many iterations for adaptive period
+    save_block <- mcmcPars["save_block"] # How many post-thinning iterations to store before saving to disk
+    histTabThin <- mcmcPars["thin2"] # Save only every nth iterations for infection history sampling
+    histSampleProb <- mcmcPars["histSampleProb"] # What proportion of infection histories to sample each step
+    switch_sample <- mcmcPars["switch_sample"] # Resample infection histories every n iterations
+    burnin <- mcmcPars["burnin"] # Run this many iterations before attempting adaptation. Idea is to reduce getting stuck in local maxima
+    
     ## Extract parameter settings
     param_length <- nrow(parTab)
-    unfixed_pars <- which(parTab$fixed == 0)
-    unfixed_par_length <- nrow(parTab[parTab$fixed== 0,])
-    current_pars <- parTab$values
-    par_names <- as.character(parTab$names)
+    unfixed_pars <- which(parTab$fixed == 0) # Indices of free parameters
+    unfixed_par_length <- nrow(parTab[parTab$fixed== 0,]) # How many free parameters?
+    current_pars <- parTab$values # Starting parameters
+    par_names <- as.character(parTab$names) # Parameter names
 
     ## Parameter constraints
-    lower_bounds <- parTab$lower_bound
-    upper_bounds <- parTab$upper_bound
+    lower_bounds <- parTab$lower_bound # Parameters cannot step below this
+    upper_bounds <- parTab$upper_bound # Parameters cannot step above this
     steps <- parTab$steps
     fixed <- parTab$fixed
     
     ## Arrays to store acceptance rates
-    ## If univariate proposals
+    ## If univariate proposals, store vector of acceptances
     if(is.null(mvrPars)){
         tempaccepted <- tempiter <- integer(param_length)
         reset <- integer(param_length)
         reset[] <- 0
-    } else { # If multivariate proposals
-        tempaccepted <- tempiter <- 0
+    } else {
+        ## If multivariate proposals, aggregate to one acceptance rate.
+        ## Also extract covariance matrix, scale of proposal steps, and how
+        ## much weighting to give to previous covariance matrix upon adaptive update
+        tempaccepted <- tempiter <- reset <- 0
         covMat <- mvrPars[[1]][unfixed_pars,unfixed_pars]
-        scale <- mvrPars[[2]]
+        covMat0 <- diag(unfixed_par_length)
+        steps <- mvrPars[[2]]
         w <- mvrPars[[3]]
     }
-
     
     ## Setup MCMC chain file with correct column names
     mcmc_chain_file <- paste0(filename,"_chain.csv")
@@ -70,9 +77,9 @@ run_MCMC <- function(parTab,
 ###############
     ## Extract data parameters
 ##############
-    strainIsolationTimes <- unique(antigenicMap$inf_years)
-    samplingTimes <- unique(data$sample)
-    n_strain <- length(strainIsolationTimes)
+    strainIsolationTimes <- unique(antigenicMap$inf_years) # How many strains are we testing against and what time did they circulate
+    samplingTimes <- unique(data$sample) # What are the range of sampling times?
+    n_strain <- length(strainIsolationTimes) # How many 
     n_indiv <- length(unique(data$individual))
     n_groups <- length(unique(data$group))
     individuals <- 1:n_indiv
@@ -86,11 +93,12 @@ run_MCMC <- function(parTab,
 
 ###############
     ## Create age mask
+    ## -----------------------
     ## Note that ages for all groups must be from same reference point
+    ## -----------------------
+    ## Should probably change this to take DOB rather than age
 ###############
     if(!is.null(ages)){
-        tref <- max(max(strainIsolationTimes),max(samplingTimes))
-        ages$DOB <- tref - ages$age
         ageMask <- sapply(ages$DOB, function(x){
             if(is.na(x)){
                 1
@@ -104,21 +112,24 @@ run_MCMC <- function(parTab,
 
 ######################
     ## Setup initial conditions
-    infectionHistories <- setup_infection_histories(data, strainIsolationTimes, ageMask)
+    infectionHistories = startInfHist
+    if(is.null(startInfHist)) infectionHistories <- setup_infection_histories(data, strainIsolationTimes, ageMask)
 
     ## Initial likelihood
-    #### NOTE
-    #### IT MIGHT BE A BIT TOO SLOW PASSING INFECTION HISTORIES AS A MATRIX EACH ITERATION
+    ## -----------------------
+    ## NOTE
+    ## IT MIGHT BE A BIT TOO SLOW PASSING INFECTION HISTORIES AS A MATRIX EACH ITERATION
+    ## -----------------------
     probabs <- posterior_simp(current_pars,infectionHistories)
     probab <- sum(probabs)
-    print(probab)
+    message(cat("Starting theta likelihood: ",probab,sep="\t"))
 ###############
     
 ####################
     ## PRE ALLOCATE MEMORY
 ####################
-    ## Create empty chain to store every iteration for the adaptive period
-    opt_chain <- matrix(nrow=adaptive_period,ncol=unfixed_par_length)
+    ## Create empty chain to store every iteration for the adaptive period and burnin
+    opt_chain <- matrix(nrow=burnin + adaptive_period,ncol=unfixed_par_length)
 
     ## Create empty chain to store "save_block" iterations at a time
     save_chain <- empty_save_chain <- matrix(nrow=save_block,ncol=param_length+2)
@@ -129,6 +140,7 @@ run_MCMC <- function(parTab,
     tmp_table <- as.data.frame(tmp_table)
     tmp_table[1,] <- c(1,current_pars,probab)
     colnames(tmp_table) <- chain_colnames
+    
     ## Write starting conditions to file
     write.table(tmp_table,file=mcmc_chain_file,row.names=FALSE,col.names=TRUE,sep=",",append=FALSE)
 
@@ -139,7 +151,8 @@ run_MCMC <- function(parTab,
     tmp_table[1:n_indiv,n_strain+1] <- individuals
     tmp_table[1:n_indiv,n_strain+2] <- 1
     colnames(tmp_table) <- c(as.character(strainIsolationTimes),"individual","sampno")
-    ## Write starting infectoin histories
+    
+    ## Write starting infection histories
     write.table(tmp_table, infectionHistory_file, row.names=FALSE, col.names=TRUE, sep=",",append=FALSE)
 
     ## Initial indexing parameters
@@ -148,11 +161,11 @@ run_MCMC <- function(parTab,
     sampno <- 2
     par_i <- 1
     chain_index <- 1
-
+    
 #####################
     ## MCMC ALGORITHM
 #####################
-    for(i in 1:(iterations + adaptive_period)){
+    for(i in 1:(iterations + adaptive_period + burnin)){
         if(i %% save_block == 0) message(cat("Current iteration: ", i, sep="\t"))
 ######################
         ## PROPOSALS
@@ -171,7 +184,7 @@ run_MCMC <- function(parTab,
             } else {
                 ## NOTE
                 ## MIGHT WANT TO USE ADAM'S PROPOSAL FUNCTION
-                proposal <- mvr_proposal(current_pars, unfixed_pars, scale*covMat, TRUE)
+                proposal <- mvr_proposal(current_pars, unfixed_pars, steps*covMat, covMat0, TRUE)
                 tempiter <- tempiter + 1
             }
             ## Calculate new likelihood for these parameters
@@ -184,7 +197,7 @@ run_MCMC <- function(parTab,
                                                               strainIsolationTimes, ageMask)
             ## Calculate new likelihood with these infection histories
             new_probabs <- posterior_simp(current_pars, newInfectionHistories)
-            #new_probab <- sum(new_probabs)
+            new_probab <- sum(new_probabs)
             histiter[indivSubSample] <- histiter[indivSubSample] + 1
         }
 
@@ -200,18 +213,13 @@ run_MCMC <- function(parTab,
         ## Skip if any parameters are outside of the allowable range
         if(i %% switch_sample == 0){
             log_prob <- new_probab-probab
-            #if(i %% 100 == 0){
-            #    print(log_prob)
-            #    print(current_pars)
-            #    print(proposal)
-            #}
             log_prob <- min(log_prob, 0)
             if(is.finite(log_prob) && log(runif(1)) < log_prob){
                 if(!any(proposal[unfixed_pars] < lower_bounds[unfixed_pars] |
                         proposal[unfixed_pars] > upper_bounds[unfixed_pars])){
                     
                     ## Accept with probability 1 if better, or proportional to
-            ## difference if not
+                    ## difference if not
                     current_pars <- proposal
                     ## Store acceptances
                     if(is.null(mvrPars)) tempaccepted[j] <- tempaccepted[j] + 1
@@ -222,7 +230,6 @@ run_MCMC <- function(parTab,
             }
         } else {
             log_probs <- new_probabs[indivSubSample] - probabs[indivSubSample]
-            #message(cat(any(log_probabs > 0), " better history"))
             log_probs[log_probs > 0] <- 0
             x <- log(runif(length(indivSubSample))) < log_probs
             x <- indivSubSample[x]
@@ -251,7 +258,7 @@ run_MCMC <- function(parTab,
         if(i %% histTabThin == 0){
             historyTab[no_recorded_infHist:(no_recorded_infHist + n_indiv-1),1:n_strain] <- infectionHistories
             historyTab[no_recorded_infHist:(no_recorded_infHist + n_indiv-1),n_strain+1] <- individuals
-            historyTab[no_recorded_infHist:(no_recorded_infHist + n_indiv-1),n_strain+2] <- i
+            historyTab[no_recorded_infHist:(no_recorded_infHist + n_indiv-1),n_strain+2] <- sampno
             no_recorded_infHist <- no_recorded_infHist + n_indiv
         }
         
@@ -259,22 +266,16 @@ run_MCMC <- function(parTab,
         ## ADAPTIVE PERIOD
 ##############################
         ## If within adaptive period, need to do some adapting!
-        if(i > adaptive_period & i %% opt_freq == 0){
-            pcur <- tempaccepted/tempiter
-            if(is.null(mvrPars)){
-                message(cat("Pcur: ", pcur[unfixed_pars],sep="\t"))
-                message(cat("Step sizes: ", steps[unfixed_pars],sep="\t"))
-                tempaccepted <- tempiter <- reset
-            } else {
-                message(cat("Pcur: ", pcur,sep="\t"))
-                message(cat("Scale: ", scale,sep="\t"))
-                tempiter <- tempaccepted <- 0
-            }
+        if(i > (adaptive_period + burnin) & i %% opt_freq == 0){
+            pcur <- tempaccepted/tempiter ## get current acceptance rate
+            message(cat("Pcur: ", pcur,sep="\t"))
+            message(cat("Step sizes: ", steps,sep="\t"))
+            tempaccepted <- tempiter <- reset
             pcurHist <- histaccepted/histiter
             histiter <- histaccepted <- histreset
             message(cat("Infection history pcur: ", pcurHist,sep="\t"))
         }
-        if(i <= adaptive_period){
+        if(i > burnin & i <= (adaptive_period + burnin)){
             ## Current acceptance rate
             pcur <- tempaccepted/tempiter
             ## Save each step
@@ -285,29 +286,25 @@ run_MCMC <- function(parTab,
                 if(is.null(mvrPars)){
                     ## For each non fixed parameter, scale the step size
                     for(x in unfixed_pars) steps[x] <- scaletuning(steps[x],popt,pcur[x])
-                    message(cat("Pcur: ", pcur[unfixed_pars],sep="\t"))
-                    message(cat("Step sizes: ", steps[unfixed_pars],sep="\t"))
-                    tempaccepted <- tempiter <- reset
-                } else {       ## If using multivariate proposals
-                    if(chain_index > OPT_TUNING*adaptive_period & chain_index < (0.8*adaptive_period)){
+                } else {
+                    if(chain_index > OPT_TUNING*adaptive_period & chain_index < adaptive_period){
                         oldCovMat <- covMat
                         ## Creates a new covariance matrix, but weights it with the old one
                         covMat <- cov(opt_chain[1:chain_index,])
                         covMat <- w*covMat + (1-w)*oldCovMat
                     }
-                    ## Scale tuning for last 20% of the adpative period
-                    if(chain_index > (0.8)*adaptive_period){
-                        scale <- scaletuning(scale, popt,pcur)
-                    }
-                    tempiter <- tempaccepted <- 0
-                    message(cat("Pcur: ", pcur,sep="\t"))
-                    message(cat("Scale: ", scale,sep="\t"))
+                    ## Scale tuning for last 20% of the adaptive period
+                    ##if(chain_index > (0.8)*adaptive_period){
+                    ##steps <- scaletuning(steps, popt,pcur)
+                    steps=max(0.00001,min(1,exp(log(steps)+(pcur-popt)*0.999^(i-burnin))))
                 }
-               
+                message(cat("Pcur: ", pcur,sep="\t"))
+                message(cat("Step sizes: ", steps,sep="\t"))
+                tempaccepted <- tempiter <- reset
             }
             chain_index <- chain_index + 1
         }
-        #######################
+#######################
         ## HOUSEKEEPING
 #######################
         if(no_recorded == save_block){
@@ -340,12 +337,9 @@ run_MCMC <- function(parTab,
 
     if(is.null(mvrPars)){
         covMat <- NULL
-        scale <- NULL
-    } else {
-        steps <- NULL
     }
     return(list("chain_file"=mcmc_chain_file,"history_file"=infectionHistory_file,
-                "covMat"=covMat,"scale"=scale, "steps"=steps))
+                "covMat"=covMat,"step_scale"=steps))
 }
 
 

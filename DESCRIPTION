@@ -6,8 +6,8 @@ Maintainer: Adam Kucharski <Adam.Kucharski@lshtm.ac.uk> James Hay <jameshay218@g
 Description: Given a table of serological data for a population, infers the presence and timing of infections based on raised titres.
 License: GPL-3
 LazyData: true
-URL: https://github.com/adamkucharski/sero-solver
-BugReports: https://github.com/adamkucharski/sero-solver/issues
+URL: https://github.com/adamkucharski/serosolver
+BugReports: https://github.com/adamkucharski/serosolver/issues
 Suggests:
     testthat,
     knitr,

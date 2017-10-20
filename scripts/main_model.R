@@ -1,83 +1,85 @@
-# - - - - - - - - - - - - - - - - - - - - -
-# Main execution code
-#
-# Model of serological dynamics
-# github.com/adamkucharski/serology-model
-# - - - - - - - - - - - - - - - - - - - - -
-
-# Load libraries
-library(reshape2)
-library(mvtnorm)
-library(MASS)
-library(coda)
-library(RColorBrewer)
-library(magrittr)
-library(plot3D)
-library(colorspace)
-
-library(foreach)
 library(doMC)
-registerDoMC(4)  #change the 2 to your number of CPU cores
-getDoParWorkers()
+library(foreach)
+setwd("~/Documents/Fluscape/serosolver")
+devtools::load_all()
+#library(serosolver)
 
+## Where to save final plots
+outputDir <- "outputs"
 
-setwd("~/Documents/serology-model/R/") # set R directory
-rm(list=ls(all=TRUE)) # Clear environment
+## Simulate or real?
+SIM <- FALSE
 
-# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
-# Load data and functions
-# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
+## How many individual to simulate/use? Leave as NULL if all individuals for real data
+n_indiv <- 50
 
-source("sero_functions.R")
-source("posterior_analysis.R")
+## CHANGE FOR LOCAL FILE SYSTEM
+## Important input parameters and antigenic map
+parTab <- read.csv("~/Documents/Fluscape/serosolver/inputs/parTab.csv",stringsAsFactors=FALSE)
+antigenicMap <- read.csv("~/Documents/Fluscape/serosolver/data/fluscape_map.csv")
 
-compile.c() # Compile c code
+## Simulation options
+samplingTimes <- 2007:2015
+nsamp <- 2
 
-antigenic_map = read.csv("../data/antigenic_map.csv") # load antigenic locations
+## CHANGE FOR LOCAL FILE SYSTEM
+## Make up filenames to save output to
+filenames <- c("chains/output","chains/output","chains/output")
 
+## We'll be parallelising a few chains
+registerDoMC(cores=4)
 
-# >>> Run code up to here to set everything up
+if(SIM){
+    ## Extract possible infection times
+    strainIsolationTimes <- unique(antigenicMap$inf_years)
 
+    ## Ages between 5 and 80, censor 0% of titres
+    dat <- simulate_data(parTab,1,n_indiv,strainIsolationTimes,
+                         samplingTimes, nsamp,antigenicMap, 0,0,5,80)
 
-# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
-# RUN INFERENCE MODEL
-# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
+    ## Extract simulation data
+    infectionHistories <- dat[["infectionHistories"]]
+    data <- dat[["data"]]
+    ages <- dat[["ages"]]
+    ages <- data.frame(individual=1:n_indiv,DOB=ages)
+} else {
+    ## CHANGE FOR LOCAL FILE SYSTEM
+    data <- read.csv("data/fluscape_data.csv",stringsAsFactors=FALSE)
+    ages <- read.csv("data/fluscape_ages.csv")
 
-# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
-# Simulation study and inference
-# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
-
-# Generate simulated data and infer parameters -- simulation parameters are defined in sero_functions.R
-# Parameters currently specified within the function (see "sero_functions.R")
-
-kk=1
-simulation.infer(seed_i=kk, # Set seed
-                 mcmc.iterations=20,  # MCMC iterations
-                 flu.type="H3HN", # Flu name
-                 fit.map=antigenic_map, # Antigenic map input
-                 fix.param=NULL, # Add noise to input parameters?
-                 vp1=0.4 # Proportion of infection histories to resample each step
-                 ) 
-
-
-# Plot convergence for MCMC chains for simulated data
-plot.multi.chain.posteriors(burnCut=0.25,
-                            flu.type="H3HN",
-                            simDat=T,
-                            year_test=c(2007:2012),
-                            loadpick = c(1) # Which simulation to plot
-                            )
-
-
-# Plot simulation study posteriors and attack rate comparisons for simulation plots
-for(kk in 1){
-  
-  plot.posteriors(simDat=T,loadseed=paste("SIM_",kk,sep=""),flu.type="H3HN",year_test=c(2007:2012),plotmap=F,fr.lim=T)
-
+    if(!is.null(n_indiv)){
+        indivs <- sample(unique(data$individual),n_indiv)
+        data <- data[data$individual %in% indivs,]
+        ages <- ages[ages$individual %in% indivs,]
+    }
 }
 
-# Plot simulation study titres against inferred model
-kk=1
-plot.posterior.titres(loadseed=paste("SIM_",kk,sep=""),flu.type="H3",simDat=T,year_test=c(2007:2012),btstrap=10)
+
+## MCMC parameter inputs
+mcmcPars <- c("iterations"=500000,"popt"=0.44,"opt_freq"=1000,"thin"=100,"adaptive_period"=50000,
+              "save_block"=100,"thin2"=1000,"histSampleProb"=0.1,"switch_sample"=2, "burnin"=50000)
+
+## For multivariate proposals
+covMat <- diag(nrow(parTab))
+scale <- 0.01
+w <- 0.9
+mvrPars <- list(covMat, scale, w)
+
+## For univariate proposals
+mvrPars <- NULL
+
+## Generate random starting points and run
+res <- foreach(x =filenames) %dopar% {
+    startTab <- parTab
+    for(i in 1:nrow(startTab)){
+        if(startTab$fixed[i] == 0){
+            startTab$values[i] <- runif(1,startTab$lower_bound[i],startTab$upper_bound[i])
+        }
+    }
+    run_MCMC(startTab, data, mcmcPars, filename=x,create_post_func, NULL, mvrPars, 0.2, antigenicMap, ages, startInfHist=NULL)
+}
 
 
+output <- res[[1]]
+generate_all_plots(outputDir, mcmcPars["adaptive_period"], output$chain_file, output$history_file,
+                   data, antigenicMap, parTab, ages, 10, 1000, "testing")
