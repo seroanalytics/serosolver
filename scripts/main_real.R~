@@ -1,0 +1,37 @@
+setwd("~/Documents/Fluscape/serosolver")
+devtools::load_all()
+library(doMC)
+registerDoMC(cores=4)
+library(foreach)
+titreDat <- read.csv("data/fluscape_data.csv",stringsAsFactors=FALSE)
+fit_map <- read.csv("data/fluscape_map.csv",stringsAsFactors=FALSE)
+parTab <- startTab <- read.csv("inputs/parTab.csv",stringsAsFactors = FALSE)
+ages <- read.csv("data/fluscape_ages.csv")
+strainIsolationTimes <- unique(fit_map$inf_years)
+
+indivs <- sample(unique(titreDat$individual),50)
+tmpDat <- titreDat[titreDat$individual %in% indivs,]
+ages <- ages[ages$individual %in% indivs,]
+
+mcmcPars <- c("iterations"=500000,"popt"=0.44,"opt_freq"=1000,"thin"=100,"adaptive_period"=100000,
+              "save_block"=100,"thin2"=1000,"histSampleProb"=0.05,"switch_sample"=2,"burnin"=50000)
+
+filenames <- c("chains/areal1","chains/areal2","chains/areal3")
+
+covMat <- diag(nrow(parTab))
+scale <- 0.01
+w <- 0.9
+mvrPars <- list(covMat, scale, w)
+
+foreach(x =filenames) %dopar% {
+  startTab <- parTab
+  for(i in 1:nrow(startTab)){
+    if(startTab$fixed[i] == 0){
+      startTab$values[i] <- runif(1,startTab$lower_bound[i],startTab$upper_bound[i])
+    }
+  }
+  run_MCMC(startTab, tmpDat, mcmcPars, x,create_post_func, NULL, NULL, 0.2, fit_map, ages)
+}
+
+
+
