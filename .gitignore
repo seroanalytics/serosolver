@@ -1,2 +1,5 @@
 *.png
 *.DS_Store
+*.R~
+*.o
+*.so
