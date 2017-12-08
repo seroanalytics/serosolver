@@ -1,6 +1,6 @@
 names,values,fixed,steps,lower_bound,upper_bound
-mu,2,0,0.1,0,10
-mu_short,2,0,0.1,0,10
+mu,2,0,0.1,0,8
+mu_short,2,0,0.1,0,8
 tau,0.05,0,0.1,0,1
 wane,0.2,0,0.1,0,1
 sigma1,0.3,0,0.1,0,1

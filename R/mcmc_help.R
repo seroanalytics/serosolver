@@ -40,8 +40,8 @@ mvr_proposal <- function(values, fixed, covMat, covMat0 = NULL, useLog=FALSE, be
 #' an individual *could* be infected).
 #' NOTE - MIGHT NEED TO UPDATE THIS FOR GROUPS
 #' @param newInfectionHistories an n*m matrix of 1s & 0s indicating infection histories, where n is individuals and m i strains
-#' @param sampledIndivs the indices of sampled individuals to be receive proposals
-#' @param strainIsolationTimes the vector of strain isolation times in rela time
+#' @param sampledIndivs the indices of sampled individuals to receive proposals
+#' @param strainIsolationTimes the vector of strain isolation times in real time
 #' @param ageMask the vector of indices for each individual specifiying which index of strainIsolationTimes is the first strain each individual coul dhave seen
 #' @return a new matrix matching newInfectionHistories in dimensions with proposed moves
 #' @export
