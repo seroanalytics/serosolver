@@ -8,10 +8,10 @@ devtools::load_all()
 outputDir <- "outputs"
 
 ## Simulate or real?
-SIM <- TRUE
+SIM <- FALSE
 
 ## How many individual to simulate/use? Leave as NULL if all individuals for real data
-n_indiv <- 10
+n_indiv <- 50
 
 ## CHANGE FOR LOCAL FILE SYSTEM
 ## Important input parameters and antigenic map
@@ -56,8 +56,8 @@ if(SIM){
 
 
 ## MCMC parameter inputs
-mcmcPars <- c("iterations"=500000,"popt"=0.44,"opt_freq"=1000,"thin"=10,"adaptive_period"=100000,
-              "save_block"=100,"thin2"=1000,"histSampleProb"=0.1,"switch_sample"=2, "burnin"=100000)
+mcmcPars <- c("iterations"=500000,"popt"=0.44,"opt_freq"=1000,"thin"=100,"adaptive_period"=50000,
+              "save_block"=100,"thin2"=1000,"histSampleProb"=0.1,"switch_sample"=2, "burnin"=50000)
 
 ## For multivariate proposals
 covMat <- diag(nrow(parTab))
@@ -76,17 +76,10 @@ res <- foreach(x =filenames) %dopar% {
             startTab$values[i] <- runif(1,startTab$lower_bound[i],startTab$upper_bound[i])
         }
     }
-    run_MCMC(startTab, data, mcmcPars, filename="test",create_post_func, NULL, mvrPars, 0.2, antigenicMap, ages, startInfHist=NULL)
+    run_MCMC(startTab, data, mcmcPars, filename=x,create_post_func, NULL, mvrPars, 0.2, antigenicMap, ages, startInfHist=NULL)
 }
 
-res <- run_MCMC(startTab, data, mcmcPars, filename="test1",create_post_func, NULL, mvrPars, 0.2, antigenicMap, ages, startInfHist=NULL)
 
 output <- res[[1]]
 generate_all_plots(outputDir, mcmcPars["adaptive_period"], output$chain_file, output$history_file,
                    data, antigenicMap, parTab, ages, 10, 1000, "testing")
-
-
-generate_all_plots(outputDir, mcmcPars["adaptive_period"], "test_chain.csv", "test_infectionHistories.csv",
-                   data, antigenicMap, parTab, ages, 10, 100, "testing")
-chain <- read.csv("test_chain.csv")
-infectionHistories <- read.csv("test_infectionHistories.csv")

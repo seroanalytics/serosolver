@@ -8,7 +8,7 @@ using namespace Rcpp;
 //' The main model solving function for a single individual.
 //' NOTES:
 //' - Do we want infection history to be a vector of infection times?
-//' - Treat the contents of infectionHistory as a parameter (ie. exposure type)
+//' - Tread the contents of infectionHistory as a parameter (ie. exposure type)
 //' @param theta NumericVector, the named vector of model parameters
 //' @param infectionHistory NumericVector, the vector of 1s and 0s showing presence/absence of infection for each possible time. 
 //' @param samplingTime double, the real time that the sample was taken

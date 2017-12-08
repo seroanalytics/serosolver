@@ -1,30 +1,16 @@
 library(tidyr)
-library(plyr)
 setwd("~/Documents/Fluscape/serosolver")
 devtools::load_all()
 
-resolution <- "monthly"
 firstYear <- 1968
 lastYear <- 2015
-
 virus_key <- c("HK68"=1968, "EN72"=1972, "VI75"=1975, "TX77"=1977, "BK79"=1979, "SI87"=1987, "BE89"=1989, "BJ89"=1989,
-               "BE92"=1992, "WU95"=1995, "SY97"=1997, "FU02"=2002, "CA04"=2004, "WI05"=2005, "PE06"=2006)
-
-## Following assumptions:
-## 1. X31 == 1969
-## 2. PE2009 is like the strain circulating in 2010
+               "BE92"=1992, 
+               "WU95"=1995, "SY97"=1997, "FU02"=2002, "CA04"=2004, "WI05"=2005, "PE06"=2006)
 
 fluscape_virus_key <- c("BJ89"=1989, "SC87"=1987, "PH82"=1982, "BR07"=2007, "WU95"=1995, "BK79"=1979, "HK14"=2014, "TX12"=2012, 
-                        "PE09"=2010, "BJ92"=1992, "TX77"=1977, "VC09"=2009, "CL04"=2004, "VC98"=1998, "FJ00"=2000, "VC75"=1975, 
-                        "MS85"=1985, "FJ02"=2002, "EN72"=1972, "X31"=1969, "HK68"=1968)
-
-if(resolution == "monthly"){
-  firstYear <- firstYear*12
-  lastYear <- lastYear*12
-  virus_key <- virus_key*12
-  fluscape_virus_key <- fluscape_virus_key*12
-}
-
+                        "PE09"=2009, "BJ92"=1992, "TX77"=1977, "VC09"=2009, "CL04"=2004, "VC98"=1998, "FJ00"=2000, "VC75"=1975, 
+                        "MS85"=1985, "FJ02"=2002, "EN72"=1972, "X31"=1931, "HK68"=1968)
 
 
 ## Extract fluscape data
@@ -75,21 +61,11 @@ birthDates <- apply(part_info, 1, function(x){
 
 birthDates <- as.Date(birthDates) 
 part_info$age <- as.numeric(round((maxTime - birthDates)/365))
-
-if(resolution == "yearly"){
-  part_info$DOB <- as.numeric(format(birthDates,"%Y"))
-  part_info$V1 <-  as.numeric(format(part_info$V1, "%Y"))
-  part_info$V2 <-  as.numeric(format(part_info$V2, "%Y"))
-  part_info$V3 <-  as.numeric(format(part_info$V3, "%Y"))
-  part_info$V4 <-  as.numeric(format(part_info$V4, "%Y"))
-} else {
-  part_info$DOB <- as.numeric(format(birthDates,"%Y"))*12 + as.numeric(format(birthDates,"%m"))
-  part_info$V1 <-  as.numeric(format(part_info$V1, "%Y"))*12 + as.numeric(format(part_info$V1,"%m"))
-  part_info$V2 <-  as.numeric(format(part_info$V2, "%Y"))*12 + as.numeric(format(part_info$V2,"%m"))
-  part_info$V3 <-  as.numeric(format(part_info$V3, "%Y"))*12 + as.numeric(format(part_info$V3,"%m"))
-  part_info$V4 <-  as.numeric(format(part_info$V4, "%Y"))*12 + as.numeric(format(part_info$V4,"%m"))
-}
-  
+part_info$DOB <- as.numeric(format(birthDates,"%Y"))
+part_info$V1 <-  as.numeric(format(part_info$V1, "%Y"))
+part_info$V2 <-  as.numeric(format(part_info$V2, "%Y"))
+part_info$V3 <-  as.numeric(format(part_info$V3, "%Y"))
+part_info$V4 <-  as.numeric(format(part_info$V4, "%Y"))
 part_info$ID <- PARTICIPANT_ID
 part_info <- part_info[part_info$ID %in% unique(titreDat$individual),]
 
@@ -116,7 +92,7 @@ ages$individual <- match(ages$individual,PARTICIPANT_ID)
 finalDat <- merge(titreDat, tmp, by=c("visit","individual"))
 
 #### NEED TO FIX THIS - REMOVING DUPLICATED DATA FOR THE SAME SAMPLE TIME
-#finalDat <- finalDat[!duplicated(finalDat[,c("visit","individual","virus","samples")]),]
+finalDat <- finalDat[!duplicated(finalDat[,c("visit","individual","virus","samples")]),]
 finalDat <- finalDat[order(finalDat$indiv,finalDat$samples, finalDat$virus),]
 ids <- unique(finalDat$individual)
 ages$individual <- match(ages$individual, ids)
@@ -130,22 +106,19 @@ finalDat$virus <- fluscape_virus_key[finalDat$virus]
 #####
 all_viruses <- expand.grid("individual"=unique(finalDat$individual),"virus"=seq(firstYear,lastYear,by=1))
 all_samples <- unique(finalDat[,c("individual","samples")])
-all_viruses <- merge(all_viruses, all_samples) 
+all_viruses <- merge(all_viruses, all_samples)
 all_viruses <- all_viruses[order(all_viruses$individual,all_viruses$samples,all_viruses$virus),]
 
 tmp <- merge(finalDat, all_viruses, by=c("individual","virus","samples"), all=TRUE)
 tmp <- tmp[order(tmp$individual,tmp$samples,tmp$individual),]
 finalDat <- tmp
 
+### NEED TO FIX THIS - NOT SURE WHICH YEAR X31 CORRESPONDS TO
+finalDat <- finalDat[finalDat$virus != 1931,]
+
 finalDat$group <- 1
 finalDat[!is.na(finalDat$titre) & finalDat$titre == 0,"titre"] <- 5
 finalDat[!is.na(finalDat$titre),"titre"] <- log2(finalDat[!is.na(finalDat$titre),"titre"]/5)
-
-#####
-## Need to count repeats for formatting later on
-#####
-finalDat <- plyr::ddply(finalDat,.(group,individual,virus,samples),function(x) cbind(x,"run"=1:nrow(x)))
-finalDat <- finalDat[order(finalDat$group,finalDat$individual,finalDat$samples,finalDat$run),c("group","individual","samples","virus","titre","run")]
 
 write.table(finalDat,"data/fluscape_data.csv",sep=",",row.names=FALSE)
 write.table(ages,"data/fluscape_ages.csv",sep=",",row.names=FALSE)

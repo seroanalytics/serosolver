@@ -31,12 +31,6 @@ create_post_func <- function(parTab, data,
   ## Get indexing for samples
   ## This finds which samples correspond to which individual
   samples <- unique(data[,c("individual","samples")])
-  
-  ## Look for repeated samples at the same time point for the same virus - these
-  ## need to be included twice
-  samples <- rbind(samples, unique(data[duplicated(data[,c("individual","virus","samples")]),][,c("individual","samples")]))
-  
-  samples <- samples[order(samples$individual, samples$samples),]
   indicesB <- c(0)
   individuals <- samples$individual
   for(individual in unique(individuals)){

@@ -6,7 +6,7 @@ generate_all_plots <- function(outputDir, adaptive_period, chainFile, infHistFil
     chain <- read.csv(chainFile)
     infectionHistories <- data.table::fread(infHistFile,data.table=FALSE)
     individuals <- sample(unique(titreDat$individual),nIndiv)
-    p1 <- plot_infection_histories(chain, infectionHistories,titreDat, individuals, antigenicMap, ages, nSamp)
+    p1 <- plot_infection_histories(chain, infectionHistories,titreDat, individuals, fit_map, ages, nSamp)
     posteriors <- plot_posteriors(chain,parTab,TRUE,TRUE,TRUE,TRUE,fileName)
     xs <- min(strainIsolationTimes):max(strainIsolationTimes)
     arP <- plot_attack_rates(infectionHistories, titreDat,ages,xs)
@@ -54,7 +54,7 @@ get_titre_predictions <- function(chain, infectionHistories, dat,
             tmpIHist[,which(strainIsolationTimes > sampleTime)] <- 0
             tmpIHist[,which(strainIsolationTimes < birthYear)] <- 0
             infCounts <- apply(tmpIHist[,1:nstrain],2,function(x) table(factor(x, levels=c(0,1))))
-            infSD <- apply(tmpIHist[,1:nstrain],2,sd)
+            infSD <- apply(tmp[,1:nstrain],2,sd)
             y <- (infCounts[2,]/colSums(infCounts))
             histDens <- data.frame(year=strainIsolationTimes,density=y)
             histDens$year <- as.numeric(as.character(histDens$year))
