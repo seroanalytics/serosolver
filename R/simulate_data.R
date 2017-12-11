@@ -46,20 +46,32 @@ simulate_group <- function(n_indiv, theta, infectionHistories,
 #' @export
 #' @seealso \code{\link{infection_model_indiv}}
 simulate_individual <- function(theta, infectionHistory,
-                                samplingTimes, strainIsolationTimes,
+                                samplingTimes, dataIndices,
+                                strainIsolationTimes, virusIndices,
                                 antigenicMapLong, antigenicMapShort){
-    dat <- matrix(ncol=3, nrow=length(samplingTimes)*length(infectionHistory))
+    numberStrains <- length(infectionHistory)
+    dat <- matrix(ncol=3, nrow=length(strainIsolationTimes))
     titres <- NULL
     dates <- NULL
     ## For each sampling time
+    startIndex <- 1
+    endIndex <- 0
+    
     for(i in 1:length(samplingTimes)){
-        ## Solve the model
-        y <- infection_model_indiv(theta, infectionHistory, samplingTimes[i],
-                                   strainIsolationTimes, antigenicMapLong, antigenicMapShort)
+      startIndex <- endIndex + 1
+      endIndex <- endIndex + dataIndices[i]
+      ## Solve the model
+       y <- infection_model_indiv(theta, infectionHistory, samplingTimes[i],
+                                   strainIsolationTimes[startIndex:endIndex], 
+                                   virusIndices[startIndex:endIndex],
+                                   antigenicMapLong, antigenicMapShort,
+                                   numberStrains)
+        
+        
         ## Add noise to the data
-        y <- add_noise(y, theta)
+        #y <- add_noise(y, theta)
         titres <- c(titres, y)
-        dates <- c(dates, rep(samplingTimes[i],length(strainIsolationTimes)))
+        dates <- c(dates, rep(samplingTimes[i],length(strainIsolationTimes[startIndex:endIndex])))
     }
     dat[,1] <- dates
     dat[,2] <- strainIsolationTimes

@@ -1,6 +1,6 @@
 library(doMC)
 library(foreach)
-setwd("~/Documents/Fluscape/serosolver")
+setwd("E:/James/Documents/Fluscape/serosolver")
 devtools::load_all()
 #library(serosolver)
 
@@ -8,15 +8,15 @@ devtools::load_all()
 outputDir <- "outputs"
 
 ## Simulate or real?
-SIM <- TRUE
+SIM <- FALSE
 
 ## How many individual to simulate/use? Leave as NULL if all individuals for real data
 n_indiv <- 10
 
 ## CHANGE FOR LOCAL FILE SYSTEM
 ## Important input parameters and antigenic map
-parTab <- read.csv("~/Documents/Fluscape/serosolver/inputs/parTab.csv",stringsAsFactors=FALSE)
-antigenicMap <- read.csv("~/Documents/Fluscape/serosolver/data/fluscape_map.csv")
+parTab <- read.csv("E:/James/Documents/Fluscape/serosolver/inputs/parTab.csv",stringsAsFactors=FALSE)
+antigenicMap <- read.csv("E:/James/Documents/Fluscape/serosolver/data/fluscape_map.csv")
 
 ## Simulation options
 samplingTimes <- 2007:2015

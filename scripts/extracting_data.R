@@ -1,9 +1,10 @@
 library(tidyr)
 library(plyr)
-setwd("~/Documents/Fluscape/serosolver")
+setwd("E:/James/Documents/Fluscape/serosolver")
+fluscapeWD <- "E:/James/Documents/Fluscape"
 devtools::load_all()
-
-resolution <- "monthly"
+setwd(fluscapeWD)
+resolution <- "yearly"
 firstYear <- 1968
 lastYear <- 2015
 
@@ -28,16 +29,16 @@ if(resolution == "monthly"){
 
 
 ## Extract fluscape data
-titreDat <- read.csv("~/Documents/Fluscape/fluscape/trunk/data/HI_titers_paired_R56Pilot.csv",stringsAsFactors = FALSE)
+titreDat <- read.csv("fluscape/trunk/data/HI_titers_paired_R56Pilot.csv",stringsAsFactors = FALSE)
 titreDat <- titreDat[,c("Visit","Virus","HI_Titer","Participant_ID")]
 titreDat[titreDat$Visit == "v1","Visit"] <- "V1"
 titreDat[titreDat$Visit == "20","Visit"] <- "V2"
 viruses <- unique(titreDat$Virus)
 colnames(titreDat) <- c("visit","virus","titre","individual")
-v1 <- read.csv("~/Documents/Fluscape/fluscape/trunk/data/Participants_V1.csv",stringsAsFactors = FALSE)
-v2 <- read.csv("~/Documents/Fluscape/fluscape/trunk/data/Participants_V2.csv",stringsAsFactors = FALSE)
-v3 <- read.csv("~/Documents/Fluscape/fluscape/trunk/data/Participants_V3.csv",stringsAsFactors = FALSE)
-v4 <- read.csv("~/Documents/Fluscape/fluscape/trunk/data/Participants_V4.csv",stringsAsFactors = FALSE)
+v1 <- read.csv("fluscape/trunk/data/Participants_V1.csv",stringsAsFactors = FALSE)
+v2 <- read.csv("fluscape/trunk/data/Participants_V2.csv",stringsAsFactors = FALSE)
+v3 <- read.csv("fluscape/trunk/data/Participants_V3.csv",stringsAsFactors = FALSE)
+v4 <- read.csv("fluscape/trunk/data/Participants_V4.csv",stringsAsFactors = FALSE)
 
 needed_names <- c("PARTICIPANT_ID","HH_ID","LOC_ID","PART_SAMPLE_TIME")
 v1 <- v1[,needed_names[!(needed_names %in% c("PART_BIRTH_YEAR","PART_BIRTH_MONTH"))]]
@@ -144,8 +145,11 @@ finalDat[!is.na(finalDat$titre),"titre"] <- log2(finalDat[!is.na(finalDat$titre)
 #####
 ## Need to count repeats for formatting later on
 #####
+finalDat <- finalDat[complete.cases(finalDat),]
 finalDat <- plyr::ddply(finalDat,.(group,individual,virus,samples),function(x) cbind(x,"run"=1:nrow(x)))
 finalDat <- finalDat[order(finalDat$group,finalDat$individual,finalDat$samples,finalDat$run),c("group","individual","samples","virus","titre","run")]
 
+
+setwd("E:/James/Documents/Fluscape/serosolver")
 write.table(finalDat,"data/fluscape_data.csv",sep=",",row.names=FALSE)
 write.table(ages,"data/fluscape_ages.csv",sep=",",row.names=FALSE)

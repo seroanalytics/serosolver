@@ -14,36 +14,50 @@ create_post_func <- function(parTab, data,
   pars1 <- parTab$values
   mynames <- parTab$names
   names(pars1) <- parTab$names
-  sampleTimes <- unique(data$samples)
+  
+  ## 
   titres <- data$titre
-  strainIsolationTimes <- unique(antigenicMap$inf_years)
+  virusIndices <- match(data$virus, antigenicMap$inf_years)
+
+  ## Note that the strain isolution times in the data set should have
+  ## corresponding indices in the antigenic map table
+  strainIsolationTimes <- data$virus
+  
   antigenicMapMelted <- c(outputdmatrix.fromcoord(antigenicMap[,c("x_coord","y_coord")]))
 
+  ## Get unique measurement sets for each individual at
+  ## each sampling time for each repeat
+  samples <- unique(data[,c("individual","samples","run")])
+  samples <- samples[order(samples$individual, samples$run, samples$samples),]
+  
+  ## Extract vector of sampling times and individual indices for speed
+  sampleTimes <- samples$samples
+  individuals <- samples$individual
+  
+  
+  indicesData <- NULL
+  for(i in 1:nrow(samples)){
+    indicesData <- c(indicesData, nrow(samples[data$individual == samples[i,"individual"] &
+                                        data$samples == samples[i,"samples"] &
+                                        data$run == samples[i,"run"],]))
+  }
+ 
   ## Get indexing for individuals. This works out which rows in the titre data correspond
   ## to which individuals
-  indicesA <- c(0)
-  individuals <- data$individual
+  indicesSamples <- c(0)
   for(individual in unique(individuals)){
-      indicesA <- c(indicesA, length(individuals[individuals==individual]))
+    indicesSamples <- c(indicesSamples, length(individuals[individuals==individual]))
   }
-  indicesA <- cumsum(indicesA)
+  indicesSamples <- cumsum(indicesSamples)
 
-  ## Get indexing for samples
-  ## This finds which samples correspond to which individual
-  samples <- unique(data[,c("individual","samples")])
-  
-  ## Look for repeated samples at the same time point for the same virus - these
-  ## need to be included twice
-  samples <- rbind(samples, unique(data[duplicated(data[,c("individual","virus","samples")]),][,c("individual","samples")]))
-  
-  samples <- samples[order(samples$individual, samples$samples),]
-  indicesB <- c(0)
-  individuals <- samples$individual
+  indicesDataOverall <- NULL
   for(individual in unique(individuals)){
-      indicesB <- c(indicesB, length(individuals[individuals == individual]))
+    indicesDataOverall <- c(indicesDataOverall, nrow(data[data$individual == individual,]))
   }
-  indicesB <- cumsum(indicesB)
-
+  indicesDataOverall <- cumsum(c(0,indicesDataOverall))
+  
+  
+  
   ## The function pointer
   f <- function(pars, infectionHistories){
       names(pars) <- mynames
@@ -56,8 +70,8 @@ create_post_func <- function(parTab, data,
 
       ## Now pass to the C++ function
       return(group_likelihood_vector(pars,infectionHistories,
-                                     indicesA, indicesB,
-                                     samples$samples,strainIsolationTimes, 
+                                     indicesSamples, indicesData, indicesDataOverall,
+                                     sampleTimes,strainIsolationTimes, virusIndices,
                                      antigenicMapLong,antigenicMapShort,
                                      titres))
   }

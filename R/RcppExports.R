@@ -16,8 +16,8 @@
 #' @return NumericVector of predicted titres for each strainIsolationTime
 #' @useDynLib serosolver
 #' @export
-infection_model_indiv <- function(theta, infectionHistory, samplingTime, strainIsolationTimes, antigenicMapLong, antigenicMapShort) {
-    .Call('_serosolver_infection_model_indiv', PACKAGE = 'serosolver', theta, infectionHistory, samplingTime, strainIsolationTimes, antigenicMapLong, antigenicMapShort)
+infection_model_indiv <- function(theta, infectionHistory, samplingTime, strainIsolationTimes, virusIndices, antigenicMapLong, antigenicMapShort, numberStrains) {
+    .Call('_serosolver_infection_model_indiv', PACKAGE = 'serosolver', theta, infectionHistory, samplingTime, strainIsolationTimes, virusIndices, antigenicMapLong, antigenicMapShort, numberStrains)
 }
 
 #' Calculate likelihood
@@ -45,8 +45,8 @@ likelihood_titre <- function(expected, data, theta) {
 #' @return a single log likelihood
 #' @useDynLib serosolver
 #' @export
-individual_likelihood <- function(theta, infectionHistory, samplingTimes, strainIsolationTimes, antigenicMapLong, antigenicMapShort, titres) {
-    .Call('_serosolver_individual_likelihood', PACKAGE = 'serosolver', theta, infectionHistory, samplingTimes, strainIsolationTimes, antigenicMapLong, antigenicMapShort, titres)
+individual_likelihood <- function(theta, infectionHistory, samplingTimes, indivIndices, strainIsolationTimes, indivVirusIndices, antigenicMapLong, antigenicMapShort, titres, numberStrains) {
+    .Call('_serosolver_individual_likelihood', PACKAGE = 'serosolver', theta, infectionHistory, samplingTimes, indivIndices, strainIsolationTimes, indivVirusIndices, antigenicMapLong, antigenicMapShort, titres, numberStrains)
 }
 
 #' Group likelihood
@@ -54,18 +54,19 @@ individual_likelihood <- function(theta, infectionHistory, samplingTimes, strain
 #' Uses \code{\link{individual_likelihood}} for each individual and returns a vector of log likelihoods for each individual
 #' @param theta NumericVector, the named vector of model parameters
 #' @param infectionHistories NumericMatrix, the matrix of 1s and 0s showing presence/absence of infection for each possible time for each individual 
-#' @param indicesA IntegerVector, the range of indices of the titre vector that correspond to each individual (eg. first 5 titres are for indiv 1, indicesA = c(0,5,...)
-#' @param indicesB IntegerVector, the range of indices of the sample vector that correspond to each individual (eg. first 2 sampling times are for indiv 1, indicesB = c(0,2,...)
+#' @param indicesSampling IntegerVector, the range of indices of the titre vector that correspond to each individual (eg. first 5 titres are for indiv 1, indicesA = c(0,5,...)
+#' @param indicesData IntegerVector, the range of indices of the sample vector that correspond to each individual (eg. first 2 sampling times are for indiv 1, indicesB = c(0,2,...)
 #' @param samplingTimes NumericVector, the vector of real times that samples were taken
 #' @param strainIsolationTimes NumericVector, the vector of times at which each virus strain circulated
 #' @param antigenicMapLong NumericVector, the collapsed cross reactivity map for long term boosting, after multiplying by sigma1
 #' @param antigenicMapShort NumericVector, the collapsed cross reactivity map for short term boosting, after multiplying by sigma2
 #' @param titres NumericVector, the vector of observed titres for all individuals.
+#' @param n_strains int, the maximum number of strains that could be tested against
 #' @return a NumericVector of log likelihoods for each individual
 #' @useDynLib serosolver
 #' @export
-group_likelihood_vector <- function(theta, infectionHistories, indicesA, indicesB, samplingTimes, strainIsolationTimes, antigenicMapLong, antigenicMapShort, titres) {
-    .Call('_serosolver_group_likelihood_vector', PACKAGE = 'serosolver', theta, infectionHistories, indicesA, indicesB, samplingTimes, strainIsolationTimes, antigenicMapLong, antigenicMapShort, titres)
+group_likelihood_vector <- function(theta, infectionHistories, indicesSamples, indicesData, indicesDataOverall, samplingTimes, strainIsolationTimes, virusIndices, antigenicMapLong, antigenicMapShort, titres) {
+    .Call('_serosolver_group_likelihood_vector', PACKAGE = 'serosolver', theta, infectionHistories, indicesSamples, indicesData, indicesDataOverall, samplingTimes, strainIsolationTimes, virusIndices, antigenicMapLong, antigenicMapShort, titres)
 }
 
 #' Group likelihood
@@ -83,7 +84,7 @@ group_likelihood_vector <- function(theta, infectionHistories, indicesA, indices
 #' @return a single log likelihood
 #' @useDynLib serosolver
 #' @export
-group_likelihood_total <- function(theta, infectionHistories, indicesA, indicesB, samplingTimes, strainIsolationTimes, antigenicMapLong, antigenicMapShort, titres) {
-    .Call('_serosolver_group_likelihood_total', PACKAGE = 'serosolver', theta, infectionHistories, indicesA, indicesB, samplingTimes, strainIsolationTimes, antigenicMapLong, antigenicMapShort, titres)
+group_likelihood_total <- function(theta, infectionHistories, indicesSamples, indicesData, indicesDataOverall, samplingTimes, strainIsolationTimes, virusIndices, antigenicMapLong, antigenicMapShort, titres) {
+    .Call('_serosolver_group_likelihood_total', PACKAGE = 'serosolver', theta, infectionHistories, indicesSamples, indicesData, indicesDataOverall, samplingTimes, strainIsolationTimes, virusIndices, antigenicMapLong, antigenicMapShort, titres)
 }
 
