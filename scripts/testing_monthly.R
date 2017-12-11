@@ -1,31 +1,160 @@
+library(ggplot2)
+setwd("~/Documents/Fluscape/serosolver")
+devtools::load_all()
+parTab <- read.csv("~/Documents/Fluscape/serosolver/inputs/parTab.csv",stringsAsFactors=FALSE)
+antigenicMap <- read.csv("~/Documents/Fluscape/serosolver/data/fluscape_map.csv")
+
 strains <- unique(antigenicMap$inf_years)
 numberStrains <- length(strains)
 strainIsolationTimes <- strains
-strainIsolationTimes <- sample(strains,15)
-strainIsolationTimes <- strainIsolationTimes[order(strainIsolationTimes)]
+#strainIsolationTimes <- sample(strains,15)
+#strainIsolationTimes <- strainIsolationTimes[order(strainIsolationTimes)]
 virusIndices <- match(strainIsolationTimes,strains)-1
-samplingTime <- 2010
-theta <- pars
+
+antigenicMapMelted <- c(outputdmatrix.fromcoord(antigenicMap[,c("x_coord","y_coord")]))
+
+pars <- parTab$values
+mynames <- parTab$names
+names(pars) <- parTab$names
+
+antigenicMapLong <- 1-pars["sigma1"]*antigenicMapMelted
+antigenicMapLong[antigenicMapLong < 0] <- 0
+antigenicMapShort <- 1-pars["sigma2"]*antigenicMapMelted
+antigenicMapShort[antigenicMapShort < 0] <- 0
 
 infectionHistory <- sample(c(0,0,0,1),numberStrains,replace=T)
 infectionHistory <- rep(0,numberStrains)
-infectionHistory[which(strains==1968)] <- 1
-infectionHistory[which(strains==1990)] <- 1
-infectionHistory[which(strains==2009)] <- 1
+infectionHistory[which(strains==1968*12)] <- 1
+infectionHistory[which(strains==1990*12)] <- 1
+infectionHistory[which(strains==2009*12)] <- 1
 
 
-y <- infection_model_indiv(pars, infectionHistory, samplingTime, strainIsolationTimes, virusIndices,
-                      antigenicMapLong,antigenicMapShort,numberStrains)
+sampleTimes <- c(1980,1990,2000,2010)*12
 
-samplingTimes <- c(2007)
-dataIndices <- c(48)
-a <- sample(strains,21)
-b <- sample(strains,18)
-c <- sample(strains,17)
-a <- a[order(a)]
-b <- b[order(b)]
-c <- c[order(c)]
+nsamps <- 30
+strainIsolationTimesA <- sample(strainIsolationTimes,nsamps)
+strainIsolationTimesA <- strainIsolationTimesA[order(strainIsolationTimesA)]
 
-strainIsolationTimes <- c(a,b,c)
-strainIsolationTimes <- strains
-virusIndices <- match(strainIsolationTimes,strains)-1
+strainIsolationTimes1 <- rep(strainIsolationTimesA, length(sampleTimes))
+dataIndices <- rep(length(strainIsolationTimesA),length(sampleTimes))
+
+theta <- pars
+strainIsolationTimes <- strainIsolationTimes1
+
+library(microbenchmark)
+a <- infectionHistory[which(infectionHistory == 1)]
+b <- strains[which(infectionHistory == 1)]
+c <- match(strains[which(infectionHistory==1)],strains)-1
+d <- match(strainIsolationTimesA,strains)-1
+microbenchmark(infection_model_indiv(pars, 
+                          a, 
+                          b,
+                           c,
+                           24109, 
+                           d, 
+                           antigenicMapLong, 
+                           antigenicMapShort, 
+                           length(strains)))
+
+
+microbenchmark(infection_model_indiv_OLD(pars, 
+                                     infectionHistory, 
+                                     24109,
+                                     strainIsolationTimesA,
+                                     d,
+                                     antigenicMapLong, 
+                                     antigenicMapShort, 
+                                     length(strains)))
+
+
+strainIsolationTimes1 <- rep(strains, length(sampleTimes))
+dataIndices <- rep(length(strains),length(sampleTimes))
+microbenchmark(simulate_individual(pars, infectionHistory,sampleTimes,dataIndices,strainIsolationTimes1,match(strainIsolationTimes1, strains)-1,antigenicMapLong,antigenicMapShort,strains))
+
+y <- as.data.frame(y)
+colnames(y) <- c("sample","virus","titre")
+infDat <- data.frame(x=strains[which(infectionHistory==1)])
+sampDat <- data.frame(x=sampleTimes)
+ggplot(y) + geom_point(aes(x=virus,y=titre)) + 
+            geom_vline(data=infDat,aes(xintercept=x)) + 
+  geom_vline(data=sampDat,aes(xintercept=x),col="red")+
+  facet_wrap(~sample,ncol=1)+
+  theme_bw()
+
+circulationTimeIndices = match(strains, strains)-1
+measurementMapIndices = match(strainIsolationTimes1,strains)-1
+y <- titre_data_individual(pars, infectionHistory, strains,circulationTimeIndices , sampleTimes, dataIndices, measurementMapIndices,strainIsolationTimes1,
+                           antigenicMapLong,antigenicMapShort,length(strains))
+samples <- rep(sampleTimes, each=length(strains))
+
+dat <- data.frame(sample=samples,virus=strainIsolationTimes1,titre=y)
+
+dat1 <- simulate_individual(pars, infectionHistory,sampleTimes,dataIndices,strainIsolationTimes1,match(strainIsolationTimes1, strains)-1,antigenicMapLong,antigenicMapShort,strains)
+dat1 <- as.data.frame(dat1)
+colnames(dat1) <- c("sample","virus","titre")
+infDat <- data.frame(x=strains[which(infectionHistory==1)])
+sampDat <- data.frame(x=sampleTimes)
+ggplot()+ #geom_line(data=dat, aes(x=virus,y=titre),col="red")+
+  geom_point(data=dat1,aes(x=virus,y=titre),col="blue") +
+  geom_vline(data=infDat,aes(xintercept=x)) + 
+  geom_vline(data=sampDat,aes(xintercept=x),col="red")+
+  facet_wrap(~sample,ncol=1)
+
+infectionHistory <- rep(0,numberStrains)
+infectionHistory[which(strains==1968*12)] <- 1
+infectionHistory[which(strains==1990*12)] <- 1
+infectionHistory[which(strains==2009*12)] <- 1
+
+sampleTimes <- seq(1970,2010,by=10)*12
+dataIndices <- rep(length(strains),length(sampleTimes))
+strains <- unique(antigenicMap$inf_years)
+strainIsolationTimes1 <- as.numeric(rep(strains, length(sampleTimes)))
+infectionHistory <- as.integer(infectionHistory)
+strains <- as.numeric(strains)
+circulationTimeIndices <- seq_along(strains)-1
+circulationTimeIndices <- as.integer(circulationTimeIndices)
+sampleTimes <- as.numeric(sampleTimes)
+dataIndices <- as.integer(dataIndices)
+measurementMapIndices <- as.numeric(match(strainIsolationTimes1,strains))
+nStrains <- length(strains)
+pars["mu"] <- 2
+pars["mu_short"]  <- 5
+dat1 <- simulate_individual(pars, infectionHistory,sampleTimes,
+                            dataIndices,strainIsolationTimes1,
+                            match(strainIsolationTimes1, strains)-1,
+                            antigenicMapLong,antigenicMapShort,strains)
+dat1 <- as.data.frame(dat1)
+colnames(dat1) <- c("sample","virus","titre")
+#dat1$titre <- floor(dat1$titre)
+
+r_likelihood <- function(expected, data, theta){
+  largeI <- data > theta["MAX_TITRE"]
+  smallI <- data <= 0
+  restI <- data > 0 & data <= theta["MAX_TITRE"]
+  
+  large <- pnorm(theta["MAX_TITRE"], expected[largeI],theta["error"],0,1)
+  small <- pnorm(1, expected[smallI],theta["error"],1,1)
+  rest <- log(pnorm(data[restI]+1,expected[restI],theta["error"], 1, 0) - pnorm(data[restI],expected[restI], theta["error"],1, 0))
+  return(sum(large, small, rest))
+}
+conciseInfHist <- infectionHistory[infectionHistory > 0]
+conciseInfTimes <- strains[which(infectionHistory > 0)]
+infectionMapIndices <- circulationTimeIndices[which(infectionHistory > 0)]
+#samplingTime <- 2011*12
+
+#pars["wane"] <- 0.03
+#dat <- infection_model_indiv(pars, conciseInfHist,conciseInfTimes,infectionMapIndices,samplingTime,match(strains,strains)-1,antigenicMapLong,antigenicMapShort,nStrains)
+liks <- NULL
+system.time(
+for(i in 1:1000){
+  pars["mu"] <- (i-1)/100
+  
+  #y <- infection_model_indiv(pars, conciseInfHist,conciseInfTimes,infectionMapIndices,samplingTime,match(strains,strains)-1,antigenicMapLong,antigenicMapShort,nStrains)
+  titres <- titre_data_individual(pars, infectionHistory, strains,circulationTimeIndices , sampleTimes, dataIndices, measurementMapIndices,strainIsolationTimes1,
+                           antigenicMapLong,antigenicMapShort,nStrains)
+  liks[i] <- r_likelihood(titres,dat1$titre,pars)
+  #liks[i] <- likelihood_titre(titres, dat1$titre, pars)
+  #liks[i] <- sum(dnorm(x=dat1$titre, mean=titres, sd=1,log=TRUE))
+}
+)
+plot(liks)

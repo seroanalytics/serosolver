@@ -16,8 +16,13 @@
 #' @return NumericVector of predicted titres for each strainIsolationTime
 #' @useDynLib serosolver
 #' @export
-infection_model_indiv <- function(theta, infectionHistory, samplingTime, strainIsolationTimes, virusIndices, antigenicMapLong, antigenicMapShort, numberStrains) {
-    .Call('_serosolver_infection_model_indiv', PACKAGE = 'serosolver', theta, infectionHistory, samplingTime, strainIsolationTimes, virusIndices, antigenicMapLong, antigenicMapShort, numberStrains)
+infection_model_indiv <- function(theta, infectionHistory, infectionTimes, infectionMapIndices, samplingTime, measurementMapIndices, antigenicMapLong, antigenicMapShort, numberStrains) {
+    .Call('_serosolver_infection_model_indiv', PACKAGE = 'serosolver', theta, infectionHistory, infectionTimes, infectionMapIndices, samplingTime, measurementMapIndices, antigenicMapLong, antigenicMapShort, numberStrains)
+}
+
+#' @export
+titre_data_individual <- function(theta, infectionHistory, circulationTimes, circulationMapIndices, samplingTimes, dataIndices, measurementMapIndices, measuredStrainTimes, antigenicMapLong, antigenicMapShort, numberStrains) {
+    .Call('_serosolver_titre_data_individual', PACKAGE = 'serosolver', theta, infectionHistory, circulationTimes, circulationMapIndices, samplingTimes, dataIndices, measurementMapIndices, measuredStrainTimes, antigenicMapLong, antigenicMapShort, numberStrains)
 }
 
 #' Calculate likelihood
@@ -30,6 +35,11 @@ infection_model_indiv <- function(theta, infectionHistory, samplingTime, strainI
 #' @export
 likelihood_titre <- function(expected, data, theta) {
     .Call('_serosolver_likelihood_titre', PACKAGE = 'serosolver', expected, data, theta)
+}
+
+#' @export
+likelihood_data_individual <- function(theta, infectionHistory, circulationTimes, circulationMapIndices, samplingTimes, dataIndices, measurementMapIndices, measuredStrainTimes, antigenicMapLong, antigenicMapShort, numberStrains, data) {
+    .Call('_serosolver_likelihood_data_individual', PACKAGE = 'serosolver', theta, infectionHistory, circulationTimes, circulationMapIndices, samplingTimes, dataIndices, measurementMapIndices, measuredStrainTimes, antigenicMapLong, antigenicMapShort, numberStrains, data)
 }
 
 #' Individual likelihood
@@ -86,5 +96,17 @@ group_likelihood_vector <- function(theta, infectionHistories, indicesSamples, i
 #' @export
 group_likelihood_total <- function(theta, infectionHistories, indicesSamples, indicesData, indicesDataOverall, samplingTimes, strainIsolationTimes, virusIndices, antigenicMapLong, antigenicMapShort, titres) {
     .Call('_serosolver_group_likelihood_total', PACKAGE = 'serosolver', theta, infectionHistories, indicesSamples, indicesData, indicesDataOverall, samplingTimes, strainIsolationTimes, virusIndices, antigenicMapLong, antigenicMapShort, titres)
+}
+
+subset_test <- function(x, y) {
+    .Call('_serosolver_subset_test', PACKAGE = 'serosolver', x, y)
+}
+
+subset_test1 <- function(x, y) {
+    .Call('_serosolver_subset_test1', PACKAGE = 'serosolver', x, y)
+}
+
+infection_model_indiv_OLD <- function(theta, infectionHistory, samplingTime, strainIsolationTimes, virusIndices, antigenicMapLong, antigenicMapShort, numberStrains) {
+    .Call('_serosolver_infection_model_indiv_OLD', PACKAGE = 'serosolver', theta, infectionHistory, samplingTime, strainIsolationTimes, virusIndices, antigenicMapLong, antigenicMapShort, numberStrains)
 }
 

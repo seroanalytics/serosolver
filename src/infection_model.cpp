@@ -19,9 +19,15 @@ using namespace Rcpp;
 //' @useDynLib serosolver
 //' @export
 //[[Rcpp::export]]
-NumericVector infection_model_indiv(NumericVector theta, NumericVector infectionHistory,
-				    double samplingTime, NumericVector strainIsolationTimes, IntegerVector virusIndices,
-				    NumericVector antigenicMapLong,NumericVector antigenicMapShort, int numberStrains){
+NumericVector infection_model_indiv(NumericVector theta, 
+				    IntegerVector infectionHistory,
+				    NumericVector infectionTimes,
+				    IntegerVector infectionMapIndices,
+				    double samplingTime, 
+				    IntegerVector measurementMapIndices,
+				    NumericVector antigenicMapLong,
+				    NumericVector antigenicMapShort, 
+				    int numberStrains){
   // Extract model parameters
   double mu = theta["mu"];
   double mu_short = theta["mu_short"];
@@ -29,18 +35,17 @@ NumericVector infection_model_indiv(NumericVector theta, NumericVector infection
   double wane = theta["wane"];
 
   // We will need to loop over each strain that was tested
-  int n_samples = strainIsolationTimes.size(); // Number of time points sampled
-  int max_infections = numberStrains; // max number of infections is one for each strain
+  int n_samples = measurementMapIndices.size(); // Number of time points sampled
+  int max_infections = infectionTimes.size(); // max number of infections is one for each strain
   double tmpTitre=0;
-
   
-// Only recording titres for which we have data
+  // Only recording titres for which we have data
   NumericVector predictedTitre(n_samples);
   
   // But need to record infection info for each strain that individual could have been
   // infected with
-  NumericVector cumInfectionHistory(max_infections);
-  NumericVector maskedInfectionHistory(max_infections);
+  IntegerVector cumInfectionHistory(max_infections);
+  IntegerVector maskedInfectionHistory(max_infections);
   NumericVector waning(max_infections);
 
   double circulation_time;
@@ -48,7 +53,7 @@ NumericVector infection_model_indiv(NumericVector theta, NumericVector infection
   // Set up cumulative infection history and waning vector
   /* Check if isolation time is after the sampling time.
      if so, then we do not test against this strain */ 
-  circulation_time = strainIsolationTimes[0];
+  circulation_time = infectionTimes[0];
   if(circulation_time > samplingTime) maskedInfectionHistory[0]=0;
   else maskedInfectionHistory[0] = infectionHistory[0];
   waning[0] = MAX(0, 1.0-wane*(samplingTime - circulation_time));
@@ -57,10 +62,10 @@ NumericVector infection_model_indiv(NumericVector theta, NumericVector infection
   /* For strains that circulated before the isolation time,
      add to cumulative infection history */
   //Rcpp::Rcout << "Sampling time: " << samplingTime << std::endl;
-  for(int i=1; i < numberStrains; ++i){
+  for(int i=1; i < max_infections; ++i){
     /* At which time did this strain circulate?
        This might change to a range of times in the future */
-    circulation_time = strainIsolationTimes[i];
+    circulation_time = infectionTimes[i];
     // If circulated after the sample, then could not have been infected
     if(circulation_time > samplingTime){
       maskedInfectionHistory[i]=0;
@@ -88,16 +93,61 @@ NumericVector infection_model_indiv(NumericVector theta, NumericVector infection
       ///////////////////////////////
       // THE ACTUAL MODEL
       tmpTitre += maskedInfectionHistory[i]* // Ignore infections that couldn't have happened
-	            MAX(0, 1.0 - tau*(cumInfectionHistory[i] - 1.0))* // Antigenic seniority
-	            (mu*antigenicMapLong[virusIndices[k]*numberStrains+i] +  // Long term boost
-	            mu_short*antigenicMapShort[virusIndices[k]*numberStrains+i]* // Short term cross reactive boost
-	            waning[i]); // Waning rate
+	MAX(0, 1.0 - tau*(cumInfectionHistory[i] - 1.0))* // Antigenic seniority
+	(mu*antigenicMapLong[measurementMapIndices[k]*numberStrains+infectionMapIndices[i]] +  // Long term boost
+	 mu_short*antigenicMapShort[measurementMapIndices[k]*numberStrains+infectionMapIndices[i]]* // Short term cross reactive boost
+	 waning[i]); // Waning rate
       ////////////////////////////
     }
     predictedTitre[k] = tmpTitre;
   }
   return(predictedTitre);
 }
+//' @export
+//[[Rcpp::export]]
+NumericVector titre_data_individual(NumericVector theta, 
+				    IntegerVector infectionHistory, 
+				    NumericVector circulationTimes, 
+				    IntegerVector circulationMapIndices,
+				    NumericVector samplingTimes,
+				    IntegerVector dataIndices,
+				    IntegerVector measurementMapIndices, 
+				    NumericVector measuredStrainTimes,
+				    NumericVector antigenicMapLong, 
+				    NumericVector antigenicMapShort,
+				    int numberStrains
+				    ){
+  int numberSamples = samplingTimes.size();
+  int numberMeasuredStrains = measuredStrainTimes.size();
+  //NumericMatrix results(numberStrains, 3);
+  NumericVector titres(numberMeasuredStrains);
+  //NumericVector times(numberMeasuredStrains);
+
+  int startIndex = 0;
+  int endIndex = dataIndices[0] - 1;
+
+  LogicalVector indices = infectionHistory > 0;
+
+  IntegerVector conciseInfHist = infectionHistory[indices];
+  NumericVector infectionTimes = circulationTimes[indices];
+  IntegerVector infMapIndices = circulationMapIndices[indices];
+
+  for(int i = 0; i < numberSamples; ++i){ 
+    titres[Range(startIndex, endIndex)] = infection_model_indiv(theta,
+								conciseInfHist,
+								infectionTimes,
+								infMapIndices,
+								samplingTimes[i],
+								measurementMapIndices[Range(startIndex,endIndex)],
+								antigenicMapLong, antigenicMapShort,
+								numberStrains);
+    startIndex = endIndex + 1;
+    endIndex += dataIndices[i];
+  }
+  return(titres);
+}
+
+
 
 //' Calculate likelihood
 //'
@@ -111,6 +161,7 @@ NumericVector infection_model_indiv(NumericVector theta, NumericVector infection
 double likelihood_titre(NumericVector expected, NumericVector data, NumericVector theta){
   int n = expected.size();
   double lnlike = 0;
+  
   for(int i=0; i < n; ++i){
     if(!NumericVector::is_na(data[i])){
       if(data[i] > theta["MAX_TITRE"]){
@@ -125,7 +176,53 @@ double likelihood_titre(NumericVector expected, NumericVector data, NumericVecto
   }
   return(lnlike);
 }
+//' @export
+//[[Rcpp::export]]
+NumericVector likelihood_data_individual(NumericVector theta, 
+					 IntegerVector infectionHistory, 
+					 NumericVector circulationTimes, 
+					 IntegerVector circulationMapIndices,
+					 NumericVector samplingTimes,
+					 IntegerVector dataIndices,
+					 IntegerVector measurementMapIndices, 
+					 NumericVector measuredStrainTimes,
+					 NumericVector antigenicMapLong, 
+					 NumericVector antigenicMapShort,
+					 int numberStrains,
+					 NumericVector data
+				    ){
 
+  int numberSamples = samplingTimes.size();
+  int numberMeasuredStrains = measuredStrainTimes.size();
+  //NumericMatrix results(numberStrains, 3);
+  NumericVector lnlikes(numberMeasuredStrains);
+  NumericVector titres(numberMeasuredStrains);
+  //NumericVector times(numberMeasuredStrains);
+
+  int startIndex = 0;
+  int endIndex = dataIndices[0] - 1;
+
+  LogicalVector indices = infectionHistory > 0;
+
+  IntegerVector conciseInfHist = infectionHistory[indices];
+  NumericVector infectionTimes = circulationTimes[indices];
+  IntegerVector infMapIndices = circulationMapIndices[indices];
+
+  for(int i = 0; i < numberSamples; ++i){ 
+    titres[Range(startIndex, endIndex)] = infection_model_indiv(theta,
+								conciseInfHist,
+								infectionTimes,
+								infMapIndices,
+								samplingTimes[i],
+								measurementMapIndices[Range(startIndex,endIndex)],
+								antigenicMapLong, antigenicMapShort,
+								numberStrains);
+    startIndex = endIndex + 1;
+    endIndex += dataIndices[i];
+  }
+  lnlikes = likelihood_titre(titres, data, theta);
+  return(lnlikes);
+}
 //' Individual likelihood
 //'
 //' Uses \code{\link{infection_model_indiv}} for a single individual and then calls \code{\link{likelihood_titre}}. Works with NA
@@ -157,10 +254,12 @@ double individual_likelihood(NumericVector theta, NumericVector infectionHistory
   int endIndex = indivIndices[0] - 1;
   
   for(int i=0; i < numberSamples; ++i){
-    predictedTitres = infection_model_indiv(theta, infectionHistory, samplingTimes[i],
-					                                  strainIsolationTimes[Range(startIndex, endIndex)], 
-                                            indivVirusIndices[Range(startIndex, endIndex)],
-                                            antigenicMapLong, antigenicMapShort, numberStrains);
+    /*  predictedTitres = infection_model_indiv(theta, infectionHistory, 
+	samplingTimes[i],
+	strainIsolationTimes[Range(startIndex, endIndex)], 
+	indivVirusIndices[Range(startIndex, endIndex)],
+	antigenicMapLong, antigenicMapShort, numberStrains);
+    */
     tmpTitres = titres[Range(startIndex,endIndex)];
     lnlike += likelihood_titre(predictedTitres, tmpTitres,theta);
 
@@ -222,9 +321,9 @@ NumericVector group_likelihood_vector(NumericVector theta, NumericMatrix infecti
                                       strainIsolationTimes[Range(startIndexData,endIndexData)], 
                                                           virusIndices[Range(startIndexData,endIndexData)],
                                       antigenicMapLong, 
-                                      antigenicMapShort, 
-                                      titres[Range(startIndexData,endIndexData)],
-                                            n_strains);
+				       antigenicMapShort, 
+				       titres[Range(startIndexData,endIndexData)],
+				       n_strains);
   }
   return(lnlikes);  
 }
@@ -285,3 +384,4 @@ double group_likelihood_total(NumericVector theta, NumericMatrix infectionHistor
   }
   return(lnlike);  
 }
+

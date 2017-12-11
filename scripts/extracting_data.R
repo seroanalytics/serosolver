@@ -1,7 +1,7 @@
 library(tidyr)
 library(plyr)
-setwd("E:/James/Documents/Fluscape/serosolver")
-fluscapeWD <- "E:/James/Documents/Fluscape"
+setwd("~/Documents/Fluscape/serosolver")
+fluscapeWD <- "~/Documents/Fluscape"
 devtools::load_all()
 setwd(fluscapeWD)
 resolution <- "yearly"
@@ -150,6 +150,6 @@ finalDat <- plyr::ddply(finalDat,.(group,individual,virus,samples),function(x) c
 finalDat <- finalDat[order(finalDat$group,finalDat$individual,finalDat$samples,finalDat$run),c("group","individual","samples","virus","titre","run")]
 
 
-setwd("E:/James/Documents/Fluscape/serosolver")
+setwd("~/Documents/Fluscape/serosolver")
 write.table(finalDat,"data/fluscape_data.csv",sep=",",row.names=FALSE)
 write.table(ages,"data/fluscape_ages.csv",sep=",",row.names=FALSE)

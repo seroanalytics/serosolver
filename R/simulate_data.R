@@ -45,35 +45,23 @@ simulate_group <- function(n_indiv, theta, infectionHistories,
 #' @return a data frame with columns samples, virus and titre of simulated data
 #' @export
 #' @seealso \code{\link{infection_model_indiv}}
-simulate_individual <- function(theta, infectionHistory,
-                                samplingTimes, dataIndices,
-                                strainIsolationTimes, virusIndices,
-                                antigenicMapLong, antigenicMapShort){
-    numberStrains <- length(infectionHistory)
+simulate_individual <- function(theta,
+                                infectionHistory,
+                                samplingTimes,
+                                dataIndices,
+                                strainIsolationTimes,
+                                virusIndices,
+                                antigenicMapLong,
+                                antigenicMapShort,
+                                strains){
+    numberStrains <- length(strains)
     dat <- matrix(ncol=3, nrow=length(strainIsolationTimes))
-    titres <- NULL
-    dates <- NULL
-    ## For each sampling time
-    startIndex <- 1
-    endIndex <- 0
-    
-    for(i in 1:length(samplingTimes)){
-      startIndex <- endIndex + 1
-      endIndex <- endIndex + dataIndices[i]
-      ## Solve the model
-       y <- infection_model_indiv(theta, infectionHistory, samplingTimes[i],
-                                   strainIsolationTimes[startIndex:endIndex], 
-                                   virusIndices[startIndex:endIndex],
-                                   antigenicMapLong, antigenicMapShort,
-                                   numberStrains)
-        
-        
-        ## Add noise to the data
-        #y <- add_noise(y, theta)
-        titres <- c(titres, y)
-        dates <- c(dates, rep(samplingTimes[i],length(strainIsolationTimes[startIndex:endIndex])))
-    }
-    dat[,1] <- dates
+
+    titres <- titre_data_individual(theta, infectionHistory, strains, seq_along(strains)-1, samplingTimes,
+                                    dataIndices, match(strainIsolationTimes, strains)-1, strainIsolationTimes,
+                                    antigenicMapLong, antigenicMapShort, numberStrains)
+   
+    dat[,1] <- rep(samplingTimes, dataIndices)
     dat[,2] <- strainIsolationTimes
     dat[,3] <- titres
     return(dat)
