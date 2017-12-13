@@ -21,8 +21,12 @@ infection_model_indiv <- function(theta, infectionHistory, infectionTimes, infec
 }
 
 #' @export
-titre_data_individual <- function(theta, infectionHistory, circulationTimes, circulationMapIndices, samplingTimes, dataIndices, measurementMapIndices, measuredStrainTimes, antigenicMapLong, antigenicMapShort, numberStrains) {
-    .Call('_serosolver_titre_data_individual', PACKAGE = 'serosolver', theta, infectionHistory, circulationTimes, circulationMapIndices, samplingTimes, dataIndices, measurementMapIndices, measuredStrainTimes, antigenicMapLong, antigenicMapShort, numberStrains)
+titre_data_individual <- function(theta, infectionHistory, circulationTimes, circulationMapIndices, samplingTimes, dataIndices, measuredMapIndices, antigenicMapLong, antigenicMapShort, numberStrains) {
+    .Call('_serosolver_titre_data_individual', PACKAGE = 'serosolver', theta, infectionHistory, circulationTimes, circulationMapIndices, samplingTimes, dataIndices, measuredMapIndices, antigenicMapLong, antigenicMapShort, numberStrains)
+}
+
+titre_data_group <- function(theta, infectionHistories, circulationTimes, circulationMapIndices, samplingTimes, indicesData, indicesDataOverall, indicesSamples, measuredMapIndices, antigenicMapLong, antigenicMapShort) {
+    .Call('_serosolver_titre_data_group', PACKAGE = 'serosolver', theta, infectionHistories, circulationTimes, circulationMapIndices, samplingTimes, indicesData, indicesDataOverall, indicesSamples, measuredMapIndices, antigenicMapLong, antigenicMapShort)
 }
 
 #' Calculate likelihood

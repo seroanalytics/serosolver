@@ -111,14 +111,13 @@ NumericVector titre_data_individual(NumericVector theta,
 				    IntegerVector circulationMapIndices,
 				    NumericVector samplingTimes,
 				    IntegerVector dataIndices,
-				    IntegerVector measurementMapIndices, 
-				    NumericVector measuredStrainTimes,
+				    IntegerVector measuredMapIndices, 
 				    NumericVector antigenicMapLong, 
 				    NumericVector antigenicMapShort,
 				    int numberStrains
 				    ){
   int numberSamples = samplingTimes.size();
-  int numberMeasuredStrains = measuredStrainTimes.size();
+  int numberMeasuredStrains = measuredMapIndices.size();
   //NumericMatrix results(numberStrains, 3);
   NumericVector titres(numberMeasuredStrains);
   //NumericVector times(numberMeasuredStrains);
@@ -133,20 +132,56 @@ NumericVector titre_data_individual(NumericVector theta,
   IntegerVector infMapIndices = circulationMapIndices[indices];
 
   for(int i = 0; i < numberSamples; ++i){ 
-    titres[Range(startIndex, endIndex)] = infection_model_indiv(theta,
-								conciseInfHist,
-								infectionTimes,
-								infMapIndices,
-								samplingTimes[i],
-								measurementMapIndices[Range(startIndex,endIndex)],
-								antigenicMapLong, antigenicMapShort,
-								numberStrains);
+    titres[Range(startIndex, endIndex)] = infection_model_indiv(theta,conciseInfHist,infectionTimes,infMapIndices,
+								samplingTimes[i],measuredMapIndices[Range(startIndex,endIndex)],
+								antigenicMapLong, antigenicMapShort,numberStrains);
     startIndex = endIndex + 1;
     endIndex += dataIndices[i];
   }
   return(titres);
 }
 
+//# @export
+//[[Rcpp::export]]
+NumericVector titre_data_group(NumericVector theta, 
+			       IntegerMatrix infectionHistories, 
+			       NumericVector circulationTimes,
+			       IntegerVector circulationMapIndices,
+			       NumericVector samplingTimes,
+			       IntegerVector indicesData,
+			       IntegerVector indicesDataOverall,
+			       IntegerVector indicesSamples,
+			       IntegerVector measuredMapIndices, 
+			       NumericVector antigenicMapLong, 
+			       NumericVector antigenicMapShort){
+  int n = infectionHistories.nrow();
+  int n_strains = infectionHistories.ncol();
+
+  NumericVector titres(measuredMapIndices.size());
+  
+  // These indices allow us to step through the titre data vector
+  // as if it were a matrix ie. number of rows for each individual
+  // at a time
+  int startIndexSamples;
+  int endIndexSamples;
+  int startIndexData;
+  int endIndexData;
+
+  for(int i=1; i <= n; ++i){
+    startIndexSamples = indicesSamples[i-1];
+    endIndexSamples = indicesSamples[i] - 1;
+
+    startIndexData = indicesDataOverall[i-1];
+    endIndexData = indicesDataOverall[i] - 1;
+    titres[Range(startIndexData, endIndexData)] = titre_data_individual(theta,  infectionHistories(i-1,_),circulationTimes,circulationMapIndices,
+									samplingTimes[Range(startIndexSamples, endIndexSamples)], 
+									indicesData[Range(startIndexSamples,endIndexSamples)], 
+									measuredMapIndices[Range(startIndexData,endIndexData)], 
+									antigenicMapLong, antigenicMapShort,  n_strains);
+  }
+
+  return(titres);
+}
 
 
 //' Calculate likelihood
@@ -314,13 +349,12 @@ NumericVector group_likelihood_vector(NumericVector theta, NumericMatrix infecti
     endIndexSamples -= 1;
     
     lnlikes[i] = individual_likelihood(theta, 
-                                      infectionHistories(i,_),
-                                      samplingTimes[Range(startIndexSamples, endIndexSamples)],
-                                                   indicesData[Range(startIndexSamples,endIndexSamples)],
-                                    
-                                      strainIsolationTimes[Range(startIndexData,endIndexData)], 
-                                                          virusIndices[Range(startIndexData,endIndexData)],
-                                      antigenicMapLong, 
+				       infectionHistories(i,_),
+				       samplingTimes[Range(startIndexSamples, endIndexSamples)],
+				       indicesData[Range(startIndexSamples,endIndexSamples)],
+				       strainIsolationTimes[Range(startIndexData,endIndexData)], 
+				       virusIndices[Range(startIndexData,endIndexData)],
+				       antigenicMapLong, 
 				       antigenicMapShort, 
 				       titres[Range(startIndexData,endIndexData)],
 				       n_strains);
@@ -372,15 +406,15 @@ double group_likelihood_total(NumericVector theta, NumericMatrix infectionHistor
     endIndexSamples -= 1;
     
     lnlike += individual_likelihood(theta, 
-                                       infectionHistories(i,_),
-                                       samplingTimes[Range(startIndexSamples, endIndexSamples)],
-                                                    indicesData[Range(startIndexSamples,endIndexSamples)],
-                                                               strainIsolationTimes[Range(startIndexData,endIndexData)], 
-                                                                                   virusIndices[Range(startIndexData,endIndexData)],
-                                                                                               antigenicMapLong, 
-                                                                                               antigenicMapShort, 
-                                                                                               titres[Range(startIndexData,endIndexData)],
-                                                                                                     n_strains);
+				    infectionHistories(i,_),
+				    samplingTimes[Range(startIndexSamples, endIndexSamples)],
+				    indicesData[Range(startIndexSamples,endIndexSamples)],
+				    strainIsolationTimes[Range(startIndexData,endIndexData)], 
+				    virusIndices[Range(startIndexData,endIndexData)],
+				    antigenicMapLong, 
+				    antigenicMapShort, 
+				    titres[Range(startIndexData,endIndexData)],
+				    n_strains);
   }
   return(lnlike);  
 }

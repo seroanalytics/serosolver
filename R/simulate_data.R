@@ -20,9 +20,16 @@ simulate_group <- function(n_indiv, theta, infectionHistories,
     for(i in 1:n_indiv){
         ## Choose random sampling times
         samps <- sample(sampleTimes, nsamps)
+        samps <- samps[order(samps)]
+        virusSamples <- rep(strainIsolationTimes, length(samps))
+        dataIndices <- rep(length(strainIsolationTimes), length(samps))
+        virusIndices <- match(virusSamples, strainIsolationTimes)-1
         y <- as.data.frame(simulate_individual(theta, infectionHistories[i,],
-                                               samps, strainIsolationTimes, antigenicMapLong,
-                                               antigenicMapShort))
+                                               samps, dataIndices, virusSamples,
+                                               virusIndices,
+                                               antigenicMapLong,
+                                               antigenicMapShort,
+                                               strainIsolationTimes))
         ## Record individual ID
         y$indiv <- i
         colnames(y) <- c("samples","virus","titre","individual")
@@ -58,12 +65,13 @@ simulate_individual <- function(theta,
     dat <- matrix(ncol=3, nrow=length(strainIsolationTimes))
 
     titres <- titre_data_individual(theta, infectionHistory, strains, seq_along(strains)-1, samplingTimes,
-                                    dataIndices, match(strainIsolationTimes, strains)-1, strainIsolationTimes,
+                                    dataIndices, match(strainIsolationTimes, strains)-1,
                                     antigenicMapLong, antigenicMapShort, numberStrains)
    
     dat[,1] <- rep(samplingTimes, dataIndices)
     dat[,2] <- strainIsolationTimes
-    dat[,3] <- titres
+    dat[,3] <- add_noise(titres,theta)
+    #dat[,3] <- titres
     return(dat)
 }
 

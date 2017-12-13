@@ -17,8 +17,10 @@ create_post_func <- function(parTab, data,
   
   ## 
   titres <- data$titre
-  virusIndices <- match(data$virus, antigenicMap$inf_years)
-
+  virusIndices <- match(data$virus, antigenicMap$inf_years) - 1
+  strains <- unique(antigenicMap$inf_years)
+  strainIndices <- match(strains, strains) - 1
+  
   ## Note that the strain isolution times in the data set should have
   ## corresponding indices in the antigenic map table
   strainIsolationTimes <- data$virus
@@ -56,7 +58,17 @@ create_post_func <- function(parTab, data,
   }
   indicesDataOverall <- cumsum(c(0,indicesDataOverall))
   
-  
+  r_likelihood <- function(expected, data, theta){
+    largeI <- data > theta["MAX_TITRE"]
+    smallI <- data <= 0
+    restI <- data > 0 & data <= theta["MAX_TITRE"]
+    
+    large <- pnorm(theta["MAX_TITRE"], expected[largeI],theta["error"],lower.tail=FALSE,log.p=TRUE)
+    small <- pnorm(1, expected[smallI],theta["error"],lower.tail=TRUE,log.p=TRUE)
+    rest <- log(pnorm(data[restI]+1,expected[restI],theta["error"],lower.tail=TRUE,log.p=FALSE) - 
+                  pnorm(data[restI],expected[restI], theta["error"],lower.tail=TRUE,log.p=FALSE))
+    return(sum(large, small, rest))
+  }
   
   ## The function pointer
   f <- function(pars, infectionHistories){
@@ -69,11 +81,10 @@ create_post_func <- function(parTab, data,
       antigenicMapShort[antigenicMapShort < 0] <- 0
 
       ## Now pass to the C++ function
-      return(group_likelihood_vector(pars,infectionHistories,
-                                     indicesSamples, indicesData, indicesDataOverall,
-                                     sampleTimes,strainIsolationTimes, virusIndices,
-                                     antigenicMapLong,antigenicMapShort,
-                                     titres))
+      y <- titre_data_group(pars, infectionHistories, strains, strainIndices, sampleTimes,
+                                 indicesData,indicesDataOverall,indicesSamples, virusIndices, 
+                                 antigenicMapLong, antigenicMapShort)
+      return(r_likelihood(y, titres, pars))
   }
   f
 }
