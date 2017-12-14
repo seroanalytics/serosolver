@@ -70,8 +70,8 @@ simulate_individual <- function(theta,
    
     dat[,1] <- rep(samplingTimes, dataIndices)
     dat[,2] <- strainIsolationTimes
-    dat[,3] <- add_noise(titres,theta)
-    #dat[,3] <- titres
+    #dat[,3] <- add_noise(titres,theta)
+    dat[,3] <- titres
     return(dat)
 }
 

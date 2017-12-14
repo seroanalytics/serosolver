@@ -59,21 +59,21 @@ create_post_func <- function(parTab, data,
   indicesDataOverall <- cumsum(c(0,indicesDataOverall))
   
   r_likelihood <- function(expected, data, theta){
+    liks <- numeric(length(expected))
     largeI <- data > theta["MAX_TITRE"]
     smallI <- data <= 0
     restI <- data > 0 & data <= theta["MAX_TITRE"]
     
-    large <- pnorm(theta["MAX_TITRE"], expected[largeI],theta["error"],lower.tail=FALSE,log.p=TRUE)
-    small <- pnorm(1, expected[smallI],theta["error"],lower.tail=TRUE,log.p=TRUE)
-    rest <- log(pnorm(data[restI]+1,expected[restI],theta["error"],lower.tail=TRUE,log.p=FALSE) - 
+    liks[largeI] <- pnorm(theta["MAX_TITRE"], expected[largeI],theta["error"],lower.tail=FALSE,log.p=TRUE)
+    liks[smallI] <- pnorm(1, expected[smallI],theta["error"],lower.tail=TRUE,log.p=TRUE)
+    liks[restI] <- log(pnorm(data[restI]+1,expected[restI],theta["error"],lower.tail=TRUE,log.p=FALSE) - 
                   pnorm(data[restI],expected[restI], theta["error"],lower.tail=TRUE,log.p=FALSE))
-    return(sum(large, small, rest))
+    return(liks)
   }
   
   ## The function pointer
   f <- function(pars, infectionHistories){
       names(pars) <- mynames
-
       ## Work out short and long term boosting cross reactivity
       antigenicMapLong <- 1-pars["sigma1"]*antigenicMapMelted
       antigenicMapLong[antigenicMapLong < 0] <- 0
@@ -84,7 +84,10 @@ create_post_func <- function(parTab, data,
       y <- titre_data_group(pars, infectionHistories, strains, strainIndices, sampleTimes,
                                  indicesData,indicesDataOverall,indicesSamples, virusIndices, 
                                  antigenicMapLong, antigenicMapShort)
-      return(r_likelihood(y, titres, pars))
+      #return(r_likelihood(y, titres, pars))
+      #liks <- numeric(length(y))
+      #return(liks)
+      return(dnorm(titres,y,sd=pars["error"],1))
   }
   f
 }

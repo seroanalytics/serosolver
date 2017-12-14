@@ -33,6 +33,53 @@ mvr_proposal <- function(values, fixed, covMat, covMat0 = NULL, useLog=FALSE, be
     return(proposed)
 }
 
+#' Infection history proposal group
+#'
+#' Proposes new infection histories for a vector of infection histories, where rows represent individuals and columns represent years. Proposals are either removal, addition or switching of infections.
+#' Also requires the indices of sampled individuals, the vector of strain isolation times, and a vector of age masks (ie. which index of the strainIsolationTimes vector is the first year in which
+#' an individual *could* be infected).
+#' NOTE - MIGHT NEED TO UPDATE THIS FOR GROUPS
+#' @param newInfectionHistories an n*m matrix of 1s & 0s indicating infection histories, where n is individuals and m i strains
+#' @param sampledIndivs the indices of sampled individuals to receive proposals
+#' @param ageMask the vector of indices for each individual specifiying which index of strainIsolationTimes is the first strain each individual could have seen
+#' @param nInfs the number of infections to move/add/remove
+#' @return a new matrix matching newInfectionHistories in dimensions with proposed moves
+#' @export
+infection_history_proposal_group <-function(newInfectionHistories,sampledIndivs,ageMask,nInfs=1){
+    newInf <- newInfectionHistories
+    for(i in sampledIndivs){ # Resample subset of individuals
+        rand1 = runif(1)
+        x=newInfectionHistories[i,ageMask[i]:ncol(newInfectionHistories)] # Only resample years individual was alive
+        
+        if(rand1<1/3){
+            infectID= which(x>0)
+            n <- min(nInfs, length(infectID))
+            if(n>0){
+                x[sample(infectID,n)]=0 # Why double? DEBUG
+            }
+        }
+        ## Add infection
+        if(rand1>1/3 & rand1<2/3){
+            ninfecID=which(x==0)
+            n <- min(nInfs, length(ninfecID))
+            if(n>0){
+                x[sample(ninfecID,n)]=1
+            }
+        }
+        ## Move infection position
+        if(rand1>2/3){
+            infectID=which(x > 0)
+            ninfecID=which(x == 0)
+            n <- min(nInfs, length(infectID), length(ninfecID))
+            if(n){
+                x[sample(infectID,n)]=0
+                x[sample(ninfecID,n)]=1
+            }
+        }
+        newInf[i,ageMask[i]:ncol(newInfectionHistories)]=x # Only =1 if individual was alive
+    } # end loop over individuals
+    newInf
+}
 #' Infection history proposal
 #'
 #' Proposes new infection histories for a vector of infection histories, where rows represent individuals and columns represent years. Proposals are either removal, addition or switching of infections.
@@ -46,6 +93,7 @@ mvr_proposal <- function(values, fixed, covMat, covMat0 = NULL, useLog=FALSE, be
 #' @return a new matrix matching newInfectionHistories in dimensions with proposed moves
 #' @export
 infection_history_proposal <-function(newInfectionHistories,sampledIndivs,strainIsolationTimes,ageMask){
+    newInf <- newInfectionHistories
     for(i in sampledIndivs){ # Resample subset of individuals
         rand1=runif(1)
         x=newInfectionHistories[i,ageMask[i]:length(strainIsolationTimes)] # Only resample years individual was alive
@@ -73,9 +121,9 @@ infection_history_proposal <-function(newInfectionHistories,sampledIndivs,strain
             }
         }
         
-        newInfectionHistories[i,ageMask[i]:length(strainIsolationTimes)]=x # Only =1 if individual was alive
+        newInf[i,ageMask[i]:length(strainIsolationTimes)]=x # Only =1 if individual was alive
     } # end loop over individuals
-    newInfectionHistories
+    newInf
 }
 
 #' Individual infection history sample - for testing

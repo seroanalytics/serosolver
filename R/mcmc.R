@@ -39,6 +39,7 @@ run_MCMC <- function(parTab,
     histSampleProb <- mcmcPars["histSampleProb"] # What proportion of infection histories to sample each step
     switch_sample <- mcmcPars["switch_sample"] # Resample infection histories every n iterations
     burnin <- mcmcPars["burnin"] # Run this many iterations before attempting adaptation. Idea is to reduce getting stuck in local maxima
+    nInfs <- mcmcPars["nInfs"] # Number of infections to move/remove/add in each proposal step
     
     ## Extract parameter settings
     param_length <- nrow(parTab)
@@ -193,11 +194,16 @@ run_MCMC <- function(parTab,
             ## Otherwise, resample infection history
         } else {
             indivSubSample <- sample(1:n_indiv, ceiling(histSampleProb*n_indiv))
-            newInfectionHistories <- infection_history_proposal(infectionHistories, indivSubSample,
-                                                              strainIsolationTimes, ageMask)
+            message(cat("Indiv histories sampled: ", indivSubSample, sep="\t"))
+            #newInfectionHistories <- infection_history_proposal_group(infectionHistories, indivSubSample, ageMask, nInfs)
+            newInfectionHistories <- infection_history_proposal(infectionHistories, indivSubSample, strainIsolationTimes, ageMask)
             ## Calculate new likelihood with these infection histories
-            new_probabs <- posterior_simp(current_pars, newInfectionHistories)
+            message(cat("Diff: ", (sum(infectionHistories-newInfectionHistories)^2),sep="\t"))
+            message(cat("Current pars:", current_pars))
+            new_probabs <- posterior_simp(current_pars, infectionHistories)
             new_probab <- sum(new_probabs)
+            print(sum(probabs))
+            print(sum(new_probabs))
             histiter[indivSubSample] <- histiter[indivSubSample] + 1
         }
 
@@ -212,6 +218,8 @@ run_MCMC <- function(parTab,
         ## Check that all proposed parameters are in allowable range
         ## Skip if any parameters are outside of the allowable range
         if(i %% switch_sample == 0){
+            message(cat("Probab start par:",probab,sep="\t"))
+            message(cat("New probab par:",new_probab,sep="\t"))
             log_prob <- new_probab-probab
             log_prob <- min(log_prob, 0)
             if(is.finite(log_prob) && log(runif(1)) < log_prob){
@@ -228,7 +236,14 @@ run_MCMC <- function(parTab,
                     probab <- new_probab
                 }
             }
+            message(cat("Probab end par:",probab,sep="\t"))
+            message(cat("Proposal: ", proposal, sep="\t"))
+            message(cat("Current pars: ", current_pars, sep="\t"))
         } else {
+            message(cat("Probab start of inf hist:",sum(probabs),sep="\t"))
+            message(cat("New probab inf hist:",sum(new_probabs),sep="\t"))
+            message(cat("Indiv sampled probs before: ", probabs[indivSubSample],sep="\t"))
+            message(cat("Indiv sampled probs after: ", new_probabs[indivSubSample],sep="\t"))
             log_probs <- new_probabs[indivSubSample] - probabs[indivSubSample]
             log_probs[log_probs > 0] <- 0
             x <- log(runif(length(indivSubSample))) < log_probs
@@ -236,6 +251,7 @@ run_MCMC <- function(parTab,
             infectionHistories[x,] <- newInfectionHistories[x,]
             probabs[x] <- new_probabs[x]
             probab <- sum(probabs)
+            message(cat("Probab end of inf hist:",probab,sep="\t"))
             histaccepted[x] <- histaccepted[x] + 1
         }
         
@@ -272,6 +288,7 @@ run_MCMC <- function(parTab,
             message(cat("Step sizes: ", steps,sep="\t"))
             tempaccepted <- tempiter <- reset
             pcurHist <- histaccepted/histiter
+            message(cat("Infection history iter:", histiter,sep="\t"))
             histiter <- histaccepted <- histreset
             message(cat("Infection history pcur: ", pcurHist,sep="\t"))
         }
@@ -298,6 +315,9 @@ run_MCMC <- function(parTab,
                     ##steps <- scaletuning(steps, popt,pcur)
                     steps=max(0.00001,min(1,exp(log(steps)+(pcur-popt)*0.999^(i-burnin))))
                 }
+                pcurHist <- histaccepted/histiter
+                histiter <- histaccepted <- histreset
+                message(cat("Infection history pcur: ", pcurHist,sep="\t"))
                 message(cat("Pcur: ", pcur,sep="\t"))
                 message(cat("Step sizes: ", steps,sep="\t"))
                 tempaccepted <- tempiter <- reset
