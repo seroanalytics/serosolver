@@ -47,9 +47,9 @@ mvr_proposal <- function(values, fixed, covMat, covMat0 = NULL, useLog=FALSE, be
 #' @export
 infection_history_proposal_group <-function(newInfectionHistories,sampledIndivs,ageMask,nInfs=1){
     newInf <- newInfectionHistories
-    for(i in sampledIndivs){ # Resample subset of individuals
+    for(indiv in sampledIndivs){ # Resample subset of individuals
         rand1 = runif(1)
-        x=newInfectionHistories[i,ageMask[i]:ncol(newInfectionHistories)] # Only resample years individual was alive
+        x=newInfectionHistories[indiv,ageMask[indiv]:ncol(newInfectionHistories)] # Only resample years individual was alive
         
         if(rand1<1/3){
             infectID= which(x>0)
@@ -76,9 +76,9 @@ infection_history_proposal_group <-function(newInfectionHistories,sampledIndivs,
                 x[sample(ninfecID,n)]=1
             }
         }
-        newInf[i,ageMask[i]:ncol(newInfectionHistories)]=x # Only =1 if individual was alive
+        newInf[indiv,ageMask[indiv]:ncol(newInfectionHistories)]=x # Only =1 if individual was alive
     } # end loop over individuals
-    newInf
+    return(newInf)
 }
 #' Infection history proposal
 #'
@@ -94,9 +94,9 @@ infection_history_proposal_group <-function(newInfectionHistories,sampledIndivs,
 #' @export
 infection_history_proposal <-function(newInfectionHistories,sampledIndivs,strainIsolationTimes,ageMask){
     newInf <- newInfectionHistories
-    for(i in sampledIndivs){ # Resample subset of individuals
+    for(indiv in sampledIndivs){ # Resample subset of individuals
         rand1=runif(1)
-        x=newInfectionHistories[i,ageMask[i]:length(strainIsolationTimes)] # Only resample years individual was alive
+        x=newInfectionHistories[indiv,ageMask[indiv]:length(strainIsolationTimes)] # Only resample years individual was alive
         ## Remove infection
         if(rand1<1/3){
             infectID= which(x>0)
@@ -121,9 +121,9 @@ infection_history_proposal <-function(newInfectionHistories,sampledIndivs,strain
             }
         }
         
-        newInf[i,ageMask[i]:length(strainIsolationTimes)]=x # Only =1 if individual was alive
+        newInf[indiv,ageMask[indiv]:length(strainIsolationTimes)]=x # Only =1 if individual was alive
     } # end loop over individuals
-    newInf
+    return(newInf)
 }
 
 #' Individual infection history sample - for testing

@@ -72,6 +72,7 @@ simulate_individual <- function(theta,
     dat[,2] <- strainIsolationTimes
     #dat[,3] <- add_noise(titres,theta)
     dat[,3] <- titres
+    #dat[,3] <- rnorm(length(titres),titres,sd=theta["error"])
     return(dat)
 }
 

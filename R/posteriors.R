@@ -8,8 +8,8 @@
 #' @param ... other arguments to pass to the posterior solving function
 #' @return a single function pointer that takes only pars and infectionHistories as unnamed arguments
 #' @export
-create_post_func <- function(parTab, data,
-                             antigenicMap, PRIOR_FUNC,
+create_post_func <- function(parTab, data, antigenicMap,
+                             PRIOR_FUNC,
                              ...){
   pars1 <- parTab$values
   mynames <- parTab$names
@@ -71,6 +71,7 @@ create_post_func <- function(parTab, data,
     return(liks)
   }
   
+  indicesOverallDiff <- diff(indicesDataOverall)
   ## The function pointer
   f <- function(pars, infectionHistories){
       names(pars) <- mynames
@@ -84,10 +85,11 @@ create_post_func <- function(parTab, data,
       y <- titre_data_group(pars, infectionHistories, strains, strainIndices, sampleTimes,
                                  indicesData,indicesDataOverall,indicesSamples, virusIndices, 
                                  antigenicMapLong, antigenicMapShort)
-      #return(r_likelihood(y, titres, pars))
+      #liks <- r_likelihood(y, titres, pars)
       #liks <- numeric(length(y))
       #return(liks)
-      return(dnorm(titres,y,sd=pars["error"],1))
+      liks <- dnorm(titres,y,sd=pars["error"],1)
+      return(zikaInfer::sum_buckets(liks, indicesOverallDiff))
   }
   f
 }
