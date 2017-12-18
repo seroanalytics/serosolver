@@ -45,7 +45,7 @@ mvr_proposal <- function(values, fixed, covMat, covMat0 = NULL, useLog=FALSE, be
 #' @param nInfs the number of infections to move/add/remove
 #' @return a new matrix matching newInfectionHistories in dimensions with proposed moves
 #' @export
-infection_history_proposal_group <-function(newInfectionHistories,sampledIndivs,ageMask,nInfs=1){
+infection_history_proposal_group <-function(newInfectionHistories,sampledIndivs,ageMask,nInfs){
     newInf <- newInfectionHistories
     for(indiv in sampledIndivs){ # Resample subset of individuals
         rand1 = runif(1)
@@ -53,7 +53,7 @@ infection_history_proposal_group <-function(newInfectionHistories,sampledIndivs,
         
         if(rand1<1/3){
             infectID= which(x>0)
-            n <- min(nInfs, length(infectID))
+            n <- min(nInfs[indiv], length(infectID))
             if(n>0){
                 x[sample(infectID,n)]=0 # Why double? DEBUG
             }
@@ -61,7 +61,7 @@ infection_history_proposal_group <-function(newInfectionHistories,sampledIndivs,
         ## Add infection
         if(rand1>1/3 & rand1<2/3){
             ninfecID=which(x==0)
-            n <- min(nInfs, length(ninfecID))
+            n <- min(nInfs[indiv], length(ninfecID))
             if(n>0){
                 x[sample(ninfecID,n)]=1
             }
@@ -70,7 +70,7 @@ infection_history_proposal_group <-function(newInfectionHistories,sampledIndivs,
         if(rand1>2/3){
             infectID=which(x > 0)
             ninfecID=which(x == 0)
-            n <- min(nInfs, length(infectID), length(ninfecID))
+            n <- min(nInfs[indiv], length(infectID), length(ninfecID))
             if(n){
                 x[sample(infectID,n)]=0
                 x[sample(ninfecID,n)]=1

@@ -32,4 +32,4 @@ p1 <- ggplot(antigenicMap) +
     theme_bw()
 
 colnames(fit_dat) <- c("x_coord","y_coord","inf_years")
-write.table(fit_dat,"data/fluscape_map.csv",row.names=FALSE,sep=",")
+write.table(fit_dat,"data/fluscape_map_monthly.csv",row.names=FALSE,sep=",")

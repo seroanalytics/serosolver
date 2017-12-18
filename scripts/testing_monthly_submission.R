@@ -1,8 +1,8 @@
-setwd("E:/James/Documents/Fluscape/serosolver")
+setwd("~/Documents/Fluscape/serosolver")
 devtools::load_all()
 
-parTab <- read.csv("E:/James/Documents/Fluscape/serosolver/inputs/parTab.csv",stringsAsFactors=FALSE)
-antigenicMap <- read.csv("E:/James/Documents/Fluscape/serosolver/data/fluscape_map.csv")
+parTab <- read.csv("~/Documents/Fluscape/serosolver/inputs/parTab.csv",stringsAsFactors=FALSE)
+antigenicMap <- read.csv("~/Documents/Fluscape/serosolver/data/fluscape_map.csv")
 parTab[parTab$names == "wane","values"] <- 0.2
 
 ## How many individual to simulate/use? Leave as NULL if all individuals for real data
@@ -10,9 +10,10 @@ n_indiv <- 100
 
 
 ## Simulation options
-samplingTimes <- (2007:2015)
+samplingTimes <- (1995:2010)
 nsamp <- 2
 
+antigenicMap <- antigenicMap[antigenicMap$inf_years >= 1995,]
 strainIsolationTimes <- unique(antigenicMap$inf_years)
 
 ## Ages between 5 and 80, censor 0% of titres
@@ -25,12 +26,12 @@ data <- dat[["data"]]
 ages <- dat[["ages"]]
 ages <- data.frame(individual=1:n_indiv,DOB=ages)
 data$run <- 1
-testedStrains <- seq(1970,2010,by=5)
+#testedStrains <- seq(1995,2010,by=5)
 #data <- data[data$virus %in% testedStrains,]
 
-mcmcPars <- c("iterations"=10000,"popt"=0.44,"opt_freq"=1000,"thin"=1,"adaptive_period"=5000,
-              "save_block"=100,"thin2"=10,"histSampleProb"=0.01,"switch_sample"=1, "burnin"=1000, 
-              "nInfs"=2)
+mcmcPars <- c("iterations"=50000,"popt"=0.44,"opt_freq"=1000,"thin"=1,"adaptive_period"=10000,
+              "save_block"=100,"thin2"=10,"histSampleProb"=0.1,"switch_sample"=1, "burnin"=1000, 
+              "nInfs"=5)
 
 ## For multivariate proposals
 covMat <- diag(nrow(parTab))
@@ -45,6 +46,7 @@ f <- create_post_func(parTab,data,antigenicMap,NULL)
 
 parTab[parTab$names == "error","fixed"] <- 1
 startTab <- parTab
+#startTab <- parTab[,c("mu","mu_short","tau","wane","sigma1","sigma2","lnlike")]
 #f(parTab$values, infectionHistories)
 for(i in 1:nrow(startTab)){
   if(startTab$fixed[i] == 0){
@@ -56,17 +58,21 @@ for(i in 1:nrow(startTab)){
 res <- lazymcmc::run_MCMC(startTab, data, mcmcPars, filename="test",create_post_func1, NULL, NULL, 0.2, 
                           antigenicMap=antigenicMap, infectionHistories=infectionHistories)
 
-chain_lazy <- read.csv("test_univariate_chain.csv")
+chain_lazy <- read.csv("test_chain.csv")
 library(coda)
 chain_lazy <- as.mcmc(chain_lazy[chain_lazy$sampno > 11000 & chain_lazy$sampno < 60002,])
-#plot(coda::as.mcmc(chain))
+plot(coda::as.mcmc(chain_lazy))
 
-res <- run_MCMC(parTab, data, mcmcPars, filename="test1",create_post_func, mvrPars, NULL, 0.2, antigenicMap, ages, startInfHist=infectionHistories)
+res <- run_MCMC(startTab, data, mcmcPars, filename="test1",create_post_func, mvrPars, NULL, 0.2, antigenicMap, ages, startInfHist=infectionHistories)
 chain_norm <- read.csv(res$chain_file)
-chain_norm <- as.mcmc(chain_norm[chain_norm$sampno > 11000 & chain_norm$sampno < 60002,])
-
+chain_norm <- as.mcmc(chain_norm[chain_norm$sampno > 21000 & chain_norm$sampno < 100002,])
 plot(coda::as.mcmc(chain_norm))
-chains <- mcmc.list(chain_lazy,chain_norm)
+infectionChain <- data.table::fread(res$history_file,data.table=FALSE)
+library(ggplot2)
+colSums(infectionChain[infectionChain$individual == 19,1:(ncol(infectionChain)-2)])/nrow(infectionChain[infectionChain$individual == 19,])
+
+
+chains <- mcmc.list(chain_lazy[,c("mu","mu_short","tau","wane","sigma1","sigma2","lnlike")],chain_norm[,c("mu","mu_short","tau","wane","sigma1","sigma2","lnlike")])
 plot(chains)
 #plot(coda::as.mcmc(chain))
 #plot(coda::as.mcmc(chain))
@@ -74,10 +80,14 @@ plot(chains)
 bestPars <- get_best_pars(chain)
 chain <- chain[chain$sampno >= mcmcPars["adaptive_period"],2:(ncol(chain)-1)]
 covMat <- cov(chain)
-mvrPars <- list(covMat,2.38/sqrt(nrow(parTab[parTab$fixed==0,])),w=0.8)
+mvrPars <- list(covMat,2.38/sqrt(nrow(parTab[parTab$fixed==0,])),w=0.9)
 
 startTab <- parTab
 startTab$values <- bestPars
-res <- run_MCMC(startTab, data, mcmcPars, filename="test1",create_post_func, mvrPars, NULL,0.2, antigenicMap, ages, startInfHist=infectionHistories)
+res1 <- run_MCMC(startTab, data, mcmcPars, filename="test1",create_post_func, mvrPars, NULL,0.2, antigenicMap, ages, startInfHist=infectionHistories)
 chain <- read.csv(res$chain_file)
 plot(coda::as.mcmc(chain))
+
+subSamp <- sample(1:n_indiv,5)
+newInf <- infection_history_proposal_group(infHist, subSamp,ageMask, rep(5,nrow(infectionHistories)))
+

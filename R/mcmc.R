@@ -86,6 +86,7 @@ run_MCMC <- function(parTab,
     individuals <- 1:n_indiv
     groups <- 1:n_groups
     histiter <- histaccepted <- histreset <- integer(n_indiv)
+    nInfs_vec <- rep(nInfs, n_indiv)
     
     ## Create posterior calculating function
     posterior_simp <- protect(CREATE_POSTERIOR_FUNC(parTab,data,
@@ -168,12 +169,6 @@ run_MCMC <- function(parTab,
     ## MCMC ALGORITHM
 #####################
     for(i in 1:(iterations + adaptive_period + burnin)){
-      #message("Start of iterations")
-    #  message(cat("Current pars:", current_pars))
-    #  message(cat("Total inf hist:", sum(infectionHistories),sep="\t"))
-      #message(cat("Sum probabs: ",sum(probabs),sep="\t"))
-      #message(cat("Probab: ", probab, sep="\t"))
-      #message(cat("Calc probab:", sum(posterior_simp(current_pars, infectionHistories)),sep="\t"))
         if(i %% save_block == 0) message(cat("Current iteration: ", i, sep="\t"))
 ######################
         ## PROPOSALS
@@ -201,18 +196,13 @@ run_MCMC <- function(parTab,
             ## Otherwise, resample infection history
         } else {
             indivSubSample <- sample(1:n_indiv, ceiling(histSampleProb*n_indiv))
-           # message(cat("Proposed individuals: ", indivSubSample,sep="\t"))
-           newInfectionHistories <- infection_history_proposal(infectionHistories, indivSubSample, strainIsolationTimes, ageMask)
-           # newInfectionHistories <- infection_history_proposal_group(infectionHistories, indivSubSample,  ageMask, nInfs)
+            #newInfectionHistories <- infection_history_proposal(infectionHistories, indivSubSample, strainIsolationTimes, ageMask)
+            newInfectionHistories <- infection_history_proposal_group(infectionHistories, indivSubSample, ageMask, nInfs_vec)
+
             ## Calculate new likelihood with these infection histories
-            #probab <- posterior_simp(current_pars, infectionHistories)
             new_probabs <- posterior_simp(current_pars, newInfectionHistories)
-        #    print(length(new_probabs))
-          #  message(cat("Probab: ", sum(probabs),sep="\t"))
-          #  message(cat("New probab: ", sum(new_probabs),sep="\t"))
-          #  message(cat("These indices changed: ", which(probabs != new_probabs),sep="\t"))
             new_probab <- sum(new_probabs)
-            histiter <- histiter+ 1
+            histiter[indivSubSample]<- histiter[indivSubSample] + 1
         }
 
 #########################
@@ -242,32 +232,14 @@ run_MCMC <- function(parTab,
                 }
             }
         } else {
-         # message(cat("Old probab: ", probab,sep="\t"))
-        #    message(cat("How many changed: ", sum(new_probabs != probabs), sep="\t"))
-        #    message(cat("How many were proposed: ", length(indivSubSample),sep="\t"))
-            #log_probs <- new_probabs[indivSubSample] - probabs[indivSubSample]
-            log_prob <- new_probab - probab
-            log_prob <- min(log_prob, 0)
-            if(is.finite(log_prob)&&log(runif(1)) < log_prob){
-         #   message(cat("log probs: ",log_probs,sep="\t"))
-            #log_probs[log_probs > 0] <- 0
-            #x <- which(log(runif(length(indivSubSample))) < log_probs)
-          #  message(cat("log probs: ", x, sep="\t"))
-            #changeI <- indivSubSample[x]
-           # message(cat("How many accepted: ",length(changeI),sep="\t"))
-            #infectionHistories[changeI,] <- newInfectionHistories[changeI,]
-          #  message(cat("Correct new probab: ", sum(posterior_simp(current_pars, infectionHistories)),sep="\t"))
-            #probabs[changeI] <- new_probabs[changeI]
-            #probabs <- posterior_simp(current_pars, infectionHistories)
-            #probab <- sum(probabs)
-          #  message(cat("New probab: ", probab,sep="\t"))
-              infectionHistories <- newInfectionHistories
-              probabs <- new_probabs
-              probab <- new_probab
-              histaccepted <- histaccepted + 1
-            }
-          #  message(cat("How many changed end: ", sum(new_probabs != probabs), sep="\t"))
-          #  message("")
+            log_probs <- new_probabs[indivSubSample] - probabs[indivSubSample]
+            log_probs[log_probs > 0] <- 0
+            x <- which(log(runif(length(indivSubSample))) < log_probs)
+            changeI <- indivSubSample[x]
+            infectionHistories[changeI,] <- newInfectionHistories[changeI,]
+            probabs[changeI] <- new_probabs[changeI]
+            probab <- sum(probabs)
+            histaccepted[changeI] <- histaccepted[changeI] + 1
         }
         
 ##############################
@@ -303,7 +275,6 @@ run_MCMC <- function(parTab,
             message(cat("Step sizes: ", steps,sep="\t"))
             tempaccepted <- tempiter <- reset
             pcurHist <- histaccepted/histiter
-            message(cat("Infection history iter:", histiter,sep="\t"))
             histiter <- histaccepted <- histreset
             message(cat("Infection history pcur: ", pcurHist,sep="\t"))
         }
@@ -330,8 +301,15 @@ run_MCMC <- function(parTab,
                     ##steps <- scaletuning(steps, popt,pcur)
                     steps=max(0.00001,min(1,exp(log(steps)+(pcur-popt)*0.999^(i-burnin))))
                 }
+                message(cat("Infection history proposals: ", nInfs_vec, sep="\t"))
                 pcurHist <- histaccepted/histiter
                 histiter <- histaccepted <- histreset
+                nInfs_vec[which(pcurHist < 0.234)] <- nInfs_vec[which(pcurHist < 0.234)] - 1
+                nInfs_vec[which(pcurHist >= 0.234)] <- nInfs_vec[which(pcurHist >= 0.234)] +1
+
+                nInfs_vec[nInfs_vec < 1] <- 1
+                nInfs_vec[nInfs_vec > 20] <- 20
+                
                 message(cat("Infection history pcur: ", pcurHist,sep="\t"))
                 message(cat("Pcur: ", pcur,sep="\t"))
                 message(cat("Step sizes: ", steps,sep="\t"))
