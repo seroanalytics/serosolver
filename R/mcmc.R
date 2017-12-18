@@ -212,7 +212,7 @@ run_MCMC <- function(parTab,
           #  message(cat("New probab: ", sum(new_probabs),sep="\t"))
           #  message(cat("These indices changed: ", which(probabs != new_probabs),sep="\t"))
             new_probab <- sum(new_probabs)
-            histiter[indivSubSample] <- histiter[indivSubSample] + 1
+            histiter <- histiter+ 1
         }
 
 #########################
@@ -245,21 +245,27 @@ run_MCMC <- function(parTab,
          # message(cat("Old probab: ", probab,sep="\t"))
         #    message(cat("How many changed: ", sum(new_probabs != probabs), sep="\t"))
         #    message(cat("How many were proposed: ", length(indivSubSample),sep="\t"))
-            log_probs <- new_probabs[indivSubSample] - probabs[indivSubSample]
-            
+            #log_probs <- new_probabs[indivSubSample] - probabs[indivSubSample]
+            log_prob <- new_probab - probab
+            log_prob <- min(log_prob, 0)
+            if(is.finite(log_prob)&&log(runif(1)) < log_prob){
          #   message(cat("log probs: ",log_probs,sep="\t"))
-            log_probs[log_probs > 0] <- 0
-            x <- log(runif(length(indivSubSample))) < log_probs
+            #log_probs[log_probs > 0] <- 0
+            #x <- which(log(runif(length(indivSubSample))) < log_probs)
           #  message(cat("log probs: ", x, sep="\t"))
-            changeI <- indivSubSample[x]
+            #changeI <- indivSubSample[x]
            # message(cat("How many accepted: ",length(changeI),sep="\t"))
-            infectionHistories[changeI,] <- newInfectionHistories[changeI,]
+            #infectionHistories[changeI,] <- newInfectionHistories[changeI,]
           #  message(cat("Correct new probab: ", sum(posterior_simp(current_pars, infectionHistories)),sep="\t"))
             #probabs[changeI] <- new_probabs[changeI]
-            probabs <- posterior_simp(current_pars, infectionHistories)
-            probab <- sum(probabs)
+            #probabs <- posterior_simp(current_pars, infectionHistories)
+            #probab <- sum(probabs)
           #  message(cat("New probab: ", probab,sep="\t"))
-            histaccepted[changeI] <- histaccepted[changeI] + 1
+              infectionHistories <- newInfectionHistories
+              probabs <- new_probabs
+              probab <- new_probab
+              histaccepted <- histaccepted + 1
+            }
           #  message(cat("How many changed end: ", sum(new_probabs != probabs), sep="\t"))
           #  message("")
         }

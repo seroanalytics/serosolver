@@ -28,8 +28,8 @@ data$run <- 1
 testedStrains <- seq(1970,2010,by=5)
 #data <- data[data$virus %in% testedStrains,]
 
-mcmcPars <- c("iterations"=50000,"popt"=0.44,"opt_freq"=1000,"thin"=1,"adaptive_period"=10000,
-              "save_block"=100,"thin2"=10,"histSampleProb"=0.1,"switch_sample"=2, "burnin"=1000, 
+mcmcPars <- c("iterations"=10000,"popt"=0.44,"opt_freq"=1000,"thin"=1,"adaptive_period"=5000,
+              "save_block"=100,"thin2"=10,"histSampleProb"=0.01,"switch_sample"=1, "burnin"=1000, 
               "nInfs"=2)
 
 ## For multivariate proposals
@@ -61,10 +61,11 @@ library(coda)
 chain_lazy <- as.mcmc(chain_lazy[chain_lazy$sampno > 11000 & chain_lazy$sampno < 60002,])
 #plot(coda::as.mcmc(chain))
 
-res <- run_MCMC(startTab, data, mcmcPars, filename="test1",create_post_func, mvrPars, NULL, 0.2, antigenicMap, ages, startInfHist=infectionHistories)
+res <- run_MCMC(parTab, data, mcmcPars, filename="test1",create_post_func, mvrPars, NULL, 0.2, antigenicMap, ages, startInfHist=infectionHistories)
 chain_norm <- read.csv(res$chain_file)
 chain_norm <- as.mcmc(chain_norm[chain_norm$sampno > 11000 & chain_norm$sampno < 60002,])
 
+plot(coda::as.mcmc(chain_norm))
 chains <- mcmc.list(chain_lazy,chain_norm)
 plot(chains)
 #plot(coda::as.mcmc(chain))
