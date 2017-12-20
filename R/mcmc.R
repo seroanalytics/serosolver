@@ -70,7 +70,7 @@ run_MCMC <- function(parTab,
         steps <- mvrPars[[2]]
         w <- mvrPars[[3]]
     }
-    
+    tempaccepted_lnlike <- tempiter_lnlike <- 0
     ## Setup MCMC chain file with correct column names
     mcmc_chain_file <- paste0(filename,"_chain.csv")
     infectionHistory_file <- paste0(filename,"_infectionHistories.csv")
@@ -169,6 +169,7 @@ run_MCMC <- function(parTab,
     ## MCMC ALGORITHM
 #####################
     for(i in 1:(iterations + adaptive_period + burnin)){
+        tempiter_lnlike <- tempiter_lnlike + 1
         if(i %% save_block == 0) message(cat("Current iteration: ", i, sep="\t"))
 ######################
         ## PROPOSALS
@@ -229,6 +230,7 @@ run_MCMC <- function(parTab,
                     else tempaccepted <- tempaccepted + 1
                     probabs <- new_probabs
                     probab <- new_probab
+                    tempaccepted_lnlike <- tempaccepted_lnlike + 1
                 }
             }
         } else {
@@ -240,6 +242,7 @@ run_MCMC <- function(parTab,
             probabs[changeI] <- new_probabs[changeI]
             probab <- sum(probabs)
             histaccepted[changeI] <- histaccepted[changeI] + 1
+            if(length(x) > 0) tempaccepted_lnlike <- tempaccepted_lnlike + 1
         }
         
 ##############################
@@ -276,7 +279,10 @@ run_MCMC <- function(parTab,
             tempaccepted <- tempiter <- reset
             pcurHist <- histaccepted/histiter
             histiter <- histaccepted <- histreset
-            message(cat("Infection history pcur: ", pcurHist,sep="\t"))
+            message(cat("Mean infection history pcur: ", mean(pcurHist),sep="\t"))
+            pcurLik <- tempaccepted_lnlike/tempiter_lnlike
+            tempaccepted_lnlike <- tempiter_lnlike <- 0
+            message(cat("Lnlike pcur: ", pcurLik,sep="\t"))
         }
         if(i > burnin & i <= (adaptive_period + burnin)){
             ## Current acceptance rate
@@ -310,10 +316,15 @@ run_MCMC <- function(parTab,
                 nInfs_vec[nInfs_vec < 1] <- 1
                 nInfs_vec[nInfs_vec > 20] <- 20
                 
-                message(cat("Infection history pcur: ", pcurHist,sep="\t"))
+                message(cat("Mean infection history pcur: ", mean(pcurHist),sep="\t"))
                 message(cat("Pcur: ", pcur,sep="\t"))
                 message(cat("Step sizes: ", steps,sep="\t"))
                 tempaccepted <- tempiter <- reset
+                pcurLik <- tempaccepted_lnlike/tempiter_lnlike
+                tempaccepted_lnlike <- tempiter_lnlike <- 0
+                #histSampleProb <- scaletuning(histSampleProb, 0.234, mean(pcurHist))
+                message(cat("Lnlike pcur: ", pcurLik,sep="\t"))
+                message(cat("Hist sample prob: ", histSampleProb))
             }
             chain_index <- chain_index + 1
         }

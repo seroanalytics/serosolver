@@ -51,7 +51,7 @@ infection_history_proposal_group <-function(newInfectionHistories,sampledIndivs,
         rand1 = runif(1)
         x=newInfectionHistories[indiv,ageMask[indiv]:ncol(newInfectionHistories)] # Only resample years individual was alive
         
-        if(rand1<1/3){
+        if(rand1<1/4){
             infectID= which(x>0)
             n <- min(nInfs[indiv], length(infectID))
             if(n>0){
@@ -59,7 +59,7 @@ infection_history_proposal_group <-function(newInfectionHistories,sampledIndivs,
             }
         }
         ## Add infection
-        if(rand1>1/3 & rand1<2/3){
+        if(rand1>1/4 & rand1<2/4){
             ninfecID=which(x==0)
             n <- min(nInfs[indiv], length(ninfecID))
             if(n>0){
@@ -67,7 +67,7 @@ infection_history_proposal_group <-function(newInfectionHistories,sampledIndivs,
             }
         }
         ## Move infection position
-        if(rand1>2/3){
+        if(rand1>2/4){
             infectID=which(x > 0)
             ninfecID=which(x == 0)
             n <- min(nInfs[indiv], length(infectID), length(ninfecID))

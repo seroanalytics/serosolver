@@ -1,17 +1,19 @@
+library(ggplot2)
 setwd("~/Documents/Fluscape/serosolver")
 devtools::load_all()
 
-parTab <- read.csv("~/Documents/Fluscape/serosolver/inputs/parTab.csv",stringsAsFactors=FALSE)
+
+parTab <- read.csv("~/Documents/Fluscape/serosolver/inputs/parTab_monthly.csv",stringsAsFactors=FALSE)
 antigenicMap <- read.csv("~/Documents/Fluscape/serosolver/data/fluscape_map_monthly.csv")
 
 ## How many individual to simulate/use? Leave as NULL if all individuals for real data
-n_indiv <- 100
+n_indiv <- 1
 
 ## Simulation options
-samplingTimes <- (1995:2015)*12
-nsamp <- 2
+samplingTimes <- (2010:2015)*12
+nsamp <- 5
 
-antigenicMap <- antigenicMap[antigenicMap$inf_years >= 1995*12,]
+antigenicMap <- antigenicMap[antigenicMap$inf_years >= 1970*12,]
 strainIsolationTimes <- unique(antigenicMap$inf_years)
 
 ## Ages between 5 and 80, censor 0% of titres
@@ -34,33 +36,47 @@ for(i in 1:nrow(infHist)){
 
 data <- simulate_group(n_indiv, pars, infHist, strainIsolationTimes, samplingTimes, nsamp, antigenicMapLong, antigenicMapShort)
 data$run <- 1
-testedStrains <- seq(1995,2010,by=1)
-#data <- data[data$virus %in% testedStrains,]
+#testedStrains <- seq(1970*12,2010*12,by=24)
+data <- data[data$virus %in% testedStrains,]
+dat_plot1 <- ggplot(data[data$individual <= 5,]) + geom_point(aes(x=as.integer(virus),y=titre)) + facet_grid(individual~samples)
+
+startInf <- matrix(0, nrow=n_indiv, ncol=length(strainIsolationTimes))
+for(i in 1:nrow(infHist)){
+  infections <- sample(1:ncol(infHist),rpois(1, 3))
+  startInf[i,infections] <- 1
+}
 
 
-mcmcPars <- c("iterations"=1000000,"popt"=0.44,"opt_freq"=2000,"thin"=1,"adaptive_period"=200000,
-              "save_block"=100,"thin2"=10,"histSampleProb"=1,"switch_sample"=2, "burnin"=10000, 
-              "nInfs"=5)
+mcmcPars <- c("iterations"=100000,"popt"=0.44,"opt_freq"=2000,"thin"=10,"adaptive_period"=100000,
+              "save_block"=100,"thin2"=100,"histSampleProb"=0.05,"switch_sample"=2, "burnin"=0, 
+              "nInfs"=3)
               
             ## For univariate proposals
-mvrPars <- NULL
 
+covMat <- diag(nrow(parTab))
+scale <- 0.01
+w <- 0.99
+mvrPars <- list(covMat, scale, w)
 f <- create_post_func(parTab,data,antigenicMap,NULL)
+#mvrPars <- NULL
 
+set.seed(2)
 startTab <- parTab
 for(i in 1:nrow(startTab)){
   if(startTab$fixed[i] == 0){
     startTab$values[i] <- runif(1,startTab$lower_bound[i],startTab$upper_bound[i])
   }
 }
-ages <- data.frame(individual=1:n_indiv, DOB=1970)
+#startTab[startTab$names == "mu","values"] <- 2
+#startTab[startTab$names == "mu_short","values"] <- 2
+ages <- data.frame(individual=1:n_indiv, DOB=1970*12)
 
 #res <- lazymcmc::run_MCMC(startTab, data, mcmcPars, filename="test",create_post_func, NULL, NULL, 0.2, 
 #                          antigenicMap=antigenicMap, infectionHistories=infectionHistories)
 res <- run_MCMC(startTab, data, mcmcPars, filename="test1",
                 create_post_func, mvrPars, NULL, 0.2, 
                 antigenicMap, ages, 
-                startInfHist=NULL)
+                startInfHist=startInf)
 
 #chain <- read.csv(res$chain_file)
 #bestI <- floor((which.max(chain$lnlike) / 10))*10 + 1

@@ -15,6 +15,7 @@ create_post_func <- function(parTab, data, antigenicMap,
   mynames <- parTab$names
   names(pars1) <- parTab$names
   
+  
   ## 
   titres <- data$titre
   virusIndices <- match(data$virus, antigenicMap$inf_years) - 1
@@ -85,10 +86,11 @@ create_post_func <- function(parTab, data, antigenicMap,
       y <- titre_data_group(pars, infectionHistories, strains, strainIndices, sampleTimes,
                                  indicesData,indicesDataOverall,indicesSamples, virusIndices, 
                                  antigenicMapLong, antigenicMapShort)
-      #liks <- r_likelihood(y, titres, pars)
+      liks <- r_likelihood(y, titres, pars)
+      #return(list(liks, y, titres))
       #liks <- numeric(length(y))
       #return(liks)
-      liks <- dnorm(titres,y,sd=pars["error"],1)
+      #liks <- dnorm(titres,y,sd=pars["error"],1)
       return(zikaInfer::sum_buckets(liks, indicesOverallDiff))
   }
   f
