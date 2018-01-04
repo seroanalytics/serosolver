@@ -2,6 +2,10 @@
 generate_all_plots <- function(outputDir, adaptive_period, chainFile, infHistFile,
                                titreDat, antigenicMap, parTab, ages, nIndiv=10,nSamp=1000,
                                filename="test"){
+  
+    # DEBUG
+    # outputDir; adaptive_period = mcmcPars["adaptive_period"]; chainFile = res$chain_file; infHistFile = res$history_file; titreDat = data; nIndiv = 10; nSamp = 100; filename = "tests/testing"
+  
     strainIsolationTimes <- unique(antigenicMap$inf_years)
     chain <- read.csv(chainFile)
     infectionHistories <- data.table::fread(infHistFile,data.table=FALSE)
@@ -48,7 +52,7 @@ get_titre_predictions <- function(chain, infectionHistories, dat,
         tmpDat <- tmpDat[complete.cases(tmpDat),]
         #age <- as.numeric(ages[ages$individual == indiv,"age"])
         birthYear <- as.numeric(ages[ages$individual == indiv,"DOB"])
-        tmpSamp <- sample(intersect(unique(tmpInfHist$sampno),unique(chain$sampno)),nsamp)
+        tmpSamp <- sample(intersect(unique(tmpInfHist$sampno),unique(chain$sampno)),nsamp,replace=T) # AK: add replace
         for(sampleTime in unique(tmpDat$samples)){
             predicted_titres <- matrix(nrow=nsamp,ncol=length(strainIsolationTimes))
             tmpIHist <- tmpInfHist
