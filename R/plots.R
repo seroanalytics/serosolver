@@ -210,7 +210,7 @@ plot_attack_rates <- function(infectionHistories, dat, ages, yearRange){
 
 #' @export
 plot_number_infections <- function(infectionHistories){
-    indivHist <- plyr::ddply(infectionHistories,.(individual),function(x) quantile(rowSums(x[,1:47]),c(0.025,0.5,0.975)))
+    indivHist <- plyr::ddply(infectionHistories,.(individual),function(x) quantile(rowSums(x),c(0.025,0.5,0.975)))
     colnames(indivHist) <- c("individual","lower","median","upper")
     indivHist <- indivHist[order(indivHist$median),]
     indivHist$individual <- 1:nrow(indivHist)
@@ -224,4 +224,35 @@ plot_number_infections <- function(infectionHistories){
         theme_bw() +
         theme(text=element_text(family="Arial"))
     return(p)
+}
+
+#' @export
+plot_data <- function(data, infectionHistories, strainIsolationTimes, n_samps, startInf=NULL){
+    indivs <- unique(data$individual)
+    infHist <- as.data.frame(cbind(indivs, infectionHistories))
+    colnames(infHist) <- c("individual",strainIsolationTimes)
+    meltedInfHist <- reshape2::melt(infHist, id.vars="individual")
+    meltedInfHist$variable <- as.numeric(as.character(meltedInfHist$variable))
+    meltedInfHist <- meltedInfHist[meltedInfHist$value > 0,]
+    samps <- sample(unique(data$individual), n_samps)
+
+    
+    
+    p1 <- ggplot(data[data$individual %in% samps,]) +
+        geom_point(aes(x=as.integer(virus),y=titre)) +
+        #geom_vline(aes(xintercept=samples), col="red",linetype="dashed") +
+        geom_vline(data=meltedInfHist[meltedInfHist$individual %in% samps,], aes(xintercept=variable), col="red",linetype="dashed")+
+        theme_bw()
+    
+    if(!is.null(startInf)){
+        startInfHist <- as.data.frame(cbind(indivs, startInf))
+        colnames(startInfHist) <- c("individual",strainIsolationTimes)
+        meltedStartHist <- reshape2::melt(startInfHist, id.vars="individual")
+        meltedStartHist$variable <- as.numeric(as.character(meltedStartHist$variable))
+        meltedStartHist <- meltedStartHist[meltedStartHist$value > 0,]
+        p1 <- p1 + geom_vline(data=meltedStartHist[meltedStartHist$individual %in% samps,], aes(xintercept=variable), col="blue",linetype="dashed")
+    }
+    p1 <- p1 +
+        facet_grid(individual~samples)
+    return(p1)
 }

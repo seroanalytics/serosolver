@@ -61,7 +61,6 @@ NumericVector infection_model_indiv(NumericVector theta,
 
   /* For strains that circulated before the isolation time,
      add to cumulative infection history */
-  //Rcpp::Rcout << "Sampling time: " << samplingTime << std::endl;
   for(int i=1; i < max_infections; ++i){
     /* At which time did this strain circulate?
        This might change to a range of times in the future */
@@ -86,9 +85,9 @@ NumericVector infection_model_indiv(NumericVector theta,
   for(int k=0; k < n_samples; ++k){
     tmpTitre=0;
     // Sum contributions from all infections
-    // Note that virusIndices[k] finds the correct entry in the
-    // antigenicMap vector for the *tested* strain, whereas
-    // i finds the entry for the *infecting* strain
+    // Note that measurementMapIndices[k] finds the correct entry in the
+    // antigenicMap vector for the *tested* strain (row), whereas
+    // infectionMapIndices[i] finds the entry for the *infecting* strain (column)
     for(int i=0; i < max_infections; ++i){
       ///////////////////////////////
       // THE ACTUAL MODEL

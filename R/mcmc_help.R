@@ -33,6 +33,76 @@ mvr_proposal <- function(values, fixed, covMat, covMat0 = NULL, useLog=FALSE, be
     return(proposed)
 }
 
+#' @export
+infection_history_proposal_smart <- function(infectionHistories, sampledIndivs, ageMask, noJumps){
+    newInf <- infectionHistories
+    maxI <- ncol(newInf)
+    for(i in seq_along(sampledIndivs)){
+        indiv <- sampledIndivs[i]
+        x = newInf[indiv, ageMask[indiv]:maxI]
+        for(j in 1:noJumps[i]){
+            rand1 = runif(1)
+            if(rand1 < 1/2){
+                id1 <- sample(length(x),1)
+                x[id1] <- !x[id1]
+            } else {
+                id1 <- sample(length(x),1)
+                moveMax <- 5
+                ##       
+                move <- sample(-moveMax:moveMax,1)
+                id2 <- id1 + move
+                                        #
+                if(id2 < 1) id2 <- maxI + id2
+                if(id2 > maxI) id2 <- id2 - maxI
+                
+                                        #                    x[infectID]=x[naiveID]
+                                        #                   x[naiveID]=1
+                tmp <- x[id1]
+                x[id1] <- x[id2]
+                x[id2] <- tmp        
+            }
+            ## Remove infection
+                                        #if(rand1 < 1/3){
+            #    ## Find location of an infection
+            #    infectID = which(x < 0)
+            #    ## Only do this is there is an infection to be removed!
+            #    if(length(infectID) > 0){
+            #        x[sample(infectID,1)]=0
+            #    }
+            #    ## Add infection
+            #}
+            #if(rand1 > 1/3  & rand1 < 2/3){
+            #    ## Find year where no infection occured
+            #    naiveID = which(x == 0)
+            #    ## Only do this if there is a naive location
+            #    if(length(naiveID) > 0){
+            #        x[sample(naiveID,1)]=1
+            #    }
+            #    ## Move infection
+            #}
+                                        #if(rand1 > 2/3){
+                                        #    infectID = which(x > 0)
+                                        #    if(length(infectID) > 0){
+                                        #        if(length(infectID) > 1) infectID <- sample(infectID, 1)
+                                        #       moveMax <- 5
+            ##       
+                                        #       move <- sample(-moveMax:moveMax,1)
+                                        #       naiveID <- infectID + move
+                                        #
+            ##                    if(naiveID < 1) naiveID <- maxI + naiveID
+                                        #                    if(naiveID > maxI) naiveID <- naiveID - maxI##
+
+                                        #                    x[infectID]=x[naiveID]
+                                        #                   x[naiveID]=1
+                                        #              }
+                                        #             
+                                        #        }
+        }
+        newInf[indiv,ageMask[indiv]:maxI]=x # Only =1 if individual was alive
+    } # end loop over individuals
+    return(newInf)
+}
+
 #' Infection history proposal group
 #'
 #' Proposes new infection histories for a vector of infection histories, where rows represent individuals and columns represent years. Proposals are either removal, addition or switching of infections.
@@ -80,6 +150,50 @@ infection_history_proposal_group <-function(newInfectionHistories,sampledIndivs,
     } # end loop over individuals
     return(newInf)
 }
+
+
+#' @export
+infection_history_betabinom <- function(newInfHist, sampledIndivs, ageMask, alpha=2, beta=18){
+    newInf <- newInfHist
+    maxI <- ncol(newInf)
+    for(indiv in sampledIndivs){
+        x <- newInfHist[indiv, ageMask[indiv]:ncol(newInfHist)]
+        rand1 <- runif(1)
+        if(rand1 < 1/2){
+            loc <- sample(length(x), 1)
+            
+            prob1 <- (alpha+sum(x[-loc]))/(alpha+beta+(length(x)-1))
+            if(runif(1)<prob1){
+                x[loc] <- 1
+            } else {
+                x[loc] <- 0
+            }
+        } else {
+            id1 <- sample(length(x),1)
+            moveMax <- 5
+            ##       
+            move <- sample(-moveMax:moveMax,1)
+            id2 <- id1 + move
+                                        #
+            if(id2 < 1) id2 <- maxI + id2
+            if(id2 > maxI) id2 <- id2 - maxI
+            
+                                        #                    x[infectID]=x[naiveID]
+                                        #                   x[naiveID]=1
+            tmp <- x[id1]
+            x[id1] <- x[id2]
+            x[id2] <- tmp       
+           # id1 <- sample(length(x),1)
+           # id2 <- sample(length(x),1)
+           # tmp <- x[id1]
+           # x[id1] <- x[id2]
+           # x[id2] <- tmp       
+        }
+        newInf[indiv,ageMask[indiv]:length(strainIsolationTimes)]=x
+    }
+    return(newInf)
+}
+
 #' Infection history proposal
 #'
 #' Proposes new infection histories for a vector of infection histories, where rows represent individuals and columns represent years. Proposals are either removal, addition or switching of infections.
@@ -94,31 +208,75 @@ infection_history_proposal_group <-function(newInfectionHistories,sampledIndivs,
 #' @export
 infection_history_proposal <-function(newInfectionHistories,sampledIndivs,strainIsolationTimes,ageMask){
     newInf <- newInfectionHistories
+    acceptance_distribution <- rep(1, nrow(newInf))
     for(indiv in sampledIndivs){ # Resample subset of individuals
         rand1=runif(1)
         x=newInfectionHistories[indiv,ageMask[indiv]:length(strainIsolationTimes)] # Only resample years individual was alive
+        accept <- 0
+      
         ## Remove infection
         if(rand1<1/3){
             infectID= which(x>0)
-            if(length(infectID)>0){
+                                        # Number of 1s in first place
+            n_1 <- length(infectID)
+            if(n_1 > 0){
                 x[sample(infectID,1)]=0 # Why double? DEBUG
+                n_0 <- length(which(x==0))
+                p_forward <- 1/3 * 1/n_1
+                p_back <- 1/3 * 1/n_0
+                accept <- (p_back/p_forward)
             }
         }
         ## Add infection
         if(rand1>1/3 & rand1<2/3){
             ninfecID=which(x==0)
-            if(length(ninfecID)>0){
+            n_0 <- length(ninfecID)
+            if(n_0>0){
                 x[sample(ninfecID,1)]=1
+                n_1 <- length(which(x==1))
+                p_forward <- 1/3 * 1/n_0
+                p_back <- 1/3 * 1/n_1
+                accept <- (p_back/p_forward)
             }
         }
         ## Move infection position
         if(rand1>2/3){
             infectID=which(x > 0)
             ninfecID=which(x == 0)
-            if(length(infectID)>0 & length(ninfecID)>0){
+            n_1 <- length(infectID)
+            n_0 <- length(ninfecID)
+            if(n_1 > 0 & n_0 > 0){
                 x[sample(infectID,1)]=0
                 x[sample(ninfecID,1)]=1
+                p_forward <- 1/3 * n_1 * n_0
+                
+                n_1b <- length(which(x > 0))
+                n_0b <- length(which(x==0))
+                p_back <- 1/3 * n_1b * n_0b
+                accept <- (p_back/p_forward)
             }
+        }
+        acceptance_distribution[indiv] <- accept
+        newInf[indiv,ageMask[indiv]:length(strainIsolationTimes)]=x # Only =1 if individual was alive
+    } # end loop over individuals
+return(list(newInf, acceptance_distribution))
+}
+
+#' @export
+infection_history_proposal_correct <-function(newInfectionHistories,sampledIndivs,strainIsolationTimes,ageMask){
+    newInf <- newInfectionHistories
+    for(indiv in sampledIndivs){ # Resample subset of individuals
+        rand1=runif(1)
+        x=newInfectionHistories[indiv,ageMask[indiv]:length(strainIsolationTimes)] # Only resample years individual was alive
+        if(rand1 < 1/2){
+            id1 <- sample(length(x),1)
+            x[id1] <- !x[id1]
+        } else {
+            id1 <- sample(length(x),1)
+            id2 <- sample(length(x),1)
+            tmp <- x[id1]
+            x[id1] <- x[id2]
+            x[id2] <- tmp        
         }
         
         newInf[indiv,ageMask[indiv]:length(strainIsolationTimes)]=x # Only =1 if individual was alive
@@ -131,7 +289,8 @@ infection_history_proposal <-function(newInfectionHistories,sampledIndivs,strain
 #' @export
 sample_indiv <- function(x){
     rand1=runif(1)
-    
+   
+        
     ## Remove infection
     if(rand1<1/3){
         infectID= which(x>0)
@@ -234,12 +393,13 @@ ComputeProbability<-function(marg_likelihood,marg_likelihood_star){
 #' @param ageMask vector of indices for each individual corresponding to the first index of the strainIsolationTimes vector that each individual could be infected with
 #' @return an nxm matrix of infection histories containing 1s and 0s, where n is the number of individuals and m is the number of potential infecting strains
 #' @export
-setup_infection_histories<- function(dat, strainIsolationTimes, ageMask){
+setup_infection_histories<- function(dat, strainIsolationTimes, ageMask,sample_prob, titre_cutoff=3){
     # 
-    SAMPLE_PROB <- 0.2
+    SAMPLE_PROB <- sample_prob
     n_indiv <- length(unique(dat$individual))
     n_strain <- length(strainIsolationTimes)
-    samplingTimes <- unique(dat$sample)
+    samplingTimes <- unique(dat$samples)
+    sampleTime <- max(samplingTimes)
     infectionHistories <- matrix(0,nrow=n_indiv,ncol=n_strain)
     
     index <- 1
@@ -247,28 +407,20 @@ setup_infection_histories<- function(dat, strainIsolationTimes, ageMask){
     tmpInfHistIndiv <- matrix(0,nrow=length(samplingTimes),ncol=n_strain)
     for(indiv in unique(dat$individual)){
         ## For each sampling time
-        index1 <- 1
-        for(sampleTime in unique(dat$sample)){
-            ## For each strain
-            tmpInfHist <- numeric(n_strain)
-            index2 <- 1
-            for(strain in unique(dat$strain)){
-                tmpTitre <- dat[dat$strain == strain &
-                                dat$sample == sampleTime &
-                                dat$individual == indiv,"titre"]
-                tmpInf <- 0
-                # If high titre, set infection presence to 1 with some probability (0.2)
-                if(!is.na(tmpTitre) && (tmpTitre >= 4 & runif(1) > SAMPLE_PROB)){
-                    tmpInf <- 1
-                }
-                tmpInfHist[index2] <- tmpInf
-                index2 <- index2 + 1
+        tmpInfHist <- numeric(n_strain)
+        index2 <- 1
+        for(strain in strainIsolationTimes){
+            tmpTitre <- max(dat[dat$virus == strain &
+                                dat$individual == indiv,"titre"], 0)
+            tmpInf <- 0
+                                        # If high titre, set infection presence to 1 with some probability (0.2)
+            if(!is.na(tmpTitre) && (tmpTitre >= titre_cutoff & runif(1) > SAMPLE_PROB)){
+                tmpInf <- 1
             }
-            tmpInfHistIndiv[index1,] <- tmpInfHist
-            index1 <- index1 + 1
+            tmpInfHist[index2] <- tmpInf
+            index2 <- index2 + 1
         }
-
-        infectionHistories[index,] <- as.numeric(colSums(tmpInfHistIndiv) > 0)
+        infectionHistories[index,] <- tmpInfHist
         ## Add infection at some point in the last 10 years
         forcedInfection <- which(strainIsolationTimes==sample(strainIsolationTimes[strainIsolationTimes <= sampleTime & strainIsolationTimes >= (sampleTime-10)],1))
         ## Pick strain within plausible region to add
@@ -279,4 +431,58 @@ setup_infection_histories<- function(dat, strainIsolationTimes, ageMask){
     }
     infectionHistories
 
+}
+
+setup_infection_histories_new <- function(data, strainIsolationTimes, space=5, titre_cutoff=2){
+  startInf <- NULL
+  individuals <- unique(data$individual)
+  for(individual in individuals){
+    dat <- data[data$individual == individual,]
+    strains <- unique(dat$virus)
+    infYears <- NULL
+    i <- 0
+    while(i < length(strains)){ ## Start going through each strain
+      i <- i + 1
+      strain <- strains[i] ## Get current strain of interest
+      #message(cat("Strain under consideration: ", strain, sep="\t"))
+      measurement <- -1
+      dist <- 0
+      
+      titre <- max(dat[dat$virus == strain, "titre"]) ## Get max titre against this strain
+      if(titre >= titre_cutoff){ ## If elevated against this strain, assume an infection
+       # message(cat("Elevated titre against: ", strain,sep="\t"))
+        newInf <- strain
+        ## Begin counting up distance
+        while(dist < space & i < length(strains)){
+          i <- i + 1
+          strain <- strains[i]
+          #message(cat("Strain under consideration: ", strain, sep="\t"))
+          dist <- strain - newInf ## How many years since last infection?
+          new_titre <- max(dat[dat$virus == strain, "titre"]) ## Get max titre against next strain along
+          ## If this one is better, replace and reset distance
+          if(new_titre > titre){
+            #message(cat("Better titre against: ", strain, "; at: ",new_titre,sep="\t"))
+            newInf <- strain
+            titre <- new_titre
+            dist <- 0
+          }
+        }
+        infYears <- c(infYears, newInf)
+        dist <- 0
+        measurement <- -1
+      }
+    }
+    infections <- rep(0, length(strainIsolationTimes))
+    infections[match(infYears, strainIsolationTimes)] <- 1
+    startInf <- rbind(startInf, infections)
+  }
+  colnames(startInf) <- strainIsolationTimes
+  rownames(startInf) <- NULL
+  return(startInf)
+}
+
+#' @export
+create_age_mask <- function(ages, strainIsolationTimes, n_indiv){
+    
+    return(ageMask)
 }

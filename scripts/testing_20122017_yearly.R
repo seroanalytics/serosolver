@@ -1,7 +1,11 @@
 library(ggplot2)
+library(coda)
+library(plyr)
+library(reshape2)
+
 setwd("~/Documents/Fluscape/serosolver")
 devtools::load_all()
-monthly <- TRUE
+monthly <- FALSE
 
 if(!monthly){
   parTab <- read.csv("~/Documents/Fluscape/serosolver/inputs/parTab.csv",stringsAsFactors=FALSE)
@@ -10,9 +14,13 @@ if(!monthly){
   parTab <- read.csv("~/Documents/Fluscape/serosolver/inputs/parTab_monthly.csv",stringsAsFactors=FALSE)
   antigenicMap <- read.csv("~/Documents/Fluscape/serosolver/data/fluscape_map_monthly.csv")
 }
+#parTab$fixed <- 1
+#parTab[parTab$names == "error","fixed"] <- 0
+parTab[parTab$names == "mu","fixed"] <- 0
 
+startTab <- parTab
 ## How many individual to simulate/use? Leave as NULL if all individuals for real data
-n_indiv <- 25
+n_indiv <- 10
 
 ## Simulation options
 samplingTimes <- (2010:2015)
@@ -36,13 +44,12 @@ antigenicMapShort <- 1 - pars["sigma2"]*c(antigenicMap1)
 antigenicMapLong[antigenicMapLong < 0] <- 0
 antigenicMapShort[antigenicMapShort < 0] <- 0
 
-
 infHist <- matrix(0, nrow=n_indiv, ncol=length(strainIsolationTimes))
 for(i in 1:nrow(infHist)){
   infections <- sample(1:ncol(infHist),rpois(1, 3))
   infHist[i,infections] <- 1
 }
-
+colnames(infHist) <- strainIsolationTimes
 data <- simulate_group(n_indiv, pars, infHist, strainIsolationTimes, samplingTimes, nsamp, antigenicMapLong, antigenicMapShort)
 data$run <- 1
 if(monthly){
@@ -50,88 +57,73 @@ if(monthly){
 } else {
   testedStrains <- seq(1970,2010,by=1)
 }
-#data <- data[data$virus %in% testedStrains,]
-dat_plot1 <- ggplot(data[data$individual <= 5,]) + geom_point(aes(x=as.integer(virus),y=titre)) + facet_grid(individual~samples)
-
-startInf <- matrix(0, nrow=n_indiv, ncol=length(strainIsolationTimes))
-for(i in 1:nrow(infHist)){
-  infections <- sample(1:ncol(infHist),rpois(1, 5))
-  startInf[i,infections] <- 1
-}
-set.seed(2)
-startTab <- parTab
-for(i in 1:nrow(startTab)){
-  if(startTab$fixed[i] == 0){
-    startTab$values[i] <- runif(1,startTab$lower_bound[i],startTab$upper_bound[i])
-  }
-}
-
-startInf <- setup_infection_histories(data, strainIsolationTimes, rep(1,n_indiv),0.05)
+#startInf <- setup_infection_histories(data, strainIsolationTimes, rep(1,n_indiv),0.2, titre_cutoff = 4)
+startInf <- setup_infection_histories_new(data, strainIsolationTimes, space=5,titre_cutoff=3)
+p <- plot_data(data, infHist, strainIsolationTimes, 5, startInf)
+#startInf <- infectionHistories <- infHist
 infectionHistories <- startInf
-f1 <- create_post_func1(parTab,data,antigenicMap,NULL,infectionHistories=startInf)
-startPar <- optifix(startTab$values, c(FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, TRUE, FALSE), 
-                    f1,method="Nelder-Mead", control=list(maxit=10000,abstol=1e-4))$fullpars
-startPar <- as.numeric(Map(max, startPar, parTab$lower_start))
-startPar <- as.numeric(Map(min, startPar, parTab$upper_start))
-
-mcmcPars <- c("iterations"=100000,"popt"=0.44,"opt_freq"=2000,"thin"=10,"adaptive_period"=50000,
-              "save_block"=100,"thin2"=100,"histSampleProb"=0.1,"switch_sample"=2, "burnin"=0, 
+f1 <- create_post_func1(startTab,data,antigenicMap,NULL,infectionHistories=startInf)
+startPar <- DEoptim::DEoptim(f1, lower=parTab$lower_bound, upper=parTab$upper_bound,control=list(itermax=200))$optim$bestmem
+#startPar <- parTab$values
+#startPar[1] <- 0.8
+mcmcPars <- c("iterations"=500000,"popt"=0.234,"opt_freq"=5000,"thin"=10,"adaptive_period"=200000,
+              "save_block"=100,"thin2"=100,"histSampleProb"=0.2,"switch_sample"=2, "burnin"=50000, 
               "nInfs"=1)
               
             ## For univariate proposals
 
 covMat <- diag(nrow(parTab))
 scale <- 0.8
-w <- 0.9
+w <- 0.5
 mvrPars <- list(covMat, scale, w)
 f <- create_post_func(parTab,data,antigenicMap,NULL)
 
-mvrPars <- NULL
+#mvrPars <- NULL
 
-
-#startTab[startTab$names == "mu","values"] <- 2
-#startTab[startTab$names == "mu_short","values"] <- 2
 startTab$values <- startPar
+#startTab[which(startTab$fixed == 1),"values"] <- parTab[which(parTab$fixed == 1),"values"]
+
 ages <- data.frame(individual=1:n_indiv, DOB=1970)
 if(monthly) ages$DOB <- ages$DOB*12
   
-#res <- lazymcmc::run_MCMC(startTab, data, mcmcPars, filename="test",create_post_func1, NULL, NULL, 0.2, 
-#                          antigenicMap=antigenicMap, infectionHistories=infHist)
-res <- run_MCMC(startTab, data, mcmcPars, filename="monthly",
+res <- run_MCMC(startTab, data, mcmcPars, filename="test1",
                 create_post_func, mvrPars, NULL, 0.2, 
-                antigenicMap, ages, 
+                antigenicMap, ages=NULL, 
                 startInfHist=startInf)
 beepr::beep(sound=4)
-chain <- read.csv(res$chain_file)
-chain <- chain[chain$sampno >= (mcmcPars["adaptive_period"]+mcmcPars["burnin"]),]
-infChain <- data.table::fread(res$history_file,data.table=FALSE)
-infChain <- infChain[infChain$sampno >= (mcmcPars["adaptive_period"]+mcmcPars["burnin"]),]
-chain <- chain[chain$sampno %in% infChain$sampno,]
-bestI <- chain[which.max(chain$lnlike),"sampno"]
-bestPars <- get_best_pars(chain)
-covMat <- cov(chain)
-#mvrPars <- list(covMat,2.38/sqrt(nrow(parTab[parTab$fixed==0,])),w=0.99)
-mvrPars <- list(covMat,0.01,w=0.99)
-startTab <- parTab
-startTab$values <- bestPars
-bestInf <- as.matrix(infChain[infChain$sampno == bestI, 1:(ncol(infChain)-2)])
 
-mcmcPars <- c("iterations"=100000,"popt"=0.234,"opt_freq"=2000,"thin"=10,"adaptive_period"=50000,
-              "save_block"=100,"thin2"=100,"histSampleProb"=0.1,"switch_sample"=2, "burnin"=0, 
-              "nInfs"=1)
-res <- run_MCMC(startTab, data, mcmcPars, filename="monthly2",
-                create_post_func, mvrPars, NULL, 0.2, 
-                antigenicMap, ages, 
-                startInfHist=bestInf)
+#chain <- read.csv(res$chain_file)
+#chain <- chain[chain$sampno >= (mcmcPars["adaptive_period"]+mcmcPars["burnin"]),]
+#infChain <- data.table::fread(res$history_file,data.table=FALSE)
+#infChain <- infChain[infChain$sampno >= (mcmcPars["adaptive_period"]+mcmcPars["burnin"]),]
+#chain <- chain[chain$sampno %in% infChain$sampno,]
+#bestI <- chain[which.max(chain$lnlike),"sampno"]
+#bestPars <- get_best_pars(chain)
+#covMat <- cov(chain)
+#mvrPars <- list(covMat,2.38/sqrt(nrow(parTab[parTab$fixed==0,])),w=0.99)
+#mvrPars <- list(covMat,0.16,w=0.98)
+#startTab <- parTab
+#startTab$values <- bestPars
+#bestInf <- as.matrix(infChain[infChain$sampno == bestI, 1:(ncol(infChain)-2)])
+
+#mcmcPars <- c("iterations"=100000,"popt"=0.234,"opt_freq"=2000,"thin"=10,"adaptive_period"=50000,
+#              "save_block"=100,"thin2"=100,"histSampleProb"=0.5,"switch_sample"=2, "burnin"=0, 
+#              "nInfs"=1)
+#res <- run_MCMC(startTab, data, mcmcPars, filename="test2",
+#                create_post_func, mvrPars, NULL, 0.2, 
+#                antigenicMap, ages, 
+#                startInfHist=bestInf)
 
 chain1 <- read.csv(res$chain_file)
 chain1 <- chain1[chain1$sampno >= (mcmcPars["adaptive_period"]+mcmcPars["burnin"]),]
-#chain1 <- chain1[seq(1,nrow(chain1),by=50),]
-#pairs(chain1)
 plot(coda::as.mcmc(chain1))
 
 infChain <- data.table::fread(res$history_file,data.table=FALSE)
-library(plyr)
+n_infs <- ddply(infChain, ~individual, function(x) summary(rowSums(x[,1:(ncol(x)-2)])))
+n_inf_chain <- ddply(infChain, c("individual","sampno"), function(x) rowSums(x[,1:(ncol(x)-2)]))
+n_hist_chain <- reshape2::dcast(n_inf_chain, sampno~individual, drop=TRUE)
+plot(coda::as.mcmc(n_hist_chain))
+
 wow <- ddply(infChain, ~individual, function(x) colSums(x[,!(colnames(x) %in% c("individual","sampno"))])/nrow(x))
 wow <- reshape2::melt(wow, id.vars="individual")
 wow$variable <- as.integer(wow$variable)
@@ -171,10 +163,17 @@ colnames(realHistProfiles) <- strainIsolationTimes
 realHistProfiles$individual <- 1:n_indiv
 realHistProfiles <- reshape2::melt(realHistProfiles,id.vars="individual")
   
-p1 <- ggplot(quantHist[quantHist$individual %in% seq(1,10,by=1),]) + 
+startHistProfiles <- as.data.frame(t(apply(startInf, 1, cumsum)))
+colnames(startHistProfiles) <- strainIsolationTimes
+startHistProfiles$individual <- 1:n_indiv
+startHistProfiles <- reshape2::melt(startHistProfiles,id.vars="individual")
+
+
+p1 <- ggplot(quantHist[quantHist$individual %in% seq(1,n_indiv,by=1),]) + 
   geom_line(aes(x=as.integer(variable),y=median)) + 
   geom_ribbon(aes(x=as.integer(variable),ymin=lower,ymax=upper), alpha=0.2) + 
-  geom_line(data=realHistProfiles[realHistProfiles$individual %in% seq(1,10,by=1),],aes(x=as.integer(variable),y=value), col="blue") +
+  geom_line(data=realHistProfiles[realHistProfiles$individual %in% seq(1,n_indiv,by=1),],aes(x=as.integer(variable),y=value), col="blue") +
+  geom_line(data=startHistProfiles[startHistProfiles$individual %in% seq(1,n_indiv,by=1),],aes(x=as.integer(variable),y=value), col="red") +
   #scale_y_continuous(limits=c(0,10)) +
   facet_wrap(~individual, scales="free_y")
 
@@ -182,3 +181,15 @@ p2 <- ggplot(wow) + geom_line(aes(x=variable,y=value)) +
     geom_vline(data=infHist1,aes(xintercept=as.integer(variable)),col="red") + 
   #geom_vline(data=firstSamp, aes(xintercept=as.integer(variable)),col="blue") +
     facet_wrap(~individual)
+
+#pdf("original_proposal_prior.pdf")
+#plot(coda::as.mcmc(n_hist_chain))
+#dev.off()
+
+#pdf("original_cum_inf.pdf")
+#plot(p1)
+#dev.off()
+
+#pdf("original_each_inf.pdf")
+#plot(p2)
+#dev.off()

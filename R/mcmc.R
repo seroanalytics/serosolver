@@ -80,13 +80,19 @@ run_MCMC <- function(parTab,
 ##############
     strainIsolationTimes <- unique(antigenicMap$inf_years) # How many strains are we testing against and what time did they circulate
     samplingTimes <- unique(data$sample) # What are the range of sampling times?
-    n_strain <- length(strainIsolationTimes) # How many 
-    n_indiv <- length(unique(data$individual))
-    n_groups <- length(unique(data$group))
-    individuals <- 1:n_indiv
-    groups <- 1:n_groups
+    n_strain <- length(strainIsolationTimes) # How many strains could an individual see?
+    n_indiv <- length(unique(data$individual)) # How many individuals in the data?
+    n_groups <- length(unique(data$group)) # How many groups in the data?
+    individuals <- 1:n_indiv # Create vector of individuals
+    groups <- 1:n_groups # Create vector of groups
+
+    ###################
+    ## Housekeeping for infection history chain
+    ###################
     histiter <- histaccepted <- histreset <- integer(n_indiv)
-    nInfs_vec <- rep(nInfs, n_indiv)
+    
+    nInfs_vec <- rep(nInfs, n_indiv) # How many infection history moves to make with each proposal
+    moveSizes <- rep(5, n_indiv) # How many years to move in smart proposal step
     
     ## Create posterior calculating function
     posterior_simp <- protect(CREATE_POSTERIOR_FUNC(parTab,data,
@@ -111,7 +117,7 @@ run_MCMC <- function(parTab,
     } else {
         ageMask <- rep(1, n_indiv)
     }
-
+    
 ######################
     ## Setup initial conditions
     infectionHistories = startInfHist
@@ -194,14 +200,19 @@ run_MCMC <- function(parTab,
             ## Calculate new likelihood for these parameters
             new_probabs <- posterior_simp(proposal, infectionHistories)
             new_probab <- sum(new_probabs)
+            #acceptanceProbs <- rep(1, n_indiv)
             ## Otherwise, resample infection history
         } else {
             indivSubSample <- sample(1:n_indiv, ceiling(histSampleProb*n_indiv))
-            #newInfectionHistories <- infection_history_proposal(infectionHistories, indivSubSample, strainIsolationTimes, ageMask)
-            newInfectionHistories <- infection_history_proposal_group(infectionHistories, indivSubSample, ageMask, nInfs_vec)
-
+            newInfectionHistories <- infection_history_betabinom(infectionHistories, indivSubSample,
+                                                                 ageMask)
+            #message(cat("Acceptance distribution: ", newInfectionHistories[[2]],sep="\t"))
+            #acceptanceProbs <- newInfectionHistories[[2]]
+            #newInfectionHistories <- newInfectionHistories[[1]]
+            
             ## Calculate new likelihood with these infection histories
             new_probabs <- posterior_simp(current_pars, newInfectionHistories)
+            
             new_probab <- sum(new_probabs)
             histiter[indivSubSample]<- histiter[indivSubSample] + 1
         }
@@ -234,8 +245,12 @@ run_MCMC <- function(parTab,
                 }
             }
         } else {
-            log_probs <- new_probabs[indivSubSample] - probabs[indivSubSample]
+            log_probs <- (new_probabs[indivSubSample] - probabs[indivSubSample])# + log(acceptanceProbs[indivSubSample])
+            #message(cat("New probabs: ", new_probabs, sep="\t"))
+            #message(cat("Old probabs: ", probabs, sep="\t"))
+            #message(cat("Log probs: ", log_probs, sep="\t"))
             log_probs[log_probs > 0] <- 0
+
             x <- which(log(runif(length(indivSubSample))) < log_probs)
             changeI <- indivSubSample[x]
             infectionHistories[changeI,] <- newInfectionHistories[changeI,]
@@ -303,26 +318,38 @@ run_MCMC <- function(parTab,
                         covMat <- w*covMat + (1-w)*oldCovMat
                     }
                     ## Scale tuning for last 20% of the adaptive period
-                    ##if(chain_index > (0.8)*adaptive_period){
-                    ##steps <- scaletuning(steps, popt,pcur)
+                    #if(chain_index > (0.8)*adaptive_period){
+                    #    steps <- scaletuning(steps, popt,pcur)
+                    #}
                     steps=max(0.00001,min(1,exp(log(steps)+(pcur-popt)*0.999^(i-burnin))))
                 }
-                message(cat("Infection history proposals: ", nInfs_vec, sep="\t"))
+                #message(cat("Infection history proposals: ", moveSizes, sep="\t"))
                 pcurHist <- histaccepted/histiter
+                message(cat("Infection history proposals:", histiter, sep="\t"))
                 histiter <- histaccepted <- histreset
+
+                message(cat(pcurHist,sep="\t"))
                 nInfs_vec[which(pcurHist < 0.234)] <- nInfs_vec[which(pcurHist < 0.234)] - 1
                 nInfs_vec[which(pcurHist >= 0.234)] <- nInfs_vec[which(pcurHist >= 0.234)] +1
-
+                
                 nInfs_vec[nInfs_vec < 1] <- 1
                 nInfs_vec[nInfs_vec > 20] <- 20
+
+                moveSizes[which(pcurHist < 0.234)] <- moveSizes[which(pcurHist < 0.234)] - 1
+                moveSizes[which(pcurHist >= 0.234)] <- moveSizes[which(pcurHist >= 0.234)] +1
                 
+                moveSizes[moveSizes < 1] <- 1
+                moveSizes[moveSizes > 5] <- 5
+
+
                 message(cat("Mean infection history pcur: ", mean(pcurHist),sep="\t"))
                 message(cat("Pcur: ", pcur,sep="\t"))
                 message(cat("Step sizes: ", steps,sep="\t"))
+                message(cat("Number moves: ", moveSizes,sep="\t"))
                 tempaccepted <- tempiter <- reset
                 pcurLik <- tempaccepted_lnlike/tempiter_lnlike
                 tempaccepted_lnlike <- tempiter_lnlike <- 0
-                #histSampleProb <- scaletuning(histSampleProb, 0.234, mean(pcurHist))
+
                 message(cat("Lnlike pcur: ", pcurLik,sep="\t"))
                 message(cat("Hist sample prob: ", histSampleProb))
             }
@@ -338,7 +365,7 @@ run_MCMC <- function(parTab,
             no_recorded <- 1
         }
         if((no_recorded_infHist-1)/n_indiv == save_block){
-            write.table(historyTab[1:(no_recorded_infHist-n_indiv),], file=infectionHistory_file,
+            write.table(historyTab[1:(no_recorded_infHist-1),], file=infectionHistory_file,
                         col.names=FALSE,row.names=FALSE,sep=",",append=TRUE)
             historyTab <- emptyHistoryTab
             no_recorded_infHist <- 1

@@ -220,3 +220,5 @@ outputdmatrix.fromcoord <- function(anti.map.in){ #anti.map.in can be vector or 
                        }))
     }
 }
+
+
