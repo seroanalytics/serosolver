@@ -234,9 +234,7 @@ plot_data <- function(data, infectionHistories, strainIsolationTimes, n_samps, s
     meltedInfHist <- reshape2::melt(infHist, id.vars="individual")
     meltedInfHist$variable <- as.numeric(as.character(meltedInfHist$variable))
     meltedInfHist <- meltedInfHist[meltedInfHist$value > 0,]
-    samps <- sample(unique(data$individual), n_samps)
-
-    
+    samps <- sample(unique(data$individual), n_samps)    
     
     p1 <- ggplot(data[data$individual %in% samps,]) +
         geom_point(aes(x=as.integer(virus),y=titre)) +

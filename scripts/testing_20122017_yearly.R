@@ -14,9 +14,6 @@ if(!monthly){
   parTab <- read.csv("~/Documents/Fluscape/serosolver/inputs/parTab_monthly.csv",stringsAsFactors=FALSE)
   antigenicMap <- read.csv("~/Documents/Fluscape/serosolver/data/fluscape_map_monthly.csv")
 }
-#parTab$fixed <- 1
-#parTab[parTab$names == "error","fixed"] <- 0
-parTab[parTab$names == "mu","fixed"] <- 0
 
 startTab <- parTab
 ## How many individual to simulate/use? Leave as NULL if all individuals for real data
@@ -34,38 +31,25 @@ if(monthly){
 }
 strainIsolationTimes <- unique(antigenicMap$inf_years)
 
-## Ages between 5 and 80, censor 0% of titres
-## Create antigenic map for short and long term boosting
-pars <- parTab$values
-names(pars) <- parTab$names
-antigenicMap1 <- outputdmatrix.fromcoord(antigenicMap[,c("x_coord","y_coord")])
-antigenicMapLong <- 1 - pars["sigma1"]*c(antigenicMap1)
-antigenicMapShort <- 1 - pars["sigma2"]*c(antigenicMap1)
-antigenicMapLong[antigenicMapLong < 0] <- 0
-antigenicMapShort[antigenicMapShort < 0] <- 0
+dat <- simulate_data(parTab, 1, n_indiv, strainIsolationTimes,
+                     samplingTimes, 2, antigenicMap, 0, 0, 75,75)
+titreDat <- dat[[1]]
+infectionHistories <- dat[[2]]
+ages <- dat[[3]]
+AR <- dat[[4]]
 
-infHist <- matrix(0, nrow=n_indiv, ncol=length(strainIsolationTimes))
-for(i in 1:nrow(infHist)){
-  infections <- sample(1:ncol(infHist),rpois(1, 3))
-  infHist[i,infections] <- 1
-}
-colnames(infHist) <- strainIsolationTimes
-data <- simulate_group(n_indiv, pars, infHist, strainIsolationTimes, samplingTimes, nsamp, antigenicMapLong, antigenicMapShort)
-data$run <- 1
-if(monthly){
-  testedStrains <- seq(1970*12,2010*12,by=24)
-} else {
-  testedStrains <- seq(1970,2010,by=1)
-}
-#startInf <- setup_infection_histories(data, strainIsolationTimes, rep(1,n_indiv),0.2, titre_cutoff = 4)
+write.table(titreDat, "~/net/home/serosolver/data/sim_10_dat.csv",row.names=FALSE, sep=",")
+write.table(infectionHistories, "~/net/home/serosolver/data/sim_10_infHist.csv",row.names=FALSE, sep=",")
+write.table(ages, "~/net/home/serosolver/data/sim_10_ages.csv",row.names=FALSE, sep=",")
+write.table(AR, "~/net/home/serosolver/data/sim_10_AR.csv",row.names=FALSE, sep=",")
+
 startInf <- setup_infection_histories_new(data, strainIsolationTimes, space=5,titre_cutoff=3)
-p <- plot_data(data, infHist, strainIsolationTimes, 5, startInf)
-#startInf <- infectionHistories <- infHist
+p <- plot_data(dat[[1]], dat[[2]], strainIsolationTimes, 5, NULL)
+
 infectionHistories <- startInf
 f1 <- create_post_func1(startTab,data,antigenicMap,NULL,infectionHistories=startInf)
 startPar <- DEoptim::DEoptim(f1, lower=parTab$lower_bound, upper=parTab$upper_bound,control=list(itermax=200))$optim$bestmem
-#startPar <- parTab$values
-#startPar[1] <- 0.8
+
 mcmcPars <- c("iterations"=500000,"popt"=0.234,"opt_freq"=5000,"thin"=10,"adaptive_period"=200000,
               "save_block"=100,"thin2"=100,"histSampleProb"=0.2,"switch_sample"=2, "burnin"=50000, 
               "nInfs"=1)
@@ -77,42 +61,16 @@ scale <- 0.8
 w <- 0.5
 mvrPars <- list(covMat, scale, w)
 f <- create_post_func(parTab,data,antigenicMap,NULL)
-
 #mvrPars <- NULL
 
 startTab$values <- startPar
-#startTab[which(startTab$fixed == 1),"values"] <- parTab[which(parTab$fixed == 1),"values"]
 
-ages <- data.frame(individual=1:n_indiv, DOB=1970)
-if(monthly) ages$DOB <- ages$DOB*12
-  
 res <- run_MCMC(startTab, data, mcmcPars, filename="test1",
                 create_post_func, mvrPars, NULL, 0.2, 
                 antigenicMap, ages=NULL, 
                 startInfHist=startInf)
 beepr::beep(sound=4)
 
-#chain <- read.csv(res$chain_file)
-#chain <- chain[chain$sampno >= (mcmcPars["adaptive_period"]+mcmcPars["burnin"]),]
-#infChain <- data.table::fread(res$history_file,data.table=FALSE)
-#infChain <- infChain[infChain$sampno >= (mcmcPars["adaptive_period"]+mcmcPars["burnin"]),]
-#chain <- chain[chain$sampno %in% infChain$sampno,]
-#bestI <- chain[which.max(chain$lnlike),"sampno"]
-#bestPars <- get_best_pars(chain)
-#covMat <- cov(chain)
-#mvrPars <- list(covMat,2.38/sqrt(nrow(parTab[parTab$fixed==0,])),w=0.99)
-#mvrPars <- list(covMat,0.16,w=0.98)
-#startTab <- parTab
-#startTab$values <- bestPars
-#bestInf <- as.matrix(infChain[infChain$sampno == bestI, 1:(ncol(infChain)-2)])
-
-#mcmcPars <- c("iterations"=100000,"popt"=0.234,"opt_freq"=2000,"thin"=10,"adaptive_period"=50000,
-#              "save_block"=100,"thin2"=100,"histSampleProb"=0.5,"switch_sample"=2, "burnin"=0, 
-#              "nInfs"=1)
-#res <- run_MCMC(startTab, data, mcmcPars, filename="test2",
-#                create_post_func, mvrPars, NULL, 0.2, 
-#                antigenicMap, ages, 
-#                startInfHist=bestInf)
 
 chain1 <- read.csv(res$chain_file)
 chain1 <- chain1[chain1$sampno >= (mcmcPars["adaptive_period"]+mcmcPars["burnin"]),]

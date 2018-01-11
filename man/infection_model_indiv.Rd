@@ -4,8 +4,9 @@
 \alias{infection_model_indiv}
 \title{Model function}
 \usage{
-infection_model_indiv(theta, infectionHistory, samplingTime,
-  strainIsolationTimes, antigenicMapLong, antigenicMapShort)
+infection_model_indiv(theta, infectionHistory, infectionTimes,
+  infectionMapIndices, samplingTime, measurementMapIndices, antigenicMapLong,
+  antigenicMapShort, numberStrains)
 }
 \arguments{
 \item{theta}{NumericVector, the named vector of model parameters}
@@ -14,11 +15,11 @@ infection_model_indiv(theta, infectionHistory, samplingTime,
 
 \item{samplingTime}{double, the real time that the sample was taken}
 
-\item{strainIsolationTimes}{NumericVector, the vector of times at which each virus strain circulated}
-
 \item{antigenicMapLong}{NumericVector, the collapsed cross reactivity map for long term boosting, after multiplying by sigma1}
 
 \item{antigenicMapShort}{NumericVector, the collapsed cross reactivity map for short term boosting, after multiplying by sigma2}
+
+\item{strainIsolationTimes}{NumericVector, the vector of times at which each virus strain circulated}
 }
 \value{
 NumericVector of predicted titres for each strainIsolationTime
@@ -27,6 +28,6 @@ NumericVector of predicted titres for each strainIsolationTime
 The main model solving function for a single individual.
 NOTES:
 - Do we want infection history to be a vector of infection times?
-- Tread the contents of infectionHistory as a parameter (ie. exposure type)
+- Treat the contents of infectionHistory as a parameter (ie. exposure type)
 }
 

@@ -10,9 +10,9 @@ infection_history_proposal(newInfectionHistories, sampledIndivs,
 \arguments{
 \item{newInfectionHistories}{an n*m matrix of 1s & 0s indicating infection histories, where n is individuals and m i strains}
 
-\item{sampledIndivs}{the indices of sampled individuals to be receive proposals}
+\item{sampledIndivs}{the indices of sampled individuals to receive proposals}
 
-\item{strainIsolationTimes}{the vector of strain isolation times in rela time}
+\item{strainIsolationTimes}{the vector of strain isolation times in real time}
 
 \item{ageMask}{the vector of indices for each individual specifiying which index of strainIsolationTimes is the first strain each individual coul dhave seen}
 }

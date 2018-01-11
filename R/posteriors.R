@@ -189,9 +189,7 @@ create_post_func1 <- function(parTab, data,
                           indicesData,indicesDataOverall,indicesSamples, virusIndices, 
                           antigenicMapLong, antigenicMapShort)
     liks <- r_likelihood(y, titres, pars)
-    #return(list(liks, y, titres))
-    #liks <- numeric(length(y))
-    #return(liks)
+  
     #liks <- dnorm(titres,y,sd=pars["error"],1)
     lik <- -sum(zikaInfer::sum_buckets(liks, indicesOverallDiff))
     

@@ -4,8 +4,9 @@
 \alias{simulate_individual}
 \title{Simulate individual data}
 \usage{
-simulate_individual(theta, infectionHistory, samplingTimes,
-  strainIsolationTimes, antigenicMapLong, antigenicMapShort)
+simulate_individual(theta, infectionHistory, samplingTimes, dataIndices,
+  strainIsolationTimes, virusIndices, antigenicMapLong, antigenicMapShort,
+  strains)
 }
 \arguments{
 \item{theta}{the named parameter vector}

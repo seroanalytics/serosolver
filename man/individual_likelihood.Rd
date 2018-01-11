@@ -4,8 +4,9 @@
 \alias{individual_likelihood}
 \title{Individual likelihood}
 \usage{
-individual_likelihood(theta, infectionHistory, samplingTimes,
-  strainIsolationTimes, antigenicMapLong, antigenicMapShort, titres)
+individual_likelihood(theta, infectionHistory, samplingTimes, indivIndices,
+  strainIsolationTimes, indivVirusIndices, antigenicMapLong, antigenicMapShort,
+  titres, numberStrains)
 }
 \arguments{
 \item{theta}{NumericVector, the named vector of model parameters}

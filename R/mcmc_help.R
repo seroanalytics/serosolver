@@ -153,7 +153,10 @@ infection_history_proposal_group <-function(newInfectionHistories,sampledIndivs,
 
 
 #' @export
-infection_history_betabinom <- function(newInfHist, sampledIndivs, ageMask, alpha=2, beta=18){
+infection_history_betabinom <- function(newInfHist, sampledIndivs, ageMask, moveSizes, pars){
+    alpha <- pars["alpha"]
+    beta <- pars["beta"]
+    
     newInf <- newInfHist
     maxI <- ncol(newInf)
     for(indiv in sampledIndivs){
@@ -170,24 +173,16 @@ infection_history_betabinom <- function(newInfHist, sampledIndivs, ageMask, alph
             }
         } else {
             id1 <- sample(length(x),1)
-            moveMax <- 5
-            ##       
+            moveMax <- moveSizes[indiv]
             move <- sample(-moveMax:moveMax,1)
             id2 <- id1 + move
-                                        #
+
             if(id2 < 1) id2 <- maxI + id2
             if(id2 > maxI) id2 <- id2 - maxI
             
-                                        #                    x[infectID]=x[naiveID]
-                                        #                   x[naiveID]=1
             tmp <- x[id1]
             x[id1] <- x[id2]
             x[id2] <- tmp       
-           # id1 <- sample(length(x),1)
-           # id2 <- sample(length(x),1)
-           # tmp <- x[id1]
-           # x[id1] <- x[id2]
-           # x[id2] <- tmp       
         }
         newInf[indiv,ageMask[indiv]:length(strainIsolationTimes)]=x
     }
@@ -483,6 +478,12 @@ setup_infection_histories_new <- function(data, strainIsolationTimes, space=5, t
 
 #' @export
 create_age_mask <- function(ages, strainIsolationTimes, n_indiv){
-    
+    ageMask <- sapply(ages$DOB, function(x){
+        if(is.na(x)){
+            1
+        } else {
+            which(as.numeric(x <= strainIsolationTimes) > 0)[1]
+        }
+    })
     return(ageMask)
 }

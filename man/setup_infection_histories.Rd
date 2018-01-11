@@ -4,7 +4,8 @@
 \alias{setup_infection_histories}
 \title{Propose initial infection histories}
 \usage{
-setup_infection_histories(dat, strainIsolationTimes, ageMask)
+setup_infection_histories(dat, strainIsolationTimes, ageMask, sample_prob,
+  titre_cutoff = 3)
 }
 \arguments{
 \item{dat}{the matrix of titres data with columns for individual, sample, and titre}

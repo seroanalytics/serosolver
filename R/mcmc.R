@@ -107,13 +107,7 @@ run_MCMC <- function(parTab,
     ## Should probably change this to take DOB rather than age
 ###############
     if(!is.null(ages)){
-        ageMask <- sapply(ages$DOB, function(x){
-            if(is.na(x)){
-                1
-            } else {
-                which(as.numeric(x <= strainIsolationTimes) > 0)[1]
-            }
-        })
+       ageMask <- create_age_mask(ages, strainIsolationTimes, n_indiv)
     } else {
         ageMask <- rep(1, n_indiv)
     }
@@ -200,15 +194,11 @@ run_MCMC <- function(parTab,
             ## Calculate new likelihood for these parameters
             new_probabs <- posterior_simp(proposal, infectionHistories)
             new_probab <- sum(new_probabs)
-            #acceptanceProbs <- rep(1, n_indiv)
             ## Otherwise, resample infection history
         } else {
             indivSubSample <- sample(1:n_indiv, ceiling(histSampleProb*n_indiv))
             newInfectionHistories <- infection_history_betabinom(infectionHistories, indivSubSample,
-                                                                 ageMask)
-            #message(cat("Acceptance distribution: ", newInfectionHistories[[2]],sep="\t"))
-            #acceptanceProbs <- newInfectionHistories[[2]]
-            #newInfectionHistories <- newInfectionHistories[[1]]
+                                                                 ageMask, moveSizes, current_pars)
             
             ## Calculate new likelihood with these infection histories
             new_probabs <- posterior_simp(current_pars, newInfectionHistories)
@@ -245,10 +235,7 @@ run_MCMC <- function(parTab,
                 }
             }
         } else {
-            log_probs <- (new_probabs[indivSubSample] - probabs[indivSubSample])# + log(acceptanceProbs[indivSubSample])
-            #message(cat("New probabs: ", new_probabs, sep="\t"))
-            #message(cat("Old probabs: ", probabs, sep="\t"))
-            #message(cat("Log probs: ", log_probs, sep="\t"))
+            log_probs <- (new_probabs[indivSubSample] - probabs[indivSubSample])
             log_probs[log_probs > 0] <- 0
 
             x <- which(log(runif(length(indivSubSample))) < log_probs)
@@ -294,9 +281,9 @@ run_MCMC <- function(parTab,
             tempaccepted <- tempiter <- reset
             pcurHist <- histaccepted/histiter
             histiter <- histaccepted <- histreset
-            message(cat("Mean infection history pcur: ", mean(pcurHist),sep="\t"))
             pcurLik <- tempaccepted_lnlike/tempiter_lnlike
             tempaccepted_lnlike <- tempiter_lnlike <- 0
+            
             message(cat("Lnlike pcur: ", pcurLik,sep="\t"))
         }
         if(i > burnin & i <= (adaptive_period + burnin)){
@@ -318,34 +305,24 @@ run_MCMC <- function(parTab,
                         covMat <- w*covMat + (1-w)*oldCovMat
                     }
                     ## Scale tuning for last 20% of the adaptive period
-                    #if(chain_index > (0.8)*adaptive_period){
-                    #    steps <- scaletuning(steps, popt,pcur)
-                    #}
+                                        #if(chain_index > (0.8)*adaptive_period){
+                                        #    steps <- scaletuning(steps, popt,pcur)
+                                        #}
                     steps=max(0.00001,min(1,exp(log(steps)+(pcur-popt)*0.999^(i-burnin))))
                 }
-                #message(cat("Infection history proposals: ", moveSizes, sep="\t"))
                 pcurHist <- histaccepted/histiter
-                message(cat("Infection history proposals:", histiter, sep="\t"))
                 histiter <- histaccepted <- histreset
+                ##nInfs_vec[which(pcurHist < 0.234)] <- nInfs_vec[which(pcurHist < 0.234)] - 1
+                ##nInfs_vec[which(pcurHist >= 0.234)] <- nInfs_vec[which(pcurHist >= 0.234)] +1
+                ##nInfs_vec[nInfs_vec < 1] <- 1
+                ##nInfs_vec[nInfs_vec > 20] <- 20
+                ##moveSizes[which(pcurHist < 0.234)] <- moveSizes[which(pcurHist < 0.234)] - 1
+                ##moveSizes[which(pcurHist >= 0.234)] <- moveSizes[which(pcurHist >= 0.234)] +1
+                ##moveSizes[moveSizes < 1] <- 1
+                ##moveSizes[moveSizes > 5] <- 5
 
-                message(cat(pcurHist,sep="\t"))
-                nInfs_vec[which(pcurHist < 0.234)] <- nInfs_vec[which(pcurHist < 0.234)] - 1
-                nInfs_vec[which(pcurHist >= 0.234)] <- nInfs_vec[which(pcurHist >= 0.234)] +1
-                
-                nInfs_vec[nInfs_vec < 1] <- 1
-                nInfs_vec[nInfs_vec > 20] <- 20
-
-                moveSizes[which(pcurHist < 0.234)] <- moveSizes[which(pcurHist < 0.234)] - 1
-                moveSizes[which(pcurHist >= 0.234)] <- moveSizes[which(pcurHist >= 0.234)] +1
-                
-                moveSizes[moveSizes < 1] <- 1
-                moveSizes[moveSizes > 5] <- 5
-
-
-                message(cat("Mean infection history pcur: ", mean(pcurHist),sep="\t"))
                 message(cat("Pcur: ", pcur,sep="\t"))
                 message(cat("Step sizes: ", steps,sep="\t"))
-                message(cat("Number moves: ", moveSizes,sep="\t"))
                 tempaccepted <- tempiter <- reset
                 pcurLik <- tempaccepted_lnlike/tempiter_lnlike
                 tempaccepted_lnlike <- tempiter_lnlike <- 0

@@ -194,11 +194,13 @@ simulate_data <- function(parTab, group=1,n_indiv,
 
     ## Randomly censor titre values
     y$titre <- y$titre*sample(c(0,1),nrow(y),prob=c(titreSensoring,1-titreSensoring),replace=TRUE)
-    
-    y <- cbind(group=group,y)
+    y$run <- 1
+    y$group <- 1
+
     DOB <- max(samplingTimes) - ages
-    y <- y[,c("individual","virus","samples","titre","group")]
-    return(list(data=y, infectionHistories=infHist, ages=DOB))
+    ages <- data.frame("individual"=1:n_indiv, "DOB"=DOB)
+    attackRates <- data.frame("year"=strainIsolationTimes,"AR"=pInf)
+    return(list(data=y, infectionHistories=infHist, ages=ages, attackRates=attackRates))
 }
 
 #' Create useable antigenic map
@@ -220,5 +222,3 @@ outputdmatrix.fromcoord <- function(anti.map.in){ #anti.map.in can be vector or 
                        }))
     }
 }
-
-
