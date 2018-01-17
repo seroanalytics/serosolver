@@ -4,18 +4,21 @@
 \alias{create_post_func1}
 \title{Posterior function pointer}
 \usage{
-create_post_func1(parTab, data, PRIOR_FUNC, ...)
+create_post_func1(parTab, data, antigenicMap, PRIOR_FUNC, infectionHistories,
+  ...)
 }
 \arguments{
 \item{parTab}{the parameter table controlling information such as bounds, initial values etc}
 
 \item{data}{the data frame of data to be fitted. Must have columns: group (index of group); individual (integer ID of individual); samples (numeric time of sample taken); virus (numeric time of when the virus was circulating); titre (integer of titre value against the given virus at that sampling time)}
 
+\item{antigenicMap}{a data frame of antigenic x and y coordinates. Must have column names: x_coord; y_coord; inf_years}
+
 \item{PRIOR_FUNC}{user function of prior for model parameters. Should take parameter values only}
 
-\item{...}{other arguments to pass to the posterior solving function}
+\item{infectionHistories}{other arguments to pass to the posterior solving function}
 
-\item{antigenicMap}{a data frame of antigenic x and y coordinates. Must have column names: x_coord; y_coord; inf_years}
+\item{...}{blah}
 }
 \value{
 a single function pointer that takes only pars and infectionHistories as unnamed arguments

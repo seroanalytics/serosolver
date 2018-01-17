@@ -14,7 +14,7 @@ infection_history_proposal(newInfectionHistories, sampledIndivs,
 
 \item{strainIsolationTimes}{the vector of strain isolation times in real time}
 
-\item{ageMask}{the vector of indices for each individual specifiying which index of strainIsolationTimes is the first strain each individual coul dhave seen}
+\item{ageMask}{the vector of indices for each individual specifiying which index of strainIsolationTimes is the first strain each individual could have seen}
 }
 \value{
 a new matrix matching newInfectionHistories in dimensions with proposed moves

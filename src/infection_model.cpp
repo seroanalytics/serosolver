@@ -379,10 +379,10 @@ NumericVector group_likelihood_vector(NumericVector theta, NumericMatrix infecti
 //' @export
 //[[Rcpp::export]]
 double group_likelihood_total(NumericVector theta, NumericMatrix infectionHistories, 
-                                      IntegerVector indicesSamples, IntegerVector indicesData, IntegerVector indicesDataOverall,
-                                      NumericVector samplingTimes, NumericVector strainIsolationTimes, IntegerVector virusIndices,
-                                      NumericVector antigenicMapLong, NumericVector antigenicMapShort, 
-                                      NumericVector titres){
+			      IntegerVector indicesSamples, IntegerVector indicesData, IntegerVector indicesDataOverall,
+			      NumericVector samplingTimes, NumericVector strainIsolationTimes, IntegerVector virusIndices,
+			      NumericVector antigenicMapLong, NumericVector antigenicMapShort, 
+			      NumericVector titres){
   int n = infectionHistories.nrow();
   int n_strains = infectionHistories.ncol();
   double lnlike=0;
@@ -418,3 +418,23 @@ double group_likelihood_total(NumericVector theta, NumericMatrix infectionHistor
   return(lnlike);  
 }
 
+
+//' Sums a vector based on bucket sizes
+//'
+//' Given a vector (a) and another vector of bucket sizes, returns the summed vector (a)
+//' @param a the vector to be bucketed
+//' @param buckets the vector of bucket sizes to sum a over
+//' @return the vector of summed a
+//' @export
+//[[Rcpp::export]]
+NumericVector sum_buckets(NumericVector a, NumericVector buckets){
+  NumericVector results(buckets.size());
+  int index = 0;
+  for(int i = 0; i < buckets.size(); ++i){
+    results[i] = 0;
+    for(int j = 0; (j < buckets[i]) & (index < a.size()); ++j){
+      results[i] += a[index++];
+    }
+  }
+  return(results);
+}

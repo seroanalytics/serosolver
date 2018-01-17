@@ -136,13 +136,58 @@ simulate_infection_histories <- function(pInf, infSD, strainIsolationTimes, samp
     for(i in 1:n_strains){
         ## Find who was alive (all we need samplingTimes for is its max value)
         alive <- (max(samplingTimes) - ages) <= strainIsolationTimes[i]
-
+        
         ## Sample a number of infections for the alive individuals, and set these entries to 1
-        infectionHistories[sample(indivs[alive], round(length(indivs[alive])*attackRates[i])),i] <- 1
+        y <- round(length(indivs[alive])*attackRates[i])
+        x <- sample(indivs[alive], y)
+        infectionHistories[x,i] <- 1
     }
     return(infectionHistories)    
 }
 
+#' @export
+generate_ar_annual <- function(AR, buckets){
+  SIR_odes <- function(t, x, params) {
+    S <- x[1]
+    I <- x[2]
+    R <- x[3]
+    inc <- x[4]
+    
+    beta <- params[1]
+    gamma <- params[2]
+    dS <- -beta*S*I
+    dI <- beta*S*I - gamma*I
+    dR <- gamma*I
+    dinc <- beta*S*I
+    list(c(dS,dI,dR, dinc))
+  }
+  R0 <- 1.5
+  gamma <- 1/5
+  beta <- R0*gamma
+  t <- seq(0,360,by=0.1)
+  results <- as.data.frame(deSolve::ode(y=c(S=1,I=0.0001,R=0, inc=0),
+                                        times=t, func=SIR_odes,
+                                        parms=c(beta,gamma)))
+  incidence <- diff(results$inc)
+  incidence <- incidence*AR/sum(incidence)
+  group <- 360*10/buckets
+  monthly_risk <- colSums(matrix(incidence, nrow=group))
+  return(monthly_risk)
+}
+
+#' @export
+simulate_ars_buckets <- function(infectionYears, buckets, meanPar=0.15,sdPar=0.5, 
+                                 largeFirstYear=FALSE,bigYearMean=0.5){
+    n <- ceiling(length(infectionYears)/buckets)
+    attack_year <- rlnorm(n, meanlog=log(meanPar)-sdPar^2/2,sdlog=sdPar)
+    if(largeFirstYear) attack_year[1] <- rlnorm(1,meanlog=log(bigYearMean)-(sdPar/2)^2/2,sdlog=sdPar/2)
+    ars <- NULL
+    for(i in seq_along(attack_year)){
+        ars <- c(ars, generate_ar_annual(attack_year[i],buckets))
+    }
+    ars <- ars[1:length(infectionYears)]
+    return(ars)
+}
 #' Simulate full data set
 #'
 #' Simulates a full data set for a given set of parameters etc.
@@ -160,7 +205,7 @@ simulate_infection_histories <- function(pInf, infSD, strainIsolationTimes, samp
 #' @param simInfPars vector of parameters to pass to \code{\link{simulate_attack_rates}}
 #' @return a list with: 1) the data frame of titre data as returned by \code{\link{simulate_group}}; 2) a matrix of infection histories as returned by \code{\link{simulate_infection_histories}}; 3) a vector of ages
 #' @export
-simulate_data <- function(parTab, group=1,n_indiv,
+simulate_data <- function(parTab, group=1,n_indiv,buckets=12,
                           strainIsolationTimes, samplingTimes, nsamps=2,
                           antigenicMap,
                           sampleSensoring=0, titreSensoring=0,
@@ -181,13 +226,14 @@ simulate_data <- function(parTab, group=1,n_indiv,
 
     ## Simulate ages
     ages <- floor(runif(n_indiv,ageMin,ageMax))
-
+    
     ## Simulate attack rates
-    pInf <- simulate_attack_rates(strainIsolationTimes, simInfPars["mean"],simInfPars["sd"],TRUE,simInfPars["bigMean"])
-
+    #pInf <- simulate_attack_rates(strainIsolationTimes, simInfPars["mean"],simInfPars["sd"],TRUE,simInfPars["bigMean"])
+    pInf <- simulate_ars_buckets(strainIsolationTimes, buckets, simInfPars["mean"],simInfPars["sd"],TRUE,simInfPars["bigMean"])
+    print(pInf)
     ## Simulate infection histories
     infHist <- simulate_infection_histories(pInf, simInfPars["logSD"], strainIsolationTimes, samplingTimes, ages)
-
+    
     ## Simulate titre data
     y <- simulate_group(n_indiv, pars, infHist, strainIsolationTimes, samplingTimes,
                         nsamps, antigenicMapLong,antigenicMapShort)

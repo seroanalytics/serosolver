@@ -103,60 +103,9 @@ infection_history_proposal_smart <- function(infectionHistories, sampledIndivs, 
     return(newInf)
 }
 
-#' Infection history proposal group
-#'
-#' Proposes new infection histories for a vector of infection histories, where rows represent individuals and columns represent years. Proposals are either removal, addition or switching of infections.
-#' Also requires the indices of sampled individuals, the vector of strain isolation times, and a vector of age masks (ie. which index of the strainIsolationTimes vector is the first year in which
-#' an individual *could* be infected).
-#' NOTE - MIGHT NEED TO UPDATE THIS FOR GROUPS
-#' @param newInfectionHistories an n*m matrix of 1s & 0s indicating infection histories, where n is individuals and m i strains
-#' @param sampledIndivs the indices of sampled individuals to receive proposals
-#' @param ageMask the vector of indices for each individual specifiying which index of strainIsolationTimes is the first strain each individual could have seen
-#' @param nInfs the number of infections to move/add/remove
-#' @return a new matrix matching newInfectionHistories in dimensions with proposed moves
-#' @export
-infection_history_proposal_group <-function(newInfectionHistories,sampledIndivs,ageMask,nInfs){
-    newInf <- newInfectionHistories
-    for(indiv in sampledIndivs){ # Resample subset of individuals
-        rand1 = runif(1)
-        x=newInfectionHistories[indiv,ageMask[indiv]:ncol(newInfectionHistories)] # Only resample years individual was alive
-        
-        if(rand1<1/4){
-            infectID= which(x>0)
-            n <- min(nInfs[indiv], length(infectID))
-            if(n>0){
-                x[sample(infectID,n)]=0 # Why double? DEBUG
-            }
-        }
-        ## Add infection
-        if(rand1>1/4 & rand1<2/4){
-            ninfecID=which(x==0)
-            n <- min(nInfs[indiv], length(ninfecID))
-            if(n>0){
-                x[sample(ninfecID,n)]=1
-            }
-        }
-        ## Move infection position
-        if(rand1>2/4){
-            infectID=which(x > 0)
-            ninfecID=which(x == 0)
-            n <- min(nInfs[indiv], length(infectID), length(ninfecID))
-            if(n){
-                x[sample(infectID,n)]=0
-                x[sample(ninfecID,n)]=1
-            }
-        }
-        newInf[indiv,ageMask[indiv]:ncol(newInfectionHistories)]=x # Only =1 if individual was alive
-    } # end loop over individuals
-    return(newInf)
-}
-
 
 #' @export
-infection_history_betabinom <- function(newInfHist, sampledIndivs, ageMask, moveSizes, pars){
-    alpha <- pars["alpha"]
-    beta <- pars["beta"]
-    
+infection_history_betabinom <- function(newInfHist, sampledIndivs, ageMask, moveSizes, alpha, beta){
     newInf <- newInfHist
     maxI <- ncol(newInf)
     for(indiv in sampledIndivs){
@@ -164,8 +113,16 @@ infection_history_betabinom <- function(newInfHist, sampledIndivs, ageMask, move
         rand1 <- runif(1)
         if(rand1 < 1/2){
             loc <- sample(length(x), 1)
-            
+            x_new <- x_old <- x
+            x_new[loc] <- 1
+            x_old[loc] <- 0
+
+            #probA <- dbb(sum(x_new), length(x), alpha, beta)/choose(length(x), sum(x_new))
+            #probB <- dbb(sum(x_old), length(x), alpha, beta)/choose(length(x), sum(x_old))
+                    
+            #ratio <- probA/(probA + probB)
             prob1 <- (alpha+sum(x[-loc]))/(alpha+beta+(length(x)-1))
+
             if(runif(1)<prob1){
                 x[loc] <- 1
             } else {
@@ -176,7 +133,6 @@ infection_history_betabinom <- function(newInfHist, sampledIndivs, ageMask, move
             moveMax <- moveSizes[indiv]
             move <- sample(-moveMax:moveMax,1)
             id2 <- id1 + move
-
             if(id2 < 1) id2 <- maxI + id2
             if(id2 > maxI) id2 <- id2 - maxI
             
@@ -184,10 +140,55 @@ infection_history_betabinom <- function(newInfHist, sampledIndivs, ageMask, move
             x[id1] <- x[id2]
             x[id2] <- tmp       
         }
-        newInf[indiv,ageMask[indiv]:length(strainIsolationTimes)]=x
+        newInf[indiv,ageMask[indiv]:ncol(newInfHist)]=x
     }
-    return(newInf)
+    return(newInf)    
 }
+
+
+#' @export
+infection_history_betabinom_group <- function(newInfHist, sampledIndivs, ageMask, moveSizes, nInfs, alpha, beta){
+    newInf <- newInfHist
+    for(indiv in sampledIndivs){
+        x <- newInf[indiv,ageMask[indiv]:ncol(newInfHist)]
+        maxI <- length(x)
+        if(runif(1) < 1/2){
+            
+            k <- nInfs[indiv]
+            locs <- sample(length(x), k)
+            number_1s <- sum(x[-locs])
+            n <- length(x[-locs])
+
+            for(i in 1:k){
+                ratio <- (alpha+number_1s)/(alpha+beta+n)
+                if(runif(1) < ratio){
+                    x[locs[i]] <- 1
+                    number_1s <- number_1s + 1
+                } else {
+                    x[locs[i]] <- 0
+                }
+                n <- n + 1
+            }
+        } else {
+            for(i in 1:nInfs[indiv]){
+                id1 <- sample(length(x),1)
+                moveMax <- moveSizes[indiv]
+                move <- sample(-moveMax:moveMax,1)
+                id2 <- id1 + move
+                if(id2 < 1) id2 <- maxI + id2
+                if(id2 > maxI) id2 <- id2 - maxI
+                tmp <- x[id1]
+                x[id1] <- x[id2]
+                x[id2] <- tmp
+            }
+        }
+
+        newInf[indiv,ageMask[indiv]:ncol(newInfHist)]=x
+        
+    }
+    return(newInf)    
+}
+
 
 #' Infection history proposal
 #'
@@ -198,7 +199,7 @@ infection_history_betabinom <- function(newInfHist, sampledIndivs, ageMask, move
 #' @param newInfectionHistories an n*m matrix of 1s & 0s indicating infection histories, where n is individuals and m i strains
 #' @param sampledIndivs the indices of sampled individuals to receive proposals
 #' @param strainIsolationTimes the vector of strain isolation times in real time
-#' @param ageMask the vector of indices for each individual specifiying which index of strainIsolationTimes is the first strain each individual coul dhave seen
+#' @param ageMask the vector of indices for each individual specifiying which index of strainIsolationTimes is the first strain each individual could have seen
 #' @return a new matrix matching newInfectionHistories in dimensions with proposed moves
 #' @export
 infection_history_proposal <-function(newInfectionHistories,sampledIndivs,strainIsolationTimes,ageMask){
@@ -428,6 +429,7 @@ setup_infection_histories<- function(dat, strainIsolationTimes, ageMask,sample_p
 
 }
 
+#' @export
 setup_infection_histories_new <- function(data, strainIsolationTimes, space=5, titre_cutoff=2){
   startInf <- NULL
   individuals <- unique(data$individual)

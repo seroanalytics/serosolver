@@ -37,6 +37,7 @@ create_post_func <- function(parTab, data, antigenicMap,
   ## Extract vector of sampling times and individual indices for speed
   sampleTimes <- samples$samples
   individuals <- samples$individual  
+  n_indiv <- length(unique(samples$individual))
   
   indicesData <- NULL
   for(i in 1:nrow(samples)){
@@ -93,8 +94,8 @@ create_post_func <- function(parTab, data, antigenicMap,
                                         #liks <- dnorm(titres,y,sd=pars["error"],1)
                                         #prior <- dunif(rowSums(infectionHistories),0,ncol(infectionHistories),log=TRUE)
      # prior <- dbinom(rowSums(infectionHistories), ncol(infectionHistories), 0.5,  1)
-      #return(rep(-10000,n_indiv))
-      return(zikaInfer::sum_buckets(liks, indicesOverallDiff))
+      #return(rep(0,n_indiv))
+      return(sum_buckets(liks, indicesOverallDiff))
   }
   f
 }
@@ -107,12 +108,12 @@ create_post_func <- function(parTab, data, antigenicMap,
 #' @param data the data frame of data to be fitted. Must have columns: group (index of group); individual (integer ID of individual); samples (numeric time of sample taken); virus (numeric time of when the virus was circulating); titre (integer of titre value against the given virus at that sampling time)
 #' @param antigenicMap a data frame of antigenic x and y coordinates. Must have column names: x_coord; y_coord; inf_years
 #' @param PRIOR_FUNC user function of prior for model parameters. Should take parameter values only
-#' @param ... other arguments to pass to the posterior solving function
+#' @param infectionHistories other arguments to pass to the posterior solving function
+#' @param ... blah
 #' @return a single function pointer that takes only pars and infectionHistories as unnamed arguments
 #' @export
-create_post_func1 <- function(parTab, data,
-                             PRIOR_FUNC,
-                             ...){
+create_post_func1 <- function(parTab, data,antigenicMap,
+                             PRIOR_FUNC,infectionHistories, ...){
   pars1 <- parTab$values
   mynames <- parTab$names
   names(pars1) <- parTab$names
@@ -191,7 +192,7 @@ create_post_func1 <- function(parTab, data,
     liks <- r_likelihood(y, titres, pars)
   
     #liks <- dnorm(titres,y,sd=pars["error"],1)
-    lik <- -sum(zikaInfer::sum_buckets(liks, indicesOverallDiff))
+    lik <- -sum(sum_buckets(liks, indicesOverallDiff))
     
     lik
   }

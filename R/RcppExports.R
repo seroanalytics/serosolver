@@ -102,6 +102,21 @@ group_likelihood_total <- function(theta, infectionHistories, indicesSamples, in
     .Call('_serosolver_group_likelihood_total', PACKAGE = 'serosolver', theta, infectionHistories, indicesSamples, indicesData, indicesDataOverall, samplingTimes, strainIsolationTimes, virusIndices, antigenicMapLong, antigenicMapShort, titres)
 }
 
+#' Sums a vector based on bucket sizes
+#'
+#' Given a vector (a) and another vector of bucket sizes, returns the summed vector (a)
+#' @param a the vector to be bucketed
+#' @param buckets the vector of bucket sizes to sum a over
+#' @return the vector of summed a
+#' @export
+sum_buckets <- function(a, buckets) {
+    .Call('_serosolver_sum_buckets', PACKAGE = 'serosolver', a, buckets)
+}
+
+inf_hist_prop_cpp <- function(infHist, sampledIndivs, ageMask, moveSizes, nInfs, alpha, beta, randNs) {
+    .Call('_serosolver_inf_hist_prop_cpp', PACKAGE = 'serosolver', infHist, sampledIndivs, ageMask, moveSizes, nInfs, alpha, beta, randNs)
+}
+
 subset_test <- function(x, y) {
     .Call('_serosolver_subset_test', PACKAGE = 'serosolver', x, y)
 }

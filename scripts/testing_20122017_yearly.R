@@ -12,47 +12,65 @@ if(!monthly){
   antigenicMap <- read.csv("~/Documents/Fluscape/serosolver/data/fluscape_map.csv")
 } else {
   parTab <- read.csv("~/Documents/Fluscape/serosolver/inputs/parTab_monthly.csv",stringsAsFactors=FALSE)
-  antigenicMap <- read.csv("~/Documents/Fluscape/serosolver/data/fluscape_map_monthly.csv")
+  antigenicMap <- read.csv("~/Documents/Fluscape/serosolver/data/fluscape_map_quarter.csv")
 }
-
+parTab[parTab$names %in% c("MAX_TITRE"),"values"] <- 8
 startTab <- parTab
+
 ## How many individual to simulate/use? Leave as NULL if all individuals for real data
 n_indiv <- 10
 
 ## Simulation options
 samplingTimes <- (2010:2015)
-if(monthly) samplingTimes <- samplingTimes*12
+if(monthly) samplingTimes <- samplingTimes
 nsamp <- 2
 
 if(monthly){
-  antigenicMap <- antigenicMap[antigenicMap$inf_years >= 1970*12,]
+  antigenicMap <- antigenicMap[antigenicMap$inf_years >= 1970*4,]
 } else {
   antigenicMap <- antigenicMap[antigenicMap$inf_years >= 1970,]
 }
 strainIsolationTimes <- unique(antigenicMap$inf_years)
 
-dat <- simulate_data(parTab, 1, n_indiv, strainIsolationTimes,
-                     samplingTimes, 2, antigenicMap, 0, 0, 75,75)
+bucket <- 1
+dat <- simulate_data(parTab, 1, n_indiv, bucket,strainIsolationTimes,
+                     samplingTimes*bucket, 2, antigenicMap, 0, 0, 75*bucket,75*bucket,
+                     simInfPars=c("mean"=0.2,"sd"=0,"bigMean"=0.5,"logSD"=0))
+#plot(dat[[4]])
 titreDat <- dat[[1]]
-infectionHistories <- dat[[2]]
+#titreDat <- titreDat[titreDat$virus %in% unique(antigenicMap$inf_years),]
+infectionHistories <- infHist <- dat[[2]]
 ages <- dat[[3]]
 AR <- dat[[4]]
 
-write.table(titreDat, "~/net/home/serosolver/data/sim_10_dat.csv",row.names=FALSE, sep=",")
-write.table(infectionHistories, "~/net/home/serosolver/data/sim_10_infHist.csv",row.names=FALSE, sep=",")
-write.table(ages, "~/net/home/serosolver/data/sim_10_ages.csv",row.names=FALSE, sep=",")
-write.table(AR, "~/net/home/serosolver/data/sim_10_AR.csv",row.names=FALSE, sep=",")
+#parTab <- read.csv("~/net/home/serosolver/inputs/parTab.csv",stringsAsFactors = FALSE)
+#antigenicMap <- read.csv("data/fluscape_map.csv")
+#antigenicMap <- antigenicMap[antigenicMap$inf_years >= 1970,]
+#titreDat <- read.csv("~/net/home/serosolver/data/sim_10_dat.csv",stringsAsFactors = FALSE)
+#infHist <- read.csv("~/net/home/serosolver/data/sim_10_infHist.csv",stringsAsFactors = FALSE)
+#ages <- read.csv("~/net/home/serosolver/data/sim_10_ages.csv",stringsAsFactors = FALSE)
 
-startInf <- setup_infection_histories_new(data, strainIsolationTimes, space=5,titre_cutoff=3)
-p <- plot_data(dat[[1]], dat[[2]], strainIsolationTimes, 5, NULL)
+#write.table(titreDat, paste0("~/net/home/serosolver/data/sim_",n_indiv,"_dat.csv"),row.names=FALSE, sep=",")
+#write.table(infectionHistories, paste0("~/net/home/serosolver/data/sim_",n_indiv,"_infHist.csv"),row.names=FALSE, sep=",")
+#write.table(ages, paste0("~/net/home/serosolver/data/sim_",n_indiv,"_ages.csv"),row.names=FALSE, sep=",")
+#write.table(AR, paste0("~/net/home/serosolver/data/sim_",n_indiv,"_AR.csv"),row.names=FALSE, sep=",")
 
-infectionHistories <- startInf
-f1 <- create_post_func1(startTab,data,antigenicMap,NULL,infectionHistories=startInf)
-startPar <- DEoptim::DEoptim(f1, lower=parTab$lower_bound, upper=parTab$upper_bound,control=list(itermax=200))$optim$bestmem
+p <- plot_data(titreDat, infectionHistories, strainIsolationTimes, n_indiv, NULL)
+#pdf(paste0("~/net/home/serosolver/data/sim_",n_indiv,"_data_p.pdf"))
+#plot(p)
+#dev.off()
 
-mcmcPars <- c("iterations"=500000,"popt"=0.234,"opt_freq"=5000,"thin"=10,"adaptive_period"=200000,
-              "save_block"=100,"thin2"=100,"histSampleProb"=0.2,"switch_sample"=2, "burnin"=50000, 
-              "nInfs"=1)
+startInf <- setup_infection_histories_new(titreDat, strainIsolationTimes, space=5,titre_cutoff=3)
+
+optimTab <- startTab[!(startTab$names %in% c("alpha","beta")),]
+f1 <- create_post_func1(optimTab,titreDat,antigenicMap,NULL,infectionHistories=startInf)
+startPar <- parTab$values
+startPar <- DEoptim::DEoptim(f1, lower=optimTab$lower_bound, upper=optimTab$upper_bound,control=list(itermax=200))$optim$bestmem
+startPar <- c(startPar, startTab[(startTab$names %in% c("alpha","beta")),"values"])
+
+mcmcPars <- c("iterations"=100000,"popt"=0.44,"opt_freq"=2000,"thin"=10,"adaptive_period"=50000,
+              "save_block"=100,"thin2"=100,"histSampleProb"=1,"switch_sample"=2, "burnin"=0, 
+              "nInfs"=4, "moveSize"=5)
               
             ## For univariate proposals
 
@@ -60,16 +78,15 @@ covMat <- diag(nrow(parTab))
 scale <- 0.8
 w <- 0.5
 mvrPars <- list(covMat, scale, w)
-f <- create_post_func(parTab,data,antigenicMap,NULL)
-#mvrPars <- NULL
+f <- create_post_func(parTab,titreDat,antigenicMap,NULL)
+mvrPars <- NULL
 
 startTab$values <- startPar
 
-res <- run_MCMC(startTab, data, mcmcPars, filename="test1",
+res <- run_MCMC(startTab, titreDat, mcmcPars, filename="test1",
                 create_post_func, mvrPars, NULL, 0.2, 
                 antigenicMap, ages=NULL, 
                 startInfHist=startInf)
-beepr::beep(sound=4)
 
 
 chain1 <- read.csv(res$chain_file)
@@ -77,10 +94,13 @@ chain1 <- chain1[chain1$sampno >= (mcmcPars["adaptive_period"]+mcmcPars["burnin"
 plot(coda::as.mcmc(chain1))
 
 infChain <- data.table::fread(res$history_file,data.table=FALSE)
+#infChain <- data.table::fread(infChainFile,data.table=FALSE)
 n_infs <- ddply(infChain, ~individual, function(x) summary(rowSums(x[,1:(ncol(x)-2)])))
 n_inf_chain <- ddply(infChain, c("individual","sampno"), function(x) rowSums(x[,1:(ncol(x)-2)]))
 n_hist_chain <- reshape2::dcast(n_inf_chain, sampno~individual, drop=TRUE)
+beepr::beep(sound=4)
 plot(coda::as.mcmc(n_hist_chain))
+
 
 wow <- ddply(infChain, ~individual, function(x) colSums(x[,!(colnames(x) %in% c("individual","sampno"))])/nrow(x))
 wow <- reshape2::melt(wow, id.vars="individual")
@@ -126,6 +146,7 @@ colnames(startHistProfiles) <- strainIsolationTimes
 startHistProfiles$individual <- 1:n_indiv
 startHistProfiles <- reshape2::melt(startHistProfiles,id.vars="individual")
 
+n_indiv <- 10
 
 p1 <- ggplot(quantHist[quantHist$individual %in% seq(1,n_indiv,by=1),]) + 
   geom_line(aes(x=as.integer(variable),y=median)) + 

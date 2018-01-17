@@ -39,6 +39,7 @@ run_MCMC <- function(parTab,
     histSampleProb <- mcmcPars["histSampleProb"] # What proportion of infection histories to sample each step
     switch_sample <- mcmcPars["switch_sample"] # Resample infection histories every n iterations
     burnin <- mcmcPars["burnin"] # Run this many iterations before attempting adaptation. Idea is to reduce getting stuck in local maxima
+    moveSize <- mcmcPars["moveSize"] # Number of infections to move/remove/add in each proposal step
     nInfs <- mcmcPars["nInfs"] # Number of infections to move/remove/add in each proposal step
     
     ## Extract parameter settings
@@ -47,12 +48,15 @@ run_MCMC <- function(parTab,
     unfixed_par_length <- nrow(parTab[parTab$fixed== 0,]) # How many free parameters?
     current_pars <- parTab$values # Starting parameters
     par_names <- as.character(parTab$names) # Parameter names
-
     ## Parameter constraints
     lower_bounds <- parTab$lower_bound # Parameters cannot step below this
     upper_bounds <- parTab$upper_bound # Parameters cannot step above this
     steps <- parTab$steps
     fixed <- parTab$fixed
+
+    alpha <- parTab[parTab$names == "alpha","values"]
+    beta <- parTab[parTab$names == "beta","values"]
+
     
     ## Arrays to store acceptance rates
     ## If univariate proposals, store vector of acceptances
@@ -70,7 +74,6 @@ run_MCMC <- function(parTab,
         steps <- mvrPars[[2]]
         w <- mvrPars[[3]]
     }
-    tempaccepted_lnlike <- tempiter_lnlike <- 0
     ## Setup MCMC chain file with correct column names
     mcmc_chain_file <- paste0(filename,"_chain.csv")
     infectionHistory_file <- paste0(filename,"_infectionHistories.csv")
@@ -89,10 +92,10 @@ run_MCMC <- function(parTab,
     ###################
     ## Housekeeping for infection history chain
     ###################
-    histiter <- histaccepted <- histreset <- integer(n_indiv)
+    histiter <- histaccepted <- histiter_add <- histaccepted_add <- histiter_move <- histaccepted_move <- histreset <- integer(n_indiv)
     
     nInfs_vec <- rep(nInfs, n_indiv) # How many infection history moves to make with each proposal
-    moveSizes <- rep(5, n_indiv) # How many years to move in smart proposal step
+    moveSizes <- rep(moveSize, n_indiv) # How many years to move in smart proposal step
     
     ## Create posterior calculating function
     posterior_simp <- protect(CREATE_POSTERIOR_FUNC(parTab,data,
@@ -107,7 +110,7 @@ run_MCMC <- function(parTab,
     ## Should probably change this to take DOB rather than age
 ###############
     if(!is.null(ages)){
-       ageMask <- create_age_mask(ages, strainIsolationTimes, n_indiv)
+        ageMask <- create_age_mask(ages, strainIsolationTimes, n_indiv)
     } else {
         ageMask <- rep(1, n_indiv)
     }
@@ -169,7 +172,6 @@ run_MCMC <- function(parTab,
     ## MCMC ALGORITHM
 #####################
     for(i in 1:(iterations + adaptive_period + burnin)){
-        tempiter_lnlike <- tempiter_lnlike + 1
         if(i %% save_block == 0) message(cat("Current iteration: ", i, sep="\t"))
 ######################
         ## PROPOSALS
@@ -188,7 +190,7 @@ run_MCMC <- function(parTab,
             } else {
                 ## NOTE
                 ## MIGHT WANT TO USE ADAM'S PROPOSAL FUNCTION
-                proposal <- mvr_proposal(current_pars, unfixed_pars, steps*covMat, covMat0, TRUE)
+                proposal <- mvr_proposal(current_pars, unfixed_pars, steps*covMat, covMat0, FALSE)
                 tempiter <- tempiter + 1
             }
             ## Calculate new likelihood for these parameters
@@ -197,14 +199,32 @@ run_MCMC <- function(parTab,
             ## Otherwise, resample infection history
         } else {
             indivSubSample <- sample(1:n_indiv, ceiling(histSampleProb*n_indiv))
-            newInfectionHistories <- infection_history_betabinom(infectionHistories, indivSubSample,
-                                                                 ageMask, moveSizes, current_pars)
+                                        #newInfectionHistories <- infection_history_betabinom(infectionHistories, indivSubSample,
+                                        #                                                     ageMask, moveSizes, alpha, beta)
+                                        #newInfectionHistories <- infection_history_betabinom_group(infectionHistories, indivSubSample,
+                                        #                                                           ageMask, moveSizes, nInfs_vec, alpha, beta)
+            randNs <- runif(length(indivSubSample))
+           
+            newInfectionHistories <- inf_hist_prop_cpp(infectionHistories,
+                                                       indivSubSample,
+                                                       ageMask,
+                                                       moveSizes,
+                                                       nInfs_vec,
+                                                       alpha,
+                                                       beta,
+                                                       randNs)
+            
             
             ## Calculate new likelihood with these infection histories
             new_probabs <- posterior_simp(current_pars, newInfectionHistories)
             
             new_probab <- sum(new_probabs)
             histiter[indivSubSample]<- histiter[indivSubSample] + 1
+
+            move <- which(randNs > 1/2)
+            add <- which(randNs < 1/2)
+            histiter_add[indivSubSample[add]]<- histiter_add[indivSubSample[add]] + 1
+            histiter_move[indivSubSample[move]]<- histiter_move[indivSubSample[move]] + 1
         }
 
 #########################
@@ -212,7 +232,7 @@ run_MCMC <- function(parTab,
         ## generalised. Shouldn't need to though, thanks to the function pointer idea
 #########################
 
-        #############################
+#############################
         ## METROPOLIS HASTINGS STEP
         #############################
         ## Check that all proposed parameters are in allowable range
@@ -231,20 +251,22 @@ run_MCMC <- function(parTab,
                     else tempaccepted <- tempaccepted + 1
                     probabs <- new_probabs
                     probab <- new_probab
-                    tempaccepted_lnlike <- tempaccepted_lnlike + 1
                 }
             }
         } else {
-            log_probs <- (new_probabs[indivSubSample] - probabs[indivSubSample])
+            #print(priors)
+            log_probs <- (new_probabs[indivSubSample] - probabs[indivSubSample])# + log(priors)
             log_probs[log_probs > 0] <- 0
-
             x <- which(log(runif(length(indivSubSample))) < log_probs)
             changeI <- indivSubSample[x]
             infectionHistories[changeI,] <- newInfectionHistories[changeI,]
             probabs[changeI] <- new_probabs[changeI]
             probab <- sum(probabs)
+            add <- intersect(add, changeI)
+            move <- intersect(move, changeI)
+            histaccepted_add[add] <- histaccepted_add[add] + 1
+            histaccepted_move[move] <- histaccepted_move[move] + 1
             histaccepted[changeI] <- histaccepted[changeI] + 1
-            if(length(x) > 0) tempaccepted_lnlike <- tempaccepted_lnlike + 1
         }
         
 ##############################
@@ -280,11 +302,9 @@ run_MCMC <- function(parTab,
             message(cat("Step sizes: ", steps,sep="\t"))
             tempaccepted <- tempiter <- reset
             pcurHist <- histaccepted/histiter
-            histiter <- histaccepted <- histreset
-            pcurLik <- tempaccepted_lnlike/tempiter_lnlike
-            tempaccepted_lnlike <- tempiter_lnlike <- 0
-            
-            message(cat("Lnlike pcur: ", pcurLik,sep="\t"))
+            pcurHist_add <- histaccepted_add/histiter_add
+            pcurHist_move <- histaccepted_move/histiter_move
+            histiter <- histaccepted <- histaccepted_add <- histaccepted_move <- histiter_add <- histiter_move <- histreset
         }
         if(i > burnin & i <= (adaptive_period + burnin)){
             ## Current acceptance rate
@@ -311,23 +331,35 @@ run_MCMC <- function(parTab,
                     steps=max(0.00001,min(1,exp(log(steps)+(pcur-popt)*0.999^(i-burnin))))
                 }
                 pcurHist <- histaccepted/histiter
-                histiter <- histaccepted <- histreset
-                ##nInfs_vec[which(pcurHist < 0.234)] <- nInfs_vec[which(pcurHist < 0.234)] - 1
-                ##nInfs_vec[which(pcurHist >= 0.234)] <- nInfs_vec[which(pcurHist >= 0.234)] +1
-                ##nInfs_vec[nInfs_vec < 1] <- 1
-                ##nInfs_vec[nInfs_vec > 20] <- 20
-                ##moveSizes[which(pcurHist < 0.234)] <- moveSizes[which(pcurHist < 0.234)] - 1
-                ##moveSizes[which(pcurHist >= 0.234)] <- moveSizes[which(pcurHist >= 0.234)] +1
-                ##moveSizes[moveSizes < 1] <- 1
-                ##moveSizes[moveSizes > 5] <- 5
+                                        #message(cat("Hist acceptance: ", pcurHist, cat="\t"))
+                pcurHist_add <- histaccepted_add/histiter_add
+                pcurHist_move <- histaccepted_move/histiter_move
+                #message(cat("Hist iter add: ", histiter_add, cat="\t"))
+                #message(cat("Hist accepted add: ", histaccepted_add, cat="\t"))
+                message(cat("Hist acceptance add: ", pcurHist_add, cat="\t"))
+                message(cat("Hist acceptance move: ", pcurHist_move, cat="\t"))
+                #message(cat("Hist iter move: ", histiter_move, cat="\t"))
+                #message(cat("Hist accepted move: ", histaccepted_move, cat="\t"))
+                
+                message(cat("Mean hist acceptance: ", mean(pcurHist),cat="\t"))
+                                        #histiter <- histaccepted <- histreset
+                histiter <- histaccepted <- histaccepted_add <- histaccepted_move <- histiter_add <- histiter_move <- histreset
+                popt_hist <- 0.44
+                nInfs_vec[which(pcurHist_add < popt_hist*0.9)] <- nInfs_vec[which(pcurHist_add< popt_hist*0.9)] - 1
+                nInfs_vec[which(pcurHist >= popt_hist*1.1)] <- nInfs_vec[which(pcurHist >= popt_hist*1.1)] +1
+                nInfs_vec[nInfs_vec < 1] <- 1
+                nInfs_vec[nInfs_vec > n_strain] <- n_strain
+                moveSizes[which(pcurHist < popt_hist*0.9)] <- moveSizes[which(pcurHist < popt_hist*0.9)] - 1
+                moveSizes[which(pcurHist >= popt_hist*1.1)] <- moveSizes[which(pcurHist >= popt_hist*1.1)] +1
+                moveSizes[moveSizes < 1] <- 1
+                moveSizes[moveSizes > n_strain] <- n_strain
 
+                message(cat("nInfs: ", nInfs_vec, sep="\t"))
+                message(cat("Move sizes: ", moveSizes, sep="\t"))
+                
                 message(cat("Pcur: ", pcur,sep="\t"))
                 message(cat("Step sizes: ", steps,sep="\t"))
                 tempaccepted <- tempiter <- reset
-                pcurLik <- tempaccepted_lnlike/tempiter_lnlike
-                tempaccepted_lnlike <- tempiter_lnlike <- 0
-
-                message(cat("Lnlike pcur: ", pcurLik,sep="\t"))
                 message(cat("Hist sample prob: ", histSampleProb))
             }
             chain_index <- chain_index + 1
