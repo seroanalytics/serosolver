@@ -126,8 +126,9 @@ simulate_infection_histories <- function(pInf, infSD, strainIsolationTimes, samp
     indivs <- 1:n_indiv
     ## Empty matrix
     infectionHistories <- matrix(0,ncol=n_strains,nrow=n_indiv)
+    
     ## Simulate attack rates
-    attackRates <- rlnorm(length(pInf), meanlog=log(pInf)- infSD^2/2,sdlog=infSD)
+    #attackRates <- rlnorm(length(pInf), meanlog=log(pInf)- infSD^2/2,sdlog=infSD)
 
     ## Should this be necessary?
     attackRates[attackRates > 1] <- 1
@@ -138,7 +139,8 @@ simulate_infection_histories <- function(pInf, infSD, strainIsolationTimes, samp
         alive <- (max(samplingTimes) - ages) <= strainIsolationTimes[i]
         
         ## Sample a number of infections for the alive individuals, and set these entries to 1
-        y <- round(length(indivs[alive])*attackRates[i])
+        #y <- round(length(indivs[alive])*attackRates[i])
+        y <- rbinom(1, length(indivs[alive]),attackRates[i])
         x <- sample(indivs[alive], y)
         infectionHistories[x,i] <- 1
     }
@@ -210,7 +212,8 @@ simulate_data <- function(parTab, group=1,n_indiv,buckets=12,
                           antigenicMap,
                           sampleSensoring=0, titreSensoring=0,
                           ageMin=5,ageMax=80,
-                          simInfPars=c("mean"=0.15,"sd"=0.5,"bigMean"=0.5,"logSD"=1)){
+                          simInfPars=c("mean"=0.15,"sd"=0.5,"bigMean"=0.5,"logSD"=1),
+                          useSIR=FALSE){
     ## Extract parameters
     pars <- parTab$values
     names(pars) <- parTab$names
@@ -228,9 +231,12 @@ simulate_data <- function(parTab, group=1,n_indiv,buckets=12,
     ages <- floor(runif(n_indiv,ageMin,ageMax))
     
     ## Simulate attack rates
-    #pInf <- simulate_attack_rates(strainIsolationTimes, simInfPars["mean"],simInfPars["sd"],TRUE,simInfPars["bigMean"])
-    pInf <- simulate_ars_buckets(strainIsolationTimes, buckets, simInfPars["mean"],simInfPars["sd"],TRUE,simInfPars["bigMean"])
-    print(pInf)
+    if(useSIR){
+        pInf <- simulate_ars_buckets(strainIsolationTimes, buckets, simInfPars["mean"],simInfPars["sd"],TRUE,simInfPars["bigMean"])
+    } else {
+        pInf <- simulate_attack_rates(strainIsolationTimes, simInfPars["mean"],simInfPars["sd"],TRUE,simInfPars["bigMean"])
+    }
+    
     ## Simulate infection histories
     infHist <- simulate_infection_histories(pInf, simInfPars["logSD"], strainIsolationTimes, samplingTimes, ages)
     
@@ -267,4 +273,28 @@ outputdmatrix.fromcoord <- function(anti.map.in){ #anti.map.in can be vector or 
                            y 
                        }))
     }
+}
+
+#' @export
+generate_antigenic_map <- function(antigenicDistances, buckets=1){
+  ## Following assumptions:
+  ## 1. X31 == 1969
+  ## 2. PE2009 is like the strain circulating in 2010
+  virus_key <- c("HK68"=1968, "EN72"=1972, "VI75"=1975, "TX77"=1977, "BK79"=1979, "SI87"=1987, "BE89"=1989, "BJ89"=1989,
+                 "BE92"=1992, "WU95"=1995, "SY97"=1997, "FU02"=2002, "CA04"=2004, "WI05"=2005, "PE06"=2006)*buckets
+  antigenicDistances$Strain <- virus_key[antigenicDistances$Strain]
+  fit <- smooth.spline(antigenicDistances$X,antigenicDistances$Y,spar=0.3)
+  x_line <- lm(data = antigenicDistances, X~Strain)
+  Strain <- seq(1968*buckets,2015*buckets,by=1)
+  x_predict <- predict(x_line,data.frame(Strain))
+  y_predict <- predict(fit, x=x_predict)
+  fit_dat <- data.frame(x=y_predict$x,y=y_predict$y)
+  fit_dat$strain <- Strain
+  colnames(fit_dat) <- c("x_coord","y_coord","inf_years")
+  return(fit_dat)
+}
+
+#' @export
+euc_distance <- function(i1, i2, fit_dat){
+  return(sqrt((fit_dat[i1,"x_coord"] - fit_dat[i2,"x_coord"])^2 + (fit_dat[i1,"y_coord"] - fit_dat[i2,"y_coord"])^2))
 }

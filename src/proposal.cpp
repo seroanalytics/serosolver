@@ -5,7 +5,7 @@ using namespace Rcpp ;
 
 // [[Rcpp::export]]
 arma::mat inf_hist_prop_cpp(arma::mat infHist, IntegerVector sampledIndivs, IntegerVector ageMask,IntegerVector moveSizes, IntegerVector nInfs,
-                     double alpha, double beta, NumericVector randNs) {
+			    double alpha, double beta, NumericVector randNs) {
   
   arma::mat newInfHist = infHist;
   IntegerVector locs; // Locations to be updated

@@ -31,6 +31,7 @@ run_MCMC <- function(parTab,
     ## Extract MCMC parameters
     iterations <- mcmcPars["iterations"] # How many iterations to run after adaptive period
     popt <- mcmcPars["popt"] # Desired optimal acceptance rate
+    popt_hist <- mcmcPars["popt_hist"]
     opt_freq<- mcmcPars["opt_freq"] # How often to adjust step size
     thin <- mcmcPars["thin"] # Save only every nth iterations for theta sampling
     adaptive_period<- mcmcPars["adaptive_period"] # How many iterations for adaptive period
@@ -204,7 +205,7 @@ run_MCMC <- function(parTab,
                                         #newInfectionHistories <- infection_history_betabinom_group(infectionHistories, indivSubSample,
                                         #                                                           ageMask, moveSizes, nInfs_vec, alpha, beta)
             randNs <- runif(length(indivSubSample))
-           
+                       
             newInfectionHistories <- inf_hist_prop_cpp(infectionHistories,
                                                        indivSubSample,
                                                        ageMask,
@@ -344,13 +345,13 @@ run_MCMC <- function(parTab,
                 message(cat("Mean hist acceptance: ", mean(pcurHist),cat="\t"))
                                         #histiter <- histaccepted <- histreset
                 histiter <- histaccepted <- histaccepted_add <- histaccepted_move <- histiter_add <- histiter_move <- histreset
-                popt_hist <- 0.44
-                nInfs_vec[which(pcurHist_add < popt_hist*0.9)] <- nInfs_vec[which(pcurHist_add< popt_hist*0.9)] - 1
-                nInfs_vec[which(pcurHist >= popt_hist*1.1)] <- nInfs_vec[which(pcurHist >= popt_hist*1.1)] +1
+
+                nInfs_vec[which(pcurHist_add < popt_hist*(1-OPT_TUNING))] <- nInfs_vec[which(pcurHist_add< popt_hist*(1-OPT_TUNING))] - 1
+                nInfs_vec[which(pcurHist >= popt_hist*(1+OPT_TUNING))] <- nInfs_vec[which(pcurHist >= popt_hist*(1+OPT_TUNING))] +1
                 nInfs_vec[nInfs_vec < 1] <- 1
                 nInfs_vec[nInfs_vec > n_strain] <- n_strain
-                moveSizes[which(pcurHist < popt_hist*0.9)] <- moveSizes[which(pcurHist < popt_hist*0.9)] - 1
-                moveSizes[which(pcurHist >= popt_hist*1.1)] <- moveSizes[which(pcurHist >= popt_hist*1.1)] +1
+                moveSizes[which(pcurHist < popt_hist*(1-OPT_TUNING))] <- moveSizes[which(pcurHist < popt_hist*(1-OPT_TUNING))] - 1
+                moveSizes[which(pcurHist >= popt_hist*(1+OPT_TUNING))] <- moveSizes[which(pcurHist >= popt_hist*(1+OPT_TUNING))] +1
                 moveSizes[moveSizes < 1] <- 1
                 moveSizes[moveSizes > n_strain] <- n_strain
 

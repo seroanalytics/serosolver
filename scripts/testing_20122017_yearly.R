@@ -7,6 +7,10 @@ setwd("~/Documents/Fluscape/serosolver")
 devtools::load_all()
 monthly <- FALSE
 
+filename <- "informative"
+nInfs <- 10
+filename <- paste0(filename,"_",nInfs)
+
 if(!monthly){
   parTab <- read.csv("~/Documents/Fluscape/serosolver/inputs/parTab.csv",stringsAsFactors=FALSE)
   antigenicMap <- read.csv("~/Documents/Fluscape/serosolver/data/fluscape_map.csv")
@@ -14,7 +18,10 @@ if(!monthly){
   parTab <- read.csv("~/Documents/Fluscape/serosolver/inputs/parTab_monthly.csv",stringsAsFactors=FALSE)
   antigenicMap <- read.csv("~/Documents/Fluscape/serosolver/data/fluscape_map_quarter.csv")
 }
-parTab[parTab$names %in% c("MAX_TITRE"),"values"] <- 8
+parTab[parTab$names %in% c("alpha","beta"),"values"] <- c(2,10)
+
+
+
 startTab <- parTab
 
 ## How many individual to simulate/use? Leave as NULL if all individuals for real data
@@ -35,7 +42,7 @@ strainIsolationTimes <- unique(antigenicMap$inf_years)
 bucket <- 1
 dat <- simulate_data(parTab, 1, n_indiv, bucket,strainIsolationTimes,
                      samplingTimes*bucket, 2, antigenicMap, 0, 0, 75*bucket,75*bucket,
-                     simInfPars=c("mean"=0.2,"sd"=0,"bigMean"=0.5,"logSD"=0))
+                     simInfPars=c("mean"=0.15,"sd"=0.5,"bigMean"=0.5,"logSD"=1),useSIR=FALSE)
 #plot(dat[[4]])
 titreDat <- dat[[1]]
 #titreDat <- titreDat[titreDat$virus %in% unique(antigenicMap$inf_years),]
@@ -65,12 +72,12 @@ startInf <- setup_infection_histories_new(titreDat, strainIsolationTimes, space=
 optimTab <- startTab[!(startTab$names %in% c("alpha","beta")),]
 f1 <- create_post_func1(optimTab,titreDat,antigenicMap,NULL,infectionHistories=startInf)
 startPar <- parTab$values
-startPar <- DEoptim::DEoptim(f1, lower=optimTab$lower_bound, upper=optimTab$upper_bound,control=list(itermax=200))$optim$bestmem
-startPar <- c(startPar, startTab[(startTab$names %in% c("alpha","beta")),"values"])
+#startPar <- DEoptim::DEoptim(f1, lower=optimTab$lower_bound, upper=optimTab$upper_bound,control=list(itermax=200))$optim$bestmem
+#startPar <- c(startPar, startTab[(startTab$names %in% c("alpha","beta")),"values"])
 
-mcmcPars <- c("iterations"=100000,"popt"=0.44,"opt_freq"=2000,"thin"=10,"adaptive_period"=50000,
+mcmcPars <- c("iterations"=100000,"popt"=0.44,"popt_hist"=0.234,"opt_freq"=2000,"thin"=10,"adaptive_period"=0,
               "save_block"=100,"thin2"=100,"histSampleProb"=1,"switch_sample"=2, "burnin"=0, 
-              "nInfs"=4, "moveSize"=5)
+              "nInfs"=nInfs, "moveSize"=5)
               
             ## For univariate proposals
 
@@ -91,15 +98,17 @@ res <- run_MCMC(startTab, titreDat, mcmcPars, filename="test1",
 
 chain1 <- read.csv(res$chain_file)
 chain1 <- chain1[chain1$sampno >= (mcmcPars["adaptive_period"]+mcmcPars["burnin"]),]
-plot(coda::as.mcmc(chain1))
+#plot(coda::as.mcmc(chain1))
 
 infChain <- data.table::fread(res$history_file,data.table=FALSE)
 #infChain <- data.table::fread(infChainFile,data.table=FALSE)
 n_infs <- ddply(infChain, ~individual, function(x) summary(rowSums(x[,1:(ncol(x)-2)])))
 n_inf_chain <- ddply(infChain, c("individual","sampno"), function(x) rowSums(x[,1:(ncol(x)-2)]))
 n_hist_chain <- reshape2::dcast(n_inf_chain, sampno~individual, drop=TRUE)
-beepr::beep(sound=4)
+#beepr::beep(sound=4)
+pdf(paste0(filename,"_infChain.pdf"))
 plot(coda::as.mcmc(n_hist_chain))
+dev.off()
 
 
 wow <- ddply(infChain, ~individual, function(x) colSums(x[,!(colnames(x) %in% c("individual","sampno"))])/nrow(x))
@@ -160,6 +169,14 @@ p2 <- ggplot(wow) + geom_line(aes(x=variable,y=value)) +
     geom_vline(data=infHist1,aes(xintercept=as.integer(variable)),col="red") + 
   #geom_vline(data=firstSamp, aes(xintercept=as.integer(variable)),col="blue") +
     facet_wrap(~individual)
+
+pdf(paste0(filename,"_infHistP.pdf"))
+plot(p1)
+dev.off()
+
+pdf(paste0(filename,"_infHistP2.pdf"))
+plot(p2)
+dev.off()
 
 #pdf("original_proposal_prior.pdf")
 #plot(coda::as.mcmc(n_hist_chain))

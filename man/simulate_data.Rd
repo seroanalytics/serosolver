@@ -4,10 +4,11 @@
 \alias{simulate_data}
 \title{Simulate full data set}
 \usage{
-simulate_data(parTab, group = 1, n_indiv, strainIsolationTimes, samplingTimes,
-  nsamps = 2, antigenicMap, sampleSensoring = 0, titreSensoring = 0,
-  ageMin = 5, ageMax = 80, simInfPars = c(mean = 0.15, sd = 0.5, bigMean =
-  0.5, logSD = 1))
+simulate_data(parTab, group = 1, n_indiv, buckets = 12,
+  strainIsolationTimes, samplingTimes, nsamps = 2, antigenicMap,
+  sampleSensoring = 0, titreSensoring = 0, ageMin = 5, ageMax = 80,
+  simInfPars = c(mean = 0.15, sd = 0.5, bigMean = 0.5, logSD = 1),
+  useSIR = FALSE)
 }
 \arguments{
 \item{parTab}{the full parameter table controlling parameter ranges and values}

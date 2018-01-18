@@ -237,7 +237,7 @@ plot_data <- function(data, infectionHistories, strainIsolationTimes, n_samps, s
     samps <- sample(unique(data$individual), n_samps)    
     
     p1 <- ggplot(data[data$individual %in% samps,]) +
-        geom_point(aes(x=as.integer(virus),y=titre)) +
+        geom_line(aes(x=as.integer(virus),y=titre)) +
         #geom_vline(aes(xintercept=samples), col="red",linetype="dashed") +
         geom_vline(data=meltedInfHist[meltedInfHist$individual %in% samps,], aes(xintercept=variable), col="red",linetype="dashed")+
         theme_bw()

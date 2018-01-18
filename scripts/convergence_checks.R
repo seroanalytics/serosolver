@@ -1,7 +1,5 @@
 library(coda)
-runs <- read.csv("~/net/home/serosolver/inputs/runs.csv",stringsAsFactors=FALSE)
-runs <- runs[runs$N == 200,]
-
+runs <- read.csv("~/net/home/serosolver/inputs/runs_18012018.csv",stringsAsFactors=FALSE)
 wds <- as.character(runs$runName)
 
 saveDir <- "~/Documents/Fluscape/serosolver_own/sim/"
@@ -15,7 +13,7 @@ max_gelman_multi_all <- NULL
 mean_gelman_multi_all <- NULL
 mpsrf_gelman_multi_all <- NULL
 
-
+burnin1 <- burning2 <- 550000
 for(wd in wds){
   print(wd)
   actualWd <- paste0("~/net/home/serosolver/outputs/",wd)
@@ -27,7 +25,7 @@ for(wd in wds){
     tmp <- data.table::fread(chain_files_univ[i],data.table=FALSE)
     vars <- c("sampno","mu", "mu_short", "wane", "tau", "sigma1", "sigma2", "error", 
               "lnlike")
-    tmp <- as.mcmc(tmp[tmp$sampno > 550000,vars])
+    tmp <- as.mcmc(tmp[tmp$sampno > burnin1,vars])
     chains_univ[[i]] <- tmp
   }
   vars1 <- c("mu", "mu_short", "wane", "tau", "sigma1", "sigma2", "error", 
@@ -41,7 +39,7 @@ for(wd in wds){
     tmp <- data.table::fread(chain_files_multi[i],data.table=FALSE)
     vars <- c("sampno","mu", "mu_short", "wane", "tau", "sigma1", "sigma2", "error", 
               "lnlike")
-    tmp <- as.mcmc(tmp[tmp$sampno > 1050000,vars])
+    tmp <- as.mcmc(tmp[tmp$sampno > burnin2,vars])
     chains_multi[[i]] <- tmp
   }
   maxSampno <- min(as.numeric(lapply(chains_multi,function(x) max(x[,"sampno"]))))
@@ -88,7 +86,7 @@ for(wd in wds){
   mpsrf_gelman_multi_all <- c(mpsrf_gelman_multi_all, mpsrf_gelman_multi)
 }
 
-res <- data.frame(wds, runs$N, runs$histSampleProb, runs$switch_sample, ess_univ_all, 
+res <- data.frame(wds, runs$N, runs$histSampleProb, runs$switch_sample, runs$buckets,runs$alpha,runs$beta,ess_univ_all, 
                   ess_multi_all, 
              max_gelman_univ_all, mean_gelman_univ_all, mpsrf_gelman_univ_all,
              max_gelman_multi_all, mean_gelman_multi_all, mpsrf_gelman_multi_all
