@@ -98,7 +98,12 @@ res <- run_MCMC(startTab, titreDat, mcmcPars, filename="test1",
 
 chain1 <- read.csv(res$chain_file)
 chain1 <- chain1[chain1$sampno >= (mcmcPars["adaptive_period"]+mcmcPars["burnin"]),]
-#plot(coda::as.mcmc(chain1))
+
+setwd("~/Documents/Fluscape/serosolver_own/")
+
+pdf("better_alpha.pdf")
+plot(coda::as.mcmc(chain1))
+dev.off()
 
 infChain <- data.table::fread(res$history_file,data.table=FALSE)
 #infChain <- data.table::fread(infChainFile,data.table=FALSE)
@@ -106,9 +111,9 @@ n_infs <- ddply(infChain, ~individual, function(x) summary(rowSums(x[,1:(ncol(x)
 n_inf_chain <- ddply(infChain, c("individual","sampno"), function(x) rowSums(x[,1:(ncol(x)-2)]))
 n_hist_chain <- reshape2::dcast(n_inf_chain, sampno~individual, drop=TRUE)
 #beepr::beep(sound=4)
-pdf(paste0(filename,"_infChain.pdf"))
+#pdf(paste0(filename,"_infChain.pdf"))
 plot(coda::as.mcmc(n_hist_chain))
-dev.off()
+#dev.off()
 
 
 wow <- ddply(infChain, ~individual, function(x) colSums(x[,!(colnames(x) %in% c("individual","sampno"))])/nrow(x))

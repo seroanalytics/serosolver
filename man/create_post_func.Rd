@@ -4,7 +4,7 @@
 \alias{create_post_func}
 \title{Posterior function pointer}
 \usage{
-create_post_func(parTab, data, antigenicMap, PRIOR_FUNC, ...)
+create_post_func(parTab, data, antigenicMap, PRIOR_FUNC, version = 1, ...)
 }
 \arguments{
 \item{parTab}{the parameter table controlling information such as bounds, initial values etc}

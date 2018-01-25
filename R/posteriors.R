@@ -9,7 +9,7 @@
 #' @return a single function pointer that takes only pars and infectionHistories as unnamed arguments
 #' @export
 create_post_func <- function(parTab, data, antigenicMap,
-                             PRIOR_FUNC,
+                             PRIOR_FUNC,version=1,
                              ...){
   pars1 <- parTab$values
   mynames <- parTab$names
@@ -56,46 +56,62 @@ create_post_func <- function(parTab, data, antigenicMap,
 
   indicesDataOverall <- NULL
   for(individual in unique(individuals)){
-    indicesDataOverall <- c(indicesDataOverall, nrow(data[data$individual == individual,]))
+      indicesDataOverall <- c(indicesDataOverall, nrow(data[data$individual == individual,]))
   }
-  indicesDataOverall <- cumsum(c(0,indicesDataOverall))
-  
-  r_likelihood <- function(expected, data, theta){
-    liks <- numeric(length(expected))
-    largeI <- data > theta["MAX_TITRE"]
-    smallI <- data <= 0
-    restI <- data > 0 & data <= theta["MAX_TITRE"]
-    
-    liks[largeI] <- pnorm(theta["MAX_TITRE"], expected[largeI],theta["error"],lower.tail=FALSE,log.p=TRUE)
-    liks[smallI] <- pnorm(1, expected[smallI],theta["error"],lower.tail=TRUE,log.p=TRUE)
-    liks[restI] <- log(pnorm(data[restI]+1,expected[restI],theta["error"],lower.tail=TRUE,log.p=FALSE) - 
-                  pnorm(data[restI],expected[restI], theta["error"],lower.tail=TRUE,log.p=FALSE))
-    return(liks)
-  }
+  indicesDataOverall <- cumsum(c(0,indicesDataOverall))  
   
   indicesOverallDiff <- diff(indicesDataOverall)
-  ## The function pointer
-  f <- function(pars, infectionHistories){
-      names(pars) <- mynames
-      ## Work out short and long term boosting cross reactivity
-      antigenicMapLong <- 1-pars["sigma1"]*antigenicMapMelted
-      antigenicMapLong[antigenicMapLong < 0] <- 0
-      antigenicMapShort <- 1-pars["sigma2"]*antigenicMapMelted
-      antigenicMapShort[antigenicMapShort < 0] <- 0
+  if(version==1){
+      print("likelihood only - prior implicit in proposal")
+      ## The function pointer
+      f <- function(pars, infectionHistories){
 
-      ## Now pass to the C++ function
-      y <- titre_data_group(pars, infectionHistories, strains, strainIndices, sampleTimes,
-                                 indicesData,indicesDataOverall,indicesSamples, virusIndices, 
-                                 antigenicMapLong, antigenicMapShort)
-      liks <- r_likelihood(y, titres, pars)
-                                        #return(list(liks, y, titres))
-                                        #liks <- numeric(length(y))
-                                        #return(liks)
-                                        #liks <- dnorm(titres,y,sd=pars["error"],1)
-                                        #prior <- dunif(rowSums(infectionHistories),0,ncol(infectionHistories),log=TRUE)
-     # prior <- dbinom(rowSums(infectionHistories), ncol(infectionHistories), 0.5,  1)
-      #return(rep(0,n_indiv))
-      return(sum_buckets(liks, indicesOverallDiff))
+          names(pars) <- mynames
+          ## Work out short and long term boosting cross reactivity
+          antigenicMapLong <- 1-pars["sigma1"]*antigenicMapMelted
+          antigenicMapLong[antigenicMapLong < 0] <- 0
+          antigenicMapShort <- 1-pars["sigma2"]*antigenicMapMelted
+          antigenicMapShort[antigenicMapShort < 0] <- 0
+          
+          ## Now pass to the C++ function
+          y <- titre_data_group(pars, infectionHistories, strains, strainIndices, sampleTimes,
+                                indicesData,indicesDataOverall,indicesSamples, virusIndices, 
+                                antigenicMapLong, antigenicMapShort)
+          liks <- r_likelihood(y, titres, pars)                                        
+          ##return(rep(0,n_indiv))
+          return(sum_buckets(liks, indicesOverallDiff))
+      }
+  } else if(version==2){
+      print("nothing - posterior implicit in proposal")
+      f <- function(pars, infectionHistories){
+          names(pars) <- mynames
+          return(rep(0,n_indiv))
+      }
+  } else if(version == 3){
+      print("explicit prior - no likelihood. proposals should be symmetric")
+      f <- function(pars, infectionHistories){
+          names(pars) <- mynames
+          return(PRIOR_FUNC(pars, infectionHistories))
+      }
+  } else {
+      print("likelihood and prior - proposals should be symmetric")
+      f <- function(pars, infectionHistories){
+          names(pars) <- mynames
+          ## Work out short and long term boosting cross reactivity
+          antigenicMapLong <- 1-pars["sigma1"]*antigenicMapMelted
+          antigenicMapLong[antigenicMapLong < 0] <- 0
+          antigenicMapShort <- 1-pars["sigma2"]*antigenicMapMelted
+          antigenicMapShort[antigenicMapShort < 0] <- 0
+          
+          ## Now pass to the C++ function
+          y <- titre_data_group(pars, infectionHistories, strains, strainIndices, sampleTimes,
+                                indicesData,indicesDataOverall,indicesSamples, virusIndices, 
+                                antigenicMapLong, antigenicMapShort)
+          liks <- r_likelihood(y, titres, pars)
+          liks <- sum_buckets(liks, indicesOverallDiff)
+          liks <- liks + PRIOR_FUNC(pars, infectionHistories)         
+          return(liks)
+      }
   }
   f
 }
@@ -152,17 +168,38 @@ create_post_func1 <- function(parTab, data,antigenicMap,
   ## to which individuals
   indicesSamples <- c(0)
   for(individual in unique(individuals)){
-    indicesSamples <- c(indicesSamples, length(individuals[individuals==individual]))
+      indicesSamples <- c(indicesSamples, length(individuals[individuals==individual]))
   }
   indicesSamples <- cumsum(indicesSamples)
   
   indicesDataOverall <- NULL
   for(individual in unique(individuals)){
-    indicesDataOverall <- c(indicesDataOverall, nrow(data[data$individual == individual,]))
+      indicesDataOverall <- c(indicesDataOverall, nrow(data[data$individual == individual,]))
   }
   indicesDataOverall <- cumsum(c(0,indicesDataOverall))
-  
-  r_likelihood <- function(expected, data, theta){
+  indicesOverallDiff <- diff(indicesDataOverall)
+  ## The function pointer
+  f <- function(pars){
+      names(pars) <- mynames
+      ## Work out short and long term boosting cross reactivity
+      antigenicMapLong <- 1-pars["sigma1"]*antigenicMapMelted
+      antigenicMapLong[antigenicMapLong < 0] <- 0
+      antigenicMapShort <- 1-pars["sigma2"]*antigenicMapMelted
+      antigenicMapShort[antigenicMapShort < 0] <- 0
+
+      ## Now pass to the C++ function
+      y <- titre_data_group(pars, infectionHistories, strains, strainIndices, sampleTimes,
+                            indicesData,indicesDataOverall,indicesSamples, virusIndices, 
+                            antigenicMapLong, antigenicMapShort)
+      liks <- r_likelihood(y, titres, pars)
+      lik <- -sum(sum_buckets(liks, indicesOverallDiff))
+      lik
+  }
+  f
+}
+
+#' @export
+r_likelihood <- function(expected, data, theta){
     liks <- numeric(length(expected))
     largeI <- data > theta["MAX_TITRE"]
     smallI <- data <= 0
@@ -171,30 +208,7 @@ create_post_func1 <- function(parTab, data,antigenicMap,
     liks[largeI] <- pnorm(theta["MAX_TITRE"], expected[largeI],theta["error"],lower.tail=FALSE,log.p=TRUE)
     liks[smallI] <- pnorm(1, expected[smallI],theta["error"],lower.tail=TRUE,log.p=TRUE)
     liks[restI] <- log(pnorm(data[restI]+1,expected[restI],theta["error"],lower.tail=TRUE,log.p=FALSE) - 
-                         pnorm(data[restI],expected[restI], theta["error"],lower.tail=TRUE,log.p=FALSE))
+                  pnorm(data[restI],expected[restI], theta["error"],lower.tail=TRUE,log.p=FALSE))
     return(liks)
   }
   
-  indicesOverallDiff <- diff(indicesDataOverall)
-  ## The function pointer
-  f <- function(pars){
-    names(pars) <- mynames
-    ## Work out short and long term boosting cross reactivity
-    antigenicMapLong <- 1-pars["sigma1"]*antigenicMapMelted
-    antigenicMapLong[antigenicMapLong < 0] <- 0
-    antigenicMapShort <- 1-pars["sigma2"]*antigenicMapMelted
-    antigenicMapShort[antigenicMapShort < 0] <- 0
-
-    ## Now pass to the C++ function
-    y <- titre_data_group(pars, infectionHistories, strains, strainIndices, sampleTimes,
-                          indicesData,indicesDataOverall,indicesSamples, virusIndices, 
-                          antigenicMapLong, antigenicMapShort)
-    liks <- r_likelihood(y, titres, pars)
-  
-    #liks <- dnorm(titres,y,sd=pars["error"],1)
-    lik <- -sum(sum_buckets(liks, indicesOverallDiff))
-    
-    lik
-  }
-  f
-}

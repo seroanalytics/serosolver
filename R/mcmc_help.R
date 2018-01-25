@@ -54,49 +54,11 @@ infection_history_proposal_smart <- function(infectionHistories, sampledIndivs, 
                                         #
                 if(id2 < 1) id2 <- maxI + id2
                 if(id2 > maxI) id2 <- id2 - maxI
-                
-                                        #                    x[infectID]=x[naiveID]
-                                        #                   x[naiveID]=1
                 tmp <- x[id1]
                 x[id1] <- x[id2]
-                x[id2] <- tmp        
+                x[id2] <- tmp       
             }
-            ## Remove infection
-                                        #if(rand1 < 1/3){
-            #    ## Find location of an infection
-            #    infectID = which(x < 0)
-            #    ## Only do this is there is an infection to be removed!
-            #    if(length(infectID) > 0){
-            #        x[sample(infectID,1)]=0
-            #    }
-            #    ## Add infection
-            #}
-            #if(rand1 > 1/3  & rand1 < 2/3){
-            #    ## Find year where no infection occured
-            #    naiveID = which(x == 0)
-            #    ## Only do this if there is a naive location
-            #    if(length(naiveID) > 0){
-            #        x[sample(naiveID,1)]=1
-            #    }
-            #    ## Move infection
-            #}
-                                        #if(rand1 > 2/3){
-                                        #    infectID = which(x > 0)
-                                        #    if(length(infectID) > 0){
-                                        #        if(length(infectID) > 1) infectID <- sample(infectID, 1)
-                                        #       moveMax <- 5
-            ##       
-                                        #       move <- sample(-moveMax:moveMax,1)
-                                        #       naiveID <- infectID + move
-                                        #
-            ##                    if(naiveID < 1) naiveID <- maxI + naiveID
-                                        #                    if(naiveID > maxI) naiveID <- naiveID - maxI##
-
-                                        #                    x[infectID]=x[naiveID]
-                                        #                   x[naiveID]=1
-                                        #              }
-                                        #             
-                                        #        }
+           
         }
         newInf[indiv,ageMask[indiv]:maxI]=x # Only =1 if individual was alive
     } # end loop over individuals
@@ -105,24 +67,50 @@ infection_history_proposal_smart <- function(infectionHistories, sampledIndivs, 
 
 
 #' @export
-infection_history_betabinom <- function(newInfHist, sampledIndivs, ageMask, moveSizes, alpha, beta){
+infection_history_betabinom_symmetric<- function(newInfHist, sampledIndivs, ageMask, moveSizes, alpha, beta){
     newInf <- newInfHist
     maxI <- ncol(newInf)
     for(indiv in sampledIndivs){
         x <- newInfHist[indiv, ageMask[indiv]:ncol(newInfHist)]
         rand1 <- runif(1)
         if(rand1 < 1/2){
-            loc <- sample(length(x), 1)
+            loc <- sample(length(x), 1)            
+            x[loc] <- !x[loc]                                       
+        } else {
+            id1 <- sample(length(x),1)
+            moveMax <- moveSizes[indiv]
+            move <- sample(-moveMax:moveMax,1)
+            id2 <- id1 + move
+            if(id2 < 1) id2 <- maxI + id2
+            if(id2 > maxI) id2 <- id2 - maxI
+            
+            tmp <- x[id1]
+            x[id1] <- x[id2]
+            x[id2] <- tmp       
+        }
+        newInf[indiv,ageMask[indiv]:ncol(newInfHist)]=x
+    }
+    return(newInf)    
+}
+
+#' @export
+infection_history_betabinom<- function(newInfHist, sampledIndivs, ageMask, moveSizes, alpha, beta){
+    newInf <- newInfHist
+    maxI <- ncol(newInf)
+    for(indiv in sampledIndivs){
+        x <- newInfHist[indiv, ageMask[indiv]:ncol(newInfHist)]
+        rand1 <- runif(1)       
+
+        if(rand1 < 1/2){
+            loc <- sample(length(x), 1)            
             x_new <- x_old <- x
             x_new[loc] <- 1
             x_old[loc] <- 0
-
-            #probA <- dbb(sum(x_new), length(x), alpha, beta)/choose(length(x), sum(x_new))
-            #probB <- dbb(sum(x_old), length(x), alpha, beta)/choose(length(x), sum(x_old))
-                    
-            #ratio <- probA/(probA + probB)
+            ##probA <- dbb(sum(x_new), length(x), alpha, beta)/choose(length(x), sum(x_new))
+            ##probB <- dbb(sum(x_old), length(x), alpha, beta)/choose(length(x), sum(x_old))
+            ##ratio <- probA/(probA + probB)
             prob1 <- (alpha+sum(x[-loc]))/(alpha+beta+(length(x)-1))
-
+            
             if(runif(1)<prob1){
                 x[loc] <- 1
             } else {
@@ -144,6 +132,7 @@ infection_history_betabinom <- function(newInfHist, sampledIndivs, ageMask, move
     }
     return(newInf)    
 }
+
 
 
 #' @export
@@ -182,9 +171,7 @@ infection_history_betabinom_group <- function(newInfHist, sampledIndivs, ageMask
                 x[id2] <- tmp
             }
         }
-
-        newInf[indiv,ageMask[indiv]:ncol(newInfHist)]=x
-        
+        newInf[indiv,ageMask[indiv]:ncol(newInfHist)]=x        
     }
     return(newInf)    
 }
@@ -202,7 +189,7 @@ infection_history_betabinom_group <- function(newInfHist, sampledIndivs, ageMask
 #' @param ageMask the vector of indices for each individual specifiying which index of strainIsolationTimes is the first strain each individual could have seen
 #' @return a new matrix matching newInfectionHistories in dimensions with proposed moves
 #' @export
-infection_history_proposal <-function(newInfectionHistories,sampledIndivs,strainIsolationTimes,ageMask){
+infection_history_proposal_OLD<-function(newInfectionHistories,sampledIndivs,strainIsolationTimes,ageMask){
     newInf <- newInfectionHistories
     acceptance_distribution <- rep(1, nrow(newInf))
     for(indiv in sampledIndivs){ # Resample subset of individuals
@@ -257,62 +244,6 @@ infection_history_proposal <-function(newInfectionHistories,sampledIndivs,strain
     } # end loop over individuals
 return(list(newInf, acceptance_distribution))
 }
-
-#' @export
-infection_history_proposal_correct <-function(newInfectionHistories,sampledIndivs,strainIsolationTimes,ageMask){
-    newInf <- newInfectionHistories
-    for(indiv in sampledIndivs){ # Resample subset of individuals
-        rand1=runif(1)
-        x=newInfectionHistories[indiv,ageMask[indiv]:length(strainIsolationTimes)] # Only resample years individual was alive
-        if(rand1 < 1/2){
-            id1 <- sample(length(x),1)
-            x[id1] <- !x[id1]
-        } else {
-            id1 <- sample(length(x),1)
-            id2 <- sample(length(x),1)
-            tmp <- x[id1]
-            x[id1] <- x[id2]
-            x[id2] <- tmp        
-        }
-        
-        newInf[indiv,ageMask[indiv]:length(strainIsolationTimes)]=x # Only =1 if individual was alive
-    } # end loop over individuals
-    return(newInf)
-}
-
-#' Individual infection history sample - for testing
-#'
-#' @export
-sample_indiv <- function(x){
-    rand1=runif(1)
-   
-        
-    ## Remove infection
-    if(rand1<1/3){
-        infectID= which(x>0)
-        if(length(infectID)>0){
-            x[sample(infectID,1)]=0 # Why double? DEBUG
-        }
-    }
-    ## Add infection
-    if(rand1>1/3 & rand1<2/3){
-        ninfecID=which(x==0)
-        if(length(ninfecID)>0){
-            x[sample(ninfecID,1)]=1
-        }
-    }
-    ## Move infection position
-    if(rand1>2/3){
-        infectID=which(x > 0)
-        ninfecID=which(x == 0)
-        if(length(infectID)>0 & length(ninfecID)>0){
-            x[sample(infectID,1)]=0
-            x[sample(ninfecID,1)]=1
-        }
-    }
-    x
-}
-
 
 #' MCMC proposal function
 #'

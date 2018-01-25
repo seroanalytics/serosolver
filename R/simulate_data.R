@@ -128,10 +128,11 @@ simulate_infection_histories <- function(pInf, infSD, strainIsolationTimes, samp
     infectionHistories <- matrix(0,ncol=n_strains,nrow=n_indiv)
     
     ## Simulate attack rates
+    attackRates <- pInf
     #attackRates <- rlnorm(length(pInf), meanlog=log(pInf)- infSD^2/2,sdlog=infSD)
 
     ## Should this be necessary?
-    attackRates[attackRates > 1] <- 1
+    #attackRates[attackRates > 1] <- 1
 
     ## For each strain (ie. each infection year)
     for(i in 1:n_strains){

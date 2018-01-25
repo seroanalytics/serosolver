@@ -17,12 +17,14 @@
 #' @export
 run_MCMC <- function(parTab,
                      data,
-                     mcmcPars=c("iterations"=10000,"popt"=0.44,"opt_freq"=1000,"thin"=1,"adaptive_period"=5000,
-                                "save_block"=100,"thin2"=10,"histSampleProb"=0.1,"switch_sample"=2, "burnin"=5000),
+                     mcmcPars=c("iterations"=50000,"popt"=0.44,"popt_hist"=0.44,"opt_freq"=2000,"thin"=10,"adaptive_period"=10000,
+                                "save_block"=100,"thin2"=100,"histSampleProb"=1,"switch_sample"=2, "burnin"=0, 
+                                "nInfs"=4, "moveSize"=5, "histProposal"=3, "histOpt"=1),
                      filename="test",
                      CREATE_POSTERIOR_FUNC,
                      mvrPars=NULL,
                      PRIOR_FUNC=NULL,
+                     version=1,
                      OPT_TUNING=0.1,
                      antigenicMap,
                      ages=NULL,
@@ -42,6 +44,17 @@ run_MCMC <- function(parTab,
     burnin <- mcmcPars["burnin"] # Run this many iterations before attempting adaptation. Idea is to reduce getting stuck in local maxima
     moveSize <- mcmcPars["moveSize"] # Number of infections to move/remove/add in each proposal step
     nInfs <- mcmcPars["nInfs"] # Number of infections to move/remove/add in each proposal step
+    histProposal <- mcmcPars["histProposal"]
+    histOpt <- mcmcPars["histOpt"]
+    
+    if(histProposal == 1){
+        histPropPrint <- "symmetric"
+    } else if(histProposal == 2){
+        histPropPrint <- "single"
+    } else {
+        histPropPrint <- "multiple proposals"
+    }
+    message(cat("Infection history proposal version: ", histPropPrint,sep="\t"))
     
     ## Extract parameter settings
     param_length <- nrow(parTab)
@@ -57,7 +70,9 @@ run_MCMC <- function(parTab,
 
     alpha <- parTab[parTab$names == "alpha","values"]
     beta <- parTab[parTab$names == "beta","values"]
-
+    a <- parTab[parTab$names == "a","values"]
+    b <- parTab[parTab$names == "b","values"]
+    
     
     ## Arrays to store acceptance rates
     ## If univariate proposals, store vector of acceptances
@@ -101,7 +116,8 @@ run_MCMC <- function(parTab,
     ## Create posterior calculating function
     posterior_simp <- protect(CREATE_POSTERIOR_FUNC(parTab,data,
                                                     antigenicMap,
-                                                    PRIOR_FUNC,...))
+                                                    PRIOR_FUNC,version,
+                                                    ...))
 
 ###############
     ## Create age mask
@@ -127,7 +143,6 @@ run_MCMC <- function(parTab,
     ## IT MIGHT BE A BIT TOO SLOW PASSING INFECTION HISTORIES AS A MATRIX EACH ITERATION
     ## -----------------------
     probabs <- posterior_simp(current_pars,infectionHistories)
-    #return(list(current_pars, infectionHistories, posterior_simp))
     probab <- sum(probabs)
     message(cat("Starting theta likelihood: ",probab,sep="\t"))
 ###############
@@ -200,32 +215,23 @@ run_MCMC <- function(parTab,
             ## Otherwise, resample infection history
         } else {
             indivSubSample <- sample(1:n_indiv, ceiling(histSampleProb*n_indiv))
-                                        #newInfectionHistories <- infection_history_betabinom(infectionHistories, indivSubSample,
-                                        #                                                     ageMask, moveSizes, alpha, beta)
-                                        #newInfectionHistories <- infection_history_betabinom_group(infectionHistories, indivSubSample,
-                                        #                                                           ageMask, moveSizes, nInfs_vec, alpha, beta)
             randNs <- runif(length(indivSubSample))
-                       
-            newInfectionHistories <- inf_hist_prop_cpp(infectionHistories,
-                                                       indivSubSample,
-                                                       ageMask,
-                                                       moveSizes,
-                                                       nInfs_vec,
-                                                       alpha,
-                                                       beta,
-                                                       randNs)
-            
-            
-            ## Calculate new likelihood with these infection histories
-            new_probabs <- posterior_simp(current_pars, newInfectionHistories)
-            
-            new_probab <- sum(new_probabs)
-            histiter[indivSubSample]<- histiter[indivSubSample] + 1
-
+            if(histProposal==1){
+                newInfectionHistories <- infection_history_betabinom_symmetric(infectionHistories, indivSubSample, ageMask, moveSizes, alpha, beta)
+            } else if(histProposal == 2){
+                newInfectionHistories <- infection_history_betabinom(infectionHistories, indivSubSample, ageMask, moveSizes, alpha, beta)             
+            } else {
+                newInfectionHistories <- inf_hist_prop_cpp(infectionHistories,indivSubSample,ageMask,moveSizes, nInfs_vec, alpha,beta,randNs)
+                
+            }
             move <- which(randNs > 1/2)
             add <- which(randNs < 1/2)
             histiter_add[indivSubSample[add]]<- histiter_add[indivSubSample[add]] + 1
             histiter_move[indivSubSample[move]]<- histiter_move[indivSubSample[move]] + 1
+            ## Calculate new likelihood with these infection histories
+            new_probabs <- posterior_simp(current_pars, newInfectionHistories)            
+            new_probab <- sum(new_probabs)
+            histiter[indivSubSample]<- histiter[indivSubSample] + 1
         }
 
 #########################
@@ -256,7 +262,7 @@ run_MCMC <- function(parTab,
             }
         } else {
             #print(priors)
-            log_probs <- (new_probabs[indivSubSample] - probabs[indivSubSample])# + log(priors)
+            log_probs <- (new_probabs[indivSubSample] - probabs[indivSubSample])
             log_probs[log_probs > 0] <- 0
             x <- which(log(runif(length(indivSubSample))) < log_probs)
             changeI <- indivSubSample[x]
@@ -346,15 +352,17 @@ run_MCMC <- function(parTab,
                                         #histiter <- histaccepted <- histreset
                 histiter <- histaccepted <- histaccepted_add <- histaccepted_move <- histiter_add <- histiter_move <- histreset
 
-                nInfs_vec[which(pcurHist_add < popt_hist*(1-OPT_TUNING))] <- nInfs_vec[which(pcurHist_add< popt_hist*(1-OPT_TUNING))] - 1
-                nInfs_vec[which(pcurHist >= popt_hist*(1+OPT_TUNING))] <- nInfs_vec[which(pcurHist >= popt_hist*(1+OPT_TUNING))] +1
-                nInfs_vec[nInfs_vec < 1] <- 1
-                nInfs_vec[nInfs_vec > n_strain] <- n_strain
-                moveSizes[which(pcurHist < popt_hist*(1-OPT_TUNING))] <- moveSizes[which(pcurHist < popt_hist*(1-OPT_TUNING))] - 1
-                moveSizes[which(pcurHist >= popt_hist*(1+OPT_TUNING))] <- moveSizes[which(pcurHist >= popt_hist*(1+OPT_TUNING))] +1
-                moveSizes[moveSizes < 1] <- 1
-                moveSizes[moveSizes > n_strain] <- n_strain
-
+                if(histOpt == 1){
+                    nInfs_vec[which(pcurHist_add < popt_hist*(1-OPT_TUNING))] <- nInfs_vec[which(pcurHist_add< popt_hist*(1-OPT_TUNING))] - 1
+                    nInfs_vec[which(pcurHist >= popt_hist*(1+OPT_TUNING))] <- nInfs_vec[which(pcurHist >= popt_hist*(1+OPT_TUNING))] +1
+                    nInfs_vec[nInfs_vec < 1] <- 1
+                    nInfs_vec[nInfs_vec > n_strain] <- n_strain
+                    moveSizes[which(pcurHist < popt_hist*(1-OPT_TUNING))] <- moveSizes[which(pcurHist < popt_hist*(1-OPT_TUNING))] - 1
+                    moveSizes[which(pcurHist >= popt_hist*(1+OPT_TUNING))] <- moveSizes[which(pcurHist >= popt_hist*(1+OPT_TUNING))] +1
+                    moveSizes[moveSizes < 1] <- 1
+                    moveSizes[moveSizes > n_strain] <- n_strain
+                }
+                
                 message(cat("nInfs: ", nInfs_vec, sep="\t"))
                 message(cat("Move sizes: ", moveSizes, sep="\t"))
                 
