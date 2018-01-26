@@ -45,8 +45,8 @@ get_titre_predictions <- function(chain, infectionHistories, dat,
         tmpInfHist <- infectionHistories[infectionHistories$individual==indiv,]
         tmpDat <- dat[dat$individual==indiv,]
         tmpDat <- tmpDat[complete.cases(tmpDat),]
-        age <- as.numeric(ages[ages$individual == indiv,"age"])
-        birthYear <- refTime - age
+        birthYear <- as.numeric(ages[ages$individual == indiv,"DOB"])
+        #birthYear <- refTime - age
         tmpSamp <- sample(intersect(unique(tmpInfHist$sampno),unique(chain$sampno)),nsamp)
         for(sampleTime in unique(tmpDat$samples)){
             predicted_titres <- matrix(nrow=nsamp,ncol=length(strainIsolationTimes))
@@ -69,6 +69,7 @@ get_titre_predictions <- function(chain, infectionHistories, dat,
                 antigenicMapShort <- 1-pars["sigma2"]*antigenicMapMelted
                 antigenicMapShort[antigenicMapShort < 0] <- 0
                 predicted_titres[i,] <- infection_model_indiv(pars, as.numeric(infectionHistory),
+                                                              strainIsolationTimes,
                                                               sampleTime,
                                                               strainIsolationTimes,
                                                               antigenicMapLong,antigenicMapShort)

@@ -19,15 +19,16 @@ using namespace Rcpp;
 //' @useDynLib serosolver
 //' @export
 //[[Rcpp::export]]
-NumericVector infection_model_indiv(NumericVector theta, 
-				    IntegerVector infectionHistory,
-				    NumericVector infectionTimes,
-				    IntegerVector infectionMapIndices,
-				    double samplingTime, 
-				    IntegerVector measurementMapIndices,
+NumericVector infection_model_indiv(NumericVector theta, // Parameter vector
+				    IntegerVector infectionHistory, // vector of 1s and 0s for infections
+				    NumericVector infectionTimes, // Time of these infections
+				    IntegerVector infectionMapIndices, // Where these infection times fit in antigenic map
+				    double samplingTime,  // This sampling time
+				    IntegerVector measurementMapIndices, // Indices of measured strains in antigenic map
 				    NumericVector antigenicMapLong,
 				    NumericVector antigenicMapShort, 
-				    int numberStrains){
+				    int numberStrains // Maximum number of infections an individual coudl experience
+				    ){
   // Extract model parameters
   double mu = theta["mu"];
   double mu_short = theta["mu_short"];

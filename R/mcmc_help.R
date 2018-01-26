@@ -69,9 +69,9 @@ infection_history_proposal_smart <- function(infectionHistories, sampledIndivs, 
 #' @export
 infection_history_betabinom_symmetric<- function(newInfHist, sampledIndivs, ageMask, moveSizes, alpha, beta){
     newInf <- newInfHist
-    maxI <- ncol(newInf)
     for(indiv in sampledIndivs){
         x <- newInfHist[indiv, ageMask[indiv]:ncol(newInfHist)]
+        maxI <- length(x)
         rand1 <- runif(1)
         if(rand1 < 1/2){
             loc <- sample(length(x), 1)            
@@ -96,11 +96,10 @@ infection_history_betabinom_symmetric<- function(newInfHist, sampledIndivs, ageM
 #' @export
 infection_history_betabinom<- function(newInfHist, sampledIndivs, ageMask, moveSizes, alpha, beta){
     newInf <- newInfHist
-    maxI <- ncol(newInf)
     for(indiv in sampledIndivs){
         x <- newInfHist[indiv, ageMask[indiv]:ncol(newInfHist)]
-        rand1 <- runif(1)       
-
+        maxI <- length(x)
+        rand1 <- runif(1)
         if(rand1 < 1/2){
             loc <- sample(length(x), 1)            
             x_new <- x_old <- x
@@ -110,7 +109,6 @@ infection_history_betabinom<- function(newInfHist, sampledIndivs, ageMask, moveS
             ##probB <- dbb(sum(x_old), length(x), alpha, beta)/choose(length(x), sum(x_old))
             ##ratio <- probA/(probA + probB)
             prob1 <- (alpha+sum(x[-loc]))/(alpha+beta+(length(x)-1))
-            
             if(runif(1)<prob1){
                 x[loc] <- 1
             } else {
@@ -123,7 +121,6 @@ infection_history_betabinom<- function(newInfHist, sampledIndivs, ageMask, moveS
             id2 <- id1 + move
             if(id2 < 1) id2 <- maxI + id2
             if(id2 > maxI) id2 <- id2 - maxI
-            
             tmp <- x[id1]
             x[id1] <- x[id2]
             x[id2] <- tmp       

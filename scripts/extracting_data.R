@@ -27,7 +27,6 @@ if(resolution == "monthly"){
 }
 
 
-
 ## Extract fluscape data
 titreDat <- read.csv("fluscape/trunk/data/HI_titers_paired_R56Pilot.csv",stringsAsFactors = FALSE)
 titreDat <- titreDat[,c("Visit","Virus","HI_Titer","Participant_ID")]

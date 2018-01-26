@@ -131,7 +131,6 @@ run_MCMC <- function(parTab,
     } else {
         ageMask <- rep(1, n_indiv)
     }
-    
 ######################
     ## Setup initial conditions
     infectionHistories = startInfHist
@@ -214,12 +213,13 @@ run_MCMC <- function(parTab,
             new_probab <- sum(new_probabs)
             ## Otherwise, resample infection history
         } else {
+            
             indivSubSample <- sample(1:n_indiv, ceiling(histSampleProb*n_indiv))
             randNs <- runif(length(indivSubSample))
             if(histProposal==1){
                 newInfectionHistories <- infection_history_betabinom_symmetric(infectionHistories, indivSubSample, ageMask, moveSizes, alpha, beta)
             } else if(histProposal == 2){
-                newInfectionHistories <- infection_history_betabinom(infectionHistories, indivSubSample, ageMask, moveSizes, alpha, beta)             
+                newInfectionHistories <- infection_history_betabinom(infectionHistories, indivSubSample, ageMask, moveSizes, alpha, beta)
             } else {
                 newInfectionHistories <- inf_hist_prop_cpp(infectionHistories,indivSubSample,ageMask,moveSizes, nInfs_vec, alpha,beta,randNs)
                 

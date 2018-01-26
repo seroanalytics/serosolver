@@ -1,0 +1,13 @@
+version,histProposal,prior,descriptions,right?,relevant,min ess
+1,1,NULL,Likelihood only - prior implicit in proposal. Symmetric proposals,think so…,yes,14
+2,1,prior,"Posterior implicit in proposal - proposal is symmetric, so should be binomial",yes,,
+3,1,prior,"Explicit prior - with symmetric proposals, posterior should match prior",yes,,
+4,1,prior,Likelihood and prior - should be true posterior with symmetric proposals,think so…,yes,44
+1,2,NULL,"Likelihood only - prior implicit in proposal, which is beta binomial",think so…,yes,9.7
+2,2,prior,"Posterior implicit in proposal, which is beta binomial",yes,,
+3,2,prior,Nonsense,,,
+4,2,prior,Nonsense,,,
+1,3,NULL,"Likelihood and prior implicit in proposal, which is beta binomial multiple infections",,yes,5.2
+2,3,prior,"Prior only implicit in proposal, which is beta binomial multiple infections",yes,,
+3,3,prior,Nonsense,,,
+4,3,prior,Nonsense,,,
