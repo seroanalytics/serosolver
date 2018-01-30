@@ -41,4 +41,3 @@ a list with: 1) the data frame of titre data as returned by \code{\link{simulate
 \description{
 Simulates a full data set for a given set of parameters etc.
 }
-

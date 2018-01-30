@@ -366,12 +366,14 @@ setup_infection_histories<- function(dat, strainIsolationTimes, ageMask,sample_p
 }
 
 #' @export
-setup_infection_histories_new <- function(data, strainIsolationTimes, space=5, titre_cutoff=2){
+setup_infection_histories_new <- function(data, sages, trainIsolationTimes, space=5, titre_cutoff=2){
   startInf <- NULL
   individuals <- unique(data$individual)
   for(individual in individuals){
     dat <- data[data$individual == individual,]
+    dob <- as.numeric(ages[ages$individual == individual,"DOB"])
     strains <- unique(dat$virus)
+    strains <- strains[strains >= dob]
     infYears <- NULL
     i <- 0
     while(i < length(strains)){ ## Start going through each strain

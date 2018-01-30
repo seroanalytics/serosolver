@@ -133,7 +133,7 @@ simulate_infection_histories <- function(pInf, infSD, strainIsolationTimes, samp
 
     ## Should this be necessary?
     #attackRates[attackRates > 1] <- 1
-
+    ARs <- numeric(n_strains)
     ## For each strain (ie. each infection year)
     for(i in 1:n_strains){
         ## Find who was alive (all we need samplingTimes for is its max value)
@@ -142,10 +142,11 @@ simulate_infection_histories <- function(pInf, infSD, strainIsolationTimes, samp
         ## Sample a number of infections for the alive individuals, and set these entries to 1
         #y <- round(length(indivs[alive])*attackRates[i])
         y <- rbinom(1, length(indivs[alive]),attackRates[i])
+        ARs[i] <- y/length(indivs[alive])
         x <- sample(indivs[alive], y)
         infectionHistories[x,i] <- 1
     }
-    return(infectionHistories)    
+    return(list(infectionHistories,ARs))    
 }
 
 #' @export
@@ -239,20 +240,22 @@ simulate_data <- function(parTab, group=1,n_indiv,buckets=12,
     }
     
     ## Simulate infection histories
-    infHist <- simulate_infection_histories(pInf, simInfPars["logSD"], strainIsolationTimes, samplingTimes, ages)
+    tmp <- simulate_infection_histories(pInf, simInfPars["logSD"], strainIsolationTimes, samplingTimes, ages)
+    infHist <- tmp[[1]]
+    ARs <- tmp[[2]]
     
     ## Simulate titre data
     y <- simulate_group(n_indiv, pars, infHist, strainIsolationTimes, samplingTimes,
                         nsamps, antigenicMapLong,antigenicMapShort)
 
     ## Randomly censor titre values
-    y$titre <- y$titre*sample(c(0,1),nrow(y),prob=c(titreSensoring,1-titreSensoring),replace=TRUE)
+    y$titre <- y$titre*sample(c(NA,1),nrow(y),prob=c(titreSensoring,1-titreSensoring),replace=TRUE)
     y$run <- 1
     y$group <- 1
 
     DOB <- max(samplingTimes) - ages
     ages <- data.frame("individual"=1:n_indiv, "DOB"=DOB)
-    attackRates <- data.frame("year"=strainIsolationTimes,"AR"=pInf)
+    attackRates <- data.frame("year"=strainIsolationTimes,"AR"=ARs)
     return(list(data=y, infectionHistories=infHist, ages=ages, attackRates=attackRates))
 }
 

@@ -5,7 +5,8 @@ library(reshape2)
 
 setwd("~/Documents/serosolver_own/serosolver")
 #devtools::load_all()
-n_indiv <-100
+n_indiv <- 100
+
 version <- 1
 histProposal <- 3
 PRIOR <- infHistPrior
@@ -15,8 +16,6 @@ antigenicMap <- read.csv("~/Documents/fluscape/trunk/data/Fonville2014AxMapPosit
 fit_dat <- generate_antigenic_map(antigenicMap, buckets)
 virus_key <- c("HK68"=1968, "EN72"=1972, "VI75"=1975, "TX77"=1977, "BK79"=1979, "SI87"=1987, "BE89"=1989, "BJ89"=1989,
                "BE92"=1992, "WU95"=1995, "SY97"=1997, "FU02"=2002, "CA04"=2004, "WI05"=2005, "PE06"=2006)*buckets
-
-
 antigenicMap$Strain <- virus_key[antigenicMap$Strain]
 
 p1 <- ggplot(antigenicMap) + 
@@ -25,95 +24,96 @@ p1 <- ggplot(antigenicMap) +
   geom_label(data=antigenicMap,aes(x=X+4,y=Y+0.25,label=Strain)) +
   theme_bw()
 
-parTab <- read.csv("~/Documents/serosolver_own/serosolver/inputs/parTab.csv",stringsAsFactors=FALSE)
-parTab[parTab$names == "wane","values"] <- parTab[parTab$names == "wane","values"]/buckets
-
 
 fit_dat <- fit_dat[fit_dat$inf_years >= 1968*buckets,]
 strainIsolationTimes <- unique(fit_dat$inf_years)
 samplingTimes <- seq(2010*buckets, 2015*buckets, by=1)
 
+
+parTab <- read.csv("~/Documents/serosolver_own/serosolver/inputs/parTab_lambda.csv",stringsAsFactors=FALSE)
+parTab[parTab$names == "wane","values"] <- parTab[parTab$names == "wane","values"]/buckets
+tmp <- parTab[parTab$names == "lambda",]
+for(i in 1:(length(strainIsolationTimes)-1)){
+  parTab <- rbind(parTab, tmp)
+}
+startTab <- parTab
 parTab[parTab$names %in% c("alpha","beta"),"values"] <- find_a_b(length(strainIsolationTimes),7,50)
 parTab[parTab$names == "wane","values"] <- 0.5
 
 dat <- simulate_data(parTab, 1, n_indiv, buckets,strainIsolationTimes,
                      samplingTimes, 2, antigenicMap=fit_dat, 0, 0, 10*buckets,75*buckets,
                      simInfPars=c("mean"=0.15,"sd"=0.5,"bigMean"=0.5,"logSD"=1),useSIR=TRUE)
-#indivs <- sample(1000, n_indiv)
 titreDat <- dat[[1]]
-
-#virus_key <- c("HK68"=1968, "EN72"=1972, "VI75"=1975, "TX77"=1977, "BK79"=1979, "SI87"=1987, "BE89"=1989, "BJ89"=1989,
-#               "BE92"=1992, "WU95"=1995, "SY97"=1997, "FU02"=2002, "CA04"=2004, "WI05"=2005, "PE06"=2006)
-viruses <- c(1968L, 1969L, 1972L, 1975L, 1977L, 1979L, 1982L, 1985L, 1987L, 
-  1989L, 1992L, 1995L, 1998L, 2000L, 2002L, 2004L, 2007L, 2009L, 
-  2010L, 2012L, 2014L)
-
+#viruses <- c(1968L, 1969L, 1972L, 1975L, 1977L, 1979L, 1982L, 1985L, 1987L, 
+#  1989L, 1992L, 1995L, 1998L, 2000L, 2002L, 2004L, 2007L, 2009L, 
+#  2010L, 2012L, 2014L)
 #titreDat <- titreDat[titreDat$virus %in% viruses,]
 infectionHistories <- infHist <- dat[[2]]
 ages <- dat[[3]]
 AR <- dat[[4]]
-
-#indivs <- sample(titreDat$individual,n_indiv)
-#titreDat <- titreDat[titreDat$individual %in% indivs,]
-#ages <- ages[ages$individual %in% indivs,]
-#indivs <- indivs[order(indivs)]
-#titreDat$individual <- match(titreDat$individual, indivs)
-#ages$individual <- match(ages$individual, indivs)
-
 p <- plot_data(titreDat, infHist, strainIsolationTimes, 5, NULL)
 
 startInf <- setup_infection_histories_new(titreDat, unique(fit_dat$inf_years), space=5,titre_cutoff=2)
 ageMask <- create_age_mask(ages, strainIsolationTimes,n_indiv)
-#tmpStartInf <- setup_infection_histories(data, strainIsolationTimes, ageMask, 0.2)
-startTab <- parTab
+
 #optimTab <- startTab[!(startTab$names %in% c("alpha","beta")),]
 #f1 <- create_post_func1(optimTab,titreDat,fit_dat,NULL,infectionHistories=startInf)
 #startPar <- parTab$values
 #startPar <- DEoptim::DEoptim(f1, lower=optimTab$lower_bound, upper=optimTab$upper_bound,control=list(itermax=10))$optim$bestmem
 #startPar <- c(startPar, startTab[(startTab$names %in% c("alpha","beta")),"values"])
+#startTab[!(startTab$names %in% c("alpha","beta")),"values"] <- startPar
 #startPar[6] <- 0.1
-mcmcPars <- c("iterations"=50000,"popt"=0.44,"popt_hist"=0.44,"opt_freq"=2000,"thin"=10,"adaptive_period"=20000,
-              "save_block"=100,"thin2"=100,"histSampleProb"=1,"switch_sample"=2, "burnin"=0, 
-              "nInfs"=4, "moveSize"=5, "histProposal"=histProposal, "histOpt"=0)
+#startTab[startTab$fixed == 0,"values"] <- runif(1, startTab[startTab$fixed == 0,"lower_start"], 
+#                                                startTab[startTab$fixed == 0,"upper_start"])
+mcmcPars <- c("iterations"=100000,"popt"=0.44,"popt_hist"=0.44,"opt_freq"=2000,"thin"=10,"adaptive_period"=50000,
+              "save_block"=100,"thin2"=100,"histSampleProb"=1,"switch_sample"=5, "burnin"=0, 
+              "nInfs"=4, "moveSize"=5, "histProposal"=histProposal, "histOpt"=1)
 
 ## For univariate proposals
-
-covMat <- diag(nrow(parTab))
-scale <- 0.8
-w <- 0.5
-mvrPars <- list(covMat, scale, w)
-f <- create_post_func(parTab,titreDat,fit_dat,version=version,PRIOR=PRIOR)
-#print(f(parTab$values, infHist))
-
 mvrPars <- NULL
-
-#startTab$values <- startPar
-
 #devtools::load_all()
-res <- run_MCMC(startTab, titreDat, mcmcPars, filename="lambda_compare",
-                create_post_func, mvrPars, PRIOR,version, 0.2, 
+f <- create_post_func(parTab,titreDat,fit_dat, NULL,4,ageMask)
+f(parTab$values, infHist)
+res <- run_MCMC(startTab, titreDat, mcmcPars, filename="lambda_test",
+                create_post_func, mvrPars, PRIOR,version=4, 0.2, 
                 fit_dat, ages=ages, 
                 startInfHist=startInf)
 
 
 chain1 <- read.csv(res$chain_file)
 chain1 <- chain1[chain1$sampno >= (mcmcPars["adaptive_period"]+mcmcPars["burnin"]),]
+tmp <- summary(as.mcmc(chain1))
+tmp <- as.data.frame(tmp[[2]])
+tmp$names <- rownames(tmp)
+lambda_names <- c("lambda",paste0("lambda.",1:47))
+tmp <- tmp[tmp$names %in% lambda_names,]
+tmpTab <- parTab[parTab$names == "lambda",]
+tmpTab$values <- AR[,2]
+tmpTab$names <- lambda_names
+tmp$names <- strainIsolationTimes
+tmpTab$names <- strainIsolationTimes
+AR_recovery <- ggplot() +
+    geom_pointrange(data=tmp,aes(x=names,y=`50%`,ymin=`2.5%`,ymax=`97.5%`)) +
+    geom_point(data=tmpTab,aes(x=names,y=values),col="red") +
+    ylab("Attack rate, lambda") +
+    xlab("Year") +
+    theme_bw() +
+    theme(axis.text.x=element_text(angle=45,hjust=1))
+
+
 #plot(coda::as.mcmc(chain1))
 
 infChain <- data.table::fread(res$history_file,data.table=FALSE)
 infChain <- infChain[infChain$sampno >= (mcmcPars["adaptive_period"]+mcmcPars["burnin"]),]
 #infChain <- data.table::fread(infChainFile,data.table=FALSE)
-xs <- min(strainIsolationTimes):max(strainIsolationTimes)
-colnames(AR) <- c("year","AR")
-arP <- plot_attack_rates(infChain, titreDat,ages,xs) + geom_point(data=AR,aes(x=year,y=AR), col="green")
 
 n_infs <- ddply(infChain, ~individual, function(x) summary(rowSums(x[,1:(ncol(x)-2)])))
 n_inf_chain <- ddply(infChain, c("individual","sampno"), function(x) rowSums(x[,1:(ncol(x)-2)]))
 n_hist_chain <- reshape2::dcast(n_inf_chain, sampno~individual, drop=TRUE)
 #beepr::beep(sound=4)
-#pdf(paste0(filename,"_infChain.pdf"))
-#plot(coda::as.mcmc(n_hist_chain))
-#dev.off()
+pdf(paste0(filename,"_infChain.pdf"))
+plot(coda::as.mcmc(n_hist_chain))
+dev.off()
 
 n_hist_chain <- as.data.frame(n_hist_chain[,2:ncol(n_hist_chain)])
 hist_chain <- reshape2::melt(n_hist_chain)

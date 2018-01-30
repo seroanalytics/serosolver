@@ -117,6 +117,7 @@ run_MCMC <- function(parTab,
     posterior_simp <- protect(CREATE_POSTERIOR_FUNC(parTab,data,
                                                     antigenicMap,
                                                     PRIOR_FUNC,version,
+                                                    ageMask,
                                                     ...))
 
 ###############
@@ -192,7 +193,7 @@ run_MCMC <- function(parTab,
         ## PROPOSALS
 ######################
         ## If updating theta
-        if(i %% switch_sample == 0){
+        if(i %% switch_sample != 0){
             ## If using univariate proposals
             if(is.null(mvrPars)) {
                 ## For each parameter (Gibbs)
@@ -244,7 +245,7 @@ run_MCMC <- function(parTab,
         #############################
         ## Check that all proposed parameters are in allowable range
         ## Skip if any parameters are outside of the allowable range
-        if(i %% switch_sample == 0){
+        if(i %% switch_sample != 0){
             log_prob <- new_probab-probab
             log_prob <- min(log_prob, 0)
             if(is.finite(log_prob) && log(runif(1)) < log_prob){
@@ -356,11 +357,17 @@ run_MCMC <- function(parTab,
                     nInfs_vec[which(pcurHist_add < popt_hist*(1-OPT_TUNING))] <- nInfs_vec[which(pcurHist_add< popt_hist*(1-OPT_TUNING))] - 1
                     nInfs_vec[which(pcurHist >= popt_hist*(1+OPT_TUNING))] <- nInfs_vec[which(pcurHist >= popt_hist*(1+OPT_TUNING))] +1
                     nInfs_vec[nInfs_vec < 1] <- 1
-                    nInfs_vec[nInfs_vec > n_strain/2] <- floor(n_strain/2)
+
                     moveSizes[which(pcurHist < popt_hist*(1-OPT_TUNING))] <- moveSizes[which(pcurHist < popt_hist*(1-OPT_TUNING))] - 1
                     moveSizes[which(pcurHist >= popt_hist*(1+OPT_TUNING))] <- moveSizes[which(pcurHist >= popt_hist*(1+OPT_TUNING))] +1
+                    #print(moveSizes)
                     moveSizes[moveSizes < 1] <- 1
-                    moveSizes[moveSizes > n_strain/2] <- floor(n_strain/2)
+
+                    for(ii in seq_along(moveSizes)){
+                        moveSizes[ii] <- min(moveSizes[ii], n_strain - ageMask[ii])
+                        nInfs_vec[ii] <- min(moveSizes[ii],n_strain - ageMask[ii])
+                    }
+                   
                 }
                 
                 message(cat("nInfs: ", nInfs_vec, sep="\t"))

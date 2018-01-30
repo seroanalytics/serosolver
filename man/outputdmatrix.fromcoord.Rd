@@ -15,4 +15,3 @@ the euclidean antigenic distance between each pair of viruses in anti.map.in
 \description{
 Creates an antigenic map from an input data frame that can be used to calculate cross reactivity. This will end up being an NxN matrix, where there are N strains circulating.
 }
-

@@ -19,4 +19,3 @@ the scaled step size
 \description{
 Scales the given step size (between 0 and 1) based on the current acceptance rate to get closed to the desired acceptance rate
 }
-

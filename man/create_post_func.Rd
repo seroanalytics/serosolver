@@ -4,7 +4,8 @@
 \alias{create_post_func}
 \title{Posterior function pointer}
 \usage{
-create_post_func(parTab, data, antigenicMap, PRIOR_FUNC, version = 1, ...)
+create_post_func(parTab, data, antigenicMap, PRIOR_FUNC, version = 1,
+  ageMask = NULL, ...)
 }
 \arguments{
 \item{parTab}{the parameter table controlling information such as bounds, initial values etc}
@@ -23,4 +24,3 @@ a single function pointer that takes only pars and infectionHistories as unnamed
 \description{
 Essential for the MCMC algorithm. Takes all of the input data/parameters and returns a function pointer. This function finds the posterior for a given set of input parameters (theta) and infection histories without needing to passs the data set back and forth.
 }
-

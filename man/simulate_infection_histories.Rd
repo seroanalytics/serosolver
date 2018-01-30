@@ -24,4 +24,3 @@ a matrix of infection histories for each individual in ages
 \description{
 Given a vector of infection probabilities and potential infection times, simulates infections for each element of ages (ie. each element is an individual age. Only adds infections for alive individuals)
 }
-

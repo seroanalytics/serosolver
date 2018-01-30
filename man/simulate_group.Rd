@@ -33,4 +33,3 @@ Simulates a full set of titre data for n_indiv individuals with known theta and 
 \seealso{
 \code{\link{simulate_individual}}
 }
-

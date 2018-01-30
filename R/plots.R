@@ -1,13 +1,13 @@
 #' @export
 generate_all_plots <- function(outputDir, adaptive_period, chainFile, infHistFile,
                                titreDat, antigenicMap, parTab, ages, nIndiv=10,nSamp=1000,
-                               fileName="test"){
+                               filename="test"){
     strainIsolationTimes <- unique(antigenicMap$inf_years)
     chain <- read.csv(chainFile)
     infectionHistories <- data.table::fread(infHistFile,data.table=FALSE)
     individuals <- sample(unique(titreDat$individual),nIndiv)
-    p1 <- plot_infection_histories(chain, infectionHistories,titreDat, individuals, antigenicMap, ages, nSamp)
-    posteriors <- plot_posteriors(chain,parTab,TRUE,TRUE,TRUE,TRUE,fileName)
+    p1 <- plot_infection_histories(chain, infectionHistories,titreDat, individuals, antigenicMap, ages, parTab, nSamp)
+    posteriors <- plot_posteriors(chain,parTab,TRUE,TRUE,TRUE,TRUE,filename)
     xs <- min(strainIsolationTimes):max(strainIsolationTimes)
     arP <- plot_attack_rates(infectionHistories, titreDat,ages,xs)
     infP <- plot_number_infections(infectionHistories)
@@ -31,8 +31,11 @@ generate_quantiles <- function(x, sigF=3, qs=c(0.025,0.5,0.975),asText=TRUE){
 #' @export
 get_titre_predictions <- function(chain, infectionHistories, dat,
                                   individuals, antigenicMap,
-                                  ages,
+                                  ages, parTab,
                                   nsamp=100){
+  dat <- dat[dat$individual %in% individuals,]
+  infectionHistories <- infectionHistories[infectionHistories$individual %in% individuals,]
+  ages <- ages[ages$individual %in% individuals,]
     antigenicMap <- antigenicMap[1:ncol(infectionHistories[,!(colnames(infectionHistories) %in% c("sampno","individual"))]),]
     strainIsolationTimes <- unique(antigenicMap$inf_years)
     antigenicMapMelted <- c(outputdmatrix.fromcoord(antigenicMap[,c("x_coord","y_coord")]))
@@ -40,70 +43,68 @@ get_titre_predictions <- function(chain, infectionHistories, dat,
     allRes <- NULL
     infHistDens <- NULL
     refTime <- max(dat$samples,na.rm=TRUE)
+    tmpSamp <- sample(intersect(unique(infectionHistories$sampno),unique(chain$sampno)),nsamp)
+
+    f <- create_model_func(parTab,dat,antigenicMap)
+    predicted_titres <- matrix(nrow=nrow(dat),ncol=nsamp)
     
-    for(indiv in individuals){
-        tmpInfHist <- infectionHistories[infectionHistories$individual==indiv,]
-        tmpDat <- dat[dat$individual==indiv,]
-        tmpDat <- tmpDat[complete.cases(tmpDat),]
-        birthYear <- as.numeric(ages[ages$individual == indiv,"DOB"])
-        #birthYear <- refTime - age
-        tmpSamp <- sample(intersect(unique(tmpInfHist$sampno),unique(chain$sampno)),nsamp)
-        for(sampleTime in unique(tmpDat$samples)){
-            predicted_titres <- matrix(nrow=nsamp,ncol=length(strainIsolationTimes))
-            tmpIHist <- tmpInfHist
-            tmpIHist[,which(strainIsolationTimes > sampleTime)] <- 0
-            tmpIHist[,which(strainIsolationTimes < birthYear)] <- 0
-            infCounts <- apply(tmpIHist[,1:nstrain],2,function(x) table(factor(x, levels=c(0,1))))
-            infSD <- apply(tmpIHist[,1:nstrain],2,sd)
-            y <- (infCounts[2,]/colSums(infCounts))
-            histDens <- data.frame(year=strainIsolationTimes,density=y)
-            histDens$year <- as.numeric(as.character(histDens$year))
-            
-            for(i in 1:nsamp){
-                sampno <-tmpSamp[i]
-                index <- which(chain$sampno == sampno)
-                infectionHistory <- tmpIHist[tmpIHist$sampno == sampno,1:nstrain]
-                pars <- get_index_pars(chain,index)
-                antigenicMapLong <- 1-pars["sigma1"]*antigenicMapMelted
-                antigenicMapLong[antigenicMapLong < 0] <- 0
-                antigenicMapShort <- 1-pars["sigma2"]*antigenicMapMelted
-                antigenicMapShort[antigenicMapShort < 0] <- 0
-                predicted_titres[i,] <- infection_model_indiv(pars, as.numeric(infectionHistory),
-                                                              strainIsolationTimes,
-                                                              sampleTime,
-                                                              strainIsolationTimes,
-                                                              antigenicMapLong,antigenicMapShort)
-            }
-            dat2 <- t(apply(predicted_titres,2, function(x) quantile(x, c(0.025,0.5,0.975))))
-            dat2 <- as.data.frame(cbind(year=strainIsolationTimes,dat2,
-                                        max=infection_model_indiv(bestpars, as.numeric(infectionHistory),
-                                                    sampleTime,strainIsolationTimes,
-                                                    antigenicMapLong,antigenicMapShort)))
-            colnames(dat2) <- c("year","lower","median","upper","max")
-            dat2$samples <- sampleTime
-            dat2$individual <- indiv
-            allRes <- rbind(allRes, dat2)
-            
-            histDens$samples <- sampleTime
-            histDens$individual <- indiv
-            infHistDens <- rbind(infHistDens,histDens)
-        }
+    for(i in 1:nsamp){
+      pars <- get_index_pars(chain, which(chain$sampno == tmpSamp[i]))
+      tmpInfHist <- as.matrix(infectionHistories[infectionHistories$sampno == tmpSamp[i], 1:(ncol(infectionHistories)-2)])
+      predicted_titres[,i] <- f(pars, tmpInfHist)
     }
-    return(list("predictions"=allRes,"histories"=infHistDens))
+    dat2 <- t(apply(predicted_titres,1, function(x) quantile(x, c(0.025,0.5,0.975))))
+
+    tmpInfChain <- infectionHistories[infectionHistories$sampno %in% tmpSamp,]
+    
+    infHistDens <- plyr::ddply(tmpInfChain, ~individual, function(x) colSums(x[,!(colnames(x) %in% c("individual","sampno"))])/nrow(x))
+    colnames(infHistDens) <- c("individual",strainIsolationTimes)
+    infHistDens <- reshape2::melt(infHistDens, id.vars="individual")
+    infHistDens$variable <- as.integer(as.character(infHistDens$variable))
+    infHistFinal <- NULL
+    for(indiv in unique(infHistDens$individual)){
+      sampleTimes <- unique(dat[dat$individual==indiv,"samples"])
+      tmp <- NULL
+      age <- ages[ages$individual == indiv, "DOB"]
+      for(samp in sampleTimes){
+        indivInfHist <- infHistDens[infHistDens$individual == indiv,]
+        indivInfHist[indivInfHist$variable > samp, "value"] <- 0
+        #indivInfHist[indivInfHist$variable < age, "value"] <- 0
+        indivInfHist <- cbind(indivInfHist, "samples"=samp)
+        tmp <- rbind(tmp, indivInfHist)
+      }
+      infHistFinal <- rbind(infHistFinal, tmp)
+      
+    }
+    
+    samps <- intersect(unique(infectionHistories$sampno), unique(chain$sampno))
+    tmpChain <- chain[chain$sampno %in% samps,]
+    tmpInfChain1 <- infectionHistories[infectionHistories$sampno %in% samps,]
+    bestPars <- get_best_pars(tmpChain)
+    bestI <- tmpChain$sampno[which.max(tmpChain$lnlike)]
+    bestInf <- as.matrix(tmpInfChain1[tmpInfChain1$sampno == bestI,1:(ncol(tmpInfChain1)-2)])
+        
+    bestTraj <- f(bestPars, bestInf)
+    dat2 <- as.data.frame(dat2)
+    colnames(dat2) <- c("lower","median","upper")
+    dat2$max <- bestTraj
+    dat2 <- cbind(dat,dat2)
+     
+    return(list("predictions"=dat2,"histories"=infHistFinal))
 }
 
 #' @export
 plot_infection_histories <- function(chain, infectionHistories, dat,
-                                     individuals, antigenicMap,ages,
+                                     individuals, antigenicMap,ages,parTab,
                                      nsamp=100){
-    tmp <- get_titre_predictions(chain, infectionHistories,dat, individuals, antigenicMap,ages, nsamp)
+    tmp <- get_titre_predictions(chain, infectionHistories,dat, individuals, antigenicMap,ages, parTab, nsamp)
     dens <- tmp[[1]]
     infHist <- tmp[[2]]
     p <- ggplot(dens) + 
-        geom_line(aes(x=year,y=median),col="blue") + 
-        geom_ribbon(aes(x=year,ymin=lower,ymax=upper),alpha=0.25,fill="blue") + 
-        geom_vline(data=infHist,aes(xintercept=year,alpha=density))+
-        geom_point(data=dat[dat$individual %in% individuals,],aes(x=virus,y=titre),col="red",size=0.5) + 
+        geom_line(aes(x=virus,y=max),col="blue") + 
+        geom_ribbon(aes(x=virus,ymin=lower,ymax=upper),alpha=0.25,fill="blue") + 
+        geom_vline(data=infHist,aes(xintercept=variable,alpha=value))+
+        geom_point(data=dens,aes(x=virus,y=titre),col="red",size=0.5) + 
         facet_grid(individual~samples) + 
         theme_bw() +
         theme(text=element_text(family="Arial"), axis.text.x=element_text(angle=45,hjust=1,family="Arial",size=8))+
@@ -187,9 +188,8 @@ plot_posteriors <- function(chain, parTab,
 #' @export
 plot_attack_rates <- function(infectionHistories, dat, ages, yearRange){
     nstrain <- ncol(infectionHistories[,!(infectionHistories$colnames %in% c("sampno","individual"))])
-    tmp <- plyr::ddply(infectionHistories,~sampno,function(x) colSums(x[,1:47]))
-    ages$birthYear <- max(dat$samples,na.rm=TRUE) - ages$age
-    n_alive <- sapply(yearRange, function(x) nrow(ages[ages$birthYear <= x,]) )
+    tmp <- plyr::ddply(infectionHistories,~sampno,function(x) colSums(x[,1:(ncol(infectionHistories)-2)]))
+    n_alive <- sapply(yearRange, function(x) nrow(ages[ages$DOB <= x,]) )
     quantiles <- apply(tmp[,2:ncol(tmp)],2, function(x) quantile(x,c(0.025,0.5,0.975)))
     quantiles <- quantiles/n_alive
     quantiles <- as.data.frame(t(quantiles))
@@ -210,15 +210,19 @@ plot_attack_rates <- function(infectionHistories, dat, ages, yearRange){
 }
 
 #' @export
-plot_number_infections <- function(infectionHistories){
-    indivHist <- plyr::ddply(infectionHistories,.(individual),function(x) quantile(rowSums(x),c(0.025,0.5,0.975)))
+plot_number_infections <- function(infChain){
+  n_infs <- ddply(infChain, ~individual, function(x) summary(rowSums(x[,1:(ncol(x)-2)])))
+  n_inf_chain <- ddply(infChain, c("individual","sampno"), function(x) rowSums(x[,1:(ncol(x)-2)]))
+  #n_hist_chain <- reshape2::dcast(n_inf_chain, sampno~individual, drop=TRUE)
+  indivHist <- plyr::ddply(n_inf_chain,.(individual),function(x) quantile(x$V1, c(0.025,0.5,0.975)))
+    #indivHist <- plyr::ddply(infectionHistories,.(individual),function(x) quantile(rowSums(x),c(0.025,0.5,0.975)))
     colnames(indivHist) <- c("individual","lower","median","upper")
     indivHist <- indivHist[order(indivHist$median),]
     indivHist$individual <- 1:nrow(indivHist)
     p <- ggplot(indivHist) + 
         geom_pointrange(aes(x=individual,y=median,ymin=lower,ymax=upper),
                         size=0.1,shape=21,fatten=0.1) +
-        scale_y_continuous(limits=c(0,40),expand=c(0,0)) +
+        scale_y_continuous(limits=c(0,ncol(infChain)-2),expand=c(0,0)) +
         scale_x_continuous(expand=c(0,0),breaks=seq(0,1100,by=100)) +
         xlab("Individual") +
         ylab("Estimated number of infections") +

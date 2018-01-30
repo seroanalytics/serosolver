@@ -24,4 +24,3 @@ a vector of attack rates
 \description{
 Given a number of possible infection years, simulates attack rates from a log normal distribution with specified mean and standard deviation.
 }
-
