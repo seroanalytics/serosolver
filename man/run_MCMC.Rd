@@ -4,10 +4,11 @@
 \alias{run_MCMC}
 \title{Adaptive Metropolis-within-Gibbs Random Walk Algorithm.}
 \usage{
-run_MCMC(parTab, data, mcmcPars = c(iterations = 10000, popt = 0.44, opt_freq
-  = 1000, thin = 1, adaptive_period = 5000, save_block = 100, thin2 = 10,
-  histSampleProb = 0.1, switch_sample = 2, burnin = 5000), filename = "test",
-  CREATE_POSTERIOR_FUNC, mvrPars = NULL, PRIOR_FUNC = NULL,
+run_MCMC(parTab, data, mcmcPars = c(iterations = 50000, popt = 0.44, popt_hist
+  = 0.44, opt_freq = 2000, thin = 10, adaptive_period = 10000, save_block = 100,
+  thin2 = 100, histSampleProb = 1, switch_sample = 2, burnin = 0, nInfs = 4,
+  moveSize = 5, histProposal = 3, histOpt = 1), filename = "test",
+  CREATE_POSTERIOR_FUNC, mvrPars = NULL, PRIOR_FUNC = NULL, version = 1,
   OPT_TUNING = 0.1, antigenicMap, ages = NULL, startInfHist = NULL, ...)
 }
 \arguments{
@@ -41,4 +42,3 @@ a list with: 1) full file path at which the MCMC chain is saved as a .csv file; 
 \description{
 The Adaptive Metropolis-within-Gibbs algorithm. Given a starting point and the necessary MCMC parameters as set out below, performs a random-walk of the posterior space to produce an MCMC chain that can be used to generate MCMC density and iteration plots. The algorithm undergoes an adaptive period, where it changes the step size of the random walk for each parameter to approach the desired acceptance rate, popt. The algorithm then uses \code{\link{univ_proposal}} or \code{\link{mvr_proposal}} to explore parameter space, recording the value and posterior value at each step. The MCMC chain is saved in blocks as a .csv file at the location given by filename. This version of the algorithm is also designed to explore posterior densities for infection histories.
 }
-

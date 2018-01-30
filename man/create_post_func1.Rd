@@ -26,4 +26,3 @@ a single function pointer that takes only pars and infectionHistories as unnamed
 \description{
 Essential for the MCMC algorithm. Takes all of the input data/parameters and returns a function pointer. This function finds the posterior for a given set of input parameters (theta) and infection histories without needing to passs the data set back and forth.
 }
-

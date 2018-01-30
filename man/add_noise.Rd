@@ -17,4 +17,3 @@ a noisy titre
 \description{
 Adds truncated noise to titre data
 }
-

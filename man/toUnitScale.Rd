@@ -9,4 +9,3 @@ toUnitScale(x, min, max)
 \description{
 Convert to unit scale
 }
-

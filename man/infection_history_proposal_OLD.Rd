@@ -25,4 +25,3 @@ Also requires the indices of sampled individuals, the vector of strain isolation
 an individual *could* be infected).
 NOTE - MIGHT NEED TO UPDATE THIS FOR GROUPS
 }
-

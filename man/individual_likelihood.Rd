@@ -29,4 +29,3 @@ a single log likelihood
 \description{
 Uses \code{\link{infection_model_indiv}} for a single individual and then calls \code{\link{likelihood_titre}}. Works with NA
 }
-

@@ -101,6 +101,7 @@ NumericVector infection_model_indiv(NumericVector theta, // Parameter vector
     }
     predictedTitre[k] = tmpTitre;
   }
+  //Rcpp::Rcout << predictedTitre.size() << std::endl;
   return(predictedTitre);
 }
 //' @export
@@ -123,7 +124,7 @@ NumericVector titre_data_individual(NumericVector theta,
   //NumericVector times(numberMeasuredStrains);
 
   int startIndex = 0;
-  int endIndex = dataIndices[0] - 1;
+  int endIndex = 0;
 
   LogicalVector indices = infectionHistory > 0;
 
@@ -131,12 +132,12 @@ NumericVector titre_data_individual(NumericVector theta,
   NumericVector infectionTimes = circulationTimes[indices];
   IntegerVector infMapIndices = circulationMapIndices[indices];
 
-  for(int i = 0; i < numberSamples; ++i){ 
+  for(int i = 0; i < numberSamples; ++i){
+    endIndex = startIndex + dataIndices[i] - 1;
     titres[Range(startIndex, endIndex)] = infection_model_indiv(theta,conciseInfHist,infectionTimes,infMapIndices,
 								samplingTimes[i],measuredMapIndices[Range(startIndex,endIndex)],
 								antigenicMapLong, antigenicMapShort,numberStrains);
     startIndex = endIndex + 1;
-    endIndex += dataIndices[i];
   }
   return(titres);
 }

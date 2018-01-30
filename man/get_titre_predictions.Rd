@@ -5,9 +5,8 @@
 \title{Need to mask by age and sample time}
 \usage{
 get_titre_predictions(chain, infectionHistories, dat, individuals, antigenicMap,
-  ages, nsamp = 100)
+  ages, parTab, nsamp = 100)
 }
 \description{
 Need to mask by age and sample time
 }
-

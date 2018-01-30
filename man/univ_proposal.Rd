@@ -23,4 +23,3 @@ the parameter vector after step
 \description{
 Proposal function for MCMC random walk, taking random steps of a given size. Random walk may be on a linear or log scale
 }
-

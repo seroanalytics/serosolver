@@ -30,4 +30,3 @@ NOTES:
 - Do we want infection history to be a vector of infection times?
 - Treat the contents of infectionHistory as a parameter (ie. exposure type)
 }
-

@@ -1,6 +1,6 @@
 library(doMC)
 library(foreach)
-setwd("~/Documents/Fluscape/serosolver")
+setwd("~/Documents/serosolver_own/serosolver")
 devtools::load_all()
 #library(serosolver)
 

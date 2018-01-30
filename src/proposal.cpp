@@ -3,6 +3,8 @@
 
 using namespace Rcpp ;
 
+#define MAX(a,b) ((a) < (b) ? (b) : (a)) // define MAX function for use later
+
 // [[Rcpp::export]]
 arma::mat inf_hist_prop_cpp(arma::mat infHist, IntegerVector sampledIndivs, IntegerVector ageMask,IntegerVector moveSizes, IntegerVector nInfs,
 			    double alpha, double beta, NumericVector randNs) {

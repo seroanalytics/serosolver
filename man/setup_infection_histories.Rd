@@ -21,4 +21,3 @@ an nxm matrix of infection histories containing 1s and 0s, where n is the number
 Given a matrix of titre data, proposes plausible initial infection histories from which to begin MCMC sampling.
 NOTE - MIGHT NEED TO UPDATE THIS FOR GROUPS
 }
-

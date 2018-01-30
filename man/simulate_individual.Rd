@@ -30,4 +30,3 @@ Simulates a full set of titre data for an individual with known theta and infect
 \seealso{
 \code{\link{infection_model_indiv}}
 }
-
