@@ -4,7 +4,7 @@ library(plyr)
 library(reshape2)
 
 setwd("~/Documents/Fluscape/serosolver")
-#devtools::load_all()
+devtools::load_all()
 n_indiv <-10
 
 version <- 1
@@ -28,7 +28,7 @@ p1 <- ggplot(antigenicMap) +
 
 parTab <- read.csv("~/Documents/Fluscape/serosolver/inputs/parTab.csv",stringsAsFactors=FALSE)
 parTab[parTab$names == "wane","values"] <- parTab[parTab$names == "wane","values"]/buckets
-parTab[parTab$names %in% c("alpha","beta"),"values"] <- c(2,12)
+parTab[parTab$names %in% c("alpha","beta"),"values"] <- c(0.785,4.60)
 startTab <- parTab
 
 fit_dat <- fit_dat[fit_dat$inf_years >= 1968*buckets,]
@@ -55,10 +55,9 @@ f1 <- create_post_func1(optimTab,titreDat,fit_dat,NULL,infectionHistories=startI
 startPar <- parTab$values
 startPar <- DEoptim::DEoptim(f1, lower=optimTab$lower_bound, upper=optimTab$upper_bound,control=list(itermax=200))$optim$bestmem
 startPar <- c(startPar, startTab[(startTab$names %in% c("alpha","beta")),"values"])
-startPar[6] <- 0.1
 mcmcPars <- c("iterations"=100000,"popt"=0.44,"popt_hist"=0.44,"opt_freq"=2000,"thin"=10,"adaptive_period"=50000,
               "save_block"=100,"thin2"=100,"histSampleProb"=1,"switch_sample"=2, "burnin"=0, 
-              "nInfs"=4, "moveSize"=5, "histProposal"=histProposal, "histOpt"=1)
+              "nInfs"=4, "moveSize"=5, "histProposal"=histProposal, "histOpt"=0)
 
 ## For univariate proposals
 

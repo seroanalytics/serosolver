@@ -271,8 +271,8 @@ run_MCMC <- function(parTab,
             probab <- sum(probabs)
             add <- intersect(add, changeI)
             move <- intersect(move, changeI)
-            histaccepted_add[add] <- histaccepted_add[add] + 1
-            histaccepted_move[move] <- histaccepted_move[move] + 1
+            histaccepted_add[indivSubSample[add]] <- histaccepted_add[indivSubSample[add]] + 1
+            histaccepted_move[indivSubSample[move]] <- histaccepted_move[indivSubSample[move]] + 1
             histaccepted[changeI] <- histaccepted[changeI] + 1
         }
         
@@ -356,11 +356,11 @@ run_MCMC <- function(parTab,
                     nInfs_vec[which(pcurHist_add < popt_hist*(1-OPT_TUNING))] <- nInfs_vec[which(pcurHist_add< popt_hist*(1-OPT_TUNING))] - 1
                     nInfs_vec[which(pcurHist >= popt_hist*(1+OPT_TUNING))] <- nInfs_vec[which(pcurHist >= popt_hist*(1+OPT_TUNING))] +1
                     nInfs_vec[nInfs_vec < 1] <- 1
-                    nInfs_vec[nInfs_vec > n_strain] <- n_strain
+                    nInfs_vec[nInfs_vec > n_strain/2] <- floor(n_strain/2)
                     moveSizes[which(pcurHist < popt_hist*(1-OPT_TUNING))] <- moveSizes[which(pcurHist < popt_hist*(1-OPT_TUNING))] - 1
                     moveSizes[which(pcurHist >= popt_hist*(1+OPT_TUNING))] <- moveSizes[which(pcurHist >= popt_hist*(1+OPT_TUNING))] +1
                     moveSizes[moveSizes < 1] <- 1
-                    moveSizes[moveSizes > n_strain] <- n_strain
+                    moveSizes[moveSizes > n_strain/2] <- floor(n_strain/2)
                 }
                 
                 message(cat("nInfs: ", nInfs_vec, sep="\t"))

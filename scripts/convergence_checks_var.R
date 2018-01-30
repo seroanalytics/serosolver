@@ -114,13 +114,13 @@ for(wd in wds){
     mpsrf_gelman_univ_all <- c(mpsrf_gelman_univ_all, mpsrf_gelman_univ)
   }
 }
-parEstimatesAll$version <- as.factor(parEstimatesAll$version)
-parEstimatesAll$histProposal <- as.factor(parEstimatesAll$histProposal)
-parEstimatesAll$histOpt <- as.factor(parEstimatesAll$histOpt)
+parEstimatesAll$mean1 <- as.factor(parEstimatesAll$mean1)
+parEstimatesAll$var.1 <- as.factor(parEstimatesAll$var.1)
+parEstimatesAll$buckets <- as.factor(parEstimatesAll$buckets)
 parTab <- read.csv("~/net/home/serosolver/inputs/parTab.csv",stringsAsFactors=FALSE)
 parTab <- parTab[parTab$fixed == 0,]
 colnames(parTab)[1] <- "var"
-p <- ggplot(parEstimatesAll) + geom_pointrange(aes(x=runName, y = mean,ymin=lower,ymax=upper, col=version,shape=histProposal)) + 
+p <- ggplot(parEstimatesAll) + geom_pointrange(aes(x=runName, y = mean,ymin=lower,ymax=upper, col=buckets,shape=var.1)) + 
   geom_hline(data=parTab, aes(yintercept=values),linetype="dashed")+
   facet_wrap(~var,scales="free_y") + 
   theme(axis.text.x=element_text(angle=90,hjust=0.5,size=6))
@@ -132,7 +132,7 @@ svg("~/Documents/Fluscape/serosolver_own/sim_var/simrecover.svg", width=10,heigh
 plot(p)
 dev.off()
 
-res <- data.frame(wds, runs$runName, runs$version, runs$histProposal, runs$histOpt,ess_univ_all,           
+res <- data.frame(wds, runs$runName, runs$mean, runs$var, runs$buckets,ess_univ_all,           
                   max_gelman_univ_all, mean_gelman_univ_all, mpsrf_gelman_univ_all,
                   gelman_hist_all, ess_hist_all)
 

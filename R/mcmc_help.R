@@ -97,10 +97,11 @@ infection_history_betabinom_symmetric<- function(newInfHist, sampledIndivs, ageM
 infection_history_betabinom<- function(newInfHist, sampledIndivs, ageMask, moveSizes, alpha, beta){
     newInf <- newInfHist
     for(indiv in sampledIndivs){
+#        message(cat("Indiv: ", indiv,sep="\t"))
         x <- newInfHist[indiv, ageMask[indiv]:ncol(newInfHist)]
         maxI <- length(x)
         rand1 <- runif(1)
-        if(rand1 < 1/2){
+        if(rand1 < 1){
             loc <- sample(length(x), 1)            
             x_new <- x_old <- x
             x_new[loc] <- 1
@@ -125,6 +126,13 @@ infection_history_betabinom<- function(newInfHist, sampledIndivs, ageMask, moveS
             x[id1] <- x[id2]
             x[id2] <- tmp       
         }
+        if(length(x) != length(newInf[indiv, ageMask[indiv]:ncol(newInfHist)])){
+            message(cat("Indiv: ", indiv, sep="\t"))
+            message(cat("Length x: ", length(x), sep="\t"))
+            message(cat("Length y: ", length(newInf[indiv, ageMask[indiv]:ncol(newInfHist)]), sep="\t"))
+            
+        }
+
         newInf[indiv,ageMask[indiv]:ncol(newInfHist)]=x
     }
     return(newInf)    
