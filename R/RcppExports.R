@@ -8,12 +8,15 @@
 #' - Do we want infection history to be a vector of infection times?
 #' - Treat the contents of infectionHistory as a parameter (ie. exposure type)
 #' @param theta NumericVector, the named vector of model parameters
-#' @param infectionHistory NumericVector, the vector of 1s and 0s showing presence/absence of infection for each possible time. 
+#' @param infectionHistory IntegerVector, the vector of 1s and 0s showing presence/absence of infection for each possible time. 
+#' @param infectionTimes NumericVector, the actual times of circulation that the infection history vector corresponds to
+#' @param infectionMapIndices IntegerVector, which entry in the melted antigenic map that these infection times correspond to
 #' @param samplingTime double, the real time that the sample was taken
-#' @param strainIsolationTimes NumericVector, the vector of times at which each virus strain circulated
+#' @param measurementMapIndices IntegerVector, the indices of all measured strains in the melted antigenic map
 #' @param antigenicMapLong NumericVector, the collapsed cross reactivity map for long term boosting, after multiplying by sigma1
 #' @param antigenicMapShort NumericVector, the collapsed cross reactivity map for short term boosting, after multiplying by sigma2
-#' @return NumericVector of predicted titres for each strainIsolationTime
+#'  @param numberStrains int, the maximum number of infections that an individual could experience
+#' @return NumericVector of predicted titres for each entry in measurementMapIndices
 #' @useDynLib serosolver
 #' @export
 infection_model_indiv <- function(theta, infectionHistory, infectionTimes, infectionMapIndices, samplingTime, measurementMapIndices, antigenicMapLong, antigenicMapShort, numberStrains) {
@@ -113,6 +116,18 @@ sum_buckets <- function(a, buckets) {
     .Call('_serosolver_sum_buckets', PACKAGE = 'serosolver', a, buckets)
 }
 
+#' Fast infection history proposal function
+#' 
+#' Proposes a new matrix of infection histories using a beta binomial proposal distribution. This particular implementation allows for nInfs epoch times to be changed with each function call. Furthermore, the size of the swap step is specified for each individual by moveSizes.
+#' @param infHist and RcppArmadillo matrix of infection histories, where rows represent individuals and columns represent potential infection times. The contents should be a set of 1s (presence of infection) and 0s (absence of infection)
+#' @param sampledIndivs IntegerVector, indices of which individuals to resample. Note that this is indexed from 1 (ie. as if passing straight from R)
+#' @param ageMask IntegerVector, for each individual gives the first column in the infection history matrix that an individual could have been exposed to indexed from 1. ie. if alive for the whole period, entry would be 1. If alive for the 11th epoch, entry would be 11.
+#' @param moveSizes IntegerVector, how far can a swap step sample from specified for each individual
+#' @param nInfs IntegetVector, how many infections to add/remove/swap with each proposal step for each individual
+#' @param alpha double, alpha parameter of the beta binomial
+#' @param beta double, beta parameter of the beta binomial
+#' @param randNs NumericVector, a vector of random numbers for each sampled individual. The idea is to pre-specify whether an individual experiences an add/remove step or a swap step to avoid random number sampling in C++
+#' @return a matrix of 1s and 0s corresponding to the infection histories for all individuals
 inf_hist_prop_cpp <- function(infHist, sampledIndivs, ageMask, moveSizes, nInfs, alpha, beta, randNs) {
     .Call('_serosolver_inf_hist_prop_cpp', PACKAGE = 'serosolver', infHist, sampledIndivs, ageMask, moveSizes, nInfs, alpha, beta, randNs)
 }

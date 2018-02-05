@@ -34,6 +34,8 @@ simulate_data(parTab, group = 1, n_indiv, buckets = 12,
 \item{ageMax}{maximum age to simulate}
 
 \item{simInfPars}{vector of parameters to pass to \code{\link{simulate_attack_rates}}}
+
+\item{useSIR}{boolean specifying whether to sample from an SIR model or just log normal distribution for each epoch. If TRUE, uses an SIR model}
 }
 \value{
 a list with: 1) the data frame of titre data as returned by \code{\link{simulate_group}}; 2) a matrix of infection histories as returned by \code{\link{simulate_infection_histories}}; 3) a vector of ages
@@ -41,3 +43,4 @@ a list with: 1) the data frame of titre data as returned by \code{\link{simulate
 \description{
 Simulates a full data set for a given set of parameters etc.
 }
+

@@ -14,3 +14,4 @@ to.svg(expr, filename, ..., verbose = TRUE)
 \description{
 Prints to SVG, but turns dev off if fails
 }
+

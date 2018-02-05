@@ -11,18 +11,23 @@ infection_model_indiv(theta, infectionHistory, infectionTimes,
 \arguments{
 \item{theta}{NumericVector, the named vector of model parameters}
 
-\item{infectionHistory}{NumericVector, the vector of 1s and 0s showing presence/absence of infection for each possible time.}
+\item{infectionHistory}{IntegerVector, the vector of 1s and 0s showing presence/absence of infection for each possible time.}
+
+\item{infectionTimes}{NumericVector, the actual times of circulation that the infection history vector corresponds to}
+
+\item{infectionMapIndices}{IntegerVector, which entry in the melted antigenic map that these infection times correspond to}
 
 \item{samplingTime}{double, the real time that the sample was taken}
 
+\item{measurementMapIndices}{IntegerVector, the indices of all measured strains in the melted antigenic map}
+
 \item{antigenicMapLong}{NumericVector, the collapsed cross reactivity map for long term boosting, after multiplying by sigma1}
 
-\item{antigenicMapShort}{NumericVector, the collapsed cross reactivity map for short term boosting, after multiplying by sigma2}
-
-\item{strainIsolationTimes}{NumericVector, the vector of times at which each virus strain circulated}
+\item{antigenicMapShort}{NumericVector, the collapsed cross reactivity map for short term boosting, after multiplying by sigma2
+@param numberStrains int, the maximum number of infections that an individual could experience}
 }
 \value{
-NumericVector of predicted titres for each strainIsolationTime
+NumericVector of predicted titres for each entry in measurementMapIndices
 }
 \description{
 The main model solving function for a single individual.
@@ -30,3 +35,4 @@ NOTES:
 - Do we want infection history to be a vector of infection times?
 - Treat the contents of infectionHistory as a parameter (ie. exposure type)
 }
+

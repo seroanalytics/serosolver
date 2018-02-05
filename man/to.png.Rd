@@ -14,3 +14,4 @@ to.png(expr, filename, ..., verbose = TRUE)
 \description{
 Prints to png, but turns dev off if fails
 }
+

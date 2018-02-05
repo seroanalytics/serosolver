@@ -94,3 +94,11 @@ toUnitScale <- function(x, min, max){
 fromUnitScale <- function(x,min,max){
     return(min + (max-min)*x)
 }
+
+#' @export
+describe_proposals <- function(){
+    print("The following text describes the proposal step for updating infection histories.")
+    print("Version 1: performs one `flip` proposal at a random location in an individual's infectoin history, switching 1->0 or 0->1. Otherwise, swaps the contents of two random locations")
+    print("Version 2: samples from a beta binomial with alpha and beta specified by the parTab input. Only proposes one move at a time")
+    print("Version 3: samples from a beta binomial with alpha and beta specified by the parTab input. Proposes nInfs moves at a time for add/remove, or when swapping, swaps locations up to moveSize time steps away")
+}

@@ -19,3 +19,4 @@ a single log likelihood
 \description{
 Calculates the likelihood of a given set of observed titres given predicted titres. Based on truncated discritised normal.
 }
+

@@ -3,17 +3,18 @@
 #' The Adaptive Metropolis-within-Gibbs algorithm. Given a starting point and the necessary MCMC parameters as set out below, performs a random-walk of the posterior space to produce an MCMC chain that can be used to generate MCMC density and iteration plots. The algorithm undergoes an adaptive period, where it changes the step size of the random walk for each parameter to approach the desired acceptance rate, popt. The algorithm then uses \code{\link{univ_proposal}} or \code{\link{mvr_proposal}} to explore parameter space, recording the value and posterior value at each step. The MCMC chain is saved in blocks as a .csv file at the location given by filename. This version of the algorithm is also designed to explore posterior densities for infection histories.
 #' @param parTab the parameter table controlling information such as bounds, initial values etc
 #' @param data the data frame of data to be fitted. Must have columns: group (index of group); individual (integer ID of individual); samples (numeric time of sample taken); virus (numeric time of when the virus was circulating); titre (integer of titre value against the given virus at that sampling time)
-#' @param mcmcPars named vector named vector with parameters for the MCMC procedure. Iterations (number of post adaptive iterations), popt (desired acceptance rate), opt_freq (after how many iterations do we adapt proposal), thin (save every n iterations), adaptive_period (number of iterations to adapt), save_block (number of post thinning iterations to save at a time), thin2 (infection history thinning), histSampleProb (proportion of inf histories to resample) switch_sample (resample inf histories every n iterations); burnin (number of iterations to run before any adapting).
+#' @param mcmcPars named vector named vector with parameters for the MCMC procedure. Iterations (number of post adaptive iterations), popt (desired acceptance rate), popt_hist (desired acceptance rate for infection histories) opt_freq (after how many iterations do we adapt proposal), thin (save every n iterations), adaptive_period (number of iterations to adapt), save_block (number of post thinning iterations to save at a time), thin2 (infection history thinning), histSampleProb (proportion of inf histories to resample), switch_sample (resample inf histories every n iterations); burnin (number of iterations to run before any adapting), nInfs (number of infections to resample for each individual at each iteration), moveSizes (number of infection years/months to move when performing swap step), histProposal (which infection history proposal version to use, see \code{\link{describe_proposals}}, histOpt (if 1, performs adaptive infection history proposals. If 0, retains the starting infection history proposal parameters)
 #' @param filename the full filepath at which the MCMC chain should be saved. "_chain.csv" will be appended to the end of this, so filename should have no file extensions
 #' @param CREATE_POSTERIOR_FUNC pointer to posterior function used to calculate a likelihood
 #' @param mvrPars leave NULL to use univariate proposals. Otherwise, a list of parameters if using a multivariate proposal. Must contain an initial covariance matrix, weighting for adapting cov matrix, and an initial scaling parameter (0-1)
 #' @param PRIOR_FUNC user function of prior for model parameters. Should take parameter values only
-#' @param OPT_TUNING constant used to indicate what proportion of the adaptive period should be used to build the covariance matrix, if needed
+#' @param version which version of the posterior function to use? See \code{\link{create_post_func}}
+#' @param OPT_TUNING constant describing the amount of leeway when adapting the proposals steps to reach a desired acceptance rate (ie. does not change step size if within OPT_TUNING of the specified acceptance rate)
 #' @param antigenicMap a data frame of antigenic x and y coordinates. Must have column names: x_coord; y_coord; inf_years 
 #' @param ages data frame of ages and individual IDs for each participant, used to mask infection history proposals. Columns: age, individual. Can be left NULL
 #' @param startInfHist infection history matrix to start MCMC at. Can be left NULL
 #' @param ... other arguments to pass to CREATE_POSTERIOR_FUNC
-#' @return a list with: 1) full file path at which the MCMC chain is saved as a .csv file; 2) a full file path at which the infection history chain is saved as a .csv file; 3) the last used covarianec matrix; 4) the last used scale/step size (if multivariate proposals)
+#' @return a list with: 1) full file path at which the MCMC chain is saved as a .csv file; 2) a full file path at which the infection history chain is saved as a .csv file; 3) the last used covariance matrix; 4) the last used scale/step size (if multivariate proposals)
 #' @export
 run_MCMC <- function(parTab,
                      data,
@@ -44,8 +45,8 @@ run_MCMC <- function(parTab,
     burnin <- mcmcPars["burnin"] # Run this many iterations before attempting adaptation. Idea is to reduce getting stuck in local maxima
     moveSize <- mcmcPars["moveSize"] # Number of infections to move/remove/add in each proposal step
     nInfs <- mcmcPars["nInfs"] # Number of infections to move/remove/add in each proposal step
-    histProposal <- mcmcPars["histProposal"]
-    histOpt <- mcmcPars["histOpt"]
+    histProposal <- mcmcPars["histProposal"] # Which infection history proposal version?
+    histOpt <- mcmcPars["histOpt"] # Should infection history proposal step be adaptive?
     
     if(histProposal == 1){
         histPropPrint <- "symmetric"
@@ -68,10 +69,9 @@ run_MCMC <- function(parTab,
     steps <- parTab$steps
     fixed <- parTab$fixed
 
+    ## Pull out alpha and beta for beta binomial proposals
     alpha <- parTab[parTab$names == "alpha","values"]
     beta <- parTab[parTab$names == "beta","values"]
-    a <- parTab[parTab$names == "a","values"]
-    b <- parTab[parTab$names == "b","values"]
     
     
     ## Arrays to store acceptance rates
@@ -113,6 +113,18 @@ run_MCMC <- function(parTab,
     nInfs_vec <- rep(nInfs, n_indiv) # How many infection history moves to make with each proposal
     moveSizes <- rep(moveSize, n_indiv) # How many years to move in smart proposal step
     
+  
+###############
+    ## Create age mask
+    ## -----------------------
+    ## Note that ages for all groups must be from same reference point
+    ## -----------------------
+###############
+    if(!is.null(ages)){
+        ageMask <- create_age_mask(ages, strainIsolationTimes, n_indiv)
+    } else {
+        ageMask <- rep(1, n_indiv)
+    }
     ## Create posterior calculating function
     posterior_simp <- protect(CREATE_POSTERIOR_FUNC(parTab,data,
                                                     antigenicMap,
@@ -120,18 +132,6 @@ run_MCMC <- function(parTab,
                                                     ageMask,
                                                     ...))
 
-###############
-    ## Create age mask
-    ## -----------------------
-    ## Note that ages for all groups must be from same reference point
-    ## -----------------------
-    ## Should probably change this to take DOB rather than age
-###############
-    if(!is.null(ages)){
-        ageMask <- create_age_mask(ages, strainIsolationTimes, n_indiv)
-    } else {
-        ageMask <- rep(1, n_indiv)
-    }
 ######################
     ## Setup initial conditions
     infectionHistories = startInfHist
@@ -214,9 +214,10 @@ run_MCMC <- function(parTab,
             new_probab <- sum(new_probabs)
             ## Otherwise, resample infection history
         } else {
-            
+            ## Choose a random subset of individuals to update
             indivSubSample <- sample(1:n_indiv, ceiling(histSampleProb*n_indiv))
             randNs <- runif(length(indivSubSample))
+            ## Which infection history proposal to use?
             if(histProposal==1){
                 newInfectionHistories <- infection_history_betabinom_symmetric(infectionHistories, indivSubSample, ageMask, moveSizes, alpha, beta)
             } else if(histProposal == 2){
@@ -225,20 +226,18 @@ run_MCMC <- function(parTab,
                 newInfectionHistories <- inf_hist_prop_cpp(infectionHistories,indivSubSample,ageMask,moveSizes, nInfs_vec, alpha,beta,randNs)
                 
             }
+            ## The proposals are either a swap step or an add/remove step. Need to track which type was used for which individual,
+            ## as we adapt the `step size` for these two update steps independently
             move <- which(randNs > 1/2)
             add <- which(randNs < 1/2)
             histiter_add[indivSubSample[add]]<- histiter_add[indivSubSample[add]] + 1
             histiter_move[indivSubSample[move]]<- histiter_move[indivSubSample[move]] + 1
+            
             ## Calculate new likelihood with these infection histories
             new_probabs <- posterior_simp(current_pars, newInfectionHistories)            
             new_probab <- sum(new_probabs)
             histiter[indivSubSample]<- histiter[indivSubSample] + 1
         }
-
-#########################
-        ## We could add a function pointer that does the same job as "pmask" - this way it is a bit more
-        ## generalised. Shouldn't need to though, thanks to the function pointer idea
-#########################
 
 #############################
         ## METROPOLIS HASTINGS STEP
@@ -262,7 +261,7 @@ run_MCMC <- function(parTab,
                 }
             }
         } else {
-            #print(priors)
+            ## MH step for each individual
             log_probs <- (new_probabs[indivSubSample] - probabs[indivSubSample])
             log_probs[log_probs > 0] <- 0
             x <- which(log(runif(length(indivSubSample))) < log_probs)
@@ -270,6 +269,8 @@ run_MCMC <- function(parTab,
             infectionHistories[changeI,] <- newInfectionHistories[changeI,]
             probabs[changeI] <- new_probabs[changeI]
             probab <- sum(probabs)
+
+            ## Record acceptances for each add or move step
             add <- intersect(add, changeI)
             move <- intersect(move, changeI)
             histaccepted_add[indivSubSample[add]] <- histaccepted_add[indivSubSample[add]] + 1
@@ -309,9 +310,11 @@ run_MCMC <- function(parTab,
             message(cat("Pcur: ", pcur,sep="\t"))
             message(cat("Step sizes: ", steps,sep="\t"))
             tempaccepted <- tempiter <- reset
-            pcurHist <- histaccepted/histiter
-            pcurHist_add <- histaccepted_add/histiter_add
-            pcurHist_move <- histaccepted_move/histiter_move
+
+            ## Have a look at the acceptance rates for infection histories
+            pcurHist <- histaccepted/histiter ## Overall
+            pcurHist_add <- histaccepted_add/histiter_add ## For adding
+            pcurHist_move <- histaccepted_move/histiter_move ## For moving
             histiter <- histaccepted <- histaccepted_add <- histaccepted_move <- histiter_add <- histiter_move <- histreset
         }
         if(i > burnin & i <= (adaptive_period + burnin)){
@@ -336,6 +339,7 @@ run_MCMC <- function(parTab,
                                         #if(chain_index > (0.8)*adaptive_period){
                                         #    steps <- scaletuning(steps, popt,pcur)
                                         #}
+                    ## As in Adam's version
                     steps=max(0.00001,min(1,exp(log(steps)+(pcur-popt)*0.999^(i-burnin))))
                 }
                 pcurHist <- histaccepted/histiter
@@ -344,15 +348,17 @@ run_MCMC <- function(parTab,
                 pcurHist_move <- histaccepted_move/histiter_move
                 #message(cat("Hist iter add: ", histiter_add, cat="\t"))
                 #message(cat("Hist accepted add: ", histaccepted_add, cat="\t"))
-                message(cat("Hist acceptance add: ", pcurHist_add, cat="\t"))
-                message(cat("Hist acceptance move: ", pcurHist_move, cat="\t"))
-                #message(cat("Hist iter move: ", histiter_move, cat="\t"))
-                #message(cat("Hist accepted move: ", histaccepted_move, cat="\t"))
-                
+
+                ## NOTE THAT THIS IS ONLY RELEVANT TO INFECTION HISTORY PROPOSAL 3
+                if(histProposal ==3 ){
+                    message(cat("Hist acceptance add: ", pcurHist_add, cat="\t"))
+                    message(cat("Hist acceptance move: ", pcurHist_move, cat="\t"))
+                }
+                                  
                 message(cat("Mean hist acceptance: ", mean(pcurHist),cat="\t"))
-                                        #histiter <- histaccepted <- histreset
                 histiter <- histaccepted <- histaccepted_add <- histaccepted_move <- histiter_add <- histiter_move <- histreset
 
+                ## If adaptive infection history proposal
                 if(histOpt == 1){
                     nInfs_vec[which(pcurHist_add < popt_hist*(1-OPT_TUNING))] <- nInfs_vec[which(pcurHist_add< popt_hist*(1-OPT_TUNING))] - 1
                     nInfs_vec[which(pcurHist >= popt_hist*(1+OPT_TUNING))] <- nInfs_vec[which(pcurHist >= popt_hist*(1+OPT_TUNING))] +1
@@ -360,19 +366,19 @@ run_MCMC <- function(parTab,
 
                     moveSizes[which(pcurHist < popt_hist*(1-OPT_TUNING))] <- moveSizes[which(pcurHist < popt_hist*(1-OPT_TUNING))] - 1
                     moveSizes[which(pcurHist >= popt_hist*(1+OPT_TUNING))] <- moveSizes[which(pcurHist >= popt_hist*(1+OPT_TUNING))] +1
-                    #print(moveSizes)
+                                        #print(moveSizes)
                     moveSizes[moveSizes < 1] <- 1
 
                     for(ii in seq_along(moveSizes)){
                         moveSizes[ii] <- min(moveSizes[ii], n_strain - ageMask[ii])
                         nInfs_vec[ii] <- min(moveSizes[ii],n_strain - ageMask[ii])
                     }
-                   
+                    
                 }
-                
-                message(cat("nInfs: ", nInfs_vec, sep="\t"))
-                message(cat("Move sizes: ", moveSizes, sep="\t"))
-                
+                if(histProposal == 3){
+                    message(cat("nInfs: ", nInfs_vec, sep="\t"))
+                    message(cat("Move sizes: ", moveSizes, sep="\t"))
+                }
                 message(cat("Pcur: ", pcur,sep="\t"))
                 message(cat("Step sizes: ", steps,sep="\t"))
                 tempaccepted <- tempiter <- reset

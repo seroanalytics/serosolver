@@ -16,7 +16,7 @@ run_MCMC(parTab, data, mcmcPars = c(iterations = 50000, popt = 0.44, popt_hist
 
 \item{data}{the data frame of data to be fitted. Must have columns: group (index of group); individual (integer ID of individual); samples (numeric time of sample taken); virus (numeric time of when the virus was circulating); titre (integer of titre value against the given virus at that sampling time)}
 
-\item{mcmcPars}{named vector named vector with parameters for the MCMC procedure. Iterations (number of post adaptive iterations), popt (desired acceptance rate), opt_freq (after how many iterations do we adapt proposal), thin (save every n iterations), adaptive_period (number of iterations to adapt), save_block (number of post thinning iterations to save at a time), thin2 (infection history thinning), histSampleProb (proportion of inf histories to resample) switch_sample (resample inf histories every n iterations); burnin (number of iterations to run before any adapting).}
+\item{mcmcPars}{named vector named vector with parameters for the MCMC procedure. Iterations (number of post adaptive iterations), popt (desired acceptance rate), popt_hist (desired acceptance rate for infection histories) opt_freq (after how many iterations do we adapt proposal), thin (save every n iterations), adaptive_period (number of iterations to adapt), save_block (number of post thinning iterations to save at a time), thin2 (infection history thinning), histSampleProb (proportion of inf histories to resample), switch_sample (resample inf histories every n iterations); burnin (number of iterations to run before any adapting), nInfs (number of infections to resample for each individual at each iteration), moveSizes (number of infection years/months to move when performing swap step), histProposal (which infection history proposal version to use, see \code{\link{describe_proposals}}, histOpt (if 1, performs adaptive infection history proposals. If 0, retains the starting infection history proposal parameters)}
 
 \item{filename}{the full filepath at which the MCMC chain should be saved. "_chain.csv" will be appended to the end of this, so filename should have no file extensions}
 
@@ -26,7 +26,9 @@ run_MCMC(parTab, data, mcmcPars = c(iterations = 50000, popt = 0.44, popt_hist
 
 \item{PRIOR_FUNC}{user function of prior for model parameters. Should take parameter values only}
 
-\item{OPT_TUNING}{constant used to indicate what proportion of the adaptive period should be used to build the covariance matrix, if needed}
+\item{version}{which version of the posterior function to use? See \code{\link{create_post_func}}}
+
+\item{OPT_TUNING}{constant describing the amount of leeway when adapting the proposals steps to reach a desired acceptance rate (ie. does not change step size if within OPT_TUNING of the specified acceptance rate)}
 
 \item{antigenicMap}{a data frame of antigenic x and y coordinates. Must have column names: x_coord; y_coord; inf_years}
 
@@ -37,8 +39,9 @@ run_MCMC(parTab, data, mcmcPars = c(iterations = 50000, popt = 0.44, popt_hist
 \item{...}{other arguments to pass to CREATE_POSTERIOR_FUNC}
 }
 \value{
-a list with: 1) full file path at which the MCMC chain is saved as a .csv file; 2) a full file path at which the infection history chain is saved as a .csv file; 3) the last used covarianec matrix; 4) the last used scale/step size (if multivariate proposals)
+a list with: 1) full file path at which the MCMC chain is saved as a .csv file; 2) a full file path at which the infection history chain is saved as a .csv file; 3) the last used covariance matrix; 4) the last used scale/step size (if multivariate proposals)
 }
 \description{
 The Adaptive Metropolis-within-Gibbs algorithm. Given a starting point and the necessary MCMC parameters as set out below, performs a random-walk of the posterior space to produce an MCMC chain that can be used to generate MCMC density and iteration plots. The algorithm undergoes an adaptive period, where it changes the step size of the random walk for each parameter to approach the desired acceptance rate, popt. The algorithm then uses \code{\link{univ_proposal}} or \code{\link{mvr_proposal}} to explore parameter space, recording the value and posterior value at each step. The MCMC chain is saved in blocks as a .csv file at the location given by filename. This version of the algorithm is also designed to explore posterior densities for infection histories.
 }
+

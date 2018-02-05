@@ -10,12 +10,15 @@ using namespace Rcpp;
 //' - Do we want infection history to be a vector of infection times?
 //' - Treat the contents of infectionHistory as a parameter (ie. exposure type)
 //' @param theta NumericVector, the named vector of model parameters
-//' @param infectionHistory NumericVector, the vector of 1s and 0s showing presence/absence of infection for each possible time. 
+//' @param infectionHistory IntegerVector, the vector of 1s and 0s showing presence/absence of infection for each possible time. 
+//' @param infectionTimes NumericVector, the actual times of circulation that the infection history vector corresponds to
+//' @param infectionMapIndices IntegerVector, which entry in the melted antigenic map that these infection times correspond to
 //' @param samplingTime double, the real time that the sample was taken
-//' @param strainIsolationTimes NumericVector, the vector of times at which each virus strain circulated
+//' @param measurementMapIndices IntegerVector, the indices of all measured strains in the melted antigenic map
 //' @param antigenicMapLong NumericVector, the collapsed cross reactivity map for long term boosting, after multiplying by sigma1
 //' @param antigenicMapShort NumericVector, the collapsed cross reactivity map for short term boosting, after multiplying by sigma2
-//' @return NumericVector of predicted titres for each strainIsolationTime
+//'  @param numberStrains int, the maximum number of infections that an individual could experience
+//' @return NumericVector of predicted titres for each entry in measurementMapIndices
 //' @useDynLib serosolver
 //' @export
 //[[Rcpp::export]]
@@ -27,7 +30,7 @@ NumericVector infection_model_indiv(NumericVector theta, // Parameter vector
 				    IntegerVector measurementMapIndices, // Indices of measured strains in antigenic map
 				    NumericVector antigenicMapLong,
 				    NumericVector antigenicMapShort, 
-				    int numberStrains // Maximum number of infections an individual coudl experience
+				    int numberStrains // Maximum number of infections an individual could experience
 				    ){
   // Extract model parameters
   double mu = theta["mu"];

@@ -17,3 +17,4 @@ a named vector of the best parameters
 \description{
 Given an MCMC chain, returns the parameters at the specified index
 }
+

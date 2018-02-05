@@ -33,3 +33,4 @@ a single log likelihood
 \description{
 Uses \code{\link{individual_likelihood}} for each individual and returns a summed log likelihood for all individuals
 }
+

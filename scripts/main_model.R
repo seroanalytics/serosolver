@@ -34,8 +34,9 @@ if(SIM){
     strainIsolationTimes <- unique(antigenicMap$inf_years)
 
     ## Ages between 5 and 80, censor 0% of titres
-    dat <- simulate_data(parTab,1,n_indiv,strainIsolationTimes,
-                         samplingTimes, nsamp,antigenicMap, 0,0,5,80)
+    dat <- simulate_data(parTab, 1, n_indiv, buckets,strainIsolationTimes,
+                         samplingTimes, 2, antigenicMap=fit_dat, 0, 0, 10*buckets,75*buckets,
+                         simInfPars=c("mean"=0.15,"sd"=0.5,"bigMean"=0.5,"logSD"=1),useSIR=FALSE)
 
     ## Extract simulation data
     infectionHistories <- dat[["infectionHistories"]]
@@ -76,17 +77,11 @@ res <- foreach(x =filenames) %dopar% {
             startTab$values[i] <- runif(1,startTab$lower_bound[i],startTab$upper_bound[i])
         }
     }
-    run_MCMC(startTab, data, mcmcPars, filename="test",create_post_func, NULL, mvrPars, 0.2, antigenicMap, ages, startInfHist=NULL)
+    run_MCMC(startTab, data, mcmcPars, filename="test",create_post_func, NULL, version = 1, mvrPars, 0.2, antigenicMap, ages, startInfHist=NULL)
 }
 
-res <- run_MCMC(startTab, data, mcmcPars, filename="test1",create_post_func, NULL, mvrPars, 0.2, antigenicMap, ages, startInfHist=NULL)
+res <- run_MCMC(startTab, data, mcmcPars, filename="test1",create_post_func, NULL, version = 1, mvrPars, 0.2, antigenicMap, ages, startInfHist=NULL)
 
 output <- res[[1]]
 generate_all_plots(outputDir, mcmcPars["adaptive_period"], output$chain_file, output$history_file,
                    data, antigenicMap, parTab, ages, 10, 1000, "testing")
-
-
-generate_all_plots(outputDir, mcmcPars["adaptive_period"], "test_chain.csv", "test_infectionHistories.csv",
-                   data, antigenicMap, parTab, ages, 10, 100, "testing")
-chain <- read.csv("test_chain.csv")
-infectionHistories <- read.csv("test_infectionHistories.csv")

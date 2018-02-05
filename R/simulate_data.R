@@ -46,9 +46,13 @@ simulate_group <- function(n_indiv, theta, infectionHistories,
 #' @param theta the named parameter vector
 #' @param infectionHistory the vector of 1s and 0s giving presence/absence of infections
 #' @param sampleTimes the vector of times at which samples are taken
+#' @param dataIndices see \code{\link{create_post_func}}
+#' @param strainIsolationTimes see \code{\link{create_post_func}}
+#' @param virusIndices see \code{\link{create_post_func}}
 #' @param strainIsolationTimes the vector of strain circulation times (ie. possible infection times)
 #' @param antigenicMapLong the collapsed antigenic map for long term cross reactivity, after multiplying by sigma1
 #' @param antigenicMapShort the collapsed antigenic map for short term cross reactivity, after multiplying by sigma2
+#' @param strains vector of all possible circulating strains
 #' @return a data frame with columns samples, virus and titre of simulated data
 #' @export
 #' @seealso \code{\link{infection_model_indiv}}
@@ -118,7 +122,7 @@ simulate_attack_rates <- function(infectionYears,meanPar=0.15,sdPar=0.5,
 #' @param strainIsolationTimes the vector of possible infection times
 #' @param samplingTimes vector of potential sampling times
 #' @param ages a vector of ages for each individual
-#' @return a matrix of infection histories for each individual in ages
+#' @return a list with a matrix of infection histories for each individual in ages and the true attack rate for each epoch
 #' @export
 simulate_infection_histories <- function(pInf, infSD, strainIsolationTimes, samplingTimes, ages){
     n_strains <- length(pInf) # How many strains
@@ -149,6 +153,7 @@ simulate_infection_histories <- function(pInf, infSD, strainIsolationTimes, samp
     return(list(infectionHistories,ARs))    
 }
 
+#' Generates attack rates from an SIR model with fixed beta/gamma, specified final attack rate and the number of time "buckets" to solve over ie. buckets=12 returns attack rates for 12 time periods
 #' @export
 generate_ar_annual <- function(AR, buckets){
   SIR_odes <- function(t, x, params) {
@@ -207,6 +212,7 @@ simulate_ars_buckets <- function(infectionYears, buckets, meanPar=0.15,sdPar=0.5
 #' @param ageMin minimum age to simulate
 #' @param ageMax maximum age to simulate
 #' @param simInfPars vector of parameters to pass to \code{\link{simulate_attack_rates}}
+#' @param useSIR boolean specifying whether to sample from an SIR model or just log normal distribution for each epoch. If TRUE, uses an SIR model
 #' @return a list with: 1) the data frame of titre data as returned by \code{\link{simulate_group}}; 2) a matrix of infection histories as returned by \code{\link{simulate_infection_histories}}; 3) a vector of ages
 #' @export
 simulate_data <- function(parTab, group=1,n_indiv,buckets=12,

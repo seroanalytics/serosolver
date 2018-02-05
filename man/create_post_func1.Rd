@@ -2,7 +2,7 @@
 % Please edit documentation in R/posteriors.R
 \name{create_post_func1}
 \alias{create_post_func1}
-\title{Posterior function pointer}
+\title{Posterior function pointer - for use with optim}
 \usage{
 create_post_func1(parTab, data, antigenicMap, PRIOR_FUNC, infectionHistories,
   ...)
@@ -16,9 +16,9 @@ create_post_func1(parTab, data, antigenicMap, PRIOR_FUNC, infectionHistories,
 
 \item{PRIOR_FUNC}{user function of prior for model parameters. Should take parameter values only}
 
-\item{infectionHistories}{other arguments to pass to the posterior solving function}
+\item{infectionHistories}{infection histories to solve model with}
 
-\item{...}{blah}
+\item{...}{other arguments to pass to the posterior solving function}
 }
 \value{
 a single function pointer that takes only pars and infectionHistories as unnamed arguments
@@ -26,3 +26,4 @@ a single function pointer that takes only pars and infectionHistories as unnamed
 \description{
 Essential for the MCMC algorithm. Takes all of the input data/parameters and returns a function pointer. This function finds the posterior for a given set of input parameters (theta) and infection histories without needing to passs the data set back and forth.
 }
+

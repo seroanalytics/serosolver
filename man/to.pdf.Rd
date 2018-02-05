@@ -14,3 +14,4 @@ to.pdf(expr, filename, ..., verbose = TRUE)
 \description{
 Prints to pdf, but turns dev off if fails
 }
+

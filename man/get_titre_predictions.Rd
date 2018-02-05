@@ -2,11 +2,32 @@
 % Please edit documentation in R/plots.R
 \name{get_titre_predictions}
 \alias{get_titre_predictions}
-\title{Need to mask by age and sample time}
+\title{Generate titre credible intervals}
 \usage{
 get_titre_predictions(chain, infectionHistories, dat, individuals, antigenicMap,
   ages, parTab, nsamp = 100)
 }
-\description{
-Need to mask by age and sample time
+\arguments{
+\item{chain}{the full MCMC chain to generate titre trajectories from}
+
+\item{infectionHistories}{the MCMC chain for infection histories}
+
+\item{dat}{the data frame of titre data}
+
+\item{individuals}{the subset of individuals to generate credible intervals for}
+
+\item{antigenicMap}{the unmelted antigenic map}
+
+\item{ages}{the data frame of ages for each individual, with columns for individual and DOB (date of birth)}
+
+\item{parTab}{the table controlling the parameters in the MCMC chain}
+
+\item{nsamp}{number of samples to take from posterior}
 }
+\value{
+a list with the titre predictions (95% credible intervals, median and multivariate posterior mode) and the probabilities of infection for each individual in each epoch
+}
+\description{
+Generates credible intervals on titres and infection histories from an MCMC chain output.
+}
+

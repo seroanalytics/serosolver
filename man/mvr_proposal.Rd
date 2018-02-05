@@ -30,3 +30,4 @@ a parameter vector of a proposed move. Note that these may fall outside the allo
 \description{
 Given the current parameters and a covariance matrix, returns a vector for a proposed jump from a multivariate normal distribution
 }
+

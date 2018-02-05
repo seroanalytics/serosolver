@@ -15,3 +15,4 @@ a name vector of the best parameters
 \description{
 Given an MCMC chain, returns the set of best fitting parameters
 }
+

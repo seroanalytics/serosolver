@@ -9,3 +9,4 @@ fromUnitScale(x, min, max)
 \description{
 Convert from unit scale to original scale
 }
+

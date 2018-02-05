@@ -35,3 +35,4 @@ a NumericVector of log likelihoods for each individual
 \description{
 Uses \code{\link{individual_likelihood}} for each individual and returns a vector of log likelihoods for each individual
 }
+

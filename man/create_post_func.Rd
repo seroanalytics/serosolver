@@ -16,11 +16,16 @@ create_post_func(parTab, data, antigenicMap, PRIOR_FUNC, version = 1,
 
 \item{PRIOR_FUNC}{user function of prior for model parameters. Should take parameter values only}
 
+\item{version}{integer specifying which version of the posterior function to use. This is mainly used for turning off or on the likelihood for debugging the implicit prior. The versions are as follows: 1) Likelihood turned on and no explicit prior. Any prior is implicit from the proposal distribution; 2) No likelihood and no explicit prior; 3) Explicit prior term (as specified by PRIOR_FUNC) and no likelihood. Any implicit prior from the proposal will also be included; 4) Version of the posterior distribution where we infer an explicit force of infection for each epoch; 5+) Explicit likelihood and prior - any implicit prior from the proposal will also be included, so proposals should be symmetric}
+
+\item{ageMask}{see \code{\link{create_age_mask}} - a vector with one entry for each individual specifying the first epoch of circulation in which an individual could have been exposed}
+
 \item{...}{other arguments to pass to the posterior solving function}
 }
 \value{
-a single function pointer that takes only pars and infectionHistories as unnamed arguments
+a single function pointer that takes only pars and infectionHistories as unnamed arguments. This function goes on to return a vector of posterior values for each individual
 }
 \description{
 Essential for the MCMC algorithm. Takes all of the input data/parameters and returns a function pointer. This function finds the posterior for a given set of input parameters (theta) and infection histories without needing to passs the data set back and forth.
 }
+
