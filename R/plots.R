@@ -41,7 +41,7 @@ generate_all_plots <- function(outputDir, adaptive_period, chainFile, infHistFil
     p1 <- plot_infection_histories(chain, infectionHistories,titreDat, individuals, antigenicMap,
                                    ages, parTab, nSamp)
     ## Posterior distribution
-    posteriors <- plot_posteriors(chain,parTab,TRUE,TRUE,TRUE,TRUE,filename)
+    posteriors <- plot_posteriors(chain,parTab,TRUE,FALSE,TRUE,TRUE,filename)
     
     xs <- min(strainIsolationTimes):max(strainIsolationTimes)
 
@@ -329,7 +329,7 @@ plot_number_infections <- function(infChain){
     return(p)
 }
 
-
+#' Useful plot for looking at simulated data
 #' @export
 plot_data <- function(data, infectionHistories, strainIsolationTimes, n_samps, startInf=NULL){
     indivs <- unique(data$individual)
@@ -368,11 +368,11 @@ generate_cumulative_inf_plots <- function(infChainFile, burnin, nIndiv=10, realI
     tmp <- reshape2::melt(tmp, id.vars="individual")
     tmp$variable <- as.integer(tmp$variable)
 
-    indivs <- 
+    indivs <- sample(unique(infChain$individual), nIndiv)
     if(!is.null(realInfHist)){
         infHist1 <- as.data.frame(realInfHist)
-        infHist1$individual <- 1:n_indiv
-        infHist1 <- infHist1[infHist1$individual %in% 1:10,]
+        infHist1$individual <- unique(infChain$individual)
+        infHist1 <- infHist1[infHist1$individual %in% indivs,]
    
         colnames(infHist1) <- c(strainIsolationTimes,"individual")
         infHist1 <- reshape2::melt(infHist1, id.vars="individual")
@@ -432,6 +432,6 @@ generate_cumulative_inf_plots <- function(infChainFile, burnin, nIndiv=10, realI
     }
     p1 <- p1 + 
         geom_line(data=startHistProfiles[startHistProfiles$individual %in% seq(1,10,by=1),],aes(x=as.integer(variable),y=value), col="red") +
-        facet_wrap(~individual, scales="free_y")
+        facet_wrap(~individual, scales="free_y") + theme_bw() + ylab("Cumulative infections") + xlab("Circulation time")
     return(p1)
 }

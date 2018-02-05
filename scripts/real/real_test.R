@@ -7,7 +7,7 @@ setwd("~/Documents/Fluscape/serosolver")
 devtools::load_all()
 
 filename <- "chains/output_multiprob"
-n_indiv <-200
+n_indiv <-20
 
 fluscapeDat <- read.csv("data/fluscape_data.csv",stringsAsFactors=FALSE)
 fluscapeAges <- read.csv("data/fluscape_ages.csv")

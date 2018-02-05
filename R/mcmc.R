@@ -135,7 +135,7 @@ run_MCMC <- function(parTab,
 ######################
     ## Setup initial conditions
     infectionHistories = startInfHist
-    if(is.null(startInfHist)) infectionHistories <- setup_infection_histories(data, strainIsolationTimes, ageMask)
+    if(is.null(startInfHist)) infectionHistories <- setup_infection_histories_new(data, ages, strainIsolationTimes, space=5,titre_cutoff=3)
 
     ## Initial likelihood
     ## -----------------------
