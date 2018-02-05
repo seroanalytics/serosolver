@@ -20,9 +20,16 @@ simulate_group <- function(n_indiv, theta, infectionHistories,
     for(i in 1:n_indiv){
         ## Choose random sampling times
         samps <- sample(sampleTimes, nsamps)
+        samps <- samps[order(samps)]
+        virusSamples <- rep(strainIsolationTimes, length(samps))
+        dataIndices <- rep(length(strainIsolationTimes), length(samps))
+        virusIndices <- match(virusSamples, strainIsolationTimes)-1
         y <- as.data.frame(simulate_individual(theta, infectionHistories[i,],
-                                               samps, strainIsolationTimes, antigenicMapLong,
-                                               antigenicMapShort))
+                                               samps, dataIndices, virusSamples,
+                                               virusIndices,
+                                               antigenicMapLong,
+                                               antigenicMapShort,
+                                               strainIsolationTimes))
         ## Record individual ID
         y$indiv <- i
         colnames(y) <- c("samples","virus","titre","individual")
@@ -39,31 +46,37 @@ simulate_group <- function(n_indiv, theta, infectionHistories,
 #' @param theta the named parameter vector
 #' @param infectionHistory the vector of 1s and 0s giving presence/absence of infections
 #' @param sampleTimes the vector of times at which samples are taken
+#' @param dataIndices see \code{\link{create_post_func}}
+#' @param strainIsolationTimes see \code{\link{create_post_func}}
+#' @param virusIndices see \code{\link{create_post_func}}
 #' @param strainIsolationTimes the vector of strain circulation times (ie. possible infection times)
 #' @param antigenicMapLong the collapsed antigenic map for long term cross reactivity, after multiplying by sigma1
 #' @param antigenicMapShort the collapsed antigenic map for short term cross reactivity, after multiplying by sigma2
+#' @param strains vector of all possible circulating strains
 #' @return a data frame with columns samples, virus and titre of simulated data
 #' @export
 #' @seealso \code{\link{infection_model_indiv}}
-simulate_individual <- function(theta, infectionHistory,
-                                samplingTimes, strainIsolationTimes,
-                                antigenicMapLong, antigenicMapShort){
-    dat <- matrix(ncol=3, nrow=length(samplingTimes)*length(infectionHistory))
-    titres <- NULL
-    dates <- NULL
-    ## For each sampling time
-    for(i in 1:length(samplingTimes)){
-        ## Solve the model
-        y <- infection_model_indiv(theta, infectionHistory, samplingTimes[i],
-                                   strainIsolationTimes, antigenicMapLong, antigenicMapShort)
-        ## Add noise to the data
-        y <- add_noise(y, theta)
-        titres <- c(titres, y)
-        dates <- c(dates, rep(samplingTimes[i],length(strainIsolationTimes)))
-    }
-    dat[,1] <- dates
+simulate_individual <- function(theta,
+                                infectionHistory,
+                                samplingTimes,
+                                dataIndices,
+                                strainIsolationTimes,
+                                virusIndices,
+                                antigenicMapLong,
+                                antigenicMapShort,
+                                strains){
+    numberStrains <- length(strains)
+    dat <- matrix(ncol=3, nrow=length(strainIsolationTimes))
+
+    titres <- titre_data_individual(theta, infectionHistory, strains, seq_along(strains)-1, samplingTimes,
+                                    dataIndices, match(strainIsolationTimes, strains)-1,
+                                    antigenicMapLong, antigenicMapShort, numberStrains)
+   
+    dat[,1] <- rep(samplingTimes, dataIndices)
     dat[,2] <- strainIsolationTimes
-    dat[,3] <- titres
+    dat[,3] <- add_noise(titres,theta)
+    #dat[,3] <- titres
+    #dat[,3] <- rnorm(length(titres),titres,sd=theta["error"])
     return(dat)
 }
 
@@ -109,7 +122,7 @@ simulate_attack_rates <- function(infectionYears,meanPar=0.15,sdPar=0.5,
 #' @param strainIsolationTimes the vector of possible infection times
 #' @param samplingTimes vector of potential sampling times
 #' @param ages a vector of ages for each individual
-#' @return a matrix of infection histories for each individual in ages
+#' @return a list with a matrix of infection histories for each individual in ages and the true attack rate for each epoch
 #' @export
 simulate_infection_histories <- function(pInf, infSD, strainIsolationTimes, samplingTimes, ages){
     n_strains <- length(pInf) # How many strains
@@ -117,23 +130,73 @@ simulate_infection_histories <- function(pInf, infSD, strainIsolationTimes, samp
     indivs <- 1:n_indiv
     ## Empty matrix
     infectionHistories <- matrix(0,ncol=n_strains,nrow=n_indiv)
+    
     ## Simulate attack rates
-    attackRates <- rlnorm(length(pInf), meanlog=log(pInf)- infSD^2/2,sdlog=infSD)
+    attackRates <- pInf
+    #attackRates <- rlnorm(length(pInf), meanlog=log(pInf)- infSD^2/2,sdlog=infSD)
 
     ## Should this be necessary?
-    attackRates[attackRates > 1] <- 1
-
+    #attackRates[attackRates > 1] <- 1
+    ARs <- numeric(n_strains)
     ## For each strain (ie. each infection year)
     for(i in 1:n_strains){
         ## Find who was alive (all we need samplingTimes for is its max value)
         alive <- (max(samplingTimes) - ages) <= strainIsolationTimes[i]
-
+        
         ## Sample a number of infections for the alive individuals, and set these entries to 1
-        infectionHistories[sample(indivs[alive], round(length(indivs[alive])*attackRates[i])),i] <- 1
+        #y <- round(length(indivs[alive])*attackRates[i])
+        y <- rbinom(1, length(indivs[alive]),attackRates[i])
+        ARs[i] <- y/length(indivs[alive])
+        x <- sample(indivs[alive], y)
+        infectionHistories[x,i] <- 1
     }
-    return(infectionHistories)    
+    return(list(infectionHistories,ARs))    
 }
 
+#' Generates attack rates from an SIR model with fixed beta/gamma, specified final attack rate and the number of time "buckets" to solve over ie. buckets=12 returns attack rates for 12 time periods
+#' @export
+generate_ar_annual <- function(AR, buckets){
+  SIR_odes <- function(t, x, params) {
+    S <- x[1]
+    I <- x[2]
+    R <- x[3]
+    inc <- x[4]
+    
+    beta <- params[1]
+    gamma <- params[2]
+    dS <- -beta*S*I
+    dI <- beta*S*I - gamma*I
+    dR <- gamma*I
+    dinc <- beta*S*I
+    list(c(dS,dI,dR, dinc))
+  }
+  R0 <- 1.5
+  gamma <- 1/5
+  beta <- R0*gamma
+  t <- seq(0,360,by=0.1)
+  results <- as.data.frame(deSolve::ode(y=c(S=1,I=0.0001,R=0, inc=0),
+                                        times=t, func=SIR_odes,
+                                        parms=c(beta,gamma)))
+  incidence <- diff(results$inc)
+  incidence <- incidence*AR/sum(incidence)
+  group <- 360*10/buckets
+  monthly_risk <- colSums(matrix(incidence, nrow=group))
+  return(monthly_risk)
+}
+
+#' @export
+simulate_ars_buckets <- function(infectionYears, buckets, meanPar=0.15,sdPar=0.5, 
+                                 largeFirstYear=FALSE,bigYearMean=0.5){
+    n <- ceiling(length(infectionYears)/buckets)
+    attack_year <- rlnorm(n, meanlog=log(meanPar)-sdPar^2/2,sdlog=sdPar)
+    if(largeFirstYear) attack_year[1] <- rlnorm(1,meanlog=log(bigYearMean)-(sdPar/2)^2/2,sdlog=sdPar/2)
+    ars <- NULL
+    for(i in seq_along(attack_year)){
+        ars <- c(ars, generate_ar_annual(attack_year[i],buckets))
+    }
+    ars <- ars[1:length(infectionYears)]
+    return(ars)
+}
 #' Simulate full data set
 #'
 #' Simulates a full data set for a given set of parameters etc.
@@ -149,14 +212,16 @@ simulate_infection_histories <- function(pInf, infSD, strainIsolationTimes, samp
 #' @param ageMin minimum age to simulate
 #' @param ageMax maximum age to simulate
 #' @param simInfPars vector of parameters to pass to \code{\link{simulate_attack_rates}}
+#' @param useSIR boolean specifying whether to sample from an SIR model or just log normal distribution for each epoch. If TRUE, uses an SIR model
 #' @return a list with: 1) the data frame of titre data as returned by \code{\link{simulate_group}}; 2) a matrix of infection histories as returned by \code{\link{simulate_infection_histories}}; 3) a vector of ages
 #' @export
-simulate_data <- function(parTab, group=1,n_indiv,
+simulate_data <- function(parTab, group=1,n_indiv,buckets=12,
                           strainIsolationTimes, samplingTimes, nsamps=2,
                           antigenicMap,
                           sampleSensoring=0, titreSensoring=0,
                           ageMin=5,ageMax=80,
-                          simInfPars=c("mean"=0.15,"sd"=0.5,"bigMean"=0.5,"logSD"=1)){
+                          simInfPars=c("mean"=0.15,"sd"=0.5,"bigMean"=0.5,"logSD"=1),
+                          useSIR=FALSE){
     ## Extract parameters
     pars <- parTab$values
     names(pars) <- parTab$names
@@ -172,24 +237,32 @@ simulate_data <- function(parTab, group=1,n_indiv,
 
     ## Simulate ages
     ages <- floor(runif(n_indiv,ageMin,ageMax))
-
+    
     ## Simulate attack rates
-    pInf <- simulate_attack_rates(strainIsolationTimes, simInfPars["mean"],simInfPars["sd"],TRUE,simInfPars["bigMean"])
-
+    if(useSIR){
+        pInf <- simulate_ars_buckets(strainIsolationTimes, buckets, simInfPars["mean"],simInfPars["sd"],TRUE,simInfPars["bigMean"])
+    } else {
+        pInf <- simulate_attack_rates(strainIsolationTimes, simInfPars["mean"],simInfPars["sd"],TRUE,simInfPars["bigMean"])
+    }
+    
     ## Simulate infection histories
-    infHist <- simulate_infection_histories(pInf, simInfPars["logSD"], strainIsolationTimes, samplingTimes, ages)
-
+    tmp <- simulate_infection_histories(pInf, simInfPars["logSD"], strainIsolationTimes, samplingTimes, ages)
+    infHist <- tmp[[1]]
+    ARs <- tmp[[2]]
+    
     ## Simulate titre data
     y <- simulate_group(n_indiv, pars, infHist, strainIsolationTimes, samplingTimes,
                         nsamps, antigenicMapLong,antigenicMapShort)
 
     ## Randomly censor titre values
-    y$titre <- y$titre*sample(c(0,1),nrow(y),prob=c(titreSensoring,1-titreSensoring),replace=TRUE)
-    
-    y <- cbind(group=group,y)
+    y$titre <- y$titre*sample(c(NA,1),nrow(y),prob=c(titreSensoring,1-titreSensoring),replace=TRUE)
+    y$run <- 1
+    y$group <- 1
+
     DOB <- max(samplingTimes) - ages
-    y <- y[,c("individual","virus","samples","titre","group")]
-    return(list(data=y, infectionHistories=infHist, ages=DOB))
+    ages <- data.frame("individual"=1:n_indiv, "DOB"=DOB)
+    attackRates <- data.frame("year"=strainIsolationTimes,"AR"=ARs)
+    return(list(data=y, infectionHistories=infHist, ages=ages, attackRates=attackRates))
 }
 
 #' Create useable antigenic map
@@ -210,4 +283,28 @@ outputdmatrix.fromcoord <- function(anti.map.in){ #anti.map.in can be vector or 
                            y 
                        }))
     }
+}
+
+#' @export
+generate_antigenic_map <- function(antigenicDistances, buckets=1){
+  ## Following assumptions:
+  ## 1. X31 == 1969
+  ## 2. PE2009 is like the strain circulating in 2010
+  virus_key <- c("HK68"=1968, "EN72"=1972, "VI75"=1975, "TX77"=1977, "BK79"=1979, "SI87"=1987, "BE89"=1989, "BJ89"=1989,
+                 "BE92"=1992, "WU95"=1995, "SY97"=1997, "FU02"=2002, "CA04"=2004, "WI05"=2005, "PE06"=2006)*buckets
+  antigenicDistances$Strain <- virus_key[antigenicDistances$Strain]
+  fit <- smooth.spline(antigenicDistances$X,antigenicDistances$Y,spar=0.3)
+  x_line <- lm(data = antigenicDistances, X~Strain)
+  Strain <- seq(1968*buckets,2015*buckets,by=1)
+  x_predict <- predict(x_line,data.frame(Strain))
+  y_predict <- predict(fit, x=x_predict)
+  fit_dat <- data.frame(x=y_predict$x,y=y_predict$y)
+  fit_dat$strain <- Strain
+  colnames(fit_dat) <- c("x_coord","y_coord","inf_years")
+  return(fit_dat)
+}
+
+#' @export
+euc_distance <- function(i1, i2, fit_dat){
+  return(sqrt((fit_dat[i1,"x_coord"] - fit_dat[i2,"x_coord"])^2 + (fit_dat[i1,"y_coord"] - fit_dat[i2,"y_coord"])^2))
 }

@@ -4,21 +4,30 @@
 \alias{simulate_individual}
 \title{Simulate individual data}
 \usage{
-simulate_individual(theta, infectionHistory, samplingTimes,
-  strainIsolationTimes, antigenicMapLong, antigenicMapShort)
+simulate_individual(theta, infectionHistory, samplingTimes, dataIndices,
+  strainIsolationTimes, virusIndices, antigenicMapLong, antigenicMapShort,
+  strains)
 }
 \arguments{
 \item{theta}{the named parameter vector}
 
 \item{infectionHistory}{the vector of 1s and 0s giving presence/absence of infections}
 
-\item{strainIsolationTimes}{the vector of strain circulation times (ie. possible infection times)}
+\item{dataIndices}{see \code{\link{create_post_func}}}
+
+\item{strainIsolationTimes}{see \code{\link{create_post_func}}}
+
+\item{virusIndices}{see \code{\link{create_post_func}}}
 
 \item{antigenicMapLong}{the collapsed antigenic map for long term cross reactivity, after multiplying by sigma1}
 
 \item{antigenicMapShort}{the collapsed antigenic map for short term cross reactivity, after multiplying by sigma2}
 
+\item{strains}{vector of all possible circulating strains}
+
 \item{sampleTimes}{the vector of times at which samples are taken}
+
+\item{strainIsolationTimes}{the vector of strain circulation times (ie. possible infection times)}
 }
 \value{
 a data frame with columns samples, virus and titre of simulated data

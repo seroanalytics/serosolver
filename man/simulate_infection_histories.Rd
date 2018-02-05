@@ -19,7 +19,7 @@ simulate_infection_histories(pInf, infSD, strainIsolationTimes, samplingTimes,
 \item{ages}{a vector of ages for each individual}
 }
 \value{
-a matrix of infection histories for each individual in ages
+a list with a matrix of infection histories for each individual in ages and the true attack rate for each epoch
 }
 \description{
 Given a vector of infection probabilities and potential infection times, simulates infections for each element of ages (ie. each element is an individual age. Only adds infections for alive individuals)

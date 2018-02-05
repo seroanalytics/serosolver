@@ -1,5 +1,10 @@
 library(doMC)
 library(foreach)
+library(ggplot2)
+library(coda)
+library(plyr)
+library(reshape2)
+
 setwd("~/Documents/Fluscape/serosolver")
 devtools::load_all()
 #library(serosolver)
@@ -8,15 +13,15 @@ devtools::load_all()
 outputDir <- "outputs"
 
 ## Simulate or real?
-SIM <- FALSE
+SIM <- TRUE
 
 ## How many individual to simulate/use? Leave as NULL if all individuals for real data
-n_indiv <- 50
+n_indiv <- 10
 
 ## CHANGE FOR LOCAL FILE SYSTEM
 ## Important input parameters and antigenic map
 parTab <- read.csv("~/Documents/Fluscape/serosolver/inputs/parTab.csv",stringsAsFactors=FALSE)
-antigenicMap <- read.csv("~/Documents/Fluscape/serosolver/data/fluscape_map.csv")
+antigenicMap <- read.csv("~/Documents/Fluscape/serosolver/data/antigenicMap_AK.csv")
 
 ## Simulation options
 samplingTimes <- 2007:2015
@@ -34,14 +39,14 @@ if(SIM){
     strainIsolationTimes <- unique(antigenicMap$inf_years)
 
     ## Ages between 5 and 80, censor 0% of titres
-    dat <- simulate_data(parTab,1,n_indiv,strainIsolationTimes,
-                         samplingTimes, nsamp,antigenicMap, 0,0,5,80)
+    dat <- simulate_data(parTab, 1, n_indiv, buckets,strainIsolationTimes,
+                         samplingTimes, 2, antigenicMap=antigenicMap, 0, 0, 10,75,
+                         simInfPars=c("mean"=0.15,"sd"=0.5,"bigMean"=0.5,"logSD"=1),useSIR=FALSE)
 
     ## Extract simulation data
     infectionHistories <- dat[["infectionHistories"]]
     data <- dat[["data"]]
     ages <- dat[["ages"]]
-    ages <- data.frame(individual=1:n_indiv,DOB=ages)
 } else {
     ## CHANGE FOR LOCAL FILE SYSTEM
     data <- read.csv("data/fluscape_data.csv",stringsAsFactors=FALSE)
@@ -56,8 +61,9 @@ if(SIM){
 
 
 ## MCMC parameter inputs
-mcmcPars <- c("iterations"=500000,"popt"=0.44,"opt_freq"=1000,"thin"=100,"adaptive_period"=50000,
-              "save_block"=100,"thin2"=1000,"histSampleProb"=0.1,"switch_sample"=2, "burnin"=50000)
+mcmcPars <- c("iterations"=20000,"popt"=0.44,"popt_hist"=0.44,"opt_freq"=1000,"thin"=1,"adaptive_period"=10000,
+"save_block"=100,"thin2"=1,"histSampleProb"=1,"switch_sample"=2, "burnin"=0, 
+"nInfs"=4, "moveSize"=5, "histProposal"=3, "histOpt"=1)
 
 ## For multivariate proposals
 covMat <- diag(nrow(parTab))
@@ -76,10 +82,13 @@ res <- foreach(x =filenames) %dopar% {
             startTab$values[i] <- runif(1,startTab$lower_bound[i],startTab$upper_bound[i])
         }
     }
-    run_MCMC(startTab, data, mcmcPars, filename=x,create_post_func, NULL, mvrPars, 0.2, antigenicMap, ages, startInfHist=NULL)
+    run_MCMC(startTab, data, mcmcPars, filename="test",create_post_func, NULL, version = 1, mvrPars, 0.2, 
+             antigenicMap, ages, startInfHist=NULL)
 }
+startTab <- parTab
+res <- run_MCMC(startTab, data, mcmcPars, filename="test1",create_post_func, NULL, version = 1, mvrPars, 0.2, 
+                antigenicMap, ages, startInfHist=NULL)
 
-
-output <- res[[1]]
+output <- res
 generate_all_plots(outputDir, mcmcPars["adaptive_period"], output$chain_file, output$history_file,
-                   data, antigenicMap, parTab, ages, 10, 1000, "testing")
+                   data, antigenicMap, parTab, ages, 10, 100, "testing")

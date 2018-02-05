@@ -1,9 +1,0 @@
-# - - - - - - - - - - - - - - - - 
-# Acceptance probability in MH algorithm
-ComputeProbability<-function(marg_likelihood,marg_likelihood_star){
-  # Flat priors on theta => symmetric update probability
-  calc.lik = exp(marg_likelihood_star-marg_likelihood)
-  calc.lik[calc.lik>1]=1 
-  calc.lik
-}
-

@@ -4,10 +4,11 @@
 \alias{simulate_data}
 \title{Simulate full data set}
 \usage{
-simulate_data(parTab, group = 1, n_indiv, strainIsolationTimes, samplingTimes,
-  nsamps = 2, antigenicMap, sampleSensoring = 0, titreSensoring = 0,
-  ageMin = 5, ageMax = 80, simInfPars = c(mean = 0.15, sd = 0.5, bigMean =
-  0.5, logSD = 1))
+simulate_data(parTab, group = 1, n_indiv, buckets = 12,
+  strainIsolationTimes, samplingTimes, nsamps = 2, antigenicMap,
+  sampleSensoring = 0, titreSensoring = 0, ageMin = 5, ageMax = 80,
+  simInfPars = c(mean = 0.15, sd = 0.5, bigMean = 0.5, logSD = 1),
+  useSIR = FALSE)
 }
 \arguments{
 \item{parTab}{the full parameter table controlling parameter ranges and values}
@@ -33,6 +34,8 @@ simulate_data(parTab, group = 1, n_indiv, strainIsolationTimes, samplingTimes,
 \item{ageMax}{maximum age to simulate}
 
 \item{simInfPars}{vector of parameters to pass to \code{\link{simulate_attack_rates}}}
+
+\item{useSIR}{boolean specifying whether to sample from an SIR model or just log normal distribution for each epoch. If TRUE, uses an SIR model}
 }
 \value{
 a list with: 1) the data frame of titre data as returned by \code{\link{simulate_group}}; 2) a matrix of infection histories as returned by \code{\link{simulate_infection_histories}}; 3) a vector of ages

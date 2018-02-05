@@ -4,18 +4,14 @@
 \alias{group_likelihood_total}
 \title{Group likelihood}
 \usage{
-group_likelihood_total(theta, infectionHistories, indicesA, indicesB,
-  samplingTimes, strainIsolationTimes, antigenicMapLong, antigenicMapShort,
-  titres)
+group_likelihood_total(theta, infectionHistories, indicesSamples, indicesData,
+  indicesDataOverall, samplingTimes, strainIsolationTimes, virusIndices,
+  antigenicMapLong, antigenicMapShort, titres)
 }
 \arguments{
 \item{theta}{NumericVector, the named vector of model parameters}
 
 \item{infectionHistories}{NumericMatrix, the matrix of 1s and 0s showing presence/absence of infection for each possible time for each individual}
-
-\item{indicesA}{IntegerVector, the range of indices of the titre vector that correspond to each individual (eg. first 5 titres are for indiv 1, indicesA = c(0,5,...)}
-
-\item{indicesB}{IntegerVector, the range of indices of the sample vector that correspond to each individual (eg. first 2 sampling times are for indiv 1, indicesB = c(0,2,...)}
 
 \item{samplingTimes}{NumericVector, the vector of real times that samples were taken}
 
@@ -26,6 +22,10 @@ group_likelihood_total(theta, infectionHistories, indicesA, indicesB,
 \item{antigenicMapShort}{NumericVector, the collapsed cross reactivity map for short term boosting, after multiplying by sigma2}
 
 \item{titres}{NumericVector, the vector of observed titres for all individuals.}
+
+\item{indicesA}{IntegerVector, the range of indices of the titre vector that correspond to each individual (eg. first 5 titres are for indiv 1, indicesA = c(0,5,...)}
+
+\item{indicesB}{IntegerVector, the range of indices of the sample vector that correspond to each individual (eg. first 2 sampling times are for indiv 1, indicesB = c(0,2,...)}
 }
 \value{
 a single log likelihood
