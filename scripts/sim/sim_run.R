@@ -4,7 +4,14 @@ library(plyr)
 library(reshape2)
 
 ## Set working directory and load code
-setwd("~/Documents/Fluscape/serosolver")
+if(Sys.info()["user"]=="adamkuchars" | Sys.info()["user"]=="adamkucharski") {
+  code.dir <- "~/Documents/serosolver"
+}else{
+  code.dir <- "~/Documents/Fluscape/serosolver"
+}
+
+setwd(code.dir)
+
 devtools::load_all()
 
 ## How many individuals to simulate?
