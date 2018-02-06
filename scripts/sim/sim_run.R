@@ -2,10 +2,13 @@ library(ggplot2)
 library(coda)
 library(plyr)
 library(reshape2)
+library(DEoptim)
+library(RcppArmadillo)
 
 ## Set working directory and load code
 if(Sys.info()["user"]=="adamkuchars" | Sys.info()["user"]=="adamkucharski") {
   code.dir <- "~/Documents/serosolver"
+  store.dir <- file.path(code.dir,"plots")
 }else{
   code.dir <- "~/Documents/Fluscape/serosolver"
 }
@@ -30,14 +33,14 @@ buckets <- 1
 filename <- "test_monthly"
 
 ## Read in parameter table to simulate from and change waning rate if necessary
-parTab <- read.csv("~/Documents/Fluscape/serosolver/inputs/parTab.csv",stringsAsFactors=FALSE)
+parTab <- read.csv(file.path(code.dir,"inputs/parTab.csv"),stringsAsFactors=FALSE)
 parTab[parTab$names == "wane","values"] <- parTab[parTab$names == "wane","values"]/buckets
 
 ## Possible sampling times
 samplingTimes <- seq(2010*buckets, 2015*buckets, by=1)
 
 ## Antigenic map for cross reactivity parameters
-antigenicMap <- read.csv("~/Documents/Fluscape/fluscape/trunk/data/Fonville2014AxMapPositionsApprox.csv",stringsAsFactors=FALSE)
+antigenicMap <- read.csv(file.path(code.dir,"data/fonville_map_approx.csv"),stringsAsFactors=FALSE)
 fit_dat <- generate_antigenic_map(antigenicMap, buckets)
 
 ## Rename circulation years based on isolation time
@@ -107,7 +110,7 @@ startPar <- c(startPar, startTab[(startTab$names %in% c("alpha","beta")),"values
 startTab$values <- startPar
 
 ## Specify paramters controlling the MCMC procedure
-mcmcPars <- c("iterations"=20000,"popt"=0.44,"popt_hist"=0.44,"opt_freq"=1000,"thin"=1,"adaptive_period"=10000,
+mcmcPars <- c("iterations"=5000,"popt"=0.44,"popt_hist"=0.44,"opt_freq"=1000,"thin"=1,"adaptive_period"=10000,
               "save_block"=100,"thin2"=1,"histSampleProb"=1,"switch_sample"=2, "burnin"=0, 
               "nInfs"=4, "moveSize"=5, "histProposal"=histProposal, "histOpt"=0)
 
@@ -160,5 +163,5 @@ dev.off()
 ## 7. Total number of infections for all individuals
 generate_all_plots(getwd(), mcmcPars["adaptive_period"] + mcmcPars["burnin"], res$chain_file, res$history_file,
                    titreDat, fit_dat, parTab, ages, nIndiv=10,nSamp=100,
-                   filename=filename)
+                   filename=file.path("plots",filename))
 

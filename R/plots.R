@@ -105,7 +105,7 @@ get_titre_predictions <- function(chain, infectionHistories, dat,
 
     ## Need to align the iterations of the two MCMC chains
     ## and choose some random samples
-    tmpSamp <- sample(intersect(unique(infectionHistories$sampno),unique(chain$sampno)),nsamp)
+    tmpSamp <- sample(intersect(unique(infectionHistories$sampno),unique(chain$sampno)),nsamp,replace=T)
 
     ## See the function in posteriors.R
     f <- create_model_func(parTab,dat,antigenicMap)
