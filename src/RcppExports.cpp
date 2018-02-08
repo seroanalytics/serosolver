@@ -175,6 +175,18 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// create_cross_reactivity_vector
+NumericVector create_cross_reactivity_vector(NumericVector x, double sigma);
+RcppExport SEXP _serosolver_create_cross_reactivity_vector(SEXP xSEXP, SEXP sigmaSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< NumericVector >::type x(xSEXP);
+    Rcpp::traits::input_parameter< double >::type sigma(sigmaSEXP);
+    rcpp_result_gen = Rcpp::wrap(create_cross_reactivity_vector(x, sigma));
+    return rcpp_result_gen;
+END_RCPP
+}
 // inf_hist_prop_cpp
 arma::mat inf_hist_prop_cpp(arma::mat infHist, IntegerVector sampledIndivs, IntegerVector ageMask, IntegerVector moveSizes, IntegerVector nInfs, double alpha, double beta, NumericVector randNs);
 RcppExport SEXP _serosolver_inf_hist_prop_cpp(SEXP infHistSEXP, SEXP sampledIndivsSEXP, SEXP ageMaskSEXP, SEXP moveSizesSEXP, SEXP nInfsSEXP, SEXP alphaSEXP, SEXP betaSEXP, SEXP randNsSEXP) {
@@ -246,6 +258,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_serosolver_group_likelihood_vector", (DL_FUNC) &_serosolver_group_likelihood_vector, 11},
     {"_serosolver_group_likelihood_total", (DL_FUNC) &_serosolver_group_likelihood_total, 11},
     {"_serosolver_sum_buckets", (DL_FUNC) &_serosolver_sum_buckets, 2},
+    {"_serosolver_create_cross_reactivity_vector", (DL_FUNC) &_serosolver_create_cross_reactivity_vector, 2},
     {"_serosolver_inf_hist_prop_cpp", (DL_FUNC) &_serosolver_inf_hist_prop_cpp, 8},
     {"_serosolver_subset_test", (DL_FUNC) &_serosolver_subset_test, 2},
     {"_serosolver_subset_test1", (DL_FUNC) &_serosolver_subset_test1, 2},

@@ -164,7 +164,7 @@ run_MCMC <- function(parTab,
     colnames(tmp_table) <- chain_colnames
     
     ## Write starting conditions to file
-    write.table(tmp_table,file=mcmc_chain_file,row.names=FALSE,col.names=TRUE,sep=",",append=FALSE)
+    data.table::fwrite(as.data.frame(tmp_table),file=mcmc_chain_file,row.names=FALSE,col.names=TRUE,sep=",",append=FALSE)
 
     ## Table for storing infection histories
     historyTab <- emptyHistoryTab <- matrix(NA, nrow=save_block*n_indiv,ncol=n_strain+2)
@@ -175,7 +175,7 @@ run_MCMC <- function(parTab,
     colnames(tmp_table) <- c(as.character(strainIsolationTimes),"individual","sampno")
     
     ## Write starting infection histories
-    write.table(tmp_table, infectionHistory_file, row.names=FALSE, col.names=TRUE, sep=",",append=FALSE)
+    data.table::fwrite(as.data.frame(tmp_table), infectionHistory_file, row.names=FALSE, col.names=TRUE, sep=",",append=FALSE)
 
     ## Initial indexing parameters
     no_recorded <- 1
@@ -219,7 +219,7 @@ run_MCMC <- function(parTab,
             randNs <- runif(length(indivSubSample))
             ## Which infection history proposal to use?
             if(histProposal==1){
-                newInfectionHistories <- infection_history_betabinom_symmetric(infectionHistories, indivSubSample, ageMask, moveSizes, alpha, beta)
+                newInfectionHistories <- infection_history_symmetric(infectionHistories, indivSubSample, ageMask, moveSizes, nInfs_vec, randNs)
             } else if(histProposal == 2){
                 newInfectionHistories <- infection_history_betabinom(infectionHistories, indivSubSample, ageMask, moveSizes, alpha, beta)
             } else {
@@ -349,12 +349,9 @@ run_MCMC <- function(parTab,
                 #message(cat("Hist iter add: ", histiter_add, cat="\t"))
                 #message(cat("Hist accepted add: ", histaccepted_add, cat="\t"))
 
-                ## NOTE THAT THIS IS ONLY RELEVANT TO INFECTION HISTORY PROPOSAL 3
-                if(histProposal ==3 ){
-                    message(cat("Hist acceptance add: ", pcurHist_add, cat="\t"))
-                    message(cat("Hist acceptance move: ", pcurHist_move, cat="\t"))
-                }
-                                  
+                ## NOTE THAT THIS IS ONLY RELEVANT TO INFECTION HISTORY PROPOSAL 1 & 3
+                message(cat("Hist acceptance add: ", pcurHist_add, cat="\t"))
+                message(cat("Hist acceptance move: ", pcurHist_move, cat="\t"))
                 message(cat("Mean hist acceptance: ", mean(pcurHist),cat="\t"))
                 histiter <- histaccepted <- histaccepted_add <- histaccepted_move <- histiter_add <- histiter_move <- histreset
 
@@ -364,21 +361,17 @@ run_MCMC <- function(parTab,
                     nInfs_vec[which(pcurHist >= popt_hist*(1+OPT_TUNING))] <- nInfs_vec[which(pcurHist >= popt_hist*(1+OPT_TUNING))] +1
                     nInfs_vec[nInfs_vec < 1] <- 1
 
-                    moveSizes[which(pcurHist < popt_hist*(1-OPT_TUNING))] <- moveSizes[which(pcurHist < popt_hist*(1-OPT_TUNING))] - 1
-                    moveSizes[which(pcurHist >= popt_hist*(1+OPT_TUNING))] <- moveSizes[which(pcurHist >= popt_hist*(1+OPT_TUNING))] +1
-                                        #print(moveSizes)
-                    moveSizes[moveSizes < 1] <- 1
+                    ##moveSizes[which(pcurHist < popt_hist*(1-OPT_TUNING))] <- moveSizes[which(pcurHist < popt_hist*(1-OPT_TUNING))] - 1
+                    ##moveSizes[which(pcurHist >= popt_hist*(1+OPT_TUNING))] <- moveSizes[which(pcurHist >= popt_hist*(1+OPT_TUNING))] +1
+                    ##moveSizes[moveSizes < 1] <- 1
 
-                    for(ii in seq_along(moveSizes)){
-                        moveSizes[ii] <- min(moveSizes[ii], n_strain - ageMask[ii])
-                        nInfs_vec[ii] <- min(moveSizes[ii],n_strain - ageMask[ii])
+                    for(ii in seq_along(nInfs_vec)){
+                        ##moveSizes[ii] <- min(moveSizes[ii], n_strain - ageMask[ii])
+                        nInfs_vec[ii] <- min(nInfs_vec[ii],n_strain - ageMask[ii])
                     }
-                    
                 }
-                if(histProposal == 3){
-                    message(cat("nInfs: ", nInfs_vec, sep="\t"))
-                    message(cat("Move sizes: ", moveSizes, sep="\t"))
-                }
+                message(cat("nInfs: ", nInfs_vec, sep="\t"))
+                message(cat("Move sizes: ", moveSizes, sep="\t"))
                 message(cat("Pcur: ", pcur,sep="\t"))
                 message(cat("Step sizes: ", steps,sep="\t"))
                 tempaccepted <- tempiter <- reset
@@ -390,13 +383,13 @@ run_MCMC <- function(parTab,
         ## HOUSEKEEPING
 #######################
         if(no_recorded == save_block){
-            write.table(save_chain[1:(no_recorded-1),],file=mcmc_chain_file,
-                        col.names=FALSE,row.names=FALSE,sep=",",append=TRUE)
+            data.table::fwrite(as.data.frame(save_chain[1:(no_recorded-1),]),file=mcmc_chain_file,
+                               col.names=FALSE,row.names=FALSE,sep=",",append=TRUE)
             save_chain <- empty_save_chain
             no_recorded <- 1
         }
         if((no_recorded_infHist-1)/n_indiv == save_block){
-            write.table(historyTab[1:(no_recorded_infHist-1),], file=infectionHistory_file,
+            data.table::fwrite(as.data.frame(historyTab[1:(no_recorded_infHist-1),]), file=infectionHistory_file,
                         col.names=FALSE,row.names=FALSE,sep=",",append=TRUE)
             historyTab <- emptyHistoryTab
             no_recorded_infHist <- 1
@@ -408,10 +401,10 @@ run_MCMC <- function(parTab,
     ## that due to the use of cbind, we have to check to make sure that (no_recorded-1) would not result in a single value
     ## rather than an array
     if(no_recorded > 2){
-        write.table(save_chain[1:(no_recorded-1),],file=mcmc_chain_file,row.names=FALSE,col.names=FALSE,sep=",",append=TRUE)
+        data.table::fwrite(as.data.frame(save_chain[1:(no_recorded-1),]),file=mcmc_chain_file,row.names=FALSE,col.names=FALSE,sep=",",append=TRUE)
     }
     if(no_recorded_infHist > 2){
-        write.table(historyTab, file=infectionHistory_file,
+        data.table::fwrite(as.data.frame(historyTab), file=infectionHistory_file,
                     col.names=FALSE,row.names=FALSE,sep=",",append=TRUE)
         historyTab <- emptyHistoryTab
         no_recorded_infHist <- 1

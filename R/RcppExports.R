@@ -116,6 +116,16 @@ sum_buckets <- function(a, buckets) {
     .Call('_serosolver_sum_buckets', PACKAGE = 'serosolver', a, buckets)
 }
 
+#' Convert melted antigenic map to cross reactivity
+#'
+#' Multiplies all elements of the provided vector, x such that y = 1 - sigma*x. Also makes sure that no calculated value is less than 0
+#' @param x the melted antigenic map
+#' @param sigma the cross reactivity waning parameter
+#' @return a vector of cross reactivity
+create_cross_reactivity_vector <- function(x, sigma) {
+    .Call('_serosolver_create_cross_reactivity_vector', PACKAGE = 'serosolver', x, sigma)
+}
+
 #' Fast infection history proposal function
 #' 
 #' Proposes a new matrix of infection histories using a beta binomial proposal distribution. This particular implementation allows for nInfs epoch times to be changed with each function call. Furthermore, the size of the swap step is specified for each individual by moveSizes.

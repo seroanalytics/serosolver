@@ -287,7 +287,7 @@ outputdmatrix.fromcoord <- function(anti.map.in){ #anti.map.in can be vector or 
 
 #' @export
 generate_antigenic_map <- function(antigenicDistances, buckets=1){
-  ## Following assumptions:
+    ## Following assumptions:
   ## 1. X31 == 1969
   ## 2. PE2009 is like the strain circulating in 2010
   virus_key <- c("HK68"=1968, "EN72"=1972, "VI75"=1975, "TX77"=1977, "BK79"=1979, "SI87"=1987, "BE89"=1989, "BJ89"=1989,

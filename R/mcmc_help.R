@@ -43,24 +43,23 @@ mvr_proposal <- function(values, fixed, covMat, covMat0 = NULL, useLog=FALSE, be
 #' @param sampledIndivs a vector of indices describing rows in the infection history matrix that should be updated
 #' @param ageMask a vector (one value for each individual) giving the first infection epoch that an individual could have been exposed in. That is, if an individual was born in the 7th epoch, their entry in ageMask would be 7.
 #' @param moveSizes when performing a move step, how far should two epochs be swapped?
-#' @param alpha deprecated from beta binomial proposal - kept for compatibility for now
-#' @param beta deprecated from beta binomial proposal - kept for compatibility for now
+#' @param nInfs number of infection epochs to flip
 #' @return a matrix of infection histories matching the input newInfHist
 #' @export
-infection_history_betabinom_symmetric<- function(newInfHist, sampledIndivs, ageMask, moveSizes, alpha=1, beta=1){
+infection_history_symmetric<- function(newInfHist, sampledIndivs, ageMask, moveSizes, nInfs,randNs){
     newInf <- newInfHist
     ## For each individual
-    for(indiv in sampledIndivs){
+    for(i in 1:length(sampledIndivs)){
+        indiv <- sampledIndivs[i]
         ## Isolate infection history
         x <- newInfHist[indiv, ageMask[indiv]:ncol(newInfHist)]
         maxI <- length(x)
-        rand1 <- runif(1)
 
         ## Flip or swap with prob 50%
-        if(rand1 < 1/2){
+        if(randNs[i] < 1/2){
             ## Choose a location and turn 0 -> 1 or 1 -> 0
-            loc <- sample(length(x), 1)            
-            x[loc] <- !x[loc]                                       
+            locs <- sample(length(x), nInfs[indiv])            
+            x[locs] <- !x[locs]                                       
         } else {
             ## Choose a location
             id1 <- sample(length(x),1)
@@ -105,7 +104,6 @@ infection_history_betabinom <- function(newInfHist, sampledIndivs, ageMask, move
 
         ## With prob 0.5 swap or move/add
         if(rand1 < 0.5){
-
             ## Choose a location
             loc <- sample(length(x), 1)            
             x_new <- x_old <- x

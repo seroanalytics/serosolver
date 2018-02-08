@@ -16,7 +16,9 @@ Suggests:
     rmarkdown,
     ggplot2,
     coda,
-    plyr
+    plyr,
+    Matrix,
+    data.table
 LinkingTo: Rcpp,
     RcppArmadillo
 SystemRequirements: C++11

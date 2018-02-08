@@ -361,14 +361,17 @@ plot_data <- function(data, infectionHistories, strainIsolationTimes, n_samps, s
 
 
 #' @export
-generate_cumulative_inf_plots <- function(infChainFile, burnin, nIndiv=10, realInfHist=NULL){
+generate_cumulative_inf_plots <- function(infChainFile, burnin, nIndiv=10, realInfHist=NULL, startInf=NULL,
+                                          strainIsolationTimes){
     infChain <- data.table::fread(infChainFile,data.table=FALSE)
     infChain <- infChain[infChain$sampno >= burnin,]
-    tmp <- plyr::ddply(infChain, ~individual, function(x) colSums(x[,!(colnames(x) %in% c("individual","sampno"))])/nrow(x))
+    indivs <- sample(unique(infChain$individual), nIndiv)
+
+    infChain1 <- infChain[infChain$individual %in% indivs,]
+    tmp <- plyr::ddply(infChain1, ~individual, function(x) colSums(x[,!(colnames(x) %in% c("individual","sampno"))])/nrow(x))
     tmp <- reshape2::melt(tmp, id.vars="individual")
     tmp$variable <- as.integer(tmp$variable)
 
-    indivs <- sample(unique(infChain$individual), nIndiv)
     if(!is.null(realInfHist)){
         infHist1 <- as.data.frame(realInfHist)
         infHist1$individual <- unique(infChain$individual)
@@ -386,7 +389,6 @@ generate_cumulative_inf_plots <- function(infChainFile, burnin, nIndiv=10, realI
 
     ## Generate lower, upper and median cumulative infection histories from the
     ## MCMC chain
-    infChain <- infChain[infChain$sampno > mcmcPars["adaptive_period"],]
     histProfiles <- t(apply(infChain, 1, function(x) cumsum(x[1:(ncol(infChain)-2)])))
     histProfiles <- as.data.frame(cbind(histProfiles, "individual"=infChain[,c("individual")]))
 
@@ -411,27 +413,31 @@ generate_cumulative_inf_plots <- function(infChainFile, burnin, nIndiv=10, realI
         realHistProfiles <- as.data.frame(t(apply(realInfHist, 1, cumsum)))
         colnames(realHistProfiles) <- strainIsolationTimes
         
-        realHistProfiles$individual <- 1:n_indiv
-        realHistProfiles <- realHistProfiles[realHistProfiles$individual %in% 1:10,]
+        realHistProfiles$individual <- unique(infChain$individual)
+        realHistProfiles <- realHistProfiles[realHistProfiles$individual %in% indivs,]
         realHistProfiles <- reshape2::melt(realHistProfiles,id.vars="individual")
     }
 
     ## Process starting point from MCMC chain
-    startHistProfiles <- as.data.frame(t(apply(startInf, 1, cumsum)))
-    colnames(startHistProfiles) <- strainIsolationTimes
-    startHistProfiles$individual <- 1:n_indiv
-    startHistProfiles <- startHistProfiles[startHistProfiles$individual %in% 1:10,]
-    startHistProfiles <- reshape2::melt(startHistProfiles,id.vars="individual")
-
-    p1 <- ggplot(quantHist[quantHist$individual %in% seq(1,10,by=1),]) + 
+    if(!is.null(startInf)){
+        startHistProfiles <- as.data.frame(t(apply(startInf, 1, cumsum)))
+        colnames(startHistProfiles) <- strainIsolationTimes
+        startHistProfiles$individual <- unique(infChain$individual)
+        startHistProfiles <- startHistProfiles[startHistProfiles$individual %in% indivs,]
+        startHistProfiles <- reshape2::melt(startHistProfiles,id.vars="individual")
+    }
+    
+    p1 <- ggplot(quantHist[quantHist$individual %in% indivs,]) + 
         geom_line(aes(x=as.integer(variable),y=median)) + 
         geom_ribbon(aes(x=as.integer(variable),ymin=lower,ymax=upper), alpha=0.2)
     if(!is.null(realInfHist)){
         p1 <- p1 +         
-            geom_line(data=realHistProfiles[realHistProfiles$individual %in% seq(1,10,by=1),],aes(x=as.integer(variable),y=value), col="blue")
+            geom_line(data=realHistProfiles[realHistProfiles$individual %in% indivs,],aes(x=as.integer(variable),y=value), col="blue")
     }
-    p1 <- p1 + 
-        geom_line(data=startHistProfiles[startHistProfiles$individual %in% seq(1,10,by=1),],aes(x=as.integer(variable),y=value), col="red") +
-        facet_wrap(~individual, scales="free_y") + theme_bw() + ylab("Cumulative infections") + xlab("Circulation time")
+    if(!is.null(startInf)){
+        p1 <- p1 + 
+            geom_line(data=startHistProfiles[startHistProfiles$individual %in% indivs,],aes(x=as.integer(variable),y=value), col="red")
+    }
+    p1 <- p1 + facet_wrap(~individual, scales="free_y") + theme_bw() + ylab("Cumulative infections") + xlab("Circulation time")
     return(p1)
 }

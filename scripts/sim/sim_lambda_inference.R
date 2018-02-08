@@ -8,7 +8,7 @@ setwd("~/Documents/Fluscape/serosolver")
 devtools::load_all()
 
 ## How many individuals to simulate?
-n_indiv <-10
+n_indiv <-100
 
 ## Which infection history proposal version to use?
 describe_proposals()
@@ -20,18 +20,12 @@ histProposal <- 1
 buckets <- 1
 
 ## The general output filename
-filename <- "test_lambda"
+filename <- "chains/test_lambda"
 
 ## Read in parameter table to simulate from and change waning rate if necessary
 parTab <- read.csv("~/Documents/Fluscape/serosolver/inputs/parTab_lambda.csv",stringsAsFactors=FALSE)
 parTab[parTab$names == "wane","values"] <- parTab[parTab$names == "wane","values"]/buckets
-
-## Add rows for each lambda value to be inferred
-tmp <- parTab[parTab$names == "lambda",]
-for(i in 1:(length(strainIsolationTimes)-1)){
-  parTab <- rbind(parTab, tmp)
-}
-
+parTab[parTab$names == "wane","values"] <- 1
 ## Possible sampling times
 samplingTimes <- seq(2010*buckets, 2015*buckets, by=1)
 
@@ -55,6 +49,12 @@ p1 <- ggplot(antigenicMap) +
 fit_dat <- fit_dat[fit_dat$inf_years >= 1968*buckets,]
 strainIsolationTimes <- unique(fit_dat$inf_years)
 
+## Add rows for each lambda value to be inferred
+tmp <- parTab[parTab$names == "lambda",]
+for(i in 1:(length(strainIsolationTimes)-1)){
+  parTab <- rbind(parTab, tmp)
+}
+
 ## Change alpha and beta to change proposal distribution
 ## Setting to c(1,1) gives uniform distribution on total number of infections
 #parTab[parTab$names %in% c("alpha","beta"),"values"] <- find_a_b(length(strainIsolationTimes),7,50)
@@ -66,21 +66,26 @@ dat <- simulate_data(parTab, 1, n_indiv, buckets,strainIsolationTimes,
                      simInfPars=c("mean"=0.15,"sd"=0.5,"bigMean"=0.5,"logSD"=1),useSIR=FALSE)
 
 ## If we want to use a subset of isolated strains, uncomment the line below
-#viruses <- c(1968, 1969, 1972, 1975, 1977, 1979, 1982, 1985, 1987, 
-#             1989, 1992, 1995, 1998, 2000, 2002, 2004, 2007, 2009, 
-#             2010, 2012, 2014)
+viruses <- c(1968, 1969, 1972, 1975, 1977, 1979, 1982, 1985, 1987, 
+             1989, 1992, 1995, 1998, 2000, 2002, 2004, 2007, 2009, 
+             2010, 2012, 2014)
 
 titreDat <- dat[[1]]
-##titreDat <- titreDat[titreDat$virus %in% viruses,]
+titreDat <- titreDat[titreDat$virus %in% viruses,]
 infectionHistories <- infHist <- dat[[2]]
 ages <- dat[[3]]
 AR <- dat[[4]]
 
 ## If we want to use pre-simulated data
-#titreDat <- read.csv("data/sim_200_lambda_titres.csv",stringsAsFactors=FALSE)
-#ages <- read.csv("data/sim_200_lambda_ages.csv",stringsAsFactors=FALSE)
-#infectionHistories <- infHist <- read.csv("data/sim_200_lambda_infHist.csv",stringsAsFactors=FALSE)
-#AR <- read.csv("data/sim_200_lambda_AR.csv",stringsAsFactors=FALSE)
+#titreDat <- read.csv("data/sim_1000_titres.csv",stringsAsFactors=FALSE)
+#ages <- read.csv("data/sim_1000_ages.csv",stringsAsFactors=FALSE)
+#infectionHistories <- infHist <- read.csv("data/sim_1000_infHist.csv",stringsAsFactors=FALSE)
+#AR <- read.csv("data/sim_1000_AR.csv",stringsAsFactors=FALSE)
+
+write.table(titreDat,"data/sim_10_titres.csv",sep=",",row.names=FALSE)
+write.table(infHist,"data/sim_10_infHist.csv",sep=",",row.names=FALSE)
+write.table(ages,"data/sim_10_ages.csv",sep=",",row.names=FALSE)
+write.table(AR,"data/sim_10_AR.csv",sep=",",row.names=FALSE)
 
 ## Visualise simulated data
 p <- plot_data(titreDat, infHist, strainIsolationTimes, 5, NULL)
@@ -106,15 +111,18 @@ for(i in 1:nrow(startTab)){
 }
 
 ## Specify paramters controlling the MCMC procedure
-mcmcPars <- c("iterations"=2000,"popt"=0.44,"popt_hist"=0.44,"opt_freq"=1000,"thin"=1,"adaptive_period"=1000,
-              "save_block"=100,"thin2"=1,"histSampleProb"=1,"switch_sample"=2, "burnin"=0, 
-              "nInfs"=4, "moveSize"=5, "histProposal"=histProposal, "histOpt"=0)
-
+mcmcPars <- c("iterations"=10000,"popt"=0.44,"popt_hist"=0.44,"opt_freq"=1000,"thin"=1,"adaptive_period"=5000,
+              "save_block"=2000,"thin2"=1,"histSampleProb"=0.5,"switch_sample"=2, "burnin"=0, 
+              "nInfs"=4, "moveSize"=2, "histProposal"=histProposal, "histOpt"=1)
+Rprof(tmp <- tempfile())
 ## Run the MCMC using the inputs generated above
 res <- run_MCMC(startTab, titreDat, mcmcPars, filename=filename,
                 create_post_func, NULL, PRIOR,version=4, 0.2, 
                 fit_dat, ages=ages, 
                 startInfHist=startInf)
+Rprof()
+summaryRprof(tmp)
+plotProfileCallGraph(readProfileData(tmp),score = "total")
 
 #########################
 ## Processing outputs
@@ -158,7 +166,8 @@ dev.off()
 
 ## Generate cumulative infection history plots for a random subset of individuals
 ## based on data and posterior
-infHist_p <- generate_cumulative_inf_plots(res$history_file, mcmcPars["adaptive_period"]+mcmcPars["burnin"], 10, infHist)
+infHist_p <- generate_cumulative_inf_plots(res$history_file, mcmcPars["adaptive_period"]+mcmcPars["burnin"], 
+                                           10, infHist, startInf,strainIsolationTimes)
 svg(paste0(filename, "cumulative_infHist.svg"))
 plot(infHist_p)
 dev.off()
@@ -172,6 +181,6 @@ dev.off()
 ## 6. Attack rate plots, as above
 ## 7. Total number of infections for all individuals
 generate_all_plots(getwd(), mcmcPars["adaptive_period"] + mcmcPars["burnin"], res$chain_file, res$history_file,
-                   titreDat, fit_dat, parTab, ages, nIndiv=10,nSamp=10,
+                   titreDat, fit_dat, parTab, ages, nIndiv=10,nSamp=100,
                    filename=filename)
 

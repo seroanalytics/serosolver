@@ -1,0 +1,14 @@
+#' @export
+infHistPrior <- function(a, b, infHist){
+  N <- ncol(infHist)
+  priors <- log(apply(infHist, 1, function(x) dbb(sum(x), N, a, b))  )
+  #priors <- log(apply(infHist, 1, function(x) db(sum(x)/N, a, b))  )
+}
+#' @export
+dbb <- function(x, N, u, v) {
+  (beta(x+u, N-x+v)/beta(u,v))*choose(N,x)
+}
+
+db <- function(x, a, b){
+    x^(a-1)*(1-x^(b-1))/beta(a,b)
+}

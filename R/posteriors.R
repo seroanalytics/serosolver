@@ -66,14 +66,18 @@ create_post_func <- function(parTab, data, antigenicMap,
   if(version==1){
       print("likelihood only - prior implicit in proposal")
       ## The function pointer
+ 
       f <- function(pars, infectionHistories){
 
           names(pars) <- mynames
           ## Work out short and long term boosting cross reactivity
-          antigenicMapLong <- 1-pars["sigma1"]*antigenicMapMelted
-          antigenicMapLong[antigenicMapLong < 0] <- 0
-          antigenicMapShort <- 1-pars["sigma2"]*antigenicMapMelted
-          antigenicMapShort[antigenicMapShort < 0] <- 0
+          #antigenicMapLong <- 1-pars1["sigma1"]*antigenicMapMelted
+          #antigenicMapLong[antigenicMapLong < 0] <- 0
+          #antigenicMapShort <- 1-pars1["sigma2"]*antigenicMapMelted
+          #antigenicMapShort[antigenicMapShort < 0] <- 0
+
+          antigenicMapLong <- create_cross_reactivity_vector(antigenicMapMelted, pars1["sigma1"])
+          antigenicMapShort <- create_cross_reactivity_vector(antigenicMapMelted, pars1["sigma2"])
           
           ## Now pass to the C++ function
           y <- titre_data_group(pars, infectionHistories, strains, strainIndices, sampleTimes,

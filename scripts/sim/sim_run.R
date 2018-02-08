@@ -5,22 +5,22 @@ library(reshape2)
 
 ## Set working directory and load code
 setwd("~/Documents/Fluscape/serosolver")
-devtools::load_all()
+#devtools::load_all()
 
 ## How many individuals to simulate?
-n_indiv <-10
+n_indiv <-1000
 
 ## Which infection history proposal version to use?
 describe_proposals()
-histProposal <- 2
+histProposal <- 3
 
 ## Buckets indicates the time resolution of the analysis. Setting
 ## this to 1 uses annual epochs, whereas setting this to 12 gives
 ## monthly epochs
-buckets <- 1
+buckets <- 12
 
 ## The general output filename
-filename <- "test_monthly"
+filename <- "chains/test_monthly"
 
 ## Read in parameter table to simulate from and change waning rate if necessary
 parTab <- read.csv("~/Documents/Fluscape/serosolver/inputs/parTab.csv",stringsAsFactors=FALSE)
@@ -52,20 +52,20 @@ strainIsolationTimes <- unique(fit_dat$inf_years)
 ## Change alpha and beta to change proposal distribution
 ## Setting to c(1,1) gives uniform distribution on total number of infections
 #parTab[parTab$names %in% c("alpha","beta"),"values"] <- find_a_b(length(strainIsolationTimes),7,50)
-parTab[parTab$names %in% c("alpha","beta"),"values"] <- c(1,1)
+parTab[parTab$names %in% c("alpha","beta"),"values"] <- c(2,12)
 
 ## Simulate some fake data
 dat <- simulate_data(parTab, 1, n_indiv, buckets,strainIsolationTimes,
                      samplingTimes, 2, antigenicMap=fit_dat, 0, 0, 10*buckets,75*buckets,
-                     simInfPars=c("mean"=0.15,"sd"=0.5,"bigMean"=0.5,"logSD"=1),useSIR=FALSE)
+                     simInfPars=c("mean"=0.15,"sd"=0.5,"bigMean"=0.5,"logSD"=1),useSIR=TRUE)
 
 ## If we want to use a subset of isolated strains, uncomment the line below
 viruses <- c(1968, 1969, 1972, 1975, 1977, 1979, 1982, 1985, 1987, 
              1989, 1992, 1995, 1998, 2000, 2002, 2004, 2007, 2009, 
-             2010, 2012, 2014)
+             2010, 2012, 2014)*buckets
 
 titreDat <- dat[[1]]
-##titreDat <- titreDat[titreDat$virus %in% viruses,]
+titreDat <- titreDat[titreDat$virus %in% viruses,]
 infectionHistories <- infHist <- dat[[2]]
 ages <- dat[[3]]
 AR <- dat[[4]]
@@ -100,15 +100,21 @@ startPar <- c(startPar, startTab[(startTab$names %in% c("alpha","beta")),"values
 startTab$values <- startPar
 
 ## Specify paramters controlling the MCMC procedure
-mcmcPars <- c("iterations"=20000,"popt"=0.44,"popt_hist"=0.44,"opt_freq"=1000,"thin"=1,"adaptive_period"=10000,
+mcmcPars <- c("iterations"=2000,"popt"=0.44,"popt_hist"=0.44,"opt_freq"=1000,"thin"=1,"adaptive_period"=1000,
               "save_block"=100,"thin2"=1,"histSampleProb"=1,"switch_sample"=2, "burnin"=0, 
-              "nInfs"=4, "moveSize"=5, "histProposal"=histProposal, "histOpt"=0)
+              "nInfs"=4, "moveSize"=2, "histProposal"=histProposal, "histOpt"=1)
 
 ## Run the MCMC using the inputs generated above
-res <- run_MCMC(startTab, titreDat, mcmcPars, filename=filename,
-                create_post_func, NULL, PRIOR,version=1, 0.2, 
+Rprof(tmp <- tempfile())
+res <- run_MCMC(parTab, titreDat, mcmcPars, filename=filename,
+                create_post_func, NULL, PRIOR=infHistPrior,version=1, 0.2, 
                 fit_dat, ages=ages, 
                 startInfHist=startInf)
+Rprof()
+summaryRprof(tmp)
+library(proftools)
+plotProfileCallGraph(readProfileData(tmp),score = "total")
+
 
 #########################
 ## Processing outputs
@@ -138,7 +144,8 @@ arP <- plot_attack_rates(infChain, titreDat,ages,xs) + geom_point(data=AR,aes(x=
 
 ## Generate cumulative infection history plots for a random subset of individuals
 ## based on data and posterior
-infHist_p <- generate_cumulative_inf_plots(res$history_file, mcmcPars["adaptive_period"]+mcmcPars["burnin"], 10, infHist)
+infHist_p <- generate_cumulative_inf_plots(res$history_file, mcmcPars["adaptive_period"]+mcmcPars["burnin"], 
+                                           10, infHist, startInf,strainIsolationTimes)
 svg(paste0(filename, "cumulative_infHist.svg"))
 plot(infHist_p)
 dev.off()

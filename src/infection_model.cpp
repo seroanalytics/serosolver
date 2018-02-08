@@ -37,6 +37,9 @@ NumericVector infection_model_indiv(NumericVector theta, // Parameter vector
   double mu_short = theta["mu_short"];
   double tau = theta["tau"];
   double wane = theta["wane"];
+  //double sigma1 = theta["sigma1"];
+  //double sigma2 = theta["sigma2"];
+  
 
   // We will need to loop over each strain that was tested
   int n_samples = measurementMapIndices.size(); // Number of time points sampled
@@ -442,4 +445,19 @@ NumericVector sum_buckets(NumericVector a, NumericVector buckets){
     }
   }
   return(results);
+}
+
+//' Convert melted antigenic map to cross reactivity
+//'
+//' Multiplies all elements of the provided vector, x such that y = 1 - sigma*x. Also makes sure that no calculated value is less than 0
+//' @param x the melted antigenic map
+//' @param sigma the cross reactivity waning parameter
+//' @return a vector of cross reactivity
+// [[Rcpp::export]]
+NumericVector create_cross_reactivity_vector(NumericVector x, double sigma) {
+  NumericVector x2(x.size());
+  for(int i = 0; i < x2.size(); ++i){
+    x2[i] = MAX(1 - x[i]*sigma,0);
+  }
+  return(x2);
 }
