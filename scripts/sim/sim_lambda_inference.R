@@ -8,7 +8,7 @@ setwd("~/Documents/Fluscape/serosolver")
 devtools::load_all()
 
 ## How many individuals to simulate?
-n_indiv <-100
+n_indiv <-1000
 
 ## Which infection history proposal version to use?
 describe_proposals()
@@ -17,7 +17,7 @@ histProposal <- 1
 ## Buckets indicates the time resolution of the analysis. Setting
 ## this to 1 uses annual epochs, whereas setting this to 12 gives
 ## monthly epochs
-buckets <- 1
+buckets <- 12
 
 ## The general output filename
 filename <- "chains/test_lambda"
@@ -61,14 +61,16 @@ for(i in 1:(length(strainIsolationTimes)-1)){
 parTab[parTab$names %in% c("alpha","beta"),"values"] <- c(1,1)
 
 ## Simulate some fake data
+#strainIsolationTimes <- 1968:2015
 dat <- simulate_data(parTab, 1, n_indiv, buckets,strainIsolationTimes,
                      samplingTimes, 2, antigenicMap=fit_dat, 0, 0, 10*buckets,75*buckets,
-                     simInfPars=c("mean"=0.15,"sd"=0.5,"bigMean"=0.5,"logSD"=1),useSIR=FALSE)
+                     simInfPars=c("mean"=0.15,"sd"=0.5,"bigMean"=0.5,"logSD"=1),
+                     useSIR=TRUE)
 
 ## If we want to use a subset of isolated strains, uncomment the line below
 viruses <- c(1968, 1969, 1972, 1975, 1977, 1979, 1982, 1985, 1987, 
              1989, 1992, 1995, 1998, 2000, 2002, 2004, 2007, 2009, 
-             2010, 2012, 2014)
+             2010, 2012, 2014)*buckets
 
 titreDat <- dat[[1]]
 titreDat <- titreDat[titreDat$virus %in% viruses,]
@@ -82,10 +84,10 @@ AR <- dat[[4]]
 #infectionHistories <- infHist <- read.csv("data/sim_1000_infHist.csv",stringsAsFactors=FALSE)
 #AR <- read.csv("data/sim_1000_AR.csv",stringsAsFactors=FALSE)
 
-write.table(titreDat,"data/sim_10_titres.csv",sep=",",row.names=FALSE)
-write.table(infHist,"data/sim_10_infHist.csv",sep=",",row.names=FALSE)
-write.table(ages,"data/sim_10_ages.csv",sep=",",row.names=FALSE)
-write.table(AR,"data/sim_10_AR.csv",sep=",",row.names=FALSE)
+#write.table(titreDat,"data/sim_10_titres.csv",sep=",",row.names=FALSE)
+#write.table(infHist,"data/sim_10_infHist.csv",sep=",",row.names=FALSE)
+#write.table(ages,"data/sim_10_ages.csv",sep=",",row.names=FALSE)
+#write.table(AR,"data/sim_10_AR.csv",sep=",",row.names=FALSE)
 
 ## Visualise simulated data
 p <- plot_data(titreDat, infHist, strainIsolationTimes, 5, NULL)
@@ -93,7 +95,6 @@ p <- plot_data(titreDat, infHist, strainIsolationTimes, 5, NULL)
 ## Starting infection histories based on data
 startInf <- setup_infection_histories_new(titreDat, ages, unique(fit_dat$inf_years), space=5,titre_cutoff=2)
 ageMask <- create_age_mask(ages, strainIsolationTimes,n_indiv)
-
 
 ## Housekeeping for force of infection parameters, lambda
 parTab[parTab$names == "lambda","values"] <- AR[,2]
@@ -111,17 +112,26 @@ for(i in 1:nrow(startTab)){
 }
 
 ## Specify paramters controlling the MCMC procedure
-mcmcPars <- c("iterations"=10000,"popt"=0.44,"popt_hist"=0.44,"opt_freq"=1000,"thin"=1,"adaptive_period"=5000,
-              "save_block"=2000,"thin2"=1,"histSampleProb"=0.5,"switch_sample"=2, "burnin"=0, 
+mcmcPars <- c("iterations"=500000,"popt"=0.44,"popt_hist"=0.44,"opt_freq"=2000,"thin"=10,"adaptive_period"=100000,
+              "save_block"=100,"thin2"=100,"histSampleProb"=1,"switch_sample"=10, "burnin"=0, 
               "nInfs"=4, "moveSize"=2, "histProposal"=histProposal, "histOpt"=1)
+covMat <- diag(nrow(parTab))
+scale <- 0.01
+w <- 0.9
+mvrPars <- list(covMat, scale, w)
+ageMask <- create_age_mask(ages, strainIsolationTimes,n_indiv)
+f <- create_post_func(parTab=startTab,data=titreDat,antigenicMap=fit_dat,PRIOR_FUNC = NULL,version=4, ageMask=ageMask)
+f(startTab$values, startInf)
 Rprof(tmp <- tempfile())
 ## Run the MCMC using the inputs generated above
 res <- run_MCMC(startTab, titreDat, mcmcPars, filename=filename,
-                create_post_func, NULL, PRIOR,version=4, 0.2, 
+                create_post_func, NULL, NULL,version=4, 0.2, 
                 fit_dat, ages=ages, 
                 startInfHist=startInf)
+
 Rprof()
 summaryRprof(tmp)
+library(proftools)
 plotProfileCallGraph(readProfileData(tmp),score = "total")
 
 #########################
@@ -150,6 +160,7 @@ AR_recovery <- ggplot() +
   geom_point(data=tmpTab,aes(x=names,y=values),col="red") +
   ylab("Attack rate, lambda") +
   xlab("Year") +
+  scale_y_continuous(limits=c(0,1)) +
   theme_bw() +
   theme(axis.text.x=element_text(angle=45,hjust=1))
 svg(paste0(filename,"actual_AR.svg"))

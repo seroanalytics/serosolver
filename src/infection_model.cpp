@@ -17,7 +17,7 @@ using namespace Rcpp;
 //' @param measurementMapIndices IntegerVector, the indices of all measured strains in the melted antigenic map
 //' @param antigenicMapLong NumericVector, the collapsed cross reactivity map for long term boosting, after multiplying by sigma1
 //' @param antigenicMapShort NumericVector, the collapsed cross reactivity map for short term boosting, after multiplying by sigma2
-//'  @param numberStrains int, the maximum number of infections that an individual could experience
+//' @param numberStrains int, the maximum number of infections that an individual could experience
 //' @return NumericVector of predicted titres for each entry in measurementMapIndices
 //' @useDynLib serosolver
 //' @export
@@ -37,10 +37,7 @@ NumericVector infection_model_indiv(NumericVector theta, // Parameter vector
   double mu_short = theta["mu_short"];
   double tau = theta["tau"];
   double wane = theta["wane"];
-  //double sigma1 = theta["sigma1"];
-  //double sigma2 = theta["sigma2"];
   
-
   // We will need to loop over each strain that was tested
   int n_samples = measurementMapIndices.size(); // Number of time points sampled
   int max_infections = infectionTimes.size(); // max number of infections is one for each strain
@@ -107,7 +104,6 @@ NumericVector infection_model_indiv(NumericVector theta, // Parameter vector
     }
     predictedTitre[k] = tmpTitre;
   }
-  //Rcpp::Rcout << predictedTitre.size() << std::endl;
   return(predictedTitre);
 }
 //' @export
@@ -125,9 +121,7 @@ NumericVector titre_data_individual(NumericVector theta,
 				    ){
   int numberSamples = samplingTimes.size();
   int numberMeasuredStrains = measuredMapIndices.size();
-  //NumericMatrix results(numberStrains, 3);
   NumericVector titres(numberMeasuredStrains);
-  //NumericVector times(numberMeasuredStrains);
 
   int startIndex = 0;
   int endIndex = 0;
@@ -155,10 +149,10 @@ NumericVector titre_data_group(NumericVector theta,
 			       NumericVector circulationTimes,
 			       IntegerVector circulationMapIndices,
 			       NumericVector samplingTimes,
-			       IntegerVector indicesData,
-			       IntegerVector indicesDataOverall,
-			       IntegerVector indicesSamples,
-			       IntegerVector measuredMapIndices, 
+			       IntegerVector indicesTitreDataSample, // How many rows in titre data correspond to each individual, sample and repeat?
+			       IntegerVector indicesTitreDataOverall, // How many rows in the titre data correspond to each individual?
+			       IntegerVector indicesSamples, // Split the sample times and runs for each individual
+			       IntegerVector measuredMapIndices, // For each titre measurement, corresponding entry in antigenic map
 			       NumericVector antigenicMapLong, 
 			       NumericVector antigenicMapShort){
   int n = infectionHistories.nrow();
@@ -178,13 +172,18 @@ NumericVector titre_data_group(NumericVector theta,
     startIndexSamples = indicesSamples[i-1];
     endIndexSamples = indicesSamples[i] - 1;
 
-    startIndexData = indicesDataOverall[i-1];
-    endIndexData = indicesDataOverall[i] - 1;
-    titres[Range(startIndexData, endIndexData)] = titre_data_individual(theta,  infectionHistories(i-1,_),circulationTimes,circulationMapIndices,
-									samplingTimes[Range(startIndexSamples, endIndexSamples)], 
-									indicesData[Range(startIndexSamples,endIndexSamples)], 
-									measuredMapIndices[Range(startIndexData,endIndexData)], 
-									antigenicMapLong, antigenicMapShort,  n_strains);
+    startIndexData = indicesTitreDataOverall[i-1];
+    endIndexData = indicesTitreDataOverall[i] - 1;
+    titres[Range(startIndexData, endIndexData)] = titre_data_individual(theta,   // Vector of named model parameters
+									infectionHistories(i-1,_), // Vector of infection history for individual i
+									circulationTimes, // Vector of all virus circulation times, same length and ncol infectionHistories
+									circulationMapIndices, // Gives the corresponding index in the antigenic map vector
+									samplingTimes[Range(startIndexSamples, endIndexSamples)],  // Get sampling times for this individual
+									indicesTitreDataSample[Range(startIndexSamples,endIndexSamples)], // The 
+									measuredMapIndices[Range(startIndexData,endIndexData)],  // For the indices in the antigenic map to which each titre corresponds
+									antigenicMapLong, 
+									antigenicMapShort,  
+									n_strains); // The total number of strains that circulated
   }
 
   return(titres);

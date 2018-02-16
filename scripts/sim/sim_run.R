@@ -5,10 +5,10 @@ library(reshape2)
 
 ## Set working directory and load code
 setwd("~/Documents/Fluscape/serosolver")
-#devtools::load_all()
+devtools::load_all()
 
 ## How many individuals to simulate?
-n_indiv <-1000
+n_indiv <- 25
 
 ## Which infection history proposal version to use?
 describe_proposals()
@@ -52,7 +52,7 @@ strainIsolationTimes <- unique(fit_dat$inf_years)
 ## Change alpha and beta to change proposal distribution
 ## Setting to c(1,1) gives uniform distribution on total number of infections
 #parTab[parTab$names %in% c("alpha","beta"),"values"] <- find_a_b(length(strainIsolationTimes),7,50)
-parTab[parTab$names %in% c("alpha","beta"),"values"] <- c(2,12)
+parTab[parTab$names %in% c("alpha","beta"),"values"] <- c(1,1)
 
 ## Simulate some fake data
 dat <- simulate_data(parTab, 1, n_indiv, buckets,strainIsolationTimes,
@@ -65,7 +65,7 @@ viruses <- c(1968, 1969, 1972, 1975, 1977, 1979, 1982, 1985, 1987,
              2010, 2012, 2014)*buckets
 
 titreDat <- dat[[1]]
-titreDat <- titreDat[titreDat$virus %in% viruses,]
+#titreDat <- titreDat[titreDat$virus %in% viruses,]
 infectionHistories <- infHist <- dat[[2]]
 ages <- dat[[3]]
 AR <- dat[[4]]
@@ -93,23 +93,26 @@ ageMask <- create_age_mask(ages, strainIsolationTimes,n_indiv)
 ## Generate this by optimising theta based on the chosen starting infection histories
 startTab <- parTab
 optimTab <- startTab[!(startTab$names %in% c("alpha","beta")),]
-f1 <- create_post_func1(optimTab,titreDat,fit_dat,NULL,infectionHistories=startInf)
+f1 <- create_post_func(optimTab,titreDat,fit_dat,NULL,version=6,infectionHistories=startInf)
 startPar <- parTab$values
 startPar <- DEoptim::DEoptim(f1, lower=optimTab$lower_bound, upper=optimTab$upper_bound,control=list(itermax=10))$optim$bestmem
 startPar <- c(startPar, startTab[(startTab$names %in% c("alpha","beta")),"values"])
 startTab$values <- startPar
 
 ## Specify paramters controlling the MCMC procedure
-mcmcPars <- c("iterations"=2000,"popt"=0.44,"popt_hist"=0.44,"opt_freq"=1000,"thin"=1,"adaptive_period"=1000,
-              "save_block"=100,"thin2"=1,"histSampleProb"=1,"switch_sample"=2, "burnin"=0, 
+mcmcPars <- c("iterations"=50000,"popt"=0.44,"popt_hist"=0.44,"opt_freq"=1000,"thin"=1,"adaptive_period"=20000,
+              "save_block"=100,"thin2"=10,"histSampleProb"=0.2,"switch_sample"=2, "burnin"=0, 
               "nInfs"=4, "moveSize"=2, "histProposal"=histProposal, "histOpt"=1)
 
 ## Run the MCMC using the inputs generated above
 Rprof(tmp <- tempfile())
-res <- run_MCMC(parTab, titreDat, mcmcPars, filename=filename,
-                create_post_func, NULL, PRIOR=infHistPrior,version=1, 0.2, 
+#devtools::load_all()
+system.time(
+res <- run_MCMC(startTab, titreDat, mcmcPars, filename=filename,
+                create_post_func, NULL, PRIOR=NULL,version=1, 0.2, 
                 fit_dat, ages=ages, 
                 startInfHist=startInf)
+)
 Rprof()
 summaryRprof(tmp)
 library(proftools)
@@ -127,7 +130,7 @@ plot(coda::as.mcmc(chain1))
 dev.off()
 
 ## Plot inferred attack rates against true simulated attack rates
-infChain <- data.table::fread(res$history_file,data.table=FALSE)
+infChain <- data.table::fread(res$history_file)
 infChain <- infChain[infChain$sampno >= (mcmcPars["adaptive_period"]+mcmcPars["burnin"]),]
 xs <- min(strainIsolationTimes):max(strainIsolationTimes)
 colnames(AR) <- c("year","AR")
@@ -145,7 +148,7 @@ arP <- plot_attack_rates(infChain, titreDat,ages,xs) + geom_point(data=AR,aes(x=
 ## Generate cumulative infection history plots for a random subset of individuals
 ## based on data and posterior
 infHist_p <- generate_cumulative_inf_plots(res$history_file, mcmcPars["adaptive_period"]+mcmcPars["burnin"], 
-                                           10, infHist, startInf,strainIsolationTimes)
+                                           20, infHist, startInf,strainIsolationTimes)
 svg(paste0(filename, "cumulative_infHist.svg"))
 plot(infHist_p)
 dev.off()

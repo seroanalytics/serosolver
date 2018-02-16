@@ -4,15 +4,13 @@
 \alias{get_titre_predictions}
 \title{Generate titre credible intervals}
 \usage{
-get_titre_predictions(chain, infectionHistories, dat, individuals, antigenicMap,
-  ages, parTab, nsamp = 100)
+get_titre_predictions(chain, infectionHistories, titreDat, individuals,
+  antigenicMap, ages, parTab, nsamp = 100)
 }
 \arguments{
 \item{chain}{the full MCMC chain to generate titre trajectories from}
 
 \item{infectionHistories}{the MCMC chain for infection histories}
-
-\item{dat}{the data frame of titre data}
 
 \item{individuals}{the subset of individuals to generate credible intervals for}
 
@@ -23,6 +21,8 @@ get_titre_predictions(chain, infectionHistories, dat, individuals, antigenicMap,
 \item{parTab}{the table controlling the parameters in the MCMC chain}
 
 \item{nsamp}{number of samples to take from posterior}
+
+\item{dat}{the data frame of titre data}
 }
 \value{
 a list with the titre predictions (95% credible intervals, median and multivariate posterior mode) and the probabilities of infection for each individual in each epoch

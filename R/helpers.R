@@ -80,7 +80,7 @@ protect <- function(f){
     function(...){
         tryCatch(f(...),error=function(e){
             message("caught error: ", e$message)
-            -100000
+            -10000000
         })
     }
 }

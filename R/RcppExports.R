@@ -15,7 +15,7 @@
 #' @param measurementMapIndices IntegerVector, the indices of all measured strains in the melted antigenic map
 #' @param antigenicMapLong NumericVector, the collapsed cross reactivity map for long term boosting, after multiplying by sigma1
 #' @param antigenicMapShort NumericVector, the collapsed cross reactivity map for short term boosting, after multiplying by sigma2
-#'  @param numberStrains int, the maximum number of infections that an individual could experience
+#' @param numberStrains int, the maximum number of infections that an individual could experience
 #' @return NumericVector of predicted titres for each entry in measurementMapIndices
 #' @useDynLib serosolver
 #' @export
@@ -28,8 +28,8 @@ titre_data_individual <- function(theta, infectionHistory, circulationTimes, cir
     .Call('_serosolver_titre_data_individual', PACKAGE = 'serosolver', theta, infectionHistory, circulationTimes, circulationMapIndices, samplingTimes, dataIndices, measuredMapIndices, antigenicMapLong, antigenicMapShort, numberStrains)
 }
 
-titre_data_group <- function(theta, infectionHistories, circulationTimes, circulationMapIndices, samplingTimes, indicesData, indicesDataOverall, indicesSamples, measuredMapIndices, antigenicMapLong, antigenicMapShort) {
-    .Call('_serosolver_titre_data_group', PACKAGE = 'serosolver', theta, infectionHistories, circulationTimes, circulationMapIndices, samplingTimes, indicesData, indicesDataOverall, indicesSamples, measuredMapIndices, antigenicMapLong, antigenicMapShort)
+titre_data_group <- function(theta, infectionHistories, circulationTimes, circulationMapIndices, samplingTimes, indicesTitreDataSample, indicesTitreDataOverall, indicesSamples, measuredMapIndices, antigenicMapLong, antigenicMapShort) {
+    .Call('_serosolver_titre_data_group', PACKAGE = 'serosolver', theta, infectionHistories, circulationTimes, circulationMapIndices, samplingTimes, indicesTitreDataSample, indicesTitreDataOverall, indicesSamples, measuredMapIndices, antigenicMapLong, antigenicMapShort)
 }
 
 #' Calculate likelihood

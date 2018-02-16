@@ -66,13 +66,14 @@ run_MCMC <- function(parTab,
     ## Parameter constraints
     lower_bounds <- parTab$lower_bound # Parameters cannot step below this
     upper_bounds <- parTab$upper_bound # Parameters cannot step above this
-    steps <- parTab$steps
-    fixed <- parTab$fixed
+    steps <- parTab$steps # How far to step on unit scale to begin with?
+    fixed <- parTab$fixed # Index which parameters are fixed
 
     ## Pull out alpha and beta for beta binomial proposals
-    alpha <- parTab[parTab$names == "alpha","values"]
-    beta <- parTab[parTab$names == "beta","values"]
-    
+    if("alpha" %in% par_names & "beta" %in% par_names){
+        alpha <- parTab[parTab$names == "alpha","values"]
+        beta <- parTab[parTab$names == "beta","values"]
+    }
     
     ## Arrays to store acceptance rates
     ## If univariate proposals, store vector of acceptances
@@ -167,16 +168,16 @@ run_MCMC <- function(parTab,
     data.table::fwrite(as.data.frame(tmp_table),file=mcmc_chain_file,row.names=FALSE,col.names=TRUE,sep=",",append=FALSE)
 
     ## Table for storing infection histories
-    historyTab <- emptyHistoryTab <- matrix(NA, nrow=save_block*n_indiv,ncol=n_strain+2)
-    tmp_table <- matrix(NA, nrow=n_indiv,ncol=n_strain+2)
-    tmp_table[1:n_indiv,1:n_strain] <- infectionHistories
-    tmp_table[1:n_indiv,n_strain+1] <- individuals
-    tmp_table[1:n_indiv,n_strain+2] <- 1
-    colnames(tmp_table) <- c(as.character(strainIsolationTimes),"individual","sampno")
+    #historyTab <- emptyHistoryTab <- matrix(NA, nrow=save_block*n_indiv,ncol=n_strain+2)
+    #tmp_table <- matrix(NA, nrow=n_indiv,ncol=n_strain+2)
+    #tmp_table[1:n_indiv,1:n_strain] <- infectionHistories
+    #tmp_table[1:n_indiv,n_strain+1] <- individuals
+    #tmp_table[1:n_indiv,n_strain+2] <- 1
+    #colnames(tmp_table) <- c(as.character(strainIsolationTimes),"individual","sampno")
     
     ## Write starting infection histories
-    data.table::fwrite(as.data.frame(tmp_table), infectionHistory_file, row.names=FALSE, col.names=TRUE, sep=",",append=FALSE)
-
+    ##data.table::fwrite(as.data.frame(tmp_table), infectionHistory_file, row.names=FALSE, col.names=TRUE, sep=",",append=FALSE)
+    save_infHist_to_disk(infectionHistories, infectionHistory_file, 1, append=FALSE,colNames=TRUE)
     ## Initial indexing parameters
     no_recorded <- 1
     no_recorded_infHist <- 1
@@ -295,10 +296,11 @@ run_MCMC <- function(parTab,
 
         ## Save infection histories
         if(i %% histTabThin == 0){
-            historyTab[no_recorded_infHist:(no_recorded_infHist + n_indiv-1),1:n_strain] <- infectionHistories
-            historyTab[no_recorded_infHist:(no_recorded_infHist + n_indiv-1),n_strain+1] <- individuals
-            historyTab[no_recorded_infHist:(no_recorded_infHist + n_indiv-1),n_strain+2] <- sampno
-            no_recorded_infHist <- no_recorded_infHist + n_indiv
+           save_infHist_to_disk(infectionHistories, infectionHistory_file, sampno)
+                                        #historyTab[no_recorded_infHist:(no_recorded_infHist + n_indiv-1),1:n_strain] <- infectionHistories
+                                        #historyTab[no_recorded_infHist:(no_recorded_infHist + n_indiv-1),n_strain+1] <- individuals
+            #historyTab[no_recorded_infHist:(no_recorded_infHist + n_indiv-1),n_strain+2] <- sampno
+            #no_recorded_infHist <- no_recorded_infHist + n_indiv
         }
         
 ##############################
@@ -388,12 +390,12 @@ run_MCMC <- function(parTab,
             save_chain <- empty_save_chain
             no_recorded <- 1
         }
-        if((no_recorded_infHist-1)/n_indiv == save_block){
-            data.table::fwrite(as.data.frame(historyTab[1:(no_recorded_infHist-1),]), file=infectionHistory_file,
-                        col.names=FALSE,row.names=FALSE,sep=",",append=TRUE)
-            historyTab <- emptyHistoryTab
-            no_recorded_infHist <- 1
-        }
+        #if((no_recorded_infHist-1)/n_indiv == save_block){
+        #    data.table::fwrite(as.data.frame(historyTab[1:(no_recorded_infHist-1),]), file=infectionHistory_file,
+        #                col.names=FALSE,row.names=FALSE,sep=",",append=TRUE)
+        #    historyTab <- emptyHistoryTab
+        #    no_recorded_infHist <- 1
+        #}
         sampno <- sampno + 1
     }
 
@@ -403,12 +405,12 @@ run_MCMC <- function(parTab,
     if(no_recorded > 2){
         data.table::fwrite(as.data.frame(save_chain[1:(no_recorded-1),]),file=mcmc_chain_file,row.names=FALSE,col.names=FALSE,sep=",",append=TRUE)
     }
-    if(no_recorded_infHist > 2){
-        data.table::fwrite(as.data.frame(historyTab), file=infectionHistory_file,
-                    col.names=FALSE,row.names=FALSE,sep=",",append=TRUE)
-        historyTab <- emptyHistoryTab
-        no_recorded_infHist <- 1
-    }
+    #if(no_recorded_infHist > 2){
+    #    data.table::fwrite(as.data.frame(historyTab), file=infectionHistory_file,
+    #                col.names=FALSE,row.names=FALSE,sep=",",append=TRUE)
+    #    historyTab <- emptyHistoryTab
+    #    no_recorded_infHist <- 1
+    #}
 
     if(is.null(mvrPars)){
         covMat <- NULL

@@ -6,7 +6,7 @@
 #' Multivariate proposal function
 #'
 #' Function used to give multivariate normal proposals for free model parameters.
-#' Takes into account parameter covariance and ensures Containment condition with beta, if covMat0 (the iedntity matrix) is specified.
+#' Takes into account parameter covariance and ensures Containment condition with beta, if covMat0 (the identity matrix) is specified.
 #' @param covMat the 2D covariance matrix for all of the parameters
 #' @param covMat0 optional, usually the identity matrix for theta
 #' @param useLog flag. If TRUE, propose on log scale
@@ -204,6 +204,9 @@ infection_history_betabinom_group <- function(newInfHist, sampledIndivs, ageMask
 #' @export
 #' @useDynLib serosolver
 univ_proposal <- function(values, lower_bounds, upper_bounds,steps, index){
+    #rtn <- values
+    #rtn[index] <- rnorm(1,values[index],steps[index])
+    #return(rtn)
     mn <- lower_bounds[index]
     mx <- upper_bounds[index]
 
@@ -226,7 +229,9 @@ univ_proposal <- function(values, lower_bounds, upper_bounds,steps, index){
     ##if (x < 0) x <- 1 + x	
     ##if (x > 1) x <- x - 1
     
-    if(x < 0 | x > 1) print("Stepped outside of unit scale. Something went wrong...")
+    if(x < 0 | x > 1){
+        print("Stepped outside of unit scale. Something went wrong...")
+    }
 
     rtn[index] <- fromUnitScale(x,mn,mx)
     rtn
@@ -381,4 +386,12 @@ create_age_mask <- function(ages, strainIsolationTimes, n_indiv){
         }
     })
     return(ageMask)
+}
+
+#' @export
+save_infHist_to_disk <- function(infHist, file, sampno, append=TRUE,colNames=FALSE){
+    saveInfHist <- Matrix::Matrix(infHist, sparse=TRUE)
+    saveInfHist <- as.data.frame(Matrix::summary(saveInfHist))
+    saveInfHist$sampno <- sampno
+    data.table::fwrite(saveInfHist,file=file,col.names=colNames,row.names=FALSE,sep=",",append=append)
 }

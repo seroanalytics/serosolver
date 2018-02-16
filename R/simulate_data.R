@@ -191,12 +191,26 @@ simulate_ars_buckets <- function(infectionYears, buckets, meanPar=0.15,sdPar=0.5
     attack_year <- rlnorm(n, meanlog=log(meanPar)-sdPar^2/2,sdlog=sdPar)
     if(largeFirstYear) attack_year[1] <- rlnorm(1,meanlog=log(bigYearMean)-(sdPar/2)^2/2,sdlog=sdPar/2)
     ars <- NULL
+    
     for(i in seq_along(attack_year)){
         ars <- c(ars, generate_ar_annual(attack_year[i],buckets))
     }
+    
     ars <- ars[1:length(infectionYears)]
     return(ars)
 }
+#' @export
+simulate_ars_spline <- function(infectionYears, buckets, meanPar=0.15,sdPar=0.5, largeFirstYear=FALSE,bigYearMean=0.5, knots,theta){
+    infectionYears <- infectionYears[seq(1,length(infectionYears),by=buckets)]/buckets
+    n <- length(infectionYears)
+    attack_year <- rlnorm(n, meanlog=log(meanPar)-sdPar^2/2,sdlog=sdPar)
+    if(largeFirstYear) attack_year[1] <- rlnorm(1,meanlog=log(bigYearMean)-(sdPar/2)^2/2,sdlog=sdPar/2)
+    ars <- generate_lambdas(attack_year, knots, theta, n, buckets) 
+    return(ars)
+}
+
+
+
 #' Simulate full data set
 #'
 #' Simulates a full data set for a given set of parameters etc.
@@ -221,7 +235,10 @@ simulate_data <- function(parTab, group=1,n_indiv,buckets=12,
                           sampleSensoring=0, titreSensoring=0,
                           ageMin=5,ageMax=80,
                           simInfPars=c("mean"=0.15,"sd"=0.5,"bigMean"=0.5,"logSD"=1),
-                          useSIR=FALSE){
+                          theta=rep(0.1,5),
+                          knots=c(0.33,0.66),
+                          useSIR=FALSE,
+                          useSpline=TRUE){
     ## Extract parameters
     pars <- parTab$values
     names(pars) <- parTab$names
@@ -241,15 +258,17 @@ simulate_data <- function(parTab, group=1,n_indiv,buckets=12,
     ## Simulate attack rates
     if(useSIR){
         pInf <- simulate_ars_buckets(strainIsolationTimes, buckets, simInfPars["mean"],simInfPars["sd"],TRUE,simInfPars["bigMean"])
+    } else if(useSpline){
+        pInf <- simulate_ars_spline(strainIsolationTimes, buckets, simInfPars["mean"],simInfPars["sd"],TRUE,simInfPars["bigMean"], knots,theta)
     } else {
         pInf <- simulate_attack_rates(strainIsolationTimes, simInfPars["mean"],simInfPars["sd"],TRUE,simInfPars["bigMean"])
     }
-    
     ## Simulate infection histories
     tmp <- simulate_infection_histories(pInf, simInfPars["logSD"], strainIsolationTimes, samplingTimes, ages)
+    
     infHist <- tmp[[1]]
     ARs <- tmp[[2]]
-    
+
     ## Simulate titre data
     y <- simulate_group(n_indiv, pars, infHist, strainIsolationTimes, samplingTimes,
                         nsamps, antigenicMapLong,antigenicMapShort)
@@ -262,7 +281,7 @@ simulate_data <- function(parTab, group=1,n_indiv,buckets=12,
     DOB <- max(samplingTimes) - ages
     ages <- data.frame("individual"=1:n_indiv, "DOB"=DOB)
     attackRates <- data.frame("year"=strainIsolationTimes,"AR"=ARs)
-    return(list(data=y, infectionHistories=infHist, ages=ages, attackRates=attackRates))
+    return(list(data=y, infectionHistories=infHist, ages=ages, attackRates=attackRates, lambdas=pInf))
 }
 
 #' Create useable antigenic map
@@ -295,7 +314,7 @@ generate_antigenic_map <- function(antigenicDistances, buckets=1){
   antigenicDistances$Strain <- virus_key[antigenicDistances$Strain]
   fit <- smooth.spline(antigenicDistances$X,antigenicDistances$Y,spar=0.3)
   x_line <- lm(data = antigenicDistances, X~Strain)
-  Strain <- seq(1968*buckets,2015*buckets,by=1)
+  Strain <- seq(1968*buckets,2016*buckets-1,by=1)
   x_predict <- predict(x_line,data.frame(Strain))
   y_predict <- predict(fit, x=x_predict)
   fit_dat <- data.frame(x=y_predict$x,y=y_predict$y)

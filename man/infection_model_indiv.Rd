@@ -23,8 +23,9 @@ infection_model_indiv(theta, infectionHistory, infectionTimes,
 
 \item{antigenicMapLong}{NumericVector, the collapsed cross reactivity map for long term boosting, after multiplying by sigma1}
 
-\item{antigenicMapShort}{NumericVector, the collapsed cross reactivity map for short term boosting, after multiplying by sigma2
-@param numberStrains int, the maximum number of infections that an individual could experience}
+\item{antigenicMapShort}{NumericVector, the collapsed cross reactivity map for short term boosting, after multiplying by sigma2}
+
+\item{numberStrains}{int, the maximum number of infections that an individual could experience}
 }
 \value{
 NumericVector of predicted titres for each entry in measurementMapIndices

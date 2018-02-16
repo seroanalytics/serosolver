@@ -1,11 +1,11 @@
 #' Posterior function pointer
 #'
-#' Essential for the MCMC algorithm. Takes all of the input data/parameters and returns a function pointer. This function finds the posterior for a given set of input parameters (theta) and infection histories without needing to passs the data set back and forth.
+#' Essential for the MCMC algorithm. Takes all of the input data/parameters and returns a function pointer. This function finds the posterior for a given set of input parameters (theta) and infection histories without needing to pass the data set back and forth.
 #' @param parTab the parameter table controlling information such as bounds, initial values etc
 #' @param data the data frame of data to be fitted. Must have columns: group (index of group); individual (integer ID of individual); samples (numeric time of sample taken); virus (numeric time of when the virus was circulating); titre (integer of titre value against the given virus at that sampling time)
 #' @param antigenicMap a data frame of antigenic x and y coordinates. Must have column names: x_coord; y_coord; inf_years
 #' @param PRIOR_FUNC user function of prior for model parameters. Should take parameter values only
-#' @param version integer specifying which version of the posterior function to use. This is mainly used for turning off or on the likelihood for debugging the implicit prior. The versions are as follows: 1) Likelihood turned on and no explicit prior. Any prior is implicit from the proposal distribution; 2) No likelihood and no explicit prior; 3) Explicit prior term (as specified by PRIOR_FUNC) and no likelihood. Any implicit prior from the proposal will also be included; 4) Version of the posterior distribution where we infer an explicit force of infection for each epoch; 5+) Explicit likelihood and prior - any implicit prior from the proposal will also be included, so proposals should be symmetric
+#' @param version integer specifying which version of the posterior function to use. This is mainly used for turning off or on the likelihood for debugging the implicit prior. The versions are as follows: 1) Likelihood turned on and no explicit prior. Any prior is implicit from the proposal distribution; 2) No likelihood and no explicit prior; 3) Explicit prior term (as specified by PRIOR_FUNC) and no likelihood. Any implicit prior from the proposal will also be included; 4) Version of the posterior distribution where we infer an explicit force of infection for each epoch; 5) Explicit likelihood and prior - any implicit prior from the proposal will also be included, so proposals should be symmetric; 6) just the negative log likelihood, but function only expects vector of pars (not infectionHistories), which must be specified with ...; 7+) Returns the predicted titres (model solving function)
 #' @param ageMask see \code{\link{create_age_mask}} - a vector with one entry for each individual specifying the first epoch of circulation in which an individual could have been exposed
 #' @param ... other arguments to pass to the posterior solving function
 #' @return a single function pointer that takes only pars and infectionHistories as unnamed arguments. This function goes on to return a vector of posterior values for each individual
@@ -13,13 +13,12 @@
 create_post_func <- function(parTab, data, antigenicMap,
                              PRIOR_FUNC,version=1,ageMask=NULL,
                              ...){
-  pars1 <- parTab$values
-  mynames <- parTab$names
-  names(pars1) <- parTab$names
+  parNames <- parTab$names
   
   ## Isolate data table as vectors for speed
   titres <- data$titre
   ## The entry of each virus in the data corresponding to the antigenic map
+  ## Note 0 indexed for C++ code
   virusIndices <- match(data$virus, antigenicMap$inf_years) - 1
   ## Unique strains that an individual could be exposed to
   strains <- unique(antigenicMap$inf_years)
@@ -47,55 +46,48 @@ create_post_func <- function(parTab, data, antigenicMap,
                                         data$samples == samples[i,"samples"] &
                                         data$run == samples[i,"run"],]))
   }
- 
+  
   ## Get indexing for individuals. This works out which rows in the titre data correspond
-  ## to which individuals
+  ## to which individuals.
+  ## Firstly, how many runs/samples correspond to each individual?
   indicesSamples <- c(0)
   for(individual in unique(individuals)){
-    indicesSamples <- c(indicesSamples, length(individuals[individuals==individual]))
+      indicesSamples <- c(indicesSamples, length(individuals[individuals==individual]))
   }
   indicesSamples <- cumsum(indicesSamples)
-
+  ## How many rows in the titre data correspond to each individual?
   indicesDataOverall <- NULL
   for(individual in unique(individuals)){
       indicesDataOverall <- c(indicesDataOverall, nrow(data[data$individual == individual,]))
   }
-  indicesDataOverall <- cumsum(c(0,indicesDataOverall))  
-  
+  indicesDataOverall <- cumsum(c(0,indicesDataOverall))    
   indicesOverallDiff <- diff(indicesDataOverall)
+  
   if(version==1){
       print("likelihood only - prior implicit in proposal")
       ## The function pointer
- 
-      f <- function(pars, infectionHistories){
-
-          names(pars) <- mynames
-          ## Work out short and long term boosting cross reactivity
-          #antigenicMapLong <- 1-pars1["sigma1"]*antigenicMapMelted
-          #antigenicMapLong[antigenicMapLong < 0] <- 0
-          #antigenicMapShort <- 1-pars1["sigma2"]*antigenicMapMelted
-          #antigenicMapShort[antigenicMapShort < 0] <- 0
-
-          antigenicMapLong <- create_cross_reactivity_vector(antigenicMapMelted, pars1["sigma1"])
-          antigenicMapShort <- create_cross_reactivity_vector(antigenicMapMelted, pars1["sigma2"])
+       f <- function(pars, infectionHistories){
+          names(pars) <- parNames
+          ## Work out short and long term boosting cross reactivity - C++ function
+          antigenicMapLong <- create_cross_reactivity_vector(antigenicMapMelted, pars["sigma1"])
+          antigenicMapShort <- create_cross_reactivity_vector(antigenicMapMelted, pars["sigma2"])
           
           ## Now pass to the C++ function
           y <- titre_data_group(pars, infectionHistories, strains, strainIndices, sampleTimes,
                                 indicesData,indicesDataOverall,indicesSamples, virusIndices, 
                                 antigenicMapLong, antigenicMapShort)
           liks <- r_likelihood(y, titres, pars)                                        
-          ##return(rep(0,n_indiv))
           return(sum_buckets(liks, indicesOverallDiff))
       }
   } else if(version==2){
       print("nothing - posterior implicit in proposal")
       theta_indices <- which(parTab$identity == 1)
       lambda_indices <- which(parTab$identity == 2)
-      mynames <- parTab[theta_indices,"names"]
-      f <- function(pars1, infectionHistories){
-          pars <- pars1[theta_indices]
-          lambdas <- pars1[lambda_indices]
-          names(pars) <- mynames
+      parNames <- parTab[theta_indices,"names"]
+      f <- function(pars, infectionHistories){
+          pars <- pars[theta_indices]
+          lambdas <- pars[lambda_indices]
+          names(pars) <- parNames
           liks <- rep(0,n_indiv)
           liks <- liks + calc_lambda_probs_indiv(lambdas, infectionHistories, ageMask)
           return(liks)
@@ -103,26 +95,23 @@ create_post_func <- function(parTab, data, antigenicMap,
   } else if(version == 3){
       print("explicit prior - no likelihood. proposals should be symmetric")
       f <- function(pars, infectionHistories){
-          names(pars) <- mynames
+          names(pars) <- parNames
           return(PRIOR_FUNC(pars, infectionHistories))
       }
   } else if(version==4) {
       print("Explicit FOI inference, lambda. Using likelihood and no explicit prior")
       theta_indices <- which(parTab$identity == 1)
       lambda_indices <- which(parTab$identity == 2)
-      mynames <- parTab[theta_indices,"names"]
+      parNames_theta<- parTab[theta_indices,"names"]
       ## The function pointer
-      f <- function(pars1, infectionHistories){
-          pars <- pars1[theta_indices]
-          lambdas <- pars1[lambda_indices]
-        
-          names(pars) <- mynames
+      f <- function(pars, infectionHistories){
+          lambdas <- pars[lambda_indices]
+          pars <- pars[theta_indices]
+          names(pars) <- parNames_theta
 
           ## Work out short and long term boosting cross reactivity
-          antigenicMapLong <- 1-pars["sigma1"]*antigenicMapMelted
-          antigenicMapLong[antigenicMapLong < 0] <- 0
-          antigenicMapShort <- 1-pars["sigma2"]*antigenicMapMelted
-          antigenicMapShort[antigenicMapShort < 0] <- 0
+          antigenicMapLong <- create_cross_reactivity_vector(antigenicMapMelted, pars["sigma1"])
+          antigenicMapShort <- create_cross_reactivity_vector(antigenicMapMelted, pars["sigma2"])
           
           ## Now pass to the C++ function
           y <- titre_data_group(pars, infectionHistories, strains, strainIndices, sampleTimes,
@@ -131,20 +120,15 @@ create_post_func <- function(parTab, data, antigenicMap,
           liks <- r_likelihood(y, titres, pars)
           liks <- sum_buckets(liks, indicesOverallDiff)
           liks <- liks + calc_lambda_probs_indiv(lambdas, infectionHistories, ageMask)
-          ##return(rep(0,n_indiv))
-                                        #return(sum_buckets(liks, indicesOverallDiff))
           return(liks)
       }
-  } else {
+  } else if(version==5){
       print("likelihood and prior - proposals should be symmetric")
       f <- function(pars, infectionHistories){
-          names(pars) <- mynames
+          names(pars) <- parNames
           ## Work out short and long term boosting cross reactivity
-          antigenicMapLong <- 1-pars["sigma1"]*antigenicMapMelted
-          antigenicMapLong[antigenicMapLong < 0] <- 0
-          antigenicMapShort <- 1-pars["sigma2"]*antigenicMapMelted
-          antigenicMapShort[antigenicMapShort < 0] <- 0
-          
+          antigenicMapLong <- create_cross_reactivity_vector(antigenicMapMelted, pars["sigma1"])
+          antigenicMapShort <- create_cross_reactivity_vector(antigenicMapMelted, pars["sigma2"])
           ## Now pass to the C++ function
           y <- titre_data_group(pars, infectionHistories, strains, strainIndices, sampleTimes,
                                 indicesData,indicesDataOverall,indicesSamples, virusIndices, 
@@ -154,88 +138,63 @@ create_post_func <- function(parTab, data, antigenicMap,
           liks <- liks + PRIOR_FUNC(pars, infectionHistories)         
           return(liks)
       }
-  }
-  f
-}
+  } else if(version == 6){
+      print("For use in optim")
+      f <- function(pars){
+          names(pars) <- parNames
+          ## Work out short and long term boosting cross reactivity
+          antigenicMapLong <- create_cross_reactivity_vector(antigenicMapMelted, pars["sigma1"])
+          antigenicMapShort <- create_cross_reactivity_vector(antigenicMapMelted, pars["sigma2"])
+          ## Now pass to the C++ function
+          y <- titre_data_group(pars, infectionHistories, strains, strainIndices, sampleTimes,
+                                indicesData,indicesDataOverall,indicesSamples, virusIndices, 
+                                antigenicMapLong, antigenicMapShort)
+          liks <- r_likelihood(y, titres, pars)
+          lik <- -sum(sum_buckets(liks, indicesOverallDiff))
+          lik
+      }
+  } else if(version == 7){
+      print("Explicit FOI inference, lambda is monthly. Using likelihood and no explicit prior")
+      theta_indices <- which(parTab$identity == 1)
+      foi_indices <- which(parTab$identity == 2)
+      weights_indices <- which(parTab$identity == 3)
+      knot_indices <- which(parTab$identity == 4)
+      parNames_theta<- parTab[theta_indices,"names"]
+      ## The function pointer
+      f <- function(pars, infectionHistories){
+          foi <- pars[foi_indices]
+          theta <- pars[weights_indices]
+          knots <- pars[knot_indices]
+          pars <- pars[theta_indices]
+          names(pars) <- parNames_theta
 
-
-#' Posterior function pointer - for use with optim
-#'
-#' Essential for the MCMC algorithm. Takes all of the input data/parameters and returns a function pointer. This function finds the posterior for a given set of input parameters (theta) and infection histories without needing to passs the data set back and forth.
-#' @param parTab the parameter table controlling information such as bounds, initial values etc
-#' @param data the data frame of data to be fitted. Must have columns: group (index of group); individual (integer ID of individual); samples (numeric time of sample taken); virus (numeric time of when the virus was circulating); titre (integer of titre value against the given virus at that sampling time)
-#' @param antigenicMap a data frame of antigenic x and y coordinates. Must have column names: x_coord; y_coord; inf_years
-#' @param PRIOR_FUNC user function of prior for model parameters. Should take parameter values only
-#' @param infectionHistories infection histories to solve model with
-#' @param ... other arguments to pass to the posterior solving function
-#' @return a single function pointer that takes only pars and infectionHistories as unnamed arguments
-#' @export
-create_post_func1 <- function(parTab, data,antigenicMap,
-                             PRIOR_FUNC,infectionHistories, ...){
-  pars1 <- parTab$values
-  mynames <- parTab$names
-  names(pars1) <- parTab$names
-  
-  ## Isolate data table as vectors for speed
-  titres <- data$titre
-  ## The entry of each virus in the data corresponding to the antigenic map
-  virusIndices <- match(data$virus, antigenicMap$inf_years) - 1
-  ## Unique strains that an individual could be exposed to
-  strains <- unique(antigenicMap$inf_years)
-  ## The entry of each strain in the antigenic map table
-  strainIndices <- match(strains, strains) - 1
-  
-  ## Note that the strain isolation times in the data set should have
-  ## corresponding indices in the antigenic map table
-  strainIsolationTimes <- data$virus
-  antigenicMapMelted <- c(outputdmatrix.fromcoord(antigenicMap[,c("x_coord","y_coord")]))
-  
-  ## Get unique measurement sets for each individual at
-  ## each sampling time for each repeat
-  samples <- unique(data[,c("individual","samples","run")])
-  samples <- samples[order(samples$individual, samples$run, samples$samples),]
-  
-  ## Extract vector of sampling times and individual indices for speed
-  sampleTimes <- samples$samples
-  individuals <- samples$individual  
-  
-  indicesData <- NULL
-  for(i in 1:nrow(samples)){
-    indicesData <- c(indicesData, nrow(samples[data$individual == samples[i,"individual"] &
-                                                 data$samples == samples[i,"samples"] &
-                                                 data$run == samples[i,"run"],]))
-  }
-  
-  ## Get indexing for individuals. This works out which rows in the titre data correspond
-  ## to which individuals
-  indicesSamples <- c(0)
-  for(individual in unique(individuals)){
-      indicesSamples <- c(indicesSamples, length(individuals[individuals==individual]))
-  }
-  indicesSamples <- cumsum(indicesSamples)
-  
-  indicesDataOverall <- NULL
-  for(individual in unique(individuals)){
-      indicesDataOverall <- c(indicesDataOverall, nrow(data[data$individual == individual,]))
-  }
-  indicesDataOverall <- cumsum(c(0,indicesDataOverall))
-  indicesOverallDiff <- diff(indicesDataOverall)
-  ## The function pointer
-  f <- function(pars){
-      names(pars) <- mynames
-      ## Work out short and long term boosting cross reactivity
-      antigenicMapLong <- 1-pars["sigma1"]*antigenicMapMelted
-      antigenicMapLong[antigenicMapLong < 0] <- 0
-      antigenicMapShort <- 1-pars["sigma2"]*antigenicMapMelted
-      antigenicMapShort[antigenicMapShort < 0] <- 0
-
-      ## Now pass to the C++ function
-      y <- titre_data_group(pars, infectionHistories, strains, strainIndices, sampleTimes,
-                            indicesData,indicesDataOverall,indicesSamples, virusIndices, 
-                            antigenicMapLong, antigenicMapShort)
-      liks <- r_likelihood(y, titres, pars)
-      lik <- -sum(sum_buckets(liks, indicesOverallDiff))
-      lik
+          ## Work out short and long term boosting cross reactivity
+          antigenicMapLong <- create_cross_reactivity_vector(antigenicMapMelted, pars["sigma1"])
+          antigenicMapShort <- create_cross_reactivity_vector(antigenicMapMelted, pars["sigma2"])
+          
+          ## Now pass to the C++ function
+          y <- titre_data_group(pars, infectionHistories, strains, strainIndices, sampleTimes,
+                                indicesData,indicesDataOverall,indicesSamples, virusIndices, 
+                                antigenicMapLong, antigenicMapShort)
+          liks <- r_likelihood(y, titres, pars)
+          liks <- sum_buckets(liks, indicesOverallDiff)
+          liks <- liks + calc_lambda_probs_monthly(foi,  knots, theta, infectionHistories, ageMask)
+          return(liks)
+      }
+  } else {
+      print("Model solving function")
+      f <- function(pars, infectionHistories){
+          names(pars) <- parNames
+          ## Work out short and long term boosting cross reactivity - C++ function
+          antigenicMapLong <- create_cross_reactivity_vector(antigenicMapMelted, pars["sigma1"])
+          antigenicMapShort <- create_cross_reactivity_vector(antigenicMapMelted, pars["sigma2"])
+          
+          ## Now pass to the C++ function
+          y <- titre_data_group(pars, infectionHistories, strains, strainIndices, sampleTimes,
+                                indicesData,indicesDataOverall,indicesSamples, virusIndices, 
+                                antigenicMapLong, antigenicMapShort)
+          return(y)
+      }
   }
   f
 }
@@ -254,80 +213,6 @@ r_likelihood <- function(expected, data, theta){
     return(liks)
   }
 
-#' Model solving function
-#'
-#' As in \code{\link{create_post_func}}, but returns the matrix of titres rather than a vector of likelihoods
-#' @export
-create_model_func <- function(parTab, data, antigenicMap,
-                              PRIOR_FUNC,
-                              ...){
-  pars1 <- parTab$values
-  mynames <- parTab$names
-  names(pars1) <- parTab$names
-  
-  ## Isolate data table as vectors for speed
-  titres <- data$titre
-  ## The entry of each virus in the data corresponding to the antigenic map
-  virusIndices <- match(data$virus, antigenicMap$inf_years) - 1
-  ## Unique strains that an individual could be exposed to
-  strains <- unique(antigenicMap$inf_years)
-  ## The entry of each strain in the antigenic map table
-  strainIndices <- match(strains, strains) - 1
-  
-  ## Note that the strain isolation times in the data set should have
-  ## corresponding indices in the antigenic map table
-  strainIsolationTimes <- data$virus
-  antigenicMapMelted <- c(outputdmatrix.fromcoord(antigenicMap[,c("x_coord","y_coord")]))
-  
-  ## Get unique measurement sets for each individual at
-  ## each sampling time for each repeat
-  samples <- unique(data[,c("individual","samples","run")])
-  samples <- samples[order(samples$individual, samples$run, samples$samples),]
-  
-  ## Extract vector of sampling times and individual indices for speed
-  sampleTimes <- samples$samples
-  individuals <- samples$individual  
-  n_indiv <- length(unique(samples$individual))
-  
-  indicesData <- NULL
-  for(i in 1:nrow(samples)){
-    indicesData <- c(indicesData, nrow(samples[data$individual == samples[i,"individual"] &
-                                                 data$samples == samples[i,"samples"] &
-                                                 data$run == samples[i,"run"],]))
-  }
-  
-  ## Get indexing for individuals. This works out which rows in the titre data correspond
-  ## to which individuals
-  indicesSamples <- c(0)
-  for(individual in unique(individuals)){
-    indicesSamples <- c(indicesSamples, length(individuals[individuals==individual]))
-  }
-  indicesSamples <- cumsum(indicesSamples)
-  
-  indicesDataOverall <- NULL
-  for(individual in unique(individuals)){
-    indicesDataOverall <- c(indicesDataOverall, nrow(data[data$individual == individual,]))
-  }
-  indicesDataOverall <- cumsum(c(0,indicesDataOverall))  
-  
-  indicesOverallDiff <- diff(indicesDataOverall)
-  
-  ## The function pointer
-  f <- function(pars, infectionHistories){
-    names(pars) <- mynames
-    ## Work out short and long term boosting cross reactivity
-    antigenicMapLong <- 1-pars["sigma1"]*antigenicMapMelted
-    antigenicMapLong[antigenicMapLong < 0] <- 0
-    antigenicMapShort <- 1-pars["sigma2"]*antigenicMapMelted
-    antigenicMapShort[antigenicMapShort < 0] <- 0
-    
-    ## Now pass to the C++ function
-    y <- titre_data_group(pars, infectionHistories, strains, strainIndices, sampleTimes,
-                          indicesData,indicesDataOverall,indicesSamples, virusIndices, 
-                          antigenicMapLong, antigenicMapShort)
-    return(y)
-  }
-}
 
 #' Calculate FOI log probability
 #'
@@ -361,6 +246,17 @@ calc_lambda_probs_indiv <- function(lambdas, infHist, ageMask){
   lik
 }
 
+#' @export
+calc_lambda_probs_monthly <- function(foi, knots, theta, infHist, ageMask){
+  
+    lambdas <- generate_lambdas(foi, knots, theta, length(foi), 12)
+
+    lik <- numeric(nrow(infHist))
+    for(i in 1:ncol(infHist)){
+        lik <- lik + log(((lambdas[i]^infHist[,i]) * (1-lambdas[i])^(1-infHist[,i])))* as.numeric(ageMask <= i)
+    }
+    lik
+}
 
 
 #' FOR DEBUGGING
@@ -379,4 +275,34 @@ calc_lambda_probs_indiv_brute<- function(lambdas, infHist, ageMask){
       }
   }
   lik
+}
+
+
+#' Generate FOI lambdas
+#'
+#' @export
+generate_lambdas <- function(foi, knots, theta, nYears, buckets, degree=2){
+    x <- seq(0,buckets-1,by=1)/buckets
+    nKnots <- length(knots) + degree + 1
+    allDat <- NULL
+    index <- 1
+    tmp <- genSpline_y(x, knots, degree, theta)
+    tmp <- tmp/sum(tmp)
+    allDat <- numeric(length(tmp)*length(foi))
+    for(i in 1:nYears){        
+        allDat[index:(index + length(tmp)-1)] <-  tmp*foi[i]
+        index <- index + length(tmp)
+    
+    }
+    allDat
+}
+
+#' @export
+genSpline_y <- function(x, knots, degree, theta, intercept=TRUE) {
+  
+    basis <- bs(x = x, knots = knots, degree = degree,
+              Boundary.knots = c(0,1), intercept = intercept)
+    
+    y.spline <- basis %*% theta
+    return(as.vector(y.spline))
 }
