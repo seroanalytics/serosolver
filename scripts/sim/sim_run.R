@@ -2,8 +2,10 @@ library(ggplot2)
 library(coda)
 library(plyr)
 library(reshape2)
-library(DEoptim)
+library(DEoptim) 
 library(RcppArmadillo)
+library(data.table)
+library(bayesplot)
 
 ## Set working directory and load code
 if(Sys.info()["user"]=="adamkuchars" | Sys.info()["user"]=="adamkucharski") {
