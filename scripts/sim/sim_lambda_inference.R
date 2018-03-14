@@ -2,13 +2,14 @@ library(ggplot2)
 library(coda)
 library(plyr)
 library(reshape2)
+library(data.table)
 
 ## Set working directory and load code
 setwd("~/Documents/Fluscape/serosolver")
 devtools::load_all()
 
 ## How many individuals to simulate?
-n_indiv <-1000
+n_indiv <-200
 
 ## Which infection history proposal version to use?
 describe_proposals()
@@ -25,7 +26,7 @@ filename <- "chains/test_lambda"
 ## Read in parameter table to simulate from and change waning rate if necessary
 parTab <- read.csv("~/Documents/Fluscape/serosolver/inputs/parTab_lambda.csv",stringsAsFactors=FALSE)
 parTab[parTab$names == "wane","values"] <- parTab[parTab$names == "wane","values"]/buckets
-parTab[parTab$names == "wane","values"] <- 1
+parTab[parTab$names == "wane","values"] <- 1/buckets
 ## Possible sampling times
 samplingTimes <- seq(2010*buckets, 2015*buckets, by=1)
 
@@ -58,14 +59,14 @@ for(i in 1:(length(strainIsolationTimes)-1)){
 ## Change alpha and beta to change proposal distribution
 ## Setting to c(1,1) gives uniform distribution on total number of infections
 #parTab[parTab$names %in% c("alpha","beta"),"values"] <- find_a_b(length(strainIsolationTimes),7,50)
-parTab[parTab$names %in% c("alpha","beta"),"values"] <- c(1,1)
+parTab[parTab$names %in% c("alpha","beta"),"values"] <- c(2,12)
 
 ## Simulate some fake data
 #strainIsolationTimes <- 1968:2015
 dat <- simulate_data(parTab, 1, n_indiv, buckets,strainIsolationTimes,
-                     samplingTimes, 2, antigenicMap=fit_dat, 0, 0, 10*buckets,75*buckets,
+                     samplingTimes, 2, antigenicMap=fit_dat, 0, 0, 6*buckets,75*buckets,
                      simInfPars=c("mean"=0.15,"sd"=0.5,"bigMean"=0.5,"logSD"=1),
-                     useSIR=TRUE)
+                     useSIR=TRUE, pInf = NULL)
 
 ## If we want to use a subset of isolated strains, uncomment the line below
 viruses <- c(1968, 1969, 1972, 1975, 1977, 1979, 1982, 1985, 1987, 
@@ -84,10 +85,10 @@ AR <- dat[[4]]
 #infectionHistories <- infHist <- read.csv("data/sim_1000_infHist.csv",stringsAsFactors=FALSE)
 #AR <- read.csv("data/sim_1000_AR.csv",stringsAsFactors=FALSE)
 
-#write.table(titreDat,"data/sim_10_titres.csv",sep=",",row.names=FALSE)
-#write.table(infHist,"data/sim_10_infHist.csv",sep=",",row.names=FALSE)
-#write.table(ages,"data/sim_10_ages.csv",sep=",",row.names=FALSE)
-#write.table(AR,"data/sim_10_AR.csv",sep=",",row.names=FALSE)
+#write.table(titreDat,"~/net/home/serosolver/data/sim_1000_data.csv",sep=",",row.names=FALSE)
+#write.table(infHist,"~/net/home/serosolver/data/sim_1000_infHist.csv",sep=",",row.names=FALSE)
+#write.table(ages,"~/net/home/serosolver/data/sim_1000_ages.csv",sep=",",row.names=FALSE)
+#write.table(AR,"~/net/home/serosolver/data/sim_1000_AR.csv",sep=",",row.names=FALSE)
 
 ## Visualise simulated data
 p <- plot_data(titreDat, infHist, strainIsolationTimes, 5, NULL)
@@ -97,9 +98,9 @@ startInf <- setup_infection_histories_new(titreDat, ages, unique(fit_dat$inf_yea
 ageMask <- create_age_mask(ages, strainIsolationTimes,n_indiv)
 
 ## Housekeeping for force of infection parameters, lambda
-parTab[parTab$names == "lambda","values"] <- AR[,2]
-parTab[parTab$names == "lambda","fixed"] <- 0
-parTab[which(parTab$names == "lambda" & parTab$values <= 0),"values"] <- 0.00001
+#parTab[parTab$names == "lambda","values"] <- AR[,2]
+#parTab[parTab$names == "lambda","fixed"] <- 0
+#parTab[which(parTab$names == "lambda" & parTab$values <= 0),"values"] <- 0.00001
 
 
 ## Generate starting locations
@@ -112,27 +113,28 @@ for(i in 1:nrow(startTab)){
 }
 
 ## Specify paramters controlling the MCMC procedure
-mcmcPars <- c("iterations"=500000,"popt"=0.44,"popt_hist"=0.44,"opt_freq"=2000,"thin"=10,"adaptive_period"=100000,
-              "save_block"=100,"thin2"=100,"histSampleProb"=1,"switch_sample"=10, "burnin"=0, 
-              "nInfs"=4, "moveSize"=2, "histProposal"=histProposal, "histOpt"=1)
+mcmcPars <- c("iterations"=3000000,"popt"=0.44,"popt_hist"=0.44,"opt_freq"=100000,"thin"=100,"adaptive_period"=1000000,
+              "save_block"=100,"thin2"=1000,"histSampleProb"=1,"switch_sample"=2, "burnin"=0, 
+              "nInfs"=5, "moveSize"=2, "histProposal"=1, "histOpt"=0)
 covMat <- diag(nrow(parTab))
-scale <- 0.01
-w <- 0.9
+scale <- 0.5
+w <- 0.95
 mvrPars <- list(covMat, scale, w)
 ageMask <- create_age_mask(ages, strainIsolationTimes,n_indiv)
 f <- create_post_func(parTab=startTab,data=titreDat,antigenicMap=fit_dat,PRIOR_FUNC = NULL,version=4, ageMask=ageMask)
 f(startTab$values, startInf)
-Rprof(tmp <- tempfile())
+startTab[startTab$names %in% c("alpha","beta"),"values"] <- c(2,12)
+#Rprof(tmp <- tempfile())
 ## Run the MCMC using the inputs generated above
 res <- run_MCMC(startTab, titreDat, mcmcPars, filename=filename,
-                create_post_func, NULL, NULL,version=4, 0.2, 
+                create_post_func, NULL,NULL,version=4, 0.2, 
                 fit_dat, ages=ages, 
                 startInfHist=startInf)
 
-Rprof()
-summaryRprof(tmp)
-library(proftools)
-plotProfileCallGraph(readProfileData(tmp),score = "total")
+#Rprof()
+#summaryRprof(tmp)
+#library(proftools)
+#plotProfileCallGraph(readProfileData(tmp),score = "total")
 
 #########################
 ## Processing outputs
@@ -140,15 +142,36 @@ plotProfileCallGraph(readProfileData(tmp),score = "total")
 ## Density/trace plots
 chain1 <- read.csv(res$chain_file)
 chain1 <- chain1[chain1$sampno >= (mcmcPars["adaptive_period"]+mcmcPars["burnin"]),]
+infChain <- data.table::fread(res$history_file)
+infChain <- infChain[infChain$sampno >= (mcmcPars["adaptive_period"]+mcmcPars["burnin"]),]
+plot_infection_histories(chain1, infChain, titreDat, sample(1:n_indiv, 10), fit_dat, ages,parTab,100)
+
+y <- get_titre_predictions(chain1, infChain, titreDat, 1:n_indiv, fit_dat, ages,parTab,100, TRUE)
+p1 <- ggplot(y[[3]]) + geom_histogram(aes(x=`50%`),binwidth=1) + 
+  facet_wrap(~virus,scales="free_x") + 
+  scale_x_continuous(limits=c(-5,5))
+
+plot_attack_rates(infChain, titreDat, ages, 1968:2015)
+wow <- infChain[infChain$i %in% 1:50,]
+setkey(wow, "sampno","i")
+omg <- wow[,list(V1=sum(x)), by=key(wow)]
+alpha <- 2
+beta <- 12
+tmp <- as.data.frame(rbb(10000,48,alpha,beta))
+#tmp <- data.frame(x=0:48,y=dbb(0:48,48,alpha,beta))
+tmp <- data.frame(x=0:48,y=dbinom(0:48,48,prob=0.5))
+ggplot(omg) + geom_density(aes(x=V1)) + geom_line(data=tmp,aes(x=x,y=y),col="red") +facet_wrap(~i)# + scale_y_continuous(limits=c(0,20))
+
+
 pdf(paste0(filename, "_chain.pdf"))
 plot(coda::as.mcmc(chain1))
 dev.off()
 
 ## Plot inferred attack rates against true simulated attack rates
-tmp <- summary(as.mcmc(chain1))
+tmp <- summary(as.mcmc(chain1[,2:(ncol(chain1)-1)]))
 tmp <- as.data.frame(tmp[[2]])
 tmp$names <- rownames(tmp)
-lambda_names <- c("lambda",paste0("lambda.",1:47))
+lambda_names <- c("lambda",paste0("lambda.",1:(nrow(AR)-1)))
 tmp <- tmp[tmp$names %in% lambda_names,]
 tmpTab <- parTab[parTab$names == "lambda",]
 tmpTab$values <- AR[,2]
@@ -161,6 +184,7 @@ AR_recovery <- ggplot() +
   ylab("Attack rate, lambda") +
   xlab("Year") +
   scale_y_continuous(limits=c(0,1)) +
+  scale_x_continuous(breaks=seq(1968,2015,by=1)) +
   theme_bw() +
   theme(axis.text.x=element_text(angle=45,hjust=1))
 svg(paste0(filename,"actual_AR.svg"))
@@ -177,8 +201,9 @@ dev.off()
 
 ## Generate cumulative infection history plots for a random subset of individuals
 ## based on data and posterior
-infHist_p <- generate_cumulative_inf_plots(res$history_file, mcmcPars["adaptive_period"]+mcmcPars["burnin"], 
-                                           10, infHist, startInf,strainIsolationTimes)
+generate_cumulative_inf_plots(res$history_file, mcmcPars["adaptive_period"]+mcmcPars["burnin"], 
+                                           25, infHist, startInf,strainIsolationTimes, 100,ages)
+plot_infection_histories(chain1, infChain, titreDat, sample(1:100, 10), fit_dat, ages,parTab,100)
 svg(paste0(filename, "cumulative_infHist.svg"))
 plot(infHist_p)
 dev.off()
@@ -194,4 +219,6 @@ dev.off()
 generate_all_plots(getwd(), mcmcPars["adaptive_period"] + mcmcPars["burnin"], res$chain_file, res$history_file,
                    titreDat, fit_dat, parTab, ages, nIndiv=10,nSamp=100,
                    filename=filename)
+
+
 

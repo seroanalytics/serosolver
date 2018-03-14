@@ -14,7 +14,7 @@ create_post_func <- function(parTab, data, antigenicMap,
                              PRIOR_FUNC,version=1,ageMask=NULL,
                              ...){
   parNames <- parTab$names
-  
+
   ## Isolate data table as vectors for speed
   titres <- data$titre
   ## The entry of each virus in the data corresponding to the antigenic map
@@ -85,18 +85,22 @@ create_post_func <- function(parTab, data, antigenicMap,
       lambda_indices <- which(parTab$identity == 2)
       parNames <- parTab[theta_indices,"names"]
       f <- function(pars, infectionHistories){
-          pars <- pars[theta_indices]
           lambdas <- pars[lambda_indices]
-          names(pars) <- parNames
-          liks <- rep(0,n_indiv)
-          liks <- liks + calc_lambda_probs_indiv(lambdas, infectionHistories, ageMask)
+          pars1 <- pars[theta_indices]
+          names(pars1) <- parNames
+          liks <- rep(-100000,n_indiv)
+          if(length(lambda_indices) > 0){
+              liks <- liks + calc_lambda_probs_indiv(lambdas, infectionHistories, ageMask)
+          }
           return(liks)
       }
   } else if(version == 3){
       print("explicit prior - no likelihood. proposals should be symmetric")
       f <- function(pars, infectionHistories){
           names(pars) <- parNames
-          return(PRIOR_FUNC(pars, infectionHistories))
+          liks <- rep(-100000,n_indiv)
+          liks <- liks + PRIOR_FUNC(pars, infectionHistories, ageMask)
+          return(liks)
       }
   } else if(version==4) {
       print("Explicit FOI inference, lambda. Using likelihood and no explicit prior")

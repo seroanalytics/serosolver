@@ -8,7 +8,8 @@ simulate_data(parTab, group = 1, n_indiv, buckets = 12,
   strainIsolationTimes, samplingTimes, nsamps = 2, antigenicMap,
   sampleSensoring = 0, titreSensoring = 0, ageMin = 5, ageMax = 80,
   simInfPars = c(mean = 0.15, sd = 0.5, bigMean = 0.5, logSD = 1),
-  useSIR = FALSE)
+  theta = rep(0.1, 5), knots = c(0.33, 0.66), useSIR = FALSE,
+  useSpline = TRUE)
 }
 \arguments{
 \item{parTab}{the full parameter table controlling parameter ranges and values}

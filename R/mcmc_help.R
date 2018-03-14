@@ -35,6 +35,23 @@ mvr_proposal <- function(values, fixed, covMat, covMat0 = NULL, useLog=FALSE, be
     return(proposed)
 }
 
+#' @export
+inf_hist_prob_lambda <- function(newInf, sampledIndivs, ageMask, nInfs, lambdas){
+    ks <- rpois(length(sampledIndivs),nInfs)
+    for(i in 1:length(sampledIndivs)){
+        indiv <- sampledIndivs[i]
+        x <- newInf[indiv, ageMask[indiv]:ncol(newInf)]
+        probs <- lambdas[ageMask[indiv]:length(lambdas)]
+        maxI <- length(x)
+        k <- min(maxI, max(ks[i],1))
+        locs <- sample(length(x), k)
+        x[locs] <- rbinom(rep(1, k),1,probs[locs])
+        newInf[indiv,ageMask[indiv]:ncol(newInf)]=x
+    }
+    return(newInf)
+        
+
+}
 
 #' Brute force infection history proposal
 #'
@@ -48,6 +65,7 @@ mvr_proposal <- function(values, fixed, covMat, covMat0 = NULL, useLog=FALSE, be
 #' @export
 infection_history_symmetric<- function(newInfHist, sampledIndivs, ageMask, moveSizes, nInfs,randNs){
     newInf <- newInfHist
+    ks <- rpois(length(sampledIndivs),nInfs)
     ## For each individual
     for(i in 1:length(sampledIndivs)){
         indiv <- sampledIndivs[i]
@@ -58,7 +76,10 @@ infection_history_symmetric<- function(newInfHist, sampledIndivs, ageMask, moveS
         ## Flip or swap with prob 50%
         if(randNs[i] < 1/2){
             ## Choose a location and turn 0 -> 1 or 1 -> 0
-            locs <- sample(length(x), nInfs[indiv])            
+            ## Poisson number of changes?
+            k <- min(maxI,max(ks[i],1))
+            locs <- sample(length(x), k)
+            #locs <- sample(length(x), nInfs[indiv])            
             x[locs] <- !x[locs]                                       
         } else {
             ## Choose a location
@@ -96,18 +117,18 @@ infection_history_symmetric<- function(newInfHist, sampledIndivs, ageMask, moveS
 #' @export
 infection_history_betabinom <- function(newInfHist, sampledIndivs, ageMask, moveSizes, alpha, beta){
     newInf <- newInfHist
-    ## For each individual
+    prob_ratio <- rep(1,nrow(newInfHist))
+                      ## For each individual
     for(indiv in sampledIndivs){
         x <- newInfHist[indiv, ageMask[indiv]:ncol(newInfHist)]
         maxI <- length(x)
         rand1 <- runif(1)
-
         ## With prob 0.5 swap or move/add
         if(rand1 < 0.5){
             ## Choose a location
             loc <- sample(length(x), 1)            
             x_new <- x_old <- x
-
+            old <- x[loc]
             ## This location can either be a 1 or a 0
             x_new[loc] <- 1
             x_old[loc] <- 0
@@ -119,12 +140,20 @@ infection_history_betabinom <- function(newInfHist, sampledIndivs, ageMask, move
             ## (the sum(x[-loc]) gives the number of 1s in the vector less the location to be
             ## updated
             prob1 <- (alpha+sum(x[-loc]))/(alpha+beta+(length(x)-1))
+            
             if(runif(1)<prob1){
                 x[loc] <- 1
                 ## Otherwise, make a 0
             } else {
                 x[loc] <- 0
             }
+            if(x[loc] == old){
+                prob_ratio[indiv] <- 1
+            } else if(x[loc] == 1){ 
+                prob_ratio[indiv] <- (beta + length(x) - sum(x[-loc]) -1)/(alpha+beta+length(x)-1)
+            } else {
+                prob_ratio[indiv] <- (alpha+sum(x[-loc]))/(alpha+beta+length(x)-1)
+            } 
         } else {
             ## Choose a location
             id1 <- sample(length(x),1)
@@ -145,7 +174,7 @@ infection_history_betabinom <- function(newInfHist, sampledIndivs, ageMask, move
         }
         newInf[indiv,ageMask[indiv]:ncol(newInfHist)]=x
     }
-    return(newInf)    
+    return(list(newInf, prob_ratio))    
 }
 
 
@@ -254,6 +283,23 @@ scaletuning <- function(step, popt,pcur){
     step <- max(0.00001, step)
     return(step)
 }
+
+#' @export
+rm_scale <- function(step_scale, mc, popt,log_prob, N_adapt)
+{
+	dd <- exp(log_prob)
+	if( dd < -30 ){ dd <- 0 }
+	dd <- min( dd, 1 )
+
+	rm_temp <- ( dd - popt )/( (mc+1)/(0.01*N_adapt+1) )
+	
+	out <- step_scale*exp(rm_temp)
+	
+	out <- max( out, 0.02 )
+	out <- min( out, 2)
+	out
+}
+
 
 #' @export
 ComputeProbability<-function(marg_likelihood,marg_likelihood_star){
@@ -392,6 +438,82 @@ create_age_mask <- function(ages, strainIsolationTimes, n_indiv){
 save_infHist_to_disk <- function(infHist, file, sampno, append=TRUE,colNames=FALSE){
     saveInfHist <- Matrix::Matrix(infHist, sparse=TRUE)
     saveInfHist <- as.data.frame(Matrix::summary(saveInfHist))
-    saveInfHist$sampno <- sampno
-    data.table::fwrite(saveInfHist,file=file,col.names=colNames,row.names=FALSE,sep=",",append=append)
+    if(nrow(saveInfHist) > 0){
+        saveInfHist$sampno <- sampno
+        try(data.table::fwrite(saveInfHist,file=file,col.names=colNames,row.names=FALSE,sep=",",append=append))
+    }
+}
+
+
+#' Infection history proposal
+#'
+#' Proposes new infection histories for a vector of infection histories, where rows represent individuals and columns represent years. Proposals are either removal, addition or switching of infections.
+#' Also requires the indices of sampled individuals, the vector of strain isolation times, and a vector of age masks (ie. which index of the strainIsolationTimes vector is the first year in which
+#' an individual *could* be infected).
+#' NOTE - MIGHT NEED TO UPDATE THIS FOR GROUPS
+#' @param newInfectionHistories an n*m matrix of 1s & 0s indicating infection histories, where n is individuals and m i strains
+#' @param sampledIndivs the indices of sampled individuals to receive proposals
+#' @param strainIsolationTimes the vector of strain isolation times in real time
+#' @param ageMask the vector of indices for each individual specifiying which index of strainIsolationTimes is the first strain each individual could have seen
+#' @return a new matrix matching newInfectionHistories in dimensions with proposed moves
+#' @export
+infection_history_proposal <-function(newInfectionHistories,sampledIndivs,strainIsolationTimes,ageMask, nInfs){
+    newInf <- newInfectionHistories
+    acceptance_distribution <- rep(1, nrow(newInf))
+    #ks <- rpois(length(sampledIndivs), nInfs)
+    for(indiv in sampledIndivs){ # Resample subset of individuals
+        rand1=runif(1)
+        x=newInfectionHistories[indiv,ageMask[indiv]:length(strainIsolationTimes)] # Only resample years individual was alive
+        accept <- 0
+        maxI <- length(x)
+        ## Remove infection
+        if(rand1<1/3){
+            infectID= which(x>0)
+                                        # Number of 1s in first place
+            n_1 <- length(infectID)
+            k_f <- min(n_1,max(nInfs[indiv],1))
+            if(n_1 > 0){
+                x[sample(infectID,k_f)]=0 # Why double? DEBUG
+                n_0 <- length(which(x==0))
+                k_b <- min(n_0+k_f, max(nInfs[indiv],1))
+                p_forward <- 1/3 * k_f/n_1
+                p_back <- 1/3 * k_b/n_0
+                accept <- (p_back/p_forward)
+            }
+        }
+        ## Add infection
+        if(rand1>1/3 & rand1<2/3){
+            ninfecID=which(x==0)
+            n_0 <- length(ninfecID)
+            k_f <- min(n_0,max(nInfs[indiv],1))
+            if(n_0>0){
+                x[sample(ninfecID,k_f)]=1
+                n_1 <- length(which(x==1))
+                k_b <-  min(n_1+k_f,max(nInfs[indiv],1))
+                p_forward <- 1/3 * k_f/n_0
+                p_back <- 1/3 *k_b/n_1
+                accept <- (p_back/p_forward)
+            }
+        }
+        ## Move infection position
+        if(rand1>2/3){
+            infectID=which(x > 0)
+            ninfecID=which(x == 0)
+            n_1 <- length(infectID)
+            n_0 <- length(ninfecID)
+            if(n_1 > 0 & n_0 > 0){
+                x[sample(infectID,1)]=0
+                x[sample(ninfecID,1)]=1
+                p_forward <- 1/3 * n_1 * n_0
+                
+                n_1b <- length(which(x > 0))
+                n_0b <- length(which(x==0))
+                p_back <- 1/3 * n_1b * n_0b
+                accept <- (p_back/p_forward)
+            }
+        }
+        acceptance_distribution[indiv] <- accept
+        newInf[indiv,ageMask[indiv]:length(strainIsolationTimes)]=x # Only =1 if individual was alive
+    } # end loop over individuals
+return(list(newInf, acceptance_distribution))
 }

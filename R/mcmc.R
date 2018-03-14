@@ -52,8 +52,10 @@ run_MCMC <- function(parTab,
         histPropPrint <- "symmetric"
     } else if(histProposal == 2){
         histPropPrint <- "single"
-    } else {
+    } else if(histProposal == 3){
         histPropPrint <- "multiple proposals"
+    } else {
+        histPropPrint <- "original AK proposal func"
     }
     message(cat("Infection history proposal version: ", histPropPrint,sep="\t"))
     
@@ -69,6 +71,8 @@ run_MCMC <- function(parTab,
     steps <- parTab$steps # How far to step on unit scale to begin with?
     fixed <- parTab$fixed # Index which parameters are fixed
 
+    lambda_indices <- which(parTab$names == "lambda")
+    
     ## Pull out alpha and beta for beta binomial proposals
     if("alpha" %in% par_names & "beta" %in% par_names){
         alpha <- parTab[parTab$names == "alpha","values"]
@@ -207,11 +211,11 @@ run_MCMC <- function(parTab,
             } else {
                 ## NOTE
                 ## MIGHT WANT TO USE ADAM'S PROPOSAL FUNCTION
-                proposal <- mvr_proposal(current_pars, unfixed_pars, steps*covMat, covMat0, FALSE)
+                proposal <- mvr_proposal(current_pars, unfixed_pars, steps*covMat, covMat0, TRUE)
                 tempiter <- tempiter + 1
             }
             ## Calculate new likelihood for these parameters
-            new_probabs <- posterior_simp(proposal, infectionHistories)
+            new_probabs <- posterior_simp(proposal,infectionHistories)            
             new_probab <- sum(new_probabs)
             ## Otherwise, resample infection history
         } else {
@@ -223,19 +227,27 @@ run_MCMC <- function(parTab,
                 newInfectionHistories <- infection_history_symmetric(infectionHistories, indivSubSample, ageMask, moveSizes, nInfs_vec, randNs)
             } else if(histProposal == 2){
                 newInfectionHistories <- infection_history_betabinom(infectionHistories, indivSubSample, ageMask, moveSizes, alpha, beta)
-            } else {
+                acceptance <- newInfectionHistories[[2]]
+                newInfectionHistories <- newInfectionHistories[[1]]
+            } else if(histProposal==3){
                 newInfectionHistories <- inf_hist_prop_cpp(infectionHistories,indivSubSample,ageMask,moveSizes, nInfs_vec, alpha,beta,randNs)
-                
+            } else if(histProposal==4){
+                tmp <- infection_history_proposal(infectionHistories, indivSubSample, strainIsolationTimes, ageMask,nInfs_vec)
+                #acceptance <- tmp[[2]]
+                newInfectionHistories <- tmp[[1]]
+            } else {
+                newInfectionHistories <- inf_hist_prob_lambda(infectionHistories, indivSubSample,ageMask,nInfs_vec, current_pars[lambda_indices])
             }
             ## The proposals are either a swap step or an add/remove step. Need to track which type was used for which individual,
             ## as we adapt the `step size` for these two update steps independently
             move <- which(randNs > 1/2)
             add <- which(randNs < 1/2)
+            
             histiter_add[indivSubSample[add]]<- histiter_add[indivSubSample[add]] + 1
             histiter_move[indivSubSample[move]]<- histiter_move[indivSubSample[move]] + 1
             
             ## Calculate new likelihood with these infection histories
-            new_probabs <- posterior_simp(current_pars, newInfectionHistories)            
+            new_probabs <- posterior_simp(current_pars, newInfectionHistories)
             new_probab <- sum(new_probabs)
             histiter[indivSubSample]<- histiter[indivSubSample] + 1
         }
@@ -263,7 +275,7 @@ run_MCMC <- function(parTab,
             }
         } else {
             ## MH step for each individual
-            log_probs <- (new_probabs[indivSubSample] - probabs[indivSubSample])
+            log_probs <- (new_probabs[indivSubSample] - probabs[indivSubSample])#  + log(acceptance[indivSubSample])
             log_probs[log_probs > 0] <- 0
             x <- which(log(runif(length(indivSubSample))) < log_probs)
             changeI <- indivSubSample[x]
@@ -338,11 +350,11 @@ run_MCMC <- function(parTab,
                         covMat <- w*covMat + (1-w)*oldCovMat
                     }
                     ## Scale tuning for last 20% of the adaptive period
-                                        #if(chain_index > (0.8)*adaptive_period){
-                                        #    steps <- scaletuning(steps, popt,pcur)
-                                        #}
+                    if(chain_index > (0.8)*adaptive_period){
+                        steps <- scaletuning(steps, popt,pcur)
+                    }
                     ## As in Adam's version
-                    steps=max(0.00001,min(1,exp(log(steps)+(pcur-popt)*0.999^(i-burnin))))
+                    #steps=max(0.00001,min(1,exp(log(steps)+(pcur-popt)*0.999^(i-burnin))))
                 }
                 pcurHist <- histaccepted/histiter
                                         #message(cat("Hist acceptance: ", pcurHist, cat="\t"))
