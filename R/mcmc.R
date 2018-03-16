@@ -47,6 +47,7 @@ run_MCMC <- function(parTab,
     nInfs <- mcmcPars["nInfs"] # Number of infections to move/remove/add in each proposal step
     histProposal <- mcmcPars["histProposal"] # Which infection history proposal version?
     histOpt <- mcmcPars["histOpt"] # Should infection history proposal step be adaptive?
+    n_par <- mcmcPars["n_par"]
     
     if(histProposal == 1){
         histPropPrint <- "symmetric"
@@ -54,8 +55,12 @@ run_MCMC <- function(parTab,
         histPropPrint <- "single"
     } else if(histProposal == 3){
         histPropPrint <- "multiple proposals"
-    } else {
+    } else if(histProposal ==4){
         histPropPrint <- "original AK proposal func"
+    } else if(histProposal == 5){
+        histPropPrint <- "sampling inf histories from lambda"
+    } else {
+        histPropPrint <- "unknown - invalid proposal specified"
     }
     message(cat("Infection history proposal version: ", histPropPrint,sep="\t"))
     
@@ -188,7 +193,7 @@ run_MCMC <- function(parTab,
     sampno <- 2
     par_i <- 1
     chain_index <- 1
-    
+    last_index <- 1
 #####################
     ## MCMC ALGORITHM
 #####################
@@ -202,16 +207,22 @@ run_MCMC <- function(parTab,
             ## If using univariate proposals
             if(is.null(mvrPars)) {
                 ## For each parameter (Gibbs)
+                #js <- sample(unfixed_pars,n_par)
                 j <- unfixed_pars[par_i]
                 par_i <- par_i + 1
                 if(par_i > unfixed_par_length) par_i <- 1
-                proposal <- univ_proposal(current_pars, lower_bounds, upper_bounds, steps,j)
+                #for(j in js){
+                    proposal <- univ_proposal(current_pars, lower_bounds, upper_bounds, steps,j)
+                #}
                 tempiter[j] <- tempiter[j] + 1
                 ## If using multivariate proposals
             } else {
                 ## NOTE
                 ## MIGHT WANT TO USE ADAM'S PROPOSAL FUNCTION
-                proposal <- mvr_proposal(current_pars, unfixed_pars, steps*covMat, covMat0, TRUE)
+                tmp <- mvr_proposal(current_pars, unfixed_pars, steps*covMat, covMat0, TRUE, beta=0.05,lower=lower_bounds, upper=upper_bounds)
+                proposal <- tmp
+                #acceptance <- tmp[[2]]
+                #message(cat("Proposal: ", proposal,sep="\t"))
                 tempiter <- tempiter + 1
             }
             ## Calculate new likelihood for these parameters
@@ -338,6 +349,7 @@ run_MCMC <- function(parTab,
             opt_chain[chain_index,] <- current_pars[unfixed_pars]
             ## If in an adaptive step
             if(chain_index %% opt_freq == 0){
+
                 ## If using univariate proposals
                 if(is.null(mvrPars)){
                     ## For each non fixed parameter, scale the step size
@@ -354,8 +366,9 @@ run_MCMC <- function(parTab,
                         steps <- scaletuning(steps, popt,pcur)
                     }
                     ## As in Adam's version
-                    #steps=max(0.00001,min(1,exp(log(steps)+(pcur-popt)*0.999^(i-burnin))))
+                                        #steps=max(0.00001,min(1,exp(log(steps)+(pcur-popt)*0.999^(i-burnin))))
                 }
+                #last_index <- chain_index
                 pcurHist <- histaccepted/histiter
                                         #message(cat("Hist acceptance: ", pcurHist, cat="\t"))
                 pcurHist_add <- histaccepted_add/histiter_add

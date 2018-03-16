@@ -102,3 +102,12 @@ describe_proposals <- function(){
     print("Version 2: samples from a beta binomial with alpha and beta specified by the parTab input. Only proposes one move at a time")
     print("Version 3: samples from a beta binomial with alpha and beta specified by the parTab input. Proposes nInfs moves at a time for add/remove, or when swapping, swaps locations up to moveSize time steps away")
 }
+
+#' @export
+logistic_transform <- function(x, maxX){
+  return(maxX/(1 + exp(-x)))
+}
+#' @export
+logit_transform <- function(p, maxX){
+  return(log(p/(maxX-p)))
+}

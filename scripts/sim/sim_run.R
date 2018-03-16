@@ -95,17 +95,17 @@ startPar <- parTab$values
 startPar <- DEoptim::DEoptim(f1, lower=optimTab$lower_bound, upper=optimTab$upper_bound,control=list(itermax=10))$optim$bestmem
 startPar <- c(startPar, startTab[(startTab$names %in% c("alpha","beta")),"values"])
 startTab$values <- startPar
-
+startTab[startTab$names == "wane","values"] <- 0.99
 ## Specify paramters controlling the MCMC procedure
 mcmcPars <- c("iterations"=50000,"popt"=0.44,"popt_hist"=0.44,"opt_freq"=1000,"thin"=01,"adaptive_period"=20000,
-              "save_block"=1000,"thin2"=10,"histSampleProb"=0.5,"switch_sample"=2, "burnin"=0, 
+              "save_block"=1000,"thin2"=10,"histSampleProb"=1,"switch_sample"=2, "burnin"=0, 
               "nInfs"=1, "moveSize"=2, "histProposal"=4, "histOpt"=0)
 
 ## Run the MCMC using the inputs generated above
 #Rprof(tmp <- tempfile())
 #devtools::load_all()
 #system.time(
-#titreDat <- titreDat[titreDat$run == 1,]
+titreDat <- titreDat[titreDat$run == 1,]
 res <- run_MCMC(startTab, titreDat, mcmcPars, filename=filename,
                 create_post_func, NULL, PRIOR=NULL,version=1, 0.2, 
                 fit_dat, ages=ages, 

@@ -30,6 +30,7 @@ generate_all_plots <- function(outputDir, adaptive_period, chainFile, infHistFil
     infectionHistories <- subset(infectionHistories, sampno > adaptive_period)
     infectionHistories <- infectionHistories[complete.cases(infectionHistories),]
     ## Attack rates for each year of circulation
+    xs <- min(strainIsolationTimes):max(strainIsolationTimes)
     arP <- plot_attack_rates(infectionHistories, titreDat,ages,xs)
     
     ## Thin infection history chain 

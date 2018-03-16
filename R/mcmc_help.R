@@ -14,10 +14,23 @@
 #' @return a parameter vector of a proposed move. Note that these may fall outside the allowable ranges.
 #' @export
 #' @useDynLib serosolver
-mvr_proposal <- function(values, fixed, covMat, covMat0 = NULL, useLog=FALSE, beta=0.05){
+mvr_proposal <- function(values, fixed, covMat, covMat0 = NULL, useLog=FALSE, beta=0.05, lower=NULL, upper=NULL){
     proposed <- values
-    # Sample either from a single covariance matrix or weighted average of the identity matrix and
-    # given cov matrix, if specified. On either a log or linear scale.
+    #tmp <- logit_transform(proposed, upper)
+    proposed[fixed] <- (1-beta)*MASS::mvrnorm(n=1,mu=proposed[fixed],Sigma=(5.6644/length(fixed))*covMat) +
+        beta*MASS::mvrnorm(n=1,mu=proposed[fixed],Sigma=(0.01/length(fixed))*covMat0)
+    #proposed <- logistic_transform(tmp, upper)
+    return(proposed)
+    #proposed[fixed] <- rtmvnorm(1, mean=proposed[fixed], lower=lower[fixed], upper=upper[fixed],algorithm="gibbs",sigma=covMat)
+    #beta*MASS::mvrnorm(n=1,mu=proposed[fixed],Sigma=(0.01/length(fixed))*covMat0)
+    #probs_forward <- dtmvnorm(x=proposed[fixed],mean=values[fixed],lower=lower[fixed],upper=upper[fixed],sigma=covMat,log=TRUE)
+    #probs_back <- dtmvnorm(x=values[fixed], mean=proposed[fixed], lower=lower[fixed],upper=upper[fixed],sigma=covMat,log=TRUE)
+    #acceptance <- probs_back - probs_forward
+    #acceptance <- 0
+    #print(acceptance)
+    #return(list(proposed,acceptance))
+                                        # Sample either from a single covariance matrix or weighted average of the identity matrix and
+                                        # given cov matrix, if specified. On either a log or linear scale.
     if(is.null(covMat0)){
         if(!useLog) proposed[fixed] <- MASS::mvrnorm(n=1,mu=proposed[fixed],Sigma=(5.6644/length(fixed))*covMat)
         else proposed[fixed] <- exp(MASS::mvrnorm(n=1,mu=log(proposed[fixed]),Sigma=(5.6644/length(fixed))*covMat))
@@ -37,15 +50,16 @@ mvr_proposal <- function(values, fixed, covMat, covMat0 = NULL, useLog=FALSE, be
 
 #' @export
 inf_hist_prob_lambda <- function(newInf, sampledIndivs, ageMask, nInfs, lambdas){
-    ks <- rpois(length(sampledIndivs),nInfs)
+    #ks <- rpois(length(sampledIndivs),nInfs)
     for(i in 1:length(sampledIndivs)){
         indiv <- sampledIndivs[i]
         x <- newInf[indiv, ageMask[indiv]:ncol(newInf)]
         probs <- lambdas[ageMask[indiv]:length(lambdas)]
         maxI <- length(x)
-        k <- min(maxI, max(ks[i],1))
-        locs <- sample(length(x), k)
-        x[locs] <- rbinom(rep(1, k),1,probs[locs])
+        #k <- min(maxI, max(ks[i],1))
+        #locs <- sample(length(x), k)
+        #x[locs] <- rbinom(rep(1, k),1,probs[locs])
+        x <- rbinom(rep(1,maxI), 1, probs)
         newInf[indiv,ageMask[indiv]:ncol(newInf)]=x
     }
     return(newInf)
@@ -242,21 +256,20 @@ univ_proposal <- function(values, lower_bounds, upper_bounds,steps, index){
     rtn <- values
     
     x <- toUnitScale(values[index],mn,mx)
-
     ## 5th index is step size
     stp <- steps[index]
 
     rv <- runif(1)
     rv <- (rv-0.5)*stp
     x <- x + rv
-
+    
     ## Bouncing boundary condition
     if (x < 0) x <- -x
     if (x > 1) x <- 2-x
 
     ## Cyclical boundary conditions
-    ##if (x < 0) x <- 1 + x	
-    ##if (x > 1) x <- x - 1
+    #if (x < 0) x <- 1 + x	
+    #if (x > 1) x <- x - 1
     
     if(x < 0 | x > 1){
         print("Stepped outside of unit scale. Something went wrong...")
