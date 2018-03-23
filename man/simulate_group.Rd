@@ -5,7 +5,7 @@
 \title{Simulate group data}
 \usage{
 simulate_group(n_indiv, theta, infectionHistories, strainIsolationTimes,
-  sampleTimes, nsamps, antigenicMapLong, antigenicMapShort)
+  sampleTimes, nsamps, antigenicMapLong, antigenicMapShort, repeats = 1)
 }
 \arguments{
 \item{n_indiv}{the number of individuals to simulate}
@@ -23,6 +23,8 @@ simulate_group(n_indiv, theta, infectionHistories, strainIsolationTimes,
 \item{antigenicMapLong}{the collapsed antigenic map for long term cross reactivity, after multiplying by sigma1}
 
 \item{antigenicMapShort}{the collapsed antigenic map for short term cross reactivity, after multiplying by sigma2}
+
+\item{repeats}{number of repeated samples for each year}
 }
 \value{
 a data frame with columns individual, samples, virus and titre of simulated data

@@ -528,5 +528,31 @@ infection_history_proposal <-function(newInfectionHistories,sampledIndivs,strain
         acceptance_distribution[indiv] <- accept
         newInf[indiv,ageMask[indiv]:length(strainIsolationTimes)]=x # Only =1 if individual was alive
     } # end loop over individuals
-return(list(newInf, acceptance_distribution))
+    return(list(newInf, acceptance_distribution))
+}
+
+#' @export
+lambda_proposal <- function(current_pars, infHist, years, js, alpha, beta, n_alive){
+    proposed <- current_pars
+    if(length(years) > 1){
+        infs <- colSums(infHist[,years])
+                                        #current_pars[j] <- rbinom(1, n_alive[year],infs/n_alive[year])/n_alive[year]        
+        proposed[js] <- rbeta(length(years), alpha + infs, beta + (n_alive[years]- infs))
+        #proposed[js] <- rbeta(length(years), alpha, beta)
+    } else {
+        infs <- sum(infHist[,years])
+        proposed[js] <- rbeta(1, alpha + infs, beta + (n_alive[years]- infs))
+        #proposed[js] <- rbeta(1, alpha, beta)
+    }
+    #print(n_alive[years])
+    #print(infs)
+    #print(js)
+    #print(proposed[js])
+    #forward <- sum(dbeta(proposed[js], alpha + infs, beta + (n_alive[years] - infs), log=TRUE))
+    #back <- sum(dbeta(current_pars[js], alpha + infs, beta + (n_alive[years] - infs), log=TRUE))
+    forward <- sum(dbeta(proposed[js], alpha, beta, log=TRUE))
+    back <- sum(dbeta(current_pars[js], alpha, beta, log=TRUE))
+    
+    ratio <- back - forward
+    return(list(proposed, ratio))    
 }

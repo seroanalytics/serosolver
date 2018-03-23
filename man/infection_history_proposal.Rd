@@ -5,7 +5,7 @@
 \title{Infection history proposal}
 \usage{
 infection_history_proposal(newInfectionHistories, sampledIndivs,
-  strainIsolationTimes, ageMask, nInfs = NULL)
+  strainIsolationTimes, ageMask, nInfs)
 }
 \arguments{
 \item{newInfectionHistories}{an n*m matrix of 1s & 0s indicating infection histories, where n is individuals and m i strains}

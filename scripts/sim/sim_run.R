@@ -6,10 +6,10 @@ library(data.table)
 
 ## Set working directory and load code
 setwd("~/Documents/Fluscape/serosolver")
-devtools::load_all()
+#devtools::load_all()
 
 ## How many individuals to simulate?
-n_indiv <- 69
+n_indiv <- 1000
 
 ## Which infection history proposal version to use?
 describe_proposals()
@@ -18,24 +18,26 @@ histProposal <- 3
 ## Buckets indicates the time resolution of the analysis. Setting
 ## this to 1 uses annual epochs, whereas setting this to 12 gives
 ## monthly epochs
-buckets <- 1
+buckets <- 12
 
 ## The general output filename
-filename <- "chains/hanam_test"
+filename <- "chains/test"
 
 ## Read in parameter table to simulate from and change waning rate if necessary
 parTab <- read.csv("~/Documents/Fluscape/serosolver/inputs/parTab.csv",stringsAsFactors=FALSE)
-parTab[parTab$names == "wane","values"] <- parTab[parTab$names == "wane","values"]/buckets
 parTab[parTab$names == "wane","values"] <- 1
+parTab[parTab$names == "wane","values"] <- parTab[parTab$names == "wane","values"]/buckets
+parTab[parTab$names == "sigma1","values"] <- parTab[parTab$names == "sigma1","values"]
+parTab[parTab$names == "sigma2","values"] <- parTab[parTab$names == "sigma2","values"]
 
 ## Possible sampling times
-#samplingTimes <- seq(2010*buckets, 2015*buckets, by=1)
-samplingTimes <- 2007:2012
+samplingTimes <- seq(2010*buckets, 2015*buckets, by=1)
+#samplingTimes <- 2007:2012
 
 ## Antigenic map for cross reactivity parameters
-#antigenicMap <- read.csv("~/Documents/Fluscape/fluscape/trunk/data/Fonville2014AxMapPositionsApprox.csv",stringsAsFactors=FALSE)
-#fit_dat <- generate_antigenic_map(antigenicMap, buckets)
-fit_dat <- read.csv("data/antigenicMap_AK.csv")
+antigenicMap <- read.csv("~/Documents/Fluscape/fluscape/trunk/data/Fonville2014AxMapPositionsApprox.csv",stringsAsFactors=FALSE)
+fit_dat <- generate_antigenic_map(antigenicMap, buckets)
+#fit_dat <- read.csv("data/antigenicMap_AK.csv")
 ## Rename circulation years based on isolation time
 virus_key <- c("HK68"=1968, "EN72"=1972, "VI75"=1975, "TX77"=1977, "BK79"=1979, "SI87"=1987, "BE89"=1989, "BJ89"=1989,
                "BE92"=1992, "WU95"=1995, "SY97"=1997, "FU02"=2002, "CA04"=2004, "WI05"=2005, "PE06"=2006)*buckets
@@ -43,18 +45,20 @@ virus_key <- c("HK68"=1968, "EN72"=1972, "VI75"=1975, "TX77"=1977, "BK79"=1979, 
 
 
 ## All possible circulation times
-fit_dat <- fit_dat[fit_dat$inf_years >= 1968*buckets & fit_dat$inf_years <= 2012,]
+fit_dat <- fit_dat[fit_dat$inf_years >= 1968*buckets & fit_dat$inf_years <= 2012*buckets,]
 strainIsolationTimes <- unique(fit_dat$inf_years)
 
 ## Change alpha and beta to change proposal distribution
 ## Setting to c(1,1) gives uniform distribution on total number of infections
 parTab[parTab$names %in% c("alpha","beta"),"values"] <- find_a_b(length(strainIsolationTimes),7,50)
-parTab[parTab$names %in% c("alpha","beta"),"values"] <- c(1,1)
-parTab[parTab$names %in% c("mu","mu_short","sigma1","sigma2"),"values"] <- c(2,2,0.3,0.1)
+
+#parTab[parTab$names %in% c("alpha","beta"),"values"] <- c(2,1)
+#parTab[parTab$names %in% c("mu","mu_short","sigma1","sigma2"),"values"] <- c(2,2,0.3,0.1)
 ## Simulate some fake data
 dat <- simulate_data(parTab, 1, n_indiv, buckets,strainIsolationTimes,
-                     samplingTimes, 6, antigenicMap=fit_dat, 0, 0, 10*buckets,75*buckets,
-                     simInfPars=c("mean"=0.15,"sd"=0.5,"bigMean"=0.5,"logSD"=1),useSIR=TRUE,repeats=2)
+                     samplingTimes, 2, antigenicMap=fit_dat, 0, 0, 10*buckets,75*buckets,
+                     simInfPars=c("mean"=0.15,"sd"=0.5,"bigMean"=0.5,"logSD"=1),useSIR=TRUE,
+                     repeats=1,pInf=NULL,useSpline=FALSE)
 
 ## If we want to use a subset of isolated strains, uncomment the line below
 viruses <- c(1968, 1969, 1972, 1975, 1977, 1979, 1982, 1985, 1987, 
@@ -62,10 +66,11 @@ viruses <- c(1968, 1969, 1972, 1975, 1977, 1979, 1982, 1985, 1987,
              2010, 2012, 2014)*buckets
 
 titreDat <- dat[[1]]
-#titreDat <- titreDat[titreDat$virus %in% viruses,]
+titreDat <- titreDat[titreDat$virus %in% viruses,]
 infectionHistories <- infHist <- dat[[2]]
 ages <- dat[[3]]
 AR <- dat[[4]]
+p <- plot_data(titreDat, infHist, strainIsolationTimes, 5, NULL)
 
 ## Code to save simulated data
 ##write.table(titreDat,"~/net/home/serosolver/data/sim_200_dat.csv",row.names=FALSE,sep=",")
@@ -98,8 +103,8 @@ startTab$values <- startPar
 startTab[startTab$names == "wane","values"] <- 0.99
 ## Specify paramters controlling the MCMC procedure
 mcmcPars <- c("iterations"=50000,"popt"=0.44,"popt_hist"=0.44,"opt_freq"=1000,"thin"=01,"adaptive_period"=20000,
-              "save_block"=1000,"thin2"=10,"histSampleProb"=1,"switch_sample"=2, "burnin"=0, 
-              "nInfs"=1, "moveSize"=2, "histProposal"=4, "histOpt"=0)
+              "save_block"=100,"thin2"=10,"histSampleProb"=0.1,"switch_sample"=2, "burnin"=0, 
+              "nInfs"=1, "moveSize"=2, "histProposal"=histProposal, "histOpt"=1)
 
 ## Run the MCMC using the inputs generated above
 #Rprof(tmp <- tempfile())
@@ -109,7 +114,7 @@ titreDat <- titreDat[titreDat$run == 1,]
 res <- run_MCMC(startTab, titreDat, mcmcPars, filename=filename,
                 create_post_func, NULL, PRIOR=NULL,version=1, 0.2, 
                 fit_dat, ages=ages, 
-                startInfHist=startInf)
+                startInfHist=infHist)
 #)
 #Rprof()
 #summaryRprof(tmp)

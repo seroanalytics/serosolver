@@ -6,7 +6,7 @@ library(data.table)
 
 ## Set working directory and load code
 setwd("~/Documents/Fluscape/serosolver")
-#devtools::load_all()
+devtools::load_all()
 
 ## How many individuals to simulate?
 n_indiv <-100
@@ -25,13 +25,14 @@ filename <- "chains/test_lambda"
 
 ## Read in parameter table to simulate from and change waning rate if necessary
 parTab <- read.csv("~/Documents/Fluscape/serosolver/inputs/parTab_lambda.csv",stringsAsFactors=FALSE)
+parTab[parTab$names == "wane","values"] <- 1
 parTab[parTab$names == "wane","values"] <- parTab[parTab$names == "wane","values"]/buckets
-parTab[parTab$names == "sigma1","values"] <- parTab[parTab$names == "sigma1","values"]/buckets
-parTab[parTab$names == "sigma2","values"] <- parTab[parTab$names == "sigma2","values"]/buckets
+parTab[parTab$names == "sigma1","values"] <- parTab[parTab$names == "sigma1","values"]*buckets
+parTab[parTab$names == "sigma2","values"] <- parTab[parTab$names == "sigma2","values"]*buckets
 #parTab[parTab$names == "wane","values"] <- 1/buckets
-parTab[parTab$names == "error","fixed"] <- 1
+#parTab[parTab$names == "error","fixed"] <- 1
 ## Possible sampling times
-samplingTimes <- seq(2000*buckets, 2015*buckets, by=1)
+samplingTimes <- seq(2010*buckets, 2015*buckets, by=1)
 
 ## Antigenic map for cross reactivity parameters
 antigenicMap <- read.csv("~/Documents/Fluscape/fluscape/trunk/data/Fonville2014AxMapPositionsApprox.csv",stringsAsFactors=FALSE)
@@ -50,7 +51,7 @@ p1 <- ggplot(antigenicMap) +
   theme_bw()
 
 ## All possible circulation times
-fit_dat <- fit_dat[fit_dat$inf_years >= 2000*buckets,]
+fit_dat <- fit_dat[fit_dat$inf_years >= 2000*buckets & fit_dat$inf_years <= 2015*buckets,]
 strainIsolationTimes <- unique(fit_dat$inf_years)
 
 ## Add rows for each lambda value to be inferred
@@ -70,13 +71,13 @@ parTab[parTab$names %in% c("alpha","beta"),"values"] <- c(2,12)
 dat <- simulate_data(parTab, 1, n_indiv, buckets,strainIsolationTimes,
                      samplingTimes, 2, antigenicMap=fit_dat, 0, 0, 6*buckets,75*buckets,
                      simInfPars=c("mean"=0.15,"sd"=0.5,"bigMean"=0.5,"logSD"=1),
-                     useSIR=TRUE, pInf = NULL)
+                     useSIR=TRUE, pInf = NULL, useSpline=FALSE)
 
 ## If we want to use a subset of isolated strains, uncomment the line below
 viruses <- c(1968, 1969, 1972, 1975, 1977, 1979, 1982, 1985, 1987, 
              1989, 1992, 1995, 1998, 2000, 2002, 2004, 2007, 2009, 
              2010, 2012, 2014)*buckets
-viruses <- seq(2000*buckets,2014*buckets,by=buckets)
+viruses <- seq(2000*buckets,2015*buckets,by=buckets)
 #viruses <- seq(1968*buckets,2014*buckets,by=4)
 
 titreDat <- dat[[1]]
@@ -119,9 +120,9 @@ for(i in 1:nrow(startTab)){
 }
 
 ## Specify paramters controlling the MCMC procedure
-mcmcPars <- c("iterations"=100000,"popt"=0.44,"popt_hist"=0.44,"opt_freq"=2000,"thin"=1,"adaptive_period"=50000,
+mcmcPars <- c("iterations"=500000,"popt"=0.44,"popt_hist"=0.44,"opt_freq"=2000,"thin"=1,"adaptive_period"=100000,
               "save_block"=100,"thin2"=100,"histSampleProb"=1,"switch_sample"=2, "burnin"=0, 
-              "nInfs"=1, "moveSize"=2, "histProposal"=1, "histOpt"=1,"n_par"=1)
+              "nInfs"=1, "moveSize"=2, "histProposal"=1, "histOpt"=1,"n_par"=10)
 covMat <- diag(nrow(parTab))
 scale <- 0.5
 w <- 1
@@ -129,10 +130,11 @@ mvrPars <- list(covMat, scale, w)
 ageMask <- create_age_mask(ages, strainIsolationTimes,n_indiv)
 f <- create_post_func(parTab=startTab,data=titreDat,antigenicMap=fit_dat,PRIOR_FUNC = NULL,version=4, ageMask=ageMask)
 parTab[parTab$names == "lambda","values"] <- lambdas
-sum(f(parTab$values, infHist))
-startTab[startTab$names %in% c("alpha","beta"),"values"] <- c(2,12)
+(f(startTab$values, infHist))
+startTab[startTab$names %in% c("alpha","beta"),"values"] <- c(1,1)
 #Rprof(tmp <- tempfile())
 ## Run the MCMC using the inputs generated above
+#startInf <- infHist
 lambdas_start <- NULL
 for(year in 1:ncol(startInf)){ lambdas_start[year] <- (sum(startInf[,year])/sum(ages$DOB <= strainIsolationTimes[year]))}
 startTab[startTab$names == "lambda","values"] <- lambdas_start
@@ -166,8 +168,8 @@ plot_attack_rates(infChain, titreDat, ages, 1968:2015)
 wow <- infChain[infChain$i %in% 1:50,]
 setkey(wow, "sampno","i")
 omg <- wow[,list(V1=sum(x)), by=key(wow)]
-alpha <- 2
-beta <- 12
+alpha <- 100
+beta <- 100
 tmp <- as.data.frame(rbb(10000,48,alpha,beta))
 #tmp <- data.frame(x=0:48,y=dbb(0:48,48,alpha,beta))
 tmp <- data.frame(x=0:48,y=dbinom(0:48,48,prob=0.5))
@@ -195,7 +197,7 @@ AR_recovery <- ggplot() +
   ylab("Attack rate, lambda") +
   xlab("Year") +
   scale_y_continuous(limits=c(0,1)) +
-  scale_x_continuous(breaks=seq(1968,2015,by=1)) +
+ # scale_x_continuous(breaks=seq(1968,2015,by=1)) +
   theme_bw() +
   theme(axis.text.x=element_text(angle=45,hjust=1))
 svg(paste0(filename,"actual_AR.svg"))
@@ -210,17 +212,19 @@ dev.off()
 #plot(coda::as.mcmc(n_hist_chain))
 #dev.off()
 indivs <- sample(n_indiv, 10)
+sampd <- sample(n_indiv,20)
 infChain <- data.table::fread(res$history_file)
 infChain <- infChain[infChain$sampno >= (mcmcPars["adaptive_period"]+mcmcPars["burnin"]),]
 n_strain <- max(infChain$j)
 data.table::setkey(infChain, "i","sampno")
 n_inf_chain <- infChain[,list(V1=sum(x)),by=key(infChain)]
-inf_chain_p <- ggplot(n_inf_chain[n_inf_chain$i %in% indivs,]) + geom_line(aes(x=sampno,y=V1)) + facet_wrap(~i)
+inf_chain_p <- ggplot(n_inf_chain[n_inf_chain$i %in% sampd,]) + geom_line(aes(x=sampno,y=V1)) + facet_wrap(~i)
 ## Generate cumulative infection history plots for a random subset of individuals
 ## based on data and posterior
 #mcmcPars["adaptive_period"]+mcmcPars["burnin"]
-generate_cumulative_inf_plots(res$history_file, 0, 
-                                           1:10, infHist, startInf,strainIsolationTimes, 100,ages)
+
+ps <- generate_cumulative_inf_plots(res$history_file, mcmcPars["adaptive_period"], 
+                                           sampd, infHist, startInf,strainIsolationTimes, 100,ages)
 plot_infection_histories(chain1, infChain, titreDat, sample(1:100, 10), fit_dat, ages,parTab,100)
 svg(paste0(filename, "cumulative_infHist.svg"))
 plot(infHist_p)

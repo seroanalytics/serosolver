@@ -95,11 +95,18 @@ create_post_func <- function(parTab, data, antigenicMap,
           return(liks)
       }
   } else if(version == 3){
-      print("explicit prior - no likelihood. proposals should be symmetric")
+      print("just likelihood from lambda")
+      theta_indices <- which(parTab$identity == 1)
+      lambda_indices <- which(parTab$identity == 2)
+      parNames <- parTab[theta_indices,"names"]
       f <- function(pars, infectionHistories){
-          names(pars) <- parNames
-          liks <- rep(-100000,n_indiv)
-          liks <- liks + PRIOR_FUNC(pars, infectionHistories, ageMask)
+          ##names(pars) <- parNames
+          ##liks <- rep(-100000,n_indiv)
+          ##liks <- liks + PRIOR_FUNC(pars, infectionHistories, ageMask)
+          lambdas <- pars[lambda_indices]
+          pars1 <- pars[theta_indices]
+          names(pars1) <- parNames
+          liks <- calc_lambda_probs_indiv(lambdas, infectionHistories, ageMask)
           return(liks)
       }
   } else if(version==4) {
@@ -185,7 +192,14 @@ create_post_func <- function(parTab, data, antigenicMap,
           liks <- liks + calc_lambda_probs_monthly(foi,  knots, theta, infectionHistories, ageMask)
           return(liks)
       }
+  } else if(version == 8){
+      print("Lambda likelihood only")
+      lambdas <- pars[lambda_indices]
+      pars <- pars[theta_indices]
+      names(pars) <- parNames_theta
+      liks <- calc_lambda_probs_indiv(lambdas, infectionHistories, ageMask)
   } else {
+      
       print("Model solving function")
       f <- function(pars, infectionHistories){
           names(pars) <- parNames
@@ -257,7 +271,8 @@ calc_lambda_probs_monthly <- function(foi, knots, theta, infHist, ageMask){
 
     lik <- numeric(nrow(infHist))
     for(i in 1:ncol(infHist)){
-        lik <- lik + log(((lambdas[i]^infHist[,i]) * (1-lambdas[i])^(1-infHist[,i])))* as.numeric(ageMask <= i)
+        #lik <- lik + log(((lambdas[i]^infHist[,i]) * (1-lambdas[i])^(1-infHist[,i]))) + as.numeric(ageMask <= i)
+        lik <- lik + infHist[,i]*log(lambdas[i]) + (1-infHist[,i])*log(lambdas[i]) + log(as.numeric(ageMask <= i))
     }
     lik
 }

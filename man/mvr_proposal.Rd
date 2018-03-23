@@ -5,7 +5,7 @@
 \title{Multivariate proposal function}
 \usage{
 mvr_proposal(values, fixed, covMat, covMat0 = NULL, useLog = FALSE,
-  beta = 0.05)
+  beta = 0.05, lower = NULL, upper = NULL)
 }
 \arguments{
 \item{values}{the vector of current parameter values}

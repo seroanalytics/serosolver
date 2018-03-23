@@ -6,7 +6,7 @@
 \usage{
 simulate_individual(theta, infectionHistory, samplingTimes, dataIndices,
   strainIsolationTimes, virusIndices, antigenicMapLong, antigenicMapShort,
-  strains)
+  strains, repeats = 1)
 }
 \arguments{
 \item{theta}{the named parameter vector}
@@ -24,6 +24,8 @@ simulate_individual(theta, infectionHistory, samplingTimes, dataIndices,
 \item{antigenicMapShort}{the collapsed antigenic map for short term cross reactivity, after multiplying by sigma2}
 
 \item{strains}{vector of all possible circulating strains}
+
+\item{repeats}{number of repeated samples for each year}
 
 \item{sampleTimes}{the vector of times at which samples are taken}
 

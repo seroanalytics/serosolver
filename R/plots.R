@@ -121,7 +121,7 @@ get_titre_predictions <- function(chain, infectionHistories, titreDat,
     tmpSamp <- sample(samps, nsamp)
 
     ## See the function in posteriors.R
-    f <- create_post_func(parTab,titreDat,antigenicMap,NULL,8)
+    f <- create_post_func(parTab,titreDat,antigenicMap,NULL,100)
     predicted_titres <- residuals <- matrix(nrow=nrow(titreDat),ncol=nsamp)
     ## For each sample, take values for theta and infection histories and simulate titres
     for(i in 1:nsamp){
@@ -397,7 +397,7 @@ generate_cumulative_inf_plots <- function(infChainFile, burnin, indivs, realInfH
     
     infChain1 <- infChain[infChain$i %in% indivs,]
     data.table::setkey(infChain1, "i","j")
-    maxSampno <- max(infChain1$sampno)
+    maxSampno <- length(unique(infChain1$sampno))
     densities <- infChain1[,list(V1=sum(x)/maxSampno),by=key(infChain1)]
     densities$j <- strainIsolationTimes[densities$j]
     allCombos <- data.table(expand.grid(i=indivs,j=strainIsolationTimes))
@@ -495,5 +495,5 @@ generate_cumulative_inf_plots <- function(infChainFile, burnin, indivs, realInfH
         theme_bw() +
         ylab("Cumulative infections") +
         xlab("Circulation time")
-    return(p1)
+    return(list(p1,density_plot))
 }

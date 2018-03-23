@@ -5,7 +5,7 @@
 \title{Generate titre credible intervals}
 \usage{
 get_titre_predictions(chain, infectionHistories, titreDat, individuals,
-  antigenicMap, ages, parTab, nsamp = 100)
+  antigenicMap, ages, parTab, nsamp = 100, addResiduals = FALSE)
 }
 \arguments{
 \item{chain}{the full MCMC chain to generate titre trajectories from}
@@ -21,6 +21,8 @@ get_titre_predictions(chain, infectionHistories, titreDat, individuals,
 \item{parTab}{the table controlling the parameters in the MCMC chain}
 
 \item{nsamp}{number of samples to take from posterior}
+
+\item{addResiduals}{if true, returns an extra output summarising residuals between the model prediction and data}
 
 \item{dat}{the data frame of titre data}
 }

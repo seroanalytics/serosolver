@@ -177,7 +177,7 @@ generate_ar_annual <- function(AR, buckets){
     dinc <- beta*S*I
     list(c(dS,dI,dR, dinc))
   }
-  R0 <- 1.5
+  R0 <- 1.2
   gamma <- 1/5
   beta <- R0*gamma
   t <- seq(0,360,by=0.1)
