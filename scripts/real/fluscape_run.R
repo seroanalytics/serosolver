@@ -2,6 +2,7 @@ library(ggplot2)
 library(coda)
 library(plyr)
 library(reshape2)
+library(data.table)
 
 ## Set working directory and load code
 setwd("~/Documents/Fluscape/serosolver")
@@ -12,7 +13,7 @@ devtools::load_all()
 
 ## Which infection history proposal version to use?
 describe_proposals()
-histProposal <- 3
+histProposal <- 1
 
 ## Buckets indicates the time resolution of the analysis. Setting
 ## this to 1 uses annual epochs, whereas setting this to 12 gives
@@ -20,7 +21,7 @@ histProposal <- 3
 buckets <- 1
 
 ## The general output filename
-filename <- "fluscape"
+filename <- "vietnam"
 
 ## Read in parameter table to simulate from and change waning rate if necessary
 parTab <- read.csv("~/Documents/Fluscape/serosolver/inputs/parTab.csv",stringsAsFactors=FALSE)
@@ -35,6 +36,10 @@ fit_dat <- read.csv("~/Documents/Fluscape/serosolver/data/antigenicMap_AK.csv")
 ## Read in Fluscape data
 fluscapeDat <- read.csv("data/fluscape_data.csv",stringsAsFactors=FALSE)
 fluscapeAges <- read.csv("data/fluscape_ages.csv")
+
+titreDat <- read.csv("data/vietnam.csv")
+ages <- data.frame(individual=1:length(unique(titreDat$individual)),DOB=1940)
+fit_dat <- fit_dat[fit_dat$inf_years <= 2012,]
 
 ## Remove individuals with NA for DOB
 na_indiv <- fluscapeAges[which(is.na(fluscapeAges$DOB)),"individual"]
@@ -74,11 +79,14 @@ startPar <- c(startPar, startTab[(startTab$names %in% c("alpha","beta")),"values
 startTab$values <- startPar
 
 ## Specify paramters controlling the MCMC procedure
-mcmcPars <- c("iterations"=1000,"popt"=0.44,"popt_hist"=0.44,"opt_freq"=1000,"thin"=1,"adaptive_period"=1000,
-              "save_block"=100,"thin2"=1,"histSampleProb"=0.2,"switch_sample"=2, "burnin"=0, 
-              "nInfs"=4, "moveSize"=5, "histProposal"=histProposal, "histOpt"=0)
-
+mcmcPars <- c("iterations"=100000,"popt"=0.44,"popt_hist"=0.44,"opt_freq"=1000,"thin"=1,"adaptive_period"=50000,
+              "save_block"=100,"thin2"=10,"histSampleProb"=0.5,"switch_sample"=2, "burnin"=0, 
+              "nInfs"=1, "moveSize"=10, "histProposal"=4, "histOpt"=0)
+startTab[startTab$names == "wane","values"] <- 1
+titreDat1 <- titreDat[titreDat$run == 1,]
+startTab[startTab$names %in% c("alpha","beta"),"values"] <- c(1,1)
 system.time(
+  
 ## Run the MCMC using the inputs generated above
 res <- run_MCMC(startTab, titreDat, mcmcPars, filename=filename,
                 create_post_func, NULL, PRIOR,version=1, 0.2, 
@@ -97,11 +105,11 @@ plot(coda::as.mcmc(chain1))
 dev.off()
 
 ## Plot inferred attack rates
-infChain <- data.table::fread(res$history_file,data.table=FALSE)
+infChain <- data.table::fread(res$history_file)
 infChain <- infChain[infChain$sampno >= (mcmcPars["adaptive_period"]+mcmcPars["burnin"]),]
 xs <- min(strainIsolationTimes):max(strainIsolationTimes)
 colnames(AR) <- c("year","AR")
-arP <- plot_attack_rates(infChain, titreDat,ages,xs)
+arP <- plot_attack_rates(infChain, titreDat,ages,xs, n_alive) + scale_y_continuous(limits=c(0,1), expand=c(0,0))
 
 
 ## Density/trace plots on total number of infections

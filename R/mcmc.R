@@ -30,6 +30,7 @@ run_MCMC <- function(parTab,
                      antigenicMap,
                      ages=NULL,
                      startInfHist=NULL,
+                     mu_indices=NULL,
                      ...){
     ## Extract MCMC parameters
     iterations <- mcmcPars["iterations"] # How many iterations to run after adaptive period
@@ -132,16 +133,23 @@ run_MCMC <- function(parTab,
 ###############
     if(!is.null(ages)){
         ageMask <- create_age_mask(ages, strainIsolationTimes, n_indiv)
+        n_alive <- sapply(strainIsolationTimes, function(x) nrow(ages[ages$DOB <=x,]))
     } else {
         ageMask <- rep(1, n_indiv)
+        n_alive <- rep(n_indiv, length(strainIsolationTimes))
     }
+    
     ## Create posterior calculating function
     posterior_simp <- protect(CREATE_POSTERIOR_FUNC(parTab,data,
                                                     antigenicMap,
                                                     PRIOR_FUNC,version,
-                                                    ageMask,
+                                                    ageMask,mu_indices,
                                                     ...))
 
+    if(!is.null(mu_indices)){
+        prior_mu <- protect(create_post_func_mu(parTab,data,antigenicMap, PRIOR_FUNC,version=2,
+                                                ageMask,mu_indices,...))
+    }
 ######################
     ## Setup initial conditions
     infectionHistories = startInfHist
@@ -154,6 +162,7 @@ run_MCMC <- function(parTab,
     ## -----------------------
     probabs <- posterior_simp(current_pars,infectionHistories)
     probab <- sum(probabs)
+    if(!is.null(mu_indices)) probab + prior_mu(current_pars)
     message(cat("Starting theta likelihood: ",probab,sep="\t"))
 ###############
     
@@ -217,6 +226,7 @@ run_MCMC <- function(parTab,
             ## Calculate new likelihood for these parameters
             new_probabs <- posterior_simp(proposal,infectionHistories)            
             new_probab <- sum(new_probabs)
+            if(!is.null(mu_indices)) new_probab <- new_probab + prior_mu(proposal)
             ## Otherwise, resample infection history
         } else {
             ## Choose a random subset of individuals to update
@@ -249,6 +259,7 @@ run_MCMC <- function(parTab,
             ## Calculate new likelihood with these infection histories
             new_probabs <- posterior_simp(current_pars, newInfectionHistories)
             new_probab <- sum(new_probabs)
+            if(!is.null(mu_indices)) new_probab <- new_probab + prior_mu(current_pars)
             histiter[indivSubSample]<- histiter[indivSubSample] + 1
         }
 
@@ -282,6 +293,7 @@ run_MCMC <- function(parTab,
             infectionHistories[changeI,] <- newInfectionHistories[changeI,]
             probabs[changeI] <- new_probabs[changeI]
             probab <- sum(probabs)
+            if(!is.null(mu_indices)) probab <- probab + prior_mu(current_pars)
 
             ## Record acceptances for each add or move step
             add <- intersect(add, changeI)

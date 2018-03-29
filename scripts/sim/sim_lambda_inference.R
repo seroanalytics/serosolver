@@ -18,17 +18,17 @@ histProposal <- 1
 ## Buckets indicates the time resolution of the analysis. Setting
 ## this to 1 uses annual epochs, whereas setting this to 12 gives
 ## monthly epochs
-buckets <- 2
+buckets <- 1
 
 ## The general output filename
-filename <- "chains/test_lambda"
+filename <- "chains/test_lambda_correct"
 
 ## Read in parameter table to simulate from and change waning rate if necessary
 parTab <- read.csv("~/Documents/Fluscape/serosolver/inputs/parTab_lambda.csv",stringsAsFactors=FALSE)
 parTab[parTab$names == "wane","values"] <- 1
 parTab[parTab$names == "wane","values"] <- parTab[parTab$names == "wane","values"]/buckets
-parTab[parTab$names == "sigma1","values"] <- parTab[parTab$names == "sigma1","values"]*buckets
-parTab[parTab$names == "sigma2","values"] <- parTab[parTab$names == "sigma2","values"]*buckets
+parTab[parTab$names == "sigma1","values"] <- parTab[parTab$names == "sigma1","values"]
+parTab[parTab$names == "sigma2","values"] <- parTab[parTab$names == "sigma2","values"]
 #parTab[parTab$names == "wane","values"] <- 1/buckets
 #parTab[parTab$names == "error","fixed"] <- 1
 ## Possible sampling times
@@ -51,7 +51,7 @@ p1 <- ggplot(antigenicMap) +
   theme_bw()
 
 ## All possible circulation times
-fit_dat <- fit_dat[fit_dat$inf_years >= 2000*buckets & fit_dat$inf_years <= 2015*buckets,]
+fit_dat <- fit_dat[fit_dat$inf_years >= 1968*buckets & fit_dat$inf_years <= 2015*buckets,]
 strainIsolationTimes <- unique(fit_dat$inf_years)
 
 ## Add rows for each lambda value to be inferred
@@ -77,7 +77,7 @@ dat <- simulate_data(parTab, 1, n_indiv, buckets,strainIsolationTimes,
 viruses <- c(1968, 1969, 1972, 1975, 1977, 1979, 1982, 1985, 1987, 
              1989, 1992, 1995, 1998, 2000, 2002, 2004, 2007, 2009, 
              2010, 2012, 2014)*buckets
-viruses <- seq(2000*buckets,2015*buckets,by=buckets)
+#viruses <- seq(2000*buckets,2015*buckets,by=buckets)
 #viruses <- seq(1968*buckets,2014*buckets,by=4)
 
 titreDat <- dat[[1]]
@@ -120,7 +120,7 @@ for(i in 1:nrow(startTab)){
 }
 
 ## Specify paramters controlling the MCMC procedure
-mcmcPars <- c("iterations"=500000,"popt"=0.44,"popt_hist"=0.44,"opt_freq"=2000,"thin"=1,"adaptive_period"=100000,
+mcmcPars <- c("iterations"=100000,"popt"=0.44,"popt_hist"=0.44,"opt_freq"=2000,"thin"=1,"adaptive_period"=50000,
               "save_block"=100,"thin2"=100,"histSampleProb"=1,"switch_sample"=2, "burnin"=0, 
               "nInfs"=1, "moveSize"=2, "histProposal"=1, "histOpt"=1,"n_par"=10)
 covMat <- diag(nrow(parTab))
@@ -224,7 +224,7 @@ inf_chain_p <- ggplot(n_inf_chain[n_inf_chain$i %in% sampd,]) + geom_line(aes(x=
 #mcmcPars["adaptive_period"]+mcmcPars["burnin"]
 
 ps <- generate_cumulative_inf_plots(res$history_file, mcmcPars["adaptive_period"], 
-                                           sampd, infHist, startInf,strainIsolationTimes, 100,ages)
+                                           sampd, infHist, startInf,strainIsolationTimes, 100,ages,numberCol=4)
 plot_infection_histories(chain1, infChain, titreDat, sample(1:100, 10), fit_dat, ages,parTab,100)
 svg(paste0(filename, "cumulative_infHist.svg"))
 plot(infHist_p)

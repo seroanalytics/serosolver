@@ -16,7 +16,7 @@
 simulate_group <- function(n_indiv, theta, infectionHistories,
                            strainIsolationTimes, sampleTimes,
                            nsamps, antigenicMapLong, antigenicMapShort,
-                           repeats=1){
+                           repeats=1, mus=NULL, musIndices=NULL){
     dat <- NULL
     ## For each individual
     for(i in 1:n_indiv){
@@ -32,7 +32,7 @@ simulate_group <- function(n_indiv, theta, infectionHistories,
                                                antigenicMapLong,
                                                antigenicMapShort,
                                                strainIsolationTimes,
-                                               repeats))
+                                               repeats, mus, musIndices))
         ## Record individual ID
         y$indiv <- i
         colnames(y) <- c("samples","virus","titre","individual")
@@ -69,13 +69,22 @@ simulate_individual <- function(theta,
                                 antigenicMapLong,
                                 antigenicMapShort,
                                 strains,
-                                repeats=1){
+                                repeats=1,
+                                mus=NULL,
+                                musIndices=NULL){
     numberStrains <- length(strains)
     dat <- matrix(ncol=3, nrow=length(strainIsolationTimes)*repeats)
 
-    titres <- titre_data_individual(theta, infectionHistory, strains, seq_along(strains)-1, samplingTimes,
-                                    dataIndices, match(strainIsolationTimes, strains)-1,
-                                    antigenicMapLong, antigenicMapShort, numberStrains)
+    if(is.null(musIndices)){    
+        titres <- titre_data_individual(theta, infectionHistory, strains, seq_along(strains)-1, samplingTimes,
+                                        dataIndices, match(strainIsolationTimes, strains)-1,
+                                        antigenicMapLong, antigenicMapShort, numberStrains)
+    } else {
+        titres <- titre_data_individual_mus(theta, mus, infectionHistory, strains, seq_along(strains)-1,
+                                        musIndices, samplingTimes,
+                                        dataIndices, match(strainIsolationTimes, strains)-1,
+                                        antigenicMapLong, antigenicMapShort, numberStrains)
+    }
     titres <- rep(titres, each=repeats)
     samplingTimes <- rep(samplingTimes, dataIndices)
     samplingTimes <- rep(samplingTimes, each=repeats)
@@ -248,10 +257,17 @@ simulate_data <- function(parTab, group=1,n_indiv,buckets=12,
                           useSIR=FALSE,
                           useSpline=TRUE,
                           pInf=NULL,
-                          repeats=1){
+                          repeats=1,
+                          musIndices=NULL){
     ## Extract parameters
     pars <- parTab$values
     names(pars) <- parTab$names
+    if(!is.null(musIndices)){
+        mus <- parTab[parTab$identity == 3,"values"]
+        pars <- parTab[parTab$identity == 1,"values"]
+        names(pars) <- parTab[parTab$identity==1,"names"]
+    }
+    lambda_pars <- parTab[parTab$identity == 2,"values"]
 
     ## Create antigenic map for short and long term boosting
     antigenicMap1 <- outputdmatrix.fromcoord(antigenicMap[,c("x_coord","y_coord")])
@@ -275,15 +291,17 @@ simulate_data <- function(parTab, group=1,n_indiv,buckets=12,
             pInf <- simulate_attack_rates(strainIsolationTimes, simInfPars["mean"],simInfPars["sd"],TRUE,simInfPars["bigMean"])
         }
     }
-    ## Simulate infection histories
-    tmp <- simulate_infection_histories(pInf, simInfPars["logSD"], strainIsolationTimes, samplingTimes, ages)
+    ## Simulate infection histories    
+    tmp <- simulate_infection_histories(pInf, simInfPars["logSD"], strainIsolationTimes,
+                                        samplingTimes, ages)
     
     infHist <- tmp[[1]]
     ARs <- tmp[[2]]
 
     ## Simulate titre data
     y <- simulate_group(n_indiv, pars, infHist, strainIsolationTimes, samplingTimes,
-                        nsamps, antigenicMapLong,antigenicMapShort,repeats)
+                        nsamps, antigenicMapLong,antigenicMapShort,repeats,
+                        mus, musIndices)
 
     ## Randomly censor titre values
     y$titre <- y$titre*sample(c(NA,1),nrow(y),prob=c(titreSensoring,1-titreSensoring),replace=TRUE)

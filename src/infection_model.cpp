@@ -460,3 +460,6 @@ NumericVector create_cross_reactivity_vector(NumericVector x, double sigma) {
   }
   return(x2);
 }
+
+
+ 

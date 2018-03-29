@@ -9,7 +9,7 @@ simulate_data(parTab, group = 1, n_indiv, buckets = 12,
   sampleSensoring = 0, titreSensoring = 0, ageMin = 5, ageMax = 80,
   simInfPars = c(mean = 0.15, sd = 0.5, bigMean = 0.5, logSD = 1),
   theta = rep(0.1, 5), knots = c(0.33, 0.66), useSIR = FALSE,
-  useSpline = TRUE, pInf = NULL, repeats = 1)
+  useSpline = TRUE, pInf = NULL, repeats = 1, musIndices = NULL)
 }
 \arguments{
 \item{parTab}{the full parameter table controlling parameter ranges and values}

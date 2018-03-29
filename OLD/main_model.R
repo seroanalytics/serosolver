@@ -21,7 +21,7 @@ registerDoMC(4)  #change the 2 to your number of CPU cores
 getDoParWorkers()
 
 
-setwd("~/Documents/serology-model/R/") # set R directory
+setwd("~/Documents/Fluscape/serosolver/OLD/") # set R directory
 if(Sys.info()["user"]=="adamkuchars") { setwd("~/Documents/serosolver/R") }  # set R directory
 
 
@@ -54,11 +54,11 @@ antigenic_map = read.csv("../data/antigenic_map.csv") # load antigenic locations
 # Parameters currently specified within the function (see "sero_functions.R")
 
 kk=1
-simulation.infer(seed_i=kk, # Set seed
-                 mcmc.iterations=20,  # MCMC iterations
+res <- simulation.infer(seed_i=kk, # Set seed
+                 mcmc.iterations=50000,  # MCMC iterations
                  flu.type="H3HN", # Flu name
                  fit.map=antigenic_map, # Antigenic map input
-                 fix.param=NULL, # Add noise to input parameters?
+                 fix.param="vary.init", # Add noise to input parameters?
                  vp1=0.4 # Proportion of infection histories to resample each step
                  ) 
 

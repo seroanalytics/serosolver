@@ -126,6 +126,39 @@ create_cross_reactivity_vector <- function(x, sigma) {
     .Call('_serosolver_create_cross_reactivity_vector', PACKAGE = 'serosolver', x, sigma)
 }
 
+#' Model function
+#'
+#' The main model solving function for a single individual.
+#' NOTES:
+#' - Do we want infection history to be a vector of infection times?
+#' - Treat the contents of infectionHistory as a parameter (ie. exposure type)
+#' @param theta NumericVector, the named vector of model parameters
+#' @param mus NumericVector, the vector of boosting parameters corresponding to each circulation time
+#' @param boostingVecIndices, which index in the mus vector does each potential infection correspond to?
+#' @param infectionHistory IntegerVector, the vector of 1s and 0s showing presence/absence of infection for each possible time. 
+#' @param infectionTimes NumericVector, the actual times of circulation that the infection history vector corresponds to
+#' @param infectionMapIndices IntegerVector, which entry in the melted antigenic map that these infection times correspond to
+#' @param samplingTime double, the real time that the sample was taken
+#' @param measurementMapIndices IntegerVector, the indices of all measured strains in the melted antigenic map
+#' @param antigenicMapLong NumericVector, the collapsed cross reactivity map for long term boosting, after multiplying by sigma1
+#' @param antigenicMapShort NumericVector, the collapsed cross reactivity map for short term boosting, after multiplying by sigma2
+#' @param numberStrains int, the maximum number of infections that an individual could experience
+#' @return NumericVector of predicted titres for each entry in measurementMapIndices
+#' @useDynLib serosolver
+#' @export
+infection_model_indiv_mus <- function(theta, mus, infectionHistory, infectionTimes, boostingVecIndices, infectionMapIndices, samplingTime, measurementMapIndices, antigenicMapLong, antigenicMapShort, numberStrains) {
+    .Call('_serosolver_infection_model_indiv_mus', PACKAGE = 'serosolver', theta, mus, infectionHistory, infectionTimes, boostingVecIndices, infectionMapIndices, samplingTime, measurementMapIndices, antigenicMapLong, antigenicMapShort, numberStrains)
+}
+
+#' @export
+titre_data_individual_mus <- function(theta, mus, infectionHistory, circulationTimes, circulationMapIndices, musIndices, samplingTimes, dataIndices, measuredMapIndices, antigenicMapLong, antigenicMapShort, numberStrains) {
+    .Call('_serosolver_titre_data_individual_mus', PACKAGE = 'serosolver', theta, mus, infectionHistory, circulationTimes, circulationMapIndices, musIndices, samplingTimes, dataIndices, measuredMapIndices, antigenicMapLong, antigenicMapShort, numberStrains)
+}
+
+titre_data_group_mus <- function(theta, mus, infectionHistories, circulationTimes, circulationMapIndices, musIndices, samplingTimes, indicesTitreDataSample, indicesTitreDataOverall, indicesSamples, measuredMapIndices, antigenicMapLong, antigenicMapShort) {
+    .Call('_serosolver_titre_data_group_mus', PACKAGE = 'serosolver', theta, mus, infectionHistories, circulationTimes, circulationMapIndices, musIndices, samplingTimes, indicesTitreDataSample, indicesTitreDataOverall, indicesSamples, measuredMapIndices, antigenicMapLong, antigenicMapShort)
+}
+
 #' Fast infection history proposal function
 #' 
 #' Proposes a new matrix of infection histories using a beta binomial proposal distribution. This particular implementation allows for nInfs epoch times to be changed with each function call. Furthermore, the size of the swap step is specified for each individual by moveSizes.
