@@ -1,3 +1,26 @@
+#' @export
+SampleTheta<-function(theta_initial,m,covartheta,covarbasic,nparam){
+  
+  # sample from multivariate normal distribution - no adaptive sampling
+  theta_star = as.numeric(exp(mvrnorm(1,log(theta_initial), Sigma=covarbasic)))
+  
+  names(theta_star)=names(theta_initial)
+  
+  # reflective boundary condition for max boost=10
+  mu1=min(20-theta_star[["mu"]],theta_star[["mu"]])
+  theta_star[["mu"]]=ifelse(mu1<0,theta_initial[["mu"]],mu1)
+  
+  #mu2=min(20-theta_star[["muShort"]],theta_star[["muShort"]])
+  #theta_star[["muShort"]]=ifelse(mu2<0,theta_initial[["muShort"]],mu2)
+  
+  # reflective boundary condition for wane function = max is 1 for now # DEBUG
+  wane2=min(2-theta_star[["wane"]],theta_star[["wane"]])
+  theta_star[["wane"]]=ifelse(wane2<0,theta_initial[["wane"]],wane2)
+  
+  #print(rbind(theta_initial,theta_star1,theta_star2))
+  return(thetaS=theta_star)
+}
+
 #' Multivariate proposal function
 #'
 #' Given the current parameters and a covariance matrix, returns a vector for a proposed jump from a multivariate normal distribution
@@ -16,19 +39,12 @@
 #' @useDynLib serosolver
 mvr_proposal <- function(values, fixed, covMat, covMat0 = NULL, useLog=FALSE, beta=0.05, lower=NULL, upper=NULL){
     proposed <- values
-    #tmp <- logit_transform(proposed, upper)
-    proposed[fixed] <- (1-beta)*MASS::mvrnorm(n=1,mu=proposed[fixed],Sigma=(5.6644/length(fixed))*covMat) +
-        beta*MASS::mvrnorm(n=1,mu=proposed[fixed],Sigma=(0.01/length(fixed))*covMat0)
-    #proposed <- logistic_transform(tmp, upper)
+    proposed[fixed] <- as.numeric(exp(MASS::mvrnorm(1,log(values[fixed]), Sigma=covMat0)))
+
+                                        # reflective boundary condition for max boost=10
+    
     return(proposed)
-    #proposed[fixed] <- rtmvnorm(1, mean=proposed[fixed], lower=lower[fixed], upper=upper[fixed],algorithm="gibbs",sigma=covMat)
-    #beta*MASS::mvrnorm(n=1,mu=proposed[fixed],Sigma=(0.01/length(fixed))*covMat0)
-    #probs_forward <- dtmvnorm(x=proposed[fixed],mean=values[fixed],lower=lower[fixed],upper=upper[fixed],sigma=covMat,log=TRUE)
-    #probs_back <- dtmvnorm(x=values[fixed], mean=proposed[fixed], lower=lower[fixed],upper=upper[fixed],sigma=covMat,log=TRUE)
-    #acceptance <- probs_back - probs_forward
-    #acceptance <- 0
-    #print(acceptance)
-    #return(list(proposed,acceptance))
+  
                                         # Sample either from a single covariance matrix or weighted average of the identity matrix and
                                         # given cov matrix, if specified. On either a log or linear scale.
     if(is.null(covMat0)){
@@ -105,8 +121,8 @@ infection_history_symmetric<- function(newInfHist, sampledIndivs, ageMask, moveS
             id2 <- id1 + move
 
             ## Control boundaries
-            if(id2 < 1) id2 <- maxI + id2
-            if(id2 > maxI) id2 <- id2 - maxI
+            if(id2 < 1) id2 <- (move %% maxI) + id1
+            if(id2 > maxI) id2 <- (id2-1) %% maxI + 1
 
             ## Swap the contents of these locations
             tmp <- x[id1]
@@ -138,7 +154,7 @@ infection_history_betabinom <- function(newInfHist, sampledIndivs, ageMask, move
         maxI <- length(x)
         rand1 <- runif(1)
         ## With prob 0.5 swap or move/add
-        if(rand1 < 0.5){
+        if(rand1 < 1/2){
             ## Choose a location
             loc <- sample(length(x), 1)            
             x_new <- x_old <- x
@@ -178,8 +194,8 @@ infection_history_betabinom <- function(newInfHist, sampledIndivs, ageMask, move
             id2 <- id1 + move
 
             ## Control boundary conditions
-            if(id2 < 1) id2 <- maxI + id2
-            if(id2 > maxI) id2 <- id2 - maxI
+            if(id2 < 1) id2 <- (move %% maxI) + id1
+            if(id2 > maxI) id2 <- (id2-1) %% maxI + 1
 
             ## Swap contents
             tmp <- x[id1]
@@ -222,8 +238,14 @@ infection_history_betabinom_group <- function(newInfHist, sampledIndivs, ageMask
                 moveMax <- moveSizes[indiv]
                 move <- sample(-moveMax:moveMax,1)
                 id2 <- id1 + move
-                if(id2 < 1) id2 <- maxI + id2
-                if(id2 > maxI) id2 <- id2 - maxI
+                #message(cat("ID1: ", id1,sep="\t"))
+                #message(cat("Move: ", move,sep="\t"))
+                #message(cat("maxI: ", maxI,sep="\t"))
+                if(id2 < 1) id2 <- (move %% maxI) + id1
+                if(id2 > maxI) id2 <- (id2-1) %% maxI + 1
+
+                #message(cat("ID2: ", id2,sep="\t"))
+
                 tmp <- x[id1]
                 x[id1] <- x[id2]
                 x[id2] <- tmp
@@ -332,6 +354,7 @@ ComputeProbability<-function(marg_likelihood,marg_likelihood_star){
 #' @param sample_prob given an infection seems likely based on titre, suggest infection with some probability
 #' @param titre_cutoff specifies how high the titre must be to imply an infection
 #' @return an nxm matrix of infection histories containing 1s and 0s, where n is the number of individuals and m is the number of potential infecting strains
+#' @export
 setup_infection_histories_OLD <- function(dat, strainIsolationTimes, ageMask,sample_prob, titre_cutoff=3){
     # 
     SAMPLE_PROB <- sample_prob

@@ -97,7 +97,6 @@ run_MCMC <- function(parTab,
         ## much weighting to give to previous covariance matrix upon adaptive update
         tempaccepted <- tempiter <- reset <- 0
         covMat <- mvrPars[[1]][unfixed_pars,unfixed_pars]
-        covMat0 <- diag(unfixed_par_length)
         steps <- mvrPars[[2]]
         w <- mvrPars[[3]]
     }
@@ -154,7 +153,7 @@ run_MCMC <- function(parTab,
     ## Setup initial conditions
     infectionHistories = startInfHist
     if(is.null(startInfHist)) infectionHistories <- setup_infection_histories_new(data, ages, strainIsolationTimes, space=5,titre_cutoff=3)
-
+    n_infected <- colSums(infectionHistories)
     ## Initial likelihood
     ## -----------------------
     ## NOTE
@@ -192,6 +191,10 @@ run_MCMC <- function(parTab,
     par_i <- 1
     chain_index <- 1
     last_index <- 1
+
+    cov_matrix_theta0 <- diag(unfixed_pars)
+    epsilon0 <- 0.01
+    cov_matrix_basic <- epsilon0*cov_matrix_theta0
 #####################
     ## MCMC ALGORITHM
 #####################
@@ -215,9 +218,13 @@ run_MCMC <- function(parTab,
                 tempiter[j] <- tempiter[j] + 1
                 ## If using multivariate proposals
             } else {
+                if(i > 1){
+                    epsilon0=max(0.00001,min(1,exp(log(epsilon0)+(accept_rateT-0.234)*0.999^i)))
+                    cov_matrix_basic=epsilon0*cov_matrix_theta0
+                }
                 ## NOTE
                 ## MIGHT WANT TO USE ADAM'S PROPOSAL FUNCTION
-                tmp <- mvr_proposal(current_pars, unfixed_pars, steps*covMat, covMat0, TRUE, beta=0.05,lower=lower_bounds, upper=upper_bounds)
+                tmp <- mvr_proposal(current_pars, unfixed_pars, steps*covMat, cov_matrix_basic, TRUE, beta=0.05,lower=lower_bounds, upper=upper_bounds)
                 proposal <- tmp
                 #acceptance <- tmp[[2]]
                 #message(cat("Proposal: ", proposal,sep="\t"))
@@ -241,6 +248,7 @@ run_MCMC <- function(parTab,
                 newInfectionHistories <- newInfectionHistories[[1]]
             } else if(histProposal==3){
                 newInfectionHistories <- inf_hist_prop_cpp(infectionHistories,indivSubSample,ageMask,moveSizes, nInfs_vec, alpha,beta,randNs)
+                #newInfectionHistories <- infection_history_betabinom_group(infectionHistories,indivSubSample,ageMask,moveSizes, nInfs_vec, alpha,beta)
             } else if(histProposal==4){
                 tmp <- infection_history_proposal(infectionHistories, indivSubSample, strainIsolationTimes, ageMask,nInfs_vec)
                 #acceptance <- tmp[[2]]
@@ -331,6 +339,15 @@ run_MCMC <- function(parTab,
         ## ADAPTIVE PERIOD
 ##############################
         ## If within adaptive period, need to do some adapting!
+        if(i < max(100)){
+            accept_rateT=0.234
+        } else {
+            accept_rateT=sum(tempaccepted)/sum(tempiter)
+        }
+        if(i %% 1000 == 0) message(cat("Accept rate: ", accept_rateT,sep="\t"))
+
+  
+        
         if(i > (adaptive_period + burnin) & i %% opt_freq == 0){
             pcur <- tempaccepted/tempiter ## get current acceptance rate
             message(cat("Pcur: ", pcur,sep="\t"))

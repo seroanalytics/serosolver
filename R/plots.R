@@ -357,14 +357,21 @@ plot_attack_rates_monthly<- function(infectionHistories, dat, ages, yearRange,ym
 #' @param dat the data frame of titre data
 #' @param ages the data frame of ages for each individual, with columns for individual and DOB (date of birth)
 #' @param yearRange vector of the first and last epoch of potential circulation
+#' @param n_alive
+#' @param pointsize
+#' @param fatten
 #' @return a ggplot2 object with the inferred attack rates for each potential epoch of circulation
 #' @export
-plot_attack_rates <- function(infectionHistories, dat, ages, yearRange,n_alive=NULL){
+plot_attack_rates <- function(infectionHistories, dat, ages, yearRange,n_alive=NULL,pointsize=1, fatten=1){
     ## Find inferred total number of infections from the MCMC output
     ##tmp <- plyr::ddply(infectionHistories,~sampno,function(x) colSums(x[,1:(ncol(infectionHistories)-2)]))
     ## Scale by number of individuals that were alive in each epoch
     ## and generate quantiles
-    if(is.null(n_alive)) n_alive <- sapply(yearRange, function(x) nrow(ages[ages$DOB <= x,]) )
+    if(is.null(n_alive)){
+        if(is.null(ages)) n_alive <- length(unique(dat$individual))
+        else n_alive <- sapply(yearRange, function(x) nrow(ages[ages$DOB <= x,]) )
+    }
+
     ##quantiles <- apply(tmp[,2:ncol(tmp)],2, function(x) quantile(x,c(0.025,0.5,0.975)))
     data.table::setkey(infectionHistories, "sampno","j")
     tmp <- infectionHistories[,list(V1=sum(x)),by=key(infectionHistories)]
@@ -380,7 +387,7 @@ plot_attack_rates <- function(infectionHistories, dat, ages, yearRange,n_alive=N
     quantiles$taken <- ifelse(quantiles$taken,"Yes","No")
     
     p <- ggplot(quantiles) + 
-        geom_pointrange(aes(x=year,y=median,ymin=lower,ymax=upper,col=taken)) +
+        geom_pointrange(aes(x=year,y=median,ymin=lower,ymax=upper,col=taken),size=pointsize, fatten=fatten) +
         scale_y_continuous(limits=c(-0.1,1),expand=c(0,0)) +  
         theme_bw() +
         #theme(text=element_text(family="Arial")) +

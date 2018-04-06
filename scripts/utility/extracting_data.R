@@ -4,8 +4,8 @@ setwd("~/Documents/Fluscape/serosolver")
 fluscapeWD <- "~/Documents/Fluscape"
 devtools::load_all()
 setwd(fluscapeWD)
-resolution <- "monthly"
-buckets <- 12
+resolution <- "annual"
+buckets <- 1
 use_buckets <- 12/buckets
 firstYear <- 1968
 lastYear <- 2015
@@ -150,7 +150,7 @@ finalDat <- finalDat[complete.cases(finalDat),]
 finalDat <- plyr::ddply(finalDat,.(group,individual,virus,samples),function(x) cbind(x,"run"=1:nrow(x)))
 finalDat <- finalDat[order(finalDat$group,finalDat$individual,finalDat$samples,finalDat$run),c("group","individual","samples","virus","titre","run")]
 
-finalDat$samples <- ceiling(finalDat$samples/use_buckets)
+finalDat$samples <- floor(finalDat$samples/use_buckets)
 finalDat$virus <- ceiling(finalDat$virus/use_buckets)
 ages$DOB <- ceiling(ages$DOB/use_buckets)
 

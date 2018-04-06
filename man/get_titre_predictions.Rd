@@ -5,7 +5,8 @@
 \title{Generate titre credible intervals}
 \usage{
 get_titre_predictions(chain, infectionHistories, titreDat, individuals,
-  antigenicMap, ages, parTab, nsamp = 100, addResiduals = FALSE)
+  antigenicMap, ages, parTab, nsamp = 100, addResiduals = FALSE,
+  mu_indices = NULL, for_res_plot = FALSE)
 }
 \arguments{
 \item{chain}{the full MCMC chain to generate titre trajectories from}

@@ -5,7 +5,7 @@
 \title{Plots infection histories and titre model fits}
 \usage{
 plot_infection_histories(chain, infectionHistories, dat, individuals,
-  antigenicMap, ages, parTab, nsamp = 100)
+  antigenicMap, ages, parTab, nsamp = 100, mu_indices = NULL)
 }
 \arguments{
 \item{chain}{the full MCMC chain to generate titre trajectories from}

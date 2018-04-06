@@ -6,10 +6,10 @@ library(data.table)
 
 ## Set working directory and load code
 setwd("~/Documents/Fluscape/serosolver")
-#devtools::load_all()
+devtools::load_all()
 
 ## How many individuals to simulate?
-n_indiv <- 1000
+n_indiv <- 100
 
 ## Which infection history proposal version to use?
 describe_proposals()
@@ -18,10 +18,10 @@ histProposal <- 3
 ## Buckets indicates the time resolution of the analysis. Setting
 ## this to 1 uses annual epochs, whereas setting this to 12 gives
 ## monthly epochs
-buckets <- 12
+buckets <- 1
 
 ## The general output filename
-filename <- "chains/test"
+filename <- "chains/prior_check"
 
 ## Read in parameter table to simulate from and change waning rate if necessary
 parTab <- read.csv("~/Documents/Fluscape/serosolver/inputs/parTab.csv",stringsAsFactors=FALSE)
@@ -52,7 +52,7 @@ strainIsolationTimes <- unique(fit_dat$inf_years)
 ## Setting to c(1,1) gives uniform distribution on total number of infections
 parTab[parTab$names %in% c("alpha","beta"),"values"] <- find_a_b(length(strainIsolationTimes),7,50)
 
-#parTab[parTab$names %in% c("alpha","beta"),"values"] <- c(2,1)
+parTab[parTab$names %in% c("alpha","beta"),"values"] <- c(1,1)
 #parTab[parTab$names %in% c("mu","mu_short","sigma1","sigma2"),"values"] <- c(2,2,0.3,0.1)
 ## Simulate some fake data
 dat <- simulate_data(parTab, 1, n_indiv, buckets,strainIsolationTimes,
@@ -103,16 +103,18 @@ startTab$values <- startPar
 startTab[startTab$names == "wane","values"] <- 0.99
 ## Specify paramters controlling the MCMC procedure
 mcmcPars <- c("iterations"=50000,"popt"=0.44,"popt_hist"=0.44,"opt_freq"=1000,"thin"=01,"adaptive_period"=20000,
-              "save_block"=100,"thin2"=10,"histSampleProb"=0.1,"switch_sample"=2, "burnin"=0, 
-              "nInfs"=1, "moveSize"=2, "histProposal"=histProposal, "histOpt"=1)
+              "save_block"=100,"thin2"=10,"histSampleProb"=1,"switch_sample"=2, "burnin"=0, 
+              "nInfs"=1, "moveSize"=2, "histProposal"=3, "histOpt"=1)
 
 ## Run the MCMC using the inputs generated above
 #Rprof(tmp <- tempfile())
 #devtools::load_all()
 #system.time(
 titreDat <- titreDat[titreDat$run == 1,]
-res <- run_MCMC(startTab, titreDat, mcmcPars, filename=filename,
-                create_post_func, NULL, PRIOR=NULL,version=1, 0.2, 
+
+parTab[parTab$names %in% c("alpha","beta"),"values"] <- c(1,1)
+res <- run_MCMC(parTab, titreDat, mcmcPars, filename=filename,
+                create_post_func, mvrPars, PRIOR=NULL,version=2, 0.2, 
                 fit_dat, ages=ages, 
                 startInfHist=infHist)
 #)
@@ -137,7 +139,7 @@ infChain <- data.table::fread(res$history_file)
 infChain <- infChain[infChain$sampno >= (mcmcPars["adaptive_period"]+mcmcPars["burnin"]),]
 xs <- min(strainIsolationTimes):max(strainIsolationTimes)
 colnames(AR) <- c("year","AR")
-arP1 <- plot_attack_rates(infChain, titreDat,ages,xs) + geom_point(data=AR,aes(x=year,y=AR), col="green")
+arP1 <- plot_attack_rates(infChain, titreDat,ages,xs, n_alive) + geom_point(data=AR,aes(x=year,y=AR), col="green")
 
 
 ## Density/trace plots on total number of infections

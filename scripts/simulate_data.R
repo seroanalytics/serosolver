@@ -8,10 +8,10 @@ library(data.table)
 setwd("~/Documents/Fluscape/serosolver")
 devtools::load_all()
 saveWD <- "~/net/home/serosolver/data_LSA/"
-filename <- "sim_1000"
+filename <- "vietnam_sim"
 
 ## How many individuals to simulate?
-n_indiv <- 1000
+n_indiv <- 69
 
 ## Buckets indicates the time resolution of the analysis. Setting
 ## this to 1 uses annual epochs, whereas setting this to 12 gives
@@ -26,16 +26,16 @@ parTab[parTab$names == "wane","values"] <- parTab[parTab$names == "wane","values
 
 ## Possible sampling times
 samplingTimes <- seq(2010*buckets, 2015*buckets, by=1)
-#samplingTimes <- 2007:2012
-nsamps <- 2
-repeats <- 1
+samplingTimes <- 2007:2012
+nsamps <- 6
+repeats <- 6
 
 ############################
 ## SIMULATE ATTACK RATES
 ############################
 ## If using HaNam sim, use ARs from Adam's code
-#hAR <- read.table("~/net/home/serosolver/data_LSA/HaNam_AR.txt",header=TRUE)
-#hAR <- hAR[,1]
+hAR <- read.table("~/net/home/serosolver/data_LSA/HaNam_AR.txt",header=TRUE)
+hAR <- hAR[,1]
 #hAR <- c(0.654, 0.965, 0.392, 0.215, 0.131, 0.0734, 0.107, 0.139, 0.13, 
 #         0.0557, 0.0173, 0.0086, 0.0196, 0.00401, 0.00403, 0.0499, 0.222, 
 #         0.799, 0.0193, 0.00724, 0.0112, 0.00443, 0.00369, 0.0282, 0.491, 
@@ -52,7 +52,7 @@ repeats <- 1
 ## Antigenic map for cross reactivity parameters
 antigenicMap <- read.csv("~/Documents/Fluscape/fluscape/trunk/data/Fonville2014AxMapPositionsApprox.csv",stringsAsFactors=FALSE)
 fit_dat <- generate_antigenic_map(antigenicMap, buckets)
-#fit_dat <- read.csv("data/antigenicMap_AK.csv")
+fit_dat <- read.csv("data/antigenicMap_AK.csv")
 
 ## Rename circulation years based on isolation time
 virus_key <- c("HK68"=1968, "EN72"=1972, "VI75"=1975, "TX77"=1977, "BK79"=1979, "SI87"=1987, "BE89"=1989, "BJ89"=1989,
@@ -68,7 +68,7 @@ parTab[parTab$names %in% c("alpha","beta"),"values"] <- find_a_b(length(strainIs
 ## Simulate some fake data
 dat <- simulate_data(parTab, 1, n_indiv, buckets,strainIsolationTimes,
                      samplingTimes, nsamps, antigenicMap=fit_dat, 0, 0, 10*buckets,75*buckets,
-                     simInfPars=c("mean"=0.15,"sd"=0.5,"bigMean"=0.5,"logSD"=1),useSIR=TRUE,pInf=NULL,
+                     simInfPars=c("mean"=0.15,"sd"=0.5,"bigMean"=0.5,"logSD"=1),useSIR=TRUE,pInf=hAR,
                      useSpline=FALSE,
                      repeats=repeats)
 
@@ -85,7 +85,9 @@ HaNam_viruses <- c(1968, 1972, 1976, 1982, 1989, 1992, 1993, 1994, 1995, 1996,
 titreDat <- dat[[1]]
 
 ## Create identifier for repeats
-#titreDat$run <- NULL
+titreDat$run <- NULL
+
+titreDat <- plyr::ddply(titreDat,.(individual,virus,samples),function(x) cbind(x,"run"=1:nrow(x)))
 #for(indiv in unique(titreDat$individual)){
 #  print(indiv)
 #  tmp1 <- titreDat[titreDat$individual == indiv,]
@@ -99,18 +101,21 @@ titreDat <- dat[[1]]
 #  }
 #}
 
-#titreDat <- titreDat[order(titreDat$individual,titreDat$run,titreDat$samples,titreDat$virus),]
+titreDat <- titreDat[order(titreDat$individual,titreDat$run,titreDat$samples,titreDat$virus),]
 
 ## Merge with HaNam data to get same dimensions
+res <- read.csv("~/Documents/Fluscape/serosolver/data/vietnam_data.csv")
+wow <- dplyr::inner_join(res[,c("individual","samples","virus","run")], titreDat[,c("individual","samples","virus","run")])
+titreDat <- dplyr::left_join(wow, titreDat)
 #res <- read.csv("~/net/home/serosolver/data_LSA/HaNam_samples.csv")
 #titreDat <- merge(res[,c("individual","samples","virus","run")], titreDat)
 #titreDat <- titreDat[order(titreDat$individual,titreDat$run,titreDat$samples,titreDat$virus),]
-titreDat <- titreDat[titreDat$virus %in% viruses,]
+#titreDat <- titreDat[titreDat$virus %in% viruses,]
 infectionHistories <- infHist <- dat[[2]]
 ages <- dat[[3]]
 AR <- dat[[4]]
 
-
+saveWD <- "~/Documents/Fluscape/serosolver/data/"
 write.table(parTab,paste0(saveWD,filename,"_pars_",buckets,".csv"),row.names=FALSE,sep=",")
 write.table(titreDat,paste0(saveWD,filename,"_dat_",buckets,".csv"),row.names=FALSE,sep=",")
 write.table(infHist,paste0(saveWD,filename,"_infHist_",buckets,".csv"),row.names=FALSE,sep=",")

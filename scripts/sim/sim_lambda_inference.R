@@ -9,11 +9,11 @@ setwd("~/Documents/Fluscape/serosolver")
 devtools::load_all()
 
 ## How many individuals to simulate?
-n_indiv <-100
+n_indiv <- 69
 
 ## Which infection history proposal version to use?
 describe_proposals()
-histProposal <- 1
+histProposal <- 4
 
 ## Buckets indicates the time resolution of the analysis. Setting
 ## this to 1 uses annual epochs, whereas setting this to 12 gives
@@ -21,7 +21,7 @@ histProposal <- 1
 buckets <- 1
 
 ## The general output filename
-filename <- "chains/test_lambda_correct"
+filename <- "chains/vietnam_original_sim"
 
 ## Read in parameter table to simulate from and change waning rate if necessary
 parTab <- read.csv("~/Documents/Fluscape/serosolver/inputs/parTab_lambda.csv",stringsAsFactors=FALSE)
@@ -37,7 +37,7 @@ samplingTimes <- seq(2010*buckets, 2015*buckets, by=1)
 ## Antigenic map for cross reactivity parameters
 antigenicMap <- read.csv("~/Documents/Fluscape/fluscape/trunk/data/Fonville2014AxMapPositionsApprox.csv",stringsAsFactors=FALSE)
 fit_dat <- generate_antigenic_map(antigenicMap, buckets)
-
+fit_dat <- read.csv("~/Documents/Fluscape/serosolver/data/antigenicMap_AK.csv")
 ## Rename circulation years based on isolation time
 virus_key <- c("HK68"=1968, "EN72"=1972, "VI75"=1975, "TX77"=1977, "BK79"=1979, "SI87"=1987, "BE89"=1989, "BJ89"=1989,
                "BE92"=1992, "WU95"=1995, "SY97"=1997, "FU02"=2002, "CA04"=2004, "WI05"=2005, "PE06"=2006)*buckets
@@ -51,7 +51,7 @@ p1 <- ggplot(antigenicMap) +
   theme_bw()
 
 ## All possible circulation times
-fit_dat <- fit_dat[fit_dat$inf_years >= 1968*buckets & fit_dat$inf_years <= 2015*buckets,]
+fit_dat <- fit_dat[fit_dat$inf_years >= 1968*buckets & fit_dat$inf_years <= 2012*buckets,]
 strainIsolationTimes <- unique(fit_dat$inf_years)
 
 ## Add rows for each lambda value to be inferred
@@ -87,10 +87,6 @@ ages <- dat[[3]]
 AR <- dat[[4]]
 
 ## If we want to use pre-simulated data
-#titreDat <- read.csv("data/sim_1000_titres.csv",stringsAsFactors=FALSE)
-#ages <- read.csv("data/sim_1000_ages.csv",stringsAsFactors=FALSE)
-#infectionHistories <- infHist <- read.csv("data/sim_1000_infHist.csv",stringsAsFactors=FALSE)
-#AR <- read.csv("data/sim_1000_AR.csv",stringsAsFactors=FALSE)
 
 #write.table(titreDat,"~/net/home/serosolver/data/sim_1000_data.csv",sep=",",row.names=FALSE)
 #write.table(infHist,"~/net/home/serosolver/data/sim_1000_infHist.csv",sep=",",row.names=FALSE)
@@ -128,7 +124,7 @@ scale <- 0.5
 w <- 1
 mvrPars <- list(covMat, scale, w)
 ageMask <- create_age_mask(ages, strainIsolationTimes,n_indiv)
-f <- create_post_func(parTab=startTab,data=titreDat,antigenicMap=fit_dat,PRIOR_FUNC = NULL,version=4, ageMask=ageMask)
+f <- create_post_func(parTab=startTab,data=titreDat,antigenicMap=fit_dat,PRIOR_FUNC = NULL,version=1, ageMask=ageMask)
 parTab[parTab$names == "lambda","values"] <- lambdas
 (f(startTab$values, infHist))
 startTab[startTab$names %in% c("alpha","beta"),"values"] <- c(1,1)
@@ -139,7 +135,7 @@ lambdas_start <- NULL
 for(year in 1:ncol(startInf)){ lambdas_start[year] <- (sum(startInf[,year])/sum(ages$DOB <= strainIsolationTimes[year]))}
 startTab[startTab$names == "lambda","values"] <- lambdas_start
 #parTab[parTab$names == "lambda","fixed"] <- 1
-res <- run_MCMC(startTab, titreDat, mcmcPars, filename=filename,
+res <- run_MCMC(parTab, titreDat, mcmcPars, filename=filename,
                 create_post_func, NULL,NULL,version=4, 0.2, 
                 fit_dat, ages=ages, 
                 startInfHist=startInf)

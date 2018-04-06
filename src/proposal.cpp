@@ -56,27 +56,41 @@ arma::mat inf_hist_prop_cpp(arma::mat infHist,
 
     // Isolate that individual's infection histories
     indiv = sampledIndivs[i]-1;
+    //Rcpp::Rcout << "individual: " << indiv << std::endl;
     nInf = nInfs[indiv];
     x = newInfHist.submat(indiv, ageMask[indiv]-1, indiv, maxI-1);
     samps = seq_len(x.n_cols);
-
     // With 50% probability, add/remove infections or swap infections
     if(randNs[i] < 1.0/2.0){
-
+      /*
+      Rcpp::Rcout << "Indiv: " << indiv << std::endl;
+      Rcpp::Rcout << "ageMask: " << ageMask[indiv]-1 << std::endl;
+      Rcpp::Rcout << "nInf: " << nInf << std::endl;
+      Rcpp::Rcout << "Inf hist: " << x << std::endl;
+      Rcpp::Rcout << "Samps: " << samps << std::endl;
+      */
       // Sample N random locations
       locs = RcppArmadillo::sample(samps, nInf, FALSE, NumericVector::create());
+      //Rcpp::Rcout << "Available locs: " << locs << std::endl;
       locs1 = as<arma::uvec>(locs)-1;
-      y = newInfHist.row(indiv);
-      y = y.elem(locs1);
-
+      //Rcpp::Rcout << "Locs chosen: " << locs1 << std::endl;
+      //y = newInfHist.row(indiv);
+      //Rcpp::Rcout << "y: " << y << std::endl;
+      y = x.elem(locs1);
+      //Rcpp::Rcout << "locations chosen contents: " << y << std::endl;
       // Count the number of 1s and 0s
       k = accu(x) - accu(y);
+      //Rcpp::Rcout << "Infections less sampled: " << k << std::endl;
       n = x.size() - nInf;
+      //Rcpp::Rcout << "N less sampled: " << n << std::endl;
+
       
       // For each sampled location, choose to turn into a 1 or 0 depending
       // on the beta binomial distribution.
       for(int j = 0; j < nInf; ++j){
+	//Rcpp::Rcout << "Alpha: " << alpha << "; beta: " << beta << std::endl;
         ratio = (alpha + k)/(alpha + beta + n);
+	//Rcpp::Rcout << "ratio: " << ratio << std::endl;
         rand1 = R::runif(0,1);
 	// With probability 'ratio', add a 1. ie. if many 1s already, less likely
 	// to add more 1s depending on alpha and beta
@@ -90,16 +104,17 @@ arma::mat inf_hist_prop_cpp(arma::mat infHist,
       }
     } else {
       // Otherwise, swap the contents of N random locations
-      maxI_indiv = x.size()-1;
+      maxI_indiv = x.size();
       IntegerVector moves;
       for(int j = 0; j < nInf; j++){
         id1 = floor(R::runif(0,1)*x.size());
         moveMax = moveSizes[indiv];
         move = floor(R::runif(0,1)*2*moveMax) - moveMax;
         id2 = id1 + move;
-        if(id2 < 0) id2 = maxI_indiv + id2;
-        if(id2 > maxI_indiv) id2 = id2 - maxI_indiv;
-        tmp = x[id1];
+	while(id2 < 0) id2 += maxI_indiv;
+        //if(id2 < 0) id2 = (move + id1) % maxI_indiv;
+	if(id2 >= maxI_indiv) id2 = (id2 % maxI_indiv);
+	tmp = x[id1];
         x[id1] = x[id2];
         x[id2] = tmp;
       }

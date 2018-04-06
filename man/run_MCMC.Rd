@@ -9,7 +9,8 @@ run_MCMC(parTab, data, mcmcPars = c(iterations = 50000, popt = 0.44, popt_hist
   thin2 = 100, histSampleProb = 1, switch_sample = 2, burnin = 0, nInfs = 4,
   moveSize = 5, histProposal = 3, histOpt = 1), filename = "test",
   CREATE_POSTERIOR_FUNC, mvrPars = NULL, PRIOR_FUNC = NULL, version = 1,
-  OPT_TUNING = 0.1, antigenicMap, ages = NULL, startInfHist = NULL, ...)
+  OPT_TUNING = 0.1, antigenicMap, ages = NULL, startInfHist = NULL,
+  mu_indices = NULL, ...)
 }
 \arguments{
 \item{parTab}{the parameter table controlling information such as bounds, initial values etc}
