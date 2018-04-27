@@ -104,7 +104,6 @@ run_MCMC <- function(parTab,
     n_groups <- length(unique(data$group)) # How many groups in the data?
     individuals <- 1:n_indiv # Create vector of individuals
     groups <- 1:n_groups # Create vector of groups
-
     ###################
     ## Housekeeping for infection history chain
     ###################
@@ -136,7 +135,6 @@ run_MCMC <- function(parTab,
     ## Setup initial conditions
     infectionHistories = startInfHist
     if(is.null(startInfHist)) infectionHistories <- setup_infection_histories_new(data, ages, strainIsolationTimes, space=5,titre_cutoff=3)
-
     ## Initial likelihood
     ## -----------------------
     ## NOTE
@@ -194,14 +192,19 @@ run_MCMC <- function(parTab,
 ######################
         ## If updating theta
         if(i %% switch_sample != 0){
+          ## If all pars are fixed 
+          if(length(unfixed_pars)==0){
+            proposal <- current_pars ## Set proposal to be current parameters
+            tempiter <- tempiter + 1
+          }else{ ##Else propose parameters
             ## If using univariate proposals
             if(is.null(mvrPars)) {
                 ## For each parameter (Gibbs)
                 j <- unfixed_pars[par_i]
                 par_i <- par_i + 1
                 if(par_i > unfixed_par_length) par_i <- 1
-                proposal <- univ_proposal(current_pars, lower_bounds, upper_bounds, steps,j)
-                tempiter[j] <- tempiter[j] + 1
+                  proposal <- univ_proposal(current_pars, lower_bounds, upper_bounds, steps,j) 
+                  tempiter[j] <- tempiter[j] + 1
                 ## If using multivariate proposals
             } else {
                 ## NOTE
@@ -209,6 +212,7 @@ run_MCMC <- function(parTab,
                 proposal <- mvr_proposal(current_pars, unfixed_pars, steps*covMat, covMat0, FALSE)
                 tempiter <- tempiter + 1
             }
+        }
             ## Calculate new likelihood for these parameters
             new_probabs <- posterior_simp(proposal, infectionHistories)
             new_probab <- sum(new_probabs)
@@ -254,8 +258,13 @@ run_MCMC <- function(parTab,
                     ## difference if not
                     current_pars <- proposal
                     ## Store acceptances
-                    if(is.null(mvrPars)) tempaccepted[j] <- tempaccepted[j] + 1
-                    else tempaccepted <- tempaccepted + 1
+                    ## If all parameters are fixed, then we 'accept'
+                    if(length(unfixed_pars)==0){ 
+                      tempaccepted <- tempaccepted + 1
+                    }else{
+                      if(is.null(mvrPars)) tempaccepted[j] <- tempaccepted[j] + 1
+                      else tempaccepted <- tempaccepted + 1
+                    }
                     probabs <- new_probabs
                     probab <- new_probab
                 }
