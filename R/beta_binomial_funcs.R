@@ -72,6 +72,9 @@ bb_var <- function(n, alpha, beta){
   return(top/bot)
 }
 
+#' Beta binomial histogram
+#'
+#' Plots a histogram of the beta binomial function with given mean and variance
 #' @export
 hist_rbb <- function(n, mean, var){
   pars <- find_a_b(n,mean,var)

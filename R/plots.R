@@ -85,6 +85,8 @@ generate_quantiles <- function(x, sigF=3, qs=c(0.025,0.5,0.975),asText=TRUE){
 #' @param parTab the table controlling the parameters in the MCMC chain
 #' @param nsamp number of samples to take from posterior
 #' @param addResiduals if true, returns an extra output summarising residuals between the model prediction and data
+#' @param  mu_indices vector of integers. for random effects on boosting parameter, mu. If random mus are included in the parameter table, this vector specifies which mu to use for each circulation year. For example, if years 1970-1976 have unique boosting, then mu_indices should be c(1,2,3,4,5,6). If every 3 year block shares has a unique boosting parameter, then this should be c(1,1,1,2,2,2)
+#' @param for_res_plot TRUE/FALSE value. If using the output of this for plotting of residuals, returns the actual data points rather than summary statistics
 #' @return a list with the titre predictions (95% credible intervals, median and multivariate posterior mode) and the probabilities of infection for each individual in each epoch
 #' @export
 get_titre_predictions <- function(chain, infectionHistories, titreDat,
@@ -126,7 +128,7 @@ get_titre_predictions <- function(chain, infectionHistories, titreDat,
     if(is.null(mu_indices)){
         f <- create_post_func(parTab,titreDat,antigenicMap,NULL,100)
     } else {
-        f <- create_post_func_mu(parTab,titreDat,antigenicMap,NULL,100, musIndices=mu_indices)
+        f <- create_post_func_mu(parTab,titreDat,antigenicMap,NULL,100, mu_indices=mu_indices)
     }
     predicted_titres <- residuals <- matrix(nrow=nrow(titreDat),ncol=nsamp)
     samp_record <- numeric(nsamp)
@@ -205,6 +207,7 @@ get_titre_predictions <- function(chain, infectionHistories, titreDat,
 #' @param ages the data frame of ages for each individual, with columns for individual and DOB (date of birth)
 #' @param parTab the table controlling the parameters in the MCMC chain
 #' @param nsamp number of samples to take from posterior
+#' @param mu_indices if random effects on boosting parameter, mu, this specifies which entry in the parameter table corresponds to which year. See \code{\link{run_MCMC}}
 #' @return a ggplot2 object
 #' @export
 plot_infection_histories <- function(chain, infectionHistories, dat,
@@ -212,10 +215,12 @@ plot_infection_histories <- function(chain, infectionHistories, dat,
                                      nsamp=100,
                                      mu_indices=NULL){
     individuals <- individuals[order(individuals)]
+
+    ## Generate titre predictions
     tmp <- get_titre_predictions(chain, infectionHistories,dat, individuals,
                                  antigenicMap,ages, parTab, nsamp, FALSE,mu_indices)
-      ## Take subset of individuals
-   
+
+    ## Use these titre predictions and summary statistics on infection histories
     dens <- tmp[[1]]
     infHist <- tmp[[2]]
     p <- ggplot(dens) + 
@@ -241,7 +246,6 @@ plot_posteriors <- function(chain, parTab,
                             savePlots=FALSE,
                             plotMCMC=TRUE,
                             saveLoc=""){
-
    
     ## Find best parameters and use only free parameters
     best_pars <- get_best_pars(chain)
@@ -302,11 +306,13 @@ plot_posteriors <- function(chain, parTab,
 
 #' Plot historical attack rates monthly
 #'
-#' Plots inferred historical attack rates from the MCMC output on infection histories for monthly
+#' Plots inferred historical attack rates from the MCMC output on infection histories for monthly. The main difference compared to the normal attack rate plot is that pointrange plots don't make as much sense at a very fine time resolution.
 #' @param infectionHistories the MCMC chain for infection histories
 #' @param dat the data frame of titre data
 #' @param ages the data frame of ages for each individual, with columns for individual and DOB (date of birth)
 #' @param yearRange vector of the first and last epoch of potential circulation
+#' @param ymax Numeric. the maximum y value to put on the axis
+#' @param buckets Integer. How many buckets of time is each year split into? ie. 12 for monthly data, 4 for quarterly etc.
 #' @return a ggplot2 object with the inferred attack rates for each potential epoch of circulation
 #' @export
 plot_attack_rates_monthly<- function(infectionHistories, dat, ages, yearRange,ymax=0.1, buckets=1){
@@ -357,9 +363,9 @@ plot_attack_rates_monthly<- function(infectionHistories, dat, ages, yearRange,ym
 #' @param dat the data frame of titre data
 #' @param ages the data frame of ages for each individual, with columns for individual and DOB (date of birth)
 #' @param yearRange vector of the first and last epoch of potential circulation
-#' @param n_alive
-#' @param pointsize
-#' @param fatten
+#' @param n_alive vector with the number of people alive in each year of circulation. Can be left as NULL, and ages will be used to infer this
+#' @param pointsize Numeric - how big should each point be?
+#' @param fatten Numeric - fatten parameter for ggplot pointrange
 #' @return a ggplot2 object with the inferred attack rates for each potential epoch of circulation
 #' @export
 plot_attack_rates <- function(infectionHistories, dat, ages, yearRange,n_alive=NULL,pointsize=1, fatten=1){
@@ -379,7 +385,6 @@ plot_attack_rates <- function(infectionHistories, dat, ages, yearRange,n_alive=N
     quantiles <- ddply(tmp, ~j, function(x) quantile(x$V1, c(0.025,0.5,0.975)))
     colnames(quantiles) <- c("j","lower","median","upper")
     quantiles[c("lower","median","upper")] <- quantiles[c("lower","median","upper")]/n_alive
-    ##quantiles <- as.data.frame(t(quantiles))
     quantiles$year <- yearRange[quantiles$j]
     quantiles$taken <- quantiles$year %in% unique(dat$samples)
 
@@ -390,7 +395,6 @@ plot_attack_rates <- function(infectionHistories, dat, ages, yearRange,n_alive=N
         geom_pointrange(aes(x=year,y=median,ymin=lower,ymax=upper,col=taken),size=pointsize, fatten=fatten) +
         scale_y_continuous(limits=c(-0.1,1),expand=c(0,0)) +  
         theme_bw() +
-        #theme(text=element_text(family="Arial")) +
         ylab("Estimated attack rate") +
         xlab("Year")
     return(p)   

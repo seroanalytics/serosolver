@@ -2,7 +2,7 @@
 % Please edit documentation in R/mcmc_help.R
 \name{infection_history_proposal}
 \alias{infection_history_proposal}
-\title{Infection history proposal}
+\title{Infection history proposal - original version}
 \usage{
 infection_history_proposal(newInfectionHistories, sampledIndivs,
   strainIsolationTimes, ageMask, nInfs)

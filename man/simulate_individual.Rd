@@ -6,7 +6,7 @@
 \usage{
 simulate_individual(theta, infectionHistory, samplingTimes, dataIndices,
   strainIsolationTimes, virusIndices, antigenicMapLong, antigenicMapShort,
-  strains, repeats = 1, mus = NULL, musIndices = NULL)
+  strains, repeats = 1, mus = NULL, mu_indices = NULL)
 }
 \arguments{
 \item{theta}{the named parameter vector}

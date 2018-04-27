@@ -23,6 +23,8 @@ plot_infection_histories(chain, infectionHistories, dat, individuals,
 \item{parTab}{the table controlling the parameters in the MCMC chain}
 
 \item{nsamp}{number of samples to take from posterior}
+
+\item{mu_indices}{if random effects on boosting parameter, mu, this specifies which entry in the parameter table corresponds to which year. See \code{\link{run_MCMC}}}
 }
 \value{
 a ggplot2 object

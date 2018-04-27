@@ -5,7 +5,7 @@
 \title{Posterior function pointer}
 \usage{
 create_post_func_mu(parTab, data, antigenicMap, PRIOR_FUNC, version = 1,
-  ageMask = NULL, musIndices = NULL)
+  ageMask = NULL, mu_indices = NULL)
 }
 \arguments{
 \item{parTab}{the parameter table controlling information such as bounds, initial values etc}

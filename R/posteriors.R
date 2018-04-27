@@ -83,11 +83,11 @@ create_post_func <- function(parTab, data, antigenicMap,
       print("nothing - posterior implicit in proposal")
       theta_indices <- which(parTab$identity == 1)
       lambda_indices <- which(parTab$identity == 2)
-      parNames <- parTab[theta_indices,"names"]
+      parNames_theta <- parTab[theta_indices,"names"]
       f <- function(pars, infectionHistories){
           lambdas <- pars[lambda_indices]
           pars1 <- pars[theta_indices]
-          names(pars1) <- parNames
+          names(pars1) <- parNames_theta
           liks <- rep(-100000,n_indiv)
           if(length(lambda_indices) > 0){
               liks <- liks + calc_lambda_probs_indiv(lambdas, infectionHistories, ageMask)

@@ -1,0 +1,4 @@
+solve_model_individual <- function(pars, infectionHistory, sampleTimes, antigenicMap){
+
+
+}

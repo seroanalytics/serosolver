@@ -6,7 +6,7 @@
 \usage{
 simulate_group(n_indiv, theta, infectionHistories, strainIsolationTimes,
   sampleTimes, nsamps, antigenicMapLong, antigenicMapShort, repeats = 1,
-  mus = NULL, musIndices = NULL)
+  mus = NULL, mu_indices = NULL)
 }
 \arguments{
 \item{n_indiv}{the number of individuals to simulate}

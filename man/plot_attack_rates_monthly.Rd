@@ -15,11 +15,15 @@ plot_attack_rates_monthly(infectionHistories, dat, ages, yearRange,
 \item{ages}{the data frame of ages for each individual, with columns for individual and DOB (date of birth)}
 
 \item{yearRange}{vector of the first and last epoch of potential circulation}
+
+\item{ymax}{Numeric. the maximum y value to put on the axis}
+
+\item{buckets}{Integer. How many buckets of time is each year split into? ie. 12 for monthly data, 4 for quarterly etc.}
 }
 \value{
 a ggplot2 object with the inferred attack rates for each potential epoch of circulation
 }
 \description{
-Plots inferred historical attack rates from the MCMC output on infection histories for monthly
+Plots inferred historical attack rates from the MCMC output on infection histories for monthly. The main difference compared to the normal attack rate plot is that pointrange plots don't make as much sense at a very fine time resolution.
 }
 

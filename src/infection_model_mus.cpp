@@ -60,6 +60,12 @@ NumericVector infection_model_indiv_mus(NumericVector theta, // Parameter vector
 
   double circulation_time;
 
+  /*
+  Rcpp::Rcout << "Number of titres performed: " << n_samples << std::endl;
+  Rcpp::Rcout << "Maximum number of infections: " << max_infections << std::endl;
+  Rcpp::Rcout << "Number of strains: " << numberStrains << std::endl;
+  Rcpp::Rcout << "Waning rate: " << wane << std::endl;
+  */
   // Set up cumulative infection history and waning vector
   /* Check if isolation time is after the sampling time.
      if so, then we do not test against this strain */ 
@@ -90,7 +96,17 @@ NumericVector infection_model_indiv_mus(NumericVector theta, // Parameter vector
        an individual would have been infected */
     waning[i] = MAX(0, 1.0-wane*(samplingTime-circulation_time));
   }
-  
+  /*
+  Rcpp::Rcout << "Cumulative infecion history: " << cumInfectionHistory << std::endl;
+  Rcpp::Rcout << "Infection map indices: " <<  infectionMapIndices << std::endl;
+  Rcpp::Rcout << "Infection times: " <<  infectionTimes << std::endl;
+  Rcpp::Rcout << "Infection history: " <<  infectionHistory << std::endl;
+  Rcpp::Rcout << "Measurement map indices: " <<  measurementMapIndices << std::endl;
+  Rcpp::Rcout << "Mus: " <<  mus << std::endl;
+  Rcpp::Rcout << "Mu indices: " <<  boostingVecIndices << std::endl;
+  */
+
+
   // For each strain we are testing against, find predicted titre
   for(int k=0; k < n_samples; ++k){
     tmpTitre=0;
@@ -99,7 +115,14 @@ NumericVector infection_model_indiv_mus(NumericVector theta, // Parameter vector
     // antigenicMap vector for the *tested* strain (row), whereas
     // infectionMapIndices[i] finds the entry for the *infecting* strain (column)
     for(int i=0; i < max_infections; ++i){
-      mu = mus[boostingVecIndices[i]];
+      mu = mus[boostingVecIndices[infectionMapIndices[i]]];
+      /*
+	Rcpp::Rcout << "Sample no: " << k << std::endl;
+	Rcpp::Rcout << "Infection no: " << i << std::endl;
+	Rcpp::Rcout << "Infection map index: " << infectionMapIndices[i] << std::endl;
+	Rcpp::Rcout << "Boosting vector index: " << boostingVecIndices[infectionMapIndices[i]] << std::endl;
+	Rcpp::Rcout << "Realised mu: " << mu << std::endl;
+      */
       ///////////////////////////////
       // THE ACTUAL MODEL
       tmpTitre += maskedInfectionHistory[i]* // Ignore infections that couldn't have happened
@@ -145,6 +168,9 @@ NumericVector titre_data_individual_mus(NumericVector theta,
 
   for(int i = 0; i < numberSamples; ++i){
     endIndex = startIndex + dataIndices[i] - 1;
+    //Rcpp::Rcout << "Mu indices: " << musIndices << std::endl;
+    //Rcpp::Rcout << "Mus: " << mus << std::endl;
+    //Rcpp::Rcout << "Infection times: " << infectionTimes << std::endl;
     titres[Range(startIndex, endIndex)] = infection_model_indiv_mus(theta,mus, conciseInfHist,infectionTimes,
 								musIndices, infMapIndices,samplingTimes[i],
 								measuredMapIndices[Range(startIndex,endIndex)],
@@ -183,6 +209,7 @@ NumericVector titre_data_group_mus(NumericVector theta,
   int endIndexData;
 
   for(int i=1; i <= n; ++i){
+    //Rcpp::Rcout << "Individual: " << i << std::endl;
     startIndexSamples = indicesSamples[i-1];
     endIndexSamples = indicesSamples[i] - 1;
 

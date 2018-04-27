@@ -12,7 +12,7 @@
 #' @export
 create_post_func_mu <- function(parTab, data, antigenicMap,
                                 PRIOR_FUNC,version=1,ageMask=NULL,
-                                musIndices=NULL){
+                                mu_indices=NULL){
     parNames <- parTab$names
     ## Isolate data table as vectors for speed
     titres <- data$titre
@@ -64,13 +64,13 @@ create_post_func_mu <- function(parTab, data, antigenicMap,
 
     theta_indices <- which(parTab$identity == 1)
     lambda_indices <- which(parTab$identity == 2)
-    mu_indices <- which(parTab$identity == 3)
+    mu_pars <- which(parTab$identity == 3)
     parNames_theta<- parTab[theta_indices,"names"]
     if(version==1){
         ## The function pointer
         f <- function(pars, infectionHistories){
             lambdas <- pars[lambda_indices]
-            mus <- pars[mu_indices]
+            mus <- pars[mu_pars]
             pars <- pars[theta_indices]
             names(pars) <- parNames_theta
 
@@ -79,7 +79,7 @@ create_post_func_mu <- function(parTab, data, antigenicMap,
             antigenicMapShort <- create_cross_reactivity_vector(antigenicMapMelted, pars["sigma2"])
             
             ## Now pass to the C++ function
-            y <- titre_data_group_mus(pars, mus, infectionHistories, strains, strainIndices,musIndices,
+            y <- titre_data_group_mus(pars, mus, infectionHistories, strains, strainIndices,mu_indices,
                                   sampleTimes,indicesData,indicesDataOverall,indicesSamples, virusIndices, 
                                   antigenicMapLong, antigenicMapShort)
             liks <- r_likelihood(y, titres, pars)
@@ -89,7 +89,7 @@ create_post_func_mu <- function(parTab, data, antigenicMap,
     } else if(version == 2){
         f <- function(pars){
             lambdas <- pars[lambda_indices]
-            mus <- pars[mu_indices]
+            mus <- pars[mu_pars]
             pars <- pars[theta_indices]
             names(pars) <- parNames_theta
             return(prob_mus(mus, pars))
@@ -109,7 +109,7 @@ create_post_func_mu <- function(parTab, data, antigenicMap,
     } else if(version == 4){
         f <- function(pars, infectionHistories){
             lambdas <- pars[lambda_indices]
-            mus <- pars[mu_indices]
+            mus <- pars[mu_pars]
             pars <- pars[theta_indices]
             names(pars) <- parNames_theta
 
@@ -119,7 +119,7 @@ create_post_func_mu <- function(parTab, data, antigenicMap,
             
             ## Now pass to the C++ function
             y <- titre_data_group_mus(pars,mus, infectionHistories, strains, strainIndices,
-                                      musIndices,sampleTimes,
+                                      mu_indices,sampleTimes,
                                       indicesData,indicesDataOverall,indicesSamples, virusIndices, 
                                       antigenicMapLong, antigenicMapShort)
             liks <- r_likelihood(y, titres, pars)
@@ -131,7 +131,7 @@ create_post_func_mu <- function(parTab, data, antigenicMap,
         print("Model solving function")
         f <- function(pars, infectionHistories){
             lambdas <- pars[lambda_indices]
-            mus <- pars[mu_indices]
+            mus <- pars[mu_pars]
             pars <- pars[theta_indices]
             names(pars) <- parNames_theta
             ## Work out short and long term boosting cross reactivity - C++ function
@@ -139,7 +139,7 @@ create_post_func_mu <- function(parTab, data, antigenicMap,
             antigenicMapShort <- create_cross_reactivity_vector(antigenicMapMelted, pars["sigma2"])
           
           ## Now pass to the C++ function
-          y <- titre_data_group_mus(pars,mus,infectionHistories, strains, strainIndices, musIndices,
+          y <- titre_data_group_mus(pars,mus,infectionHistories, strains, strainIndices, mu_indices,
                                     sampleTimes, indicesData,indicesDataOverall,indicesSamples, virusIndices, 
                                     antigenicMapLong, antigenicMapShort)
           return(y)
@@ -153,5 +153,6 @@ prob_mus <- function(mus, pars){
     mu_mean <- pars["mu_mean"]
     mu_sd <- pars["mu_sd"]
     l_mean <- log(mu_mean) - (mu_sd^2)/2
+    #return(sum(dnorm(mus, mu_mean, mu_sd,log=TRUE)))
     return(sum(dlnorm(mus, l_mean, mu_sd, log=TRUE)))
 }

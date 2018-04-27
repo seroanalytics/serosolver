@@ -10,13 +10,15 @@
 #' @param antigenicMapLong the collapsed antigenic map for long term cross reactivity, after multiplying by sigma1
 #' @param antigenicMapShort the collapsed antigenic map for short term cross reactivity, after multiplying by sigma2
 #' @param repeats number of repeated samples for each year
+#' @param mus
+#' @param mu_indices
 #' @return a data frame with columns individual, samples, virus and titre of simulated data
 #' @export
 #' @seealso \code{\link{simulate_individual}}
 simulate_group <- function(n_indiv, theta, infectionHistories,
                            strainIsolationTimes, sampleTimes,
                            nsamps, antigenicMapLong, antigenicMapShort,
-                           repeats=1, mus=NULL, musIndices=NULL){
+                           repeats=1, mus=NULL, mu_indices=NULL){
     dat <- NULL
     ## For each individual
     for(i in 1:n_indiv){
@@ -32,7 +34,7 @@ simulate_group <- function(n_indiv, theta, infectionHistories,
                                                antigenicMapLong,
                                                antigenicMapShort,
                                                strainIsolationTimes,
-                                               repeats, mus, musIndices))
+                                               repeats, mus, mu_indices))
         ## Record individual ID
         y$indiv <- i
         colnames(y) <- c("samples","virus","titre","individual")
@@ -57,6 +59,8 @@ simulate_group <- function(n_indiv, theta, infectionHistories,
 #' @param antigenicMapShort the collapsed antigenic map for short term cross reactivity, after multiplying by sigma2
 #' @param strains vector of all possible circulating strains
 #' @param repeats number of repeated samples for each year
+#' @param mus
+#' @param mu_indices
 #' @return a data frame with columns samples, virus and titre of simulated data
 #' @export
 #' @seealso \code{\link{infection_model_indiv}}
@@ -71,17 +75,17 @@ simulate_individual <- function(theta,
                                 strains,
                                 repeats=1,
                                 mus=NULL,
-                                musIndices=NULL){
+                                mu_indices=NULL){
     numberStrains <- length(strains)
     dat <- matrix(ncol=3, nrow=length(strainIsolationTimes)*repeats)
-
-    if(is.null(musIndices)){    
+    
+    if(is.null(mu_indices)){    
         titres <- titre_data_individual(theta, infectionHistory, strains, seq_along(strains)-1, samplingTimes,
                                         dataIndices, match(strainIsolationTimes, strains)-1,
                                         antigenicMapLong, antigenicMapShort, numberStrains)
     } else {
         titres <- titre_data_individual_mus(theta, mus, infectionHistory, strains, seq_along(strains)-1,
-                                        musIndices, samplingTimes,
+                                        mu_indices, samplingTimes,
                                         dataIndices, match(strainIsolationTimes, strains)-1,
                                         antigenicMapLong, antigenicMapShort, numberStrains)
     }
@@ -243,7 +247,10 @@ simulate_ars_spline <- function(infectionYears, buckets, meanPar=0.15,sdPar=0.5,
 #' @param ageMax maximum age to simulate
 #' @param simInfPars vector of parameters to pass to \code{\link{simulate_attack_rates}}
 #' @param useSIR boolean specifying whether to sample from an SIR model or just log normal distribution for each epoch. If TRUE, uses an SIR model
+#' @param useSpline
+#' @param pInf
 #' @param repeats number of repeats for each year
+#' @param mu_indices
 #' @return a list with: 1) the data frame of titre data as returned by \code{\link{simulate_group}}; 2) a matrix of infection histories as returned by \code{\link{simulate_infection_histories}}; 3) a vector of ages
 #' @export
 simulate_data <- function(parTab, group=1,n_indiv,buckets=12,
@@ -258,11 +265,11 @@ simulate_data <- function(parTab, group=1,n_indiv,buckets=12,
                           useSpline=TRUE,
                           pInf=NULL,
                           repeats=1,
-                          musIndices=NULL){
+                          mu_indices=NULL){
     ## Extract parameters
     pars <- parTab$values
     names(pars) <- parTab$names
-    if(!is.null(musIndices)){
+    if(!is.null(mu_indices)){
         mus <- parTab[parTab$identity == 3,"values"]
         pars <- parTab[parTab$identity == 1,"values"]
         names(pars) <- parTab[parTab$identity==1,"names"]
@@ -301,7 +308,7 @@ simulate_data <- function(parTab, group=1,n_indiv,buckets=12,
     ## Simulate titre data
     y <- simulate_group(n_indiv, pars, infHist, strainIsolationTimes, samplingTimes,
                         nsamps, antigenicMapLong,antigenicMapShort,repeats,
-                        mus, musIndices)
+                        mus, mu_indices)
 
     ## Randomly censor titre values
     y$titre <- y$titre*sample(c(NA,1),nrow(y),prob=c(titreSensoring,1-titreSensoring),replace=TRUE)

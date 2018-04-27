@@ -1,3 +1,4 @@
+#' Sample theta as in original coed
 #' @export
 SampleTheta<-function(theta_initial,m,covartheta,covarbasic,nparam){
   
@@ -37,16 +38,10 @@ SampleTheta<-function(theta_initial,m,covartheta,covarbasic,nparam){
 #' @return a parameter vector of a proposed move. Note that these may fall outside the allowable ranges.
 #' @export
 #' @useDynLib serosolver
-mvr_proposal <- function(values, fixed, covMat, covMat0 = NULL, useLog=FALSE, beta=0.05, lower=NULL, upper=NULL){
+mvr_proposal <- function(values, fixed, covMat, covMat0 = NULL, useLog=FALSE, beta=0.05){
     proposed <- values
-    proposed[fixed] <- as.numeric(exp(MASS::mvrnorm(1,log(values[fixed]), Sigma=covMat0)))
-
-                                        # reflective boundary condition for max boost=10
-    
-    return(proposed)
-  
-                                        # Sample either from a single covariance matrix or weighted average of the identity matrix and
-                                        # given cov matrix, if specified. On either a log or linear scale.
+    ## Sample either from a single covariance matrix or weighted average of the identity matrix and
+    ## given cov matrix, if specified. On either a log or linear scale.
     if(is.null(covMat0)){
         if(!useLog) proposed[fixed] <- MASS::mvrnorm(n=1,mu=proposed[fixed],Sigma=(5.6644/length(fixed))*covMat)
         else proposed[fixed] <- exp(MASS::mvrnorm(n=1,mu=log(proposed[fixed]),Sigma=(5.6644/length(fixed))*covMat))
@@ -91,9 +86,10 @@ inf_hist_prob_lambda <- function(newInf, sampledIndivs, ageMask, nInfs, lambdas)
 #' @param ageMask a vector (one value for each individual) giving the first infection epoch that an individual could have been exposed in. That is, if an individual was born in the 7th epoch, their entry in ageMask would be 7.
 #' @param moveSizes when performing a move step, how far should two epochs be swapped?
 #' @param nInfs number of infection epochs to flip
+#' @param randNs pre-computed random numbers (0-1) for each individual, deciding whether to do a flip or swap
 #' @return a matrix of infection histories matching the input newInfHist
 #' @export
-infection_history_symmetric<- function(newInfHist, sampledIndivs, ageMask, moveSizes, nInfs,randNs){
+infection_history_symmetric <- function(newInfHist, sampledIndivs, ageMask, moveSizes, nInfs, randNs){
     newInf <- newInfHist
     ks <- rpois(length(sampledIndivs),nInfs)
     ## For each individual
@@ -109,7 +105,6 @@ infection_history_symmetric<- function(newInfHist, sampledIndivs, ageMask, moveS
             ## Poisson number of changes?
             k <- min(maxI,max(ks[i],1))
             locs <- sample(length(x), k)
-            #locs <- sample(length(x), nInfs[indiv])            
             x[locs] <- !x[locs]                                       
         } else {
             ## Choose a location
@@ -148,7 +143,7 @@ infection_history_symmetric<- function(newInfHist, sampledIndivs, ageMask, moveS
 infection_history_betabinom <- function(newInfHist, sampledIndivs, ageMask, moveSizes, alpha, beta){
     newInf <- newInfHist
     prob_ratio <- rep(1,nrow(newInfHist))
-                      ## For each individual
+    ## For each individual
     for(indiv in sampledIndivs){
         x <- newInfHist[indiv, ageMask[indiv]:ncol(newInfHist)]
         maxI <- length(x)
@@ -238,14 +233,9 @@ infection_history_betabinom_group <- function(newInfHist, sampledIndivs, ageMask
                 moveMax <- moveSizes[indiv]
                 move <- sample(-moveMax:moveMax,1)
                 id2 <- id1 + move
-                #message(cat("ID1: ", id1,sep="\t"))
-                #message(cat("Move: ", move,sep="\t"))
-                #message(cat("maxI: ", maxI,sep="\t"))
                 if(id2 < 1) id2 <- (move %% maxI) + id1
                 if(id2 > maxI) id2 <- (id2-1) %% maxI + 1
-
-                #message(cat("ID2: ", id2,sep="\t"))
-
+                
                 tmp <- x[id1]
                 x[id1] <- x[id2]
                 x[id2] <- tmp
@@ -259,7 +249,7 @@ infection_history_betabinom_group <- function(newInfHist, sampledIndivs, ageMask
 
 #' MCMC proposal function
 #'
-#' Proposal function for MCMC random walk, taking random steps of a given size. Random walk may be on a linear or log scale
+#' Proposal function for MCMC random walk, taking random steps of a given size.
 #' @param values a vector of the parameters to be explored
 #' @param lower_bounds a vector of the low allowable bounds for the proposal
 #' @param upper_bounds a vector of the upper allowable bounds for the proposal
@@ -278,7 +268,7 @@ univ_proposal <- function(values, lower_bounds, upper_bounds,steps, index){
     rtn <- values
     
     x <- toUnitScale(values[index],mn,mx)
-    ## 5th index is step size
+
     stp <- steps[index]
 
     rv <- runif(1)
@@ -356,7 +346,6 @@ ComputeProbability<-function(marg_likelihood,marg_likelihood_star){
 #' @return an nxm matrix of infection histories containing 1s and 0s, where n is the number of individuals and m is the number of potential infecting strains
 #' @export
 setup_infection_histories_OLD <- function(dat, strainIsolationTimes, ageMask,sample_prob, titre_cutoff=3){
-    # 
     SAMPLE_PROB <- sample_prob
     n_indiv <- length(unique(dat$individual))
     n_strain <- length(strainIsolationTimes)
@@ -458,6 +447,9 @@ setup_infection_histories_new <- function(data, ages, strainIsolationTimes, spac
   return(startInf)
 }
 
+#' Create age mask
+#'
+#' Converts a data frame of individual ages to give the index of the first infection that individual could have had
 #' @export
 create_age_mask <- function(ages, strainIsolationTimes, n_indiv){
     ageMask <- sapply(ages$DOB, function(x){
@@ -470,6 +462,7 @@ create_age_mask <- function(ages, strainIsolationTimes, n_indiv){
     return(ageMask)
 }
 
+#' Write given infection history to disk
 #' @export
 save_infHist_to_disk <- function(infHist, file, sampno, append=TRUE,colNames=FALSE){
     saveInfHist <- Matrix::Matrix(infHist, sparse=TRUE)
@@ -481,7 +474,7 @@ save_infHist_to_disk <- function(infHist, file, sampno, append=TRUE,colNames=FAL
 }
 
 
-#' Infection history proposal
+#' Infection history proposal - original version
 #'
 #' Proposes new infection histories for a vector of infection histories, where rows represent individuals and columns represent years. Proposals are either removal, addition or switching of infections.
 #' Also requires the indices of sampled individuals, the vector of strain isolation times, and a vector of age masks (ie. which index of the strainIsolationTimes vector is the first year in which
