@@ -1,9 +1,9 @@
 library(coda)
-runs <- read.csv("~/net/home/serosolver/inputs/runs_18012018.csv",stringsAsFactors=FALSE)
+runs <- read.csv("~/net/home/serosolver/inputs_LSA/random_mus.csv",stringsAsFactors=FALSE)
 
 runs <- runs[runs$buckets %in% c(1,4,12),]
 wds <- as.character(runs$runName)
-saveDir <- "~/Documents/Fluscape/serosolver_own/sim1/"
+saveDir <- "~/Documents/Fluscape/serosolver_own/random_effects/"
 
 ess_univ_all <- NULL
 ess_multi_all <- NULL
@@ -14,7 +14,7 @@ max_gelman_multi_all <- NULL
 mean_gelman_multi_all <- NULL
 mpsrf_gelman_multi_all <- NULL
 
-burnin1 <- burnin2 <- 300000
+burnin1 <- burnin2 <- 500000
 
 parEstimatesAll <- NULL
 

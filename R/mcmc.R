@@ -400,12 +400,12 @@ run_MCMC <- function(parTab,
                         nInfs_vec[ii] <- min(nInfs_vec[ii],n_strain - ageMask[ii])
                     }
                 }
-                message(cat("nInfs: ", nInfs_vec, sep="\t"))
-                message(cat("Move sizes: ", moveSizes, sep="\t"))
+                #message(cat("nInfs: ", nInfs_vec, sep="\t"))
+                #message(cat("Move sizes: ", moveSizes, sep="\t"))
                 message(cat("Pcur: ", pcur,sep="\t"))
                 message(cat("Step sizes: ", steps,sep="\t"))
                 tempaccepted <- tempiter <- reset
-                message(cat("Hist sample prob: ", histSampleProb))
+                #message(cat("Hist sample prob: ", histSampleProb))
             }
             chain_index <- chain_index + 1
         }

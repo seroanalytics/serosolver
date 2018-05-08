@@ -8,7 +8,7 @@ setwd("~/Documents/Fluscape/serosolver")
 devtools::load_all()
 
 ## How many individuals to fit to?
-n_indiv <-1000
+n_indiv <-200
 
 ## Which infection history proposal version to use?
 describe_proposals()
@@ -18,14 +18,17 @@ histProposal <- 1
 ## this to 1 uses annual epochs, whereas setting this to 12 gives
 ## monthly epochs
 buckets <- 1
-mu_bucket <- 1
+clusters <- read.csv("~/Documents/Fluscape/serosolver/data/real/clusters.csv")
+n_clusters <- max(clusters$cluster1)
 
 ## The general output filename
-filename <- "fluscape_3"
+filename <- "chains/fluscape_real"
 
 ## Read in parameter table to simulate from and change waning rate if necessary
 parTab <- read.csv("~/Documents/Fluscape/serosolver/inputs/parTab_mus.csv",stringsAsFactors=FALSE)
 parTab[parTab$names == "wane","values"] <- parTab[parTab$names == "wane","values"]/buckets
+parTab[parTab$names == "wane","values"] <- 1
+parTab[parTab$names == "wane","fixed"] <- 1
 
 ## Possible sampling times
 samplingTimes <- seq(2010*buckets, 2015*buckets, by=1)
@@ -33,11 +36,21 @@ samplingTimes <- seq(2010*buckets, 2015*buckets, by=1)
 ## Antigenic map for cross reactivity parameters
 #fit_dat <- read.csv("~/Documents/Fluscape/serosolver/data/antigenicMap_AK.csv")
 antigenicMap <- read.csv("~/Documents/Fluscape/fluscape/trunk/data/Fonville2014AxMapPositionsApprox.csv",stringsAsFactors=FALSE)
+antigenicMap[antigenicMap$Strain == "PE06","Strain"] <- "PE09"
+clusters <- read.csv("~/Documents/Fluscape/Measurement_error/clusters.csv")
+cluster_labels <- read.csv("~/Documents/Fluscape/Measurement_error/cluster_labels.csv")
+colnames(cluster_labels) <- c("cluster1","cluster")
+clusters <- merge(clusters,cluster_labels)
+clusters <- clusters[,c("year","cluster")]
+colnames(clusters) <- c("year","Strain")
+antigenicMap1 <- merge(antigenicMap,clusters,all=TRUE)
+fit_dat_clustered <- antigenicMap1[,c("X","Y","year")]
+colnames(fit_dat_clustered) <- c("x_coord","y_coord","inf_years")
 fit_dat <- generate_antigenic_map(antigenicMap, buckets)
 
 ## Read in Fluscape data
-fluscapeDat <- read.csv("data/fluscape_data.csv",stringsAsFactors=FALSE)
-fluscapeAges <- read.csv("data/fluscape_ages.csv")
+fluscapeDat <- read.csv("data/real/fluscape_data.csv",stringsAsFactors=FALSE)
+fluscapeAges <- read.csv("data/real/fluscape_ages.csv")
 
 ## Remove individuals with NA for DOB
 na_indiv <- fluscapeAges[which(is.na(fluscapeAges$DOB)),"individual"]
@@ -45,9 +58,9 @@ fluscapeDat <- fluscapeDat[!(fluscapeDat$individual %in% na_indiv),]
 fluscapeAges <- fluscapeAges[!(fluscapeAges$individual %in% na_indiv),]
 
 ## Take random subset of individuals
-#indivs <- sample(unique(fluscapeDat$individual),n_indiv)
 indivs<- intersect(unique(fluscapeDat$individual),unique(fluscapeAges$individual))
 indivs <- indivs[order(indivs)]
+indivs <- sample(indivs,n_indiv)
 #indivs <- unique(fluscapeAges$individual)
 
 titreDat <- fluscapeDat[fluscapeDat$individual %in% indivs,]
@@ -63,9 +76,9 @@ strainIsolationTimes <- unique(fit_dat$inf_years)
 ## Setting to c(1,1) gives uniform distribution on total number of infections
 #parTab[parTab$names %in% c("alpha","beta"),"values"] <- find_a_b(length(strainIsolationTimes),7,50)
 parTab[parTab$names %in% c("alpha","beta"),"values"] <- c(0.75,4.5)
-n_mus <- length(strainIsolationTimes)/mu_bucket
-mu_indices <- rep(1:n_mus, each=mu_bucket) - 1
-
+mu_indices <- clusters$cluster1
+#n_clusters <- length(strainIsolationTimes)
+#mu_indices <- seq(1,length(strainIsolationTimes),by=1)
 ## Add rows for each lambda value to be inferred
 tmp <- parTab[parTab$names == "lambda",]
 for(i in 1:(length(strainIsolationTimes)-1)){
@@ -73,13 +86,16 @@ for(i in 1:(length(strainIsolationTimes)-1)){
 }
 
 ## Generate value for each mu
+parTab[parTab$names == "mu_mean","values"] <- 3
 mu_mean <- parTab[parTab$names == "mu_mean","values"]
 mu_sd <- parTab[parTab$names == "mu_sd","values"]
 l_mean <- log(mu_mean) - (mu_sd^2)/2
-mus <- rlnorm(n_mus, mean=l_mean, sd=mu_sd)
+mus <- rlnorm(n_clusters, mean=l_mean, sd=mu_sd)
+#mus <- rnorm(n_mus, mean=mu_mean, sd=mu_sd)
 mu_tab <- data.frame(names="mu",values=mus,fixed=0,steps=0.1,lower_bound=0,upper_bound=8,lower_start=0.5,
                      upper_start=5,identity=3,block=1)
 parTab <- rbind(mu_tab, parTab)
+
 
 ## Starting infection histories based on data
 startInf <- setup_infection_histories_new(titreDat, ages, unique(fit_dat$inf_years), space=5,titre_cutoff=3)
@@ -105,17 +121,22 @@ for(i in 1:nrow(startTab)){
 #startTab$values <- startPar
 
 ## Specify paramters controlling the MCMC procedure
-mcmcPars <- c("iterations"=2000000,"popt"=0.44,"popt_hist"=0.44,"opt_freq"=5000,"thin"=10,"adaptive_period"=500000,
-              "save_block"=1000,"thin2"=500,"histSampleProb"=1,"switch_sample"=2, "burnin"=50000, 
-              "nInfs"=4, "moveSize"=5, "histProposal"=1, "histOpt"=1,"n_par"=10)
+mcmcPars <- c("iterations"=100000,"popt"=0.44,"popt_hist"=0.44,"opt_freq"=5000,"thin"=10,"adaptive_period"=50000,
+              "save_block"=1000,"thin2"=100,"histSampleProb"=1,"switch_sample"=2, "burnin"=0, 
+              "nInfs"=4, "moveSize"=5, "histProposal"=1, "histOpt"=1)
 
-system.time(
+covMat <- diag(nrow(parTab))
+scale <- 0.5
+w <- 1
+mvrPars <- list(covMat, scale, w)
+
+
 ## Run the MCMC using the inputs generated above
 res <- run_MCMC(startTab, titreDat, mcmcPars, filename=filename,
                 create_post_func_mu, NULL, PRIOR,version=4, 0.2, 
                 fit_dat, ages=ages, 
-                startInfHist=startInf, mu_indices=mu_indices)
-)
+                startInfHist=startInf, mu_indices=mu_indices-1)
+
 
 #########################
 ## Processing outputs
@@ -129,10 +150,15 @@ dev.off()
 
 ## Plot inferred attack rates
 infChain <- data.table::fread(res$history_file)
+samps <- seq(min(infChain$sampno),max(infChain$sampno),by=100)
 infChain <- infChain[infChain$sampno >= (mcmcPars["adaptive_period"]+mcmcPars["burnin"]),]
+infChain <- infChain[infChain$sampno %in% samps,]
 xs <- min(strainIsolationTimes):max(strainIsolationTimes)
 colnames(AR) <- c("year","AR")
-arP <- plot_attack_rates(infChain, titreDat,ages,xs)
+arP <- plot_attack_rates(infChain, titreDat,ages,xs) + scale_y_continuous(limits=c(0,1),expand=c(0,0))
+
+titreDat$individual <- match(titreDat$individual, unique(titreDat$individual))
+ages$individual <- match(ages$individual, unique(ages$individual))
 sampd <- sample(1:n_indiv, 10)
 plot_infection_histories(chain1, infChain, titreDat, sampd, 
                          fit_dat, ages,parTab,100, mu_indices-1)
