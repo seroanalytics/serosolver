@@ -12,12 +12,11 @@ likelihood_group <- function(pars, coin_results, dat, samps=seq(1,20,by=4)){
   return(liks)
 }
 
-prior <- function(pars){
+prior <- function(pars, probs){
   #return(0)
   a <- dnorm(pars[1], 0, 1000,log=TRUE)
   b <- dnorm(pars[1],0,1000,log=TRUE)
-  c <- 0
-  c <- sum(dbeta(pars[4:length(pars)], 1,1,log=TRUE))
+  c <- sum(dbeta(probs, 1,1,log=TRUE))
   return(a+b+c)
 }
 
@@ -31,14 +30,12 @@ prior_group <- function(coin_probs, coin_results){
 }
 
 
-hyper_prior_group <- function(pars, coin_results){
-  flip_probs <- pars[4:length(pars)]
-  #return(rep(0, length(flip_probs)))
-  prob <- apply(coin_results, 1, function(x) sum(log(flip_probs^x * (1-flip_probs)^(1-x))))
+hyper_prior_group <- function(probs, coin_results){
+  prob <- apply(coin_results, 1, function(x) sum(log(probs^x * (1-probs)^(1-x))))
   return(prob)
 }
 
 
-posterior_group <- function(pars, coin_results, dat, samps){
-  return(sum(likelihood_group(pars, coin_results, dat, samps)) + sum(hyper_prior_group(pars, coin_results)) + prior(pars))
+posterior_group <- function(pars, probs, coin_results, dat, samps){
+  return(sum(likelihood_group(pars, coin_results, dat, samps)) + sum(hyper_prior_group(probs, coin_results)) + prior(pars, probs))
 }

@@ -1,16 +1,21 @@
-run_MCMC_group <- function(pars, fixed, dat, coin_results, iter,covMat, thin=10, samps){
+run_MCMC_group <- function(pars, probs, 
+                           fixed_pars, fixed_probs, 
+                           coin_results, dat, samps,
+                           iter,covMat, thin=10){
+  ## Empty chains and storage objects
   n_indiv <- nrow(coin_results)
   liks <- numeric(iter/thin)
-  chain <- matrix(nrow=iter/thin,ncol=length(pars)+1)
+  chain <- matrix(nrow=iter/thin,ncol=length(pars) + length(probs) +1)
   coin_chain <- matrix(nrow=iter*n_indiv/thin,ncol=ncol(coin_results)+2)
   
   proposed <- pars
   proposed_coin_results <- coin_results
-  probabs <- likelihood_group(pars, coin_results, dat, samps) + hyper_prior_group(pars, coin_results)
-  probab <- sum(probabs) + prior(pars)
+  probabs <- likelihood_group(pars, coin_results, dat, samps) + hyper_prior_group(probs, coin_results)
+  probab <- sum(probabs) + prior(pars, probs)
   liks[1] <- probab
   chain[1,1] <- 1
-  chain[1,2:ncol(chain)] <- pars
+  chain[1,2:length(pars)] <- pars
+  chain[1, (length(pars)+1):ncol(chain)] <- probs
   coin_chain[1:n_indiv,1] <- 1
   coin_chain[1:n_indiv,2:(ncol(coin_chain)-1)] <- coin_results
   coin_chain[1:n_indiv,ncol(coin_chain)] <- 1:n_indiv
