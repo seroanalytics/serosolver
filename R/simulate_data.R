@@ -72,15 +72,20 @@ simulate_individual <- function(theta,
                                 antigenicMapShort,
                                 strains){
     numberStrains <- length(strains)
+    
+   
     dat <- matrix(ncol=3, nrow=length(strainIsolationTimes))
 
     titres <- titre_data_individual(theta, infectionHistory, strains, seq_along(strains)-1, samplingTimes,
                                     dataIndices, match(strainIsolationTimes, strains)-1,
                                     antigenicMapLong, antigenicMapShort, numberStrains)
-   
     dat[,1] <- rep(samplingTimes, dataIndices)
     dat[,2] <- strainIsolationTimes
     dat[,3] <- add_noise(titres,theta)
+    
+    ## Only return titres for the strains circulating at the time of sampling or before (i.e. strain is circulating in the future)
+    dat<-dat[dat[,1] >= dat[,2],]
+    
     #dat[,3] <- titres
     #dat[,3] <- rnorm(length(titres),titres,sd=theta["error"])
     return(dat)
@@ -146,15 +151,14 @@ simulate_infection_histories <- function(pInf, infSD, strainIsolationTimes, samp
     ARs <- numeric(n_strains)
     ## For each strain (ie. each infection year)
     for(i in 1:n_strains){
-      
-        #If we are there are strains circulating beyond the max sampling times, then alive==0
+        #If there are strains circulating beyond the max sampling times, then alive==0
        if(max(samplingTimes)>= strainIsolationTimes[i]){
          ## Find who was alive (all we need samplingTimes for is its max value)
          alive <- (max(samplingTimes) - ages) <= strainIsolationTimes[i]
         }else{
          alive <- rep(0, n_indiv)
         }
-       
+     
         ## Sample a number of infections for the alive individuals, and set these entries to 1
         #y <- round(length(indivs[alive])*attackRates[i])
         y <- rbinom(1, length(indivs[alive]),attackRates[i])
@@ -232,7 +236,7 @@ simulate_data <- function(parTab, group=1,n_indiv,buckets=12,
                           antigenicMap,
                           sampleSensoring=0, titreSensoring=0,
                           ageMin=5,ageMax=80,
-                          simInfPars=c("mean"=0.15,"sd"=0.5,"bigMean"=0.5,"logSD"=1),
+                          simInfPars=c("mean"=0.15,"sd"=0.5,"bigMean"=0.5,"logSD"=1,"constant"=0),
                           useSIR=FALSE){
     ## Extract parameters
     pars <- parTab$values
@@ -254,9 +258,13 @@ simulate_data <- function(parTab, group=1,n_indiv,buckets=12,
     if(useSIR){
         pInf <- simulate_ars_buckets(strainIsolationTimes, buckets, simInfPars["mean"],simInfPars["sd"],TRUE,simInfPars["bigMean"])
     } else {
+      if(simInfPars["constant"]==1){ ##If constant==1 then use the mean in simInfPars to simulate constant AR 
+        pInf <- rep(simInfPars["mean"],length(strainIsolationTimes))
+      }else{
         pInf <- simulate_attack_rates(strainIsolationTimes, simInfPars["mean"],simInfPars["sd"],TRUE,simInfPars["bigMean"])
+      }
     }
-    
+
     ## Simulate infection histories
     tmp <- simulate_infection_histories(pInf, simInfPars["logSD"], strainIsolationTimes, samplingTimes, ages)
     infHist <- tmp[[1]]
@@ -265,7 +273,6 @@ simulate_data <- function(parTab, group=1,n_indiv,buckets=12,
     ## Simulate titre data
     y <- simulate_group(n_indiv, pars, infHist, strainIsolationTimes, samplingTimes,
                         nsamps, antigenicMapLong,antigenicMapShort)
-
     ## Randomly censor titre values
     y$titre <- y$titre*sample(c(NA,1),nrow(y),prob=c(titreSensoring,1-titreSensoring),replace=TRUE)
     y$run <- 1

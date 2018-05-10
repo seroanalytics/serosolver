@@ -128,8 +128,8 @@ sum_buckets <- function(a, buckets) {
 #' @param beta double, beta parameter of the beta binomial
 #' @param randNs NumericVector, a vector of random numbers for each sampled individual. The idea is to pre-specify whether an individual experiences an add/remove step or a swap step to avoid random number sampling in C++
 #' @return a matrix of 1s and 0s corresponding to the infection histories for all individuals
-inf_hist_prop_cpp <- function(infHist, sampledIndivs, ageMask, moveSizes, nInfs, alpha, beta, randNs) {
-    .Call('_serosolver_inf_hist_prop_cpp', PACKAGE = 'serosolver', infHist, sampledIndivs, ageMask, moveSizes, nInfs, alpha, beta, randNs)
+inf_hist_prop_cpp <- function(infHist, sampledIndivs, ageMask, strainMask, moveSizes, nInfs, alpha, beta, randNs) {
+    .Call('_serosolver_inf_hist_prop_cpp', PACKAGE = 'serosolver', infHist, sampledIndivs, ageMask, strainMask, moveSizes, nInfs, alpha, beta, randNs)
 }
 
 subset_test <- function(x, y) {

@@ -176,20 +176,21 @@ BEGIN_RCPP
 END_RCPP
 }
 // inf_hist_prop_cpp
-arma::mat inf_hist_prop_cpp(arma::mat infHist, IntegerVector sampledIndivs, IntegerVector ageMask, IntegerVector moveSizes, IntegerVector nInfs, double alpha, double beta, NumericVector randNs);
-RcppExport SEXP _serosolver_inf_hist_prop_cpp(SEXP infHistSEXP, SEXP sampledIndivsSEXP, SEXP ageMaskSEXP, SEXP moveSizesSEXP, SEXP nInfsSEXP, SEXP alphaSEXP, SEXP betaSEXP, SEXP randNsSEXP) {
+arma::mat inf_hist_prop_cpp(arma::mat infHist, IntegerVector sampledIndivs, IntegerVector ageMask, IntegerVector strainMask, IntegerVector moveSizes, IntegerVector nInfs, double alpha, double beta, NumericVector randNs);
+RcppExport SEXP _serosolver_inf_hist_prop_cpp(SEXP infHistSEXP, SEXP sampledIndivsSEXP, SEXP ageMaskSEXP, SEXP strainMaskSEXP, SEXP moveSizesSEXP, SEXP nInfsSEXP, SEXP alphaSEXP, SEXP betaSEXP, SEXP randNsSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< arma::mat >::type infHist(infHistSEXP);
     Rcpp::traits::input_parameter< IntegerVector >::type sampledIndivs(sampledIndivsSEXP);
     Rcpp::traits::input_parameter< IntegerVector >::type ageMask(ageMaskSEXP);
+    Rcpp::traits::input_parameter< IntegerVector >::type strainMask(strainMaskSEXP);
     Rcpp::traits::input_parameter< IntegerVector >::type moveSizes(moveSizesSEXP);
     Rcpp::traits::input_parameter< IntegerVector >::type nInfs(nInfsSEXP);
     Rcpp::traits::input_parameter< double >::type alpha(alphaSEXP);
     Rcpp::traits::input_parameter< double >::type beta(betaSEXP);
     Rcpp::traits::input_parameter< NumericVector >::type randNs(randNsSEXP);
-    rcpp_result_gen = Rcpp::wrap(inf_hist_prop_cpp(infHist, sampledIndivs, ageMask, moveSizes, nInfs, alpha, beta, randNs));
+    rcpp_result_gen = Rcpp::wrap(inf_hist_prop_cpp(infHist, sampledIndivs, ageMask, strainMask, moveSizes, nInfs, alpha, beta, randNs));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -246,7 +247,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_serosolver_group_likelihood_vector", (DL_FUNC) &_serosolver_group_likelihood_vector, 11},
     {"_serosolver_group_likelihood_total", (DL_FUNC) &_serosolver_group_likelihood_total, 11},
     {"_serosolver_sum_buckets", (DL_FUNC) &_serosolver_sum_buckets, 2},
-    {"_serosolver_inf_hist_prop_cpp", (DL_FUNC) &_serosolver_inf_hist_prop_cpp, 8},
+    {"_serosolver_inf_hist_prop_cpp", (DL_FUNC) &_serosolver_inf_hist_prop_cpp, 9},
     {"_serosolver_subset_test", (DL_FUNC) &_serosolver_subset_test, 2},
     {"_serosolver_subset_test1", (DL_FUNC) &_serosolver_subset_test1, 2},
     {"_serosolver_infection_model_indiv_OLD", (DL_FUNC) &_serosolver_infection_model_indiv_OLD, 8},
