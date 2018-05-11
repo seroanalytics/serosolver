@@ -11,18 +11,27 @@ devtools::load_all()
 n_indiv <-200
 
 ## Which infection history proposal version to use?
+## ********Note*********
+## that this should be set to 1 if using the explicit FOI term
 describe_proposals()
 histProposal <- 1
+
+## Specify paramters controlling the MCMC procedure
+mcmcPars <- c("iterations"=100000,"popt"=0.44,"popt_hist"=0.44,"opt_freq"=5000,"thin"=10,"adaptive_period"=50000,
+              "save_block"=1000,"thin2"=100,"histSampleProb"=1,"switch_sample"=2, "burnin"=0, 
+              "nInfs"=4, "moveSize"=5, "histProposal"=histProposal, "histOpt"=1)
 
 ## Buckets indicates the time resolution of the analysis. Setting
 ## this to 1 uses annual epochs, whereas setting this to 12 gives
 ## monthly epochs
 buckets <- 1
-clusters <- read.csv("~/Documents/Fluscape/serosolver/data/real/clusters.csv")
+
+## Specify which cluster each infection year belongs to
+clusters <- read.csv("~/Documents/Fluscape/serosolver/data/antigenic_maps/clusters.csv")
 n_clusters <- max(clusters$cluster1)
 
 ## The general output filename
-filename <- "chains/fluscape_real"
+filename <- "chains/random_mu"
 
 ## Read in parameter table to simulate from and change waning rate if necessary
 parTab <- read.csv("~/Documents/Fluscape/serosolver/inputs/parTab_mus.csv",stringsAsFactors=FALSE)
@@ -112,18 +121,8 @@ for(i in 1:nrow(startTab)){
   }
 }
 
-#startTab <- parTab
-#optimTab <- startTab[!(startTab$names %in% c("alpha","beta")),]
-#f1 <- create_post_func1(optimTab,titreDat,fit_dat,NULL,infectionHistories=startInf)
-#startPar <- parTab$values
-#startPar <- DEoptim::DEoptim(f1, lower=optimTab$lower_bound, upper=optimTab$upper_bound,control=list(itermax=100))$optim$bestmem
-#startPar <- c(startPar, startTab[(startTab$names %in% c("alpha","beta")),"values"])
-#startTab$values <- startPar
 
-## Specify paramters controlling the MCMC procedure
-mcmcPars <- c("iterations"=100000,"popt"=0.44,"popt_hist"=0.44,"opt_freq"=5000,"thin"=10,"adaptive_period"=50000,
-              "save_block"=1000,"thin2"=100,"histSampleProb"=1,"switch_sample"=2, "burnin"=0, 
-              "nInfs"=4, "moveSize"=5, "histProposal"=1, "histOpt"=1)
+
 
 covMat <- diag(nrow(parTab))
 scale <- 0.5

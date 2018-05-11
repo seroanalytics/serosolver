@@ -54,7 +54,6 @@ if(SIM){
     }
 }
 
-
 ## MCMC parameter inputs
 mcmcPars <- c("iterations"=500,"popt"=0.44,"opt_freq"=1000,"thin"=100,"adaptive_period"=10,
               "save_block"=100,"thin2"=10,"histSampleProb"=0.1,"switch_sample"=2, "burnin"=10)

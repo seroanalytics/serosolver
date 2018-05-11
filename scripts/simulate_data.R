@@ -52,7 +52,7 @@ hAR <- hAR[,1]
 ## Antigenic map for cross reactivity parameters
 antigenicMap <- read.csv("~/Documents/Fluscape/fluscape/trunk/data/Fonville2014AxMapPositionsApprox.csv",stringsAsFactors=FALSE)
 fit_dat <- generate_antigenic_map(antigenicMap, buckets)
-fit_dat <- read.csv("data/antigenicMap_AK.csv")
+fit_dat <- read.csv("data/antigenic_maps/antigenicMap_vietnam.csv")
 
 ## Rename circulation years based on isolation time
 virus_key <- c("HK68"=1968, "EN72"=1972, "VI75"=1975, "TX77"=1977, "BK79"=1979, "SI87"=1987, "BE89"=1989, "BJ89"=1989,
@@ -66,6 +66,7 @@ strainIsolationTimes <- unique(fit_dat$inf_years)
 parTab[parTab$names %in% c("alpha","beta"),"values"] <- find_a_b(length(strainIsolationTimes),7,50)
 
 ## Simulate some fake data
+## CHANGE PINF TO NULL IF WE WANT TO GENERATE NEW ATTACK RATES
 dat <- simulate_data(parTab, 1, n_indiv, buckets,strainIsolationTimes,
                      samplingTimes, nsamps, antigenicMap=fit_dat, 0, 0, 10*buckets,75*buckets,
                      simInfPars=c("mean"=0.15,"sd"=0.5,"bigMean"=0.5,"logSD"=1),useSIR=TRUE,pInf=hAR,
@@ -86,7 +87,6 @@ titreDat <- dat[[1]]
 
 ## Create identifier for repeats
 titreDat$run <- NULL
-
 titreDat <- plyr::ddply(titreDat,.(individual,virus,samples),function(x) cbind(x,"run"=1:nrow(x)))
 #for(indiv in unique(titreDat$individual)){
 #  print(indiv)
@@ -104,7 +104,7 @@ titreDat <- plyr::ddply(titreDat,.(individual,virus,samples),function(x) cbind(x
 titreDat <- titreDat[order(titreDat$individual,titreDat$run,titreDat$samples,titreDat$virus),]
 
 ## Merge with HaNam data to get same dimensions
-res <- read.csv("~/Documents/Fluscape/serosolver/data/vietnam_data.csv")
+res <- read.csv("~/Documents/Fluscape/serosolver/data/real/vietnam_data.csv")
 wow <- dplyr::inner_join(res[,c("individual","samples","virus","run")], titreDat[,c("individual","samples","virus","run")])
 titreDat <- dplyr::left_join(wow, titreDat)
 #res <- read.csv("~/net/home/serosolver/data_LSA/HaNam_samples.csv")

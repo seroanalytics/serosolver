@@ -14,12 +14,13 @@ infHist <- infHist1 <- infHist2 <- infHist3 <- infHist4 <- matrix(0, nrow=n_indi
 sampled <- 1:n_indiv
 strainIsolationTimes <- 1:10
 ageMask <- sample(1:5,n_indiv,replace=TRUE)
+ageMask <- rep(1, n_indiv)
 nInfs <- rep(1,n_indiv)
 moveSizes <- rep(1, n_indiv)
 
 omgs <- omgs1 <- omgs2 <- omgs3 <- omgs4 <- list()
 
-n <- 5000
+n <- 10000
 infHists <- infHists1 <- infHists2 <- infHists3 <- infHists4 <- matrix(ncol=13,nrow=n_indiv*n)
 
 for(i in 1:n){
@@ -85,7 +86,7 @@ omgs5 <- NULL
 #infHist5[,1:5] <- 0
 for(i in 1:n){
   if(i%%100 == 0) print(i)
-  infHist5 <- as.data.frame(inf_hist_prop_cpp(as.matrix(infHist5), sampled, ageMask, moveSizes, nInfs, 1, 1,runif(n_indiv, 0, 0.45)))
+  infHist5 <- as.data.frame(inf_hist_prop_cpp(as.matrix(infHist5), sampled, ageMask, moveSizes, nInfs, 1, 1,runif(n_indiv, 0, 0.5)))
   #infHist5 <- as.data.frame(infection_history_betabinom_group(infHist5, sampled, ageMask, moveSizes, nInfs, 1, 1))
   #infHist5 <- as.data.frame(infection_history_symmetric(as.matrix(infHist5), sampled, ageMask, moveSizes, nInfs, runif(n_indiv)))
   infHists5[(((i-1)*n_indiv)+1):(i*n_indiv),1:10] <-  as.matrix(infHist5)
@@ -119,7 +120,7 @@ for(var in unique(AR1$variable)){
 }
 AR_densities <- ggplot(AR1) + 
   geom_density(aes(x=V1)) + 
-  #scale_x_continuous(limits=c(0,1))+
+  #scale_y_continuous(limits=c(0,1))+
   scale_x_continuous(limits=c(0,1),breaks=seq(0,1,by=0.2),labels=seq(0,1,by=0.2)) +
   facet_grid(ver~variable) + 
   theme_bw()
@@ -130,8 +131,10 @@ omgs2$ver <- "AK_mine"
 omgs3$ver <- "BB_cpp"
 omgs4$ver <- "symmetric"
 wow <- rbind(omgs, omgs1, omgs2, omgs3, omgs4, omgs5)
+wow$infs <- as.integer(wow$infs)
 #wow <- omgs5
-indiv_total <- ggplot(wow[wow$indiv %in% which(ageMask >= 5),]) + geom_histogram(aes(x=infs,fill=ver),binwidth=1) + 
+#wow[wow$indiv %in% which(ageMask >= 5),]
+indiv_total <- ggplot(wow) + geom_histogram(aes(x=infs,fill=ver),binwidth=1) + 
     facet_grid(ver~indiv) + 
   #facet_wrap(~indiv)+
   scale_x_continuous(expand=c(0,0),

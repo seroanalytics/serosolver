@@ -40,6 +40,9 @@ SampleTheta<-function(theta_initial,m,covartheta,covarbasic,nparam){
 #' @useDynLib serosolver
 mvr_proposal <- function(values, fixed, covMat, covMat0 = NULL, useLog=FALSE, beta=0.05){
     proposed <- values
+    proposed[fixed] <- as.numeric(exp(mvrnorm(1,mu=log(proposed[fixed]),Sigma=covMat0)))
+    return(proposed)
+                               
     ## Sample either from a single covariance matrix or weighted average of the identity matrix and
     ## given cov matrix, if specified. On either a log or linear scale.
     if(is.null(covMat0)){

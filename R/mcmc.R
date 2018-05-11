@@ -380,8 +380,8 @@ run_MCMC <- function(parTab,
                 pcurHist_move <- histaccepted_move/histiter_move
 
                 ## NOTE THAT THIS IS ONLY RELEVANT TO INFECTION HISTORY PROPOSAL 1 & 3
-                message(cat("Hist acceptance add: ", pcurHist_add, cat="\t"))
-                message(cat("Hist acceptance move: ", pcurHist_move, cat="\t"))
+                #message(cat("Hist acceptance add: ", pcurHist_add, cat="\t"))
+                #message(cat("Hist acceptance move: ", pcurHist_move, cat="\t"))
                 message(cat("Mean hist acceptance: ", mean(pcurHist),cat="\t"))
                 histiter <- histaccepted <- histaccepted_add <- histaccepted_move <- histiter_add <- histiter_move <- histreset
 
