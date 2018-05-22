@@ -1,113 +1,133 @@
 library(reshape2)
 library(plyr)
 library(ggplot2)
+library(foreach)
+library(doMC)
+registerDoMC(5)  #change the 2 to your number of CPU cores
+getDoParWorkers()
+setwd("~/Documents/Fluscape/serosolver/scripts/testing/coin_toss")
 source("model_funcs.R")
 source("probability_funcs.R")
 source("proposal_funcs.R")
 source("mcmc_funcs.R")
 
 ## Input parameters
-n <- 20
-coin_probs <- runif(n)
+n <- 10
+coin_probs <- runif(n,0,0.2)
 indivs <- 10
-samps <- seq(1,n, by=2)
-pars <- c(4, 0.3, 1, coin_probs)
-fixed <- c(0,0,1,rep(0,n))
-covMat <- diag(length(fixed[which(fixed==0)]))*0.01
-iter <- 10000
-
+samps <- seq(1,n, by=1)
+pars <- c(4, 0.3, 1)
+fixed <- c(0,0,0)
+fixed_probs <- rep(0,n)
+#fixed_probs[1:2] <- 0
+covMat_theta <- diag(length(fixed[which(fixed==0)]))
+covMat_probs <- diag(length(fixed_probs[which(fixed_probs==0)]))
+iter <- 100000
 
 ## Setup parameter names and simulated data
-parNames <- c("boost","sigma","error",paste0("coin.",1:n))
+parNames <- c("boost","sigma","error")
 coin_results <- sapply(coin_probs, function(x) sample(c(0,1),indivs,prob=c(1-x,x),replace=TRUE))
 data_suggested_coins <- colSums(coin_results)/nrow(coin_results)
 dat <- coin_toss_group(pars, coin_results)
 dat <- measurement_error_group(pars,dat)
 
-
 print(paste0("Coin probs: ", paste0(signif(coin_probs,3),collapse=" ")))
 print(paste0("Data suggest coin values: ", paste0(data_suggested_coins,collapse=" ")))
 
-## Starting conditions and run MCMC
 startPars <- pars
+startPars[1] <- runif(1,0,10)
+startPars[2] <- runif(1,0,1)
+startPars[3] <- runif(1,0,5)
+startPars[which(fixed == 1)] <- pars[which(fixed == 1)]
+startProbs <- runif(n,0,1)
+startProbs[which(fixed_probs == 1)] <- coin_probs[which(fixed_probs == 1)]
 start_coins <- matrix(sample(c(0,1),n*indivs,replace=TRUE),nrow=indivs)
-res <- run_MCMC_group(pars, fixed, dat, start_coins,iter, covMat,thin=10, samps)
+res <- run_MCMC_group(startPars, startProbs, fixed, fixed_probs, coin_results,dat,samps, iter, 
+                    covMat_theta, covMat_probs, thin=100,0.01,0.001,500,1,printF=1000,temp=1000)
 
 ## Look at MCMC chain of process parameters
 chain <- res[[2]]
-chain <- chain[,c(1,which(fixed == 0)+1)]
-colnames(chain) <- c("sampno",parNames[which(fixed==0)])
+#chain <- chain[,c(1,which(fixed == 0)+1)]
+colnames(chain) <- c("sampno",parNames, paste0("coin.",1:n))
 chain <- chain[chain[,"sampno"] > 0.1*iter,]
-plot(coda::as.mcmc(chain))
+#plot(coda::as.mcmc(chain))
 
-chain <- melt(chain)
-colnames(chain) <- c("x","parameter","value")
-real_pars <- data.frame(parameter=parNames[which(fixed==0)],y=pars[which(fixed==0)])
+chain <- melt(as.data.frame(chain),id.vars="sampno")
+colnames(chain) <- c("sampno","variable","value")
+real_pars <- data.frame(variable=c(parNames,paste0("coin.",1:n)),y=c(pars,coin_probs),lower=c(3.5,rep(0,n+2)),upper=c(4.5,0.5,5,rep(1,n)))
+fixed_pars <- c("sampno")
+real_pars <- real_pars[!(real_pars$variable %in% fixed_pars),]
+chain <- chain[!(chain$variable %in% fixed_pars),]
+
+p_chain <- ggplot(chain) + geom_line(aes(x=sampno,y=value))+facet_wrap(~variable,scales="free_y")
+
+
+## Look at posteriors vs. real parameters
 p1 <- ggplot(chain) + 
   geom_density(aes(x=value,y=..scaled..)) +
   geom_vline(data=real_pars,aes(xintercept=y),col="red",linetype="dashed")+
-  facet_wrap(~parameter, scales="free_x")
+  geom_blank(data=real_pars,aes(x=lower))+
+  geom_blank(data=real_pars,aes(x=upper))+
+  facet_wrap(~variable, scales="free_x")
  
+## Coin flip outcome chain
 coin_chain <- as.data.frame(res[[3]])
 colnames(coin_chain) <- c("sampno",1:n,"indiv")
+## First 10% burn in
 coin_chain <- coin_chain[coin_chain$sampno > 0.1*iter,]
-allRes <- NULL
-for(j in 1:n){
-  print(j)
-  x <- NULL
-  i <- 1
-  for(sampno in unique(coin_chain$sampno)){
-    tmpChain <- coin_chain[coin_chain$sampno == sampno,]
-    x[i] <- sum(tmpChain[,colnames(tmpChain) == j])/indivs
-    i <- i+ 1
-  }
-  final <- quantile(x,c(0.025,0.5,0.975))
-  allRes <- rbind(allRes, final)
-}
+## Melt chain by sample number
+melted_coin_chain <- melt(coin_chain[,1:(ncol(coin_chain)-1)], id.vars="sampno")
+## Get proportion heads at each sample for each coin
+melted_coin_chain <- ddply(melted_coin_chain, .(sampno, variable), function(x) sum(x$value)/indivs)
+colnames(melted_coin_chain)[3] <- "value"
+## Expand such that we have a column for each coin
+#casted_coin_chain <- dcast(melted_coin_chain, sampno~variable)
+## Get CI for each chain
+casted_coin_chain <- ddply(melted_coin_chain, .(variable), function(x) quantile(x$value, c(0.025,0.5,0.975)))
 
-tmp <- melt(coin_chain[,1:(ncol(coin_chain)-1)], id.vars="sampno")
-tmp <- ddply(tmp, .(sampno, variable), function(x) sum(x$value)/indivs)
+tmp <- rbind(chain, melted_coin_chain)
 tmp1 <- dcast(tmp, sampno~variable)
-tmp <- ddply(tmp, ~variable, function(x) quantile(x$V1, c(0.025,0.5,0.975)))
 
 inferred_coins <- plyr::ddply(coin_chain, ~indiv, colMeans)
 inferred_coins <- inferred_coins[,2:ncol(inferred_coins)]
-wow <- melt(inferred_coins,id.vars="indiv")
-omg <- melt(coin_results)
-colnames(omg) <- c("indiv","variable","value")
-omg <- omg[omg$value == 1,]
-p2 <- ggplot(wow[wow$indiv %in% 1:10,]) + 
+mean_heads_indiv <- melt(inferred_coins,id.vars="indiv")
+real_heads_indiv <- melt(coin_results)
+colnames(real_heads_indiv) <- c("indiv","variable","value")
+real_heads_indiv <- real_heads_indiv[real_heads_indiv$value == 1,]
+p2 <- ggplot(mean_heads_indiv[mean_heads_indiv$indiv %in% 1:10,]) + 
   geom_point(aes(x=variable,y=value)) + 
-  geom_vline(data=omg[omg$indiv %in% 1:10,],aes(xintercept=variable),col="red",linetype="dashed",alpha=0.4) +
+  geom_vline(data=real_heads_indiv[real_heads_indiv$indiv %in% 1:10,],aes(xintercept=variable),col="red",linetype="dashed",alpha=0.4) +
   facet_wrap(~indiv)
 
+## Actual coin weightings
 real_coins <- data.frame(variable=1:n, y=coin_probs)
+## MLE from actual coin flips
 real_coins_data <- data.frame(variable=1:n, y=colSums(coin_results)/nrow(coin_results))
-tmp2 <- chain[chain$parameter %in% paste0("coin.",1:n),]
-colnames(tmp2) <- c("x","variable","value")
-tmp2$variable <- factor(tmp2$variable, levels=unique(as.character(tmp2$variable)))
-tmp2$variable <- as.integer(tmp2$variable)
-tmp2 <- ddply(tmp2, ~variable, function(x) quantile(x$value, c(0.025,0.5,0.975)))
-tmp$variable <- as.integer(tmp$variable)
-p3 <- ggplot(tmp) + 
-  geom_pointrange(aes(x=variable-0.2,ymin=`2.5%`,y=`50%`,ymax=`97.5%`)) + 
-  #geom_pointrange(data=tmp2,aes(x=variable+0.2,ymin=`2.5%`,y=`50%`,ymax=`97.5%`),col="blue") + 
-  geom_point(data=real_coins, aes(x=variable,y=y),col="red") +
-  geom_point(data=real_coins_data,aes(x=variable,y=y),col="purple") +
-  scale_y_continuous(limits=c(0,1))
+coin_prob_chain <- chain[chain$variable %in% paste0("coin.",1:n),]
+colnames(coin_prob_chain) <- c("x","variable","value")
+casted_coin_chain$variable <- as.integer(casted_coin_chain$variable)
+coin_prob_chain$variable <- factor(coin_prob_chain$variable, levels=unique(as.character(coin_prob_chain$variable)))
+coin_prob_chain$variable <- as.integer(coin_prob_chain$variable)
+coin_prob_chain <- ddply(coin_prob_chain, ~variable, function(x) quantile(x$value, c(0.025,0.5,0.975)))
 
+samp_tmp <- data.frame(xmin=samps-0.5,xmax=samps+0.5,ymin=0,ymax=1)
+p3 <- ggplot() + 
+  geom_rect(data=samp_tmp,aes(xmin=xmin,xmax=xmax,ymin=ymin,ymax=ymax,fill="gray80"),alpha=0.5)+
+  geom_pointrange(data=coin_prob_chain,aes(x=variable-0.2,ymin=`2.5%`,y=`50%`,ymax=`97.5%`,col="coin prob chain")) + 
+  geom_pointrange(data=casted_coin_chain,aes(x=variable+0.2,ymin=`2.5%`,y=`50%`,ymax=`97.5%`,col="coin chain")) + 
+  geom_point(data=real_coins, aes(x=variable,y=y,col="real coin prob")) +
+  geom_point(data=real_coins_data,aes(x=variable,y=y,col="real coin data")) +
+  theme_bw() +
+  scale_colour_manual(name="Key",values=c("coin prob chain"="blue","coin chain"="purple",
+                                          "real coin prob"="black","real coin data"="red"),
+                                  labels=c("Coin chain","Coin prob chain","Real coin data","Real coin prob")) +
+  scale_fill_identity(name = 'Data', guide = 'legend',labels = c('Observed')) +
+  xlab("Coin") +
+  ylab("Inferred/known probability of heads")+
+  scale_x_continuous(expand=c(0,0),limits=c(0.5,n+0.5),breaks=seq(1,n,by=1),labels=seq(1,n,by=1))+
+  scale_y_continuous(expand=c(0,0),limits=c(0,1))
 
-
-liks <- NULL
-liks1 <- NULL
-pars1 <- pars
-priors <- NULL
-for(i in 1:100){
-  pars1[4] <- (i-1)/100
-  priors[i] <- prior(pars1)
-  liks[i] <- posterior_group(pars1, coin_results, dat)
-  liks1[i] <- dbinom(sum(coin_results[,1]), nrow(coin_results), pars1[4],log=TRUE)
-}
-#plot(liks1)
-#lines(liks+log(choose(indivs, sum(coin_results[,2]))),col="red")
-
+p1
+p2
+p3
+p_chain

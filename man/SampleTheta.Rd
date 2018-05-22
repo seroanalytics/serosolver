@@ -2,11 +2,11 @@
 % Please edit documentation in R/mcmc_help.R
 \name{SampleTheta}
 \alias{SampleTheta}
-\title{Sample theta as in original coed}
+\title{Sample theta as in original code}
 \usage{
-SampleTheta(theta_initial, m, covartheta, covarbasic, nparam)
+SampleTheta(values, fixed, covMat, covMatbasic, parNames)
 }
 \description{
-Sample theta as in original coed
+Sample theta as in original code
 }
 

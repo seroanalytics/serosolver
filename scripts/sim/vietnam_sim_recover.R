@@ -10,7 +10,7 @@ setwd("~/Documents/Fluscape/serosolver")
 devtools::load_all()
 ## How many individuals to simulate?
 n_indiv <- 69
-
+buckets <- 1
 ## Read in parameter table to simulate from and change waning rate if necessary
 parTab <- read.csv("~/Documents/Fluscape/serosolver/inputs/parTab.csv",stringsAsFactors=FALSE)
 parTab[parTab$names == "wane","values"] <- 1
@@ -18,7 +18,7 @@ parTab[parTab$names == "wane","values"] <- 1
 samplingTimes <- 2007:2012
 
 ## Antigenic map for cross reactivity parameters
-fit_dat <- read.csv("~/Documents/Fluscape/serosolver/data/antigenicMap_AK.csv")
+fit_dat <- read.csv("~/Documents/Fluscape/serosolver/data/antigenic_maps/antigenicMap_vietnam.csv")
 
 ## All possible circulation times
 fit_dat <- fit_dat[fit_dat$inf_years >= 1968 & fit_dat$inf_years <= 2012,]
@@ -32,7 +32,7 @@ parTab[parTab$names %in% c("alpha","beta"),"values"] <- c(2,12)
 hAR <- read.table("~/net/home/serosolver/data_LSA/HaNam_AR.txt",header=TRUE)
 hAR <- hAR[,1]
 dat <- simulate_data(parTab, 1, n_indiv, 1,strainIsolationTimes,
-                     samplingTimes, 2, antigenicMap=fit_dat, 0, 0, 6,75,
+                     samplingTimes, 6, antigenicMap=fit_dat, 0, 0, 6,75,
                      simInfPars=c("mean"=0.15,"sd"=0.5,"bigMean"=0.5,"logSD"=1),
                      useSIR=FALSE, pInf = hAR, useSpline=FALSE)
 
@@ -50,10 +50,10 @@ ages <- dat[[3]]
 AR <- dat[[4]]
 
 
-titreDat <- read.csv("data/vietnam_sim_dat_1.csv",stringsAsFactors=FALSE)
-ages <- read.csv("data/vietnam_sim_ages_1.csv",stringsAsFactors=FALSE)
-infectionHistories <- infHist <- read.csv("data/vietnam_sim_infHist_1.csv",stringsAsFactors=FALSE)
-AR <- read.csv("data/vietnam_sim_AR_1.csv",stringsAsFactors=FALSE)
+#titreDat <- read.csv("data/vietnam_sim_dat_1.csv",stringsAsFactors=FALSE)
+#ages <- read.csv("data/vietnam_sim_ages_1.csv",stringsAsFactors=FALSE)
+#infectionHistories <- infHist <- read.csv("data/vietnam_sim_infHist_1.csv",stringsAsFactors=FALSE)
+#AR <- read.csv("data/vietnam_sim_AR_1.csv",stringsAsFactors=FALSE)
 ages1 <- ages
 ages1$DOB <- 1940
 
@@ -67,7 +67,7 @@ version <- 1
 filename <- "chains/vietnam_original_sim"
 ## Specify paramters controlling the MCMC procedure
 mcmcPars <- c("iterations"=100000,"popt"=0.44,"popt_hist"=0.44,"opt_freq"=2000,"thin"=1,"adaptive_period"=50000,
-              "save_block"=100,"thin2"=100,"histSampleProb"=1,"switch_sample"=2, "burnin"=0, 
+              "save_block"=1000,"thin2"=100,"histSampleProb"=1,"switch_sample"=2, "burnin"=0, 
               "nInfs"=1, "moveSize"=2, "histProposal"=histProposal, "histOpt"=0,"n_par"=10)
 
 ## Generate starting locations
@@ -108,7 +108,7 @@ version <- 4
 ## The general output filename
 filename <- "chains/vietnam_correct_sim"
 mcmcPars <- c("iterations"=100000,"popt"=0.44,"popt_hist"=0.44,"opt_freq"=2000,"thin"=1,"adaptive_period"=50000,
-              "save_block"=100,"thin2"=100,"histSampleProb"=1,"switch_sample"=2, "burnin"=0, 
+              "save_block"=1000,"thin2"=100,"histSampleProb"=1,"switch_sample"=2, "burnin"=0, 
               "nInfs"=1, "moveSize"=2, "histProposal"=histProposal, "histOpt"=0,"n_par"=10)
 ## Add rows for each lambda value to be inferred
 parTab <- read.csv("~/Documents/Fluscape/serosolver/inputs/parTab_lambda.csv",stringsAsFactors=FALSE)

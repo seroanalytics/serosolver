@@ -147,7 +147,7 @@ run_MCMC <- function(parTab,
     posterior_simp <- protect(CREATE_POSTERIOR_FUNC(parTab,data,
                                                     antigenicMap,
                                                     PRIOR_FUNC,version,
-                                                    ageMask,mu_indices,
+                                                    ageMask,
                                                     ...))
     ## If using random effects on mu, need to include hyperprior term on mu
     ## We can't do this in the main posterior function, because this term
@@ -225,6 +225,8 @@ run_MCMC <- function(parTab,
                 ## NOTE
                 ## MIGHT WANT TO USE ADAM'S PROPOSAL FUNCTION
                 proposal <- mvr_proposal(current_pars, unfixed_pars, steps*covMat, cov_mat0, FALSE, beta=0.05)
+                #proposal <- SampleTheta(current_pars, unfixed_pars, cov_mat0*steps, cov_mat0*steps, par_names)
+                #print(proposal)
                 tempiter <- tempiter + 1
             }
             ## Calculate new likelihood for these parameters
@@ -248,9 +250,7 @@ run_MCMC <- function(parTab,
                 newInfectionHistories <- inf_hist_prop_cpp(infectionHistories,indivSubSample,ageMask,moveSizes, nInfs_vec, alpha,beta,randNs)
                 #newInfectionHistories <- infection_history_betabinom_group(infectionHistories,indivSubSample,ageMask,moveSizes, nInfs_vec, alpha,beta)
             } else if(histProposal==4){
-                tmp <- infection_history_proposal(infectionHistories, indivSubSample, strainIsolationTimes, ageMask,nInfs_vec)
-                #acceptance <- tmp[[2]]
-                newInfectionHistories <- tmp[[1]]
+                newInfectionHistories <- infection_history_proposal(infectionHistories, indivSubSample, strainIsolationTimes, ageMask,nInfs_vec)
             } else {
                 newInfectionHistories <- inf_hist_prob_lambda(infectionHistories, indivSubSample,ageMask,nInfs_vec, current_pars[lambda_indices])
             }

@@ -187,6 +187,23 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// c_model_original
+NumericVector c_model_original(int n, int nsamp, IntegerVector x, NumericVector theta, NumericVector dd, NumericVector dd2, int t_sample);
+RcppExport SEXP _serosolver_c_model_original(SEXP nSEXP, SEXP nsampSEXP, SEXP xSEXP, SEXP thetaSEXP, SEXP ddSEXP, SEXP dd2SEXP, SEXP t_sampleSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< int >::type n(nSEXP);
+    Rcpp::traits::input_parameter< int >::type nsamp(nsampSEXP);
+    Rcpp::traits::input_parameter< IntegerVector >::type x(xSEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type theta(thetaSEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type dd(ddSEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type dd2(dd2SEXP);
+    Rcpp::traits::input_parameter< int >::type t_sample(t_sampleSEXP);
+    rcpp_result_gen = Rcpp::wrap(c_model_original(n, nsamp, x, theta, dd, dd2, t_sample));
+    return rcpp_result_gen;
+END_RCPP
+}
 // infection_model_indiv_mus
 NumericVector infection_model_indiv_mus(NumericVector theta, NumericVector mus, IntegerVector infectionHistory, NumericVector infectionTimes, IntegerVector boostingVecIndices, IntegerVector infectionMapIndices, double samplingTime, IntegerVector measurementMapIndices, NumericVector antigenicMapLong, NumericVector antigenicMapShort, int numberStrains);
 RcppExport SEXP _serosolver_infection_model_indiv_mus(SEXP thetaSEXP, SEXP musSEXP, SEXP infectionHistorySEXP, SEXP infectionTimesSEXP, SEXP boostingVecIndicesSEXP, SEXP infectionMapIndicesSEXP, SEXP samplingTimeSEXP, SEXP measurementMapIndicesSEXP, SEXP antigenicMapLongSEXP, SEXP antigenicMapShortSEXP, SEXP numberStrainsSEXP) {
@@ -325,6 +342,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_serosolver_group_likelihood_total", (DL_FUNC) &_serosolver_group_likelihood_total, 11},
     {"_serosolver_sum_buckets", (DL_FUNC) &_serosolver_sum_buckets, 2},
     {"_serosolver_create_cross_reactivity_vector", (DL_FUNC) &_serosolver_create_cross_reactivity_vector, 2},
+    {"_serosolver_c_model_original", (DL_FUNC) &_serosolver_c_model_original, 7},
     {"_serosolver_infection_model_indiv_mus", (DL_FUNC) &_serosolver_infection_model_indiv_mus, 11},
     {"_serosolver_titre_data_individual_mus", (DL_FUNC) &_serosolver_titre_data_individual_mus, 12},
     {"_serosolver_titre_data_group_mus", (DL_FUNC) &_serosolver_titre_data_group_mus, 13},

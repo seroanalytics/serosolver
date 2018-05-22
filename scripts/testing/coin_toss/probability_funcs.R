@@ -4,6 +4,7 @@ likelihood <- function(pars, coin_results, dat){
 }
 
 likelihood_group <- function(pars, coin_results, dat, samps=seq(1,20,by=4)){
+  #return(rep(-100000,nrow(coin_results)))
   y <- coin_toss_group(pars, coin_results)
   liks <- numeric(nrow(dat))
   for(i in 1:nrow(y)){
@@ -13,11 +14,14 @@ likelihood_group <- function(pars, coin_results, dat, samps=seq(1,20,by=4)){
 }
 
 prior <- function(pars, probs){
-  #return(0)
-  a <- dnorm(pars[1], 0, 1000,log=TRUE)
-  b <- dnorm(pars[1],0,1000,log=TRUE)
-  c <- sum(dbeta(probs, 1,1,log=TRUE))
-  return(a+b+c)
+  a <- dunif(pars[1],0,10,log=TRUE)
+  b <- dunif(pars[2],0,1,log=TRUE)
+  c <- dunif(pars[3],0,5,log=TRUE)
+  #a <- dnorm(pars[1], 0, 1000,log=TRUE)
+  #b <- dnorm(pars[2],0,1000,log=TRUE)
+  #c <- dnorm(pars[3],0,1000,log=TRUE)
+  d <- sum(dbeta(probs, 1,1,log=TRUE))
+  return(a+b+c+d)
 }
 
 
@@ -31,6 +35,12 @@ prior_group <- function(coin_probs, coin_results){
 
 
 hyper_prior_group <- function(probs, coin_results){
+  prob <- apply(coin_results, 1, function(x) sum(log(probs^x * (1-probs)^(1-x))))
+  return(prob)
+}
+
+
+hyper_prior_group2 <- function(alphas, betas, coin_results){
   prob <- apply(coin_results, 1, function(x) sum(log(probs^x * (1-probs)^(1-x))))
   return(prob)
 }

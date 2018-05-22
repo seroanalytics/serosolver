@@ -1,25 +1,28 @@
-#' Sample theta as in original coed
+#' Sample theta as in original code
 #' @export
-SampleTheta<-function(theta_initial,m,covartheta,covarbasic,nparam){
-  
-  # sample from multivariate normal distribution - no adaptive sampling
-  theta_star = as.numeric(exp(mvrnorm(1,log(theta_initial), Sigma=covarbasic)))
-  
-  names(theta_star)=names(theta_initial)
-  
-  # reflective boundary condition for max boost=10
-  mu1=min(20-theta_star[["mu"]],theta_star[["mu"]])
-  theta_star[["mu"]]=ifelse(mu1<0,theta_initial[["mu"]],mu1)
-  
-  #mu2=min(20-theta_star[["muShort"]],theta_star[["muShort"]])
-  #theta_star[["muShort"]]=ifelse(mu2<0,theta_initial[["muShort"]],mu2)
-  
-  # reflective boundary condition for wane function = max is 1 for now # DEBUG
-  wane2=min(2-theta_star[["wane"]],theta_star[["wane"]])
-  theta_star[["wane"]]=ifelse(wane2<0,theta_initial[["wane"]],wane2)
-  
-  #print(rbind(theta_initial,theta_star1,theta_star2))
-  return(thetaS=theta_star)
+SampleTheta <-function(values,fixed,covMat,covMatbasic, parNames){
+    theta_star<- theta_initial <- values
+    names(theta_star) <- parNames
+    #theta_star[fixed] <- mvrnorm(1, log(values), Sigma=covMatbasic)
+    theta_star[fixed] <- as.numeric(exp(mvrnorm(1,log(values[fixed]),Sigma=covMatbasic)))
+                                        # sample from multivariate normal distribution - no adaptive sampling
+                                        #theta_star = as.numeric(exp(mvrnorm(1,log(theta_initial), Sigma=covarbasic)))
+    
+                                        #names(theta_star)=names(theta_initial)
+    
+                                        # reflective boundary condition for max boost=10
+    mu1=min(20-theta_star["mu"],theta_star["mu"])
+    theta_star["mu"]=ifelse(mu1<0,theta_initial["mu"],mu1)
+     
+                                        #mu2=min(20-theta_star[["muShort"]],theta_star[["muShort"]])
+                                        #theta_star[["muShort"]]=ifelse(mu2<0,theta_initial[["muShort"]],mu2)
+    
+                                        # reflective boundary condition for wane function = max is 1 for now # DEBUG
+    wane2=min(2-theta_star["wane"],theta_star["wane"])
+    theta_star["wane"]=ifelse(wane2<0,theta_initial["wane"],wane2)
+    
+                                        #print(rbind(theta_initial,theta_star1,theta_star2))
+    return(theta_star)
 }
 
 #' Multivariate proposal function
@@ -213,8 +216,7 @@ infection_history_betabinom_group <- function(newInfHist, sampledIndivs, ageMask
     for(indiv in sampledIndivs){
         x <- newInf[indiv,ageMask[indiv]:ncol(newInfHist)]
         maxI <- length(x)
-        if(runif(1) < 1/2){
-            
+        if(runif(1) < 1/2){            
             k <- nInfs[indiv]
             locs <- sample(length(x), k)
             number_1s <- sum(x[-locs])
@@ -262,7 +264,7 @@ infection_history_betabinom_group <- function(newInfHist, sampledIndivs, ageMask
 #' @export
 #' @useDynLib serosolver
 univ_proposal <- function(values, lower_bounds, upper_bounds,steps, index){
-    #rtn <- values
+    rtn <- values
     #rtn[index] <- rnorm(1,values[index],steps[index])
     #return(rtn)
     mn <- lower_bounds[index]
@@ -491,12 +493,10 @@ save_infHist_to_disk <- function(infHist, file, sampno, append=TRUE,colNames=FAL
 #' @export
 infection_history_proposal <-function(newInfectionHistories,sampledIndivs,strainIsolationTimes,ageMask, nInfs){
     newInf <- newInfectionHistories
-    acceptance_distribution <- rep(1, nrow(newInf))
     #ks <- rpois(length(sampledIndivs), nInfs)
     for(indiv in sampledIndivs){ # Resample subset of individuals
         rand1=runif(1)
         x=newInfectionHistories[indiv,ageMask[indiv]:length(strainIsolationTimes)] # Only resample years individual was alive
-        accept <- 0
         maxI <- length(x)
         ## Remove infection
         if(rand1<1/3){
@@ -505,12 +505,8 @@ infection_history_proposal <-function(newInfectionHistories,sampledIndivs,strain
             n_1 <- length(infectID)
             k_f <- min(n_1,max(nInfs[indiv],1))
             if(n_1 > 0){
-                x[sample(infectID,k_f)]=0 # Why double? DEBUG
-                n_0 <- length(which(x==0))
-                k_b <- min(n_0+k_f, max(nInfs[indiv],1))
-                p_forward <- 1/3 * k_f/n_1
-                p_back <- 1/3 * k_b/n_0
-                accept <- (p_back/p_forward)
+                #x[sample(infectID,k_f)]=0 # Why double? DEBUG
+                x[sample(c(infectID),1)]=0
             }
         }
         ## Add infection
@@ -519,12 +515,8 @@ infection_history_proposal <-function(newInfectionHistories,sampledIndivs,strain
             n_0 <- length(ninfecID)
             k_f <- min(n_0,max(nInfs[indiv],1))
             if(n_0>0){
-                x[sample(ninfecID,k_f)]=1
-                n_1 <- length(which(x==1))
-                k_b <-  min(n_1+k_f,max(nInfs[indiv],1))
-                p_forward <- 1/3 * k_f/n_0
-                p_back <- 1/3 *k_b/n_1
-                accept <- (p_back/p_forward)
+                x[sample(c(ninfecID),1)]=1
+                #x[sample(ninfecID,k_f)]=1
             }
         }
         ## Move infection position
@@ -534,20 +526,15 @@ infection_history_proposal <-function(newInfectionHistories,sampledIndivs,strain
             n_1 <- length(infectID)
             n_0 <- length(ninfecID)
             if(n_1 > 0 & n_0 > 0){
-                x[sample(infectID,1)]=0
-                x[sample(ninfecID,1)]=1
-                p_forward <- 1/3 * n_1 * n_0
-                
-                n_1b <- length(which(x > 0))
-                n_0b <- length(which(x==0))
-                p_back <- 1/3 * n_1b * n_0b
-                accept <- (p_back/p_forward)
+                x[sample(c(infectID),1)]=0
+                x[sample(c(ninfecID),1)]=1
+                #x[sample(infectID,1)]=0
+                #x[sample(ninfecID,1)]=1
             }
         }
-        acceptance_distribution[indiv] <- accept
         newInf[indiv,ageMask[indiv]:length(strainIsolationTimes)]=x # Only =1 if individual was alive
     } # end loop over individuals
-    return(list(newInf, acceptance_distribution))
+    return(newInf)
 }
 
 #' @export

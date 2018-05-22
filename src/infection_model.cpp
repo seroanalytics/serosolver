@@ -97,8 +97,8 @@ NumericVector infection_model_indiv(NumericVector theta, // Parameter vector
       // THE ACTUAL MODEL
       tmpTitre += maskedInfectionHistory[i]* // Ignore infections that couldn't have happened
 	MAX(0, 1.0 - tau*(cumInfectionHistory[i] - 1.0))* // Antigenic seniority
-	(mu*antigenicMapLong[measurementMapIndices[k]*numberStrains+infectionMapIndices[i]] +  // Long term boost
-	 mu_short*antigenicMapShort[measurementMapIndices[k]*numberStrains+infectionMapIndices[i]]* // Short term cross reactive boost
+	((mu*antigenicMapLong[measurementMapIndices[k]*numberStrains+infectionMapIndices[i]]) +  // Long term boost
+	 (mu_short*antigenicMapShort[measurementMapIndices[k]*numberStrains+infectionMapIndices[i]])* // Short term cross reactive boost
 	 waning[i]); // Waning rate
       ////////////////////////////
     }
@@ -463,3 +463,93 @@ NumericVector create_cross_reactivity_vector(NumericVector x, double sigma) {
 
 
  
+//' Original model reimplementation
+//' @export
+// [[Rcpp::export]]
+NumericVector c_model_original(int n, // max number of infections
+			       int nsamp, // number of samples tested against (ie. number of titres)
+			       IntegerVector x, // infection history vector
+			       NumericVector theta,
+			       NumericVector dd, // Long term CR matrix
+			       NumericVector dd2, // short term CR matrix
+			       int t_sample){ // index of time that sample was taken (ie. 1 = 1968)
+  
+  
+  /* - - - - - - - - - - - - - - - - - - - - - - - - - - - */
+  /* Calculate lambda */	
+  double T_2 = theta["tau"];
+  double wane = theta["wane"];
+  double mu = theta["mu"];
+  double mu2 = theta["mu_short"]; 
+  // as sigma = theta[4]
+	
+  NumericVector titrepred(nsamp);
+  IntegerVector maskedInfectionHistory(n);
+  NumericVector distanceFromTest(n);
+  IntegerVector cumInfectionHistory(n);
+  NumericVector x1(n);
+	
+#define MAX(a,b) ((a) < (b) ? (b) : (a)) // define MAX function for use later
+  
+  /* Add for loop over k*/
+	
+  int k;
+  int i;
+  int j;
+  int m;
+	
+  double xx2; 
+  // For each strain tested
+  for (k=0; k<nsamp; k++){ // Iterate over samples tested against
+
+    xx2=0;
+
+    // Make a masked infection history
+    // Was the individual infected in each year?
+    j=(t_sample-1); // fix test year. Need (t-1) as index from 0
+    // Iterate through all possible infection years
+    for (m=0;m<n;m++) {
+      if (m <= j) {
+	maskedInfectionHistory[m] = x[m];
+      } else {
+	maskedInfectionHistory[m] = 0;
+      }
+    }
+    
+    // Make an index for waning
+    // For all possible infection years
+    // how far is the tested year from a year of infection?
+    for (m=0;m<n;m++) {
+      // distanceFromTest[m] = exp(-wane * (j-m )); // Distance from test year 
+      distanceFromTest[m] = MAX(0, 1 - wane * (j-m) ); // Distance from test year
+    }
+    
+    // Make a cumulative infection history
+    cumInfectionHistory[0] = maskedInfectionHistory[0];
+    for (m=1;m<n;m++) {
+      cumInfectionHistory[m] = cumInfectionHistory[m-1] + 
+	maskedInfectionHistory[m];
+    }
+    
+    /* Calculate expected titre	- note k indexed from 0 */
+    /* Note that waning is currently linked with back boosting */
+    /* dd is long term cross-reaction, dd2 is short-term */
+    
+    for (i=0; i<n; i++){
+      x1[i] = maskedInfectionHistory[i] *
+	// exp(-1.0 * T_2 * ( cumInfectionHistory[i]  - 1.0)) *
+	MAX(0, 1.0 - T_2 * ( cumInfectionHistory[i]  - 1.0)) * // Antigenic seniority
+	//(pow(1.0 + T_1 , (total_inf - cumInfectionHistory[i])) ) * REMOVED Tau 1
+	(mu * dd[k*n+i] + mu2 * dd2[k*n+i] * distanceFromTest[i] );
+    }
+    // Sum up contribution of all infections
+    for (i=0; i<n; i++){
+      xx2 =  xx2 + x1[i];
+    }
+    
+    titrepred[k] = xx2;
+    
+    
+  } // end sample loop (k)
+  return(titrepred);
+}

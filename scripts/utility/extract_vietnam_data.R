@@ -44,4 +44,4 @@ dataMelt <- dataMelt[complete.cases(dataMelt),]
 dataMelt <- dataMelt[order(dataMelt$individual, dataMelt$samples, dataMelt$virus),]
 finalDat <- plyr::ddply(dataMelt,.(individual,virus,samples),function(x) cbind(x,"run"=1:nrow(x)))
 finalDat <- finalDat[order(finalDat$individual, finalDat$run, finalDat$samples, finalDat$virus),]
-write.table(finalDat,"~/Documents/Fluscape/serosolver/data/vietnam_data.csv",sep=",",row.names=FALSE)
+write.table(finalDat,"~/Documents/Fluscape/serosolver/data/real/vietnam_data_primary.csv",sep=",",row.names=FALSE)

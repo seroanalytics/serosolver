@@ -7,9 +7,7 @@ library(ggplot2)
 
 #tmp <- inf_hist_prop_cpp(as.matrix(infHist), sampled, ageMask, moveSizes, nInfs, 100, 100,rep(0.2,10))
 
-
-
-n_indiv <- 25
+n_indiv <- 100
 infHist <- infHist1 <- infHist2 <- infHist3 <- infHist4 <- matrix(0, nrow=n_indiv, ncol=10,byrow=TRUE)
 sampled <- 1:n_indiv
 strainIsolationTimes <- 1:10
@@ -20,7 +18,7 @@ moveSizes <- rep(1, n_indiv)
 
 omgs <- omgs1 <- omgs2 <- omgs3 <- omgs4 <- list()
 
-n <- 10000
+n <- 50000
 infHists <- infHists1 <- infHists2 <- infHists3 <- infHists4 <- matrix(ncol=13,nrow=n_indiv*n)
 
 for(i in 1:n){
@@ -77,13 +75,17 @@ infHists1[,13] <- "beta_binom"
 infHists2[,13] <- "AK_mine"
 infHists3[,13] <- "BB_cpp"
 infHists4[,13] <- "symmetric"
-colnames(infHists) <- colnames(infHists1) <-colnames(infHists2) <-colnames(infHists3) <-colnames(infHists4) <- c(1:10, "indiv","samp","ver")
+colnames(infHists) <- 
+  colnames(infHists1) <-
+  colnames(infHists2) <-
+  colnames(infHists3) <-
+  colnames(infHists4) <- c(1:10, "indiv","samp","ver")
 
 infHist5 <- matrix(0, nrow=n_indiv, ncol=10,byrow=TRUE)
 infHists5 <- matrix(ncol=13,nrow=n_indiv*n)
 omgs5 <- NULL
 #ageMask <- rep(5,n_indiv)
-#infHist5[,1:5] <- 0
+infHist5[,1:5] <- 0
 for(i in 1:n){
   if(i%%100 == 0) print(i)
   infHist5 <- as.data.frame(inf_hist_prop_cpp(as.matrix(infHist5), sampled, ageMask, moveSizes, nInfs, 1, 1,runif(n_indiv, 0, 0.5)))
@@ -100,7 +102,11 @@ colnames(infHists5) <- c(1:10, "indiv","samp","ver")
 infHists5[,13] <- "binom_bb"
 omgs5$ver <- "binom_bb"
 
-infHists_comb <- as.data.frame(rbind(infHists,infHists1, infHists2, infHists3, infHists4, infHists5))
+infHists_comb <- as.data.frame(rbind(infHists,
+                                     infHists1, 
+                                     infHists2, infHists3, 
+                                     infHists4, 
+                                     infHists5))
 #infHists_comb <- infHists5[complete.cases(infHists5),]
 
 greb <- melt(infHists_comb, id.vars=c("ver","samp","indiv"))
@@ -132,7 +138,7 @@ omgs3$ver <- "BB_cpp"
 omgs4$ver <- "symmetric"
 wow <- rbind(omgs, omgs1, omgs2, omgs3, omgs4, omgs5)
 wow$infs <- as.integer(wow$infs)
-#wow <- omgs5
+wow <- omgs5
 #wow[wow$indiv %in% which(ageMask >= 5),]
 indiv_total <- ggplot(wow) + geom_histogram(aes(x=infs,fill=ver),binwidth=1) + 
     facet_grid(ver~indiv) + 

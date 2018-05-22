@@ -5,8 +5,8 @@ proposal_theta <- function(pars, fixed, covMat, covMat0, beta=0.05){
   return(proposed)
 }
 
+
 coin_proposal <- function(coin_results, k=1){
-  #proposed <- sample(c(0,1),length(coin_results),replace=TRUE)
   locs <- sample(length(coin_results),k)
   proposed <- coin_results
   proposed[locs] <- !coin_results[locs]
@@ -19,6 +19,8 @@ coin_proposal_symmetric_group <- function(coin_results, k=1, indivs=1){
     if(runif(1) < 0.5){
       locs <- sample(length(coin_results[j,]), k)
       proposed[j,locs] <- !coin_results[j,locs]
+      #probs <- rbeta(k, 1,1)
+      #proposed[j,locs] <- rbinom(k,1,probs)
     } else {
       locs <- sample(length(coin_results[j,]),2)
       loc1 <- locs[1]

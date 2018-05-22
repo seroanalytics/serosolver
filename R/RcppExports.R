@@ -126,6 +126,12 @@ create_cross_reactivity_vector <- function(x, sigma) {
     .Call('_serosolver_create_cross_reactivity_vector', PACKAGE = 'serosolver', x, sigma)
 }
 
+#' Original model reimplementation
+#' @export
+c_model_original <- function(n, nsamp, x, theta, dd, dd2, t_sample) {
+    .Call('_serosolver_c_model_original', PACKAGE = 'serosolver', n, nsamp, x, theta, dd, dd2, t_sample)
+}
+
 #' Model function
 #'
 #' The main model solving function for a single individual.

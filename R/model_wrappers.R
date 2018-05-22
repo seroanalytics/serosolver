@@ -32,14 +32,15 @@ solve_model_individual <- function(parTab, infectionHistory, sampleTime, antigen
 #' Solves the original model as in the original implementation
 #' @export
 solve_model_individual_original <- function(theta_star, sample, antigenic.map.in, years, infHist){ 
-    dmatrix = 1- theta_star[["sigma"]]*outputdmatrix.fromcoord.original(theta_star[["sigma"]],years,antigenic.map.in,linearD=T)
+    dmatrix = 1- theta_star[["sigma1"]]*outputdmatrix.fromcoord.original(theta_star[["sigma1"]],years,antigenic.map.in,linearD=T)
     dmatrix[dmatrix<0]=0
     dmatrix2 = 1- theta_star[["sigma2"]]*outputdmatrix.fromcoord.original(theta_star[["sigma2"]],years,antigenic.map.in,linearD=T)
     dmatrix2[dmatrix2<0]=0
 
     ind_yearsA <- 1:length(years)
     titredat <- rep(0, length(years))
-    ind_years <- years - 1967
+    ind_years <- years - 1968 + 1
+    testyear_index = sample - 1968 + 1
     testyearI <- which(years == sample)
                                         # Check test data available
                                         # Set up test strains
@@ -48,11 +49,14 @@ solve_model_individual_original <- function(theta_star, sample, antigenic.map.in
     d_vector=melt(t(d.ij))$value #melt is by column
     d.ij2=dmatrix2[test.part,] # Define cross-immunity matrix 2 for sample strain
     d_vector2=melt(t(d.ij2))$value #melt is by column
-    
-    expect=func1(as.numeric(infHist),titredat,d_vector,d_vector2,theta_star,testyearI) # Output expectation
+    expect=c_model_original(length(infHist),length(years),infHist, theta_star, d_vector,d_vector2,testyear_index);
+    #expect=func1(as.numeric(infHist),titredat,d_vector,d_vector2,theta_star,testyear_index) # Output expectation
     dat <- data.frame(years=years, y=expect)
     return(dat)
 }
+
+
+
 
 #' Needed to solve the original implementation of the model
 outputdmatrix.fromcoord.original <- function(thetasigma,inf_years,anti.map.in,linearD=F){ #anti.map.in can be vector or matrix - rows give inf_years, columns give location
@@ -73,7 +77,8 @@ outputdmatrix.fromcoord.original <- function(thetasigma,inf_years,anti.map.in,li
     if(is.null(dim(anti.map.in))){ # check if input map is one or 2 dimensions
       (dmatrix=sapply(anti.map.in,function(x){y=abs(anti.map.in-x); y   })) 
       
-    }else{ # If spline function defined, calculate directly from input
+    }else{
+                                        # If spline function defined, calculate directly from input
       (dmatrix=apply(anti.map.in,1,function(x){y=sqrt(
         
         colSums(apply(anti.map.in,1,function(y){(y-x)^2}))
