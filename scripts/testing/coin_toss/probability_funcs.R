@@ -12,8 +12,24 @@ likelihood_group <- function(pars, coin_results, dat, samps=seq(1,20,by=4)){
   }
   return(liks)
 }
+inf_mat_prior <- function(infHist, alpha, beta){
+  N <- nrow(infHist)
+  sum(apply(infHist, 2, function(x) log(beta(sum(x) + alpha, N - sum(x) + beta)/beta(alpha, beta))))
+}
 
-prior <- function(pars, probs){
+
+prior <- function(pars){
+  a <- dunif(pars[1],0,10,log=TRUE)
+  b <- dunif(pars[2],0,1,log=TRUE)
+  c <- dunif(pars[3],0,5,log=TRUE)
+  #a <- dnorm(pars[1], 0, 1000,log=TRUE)
+  #b <- dnorm(pars[2],0,1000,log=TRUE)
+  #c <- dnorm(pars[3],0,1000,log=TRUE)
+  #d <- sum(dbeta(probs, 1,1,log=TRUE))
+  return(a+b+c)
+}
+
+prior1 <- function(pars, probs){
   a <- dunif(pars[1],0,10,log=TRUE)
   b <- dunif(pars[2],0,1,log=TRUE)
   c <- dunif(pars[3],0,5,log=TRUE)

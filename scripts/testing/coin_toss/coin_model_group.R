@@ -10,11 +10,12 @@ source("model_funcs.R")
 source("probability_funcs.R")
 source("proposal_funcs.R")
 source("mcmc_funcs.R")
+source("mcmc_funcs_marginal.R")
 
 ## Input parameters
-n <- 10
+n <- 20
 coin_probs <- runif(n,0,0.2)
-indivs <- 10
+indivs <- 50
 samps <- seq(1,n, by=1)
 pars <- c(4, 0.3, 1)
 fixed <- c(0,0,0)
@@ -22,7 +23,7 @@ fixed_probs <- rep(0,n)
 #fixed_probs[1:2] <- 0
 covMat_theta <- diag(length(fixed[which(fixed==0)]))
 covMat_probs <- diag(length(fixed_probs[which(fixed_probs==0)]))
-iter <- 100000
+iter <- 50000
 
 ## Setup parameter names and simulated data
 parNames <- c("boost","sigma","error")
@@ -43,7 +44,9 @@ startProbs <- runif(n,0,1)
 startProbs[which(fixed_probs == 1)] <- coin_probs[which(fixed_probs == 1)]
 start_coins <- matrix(sample(c(0,1),n*indivs,replace=TRUE),nrow=indivs)
 res <- run_MCMC_group(startPars, startProbs, fixed, fixed_probs, coin_results,dat,samps, iter, 
-                    covMat_theta, covMat_probs, thin=100,0.01,0.001,500,1,printF=1000,temp=1000)
+                    covMat_theta, covMat_probs, thin=100,0.01,0.001,500,1,printF=1000,temp=1)
+res1 <- run_MCMC_marginal(startPars, fixed, coin_results,dat,samps, iter, 
+                      covMat_theta, thin=100,0.01,500,1,printF=1000,temp=1, samplePropn=0.1)
 
 ## Look at MCMC chain of process parameters
 chain <- res[[2]]
@@ -51,6 +54,17 @@ chain <- res[[2]]
 colnames(chain) <- c("sampno",parNames, paste0("coin.",1:n))
 chain <- chain[chain[,"sampno"] > 0.1*iter,]
 #plot(coda::as.mcmc(chain))
+
+
+chain1 <- res1[[2]]
+colnames(chain1) <- c("sampno",parNames)
+chain1 <- chain1[chain1[,"sampno"] > 0.1*iter,]
+
+#plot(coda::as.mcmc(chain1))
+chains <- mcmc.list(as.mcmc(chain[,1:4]),as.mcmc(chain1))
+plot(chains)
+coin_chains <- mcmc.list(as.mcmc(res[[3]][,2:11]),as.mcmc(res1[[3]][,2:11]))
+plot(coin_chains)
 
 chain <- melt(as.data.frame(chain),id.vars="sampno")
 colnames(chain) <- c("sampno","variable","value")
