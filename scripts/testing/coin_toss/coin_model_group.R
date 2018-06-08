@@ -13,9 +13,9 @@ source("mcmc_funcs.R")
 source("mcmc_funcs_marginal.R")
 
 ## Input parameters
-n <- 20
+n <- 10
 coin_probs <- runif(n,0,0.2)
-indivs <- 50
+indivs <- 250
 samps <- seq(1,n, by=1)
 pars <- c(4, 0.3, 1)
 fixed <- c(0,0,0)
@@ -23,7 +23,7 @@ fixed_probs <- rep(0,n)
 #fixed_probs[1:2] <- 0
 covMat_theta <- diag(length(fixed[which(fixed==0)]))
 covMat_probs <- diag(length(fixed_probs[which(fixed_probs==0)]))
-iter <- 50000
+iter <- 200000
 
 ## Setup parameter names and simulated data
 parNames <- c("boost","sigma","error")
@@ -42,26 +42,87 @@ startPars[3] <- runif(1,0,5)
 startPars[which(fixed == 1)] <- pars[which(fixed == 1)]
 startProbs <- runif(n,0,1)
 startProbs[which(fixed_probs == 1)] <- coin_probs[which(fixed_probs == 1)]
-start_coins <- matrix(sample(c(0,1),n*indivs,replace=TRUE),nrow=indivs)
-res <- run_MCMC_group(startPars, startProbs, fixed, fixed_probs, coin_results,dat,samps, iter, 
+start_coins <- matrix(sample(c(0,1),n*indivs,replace=TRUE,prob = c(0.99,0.01)),nrow=indivs)
+res <- run_MCMC_group(startPars, startProbs, fixed, fixed_probs, start_coins,dat,samps, iter, 
                     covMat_theta, covMat_probs, thin=100,0.01,0.001,500,1,printF=1000,temp=1)
-res1 <- run_MCMC_marginal(startPars, fixed, coin_results,dat,samps, iter, 
-                      covMat_theta, thin=100,0.01,500,1,printF=1000,temp=1, samplePropn=0.1)
 
-## Look at MCMC chain of process parameters
+res1 <- run_MCMC_group(startPars, startProbs, fixed, fixed_probs, start_coins,dat,samps, iter, 
+                      covMat_theta, covMat_probs, thin=100,0.01,0.001,500,100000,printF=1000,temp=1)
+
 chain <- res[[2]]
-#chain <- chain[,c(1,which(fixed == 0)+1)]
-colnames(chain) <- c("sampno",parNames, paste0("coin.",1:n))
-chain <- chain[chain[,"sampno"] > 0.1*iter,]
-#plot(coda::as.mcmc(chain))
-
+tmp <- res[[3]]
+colnames(chain) <- c("sampno","mu","cr","sd",paste0("prob.",1:n))
+y <- extract_number_infections_from_chain(tmp, n, TRUE)
+y1 <- extract_number_infections_from_chain(tmp, n, FALSE)
+chain <- merge(chain,y, by="sampno")
+chain <- merge(chain,y1,by="sampno")
+#plot(coda::as.mcmc(chain[floor(0.4*nrow(chain)):nrow(chain),]))
 
 chain1 <- res1[[2]]
-colnames(chain1) <- c("sampno",parNames)
-chain1 <- chain1[chain1[,"sampno"] > 0.1*iter,]
+tmp1 <- res1[[3]]
+colnames(chain1) <- c("sampno","mu","cr","sd",paste0("prob.",1:n))
+y <- extract_number_infections_from_chain(tmp1, n, TRUE)
+y1 <- extract_number_infections_from_chain(tmp1, n, FALSE)
+chain1 <- merge(chain1,y, by="sampno")
+chain1 <- merge(chain1,y1,by="sampno")
 
-#plot(coda::as.mcmc(chain1))
-chains <- mcmc.list(as.mcmc(chain[,1:4]),as.mcmc(chain1))
+ess1 <- effectiveSize(chain[floor(0.1*nrow(chain)):nrow(chain),])
+
+
+
+res1 <- run_MCMC_group(startPars, startProbs, fixed, fixed_probs, coin_results,dat,samps, iter, 
+                      covMat_theta, covMat_probs, thin=100,0.01,0.001,500,1,printF=1000,temp=3)
+res2 <- run_MCMC_group(startPars, startProbs, fixed, fixed_probs, coin_results,dat,samps, iter, 
+                      covMat_theta, covMat_probs, thin=100,0.01,0.001,500,1,printF=1000,temp=100)
+res3 <- run_MCMC_group(startPars, startProbs, fixed, fixed_probs, coin_results,dat,samps, iter, 
+                       covMat_theta, covMat_probs, thin=100,0.01,0.001,500,1,printF=1000,temp=10000)
+i <- 1
+xmin <- -400
+plot(density(res[[i]]),xlim=c(xmin,0))#,ylim=c(0,1))
+lines(density(res1[[i]]),col="red")
+lines(density(res2[[i]]),col="blue")
+lines(density(res3[[i]]),col="green")
+
+j <- 2
+xmax=10
+plot(density(res[[2]][,j]),xlim=c(0,xmax))
+lines(density(res1[[2]][,j]),col="red")
+lines(density(res2[[2]][,j]),col="blue")
+lines(density(res3[[2]][,j]),col="green")
+
+xmax=n*indivs
+plot(density(extract_number_infections_from_chain(res[[3]],n)[,2]),xlim=c(0,xmax),ylim=c(0,0.1))
+lines(density(extract_number_infections_from_chain(res1[[3]],n)[,2]),col="red")
+lines(density(extract_number_infections_from_chain(res2[[3]],n)[,2]),col="blue")
+lines(density(extract_number_infections_from_chain(res3[[3]],n)[,2]),col="green")
+
+res1 <- run_MCMC_marginal(startPars, fixed, start_coins,dat,samps, iter, 
+                      covMat_theta, thin=100,0.01,500,1,printF=1000,temp=1, samplePropn=0.5)
+
+sum_normal <- extract_number_infections_from_chain(res[[3]],n,FALSE)
+plot(res[[2]][,2]~sum_normal[,2],ylim=c(0,6),xlim=c(0,n*indivs),col="black")
+sum_group <- extract_number_infections_from_chain(res1[[3]],n,TRUE)
+points(res1[[2]][,2]~sum_group[,2],col="red")
+cov(res1[[2]][,2],sum_marginal[,2])
+
+## Look at MCMC chain of process parameters
+chain <- cbind(res[[2]],res[[1]])
+#chain <- chain[,c(1,which(fixed == 0)+1)]
+colnames(chain) <- c("sampno",parNames, paste0("coin.",1:n),"lnlike")
+chain <- chain[chain[,"sampno"] > 0.2*iter,]
+plot(coda::as.mcmc(chain))
+
+
+chain1 <- cbind(res1[[2]],res1[[1]])
+colnames(chain1) <- c("sampno",parNames,"lnlike")
+chain1 <- chain1[chain1[,"sampno"] > 0.2*iter,]
+plot(coda::as.mcmc(chain1))
+
+chains <- mcmc.list(as.mcmc(chain[,c(1:4,ncol(chain))]),as.mcmc(chain1))
+plot(extract_number_infections_from_chain(res[[3]],n),type='l',ylim=c(0,n*indivs))
+lines(extract_number_infections_from_chain(res1[[3]],n),col="red")
+abline(h=sum(coin_results))
+
 plot(chains)
 coin_chains <- mcmc.list(as.mcmc(res[[3]][,2:11]),as.mcmc(res1[[3]][,2:11]))
 plot(coin_chains)
@@ -145,3 +206,7 @@ p1
 p2
 p3
 p_chain
+
+
+
+

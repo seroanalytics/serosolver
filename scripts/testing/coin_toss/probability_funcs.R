@@ -1,4 +1,5 @@
 likelihood <- function(pars, coin_results, dat){
+  #return(-1000000)
   y <- coin_toss_function(pars, coin_results)
   return(sum(dnorm(dat, mean=y, sd=pars[3],log=TRUE)))
 }

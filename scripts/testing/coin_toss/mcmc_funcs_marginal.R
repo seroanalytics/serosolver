@@ -1,14 +1,14 @@
 run_MCMC_marginal <- function(pars, 
-                           fixed_pars,
-                           coin_results, dat, samps,
-                           iter,covMat_theta,
-                           thin=10,
-                           step_theta,
-                           adapt_freq,
-                           adaptive_period,
-                           printF=100,
-                           temp=1,
-                           samplePropn=0.5){
+                              fixed_pars,
+                              coin_results, dat, samps,
+                              iter,covMat_theta,
+                              thin=10,
+                              step_theta,
+                              adapt_freq,
+                              adaptive_period,
+                              printF=100,
+                              temp=1,
+                              samplePropn=0.5){
   ## Some tuning parameters
   opt_tuning <- 0.2
   w <- 0.9
@@ -64,8 +64,10 @@ run_MCMC_marginal <- function(pars,
       # step_theta <- rm_scale(step_theta, i, log_prob, adaptive_period)
     } else {
       sampledI <- sample(1:n_indiv, floor(n_indiv*samplePropn))
-       # 1:n_indiv
-      proposed_coin_results <- coin_proposal_symmetric_group(coin_results,1,sampledI)
+      # 1:n_indiv
+      #proposed_coin_results <- coin_proposal_symmetric_group(coin_results,1,sampledI)
+      proposed_coin_results <- coin_proposal_years(coin_results,1,floor(n_indiv*samplePropn))
+      #proposed_coin_results <- coin_proposal_years(coin_results,1,floor(n_indiv*samplePropn))
       new_probabs <- likelihood_group(pars, proposed_coin_results, dat, samps)/temp
       new_probab <- sum(new_probabs) + prior(pars)  + inf_mat_prior(proposed_coin_results, 1, 1)
       log_prob <- min(new_probab - probab,0)

@@ -15,16 +15,19 @@ run_MCMC_group <- function(pars, probs,
   
   ## Empty chains and storage objects
   n_indiv <- nrow(coin_results)
-  liks <- numeric(iter/thin)
+  liks_all <- liks_data <- liks_prior <- liks <- numeric(iter/thin)
   chain <- matrix(nrow=iter/thin,ncol=length(pars) + length(probs) +1)
   coin_chain <- matrix(nrow=iter*n_indiv/thin,ncol=ncol(coin_results)+2)
   opt_chain <- matrix(nrow=adaptive_period,ncol=length(pars) + length(probs))
   
   proposed_coin_results <- coin_results
-  probabs <- likelihood_group(pars, coin_results, dat, samps)/temp + hyper_prior_group(probs, coin_results)/temp
+  probabs <- likelihood_group(pars, coin_results, dat, samps) + hyper_prior_group(probs, coin_results)
   probab <- sum(probabs) + prior1(pars, probs)
   liks[1] <- probab
-  
+
+  liks_data[1] <- sum(likelihood_group(pars, coin_results, dat, samps))
+  liks_prior[1] <- sum(hyper_prior_group(probs, coin_results))
+  liks_all[1] <- liks_data[1] + liks_prior[1] + prior1(pars, probs)
   
   chain[1,1] <- 1
   chain[1,2:(length(pars)+1)] <- pars
@@ -39,9 +42,10 @@ run_MCMC_group <- function(pars, probs,
   covMat0_theta <- covMat_theta
   covMat0_probs <- covMat_probs
   
-  
   accepted_theta <- iter_theta <- accepted_theta_total <- iter_theta_total <-0
   accepted_probs <- iter_probs <- accepted_probs_total <- iter_probs_total <- 0
+  #accepted_theta <- iter_theta <- accepted_theta_total <- iter_theta_total <-numeric(length(pars))
+  #accepted_probs <- iter_probs <- accepted_probs_total <- iter_probs_total <- numeric(length(probs))
   accepted_coin <- iter_coin <- numeric(n_indiv)
   
   fixed <- which(fixed == 0)
@@ -53,13 +57,14 @@ run_MCMC_group <- function(pars, probs,
   for(i in 2:iter){
     if(i %% 2 == 0){
       proposed <- proposal_theta(pars, fixed, covMat_theta*step_theta, covMat0_theta*step_theta)
+      #proposed <- univ_proposal(pars, lower_bounds, upper_bounds, steps, ii)
       iter_theta <- iter_theta + 1
       iter_theta_total <- iter_theta_total + 1
-      new_probabs <- likelihood_group(proposed, coin_results, dat, samps)/temp + hyper_prior_group(probs, coin_results)/temp
+      new_probabs <- likelihood_group(proposed, coin_results, dat, samps) + hyper_prior_group(probs, coin_results)
       new_probab <- sum(new_probabs) + prior1(proposed, probs)
       #if(!is.finite(new_probab)) new_probab <- -100000000
       log_prob <- min(new_probab - probab,0)
-      if(is.finite(log_prob) & log(runif(1))<log_prob){
+      if(is.finite(log_prob) & log(runif(1))<log_prob/temp){
         pars <- proposed
         probab <- new_probab
         probabs <- new_probabs
@@ -70,26 +75,32 @@ run_MCMC_group <- function(pars, probs,
      # step_theta <- rm_scale(step_theta, i, log_prob, adaptive_period)
     }else if(i %% 3 == 0){
       proposed_probs <- proposal_theta(probs, fixed_probs, covMat_probs*step_prob, covMat0_probs*step_prob)
+      ##
+      #proposed_coins <- coin_proposal_probs(coin_results, proposed_probs, 0.1*ncol(coin_results),0.1*nrow(coin_results))
+      ##
       iter_probs <- iter_probs + 1
       iter_probs_total <- iter_probs_total + 1
-      new_probabs <- likelihood_group(pars, coin_results, dat, samps)/temp + hyper_prior_group(proposed_probs, coin_results)/temp
+      new_probabs <- likelihood_group(pars, coin_results, dat, samps) + hyper_prior_group(proposed_probs, coin_results)
+      #new_probabs <- likelihood_group(pars, proposed_coins, dat, samps)+ hyper_prior_group(proposed_probs, proposed_coins)
       new_probab <- sum(new_probabs) + prior1(pars, proposed_probs)
       #if(!is.finite(new_probab)) new_probab <- -100000000
       log_prob <- min(new_probab - probab,0)
-      if(is.finite(log_prob) & log(runif(1))<log_prob){
+      if(is.finite(log_prob) & log(runif(1))<log_prob/temp){
         probs <- proposed_probs
+        #coin_results <- proposed_coins
         probab <- new_probab
         probabs <- new_probabs
         accepted_probs <- accepted_probs + 1
         accepted_probs_total <- accepted_probs_total + 1
         #
       }
-    
+
       #step_prob <- rm_scale(step_prob, i, log_prob, adaptive_period)
     } else {
       sampledI <- 1:n_indiv
       proposed_coin_results <- coin_proposal_symmetric_group(coin_results,1,sampledI)
-      new_probabs <- likelihood_group(pars, proposed_coin_results, dat, samps)/temp + hyper_prior_group(probs, proposed_coin_results)
+      #proposed_coin_results <- coin_proposal_years(coin_results,1,n_indiv)
+      new_probabs <- likelihood_group(pars, proposed_coin_results, dat, samps) + hyper_prior_group(probs, proposed_coin_results)
       iter_coin[sampledI] <- iter_coin[sampledI] + 1
       log_probs <- (new_probabs[sampledI] - probabs[sampledI])
       log_probs[log_probs > 0] <- 0
@@ -105,15 +116,14 @@ run_MCMC_group <- function(pars, probs,
       message(paste0("Acceptance rate on theta: ", signif(accepted_theta/iter_theta,3)))
       message(paste0("Acceptance rate on probs: ", signif(accepted_probs/iter_probs,3)))
       message(paste0("Acceptance rate on coins: ", paste(signif(accepted_coin/iter_coin,3),collapse=" ")))
-      message(paste0("Step size theta: ", step_theta))
-      message(paste0("Step size prob: ", step_prob))
       message("\n")
-      accepted_theta <- iter_theta <- 0
-      accepted_probs <- iter_probs <- 0
-      accepted_coin <- iter_coin <- numeric(n_indiv)
+    
     }
     if(i %% thin == 0){
       liks[index] <- probab
+      liks_data[index] <- sum(likelihood_group(pars, coin_results, dat, samps))
+      liks_prior[index] <- sum(hyper_prior_group(probs, coin_results))
+      liks_all[index] <- liks_data[index] + liks_prior[index] + prior1(pars, probs)
       chain[index,1] <- i
       chain[index,2:(length(pars)+1)] <- pars
       chain[index, (length(pars)+2):ncol(chain)] <- probs
@@ -133,14 +143,24 @@ run_MCMC_group <- function(pars, probs,
           oldcovMat_probs <- covMat_probs
           covMat_theta <- w*cov(opt_chain[1:i,fixed]) + (1-w)*oldcovMat_theta
           covMat_probs <- w*cov(opt_chain[1:i,(length(pars)+1):ncol(opt_chain)]) + (1-w)*oldcovMat_probs
-          if(i > 0.9*adaptive_period){
-            pcur_theta <- accepted_theta_total/iter_theta_total
-            pcur_prob <- accepted_probs_total/iter_probs_total
-            step_theta =max(0.00001,min(1,exp(log(step_theta)+(pcur_theta-0.234)*0.999^i)))
-            step_prob =max(0.00001,min(1,exp(log(step_theta)+(pcur_prob-0.234)*0.999^i)))
-            #step_theta <- scaletuning(step_theta, 0.234, pcur_theta)
-            #step_prob <- scaletuning(step_prob, 0.234, pcur_prob)
+         
+          if(i > 0.8*adaptive_period){
+            pcur_theta <- accepted_theta/iter_theta
+            pcur_prob <- accepted_probs/iter_probs
+     
+            #step_theta =max(0.00001,min(1,exp(log(step_theta)+(pcur_theta-0.234)*0.999^i)))
+            #step_prob =max(0.00001,min(1,exp(log(step_theta)+(pcur_prob-0.234)*0.999^i)))
+            step_theta <- scaletuning(step_theta, 0.234, pcur_theta)
+            step_prob <- scaletuning(step_prob, 0.234, pcur_prob)
           }
+          message(paste0("Acceptance rate on theta: ", signif(accepted_theta/iter_theta,3)))
+          message(paste0("Acceptance rate on probs: ", signif(accepted_probs/iter_probs,3)))
+          message(paste0("Acceptance rate on coins: ", paste(signif(accepted_coin/iter_coin,3),collapse=" ")))
+          message(paste0("Step size theta: ", step_theta))
+          message(paste0("Step size prob: ", step_prob))
+          accepted_theta <- iter_theta <- 0
+          accepted_probs <- iter_probs <- 0
+          accepted_coin <- iter_coin <- numeric(n_indiv)
         } else {
           #pcur_theta <- accepted_theta_total/iter_theta_total
           #pcur_prob <- accepted_probs_total/iter_probs_total
@@ -151,7 +171,7 @@ run_MCMC_group <- function(pars, probs,
     }
    }
   }
-  return(list(liks, chain, coin_chain))
+  return(list(liks, chain, coin_chain,liks_data, liks_prior, liks_all))
 }
 
 rm_scale <- function(step_scale, mc, log_prob, adaptive_period)

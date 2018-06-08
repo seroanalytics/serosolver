@@ -25,4 +25,14 @@ measurement_error_group <- function(pars, dat){
   return(dat)
 }
 
-
+extract_number_infections_from_chain <- function(x, n, by.year=FALSE){
+  colnames(x) <- c("sampno",seq(1,n,by=1),"indiv")
+  if(!by.year) sums <- ddply(as.data.frame(x),~sampno, function(x) sum(x[,2:(ncol(x)-1)]))
+  else{
+    x <- reshape2::melt(as.data.frame(x),id.vars=c("sampno","indiv"))
+    x[,"value"] <- as.numeric(x[,"value"])
+    sums <- ddply(as.data.frame(x),.(sampno,variable), function(x) sum(x$value))
+    sums <- dcast(sums, sampno~variable)  
+  }
+  return(sums)
+}
