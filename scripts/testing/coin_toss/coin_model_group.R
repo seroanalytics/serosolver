@@ -3,27 +3,29 @@ library(plyr)
 library(ggplot2)
 library(foreach)
 library(doMC)
+library(coda)
 registerDoMC(5)  #change the 2 to your number of CPU cores
 getDoParWorkers()
 setwd("~/Documents/Fluscape/serosolver/scripts/testing/coin_toss")
 source("model_funcs.R")
 source("probability_funcs.R")
 source("proposal_funcs.R")
+source("proposal_theta.R")
 source("mcmc_funcs.R")
 source("mcmc_funcs_marginal.R")
 
 ## Input parameters
-n <- 10
+n <- 50
 coin_probs <- runif(n,0,0.2)
-indivs <- 250
+indivs <- 50
 samps <- seq(1,n, by=1)
-pars <- c(4, 0.3, 1)
+pars <- c(4, 0.2, 1)
 fixed <- c(0,0,0)
 fixed_probs <- rep(0,n)
 #fixed_probs[1:2] <- 0
 covMat_theta <- diag(length(fixed[which(fixed==0)]))
 covMat_probs <- diag(length(fixed_probs[which(fixed_probs==0)]))
-iter <- 200000
+iter <- 50000
 
 ## Setup parameter names and simulated data
 parNames <- c("boost","sigma","error")
@@ -31,25 +33,42 @@ coin_results <- sapply(coin_probs, function(x) sample(c(0,1),indivs,prob=c(1-x,x
 data_suggested_coins <- colSums(coin_results)/nrow(coin_results)
 dat <- coin_toss_group(pars, coin_results)
 dat <- measurement_error_group(pars,dat)
-
 print(paste0("Coin probs: ", paste0(signif(coin_probs,3),collapse=" ")))
 print(paste0("Data suggest coin values: ", paste0(data_suggested_coins,collapse=" ")))
+chains <- foreach(i=1:5) %dopar% {
+  startPars <- pars
+  startPars[1] <- runif(1,0,10)
+  startPars[2] <- runif(1,0,1)
+  startPars[3] <- runif(1,0,5)
+  startPars[which(fixed == 1)] <- pars[which(fixed == 1)]
+  startProbs <- runif(n,0,1)
+  startProbs[which(fixed_probs == 1)] <- coin_probs[which(fixed_probs == 1)]
+  start_coins <- matrix(sample(c(0,1),n*indivs,replace=TRUE,prob = c(0.9,0.1)),nrow=indivs)
+  
+  #res <- run_MCMC_marginal(startPars, fixed, start_coins,dat,samps, iter, 
+  #                          covMat_theta, thin=100,0.01,1000,20000,
+  #                          printF=1000,temp=1, samplePropn=0.1, yearPropn=0.2)
+  
+  
+  res <- run_MCMC_group(startPars, startProbs, 
+                        fixed, fixed_probs, 
+                        start_coins,dat,samps, iter, 
+                        covMat_theta, covMat_probs, thin=100,
+                        step_theta=rep(0.01,length(startPars)),step_prob=rep(0.001,length(startProbs)),
+                        adapt_freq=10000,adaptive_period=20000,
+                        printF=1000,temp=1,
+                        sampPropn=0.1,
+                        yearPropn=0.1)
+  chain <- res[[2]]
+  as.mcmc(chain)
+}
+pdf("tmp.pdf")
+plot(as.mcmc.list(chains))
+dev.off()
 
-startPars <- pars
-startPars[1] <- runif(1,0,10)
-startPars[2] <- runif(1,0,1)
-startPars[3] <- runif(1,0,5)
-startPars[which(fixed == 1)] <- pars[which(fixed == 1)]
-startProbs <- runif(n,0,1)
-startProbs[which(fixed_probs == 1)] <- coin_probs[which(fixed_probs == 1)]
-start_coins <- matrix(sample(c(0,1),n*indivs,replace=TRUE,prob = c(0.99,0.01)),nrow=indivs)
-res <- run_MCMC_group(startPars, startProbs, fixed, fixed_probs, start_coins,dat,samps, iter, 
-                    covMat_theta, covMat_probs, thin=100,0.01,0.001,500,1,printF=1000,temp=1)
+plot(as.mcmc(chain))
 
-res1 <- run_MCMC_group(startPars, startProbs, fixed, fixed_probs, start_coins,dat,samps, iter, 
-                      covMat_theta, covMat_probs, thin=100,0.01,0.001,500,100000,printF=1000,temp=1)
 
-chain <- res[[2]]
 tmp <- res[[3]]
 colnames(chain) <- c("sampno","mu","cr","sd",paste0("prob.",1:n))
 y <- extract_number_infections_from_chain(tmp, n, TRUE)
@@ -67,8 +86,6 @@ chain1 <- merge(chain1,y, by="sampno")
 chain1 <- merge(chain1,y1,by="sampno")
 
 ess1 <- effectiveSize(chain[floor(0.1*nrow(chain)):nrow(chain),])
-
-
 
 res1 <- run_MCMC_group(startPars, startProbs, fixed, fixed_probs, coin_results,dat,samps, iter, 
                       covMat_theta, covMat_probs, thin=100,0.01,0.001,500,1,printF=1000,temp=3)
@@ -97,7 +114,8 @@ lines(density(extract_number_infections_from_chain(res2[[3]],n)[,2]),col="blue")
 lines(density(extract_number_infections_from_chain(res3[[3]],n)[,2]),col="green")
 
 res1 <- run_MCMC_marginal(startPars, fixed, start_coins,dat,samps, iter, 
-                      covMat_theta, thin=100,0.01,500,1,printF=1000,temp=1, samplePropn=0.5)
+                      covMat_theta, thin=100,0.01,1000,20000,
+                      printF=1000,temp=1, samplePropn=0.1)
 
 sum_normal <- extract_number_infections_from_chain(res[[3]],n,FALSE)
 plot(res[[2]][,2]~sum_normal[,2],ylim=c(0,6),xlim=c(0,n*indivs),col="black")

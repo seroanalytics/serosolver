@@ -37,7 +37,7 @@ samplingTimes <- seq(2010*buckets, 2015*buckets, by=1)
 ## Antigenic map for cross reactivity parameters
 antigenicMap <- read.csv("~/Documents/Fluscape/fluscape/trunk/data/Fonville2014AxMapPositionsApprox.csv",stringsAsFactors=FALSE)
 fit_dat <- generate_antigenic_map(antigenicMap, buckets)
-fit_dat <- read.csv("~/Documents/Fluscape/serosolver/data/antigenicMap_AK.csv")
+#fit_dat <- read.csv("~/Documents/Fluscape/serosolver/data/antigenic_maps/antigenicMap_vietnam.csv")
 ## Rename circulation years based on isolation time
 virus_key <- c("HK68"=1968, "EN72"=1972, "VI75"=1975, "TX77"=1977, "BK79"=1979, "SI87"=1987, "BE89"=1989, "BJ89"=1989,
                "BE92"=1992, "WU95"=1995, "SY97"=1997, "FU02"=2002, "CA04"=2004, "WI05"=2005, "PE06"=2006)*buckets
@@ -124,9 +124,9 @@ scale <- 0.5
 w <- 1
 mvrPars <- list(covMat, scale, w)
 ageMask <- create_age_mask(ages, strainIsolationTimes,n_indiv)
-f <- create_post_func(parTab=startTab,data=titreDat,antigenicMap=fit_dat,PRIOR_FUNC = NULL,version=1, ageMask=ageMask)
+f <- create_post_func(parTab=startTab,data=titreDat,antigenicMap=fit_dat,PRIOR_FUNC = NULL,version=99, ageMask=ageMask)
 parTab[parTab$names == "lambda","values"] <- lambdas
-(f(startTab$values, infHist))
+(f(startTab$values, infHist, 1,1,1,1))
 startTab[startTab$names %in% c("alpha","beta"),"values"] <- c(1,1)
 #Rprof(tmp <- tempfile())
 ## Run the MCMC using the inputs generated above

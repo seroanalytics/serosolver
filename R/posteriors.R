@@ -17,11 +17,14 @@ create_post_func <- function(parTab, data, antigenicMap,
 
   ## Isolate data table as vectors for speed
   titres <- data$titre
+  
   ## The entry of each virus in the data corresponding to the antigenic map
   ## Note 0 indexed for C++ code
   virusIndices <- match(data$virus, antigenicMap$inf_years) - 1
   ## Unique strains that an individual could be exposed to
   strains <- unique(antigenicMap$inf_years)
+  n_strains <- length(strains)
+  
   ## The entry of each strain in the antigenic map table
   strainIndices <- match(strains, strains) - 1
   
@@ -62,6 +65,10 @@ create_post_func <- function(parTab, data, antigenicMap,
   }
   indicesDataOverall <- cumsum(c(0,indicesDataOverall))    
   indicesOverallDiff <- diff(indicesDataOverall)
+
+  if(is.null(ageMask)) ageMask <- rep(1, n_indiv)
+  n_alive <- sapply(strains, function(x) length(ageMask[ageMask <= x]))
+
   
   if(version==1){
       print("likelihood only - prior implicit in proposal")
@@ -198,12 +205,33 @@ create_post_func <- function(parTab, data, antigenicMap,
       pars <- pars[theta_indices]
       names(pars) <- parNames_theta
       liks <- calc_lambda_probs_indiv(lambdas, infectionHistories, ageMask)
+  } else if(version == 99){
+      ## Gibbs proposal on infection histories
+      f <- function(pars, infectionHistories, alpha, beta, indivPropn, yearPropn){
+          n_years_samp <- floor(yearPropn*n_strains)
+          names(pars) <- parNames
+          ## Work out short and long term boosting cross reactivity - C++ function
+          antigenicMapLong <- create_cross_reactivity_vector(antigenicMapMelted, pars["sigma1"])
+          antigenicMapShort <- create_cross_reactivity_vector(antigenicMapMelted, pars["sigma2"])
+          
+          ## Now pass to the C++ function
+          new_infectionHistories <- infection_history_proposal_gibbs(pars, infectionHistories,
+                                                                     indivPropn,n_years_samp,
+                                                                     ageMask, n_alive,
+                                                                     alpha, beta,
+                                                                     strains, strainIndices, sampleTimes,
+                                                                     indicesData,indicesDataOverall,
+                                                                     indicesSamples, virusIndices, 
+                                                                     antigenicMapLong, antigenicMapShort,
+                                                                     titres)
+          #liks <- r_likelihood(y, titres, pars)          
+          return(new_infectionHistories)
+      }
   } else {
-      
       print("Model solving function")
       f <- function(pars, infectionHistories){
           names(pars) <- parNames
-          ## Work out short and long term boosting cross reactivity - C++ function
+        ## Work out short and long term boosting cross reactivity - C++ function
           antigenicMapLong <- create_cross_reactivity_vector(antigenicMapMelted, pars["sigma1"])
           antigenicMapShort <- create_cross_reactivity_vector(antigenicMapMelted, pars["sigma2"])
           

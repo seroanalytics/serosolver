@@ -251,6 +251,8 @@ run_MCMC <- function(parTab,
                 #newInfectionHistories <- infection_history_betabinom_group(infectionHistories,indivSubSample,ageMask,moveSizes, nInfs_vec, alpha,beta)
             } else if(histProposal==4){
                 newInfectionHistories <- infection_history_proposal(infectionHistories, indivSubSample, strainIsolationTimes, ageMask,nInfs_vec)
+            } else if(histProposal==5){
+
             } else {
                 newInfectionHistories <- inf_hist_prob_lambda(infectionHistories, indivSubSample,ageMask,nInfs_vec, current_pars[lambda_indices])
             }

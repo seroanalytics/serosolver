@@ -143,7 +143,8 @@ get_titre_predictions <- function(chain, infectionHistories, titreDat,
         residuals[,i] <- titreDat$titre - floor(predicted_titres[,i])
         samp_record[i] <- index
     }
-    if(for_res_plot) return(list(residuals, samp_record, titreDat))
+    colnames(predicted_titres) <- tmpSamp
+    if(for_res_plot) return(list(residuals, samp_record, titreDat,predicted_titres))
     residuals <- cbind(titreDat, residuals)
     ## Get 95% credible interval and means
     dat2 <- t(apply(predicted_titres,1, function(x) quantile(x, c(0.025,0.5,0.975))))

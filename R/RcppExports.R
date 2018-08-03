@@ -45,8 +45,8 @@ likelihood_titre <- function(expected, data, theta) {
 }
 
 #' @export
-likelihood_data_individual <- function(theta, infectionHistory, circulationTimes, circulationMapIndices, samplingTimes, dataIndices, measurementMapIndices, measuredStrainTimes, antigenicMapLong, antigenicMapShort, numberStrains, data) {
-    .Call('_serosolver_likelihood_data_individual', PACKAGE = 'serosolver', theta, infectionHistory, circulationTimes, circulationMapIndices, samplingTimes, dataIndices, measurementMapIndices, measuredStrainTimes, antigenicMapLong, antigenicMapShort, numberStrains, data)
+likelihood_data_individual <- function(theta, infectionHistory, circulationTimes, circulationMapIndices, samplingTimes, dataIndices, measuredMapIndices, antigenicMapLong, antigenicMapShort, numberStrains, data) {
+    .Call('_serosolver_likelihood_data_individual', PACKAGE = 'serosolver', theta, infectionHistory, circulationTimes, circulationMapIndices, samplingTimes, dataIndices, measuredMapIndices, antigenicMapLong, antigenicMapShort, numberStrains, data)
 }
 
 #' Individual likelihood
@@ -163,6 +163,12 @@ titre_data_individual_mus <- function(theta, mus, infectionHistory, circulationT
 
 titre_data_group_mus <- function(theta, mus, infectionHistories, circulationTimes, circulationMapIndices, musIndices, samplingTimes, indicesTitreDataSample, indicesTitreDataOverall, indicesSamples, measuredMapIndices, antigenicMapLong, antigenicMapShort) {
     .Call('_serosolver_titre_data_group_mus', PACKAGE = 'serosolver', theta, mus, infectionHistories, circulationTimes, circulationMapIndices, musIndices, samplingTimes, indicesTitreDataSample, indicesTitreDataOverall, indicesSamples, measuredMapIndices, antigenicMapLong, antigenicMapShort)
+}
+
+#' Fast infection history proposal function
+#' @return a matrix of 1s and 0s corresponding to the infection histories for all individuals
+infection_history_proposal_gibbs <- function(pars, infHist, indivSampPropn, n_years_samp, ageMask, n_alive, alpha, beta, circulationTimes, circulationMapIndices, samplingTimes, indicesTitreDataSample, indicesTitreDataOverall, indicesSamples, measuredMapIndices, antigenicMapLong, antigenicMapShort, data) {
+    .Call('_serosolver_infection_history_proposal_gibbs', PACKAGE = 'serosolver', pars, infHist, indivSampPropn, n_years_samp, ageMask, n_alive, alpha, beta, circulationTimes, circulationMapIndices, samplingTimes, indicesTitreDataSample, indicesTitreDataOverall, indicesSamples, measuredMapIndices, antigenicMapLong, antigenicMapShort, data)
 }
 
 #' Fast infection history proposal function

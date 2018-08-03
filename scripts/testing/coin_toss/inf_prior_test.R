@@ -1,4 +1,5 @@
-
+alpha <- 1
+beta <- 1
 n <- 2000
 Zs <- sample(c(0,1),n,prob=c(0.9,0.1),replace=TRUE)
 indiv_prob <- sum(log(dbb(Zs, 1, alpha, beta)))
@@ -45,4 +46,5 @@ for(i in 1:10000){
   liks[i] <- dbernoulli(prob, Z)*dbeta(prob,1,1)
 }
 plot(liks~probs,ylim=c(0,1))
+
 

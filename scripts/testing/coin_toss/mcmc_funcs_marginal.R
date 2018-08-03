@@ -1,20 +1,28 @@
 run_MCMC_marginal <- function(pars, 
                               fixed_pars,
-                              coin_results, dat, samps,
-                              iter,covMat_theta,
+                              coin_results, 
+                              dat, 
+                              samps,
+                              iter,
+                              covMat_theta,
                               thin=10,
                               step_theta,
                               adapt_freq,
                               adaptive_period,
                               printF=100,
                               temp=1,
-                              samplePropn=0.5){
+                              samplePropn=0.5,
+                              yearPropn=0.5,
+                              alpha=1,
+                              beta=1){
   ## Some tuning parameters
   opt_tuning <- 0.2
   w <- 0.9
   
   ## Empty chains and storage objects
   n_indiv <- nrow(coin_results)
+  n_years <- ncol(coin_results)
+  
   liks <- numeric(iter/thin)
   chain <- matrix(nrow=iter/thin,ncol=length(pars)+1)
   coin_chain <- matrix(nrow=iter*n_indiv/thin,ncol=ncol(coin_results)+2)
@@ -22,7 +30,7 @@ run_MCMC_marginal <- function(pars,
   
   proposed_coin_results <- coin_results
   probabs <- likelihood_group(pars, coin_results, dat, samps)/temp
-  probab <- sum(probabs) + prior(pars) + inf_mat_prior(coin_results, 1, 1)
+  probab <- sum(probabs) + prior(pars) + inf_mat_prior(coin_results, alpha, beta)
   liks[1] <- probab
   
   
@@ -50,7 +58,7 @@ run_MCMC_marginal <- function(pars,
       iter_theta <- iter_theta + 1
       iter_theta_total <- iter_theta_total + 1
       new_probabs <- likelihood_group(proposed, coin_results, dat, samps)/temp
-      new_probab <- sum(new_probabs) + prior(proposed)  + inf_mat_prior(coin_results, 1, 1)
+      new_probab <- sum(new_probabs) + prior(proposed)  + inf_mat_prior(coin_results, alpha, beta)
       #if(!is.finite(new_probab)) new_probab <- -100000000
       log_prob <- min(new_probab - probab,0)
       if(is.finite(log_prob) & log(runif(1))<log_prob){
@@ -64,12 +72,12 @@ run_MCMC_marginal <- function(pars,
       # step_theta <- rm_scale(step_theta, i, log_prob, adaptive_period)
     } else {
       sampledI <- sample(1:n_indiv, floor(n_indiv*samplePropn))
+      k <- floor(n_years*yearPropn)
       # 1:n_indiv
-      #proposed_coin_results <- coin_proposal_symmetric_group(coin_results,1,sampledI)
-      proposed_coin_results <- coin_proposal_years(coin_results,1,floor(n_indiv*samplePropn))
-      #proposed_coin_results <- coin_proposal_years(coin_results,1,floor(n_indiv*samplePropn))
+      proposed_coin_results <- coin_proposal_symmetric_group(coin_results,k,sampledI)
+      #proposed_coin_results <- coin_proposal_by_year(coin_results,1,floor(n_indiv*samplePropn))
       new_probabs <- likelihood_group(pars, proposed_coin_results, dat, samps)/temp
-      new_probab <- sum(new_probabs) + prior(pars)  + inf_mat_prior(proposed_coin_results, 1, 1)
+      new_probab <- sum(new_probabs) + prior(pars)  + inf_mat_prior(proposed_coin_results, alpha, beta)
       log_prob <- min(new_probab - probab,0)
       iter_coin <- iter_coin+ 1
       if(is.finite(log_prob) & log(runif(1))<log_prob){
