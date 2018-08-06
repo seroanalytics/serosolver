@@ -26,3 +26,14 @@ dbb_prior <- function(x, N, u, v){
 db <- function(x, a, b){
     x^(a-1)*(1-x^(b-1))/beta(a,b)
 }
+
+
+#' @export
+inf_mat_prior <- function(infHist, ageMask, alpha, beta){
+    n_alive <- sapply(1:ncol(infHist), function(x) length(ageMask[ageMask <= x]))
+    lk <- 0
+    for(i in 1:length(n_alive)){
+        lk <- lk + log(beta(sum(infHist[,i]) + alpha, n_alive[i]- sum(infHist[,i]) + beta)/beta(alpha, beta))
+    }
+    return(lk)
+}

@@ -9,11 +9,11 @@ setwd("~/Documents/Fluscape/serosolver")
 devtools::load_all()
 
 ## How many individuals to simulate?
-n_indiv <- 69
+n_indiv <- 100
 
 ## Which infection history proposal version to use?
 describe_proposals()
-histProposal <- 4
+histProposal <- 6
 
 ## Buckets indicates the time resolution of the analysis. Setting
 ## this to 1 uses annual epochs, whereas setting this to 12 gives
@@ -63,7 +63,7 @@ for(i in 1:(length(strainIsolationTimes)-1)){
 ## Change alpha and beta to change proposal distribution
 ## Setting to c(1,1) gives uniform distribution on total number of infections
 #parTab[parTab$names %in% c("alpha","beta"),"values"] <- find_a_b(length(strainIsolationTimes),7,50)
-parTab[parTab$names %in% c("alpha","beta"),"values"] <- c(2,12)
+parTab[parTab$names %in% c("alpha","beta"),"values"] <- c(1,1)
 
 ## Simulate some fake data
 #strainIsolationTimes <- 1968:2015
@@ -116,9 +116,9 @@ for(i in 1:nrow(startTab)){
 }
 
 ## Specify paramters controlling the MCMC procedure
-mcmcPars <- c("iterations"=100000,"popt"=0.44,"popt_hist"=0.44,"opt_freq"=2000,"thin"=1,"adaptive_period"=50000,
+mcmcPars <- c("iterations"=200000,"popt"=0.44,"popt_hist"=0.44,"opt_freq"=2000,"thin"=1,"adaptive_period"=50000,
               "save_block"=100,"thin2"=100,"histSampleProb"=1,"switch_sample"=2, "burnin"=0, 
-              "nInfs"=1, "moveSize"=2, "histProposal"=1, "histOpt"=1,"n_par"=10)
+              "nInfs"=30, "moveSize"=5, "histProposal"=6, "histOpt"=0,"n_par"=10, "swapPropn"=0.8)
 covMat <- diag(nrow(parTab))
 scale <- 0.5
 w <- 1
@@ -135,8 +135,9 @@ lambdas_start <- NULL
 for(year in 1:ncol(startInf)){ lambdas_start[year] <- (sum(startInf[,year])/sum(ages$DOB <= strainIsolationTimes[year]))}
 startTab[startTab$names == "lambda","values"] <- lambdas_start
 #parTab[parTab$names == "lambda","fixed"] <- 1
-res <- run_MCMC(parTab, titreDat, mcmcPars, filename=filename,
-                create_post_func, NULL,NULL,version=4, 0.2, 
+parTab <- parTab[parTab$names != "lambda",]
+res <- run_MCMC(startTab, titreDat, mcmcPars, filename=filename,
+                create_post_func, NULL,NULL,version=1, 0.2, 
                 fit_dat, ages=ages, 
                 startInfHist=startInf)
 
@@ -160,7 +161,7 @@ p1 <- ggplot(y[[3]]) + geom_histogram(aes(x=`50%`),binwidth=1) +
   facet_wrap(~virus,scales="free_x") + 
   scale_x_continuous(limits=c(-5,5))
 
-plot_attack_rates(infChain, titreDat, ages, 1968:2015)
+plot_attack_rates(infChain, titreDat, ages, 2000:2015) + geom_point(data=AR,aes(x=year,y=AR))
 wow <- infChain[infChain$i %in% 1:50,]
 setkey(wow, "sampno","i")
 omg <- wow[,list(V1=sum(x)), by=key(wow)]

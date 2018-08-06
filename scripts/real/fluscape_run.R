@@ -9,7 +9,7 @@ setwd("~/Documents/Fluscape/serosolver")
 devtools::load_all()
 
 ## How many individuals to fit to?
-n_indiv <-69
+n_indiv <-25
 FLUSCAPE <- FALSE
 LAMBDA <- FALSE
 
@@ -17,12 +17,12 @@ LAMBDA <- FALSE
 ## ********Note*********
 ## that this should be set to 1 if using the explicit FOI term
 describe_proposals()
-histProposal <- 4
+histProposal <- 6
 
 ## MCMC run time
 mcmcPars <- c("iterations"=100000,"popt"=0.44,"popt_hist"=0.44,"opt_freq"=1000,"thin"=1,"adaptive_period"=50000,
               "save_block"=1000,"thin2"=50,"histSampleProb"=0.5,"switch_sample"=2, "burnin"=0, 
-              "nInfs"=1, "moveSize"=10, "histProposal"=histProposal, "histOpt"=1)
+              "nInfs"=10, "moveSize"=5, "histProposal"=histProposal, "histOpt"=0, "swapPropn"=0.8)
 
 ## Buckets indicates the time resolution of the analysis. Setting
 ## this to 1 uses annual epochs, whereas setting this to 12 gives

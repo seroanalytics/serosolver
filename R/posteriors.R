@@ -67,7 +67,7 @@ create_post_func <- function(parTab, data, antigenicMap,
   indicesOverallDiff <- diff(indicesDataOverall)
 
   if(is.null(ageMask)) ageMask <- rep(1, n_indiv)
-  n_alive <- sapply(strains, function(x) length(ageMask[ageMask <= x]))
+  n_alive <- sapply(1:length(strains), function(x) length(ageMask[ageMask <= x]))
 
   
   if(version==1){
@@ -206,9 +206,11 @@ create_post_func <- function(parTab, data, antigenicMap,
       names(pars) <- parNames_theta
       liks <- calc_lambda_probs_indiv(lambdas, infectionHistories, ageMask)
   } else if(version == 99){
+      print(ageMask)
+      print(n_alive)
       ## Gibbs proposal on infection histories
-      f <- function(pars, infectionHistories, alpha, beta, indivPropn, yearPropn){
-          n_years_samp <- floor(yearPropn*n_strains)
+      f <- function(pars, infectionHistories, alpha, beta, indivPropn, nYears, swapPropn=0.5,swapDistance=1){
+          #n_years_samp <- floor(yearPropn*n_strains)
           names(pars) <- parNames
           ## Work out short and long term boosting cross reactivity - C++ function
           antigenicMapLong <- create_cross_reactivity_vector(antigenicMapMelted, pars["sigma1"])
@@ -216,8 +218,9 @@ create_post_func <- function(parTab, data, antigenicMap,
           
           ## Now pass to the C++ function
           new_infectionHistories <- infection_history_proposal_gibbs(pars, infectionHistories,
-                                                                     indivPropn,n_years_samp,
+                                                                     indivPropn,nYears,
                                                                      ageMask, n_alive,
+                                                                     swapPropn, swapDistance,
                                                                      alpha, beta,
                                                                      strains, strainIndices, sampleTimes,
                                                                      indicesData,indicesDataOverall,

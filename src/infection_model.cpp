@@ -220,14 +220,14 @@ double likelihood_titre(NumericVector expected, NumericVector data, NumericVecto
 //' @export
 //[[Rcpp::export]]
 double likelihood_data_individual(NumericVector theta, 
-					 IntegerVector infectionHistory, 
-					 NumericVector circulationTimes, 
-					 IntegerVector circulationMapIndices,
-					 NumericVector samplingTimes,
-					 IntegerVector dataIndices,
-					 IntegerVector measuredMapIndices, 
-					 NumericVector antigenicMapLong, 
-					 NumericVector antigenicMapShort,
+				  IntegerVector infectionHistory, 
+				  NumericVector circulationTimes, 
+				  IntegerVector circulationMapIndices,
+				  NumericVector samplingTimes,
+				  IntegerVector dataIndices,
+				  IntegerVector measuredMapIndices, 
+				  NumericVector antigenicMapLong, 
+				  NumericVector antigenicMapShort,
 					 int numberStrains,
 					 NumericVector data
 				    ){
