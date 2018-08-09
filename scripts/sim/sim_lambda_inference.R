@@ -9,7 +9,7 @@ setwd("~/Documents/Fluscape/serosolver")
 devtools::load_all()
 
 ## How many individuals to simulate?
-n_indiv <- 100
+n_indiv <- 250
 
 ## Which infection history proposal version to use?
 describe_proposals()
@@ -54,7 +54,7 @@ p1 <- ggplot(antigenicMap) +
   theme_bw()
 
 ## All possible circulation times
-fit_dat <- fit_dat[fit_dat$inf_years >= yearMin*buckets & fit_dat$inf_years <= 2015*buckets,]
+fit_dat <- fit_dat[fit_dat$inf_years >= yearMin*buckets & fit_dat$inf_years <= 2012*buckets,]
 strainIsolationTimes <- unique(fit_dat$inf_years)
 
 ## Add rows for each lambda value to be inferred
@@ -72,7 +72,7 @@ parTab[parTab$names %in% c("alpha","beta"),"values"] <- c(1,1)
 #strainIsolationTimes <- 1968:2015
 #lambdas <- runif(length(strainIsolationTimes),0.1/buckets,0.5/buckets)
 dat <- simulate_data(parTab, 1, n_indiv, buckets,strainIsolationTimes,
-                     samplingTimes, 2, antigenicMap=fit_dat, 0, 0, 6*buckets,75*buckets,
+                     samplingTimes, 2, antigenicMap=fit_dat, 0, 0, 75*buckets,75*buckets,
                      simInfPars=c("mean"=0.15,"sd"=0.5,"bigMean"=0.5,"logSD"=1),
                      useSIR=TRUE, pInf = NULL, useSpline=FALSE)
 
@@ -120,8 +120,8 @@ for(i in 1:nrow(startTab)){
 
 ## Specify paramters controlling the MCMC procedure
 mcmcPars <- c("iterations"=50000,"popt"=0.44,"popt_hist"=0.44,"opt_freq"=2000,"thin"=1,"adaptive_period"=20000,
-              "save_block"=1000,"thin2"=100,"histSampleProb"=1,"switch_sample"=2, "burnin"=0, 
-              "nInfs"=floor(ncol(infectionHistories)/1), "moveSize"=5, "histProposal"=6, "histOpt"=1,"n_par"=10, "swapPropn"=0.5)
+              "save_block"=1000,"thin2"=100,"histSampleProb"=0.5,"switch_sample"=2, "burnin"=0, 
+              "nInfs"=floor(ncol(infectionHistories)/4), "moveSize"=5, "histProposal"=6, "histOpt"=1,"n_par"=10, "swapPropn"=0.5)
 covMat <- diag(nrow(parTab))
 scale <- 0.5
 w <- 1
@@ -141,10 +141,13 @@ startTab[startTab$names %in% c("alpha","beta"),"values"] <- c(1,1)
 #parTab[parTab$names == "lambda","fixed"] <- 1
 parTab1 <- parTab[parTab$names != "lambda",]
 parTab1[parTab1$names == "wane","fixed"] <- 0
-res2 <- run_MCMC(startTab1, titreDat, mcmcPars, filename="test",
+#Rprof(tmp <- tempfile())
+res2 <- run_MCMC(startTab1, titreDat, mcmcPars, filename="speed",
                 create_post_func, NULL,NULL,version=1, 0.2, 
                 fit_dat, ages=ages, 
                 startInfHist=startInf)
+#Rprof()
+#summaryRprof(tmp)
 beepr::beep(4)
 
 #Rprof()
@@ -240,6 +243,7 @@ data.table::setkey(infChain, "j","sampno")
 n_inf_chain <- infChain[,list(V1=sum(x)),by=key(infChain)]
 inf_chain_p <- ggplot(n_inf_chain[n_inf_chain$j %in% sampd,]) + geom_line(aes(x=sampno,y=V1)) + facet_wrap(~i)
 inf_chain_p <- ggplot(n_inf_chain) + geom_line(aes(x=sampno,y=V1)) + facet_wrap(~j)
+inf_chain_p <- ggplot(n_inf_chain) + geom_histogram(aes(x=sampno)) + facet_wrap(~j)
 ## Generate cumulative infection history plots for a random subset of individuals
 ## based on data and posterior
 #mcmcPars["adaptive_period"]+mcmcPars["burnin"]

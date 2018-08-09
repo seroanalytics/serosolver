@@ -217,6 +217,7 @@ double likelihood_titre(NumericVector expected, NumericVector data, NumericVecto
   }
   return(lnlike);
 }
+
 //' @export
 //[[Rcpp::export]]
 double likelihood_data_individual(NumericVector theta, 
@@ -231,7 +232,6 @@ double likelihood_data_individual(NumericVector theta,
 				  int numberStrains,
 				  NumericVector data
 				  ){
- 
   int numberSamples = samplingTimes.size();
   int numberMeasuredStrains = measuredMapIndices.size();
   double lnlike=0;

@@ -180,7 +180,7 @@ run_MCMC <- function(parTab,
     ## -----------------------
     probabs <- posterior_simp(current_pars,infectionHistories)
     probab <- sum(probabs)
-    if(histProposal == 6) probab <- probab + inf_mat_prior(infectionHistories, ageMask, alpha, beta)
+    if(histProposal == 6) probab <- probab + inf_mat_prior_cpp(infectionHistories, n_alive, alpha, beta)
     if(!is.null(mu_indices)) probab + prior_mu(current_pars)
     message(cat("Starting theta likelihood: ",probab,sep="\t"))
 ###############
@@ -243,7 +243,7 @@ run_MCMC <- function(parTab,
             ## Calculate new likelihood for these parameters
             new_probabs <- posterior_simp(proposal,infectionHistories)            
             new_probab <- sum(new_probabs)
-            if(histProposal == 6) new_probab <- new_probab + inf_mat_prior(infectionHistories, ageMask, alpha, beta)
+            if(histProposal == 6) new_probab <- new_probab + inf_mat_prior_cpp(infectionHistories, n_alive, alpha, beta)
             if(!is.null(mu_indices)) new_probab <- new_probab + prior_mu(proposal)
             ## Otherwise, resample infection history
         } else {
@@ -279,7 +279,7 @@ run_MCMC <- function(parTab,
             ## Calculate new likelihood with these infection histories
             new_probabs <- posterior_simp(current_pars, newInfectionHistories)
             new_probab <- sum(new_probabs)
-            if(histProposal == 6) new_probab <- new_probab + inf_mat_prior(newInfectionHistories, ageMask, alpha, beta)
+            if(histProposal == 6) new_probab <- new_probab + inf_mat_prior_cpp(newInfectionHistories, n_alive, alpha, beta)
             if(!is.null(mu_indices)) new_probab <- new_probab + prior_mu(current_pars)
         }
 
