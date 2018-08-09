@@ -228,39 +228,25 @@ double likelihood_data_individual(NumericVector theta,
 				  IntegerVector measuredMapIndices, 
 				  NumericVector antigenicMapLong, 
 				  NumericVector antigenicMapShort,
-					 int numberStrains,
-					 NumericVector data
-				    ){
-  /*  Rcpp::Rcout << "made it in?" << std::endl;
-  Rcpp::Rcout << "Infection history: " << infectionHistory << std::endl;
-  Rcpp::Rcout << "Infection hist length: " << infectionHistory.size() << std::endl;
-  Rcpp::Rcout << "circulationTimes: " << circulationTimes << std::endl;
-  Rcpp::Rcout << "circulationMapIndices: " << circulationMapIndices << std::endl;
-  Rcpp::Rcout << "samplingTimes: " << samplingTimes << std::endl;
-  Rcpp::Rcout << "dataIndices: " << dataIndices << std::endl;
-  Rcpp::Rcout << "measuredMapIndices: " << measuredMapIndices << std::endl;
-  Rcpp::Rcout << "Data: " << data << std::endl;
-  */
+				  int numberStrains,
+				  NumericVector data
+				  ){
+ 
   int numberSamples = samplingTimes.size();
   int numberMeasuredStrains = measuredMapIndices.size();
-  //NumericMatrix results(numberStrains, 3);
-  //NumericVector lnlikes(numberMeasuredStrains);
-  double lnlike;
+  double lnlike=0;
   NumericVector titres(numberMeasuredStrains);
-  //NumericVector times(numberMeasuredStrains);
 
   int startIndex = 0;
   int endIndex = 0;
 
   LogicalVector indices = infectionHistory > 0;
-  //Rcpp::Rcout << "Indices: " << indices << std::endl;
 
   IntegerVector conciseInfHist = infectionHistory[indices];
   NumericVector infectionTimes = circulationTimes[indices];
   IntegerVector infMapIndices = circulationMapIndices[indices];
-  //Rcpp::Rcout << "Concise inf hist: " << conciseInfHist << std::endl;
+
   for(int i = 0; i < numberSamples; ++i){ 
-    //Rcpp::Rcout << "Sample: " << i << std::endl;
     endIndex = startIndex + dataIndices[i] - 1;
     titres[Range(startIndex, endIndex)] = infection_model_indiv(theta,
 								conciseInfHist,

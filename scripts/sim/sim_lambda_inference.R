@@ -13,7 +13,7 @@ n_indiv <- 100
 
 ## Which infection history proposal version to use?
 describe_proposals()
-histProposal <- 6
+histProposal <- 1
 
 ## Buckets indicates the time resolution of the analysis. Setting
 ## this to 1 uses annual epochs, whereas setting this to 12 gives
@@ -29,10 +29,13 @@ parTab[parTab$names == "wane","values"] <- 1
 parTab[parTab$names == "wane","values"] <- parTab[parTab$names == "wane","values"]/buckets
 parTab[parTab$names == "sigma1","values"] <- parTab[parTab$names == "sigma1","values"]
 parTab[parTab$names == "sigma2","values"] <- parTab[parTab$names == "sigma2","values"]
+#parTab[parTab$names == "sigma1","values"] <- 1
+#parTab[parTab$names == "sigma2","values"] <- 1
 #parTab[parTab$names == "wane","values"] <- 1/buckets
 #parTab[parTab$names == "error","fixed"] <- 1
 ## Possible sampling times
 samplingTimes <- seq(2010*buckets, 2015*buckets, by=1)
+yearMin <- 1968
 
 ## Antigenic map for cross reactivity parameters
 antigenicMap <- read.csv("~/Documents/Fluscape/fluscape/trunk/data/Fonville2014AxMapPositionsApprox.csv",stringsAsFactors=FALSE)
@@ -51,14 +54,14 @@ p1 <- ggplot(antigenicMap) +
   theme_bw()
 
 ## All possible circulation times
-fit_dat <- fit_dat[fit_dat$inf_years >= 1968*buckets & fit_dat$inf_years <= 2012*buckets,]
+fit_dat <- fit_dat[fit_dat$inf_years >= yearMin*buckets & fit_dat$inf_years <= 2015*buckets,]
 strainIsolationTimes <- unique(fit_dat$inf_years)
 
 ## Add rows for each lambda value to be inferred
-tmp <- parTab[parTab$names == "lambda",]
-for(i in 1:(length(strainIsolationTimes)-1)){
-  parTab <- rbind(parTab, tmp)
-}
+#tmp <- parTab[parTab$names == "lambda",]
+#for(i in 1:(length(strainIsolationTimes)-1)){
+#  parTab <- rbind(parTab, tmp)
+#}
 
 ## Change alpha and beta to change proposal distribution
 ## Setting to c(1,1) gives uniform distribution on total number of infections
@@ -116,30 +119,33 @@ for(i in 1:nrow(startTab)){
 }
 
 ## Specify paramters controlling the MCMC procedure
-mcmcPars <- c("iterations"=200000,"popt"=0.44,"popt_hist"=0.44,"opt_freq"=2000,"thin"=1,"adaptive_period"=50000,
-              "save_block"=100,"thin2"=100,"histSampleProb"=1,"switch_sample"=2, "burnin"=0, 
-              "nInfs"=30, "moveSize"=5, "histProposal"=6, "histOpt"=0,"n_par"=10, "swapPropn"=0.8)
+mcmcPars <- c("iterations"=50000,"popt"=0.44,"popt_hist"=0.44,"opt_freq"=2000,"thin"=1,"adaptive_period"=20000,
+              "save_block"=1000,"thin2"=100,"histSampleProb"=1,"switch_sample"=2, "burnin"=0, 
+              "nInfs"=floor(ncol(infectionHistories)/1), "moveSize"=5, "histProposal"=6, "histOpt"=1,"n_par"=10, "swapPropn"=0.5)
 covMat <- diag(nrow(parTab))
 scale <- 0.5
 w <- 1
 mvrPars <- list(covMat, scale, w)
 ageMask <- create_age_mask(ages, strainIsolationTimes,n_indiv)
-f <- create_post_func(parTab=startTab,data=titreDat,antigenicMap=fit_dat,PRIOR_FUNC = NULL,version=99, ageMask=ageMask)
-parTab[parTab$names == "lambda","values"] <- lambdas
-(f(startTab$values, infHist, 1,1,1,1))
+startTab1 <- startTab[startTab$names != "lambda",]
+f <- create_post_func(parTab=startTab1,data=titreDat,antigenicMap=fit_dat,PRIOR_FUNC = NULL,version=99, ageMask=ageMask)
+#parTab[parTab$names == "lambda","values"] <- lambdas
+newInf <- f(startTab$values, infHist, 1,1,1,1)
 startTab[startTab$names %in% c("alpha","beta"),"values"] <- c(1,1)
 #Rprof(tmp <- tempfile())
 ## Run the MCMC using the inputs generated above
 #startInf <- infHist
-lambdas_start <- NULL
-for(year in 1:ncol(startInf)){ lambdas_start[year] <- (sum(startInf[,year])/sum(ages$DOB <= strainIsolationTimes[year]))}
-startTab[startTab$names == "lambda","values"] <- lambdas_start
+#lambdas_start <- NULL
+#for(year in 1:ncol(startInf)){ lambdas_start[year] <- (sum(startInf[,year])/sum(ages$DOB <= strainIsolationTimes[year]))}
+#startTab[startTab$names == "lambda","values"] <- lambdas_start
 #parTab[parTab$names == "lambda","fixed"] <- 1
-parTab <- parTab[parTab$names != "lambda",]
-res <- run_MCMC(startTab, titreDat, mcmcPars, filename=filename,
+parTab1 <- parTab[parTab$names != "lambda",]
+parTab1[parTab1$names == "wane","fixed"] <- 0
+res2 <- run_MCMC(startTab1, titreDat, mcmcPars, filename="test",
                 create_post_func, NULL,NULL,version=1, 0.2, 
                 fit_dat, ages=ages, 
                 startInfHist=startInf)
+beepr::beep(4)
 
 #Rprof()
 #summaryRprof(tmp)
@@ -150,18 +156,35 @@ res <- run_MCMC(startTab, titreDat, mcmcPars, filename=filename,
 ## Processing outputs
 #########################
 ## Density/trace plots
-chain1 <- read.csv(res$chain_file)
+chain1 <- read.csv(res1$chain_file)
 chain1 <- chain1[chain1$sampno >= (mcmcPars["adaptive_period"]+mcmcPars["burnin"]),]
-infChain <- data.table::fread(res$history_file)
+chain2 <- read.csv(res$chain_file)
+chain2 <- chain2[chain2$sampno >= (mcmcPars["adaptive_period"]+mcmcPars["burnin"]),]
+chain3 <- read.csv(res2$chain_file)
+chain3 <- chain3[chain3$sampno >= (mcmcPars["adaptive_period"]+mcmcPars["burnin"]),]
+plot(as.mcmc(chain3))
+plot(mcmc.list(as.mcmc(chain1),as.mcmc(chain2),as.mcmc(chain3)))
+
+plot(coda::as.mcmc(chain1))
+infChain <- data.table::fread(res2$history_file)
 infChain <- infChain[infChain$sampno >= (mcmcPars["adaptive_period"]+mcmcPars["burnin"]),]
-plot_infection_histories(chain1, infChain, titreDat, sample(1:n_indiv, 10), fit_dat, ages,parTab,100)
+plot_infection_histories(chain3, infChain, titreDat, sample(1:n_indiv, 10), fit_dat, ages,parTab1,100)
 
 y <- get_titre_predictions(chain1, infChain, titreDat, 1:n_indiv, fit_dat, ages,parTab,100, TRUE)
 p1 <- ggplot(y[[3]]) + geom_histogram(aes(x=`50%`),binwidth=1) + 
   facet_wrap(~virus,scales="free_x") + 
   scale_x_continuous(limits=c(-5,5))
 
-plot_attack_rates(infChain, titreDat, ages, 2000:2015) + geom_point(data=AR,aes(x=year,y=AR))
+
+infChain <- data.table::fread(res2$history_file)
+infChain <- infChain[infChain$sampno >= (mcmcPars["adaptive_period"]+mcmcPars["burnin"]+10000),]
+n_alive <- sapply(1:length(strainIsolationTimes), function(x) length(ageMask[ageMask<=x]))
+inf_prop <- colSums(infectionHistories)/n_alive
+inf_prop <- data.frame(AR=inf_prop,year=strainIsolationTimes)
+plot_attack_rates(infChain, titreDat, ages, yearMin:2015) + 
+  geom_point(data=AR,aes(x=year,y=AR)) + 
+  geom_point(data=inf_prop,aes(x=year,y=AR),col="purple") + scale_y_continuous(expand=c(0,0),limits=c(0,1))
+
 wow <- infChain[infChain$i %in% 1:50,]
 setkey(wow, "sampno","i")
 omg <- wow[,list(V1=sum(x)), by=key(wow)]
@@ -210,17 +233,18 @@ dev.off()
 #dev.off()
 indivs <- sample(n_indiv, 10)
 sampd <- sample(n_indiv,20)
-infChain <- data.table::fread(res$history_file)
+infChain <- data.table::fread(res2$history_file)
 infChain <- infChain[infChain$sampno >= (mcmcPars["adaptive_period"]+mcmcPars["burnin"]),]
 n_strain <- max(infChain$j)
-data.table::setkey(infChain, "i","sampno")
+data.table::setkey(infChain, "j","sampno")
 n_inf_chain <- infChain[,list(V1=sum(x)),by=key(infChain)]
-inf_chain_p <- ggplot(n_inf_chain[n_inf_chain$i %in% sampd,]) + geom_line(aes(x=sampno,y=V1)) + facet_wrap(~i)
+inf_chain_p <- ggplot(n_inf_chain[n_inf_chain$j %in% sampd,]) + geom_line(aes(x=sampno,y=V1)) + facet_wrap(~i)
+inf_chain_p <- ggplot(n_inf_chain) + geom_line(aes(x=sampno,y=V1)) + facet_wrap(~j)
 ## Generate cumulative infection history plots for a random subset of individuals
 ## based on data and posterior
 #mcmcPars["adaptive_period"]+mcmcPars["burnin"]
 
-ps <- generate_cumulative_inf_plots(res$history_file, mcmcPars["adaptive_period"], 
+ps <- generate_cumulative_inf_plots(res2$history_file, mcmcPars["adaptive_period"], 
                                            sampd, infHist, startInf,strainIsolationTimes, 100,ages,numberCol=4)
 plot_infection_histories(chain1, infChain, titreDat, sample(1:100, 10), fit_dat, ages,parTab,100)
 svg(paste0(filename, "cumulative_infHist.svg"))

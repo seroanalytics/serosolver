@@ -29,11 +29,11 @@ db <- function(x, a, b){
 
 
 #' @export
-inf_mat_prior <- function(infHist, ageMask, alpha, beta){
+inf_mat_prior <- function(infHist, ageMask, alpha, beta1){
     n_alive <- sapply(1:ncol(infHist), function(x) length(ageMask[ageMask <= x]))
     lk <- 0
     for(i in 1:length(n_alive)){
-        lk <- lk + log(beta(sum(infHist[,i]) + alpha, n_alive[i]- sum(infHist[,i]) + beta)/beta(alpha, beta))
+        lk <- lk + log(beta(sum(infHist[,i]) + alpha, n_alive[i]- sum(infHist[,i]) + beta1)/beta(alpha, beta1))
     }
     return(lk)
 }

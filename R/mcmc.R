@@ -92,7 +92,6 @@ run_MCMC <- function(parTab,
         alpha <- parTab[parTab$names == "alpha","values"]
         beta <- parTab[parTab$names == "beta","values"]
     }
-    
     ## Arrays to store acceptance rates
     ## If univariate proposals, store vector of acceptances
     if(is.null(mvrPars)){
@@ -145,7 +144,6 @@ run_MCMC <- function(parTab,
         ageMask <- rep(1, n_indiv)
         n_alive <- rep(n_indiv, length(strainIsolationTimes))
     }
-    
     ## Create posterior calculating function
     posterior_simp <- protect(CREATE_POSTERIOR_FUNC(parTab,data,
                                                     antigenicMap,
@@ -267,7 +265,7 @@ run_MCMC <- function(parTab,
             } else if(histProposal==5){
                 newInfectionHistories <- inf_hist_prob_lambda(infectionHistories, indivSubSample,ageMask,nInfs_vec, current_pars[lambda_indices])
             } else {
-                newInfectionHistories <- proposal_gibbs(current_pars, infectionHistories, histSampleProb, nInfs,swapPropn,moveSize)
+                newInfectionHistories <- proposal_gibbs(current_pars, infectionHistories, alpha, beta, histSampleProb, nInfs,swapPropn,moveSize)
             }
             ## The proposals are either a swap step or an add/remove step. Need to track which type was used for which individual,
             ## as we adapt the `step size` for these two update steps independently

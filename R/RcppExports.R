@@ -165,6 +165,10 @@ titre_data_group_mus <- function(theta, mus, infectionHistories, circulationTime
     .Call('_serosolver_titre_data_group_mus', PACKAGE = 'serosolver', theta, mus, infectionHistories, circulationTimes, circulationMapIndices, musIndices, samplingTimes, indicesTitreDataSample, indicesTitreDataOverall, indicesSamples, measuredMapIndices, antigenicMapLong, antigenicMapShort)
 }
 
+inf_mat_prior_cpp <- function(infHist, n_alive, alpha, beta) {
+    .Call('_serosolver_inf_mat_prior_cpp', PACKAGE = 'serosolver', infHist, n_alive, alpha, beta)
+}
+
 #' Fast infection history proposal function
 #' @return a matrix of 1s and 0s corresponding to the infection histories for all individuals
 infection_history_proposal_gibbs <- function(pars, infHist, indivSampPropn, n_years_samp, ageMask, n_alive, swapPropn, swapDistance, alpha, beta, circulationTimes, circulationMapIndices, samplingTimes, indicesTitreDataSample, indicesTitreDataOverall, indicesSamples, measuredMapIndices, antigenicMapLong, antigenicMapShort, data) {

@@ -9,7 +9,7 @@ setwd("~/Documents/Fluscape/serosolver")
 devtools::load_all()
 
 ## How many individuals to fit to?
-n_indiv <-25
+n_indiv <-69
 FLUSCAPE <- FALSE
 LAMBDA <- FALSE
 
