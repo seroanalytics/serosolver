@@ -103,7 +103,7 @@ describe_proposals <- function(){
     print("Version 3: samples from a beta binomial with alpha and beta specified by the parTab input. Proposes nInfs moves at a time for add/remove, or when swapping, swaps locations up to moveSize time steps away")
     print("Version 4: samples from Adam's original proposal")
     print("Version 5: samples directly from the current value of lambda")
-    print("Version 6: gibbs sampling of infection histories as in IBP")
+    print("Version 6: gibbs sampling of infection histories as in Indian Buffet Process papers")
 }
 
 #' @export

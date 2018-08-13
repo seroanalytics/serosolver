@@ -14,15 +14,15 @@ run_MCMC_gibbs <- function(pars,
                             printF=100,
                             temp=1,
                             sampPropn=0.5,
-                            yearPropn=0.5,
+                           yearPropn=0.5,
                            swapPropn=0.5,
-                            theta_proposal="univariate",
-                            Z_proposal = "gibbs",
-                            alpha=1,
-                            beta=1){
-  opt_tuning <- 0.2
-  w <- 0.9
-  n_indiv <- nrow(coin_results)
+                           theta_proposal="univariate_theta",
+                           Z_proposal = "gibbs",
+                           alpha=1,
+                           beta=1){
+    opt_tuning <- 0.2
+    w <- 0.9
+    n_indiv <- nrow(coin_results)
   n_years <- ncol(coin_results)
   
   index <- 1
@@ -45,13 +45,13 @@ run_MCMC_gibbs <- function(pars,
   opt_chain[1,] <- pars
   
   accepted_theta_total <- iter_theta_total <-0
-  if(theta_proposal == "univariate"){
+  if(theta_proposal == "univariate_theta"){
     accepted_theta <- iter_theta <- numeric(length(pars))
   } else {
     accepted_theta <- iter_theta <- accepted_theta_total <- iter_theta_total <-0
   }
   accepted_coin <- iter_coin <- 0
-  fixed <- which(fixed == 0)
+  fixed <- which(fixed_pars== 0)
   
   covMat0_theta <- covMat_theta
   
@@ -59,7 +59,7 @@ run_MCMC_gibbs <- function(pars,
   index <- 2
   for(i in 2:iter){
     if(i %% 2 != 0){
-      if(theta_proposal == "univariate"){
+      if(theta_proposal == "univariate_theta"){
         proposed <- univ_proposal(pars, lower_bounds, upper_bounds, step_theta, ii)
         iter_theta[ii] <- iter_theta[ii] + 1
       } else {
@@ -77,7 +77,7 @@ run_MCMC_gibbs <- function(pars,
         probab <- new_probab
         probabs <- new_probabs
         ## Which proposal on theta are we using?
-        if(theta_proposal == "univariate"){
+        if(theta_proposal == "univariate_theta"){
           accepted_theta[ii] <- accepted_theta[ii] + 1
         } else {
           accepted_theta <- accepted_theta + 1 
@@ -92,7 +92,7 @@ run_MCMC_gibbs <- function(pars,
         k <- floor(n_years*yearPropn)
         ## Choose which proposal on infection histories we're using
         if(Z_proposal == "simple"){
-          proposed_coin_results <- coin_proposal_simple(coin_results,k,swapPropn)
+          proposed_coin_results <- coin_proposal_simple(coin_results,k)
         } else if(Z_proposal == "group"){
           proposed_coin_results <- coin_proposal_symmetric_group(coin_results,k,sampledI,swapPropn)
         } else {
@@ -138,7 +138,7 @@ run_MCMC_gibbs <- function(pars,
       opt_chain[i,] <- pars
       if(i %% adapt_freq == 0){
         pcur_theta <- accepted_theta/iter_theta
-        if(theta_proposal == "univariate"){
+        if(theta_proposal == "univariate_theta"){
           for(x in 1:length(step_theta)) step_theta[x] <- scaletuning1(step_theta[x], 0.44, pcur_theta[x])
         } else {
           ## Update covariance matrix
@@ -158,7 +158,7 @@ run_MCMC_gibbs <- function(pars,
         message(cat("Acceptance rate on coins: ", paste(signif(accepted_coin/iter_coin,3),collapse=" "),sep="\t"))
         message(cat("Step size theta: ", step_theta,sep="\t"))
         message("\n")
-        if(theta_proposal == "univariate"){
+        if(theta_proposal == "univariate_theta"){
           accepted_theta <- iter_theta <- numeric(length(pars))
         } else {  
           accepted_theta <- iter_theta <- 0

@@ -7,17 +7,17 @@
 run_MCMC(parTab, data, mcmcPars = c(iterations = 50000, popt = 0.44, popt_hist
   = 0.44, opt_freq = 2000, thin = 10, adaptive_period = 10000, save_block = 100,
   thin2 = 100, histSampleProb = 1, switch_sample = 2, burnin = 0, nInfs = 4,
-  moveSize = 5, histProposal = 3, histOpt = 1), filename = "test",
-  CREATE_POSTERIOR_FUNC, mvrPars = NULL, PRIOR_FUNC = NULL, version = 1,
-  OPT_TUNING = 0.1, antigenicMap, ages = NULL, startInfHist = NULL,
-  mu_indices = NULL, ...)
+  moveSize = 5, histProposal = 3, histOpt = 1, swapPropn = 0.5),
+  filename = "test", CREATE_POSTERIOR_FUNC, mvrPars = NULL,
+  PRIOR_FUNC = NULL, version = 1, OPT_TUNING = 0.1, antigenicMap,
+  ages = NULL, startInfHist = NULL, mu_indices = NULL, ...)
 }
 \arguments{
 \item{parTab}{the parameter table controlling information such as bounds, initial values etc}
 
 \item{data}{the data frame of data to be fitted. Must have columns: group (index of group); individual (integer ID of individual); samples (numeric time of sample taken); virus (numeric time of when the virus was circulating); titre (integer of titre value against the given virus at that sampling time)}
 
-\item{mcmcPars}{named vector named vector with parameters for the MCMC procedure. Iterations (number of post adaptive iterations), popt (desired acceptance rate), popt_hist (desired acceptance rate for infection histories), opt_freq (after how many iterations do we adapt proposal), thin (save every n iterations), adaptive_period (number of iterations to adapt), save_block (number of post thinning iterations to save at a time), thin2 (infection history thinning), histSampleProb (proportion of inf histories to resample), switch_sample (resample inf histories every n iterations), burnin (number of iterations to run before any adapting), nInfs (number of infections to resample for each individual at each iteration), moveSizes (number of infection years/months to move when performing swap step), histProposal (which infection history proposal version to use, see \code{\link{describe_proposals}}, histOpt (if 1, performs adaptive infection history proposals. If 0, retains the starting infection history proposal parameters)}
+\item{mcmcPars}{named vector named vector with parameters for the MCMC procedure. Iterations (number of post adaptive iterations), popt (desired acceptance rate), popt_hist (desired acceptance rate for infection histories), opt_freq (after how many iterations do we adapt proposal), thin (save every n iterations), adaptive_period (number of iterations to adapt), save_block (number of post thinning iterations to save at a time), thin2 (infection history thinning), histSampleProb (proportion of inf histories to resample), switch_sample (resample inf histories every n iterations), burnin (number of iterations to run before any adapting), nInfs (number of infections to resample for each individual at each iteration), moveSizes (number of infection years/months to move when performing swap step), histProposal (which infection history proposal version to use, see \code{\link{describe_proposals}}, histOpt (if 1, performs adaptive infection history proposals. If 0, retains the starting infection history proposal parameters, swapPropn (if using gibbs sampling of infection histories, what proportion of proposals should be swap steps)}
 
 \item{filename}{the full filepath at which the MCMC chain should be saved. "_chain.csv" will be appended to the end of this, so filename should have no file extensions}
 

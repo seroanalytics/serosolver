@@ -27,6 +27,10 @@ simulate_individual(theta, infectionHistory, samplingTimes, dataIndices,
 
 \item{repeats}{number of repeated samples for each year}
 
+\item{mus}{default NULL, optional vector of boosting parameters for each strain}
+
+\item{mu_indices}{default NULL, optional vector giving the index of `mus` that each strain uses the boosting parameter from. eg. if there's 6 circulation years and 3 strain clusters, then this might be c(1,1,2,2,3,3)}
+
 \item{sampleTimes}{the vector of times at which samples are taken}
 
 \item{strainIsolationTimes}{the vector of strain circulation times (ie. possible infection times)}

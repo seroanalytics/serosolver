@@ -19,9 +19,10 @@ run_MCMC_group <- function(pars,
                            temp=1,
                            sampPropn=0.5,
                            yearPropn=0.5,
+                           swapPropn=0.5,
                            alpha=1,
                            beta=1,
-                           theta_proposal="univariate",
+                           theta_proposal="univariate_theta",
                            Z_proposal="simple"){
   ## Some tuning parameters
   opt_tuning <- 0.2
@@ -61,23 +62,25 @@ run_MCMC_group <- function(pars,
   covMat0_probs <- covMat_probs
   
   #accepted_theta <- iter_theta <- accepted_theta_total <- iter_theta_total <-0
-  #accepted_probs <- iter_probs <- accepted_probs_total <- iter_probs_total <- 0
-  accepted_theta_total <- iter_theta_total <-0
-  accepted_probs_total <- iter_probs_total <- 0
-  if(theta_proposal == "univariate"){
-    accepted_theta <- iter_theta <- numeric(length(pars))
-    accepted_probs <- iter_probs <- numeric(length(probs))
-  } else {
+                                        #accepted_probs <- iter_probs <- accepted_probs_total <- iter_probs_total <- 0
     accepted_theta_total <- iter_theta_total <-0
     accepted_probs_total <- iter_probs_total <- 0
-  }
-  accepted_coin <- iter_coin <- numeric(n_indiv)
-  
-  fixed <- which(fixed == 0)
-  fixed_probs <- which(fixed_probs==0)
-  
-  lower_bounds_probs <- rep(0, n_years)
-  upper_bounds_probs <- rep(1,n_years)
+    if(theta_proposal == "univariate_theta"){
+        accepted_theta <- iter_theta <- numeric(length(pars))
+        accepted_probs <- iter_probs <- numeric(length(probs))
+    } else {
+        accepted_theta <- iter_theta <- 0
+        accepted_probs <- iter_probs <- 0
+        accepted_theta_total <- iter_theta_total <-0
+        accepted_probs_total <- iter_probs_total <- 0
+    }
+    accepted_coin <- iter_coin <- numeric(n_indiv)
+    
+    fixed <- which(fixed_pars == 0)
+    fixed_probs <- which(fixed_probs==0)
+    
+    lower_bounds_probs <- rep(0, n_years)
+    upper_bounds_probs <- rep(1,n_years)
   
   ii <- jj <- 1
   
@@ -85,7 +88,7 @@ run_MCMC_group <- function(pars,
   for(i in 2:iter){
     if(i %% 2 == 0){
       #proposed <- proposal_theta(pars, fixed, covMat_theta*step_theta, covMat0_theta*step_theta)
-      if(theta_proposal == "univariate"){
+      if(theta_proposal == "univariate_theta"){
         proposed <- univ_proposal(pars, lower_bounds, upper_bounds, step_theta, ii)
         iter_theta[ii] <- iter_theta[ii] + 1
       } else {
@@ -102,7 +105,7 @@ run_MCMC_group <- function(pars,
         probabs <- new_probabs
         
         ## Which proposal on theta are we using?
-        if(theta_proposal == "univariate"){
+        if(theta_proposal == "univariate_theta"){
           accepted_theta[ii] <- accepted_theta[ii] + 1
         } else {
          accepted_theta <- accepted_theta + 1 
@@ -113,7 +116,7 @@ run_MCMC_group <- function(pars,
       if(ii > length(pars)) ii <- 1
     }else if(i %% 3 == 0){
       ## Which proposal on probs are we using?
-      if(theta_proposal == "univariate"){
+      if(theta_proposal == "univariate_theta"){
         proposed_probs <- univ_proposal(probs, lower_bounds_probs, upper_bounds_probs, step_prob, jj)
         iter_probs[jj] <- iter_probs[jj] + 1
       } else {
@@ -130,7 +133,7 @@ run_MCMC_group <- function(pars,
         probs <- proposed_probs
         probab <- new_probab
         probabs <- new_probabs
-        if(theta_proposal == "univariate"){
+        if(theta_proposal == "univariate_theta"){
           accepted_probs[jj] <- accepted_probs[jj] + 1
         } else {
           accepted_probs <- accepted_probs + 1
@@ -145,7 +148,7 @@ run_MCMC_group <- function(pars,
       
       ## Choose which proposal on infection histories we're using
       if(Z_proposal == "simple"){
-        proposed_coin_results <- coin_proposal_simple(coin_results,k,swapPropn)
+        proposed_coin_results <- coin_proposal_simple(coin_results,k)
       } else if(Z_proposal == "group"){
         proposed_coin_results <- coin_proposal_symmetric_group(coin_results,k,sampledI,swapPropn)
       } else if(Z_proposal == "years"){
@@ -192,7 +195,7 @@ run_MCMC_group <- function(pars,
       if(i %% adapt_freq == 0){
         pcur_theta <- accepted_theta/iter_theta
         pcur_prob <- accepted_probs/iter_probs
-        if(theta_proposal == "univariate"){
+        if(theta_proposal == "univariate_theta"){
           for(x in 1:length(step_theta)) step_theta[x] <- scaletuning1(step_theta[x], 0.44, pcur_theta[x])
           for(x in 1:length(step_prob)) step_prob[x] <- scaletuning1(step_prob[x], 0.44, pcur_prob[x])
         } else {
@@ -220,7 +223,7 @@ run_MCMC_group <- function(pars,
           message(cat("Step size theta: ", step_theta,sep="\t"))
           message(cat("Step size prob: ", step_prob,sep="\t"))
           message("\n")
-          if(theta_proposal == "univariate"){
+          if(theta_proposal == "univariate_theta"){
             accepted_theta <- iter_theta <- numeric(length(pars))
             accepted_probs <- iter_probs <- numeric(length(probs))
           } else {  

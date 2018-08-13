@@ -3,8 +3,6 @@ infHistPrior <- function(pars, infHist, ageMask){
     N <- ncol(infHist) - ageMask  + 1
     a <- pars["alpha"]
     b <- pars["beta"]
-    #N <- ncol(infHist)
-    #return(rep(-10000,nrow(infHist)))
     priors <- numeric(nrow(infHist))
     for(i in 1:length(priors)){
         priors[i] <- log(dbb_prior(sum(infHist[i,]),N[i],a,b))

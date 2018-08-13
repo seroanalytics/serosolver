@@ -9,9 +9,9 @@ setwd("~/Documents/Fluscape/serosolver")
 devtools::load_all()
 
 ## How many individuals to fit to?
-n_indiv <-69
-FLUSCAPE <- FALSE
-LAMBDA <- FALSE
+n_indiv <-100
+FLUSCAPE <- TRUE
+LAMBDA <- TRUE
 
 ## Which infection history proposal version to use?
 ## ********Note*********
@@ -19,10 +19,7 @@ LAMBDA <- FALSE
 describe_proposals()
 histProposal <- 6
 
-## MCMC run time
-mcmcPars <- c("iterations"=100000,"popt"=0.44,"popt_hist"=0.44,"opt_freq"=1000,"thin"=1,"adaptive_period"=50000,
-              "save_block"=1000,"thin2"=50,"histSampleProb"=0.5,"switch_sample"=2, "burnin"=0, 
-              "nInfs"=10, "moveSize"=5, "histProposal"=histProposal, "histOpt"=0, "swapPropn"=0.8)
+
 
 ## Buckets indicates the time resolution of the analysis. Setting
 ## this to 1 uses annual epochs, whereas setting this to 12 gives
@@ -30,7 +27,7 @@ mcmcPars <- c("iterations"=100000,"popt"=0.44,"popt_hist"=0.44,"opt_freq"=1000,"
 buckets <- 1
 
 ## The general output filename
-filename <- "chains/vietnam_compare_sampletheta"
+filename <- "testing/fluscape"
 
 ## Read in parameter table to simulate from and change waning rate if necessary
 ## Use "parTab.csv" if not using explicit lambda term, "parTab_lambdas.csv" otherwise
@@ -57,7 +54,7 @@ if(FLUSCAPE){
     ## Take random subset of individuals
     indivs <- sample(unique(fluscapeDat$individual),n_indiv)
     indivs <- indivs[order(indivs)]
-    indivs <- unique(fluscapeAges$individual)
+    #indivs <- unique(fluscapeAges$individual)
     titreDat <- fluscapeDat[fluscapeDat$individual %in% indivs,]
     ages <- fluscapeAges[fluscapeAges$individual %in% indivs,]
     titreDat$individual <- match(titreDat$individual, indivs)
@@ -79,14 +76,14 @@ strainIsolationTimes <- unique(fit_dat$inf_years)
 ## Change alpha and beta to change proposal distribution
 ## Setting to c(1,1) gives uniform distribution on total number of infections
 #parTab[parTab$names %in% c("alpha","beta"),"values"] <- find_a_b(length(strainIsolationTimes),7,50)
-parTab[parTab$names %in% c("alpha","beta"),"values"] <- c(0.1,0.1)
+parTab[parTab$names %in% c("alpha","beta"),"values"] <- c(1,1)
 
 
 ## Starting infection histories based on data
 ## Can use starting history using the algorithm in the bioarxiv paper or a new, sparser one
-#startInf <- setup_infection_histories_new(titreDat, ages, unique(fit_dat$inf_years), space=5,titre_cutoff=2)
+startInf <- setup_infection_histories_new(titreDat, ages, unique(fit_dat$inf_years), space=5,titre_cutoff=2)
 #startInf <- matrix(sample(c(0,0,0,0,0,0,0,0,1),n_indiv*length(strainIsolationTimes),replace=TRUE),nrow=n_indiv)
-startInf <- setup_infection_histories_OLD(titreDat, unique(fit_dat$inf_years), rep(1,n_indiv), sample_prob=0.2, titre_cutoff=3)
+#startInf <- setup_infection_histories_OLD(titreDat, unique(fit_dat$inf_years), rep(1,n_indiv), sample_prob=0.2, titre_cutoff=3)
 
 if(LAMBDA){
     if(!FLUSCAPE){
@@ -106,7 +103,7 @@ if(LAMBDA){
 } else {
     version <- 1
 }
-
+parTab <- parTab[parTab$names != "lambda",]
 ## Generate starting parameters for the MCMC chain
 startTab <- parTab
 for(i in 1:nrow(startTab)){
@@ -128,10 +125,17 @@ mvrPars <- NULL
 #########################
 startTab[startTab$names == "wane","fixed"] <- 0
 startTab[startTab$names == "wane","values"] <- 1
-startTab[startTab$names == "wane","upper_bound"] <- 2
-res <- run_MCMC(startTab, titreDat, mcmcPars, filename=filename,
+startTab[startTab$names == "wane","upper_bound"] <- 1
+
+## MCMC run time
+mcmcPars <- c("iterations"=70000,"popt"=0.44,"popt_hist"=0.44,"opt_freq"=2000,"thin"=1,"adaptive_period"=20000,
+              "save_block"=1000,"thin2"=100,"histSampleProb"=1,"switch_sample"=2, "burnin"=0, 
+              "nInfs"=floor(ncol(startInf)/2), "moveSize"=5, "histProposal"=6, "histOpt"=0,"n_par"=10, "swapPropn"=0.5)
+
+
+res <- run_MCMC(startTab, titreDat[titreDat$run == 1,], mcmcPars, filename=filename,
                 create_post_func, mvrPars, PRIOR=NULL,version=1, 0.2, 
-                fit_dat, ages=NULL, 
+                fit_dat, ages=ages, 
                 startInfHist=startInf)
 #########################
 

@@ -1,3 +1,13 @@
+#' Convert to unit scale
+toUnitScale <- function(x, min, max){
+    return((x-min)/(max-min))
+}
+
+#' Convert from unit scale to original scale
+fromUnitScale <- function(x,min,max){
+    return(min + (max-min)*x)
+}
+
 likelihood <- function(pars, coin_results, dat){
   #return(-1000000)
   y <- coin_toss_function(pars, coin_results)
@@ -16,7 +26,7 @@ likelihood_group <- function(pars, coin_results, dat, samps=seq(1,20,by=4)){
 
 inf_mat_prior <- function(infHist, alpha, beta){
   N <- nrow(infHist)
-  sum(apply(infHist, 2, function(x) log(beta(sum(x) + alpha, N - sum(x) + beta)/beta(alpha, beta))))
+  apply(infHist, 2, function(x) log(beta(sum(x) + alpha, N - sum(x) + beta)/beta(alpha, beta)))
 }
 
 

@@ -34,53 +34,56 @@ coin_proposal_gibbs <- function(pars, coin_results, dat,
         tmp <- x[loc1]
         x[loc1] <- x[loc2]
         x[loc2] <- tmp
+        #old_prob <- new_prob <- 1
         old_prob <- likelihood(pars, proposed[indiv,],dat[indiv,])
         new_prob <- likelihood(pars, x,dat[indiv,])
         log_prob <- min(new_prob - old_prob,0)
         if(is.finite(log_prob) & log(runif(1)) < log_prob){
-          proposed[indiv,] <- x 
+            proposed[indiv,] <- x 
         }
       }
     } else {
-      ## For each year
-      years <- sample(1:ncol(coin_results),floor(year_propn*ncol(coin_results)))
-      for(year in years){
-        iter <- iter + 1
-        ## Get number of other infections in this year
-        m <- sum(proposed[-indiv,year])
-        number <- runif(1)
-        #prob <- (m + alpha/ncol(coin_results))/(length(x[-indiv]) + ncol(coin_results))
-        ## Make the infection state for this individual 1 or 0 depending on prior and other individuals, gibbs
-        prob <- (m + alpha)/(length(proposed[-indiv,year]) + alpha+ beta)
-        if(number < prob){
-          x[year] <- 1
-        } else {
-          x[year] <- 0
+        ## For each year
+        years <- sample(1:ncol(coin_results),floor(year_propn*ncol(coin_results)))
+                                        #x <- proposed[indiv,]
+        for(year in years){
+            iter <- iter + 1
+            ## Get number of other infections in this year
+            m <- sum(proposed[-indiv,year])
+            number <- runif(1)
+                                        #prob <- (m + alpha/ncol(coin_results))/(length(x[-indiv]) + ncol(coin_results))
+            ## Make the infection state for this individual 1 or 0 depending on prior and other individuals, gibbs
+            prob <- (m + alpha)/(length(proposed[-indiv,year]) + alpha+ beta)
+            if(number < prob){
+                x[year] <- 1
+            } else {
+                x[year] <- 0
+            }
+            ## If proposing a change, need to check likelihood ratio
+            if(x[year] != proposed[indiv,year]){
+                #old_prob <- new_prob <- 1
+                                        old_prob <- likelihood(pars, proposed[indiv,],dat[indiv,])
+                                        new_prob <- likelihood(pars, x,dat[indiv,])
+                log_prob <- min(new_prob - old_prob,0)
+                if(is.finite(log_prob) & log(runif(1)) < log_prob){
+                    proposed[indiv,year] <- x[year] 
+                    accepted <- accepted + 1
+                }
+            }
         }
-        ## If proposing a change, need to check likelihood ratio
-        if(x[year] != proposed[indiv,year]){
-          old_prob <- likelihood(pars, proposed[indiv,],dat[indiv,])
-          new_prob <- likelihood(pars, x,dat[indiv,])
-          log_prob <- min(new_prob - old_prob,0)
-          if(is.finite(log_prob) & log(runif(1)) < log_prob){
-            proposed[indiv,year] <- x[year] 
-            accepted <- accepted + 1
-          }
-        }
-      }
     }
   }
-  #message(paste0("Acceptance rate: ",accepted/iter))
+                                        #message(paste0("Acceptance rate: ",accepted/iter))
   return(proposed)
 }
 
 coin_proposal_by_year <- function(coin_results, n_years=1, n_indiv=1, swapPropn=0.5){
-  ver <- runif(1)
-  proposed <- coin_results
-  if(ver < swapPropn){
-    #print("swap years")
-    locs <- sample(ncol(proposed),2)
-    tmp <- proposed[,locs[1]]
+    ver <- runif(1)
+    proposed <- coin_results
+    if(ver < swapPropn){
+                                        #print("swap years")
+        locs <- sample(ncol(proposed),2)
+        tmp <- proposed[,locs[1]]
     proposed[,locs[1]] <- proposed[,locs[2]]
     proposed[,locs[2]] <- tmp
   } else {

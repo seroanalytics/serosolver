@@ -38,7 +38,13 @@ simulate_data(parTab, group = 1, n_indiv, buckets = 12,
 
 \item{useSIR}{boolean specifying whether to sample from an SIR model or just log normal distribution for each epoch. If TRUE, uses an SIR model}
 
+\item{useSpline}{if TRUE, calculates a spline to generate sub annual FOI from}
+
+\item{pInf}{if given, provides infection probabilities to sample from rather than simulating}
+
 \item{repeats}{number of repeats for each year}
+
+\item{mu_indices}{default NULL, optional vector giving the index of `mus` that each strain uses the boosting parameter from. eg. if there's 6 circulation years and 3 strain clusters, then this might be c(1,1,2,2,3,3)}
 }
 \value{
 a list with: 1) the data frame of titre data as returned by \code{\link{simulate_group}}; 2) a matrix of infection histories as returned by \code{\link{simulate_infection_histories}}; 3) a vector of ages

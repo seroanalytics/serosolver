@@ -10,8 +10,8 @@
 #' @param antigenicMapLong the collapsed antigenic map for long term cross reactivity, after multiplying by sigma1
 #' @param antigenicMapShort the collapsed antigenic map for short term cross reactivity, after multiplying by sigma2
 #' @param repeats number of repeated samples for each year
-#' @param mus
-#' @param mu_indices
+#' @param mus default NULL, optional vector of boosting parameters for each strain
+#' @param mu_indices default NULL, optional vector giving the index of `mus` that each strain uses the boosting parameter from. eg. if there's 6 circulation years and 3 strain clusters, then this might be c(1,1,2,2,3,3)
 #' @return a data frame with columns individual, samples, virus and titre of simulated data
 #' @export
 #' @seealso \code{\link{simulate_individual}}
@@ -59,8 +59,8 @@ simulate_group <- function(n_indiv, theta, infectionHistories,
 #' @param antigenicMapShort the collapsed antigenic map for short term cross reactivity, after multiplying by sigma2
 #' @param strains vector of all possible circulating strains
 #' @param repeats number of repeated samples for each year
-#' @param mus
-#' @param mu_indices
+#' @param mus default NULL, optional vector of boosting parameters for each strain
+#' @param mu_indices default NULL, optional vector giving the index of `mus` that each strain uses the boosting parameter from. eg. if there's 6 circulation years and 3 strain clusters, then this might be c(1,1,2,2,3,3)
 #' @return a data frame with columns samples, virus and titre of simulated data
 #' @export
 #' @seealso \code{\link{infection_model_indiv}}
@@ -247,10 +247,10 @@ simulate_ars_spline <- function(infectionYears, buckets, meanPar=0.15,sdPar=0.5,
 #' @param ageMax maximum age to simulate
 #' @param simInfPars vector of parameters to pass to \code{\link{simulate_attack_rates}}
 #' @param useSIR boolean specifying whether to sample from an SIR model or just log normal distribution for each epoch. If TRUE, uses an SIR model
-#' @param useSpline
-#' @param pInf
+#' @param useSpline if TRUE, calculates a spline to generate sub annual FOI from
+#' @param pInf if given, provides infection probabilities to sample from rather than simulating
 #' @param repeats number of repeats for each year
-#' @param mu_indices
+#' @param mu_indices default NULL, optional vector giving the index of `mus` that each strain uses the boosting parameter from. eg. if there's 6 circulation years and 3 strain clusters, then this might be c(1,1,2,2,3,3)
 #' @return a list with: 1) the data frame of titre data as returned by \code{\link{simulate_group}}; 2) a matrix of infection histories as returned by \code{\link{simulate_infection_histories}}; 3) a vector of ages
 #' @export
 simulate_data <- function(parTab, group=1,n_indiv,buckets=12,
