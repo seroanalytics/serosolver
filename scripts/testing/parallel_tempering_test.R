@@ -23,7 +23,7 @@ buckets <- 1 ## Set to 1 for annual model. Greater than 1 gives subannual (eg. b
 ## Read in parameter table to simulate from and change waning rate and alpha/beta if necessary
 parTab <- read.csv("~/Documents/Fluscape/serosolver/inputs/parTab.csv",stringsAsFactors=FALSE)
 parTab[parTab$names %in% c("alpha","beta"),"values"] <- c(1,1)
-
+parTab[parTab$names == "wane","values"] <- 1
 
 samplingTimes <- seq(2010*buckets, 2015*buckets, by=1)
 yearMin <- 1990*buckets
@@ -74,17 +74,23 @@ for(i in 1:nrow(startTab)){
 }
 
 ## Specify paramters controlling the MCMC procedure
-mcmcPars <- c("iterations"=50000,"popt"=0.44,"popt_hist"=0.44,"opt_freq"=2000,"thin"=10,"adaptive_period"=10000,
-              "save_block"=1000,"thin2"=100,"histSampleProb"=0.5,"switch_sample"=2, "burnin"=0, 
-              "nInfs"=floor(ncol(infectionHistories)/2), "moveSize"=2*buckets, "histProposal"=6, "histOpt"=0,"n_par"=10, "swapPropn"=0.5)
-
+mcmcPars <- list("iterations"=50000,"popt"=0.44,"opt_freq"=2000,"thin"=1,"adaptive_period"=10000,
+              "save_block"=1000,"thin2"=100,"histSampleProb"=0.5,"switch_sample"=2, 
+              "temperature"=seq_len(10), "parallel_tempering_iter"=5,
+              "nInfs"=floor(ncol(infectionHistories)/2), "moveSize"=2*buckets,"swapPropn"=0.5)
+n_temperatures <- length(mcmcPars[["temperature"]])
+startTab <- rep(list(startTab),n_temperatures)
+#Rprof(tmp <- tempfile())
 ## Run the MCMC using the inputs generated above
-res <- run_MCMC(startTab, titreDat, mcmcPars, filename=filename,
-                 create_post_func, NULL,NULL,version=1, 0.2, 
-                 fit_dat, ages=ages, 
-                 startInfHist=startInf,
+res <- run_MCMC_pt(startTab, titreDat, mcmcPars, filename=filename,
+                create_post_func, NULL, 0.2, 
+                seed=1,fit_dat, ages=ages, 
+                startInfHist=startInf,
+                mu_indices=NULL,
                 measurement_indices=NULL,
-                temp=2)
+                measurement_random_effects=FALSE)
+#Rprof()
+#summaryRprof(tmp)
 beepr::beep(4)
 
 #########################
@@ -92,11 +98,12 @@ beepr::beep(4)
 #########################
 ## Density/trace plots
 chain <- read.csv(res$chain_file)
-chain <- chain[chain$sampno >= (mcmcPars["adaptive_period"]+mcmcPars["burnin"]),]
+chain <- chain[chain$sampno >= mcmcPars["adaptive_period"],]
+plot(as.mcmc(chain))
 
 ## Plot inferred attack rates against true simulated attack rates
 infChain <- data.table::fread(res$history_file)
-infChain <- infChain[infChain$sampno >= (mcmcPars["adaptive_period"]+mcmcPars["burnin"]+10000),]
+infChain <- infChain[infChain$sampno >= mcmcPars["adaptive_period"],]
 infChain <- infChain[infChain$sampno > 10000,]
 n_alive <- sapply(1:length(strainIsolationTimes), function(x) length(ageMask[ageMask<=x]))
 inf_prop <- colSums(infectionHistories)/n_alive
@@ -109,13 +116,12 @@ AR_p <- plot_attack_rates(infChain, titreDat, ages, seq(yearMin, yearMax, by=1))
 indivs <- sample(n_indiv, 10)
 sampd <- sample(n_indiv,20)
 infChain <- data.table::fread(res$history_file)
-infChain <- infChain[infChain$sampno >= (mcmcPars["adaptive_period"]+mcmcPars["burnin"]),]
+infChain <- infChain[infChain$sampno >= mcmcPars["adaptive_period"],]
 n_strain <- max(infChain$j)
 data.table::setkey(infChain, "j","sampno")
 n_inf_chain <- infChain[,list(V1=sum(x)),by=key(infChain)]
 
 inf_chain_p <- ggplot(n_inf_chain) + geom_line(aes(x=sampno,y=V1)) + facet_wrap(~j)
-
 
 n_indiv <- max(infChain$i)
 data.table::setkey(infChain, "i","sampno")
@@ -132,26 +138,3 @@ ps <- generate_cumulative_inf_plots(res$history_file, 0,
 ## Generate cumulative infection history plots for a random subset of individuals
 ## based on data and posterior
 plot_infection_histories(chain, infChain, titreDat, sample(1:n_indiv, 10), fit_dat, ages,parTab,100)
-
-f <- create_post_func(parTab,titreDat, fit_dat, NULL, 99, ageMask, mu_indices=NULL,measurement_indices=NULL,temp=1000000)
-tmpInf <- f(parTab$values, startInf,1,1,1,1,1,1)
-samps <- 50000
-tmpInf <- startInf
-omg <- matrix(ncol=ncol(startInf)+1,nrow=nrow(startInf)*(samps))
-omg <- matrix(ncol=nrow(startInf)+1,nrow=samps)
-index <- 1
-for(i in 1:samps){
-  #print(i)
-  tmp <- f(parTab$values, tmpInf, 1,1,1,1,3)
-  tmpInf <- tmp
-  tmp <- rowSums(tmp)
-  tmp <- c(tmp,i)
-  omg[i,] <- tmp
-  #omg[index:(index+nrow(startInf)-1),] <- tmp
-  #index <- index + nrow(startInf)
-}
-colnames(omg) <- c(1:nrow(startInf),"sampno")
-omg <- as.data.frame(omg)
-wow <- reshape2::melt(omg,id.vars="sampno")
-ggplot(wow) + geom_histogram(aes(x=value),binwidth=2) + facet_wrap(~variable)
-

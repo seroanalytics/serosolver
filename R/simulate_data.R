@@ -12,13 +12,17 @@
 #' @param repeats number of repeated samples for each year
 #' @param mus default NULL, optional vector of boosting parameters for each strain
 #' @param mu_indices default NULL, optional vector giving the index of `mus` that each strain uses the boosting parameter from. eg. if there's 6 circulation years and 3 strain clusters, then this might be c(1,1,2,2,3,3)
+#' @param measurement_bias default NULL, optional vector of measurement bias shift parameters for each strain
+#' @param measurement_indices default NULL, optional vector giving the index of `measurement_bias` that each strain uses the measurement shift from from. eg. if there's 6 circulation years and 3 strain clusters, then this might be c(1,1,2,2,3,3)
 #' @return a data frame with columns individual, samples, virus and titre of simulated data
 #' @export
 #' @seealso \code{\link{simulate_individual}}
 simulate_group <- function(n_indiv, theta, infectionHistories,
                            strainIsolationTimes, sampleTimes,
                            nsamps, antigenicMapLong, antigenicMapShort,
-                           repeats=1, mus=NULL, mu_indices=NULL){
+                           repeats=1, mus=NULL, mu_indices=NULL,
+                           measurement_bias=NULL, measurement_indices=NULL,
+                           addNoise=TRUE){
     dat <- NULL
     ## For each individual
     for(i in 1:n_indiv){
@@ -34,7 +38,9 @@ simulate_group <- function(n_indiv, theta, infectionHistories,
                                                antigenicMapLong,
                                                antigenicMapShort,
                                                strainIsolationTimes,
-                                               repeats, mus, mu_indices))
+                                               repeats, mus, mu_indices,
+                                               measurement_bias, measurement_indices,
+                                               addNoise))
         ## Record individual ID
         y$indiv <- i
         colnames(y) <- c("samples","virus","titre","individual")
@@ -61,6 +67,8 @@ simulate_group <- function(n_indiv, theta, infectionHistories,
 #' @param repeats number of repeated samples for each year
 #' @param mus default NULL, optional vector of boosting parameters for each strain
 #' @param mu_indices default NULL, optional vector giving the index of `mus` that each strain uses the boosting parameter from. eg. if there's 6 circulation years and 3 strain clusters, then this might be c(1,1,2,2,3,3)
+#' @param measurement_bias default NULL, optional vector of measurement bias shift parameters for each strain
+#' @param measurement_indices default NULL, optional vector giving the index of `measurement_bias` that each strain uses the measurement shift from from. eg. if there's 6 circulation years and 3 strain clus
 #' @return a data frame with columns samples, virus and titre of simulated data
 #' @export
 #' @seealso \code{\link{infection_model_indiv}}
@@ -75,7 +83,10 @@ simulate_individual <- function(theta,
                                 strains,
                                 repeats=1,
                                 mus=NULL,
-                                mu_indices=NULL){
+                                mu_indices=NULL,
+                                measurement_bias=NULL,
+                                measurement_indices=NULL,
+                                addNoise=TRUE){
     numberStrains <- length(strains)
     dat <- matrix(ncol=3, nrow=length(strainIsolationTimes)*repeats)
     
@@ -94,7 +105,15 @@ simulate_individual <- function(theta,
     samplingTimes <- rep(samplingTimes, each=repeats)
     dat[,1] <- samplingTimes
     dat[,2] <- rep(strainIsolationTimes,each=repeats)
-    dat[,3] <- add_noise(titres,theta)
+    if(addNoise){
+        if(!is.null(measurement_indices)){
+            dat[,3] <- add_noise(titres,theta, measurement_bias, measurement_indices[match(dat[,2], strains)])
+        } else {
+            dat[,3] <- add_noise(titres,theta, NULL, NULL)
+        }
+    } else {
+        dat[,3] <- titres
+    }
     #dat[,3] <- titres
     #dat[,3] <- rnorm(length(titres),titres,sd=theta["error"])
     return(dat)
@@ -107,9 +126,13 @@ simulate_individual <- function(theta,
 #' @param theta a vector with MAX_TITRE and error parameters
 #' @return a noisy titre
 #' @export
-add_noise <- function(y, theta){
+add_noise <- function(y, theta, measurement_bias=NULL, indices=NULL){
     ## Draw from normal
-    noise_y <- floor(rnorm(length(y), mean=y, sd=theta["error"]))
+    if(!is.null(measurement_bias)) {
+        noise_y <- floor(rnorm(length(y), mean=y+measurement_bias[indices], sd=theta["error"]))
+    } else {
+        noise_y <- floor(rnorm(length(y), mean=y, sd=theta["error"]))
+    }
 
     ## If outside of bounds, truncate
     noise_y[noise_y < 0] <- 0
@@ -265,12 +288,20 @@ simulate_data <- function(parTab, group=1,n_indiv,buckets=12,
                           useSpline=TRUE,
                           pInf=NULL,
                           repeats=1,
-                          mu_indices=NULL){
+                          mu_indices=NULL,
+                          measurement_indices=NULL,
+                          addNoise=TRUE){
     ## Extract parameters
     pars <- parTab$values
     names(pars) <- parTab$names
     if(!is.null(mu_indices)){
         mus <- parTab[parTab$identity == 3,"values"]
+        pars <- parTab[parTab$identity == 1,"values"]
+        names(pars) <- parTab[parTab$identity==1,"names"]
+    }
+
+    if(!is.null(measurement_indices)){
+        measurement_bias <- parTab[parTab$identity == 4,"values"]
         pars <- parTab[parTab$identity == 1,"values"]
         names(pars) <- parTab[parTab$identity==1,"names"]
     }
@@ -308,7 +339,7 @@ simulate_data <- function(parTab, group=1,n_indiv,buckets=12,
     ## Simulate titre data
     y <- simulate_group(n_indiv, pars, infHist, strainIsolationTimes, samplingTimes,
                         nsamps, antigenicMapLong,antigenicMapShort,repeats,
-                        mus, mu_indices)
+                        mus, mu_indices, measurement_bias, measurement_indices,addNoise)
 
     ## Randomly censor titre values
     y$titre <- y$titre*sample(c(NA,1),nrow(y),prob=c(titreSensoring,1-titreSensoring),replace=TRUE)

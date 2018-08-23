@@ -1,0 +1,143 @@
+create_run_MCMC_single_iter_fn <- function(unfixed_pars,unfixed_par_length,
+                                           lower_bounds,upper_bounds,
+                                           mu_indices, measurement_random_effects,
+                                           posterior_simp, prior_shifts, prior_mu, proposal_gibbs,
+                                           alpha, beta, histSampleProb, nInfs, swapPropn, moveSize,
+                                           n_alive, switch_sample
+                                           ){
+    f <- function(i, par_i,
+                  current_pars,infectionHistories,
+                  probab,probabs,
+                  tempaccepted,tempiter,
+                  steps,temp){
+
+        if(i %% switch_sample != 0){
+            ## If using univariate proposals
+            ## For each parameter (Gibbs)
+            j <- unfixed_pars[par_i]
+            par_i <- par_i + 1
+            if(par_i > unfixed_par_length) par_i <- 1
+            proposal <- univ_proposal(current_pars, lower_bounds, upper_bounds, steps,j)
+            tempiter[j] <- tempiter[j] + 1
+            ## If using multivariate proposals
+            ## Propose new parameters and calculate posterior
+            ## Check that all proposed parameters are in allowable range
+            if(!any(
+                    proposal[unfixed_pars] < lower_bounds[unfixed_pars] |
+                    proposal[unfixed_pars] > upper_bounds[unfixed_pars]
+                )
+               ){
+                ## Calculate new likelihood and find difference to old likelihood
+                new_probabs<- posterior_simp(proposal,infectionHistories)
+                new_probab <- sum(new_probabs)
+                new_probab <- new_probab + inf_mat_prior_cpp(infectionHistories, n_alive, alpha, beta)
+                if(!is.null(prior_mu)) new_probab <- new_probab + prior_mu(proposal)
+                if(!is.null(prior_shifts)) new_probab <- new_probab + prior_shifts(proposal)
+                
+                log_prob <- new_probab-probab
+                log_prob <- min(log_prob, 0)
+                
+                if(is.finite(log_prob) && log(runif(1)) < log_prob/temp){
+                    ## Accept with probability 1 if better, or proportional to
+                    ## difference if not
+                    current_pars <- proposal
+                    ## Store acceptances
+                    tempaccepted[j] <- tempaccepted[j] + 1
+                    probabs <- new_probabs
+                    probab <- new_probab
+                }
+            }
+        } else {
+            newInfectionHistories <- proposal_gibbs(current_pars, infectionHistories, alpha, beta, histSampleProb, nInfs,swapPropn,moveSize, temp)
+            ## Calculate new likelihood with these infection histories
+            new_probabs <- posterior_simp(current_pars, newInfectionHistories)
+            new_probab <- sum(new_probabs)
+            new_probab <- new_probab + inf_mat_prior_cpp(newInfectionHistories, n_alive, alpha, beta)
+            if(!is.null(prior_mu)) new_probab <- new_probab + prior_mu(current_pars)
+            if(!is.null(prior_shifts)) new_probab <- new_probab + prior_shifts(current_pars)
+            infectionHistories <- newInfectionHistories
+            probabs <- new_probabs
+            probab <- new_probab            
+        }
+        list("i"=i, "par_i" = par_i,
+             "current_pars" = current_pars,"infectionHistories"=infectionHistories,
+             "probabs"=probabs,"probab" = probab,
+             "tempaccepted" = tempaccepted,"tempiter" = tempiter,
+             "steps"=steps,"temp"=temp)
+    }
+    f
+}
+
+
+#' performs parallel tempering
+#' 
+#' @param mcmc_list a list of lists: values, log likelihood etc. of parallel MCMC chains
+#' @param temperatures numeric vector: temperatures of chains
+#' @param offset integer: 0 or 1. 0 = swap chains 1 <-> 2, 3 <-> 4...
+#' 1 = swap chains 2<->3, 4<->5...
+#' 
+#' @return a list of lists: values, log likelihood etc. of paralle chains after parallel tempering
+#' @export
+parallel_tempering <- function(mcmc_list, temperatures, offset){
+
+    recorded_swaps <- double(length(mcmc_list) - 1)
+    
+    ## extract current probabilities and log likelihoods
+    all_probab <- vapply(mcmc_list, function(x) x$probab, double(1))
+    all_probabs <- lapply(mcmc_list, function(x) x$probabs)
+    all_current_pars <- lapply(mcmc_list, function(x) x$current_pars)
+    all_infectionHistories <- lapply(mcmc_list, function(x) x$infectionHistories)
+    
+    ## decide which chains to swap
+    if((offset + 1) <= (length(mcmc_list) - 1)){
+        swap_ind <- seq(offset + 1, length(mcmc_list) - 1, by = 2)
+        
+        decide_if_swap <- function(x,y){
+            delta <- (1 / temperatures[y] - 1 / temperatures[x]) *
+                (all_probab[x] - all_probab[y])
+            runif(1) <= exp(delta)
+        }
+
+        swaps <- vapply(swap_ind, function(x) decide_if_swap(x,x+1), logical(1))
+        swap_ind <- swap_ind[swaps]
+
+        ## perform swap
+        perform_swap <- function(vec, swap_ind){
+            vec_new <- vec
+            vec_new[swap_ind] <- vec[swap_ind + 1]
+            vec_new[swap_ind + 1] <- vec[swap_ind]
+            vec_new
+        }
+        all_probab <- perform_swap(all_probab, swap_ind)
+        all_current_pars <- perform_swap(all_current_pars, swap_ind)
+        all_probabs <- perform_swap(all_probabs, swap_ind)
+        all_infectionHistories <- perform_swap(all_infectionHistories, swap_ind)
+        new_list <- Map(function(x,y,z,q) list(probab = x, current_pars = y, probabs=z, infectionHistories=q),
+                        all_probab, all_current_pars,all_probabs,all_infectionHistories)
+        
+        mcmc_list <- Map(modifyList, mcmc_list, new_list)
+        recorded_swaps[swap_ind] <- 1
+    }
+    list("swaps" = recorded_swaps, "mcmc_list" = mcmc_list)
+}
+
+#' calibrate temperatures for parallel chains
+#'
+#' @param temperatures vector of length n: current temperatures of chains
+#' @param swap_ratio vector of length n - 1: (proportion of accepted swaps
+#' out of proposed swaps)/2
+#' the factor of 2 arises because of the way the swaps are recorded, and how
+#' we alternate between swapping 1<->2, 3<->4.... and 2<->3, 4<->5...
+#' @return vector of length n: new temperatures of chains
+#'
+calibrate_temperatures <- function(temperatures,swap_ratio) {
+    diff_temp <- diff(temperatures)
+    ## find chains between which the swap ratio is too large
+    too_large = swap_ratio > .2 # note factor of 2 from main text -- see above
+    ## find chains between which the swap ratio is too small
+    too_small = swap_ratio < .05
+    ## adjust differences between temperatures accordingly
+    diff_temp = diff_temp*(too_large*1.5 + too_small*.75 + (1-too_large-too_small))
+    ## reconstruct temperatures from their differences
+    cumsum(c(temperatures[1],diff_temp))    
+}

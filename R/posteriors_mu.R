@@ -66,6 +66,10 @@ create_post_func_mu <- function(parTab, data, antigenicMap,
     lambda_indices <- which(parTab$identity == 2)
     mu_pars <- which(parTab$identity == 3)
     parNames_theta<- parTab[theta_indices,"names"]
+    if(is.null(ageMask)) ageMask <- rep(1, n_indiv)
+    n_alive <- sapply(1:length(strains), function(x) length(ageMask[ageMask <= x]))
+    
+    
     if(version==1){
         ## The function pointer
         f <- function(pars, infectionHistories){
@@ -112,7 +116,7 @@ create_post_func_mu <- function(parTab, data, antigenicMap,
             mus <- pars[mu_pars]
             pars <- pars[theta_indices]
             names(pars) <- parNames_theta
-
+             
             ## Work out short and long term boosting cross reactivity
             antigenicMapLong <- create_cross_reactivity_vector(antigenicMapMelted, pars["sigma1"])
             antigenicMapShort <- create_cross_reactivity_vector(antigenicMapMelted, pars["sigma2"])
@@ -127,6 +131,30 @@ create_post_func_mu <- function(parTab, data, antigenicMap,
             liks <- liks + calc_lambda_probs_indiv(lambdas, infectionHistories, ageMask)
             return(liks)
         }
+    }  else if(version == 99){
+        ## Gibbs proposal on infection histories
+        f <- function(pars, infectionHistories, alpha, beta, indivPropn, nYears, swapPropn=0.5,swapDistance=1){
+            mus <- pars[mu_pars]
+            pars <- pars[theta_indices]
+            names(pars) <- parNames_theta
+
+            ## Work out short and long term boosting cross reactivity - C++ function
+            antigenicMapLong <- create_cross_reactivity_vector(antigenicMapMelted, pars["sigma1"])
+            antigenicMapShort <- create_cross_reactivity_vector(antigenicMapMelted, pars["sigma2"])
+            ## Now pass to the C++ function
+            new_infectionHistories <- infection_history_proposal_gibbs_mus(pars, mus, mu_indices,
+                                                                           infectionHistories,
+                                                                           indivPropn,nYears,
+                                                                           ageMask, n_alive,
+                                                                           swapPropn, swapDistance,
+                                                                           alpha, beta,
+                                                                           strains, strainIndices, sampleTimes,
+                                                                           indicesData,indicesDataOverall,
+                                                                           indicesSamples, virusIndices, 
+                                                                           antigenicMapLong, antigenicMapShort,
+                                                                           titres)
+            return(new_infectionHistories)
+        }
     } else {
         print("Model solving function")
         f <- function(pars, infectionHistories){
@@ -137,15 +165,15 @@ create_post_func_mu <- function(parTab, data, antigenicMap,
             ## Work out short and long term boosting cross reactivity - C++ function
             antigenicMapLong <- create_cross_reactivity_vector(antigenicMapMelted, pars["sigma1"])
             antigenicMapShort <- create_cross_reactivity_vector(antigenicMapMelted, pars["sigma2"])
-          
-          ## Now pass to the C++ function
-          y <- titre_data_group_mus(pars,mus,infectionHistories, strains, strainIndices, mu_indices,
-                                    sampleTimes, indicesData,indicesDataOverall,indicesSamples, virusIndices, 
-                                    antigenicMapLong, antigenicMapShort)
-          return(y)
-      }
-  }
-  f
+            
+            ## Now pass to the C++ function
+            y <- titre_data_group_mus(pars,mus,infectionHistories, strains, strainIndices, mu_indices,
+                                      sampleTimes, indicesData,indicesDataOverall,indicesSamples, virusIndices, 
+                                      antigenicMapLong, antigenicMapShort)
+            return(y)
+        }
+    }
+    f
 }
 
 #' @export

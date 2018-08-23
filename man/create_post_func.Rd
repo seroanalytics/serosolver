@@ -5,7 +5,7 @@
 \title{Posterior function pointer}
 \usage{
 create_post_func(parTab, data, antigenicMap, PRIOR_FUNC, version = 1,
-  ageMask = NULL, ...)
+  ageMask = NULL, measurement_indices = NULL, ...)
 }
 \arguments{
 \item{parTab}{the parameter table controlling information such as bounds, initial values etc}
@@ -21,6 +21,8 @@ create_post_func(parTab, data, antigenicMap, PRIOR_FUNC, version = 1,
 \item{ageMask}{see \code{\link{create_age_mask}} - a vector with one entry for each individual specifying the first epoch of circulation in which an individual could have been exposed}
 
 \item{...}{other arguments to pass to the posterior solving function}
+
+\item{temp}{temperature for parallel tempering}
 }
 \value{
 a single function pointer that takes only pars and infectionHistories as unnamed arguments. This function goes on to return a vector of posterior values for each individual

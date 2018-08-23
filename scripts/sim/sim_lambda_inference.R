@@ -112,7 +112,7 @@ for(i in 1:nrow(startTab)){
 }
 
 ## Specify paramters controlling the MCMC procedure
-mcmcPars <- c("iterations"=50000,"popt"=0.44,"popt_hist"=0.44,"opt_freq"=2000,"thin"=1,"adaptive_period"=20000,
+mcmcPars <- c("iterations"=50000,"popt"=0.44,"popt_hist"=0.44,"opt_freq"=5000,"thin"=1,"adaptive_period"=20000,
               "save_block"=1000,"thin2"=100,"histSampleProb"=1,"switch_sample"=2, "burnin"=0, 
               "nInfs"=1, "moveSize"=2, "histProposal"=1, "histOpt"=1,"n_par"=10, "swapPropn"=0.5)
 

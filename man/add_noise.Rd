@@ -4,7 +4,7 @@
 \alias{add_noise}
 \title{Add noise}
 \usage{
-add_noise(y, theta)
+add_noise(y, theta, measurement_bias = NULL, indices = NULL)
 }
 \arguments{
 \item{y}{the titre}

@@ -6,7 +6,8 @@
 \usage{
 simulate_individual(theta, infectionHistory, samplingTimes, dataIndices,
   strainIsolationTimes, virusIndices, antigenicMapLong, antigenicMapShort,
-  strains, repeats = 1, mus = NULL, mu_indices = NULL)
+  strains, repeats = 1, mus = NULL, mu_indices = NULL,
+  measurement_bias = NULL, measurement_indices = NULL, addNoise = TRUE)
 }
 \arguments{
 \item{theta}{the named parameter vector}
@@ -30,6 +31,10 @@ simulate_individual(theta, infectionHistory, samplingTimes, dataIndices,
 \item{mus}{default NULL, optional vector of boosting parameters for each strain}
 
 \item{mu_indices}{default NULL, optional vector giving the index of `mus` that each strain uses the boosting parameter from. eg. if there's 6 circulation years and 3 strain clusters, then this might be c(1,1,2,2,3,3)}
+
+\item{measurement_bias}{default NULL, optional vector of measurement bias shift parameters for each strain}
+
+\item{measurement_indices}{default NULL, optional vector giving the index of `measurement_bias` that each strain uses the measurement shift from from. eg. if there's 6 circulation years and 3 strain clus}
 
 \item{sampleTimes}{the vector of times at which samples are taken}
 

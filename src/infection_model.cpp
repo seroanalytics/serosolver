@@ -261,6 +261,87 @@ double likelihood_data_individual(NumericVector theta,
   lnlike = likelihood_titre(titres, data, theta);
   return(lnlike);
 }
+
+
+
+
+//' Calculate likelihood
+//'
+//' Calculates the likelihood of a given set of observed titres given predicted titres. Based on truncated discritised normal.
+//' @param expected NumericVector, as returned by \code{\link{infection_model_indiv}}
+//' @param data NumericVector, the vector of observed titres
+//' @param theta NumericVector, the vector of named model parameters, requiring MAX_TITRE and error
+//' @return a single log likelihood
+//' @export
+//[[Rcpp::export]]
+double likelihood_titre_bias(NumericVector expected, NumericVector data, NumericVector theta,
+			     NumericVector to_add){
+  NumericVector expected1 = expected;
+  expected1 = expected1 + to_add;
+  int n = expected.size();
+  double lnlike = 0;
+  
+  for(int i=0; i < n; ++i){
+    if(!NumericVector::is_na(data[i])){
+      if(data[i] > theta["MAX_TITRE"]){
+	lnlike += R::pnorm(theta["MAX_TITRE"], expected[i], theta["error"],0,1);
+      } else if(data[i] <= 0){
+	lnlike += R::pnorm(1, expected[i], theta["error"],1,1);
+      } else {
+	lnlike += log(R::pnorm(data[i]+1, expected[i],theta["error"], 1,0) - 
+		      R::pnorm(data[i], expected[i], theta["error"],1,0));
+      }
+    }
+  }
+  return(lnlike);
+}
+
+//' @export
+//[[Rcpp::export]]
+double likelihood_data_individual_bias(NumericVector theta, 
+				       IntegerVector infectionHistory, 
+				       NumericVector circulationTimes, 
+				       IntegerVector circulationMapIndices,
+				       NumericVector samplingTimes,
+				       IntegerVector dataIndices,
+				       IntegerVector measuredMapIndices, 
+				       NumericVector antigenicMapLong, 
+				       NumericVector antigenicMapShort,
+				       int numberStrains,
+				       NumericVector data,
+				       NumericVector to_add
+				       ){
+  int numberSamples = samplingTimes.size();
+  int numberMeasuredStrains = measuredMapIndices.size();
+  double lnlike=0;
+  NumericVector titres(numberMeasuredStrains);
+
+  int startIndex = 0;
+  int endIndex = 0;
+
+  LogicalVector indices = infectionHistory > 0;
+
+  IntegerVector conciseInfHist = infectionHistory[indices];
+  NumericVector infectionTimes = circulationTimes[indices];
+  IntegerVector infMapIndices = circulationMapIndices[indices];
+
+  for(int i = 0; i < numberSamples; ++i){ 
+    endIndex = startIndex + dataIndices[i] - 1;
+    titres[Range(startIndex, endIndex)] = infection_model_indiv(theta,
+								conciseInfHist,
+								infectionTimes,
+								infMapIndices,
+								samplingTimes[i],
+								measuredMapIndices[Range(startIndex,endIndex)],
+								antigenicMapLong, antigenicMapShort,
+								numberStrains);
+    startIndex = endIndex + 1;
+  }
+  lnlike = likelihood_titre_bias(titres, data, theta, to_add);
+  return(lnlike);
+}
+
+
 //' Individual likelihood
 //'
 //' Uses \code{\link{infection_model_indiv}} for a single individual and then calls \code{\link{likelihood_titre}}. Works with NA

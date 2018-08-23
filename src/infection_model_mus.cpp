@@ -3,7 +3,7 @@ using namespace Rcpp;
 
 #define MAX(a,b) ((a) < (b) ? (b) : (a)) // define MAX function for use later
   
-
+double likelihood_titre(NumericVector expected, NumericVector data, NumericVector theta);
 
 //' Model function
 //'
@@ -230,4 +230,52 @@ NumericVector titre_data_group_mus(NumericVector theta,
   }
 
   return(titres);
+}
+
+
+//' @export
+//[[Rcpp::export]]
+double likelihood_data_individual_mus(NumericVector theta, 
+				      NumericVector mus,
+				      IntegerVector infectionHistory, 
+				      NumericVector circulationTimes, 
+				      IntegerVector circulationMapIndices,
+				      IntegerVector musIndices,
+				      NumericVector samplingTimes,
+				      IntegerVector dataIndices,
+				      IntegerVector measuredMapIndices, 
+				      NumericVector antigenicMapLong, 
+				      NumericVector antigenicMapShort,
+				      int numberStrains,
+				      NumericVector data
+				  ){
+  int numberSamples = samplingTimes.size();
+  int numberMeasuredStrains = measuredMapIndices.size();
+  double lnlike=0;
+  NumericVector titres(numberMeasuredStrains);
+
+  int startIndex = 0;
+  int endIndex = 0;
+
+  LogicalVector indices = infectionHistory > 0;
+
+  IntegerVector conciseInfHist = infectionHistory[indices];
+  NumericVector infectionTimes = circulationTimes[indices];
+  IntegerVector infMapIndices = circulationMapIndices[indices];
+
+  for(int i = 0; i < numberSamples; ++i){ 
+    endIndex = startIndex + dataIndices[i] - 1;
+    titres[Range(startIndex, endIndex)] = infection_model_indiv_mus(theta,mus,
+								    conciseInfHist,
+								    infectionTimes,
+								    musIndices,
+								    infMapIndices,
+								    samplingTimes[i],
+								    measuredMapIndices[Range(startIndex,endIndex)],
+								    antigenicMapLong, antigenicMapShort,
+								    numberStrains);
+    startIndex = endIndex + 1;
+  }
+  lnlike = likelihood_titre(titres, data, theta);
+  return(lnlike);
 }

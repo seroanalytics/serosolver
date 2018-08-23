@@ -1,8 +1,5 @@
 ######################
 ## JAMES HAY 13.08.2018 - jameshay218@gmail.com
-## This script fits the serosolver antibody kinetics model to the fluscape HI titre data
-## This particular script uses a gibbs proposal step to resample infection histories
-## which integrates out the annual force of infection parameters.
 library(ggplot2)
 library(coda)
 library(plyr)
@@ -17,7 +14,7 @@ devtools::load_all()
 n_indiv <-100
 
 ## The general output filename
-filename <- "chains/fluscape_1000_gibbs"
+filename <- "chains/fluscape_100_measurement"
 
 ## Read in parameter table to simulate from and change waning rate and alpha/beta if necessary
 parTab <- read.csv("~/Documents/Fluscape/serosolver/inputs/parTab.csv",stringsAsFactors=FALSE)
@@ -26,7 +23,7 @@ parTab[parTab$names %in% c("alpha","beta"),"values"] <- c(1,1)
 ## Read in and generate the antigenic map to read strain relationships from
 antigenicMap <- read.csv("~/Documents/Fluscape/fluscape/trunk/data/Fonville2014AxMapPositionsApprox.csv",stringsAsFactors=FALSE)
 fit_dat <- generate_antigenic_map(antigenicMap, 1)
-strainIsolationTimes <- unique(fit_dat$inf_years)
+
 ## Read in Fluscape data
 fluscapeDat <- read.csv("data/real/fluscape_data.csv",stringsAsFactors=FALSE)
 fluscapeAges <- read.csv("data/real/fluscape_ages.csv")
@@ -47,6 +44,31 @@ titreDat$individual <- match(titreDat$individual, indivs)
 ages$individual <- match(ages$individual, indivs)
 titreDat <- titreDat[,c("individual", "samples", "virus", "titre", "run", "group")]
 
+
+measurement_bias <- rnorm(15,0,1)
+#measurement_bias[15] <- 0
+clusters <- read.csv("~/Documents/Fluscape/serosolver/data/antigenic_maps/fonville_clusters.csv")
+n_clusters <- length(unique(clusters$cluster1))
+measurement_indices <- clusters$cluster1
+parTab$identity <- 1
+parTab <- rbind(parTab, data.frame(names="rho_mean",values=0,fixed=1,steps=0.1,
+                                   lower_bound=-10,upper_bound=10,lower_start=-2,upper_start=2, identity=1))
+parTab <- rbind(parTab, data.frame(names="rho_sd",values=1,fixed=0,steps=0.1,
+                                   lower_bound=0,upper_bound=10,lower_start=1,upper_start=2, identity=1))
+
+
+for(i in 1:length(measurement_bias)){
+  tmp <- data.frame(names="rho",values=1,fixed=0,steps=0.1,lower_bound=-10,upper_bound=10,lower_start=-2,upper_start=2, identity=4)
+  parTab <- rbind(parTab, tmp)
+}
+parTab[parTab$names == "rho","values"] <- measurement_bias
+#parTab[parTab$names=="rho","fixed"][15] <- 1
+
+strainIsolationTimes <- unique(fit_dat$inf_years)
+startInf <- setup_infection_histories_new(titreDat, ages, unique(fit_dat$inf_years), space=5,titre_cutoff=2)
+ageMask <- create_age_mask(ages, strainIsolationTimes,n_indiv)
+
+
 startTab <- parTab
 for(i in 1:nrow(startTab)){
   if(startTab[i,"fixed"] == 0){
@@ -62,20 +84,18 @@ w <- 1
 mvrPars <- list(covMat, scale, w)
 mvrPars <- NULL
 
-startInf <- setup_infection_histories_new(titreDat, ages, unique(fit_dat$inf_years), space=5,titre_cutoff=2)
-ageMask <- create_age_mask(ages, strainIsolationTimes,n_indiv)
-
 #########################
 ## RUN MCMC
 #########################
-mcmcPars <- c("iterations"=1000000,"popt"=0.44,"popt_hist"=0.44,"opt_freq"=2000,"thin"=100,"adaptive_period"=200000,
-              "save_block"=1000,"thin2"=1000,"histSampleProb"=0.5,"switch_sample"=2, "burnin"=0, 
-              "nInfs"=floor(ncol(startInf)/4), "moveSize"=3*buckets, "histProposal"=6, "histOpt"=0,"n_par"=10, "swapPropn"=0.5)
+mcmcPars <- c("iterations"=50000,"popt"=0.44,"popt_hist"=0.44,"opt_freq"=2000,"thin"=1,"adaptive_period"=10000,
+              "save_block"=1000,"thin2"=10,"histSampleProb"=1,"switch_sample"=2, "burnin"=0, 
+              "nInfs"=floor(ncol(startInf)/4), "moveSize"=3, "histProposal"=6, "histOpt"=0,"n_par"=10, "swapPropn"=0.5)
 
 res <- run_MCMC(startTab, titreDat, mcmcPars, filename=filename,
-                create_post_func, NULL,NULL,version=1, 0.2, 
+                create_post_func, NULL,NULL,version=9, 0.2, 
                 fit_dat, ages=ages, 
-                startInfHist=startInf,n_alive=NULL)
+                startInfHist=startInf,n_alive=NULL,
+                measurement_indices=measurement_indices)
 beepr::beep(4)
 
 #########################
@@ -84,14 +104,15 @@ beepr::beep(4)
 chain <- read.csv(res$chain_file)
 chain <- chain[chain$sampno >= (mcmcPars["adaptive_period"]+mcmcPars["burnin"]),]
 
+
 ## Plot inferred attack rates
 infChain <- data.table::fread(res$history_file)
 infChain <- infChain[infChain$sampno >= (mcmcPars["adaptive_period"]+mcmcPars["burnin"]),]
 n_alive <- sapply(strainIsolationTimes, function(x) length(ages[ages$DOB <= x,]))
 inf_prop <- colSums(startInf)/n_alive
 inf_prop <- data.frame(AR=inf_prop,year=strainIsolationTimes)
-AR_p <- plot_attack_rates(infChain, titreDat, ages, seq(yearMin, yearMax, by=1),n_alive=NULL) + 
- scale_y_continuous(expand=c(0,0),limits=c(0,1))
+AR_p <- plot_attack_rates(infChain, titreDat, ages, seq(1968, 2015, by=1),n_alive=NULL) + 
+  scale_y_continuous(expand=c(0,0),limits=c(0,1))
 
 ## Density/trace plots on total number of infections
 indivs <- sample(n_indiv, 10)
@@ -108,3 +129,6 @@ inf_chain_p <- ggplot(n_inf_chain) + geom_line(aes(x=sampno,y=V1)) + facet_wrap(
 ## based on data and posterior
 plot_infection_histories(chain, infChain, titreDat, sample(1:n_indiv, 10), fit_dat, ages,parTab,100)
 
+ps <- generate_cumulative_inf_plots(res$history_file, 0, 
+                                    sampd, startInf, startInf,strainIsolationTimes, 100,ages,numberCol=4)
+ps[[1]]

@@ -14,10 +14,10 @@ setwd("~/Documents/Fluscape/serosolver")
 devtools::load_all()
 
 ## How many individuals to fit to?
-n_indiv <-100
+n_indiv <-50
 
 ## The general output filename
-filename <- "chains/fluscape_1000_gibbs"
+filename <- "chains/fluscape_100_pt"
 
 ## Read in parameter table to simulate from and change waning rate and alpha/beta if necessary
 parTab <- read.csv("~/Documents/Fluscape/serosolver/inputs/parTab.csv",stringsAsFactors=FALSE)
@@ -62,42 +62,51 @@ w <- 1
 mvrPars <- list(covMat, scale, w)
 mvrPars <- NULL
 
+
 startInf <- setup_infection_histories_new(titreDat, ages, unique(fit_dat$inf_years), space=5,titre_cutoff=2)
 ageMask <- create_age_mask(ages, strainIsolationTimes,n_indiv)
 
 #########################
 ## RUN MCMC
 #########################
-mcmcPars <- c("iterations"=1000000,"popt"=0.44,"popt_hist"=0.44,"opt_freq"=2000,"thin"=100,"adaptive_period"=200000,
-              "save_block"=1000,"thin2"=1000,"histSampleProb"=0.5,"switch_sample"=2, "burnin"=0, 
-              "nInfs"=floor(ncol(startInf)/4), "moveSize"=3*buckets, "histProposal"=6, "histOpt"=0,"n_par"=10, "swapPropn"=0.5)
+## Specify paramters controlling the MCMC procedure
+mcmcPars <- list("iterations"=50000,"popt"=0.44,"opt_freq"=2000,"thin"=1,"adaptive_period"=10000,
+                 "save_block"=1000,"thin2"=100,"histSampleProb"=0.5,"switch_sample"=2, 
+                 "temperature"=seq_len(10), "parallel_tempering_iter"=5,
+                 "nInfs"=floor(ncol(startInf)/2), "moveSize"=2,"swapPropn"=0.5)
+n_temperatures <- length(mcmcPars[["temperature"]])
+startTab <- rep(list(startTab),n_temperatures)
 
-res <- run_MCMC(startTab, titreDat, mcmcPars, filename=filename,
-                create_post_func, NULL,NULL,version=1, 0.2, 
-                fit_dat, ages=ages, 
-                startInfHist=startInf,n_alive=NULL)
+## Run the MCMC using the inputs generated above
+res <- run_MCMC_pt(startTab, titreDat, mcmcPars, filename=filename,
+                   create_post_func, NULL, 0.2, 
+                   seed=1,fit_dat, ages=ages, 
+                   startInfHist=startInf,
+                   mu_indices=NULL,
+                   measurement_indices=NULL,
+                   measurement_random_effects=FALSE)
 beepr::beep(4)
 
 #########################
 ## Processing outputs
 #########################
 chain <- read.csv(res$chain_file)
-chain <- chain[chain$sampno >= (mcmcPars["adaptive_period"]+mcmcPars["burnin"]),]
+chain <- chain[chain$sampno >= mcmcPars["adaptive_period"],]
 
 ## Plot inferred attack rates
 infChain <- data.table::fread(res$history_file)
-infChain <- infChain[infChain$sampno >= (mcmcPars["adaptive_period"]+mcmcPars["burnin"]),]
+infChain <- infChain[infChain$sampno >= mcmcPars["adaptive_period"],]
 n_alive <- sapply(strainIsolationTimes, function(x) length(ages[ages$DOB <= x,]))
 inf_prop <- colSums(startInf)/n_alive
 inf_prop <- data.frame(AR=inf_prop,year=strainIsolationTimes)
-AR_p <- plot_attack_rates(infChain, titreDat, ages, seq(yearMin, yearMax, by=1),n_alive=NULL) + 
+AR_p <- plot_attack_rates(infChain, titreDat, ages, seq(1968, 2015, by=1),n_alive=NULL) + 
  scale_y_continuous(expand=c(0,0),limits=c(0,1))
 
 ## Density/trace plots on total number of infections
 indivs <- sample(n_indiv, 10)
 sampd <- sample(n_indiv,20)
 infChain <- data.table::fread(res$history_file)
-infChain <- infChain[infChain$sampno >= (mcmcPars["adaptive_period"]+mcmcPars["burnin"]),]
+infChain <- infChain[infChain$sampno >= mcmcPars["adaptive_period"],]
 n_strain <- max(infChain$j)
 data.table::setkey(infChain, "j","sampno")
 n_inf_chain <- infChain[,list(V1=sum(x)),by=key(infChain)]

@@ -10,7 +10,9 @@ run_MCMC(parTab, data, mcmcPars = c(iterations = 50000, popt = 0.44, popt_hist
   moveSize = 5, histProposal = 3, histOpt = 1, swapPropn = 0.5),
   filename = "test", CREATE_POSTERIOR_FUNC, mvrPars = NULL,
   PRIOR_FUNC = NULL, version = 1, OPT_TUNING = 0.1, antigenicMap,
-  ages = NULL, startInfHist = NULL, mu_indices = NULL, ...)
+  ages = NULL, startInfHist = NULL, mu_indices = NULL,
+  measurement_indices = NULL, measurement_random_effects = FALSE,
+  temp = 1, ...)
 }
 \arguments{
 \item{parTab}{the parameter table controlling information such as bounds, initial values etc}
@@ -38,6 +40,8 @@ run_MCMC(parTab, data, mcmcPars = c(iterations = 50000, popt = 0.44, popt_hist
 \item{startInfHist}{infection history matrix to start MCMC at. Can be left NULL}
 
 \item{mu_indices}{for random effects on boosting parameter, mu. If random mus are included in the parameter table, this vector specifies which mu to use for each circulation year. For example, if years 1970-1976 have unique boosting, then mu_indices should be c(1,2,3,4,5,6). If every 3 year block shares has a unique boosting parameter, then this should be c(1,1,1,2,2,2).}
+
+\item{measurement_indices}{wow}
 
 \item{...}{other arguments to pass to CREATE_POSTERIOR_FUNC}
 }

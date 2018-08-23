@@ -6,7 +6,7 @@
 \usage{
 get_titre_predictions(chain, infectionHistories, titreDat, individuals,
   antigenicMap, ages, parTab, nsamp = 100, addResiduals = FALSE,
-  mu_indices = NULL, for_res_plot = FALSE)
+  mu_indices = NULL, measurement_indices = NULL, for_res_plot = FALSE)
 }
 \arguments{
 \item{chain}{the full MCMC chain to generate titre trajectories from}
@@ -26,6 +26,8 @@ get_titre_predictions(chain, infectionHistories, titreDat, individuals,
 \item{addResiduals}{if true, returns an extra output summarising residuals between the model prediction and data}
 
 \item{mu_indices}{vector of integers. for random effects on boosting parameter, mu. If random mus are included in the parameter table, this vector specifies which mu to use for each circulation year. For example, if years 1970-1976 have unique boosting, then mu_indices should be c(1,2,3,4,5,6). If every 3 year block shares has a unique boosting parameter, then this should be c(1,1,1,2,2,2)}
+
+\item{measurement_indices}{default NULL}
 
 \item{for_res_plot}{TRUE/FALSE value. If using the output of this for plotting of residuals, returns the actual data points rather than summary statistics}
 
