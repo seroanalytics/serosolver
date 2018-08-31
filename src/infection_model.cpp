@@ -37,7 +37,10 @@ NumericVector infection_model_indiv(NumericVector theta, // Parameter vector
   double mu_short = theta["mu_short"];
   double tau = theta["tau"];
   double wane = theta["wane"];
-  
+  double boost_limit = theta["boost_limit"];
+  double gradient = theta["gradient"];
+  double boost=0;
+
   // We will need to loop over each strain that was tested
   int n_samples = measurementMapIndices.size(); // Number of time points sampled
   int max_infections = infectionTimes.size(); // max number of infections is one for each strain
@@ -93,13 +96,26 @@ NumericVector infection_model_indiv(NumericVector theta, // Parameter vector
     // antigenicMap vector for the *tested* strain (row), whereas
     // infectionMapIndices[i] finds the entry for the *infecting* strain (column)
     for(int i=0; i < max_infections; ++i){
-      ///////////////////////////////
-      // THE ACTUAL MODEL
-      tmpTitre += maskedInfectionHistory[i]* // Ignore infections that couldn't have happened
+	///////////////////////////////
+	// THE ACTUAL MODEL
+	/*tmpTitre += maskedInfectionHistory[i]* // Ignore infections that couldn't have happened
+	  MAX(0, 1.0 - tau*(cumInfectionHistory[i] - 1.0))* // Antigenic seniority
+	  ((mu*antigenicMapLong[measurementMapIndices[k]*numberStrains+infectionMapIndices[i]]) +  // Long term boost
+	   (mu_short*antigenicMapShort[measurementMapIndices[k]*numberStrains+infectionMapIndices[i]])* // Short term cross reactive boost
+	   waning[i]); // Waning rate
+	*/
+      boost = maskedInfectionHistory[i]* // Ignore infections that couldn't have happened
 	MAX(0, 1.0 - tau*(cumInfectionHistory[i] - 1.0))* // Antigenic seniority
 	((mu*antigenicMapLong[measurementMapIndices[k]*numberStrains+infectionMapIndices[i]]) +  // Long term boost
 	 (mu_short*antigenicMapShort[measurementMapIndices[k]*numberStrains+infectionMapIndices[i]])* // Short term cross reactive boost
 	 waning[i]); // Waning rate
+      if(tmpTitre >= boost_limit){
+	boost =  boost*(1-gradient*boost_limit); // Titre dependent boosting - at ceiling
+      } else {
+	boost = boost*(1-gradient*tmpTitre); // Titre dependent boosting - below ceiling
+      }
+      boost = MAX(0, boost);
+      tmpTitre += boost;
       ////////////////////////////
     }
     predictedTitre[k] = tmpTitre;

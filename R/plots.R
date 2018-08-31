@@ -331,9 +331,9 @@ plot_attack_rates_monthly<- function(infectionHistories, dat, ages, yearRange,ym
     years <- range(floor(yearRange/buckets))
     years <- years[1]:years[2]
     labels <- c(sapply(years, function(x) paste0(months, "/",x)))
-    labels1 <- labels[1:length(strainIsolationTimes)]
-    labels1 <- labels1[seq(30,length(labels1),by=12*5)]
-    
+    labels1 <- labels[1:length(yearRange)]
+    labels1 <- labels1[seq(1,length(labels1),by=buckets)]
+    yearBreak <- yearRange[seq(1,length(yearRange),by=buckets)]
     n_alive <- sapply(yearRange, function(x) nrow(ages[ages$DOB <= x,]) )
     ##quantiles <- apply(tmp[,2:ncol(tmp)],2, function(x) quantile(x,c(0.025,0.5,0.975)))
     data.table::setkey(infectionHistories, "sampno","j")
@@ -352,8 +352,9 @@ plot_attack_rates_monthly<- function(infectionHistories, dat, ages, yearRange,ym
     p <- ggplot(quantiles) + 
         geom_ribbon(aes(x=year, ymin=lower,ymax=upper),fill="red",alpha=0.2) +
         geom_line(aes(x=year,y=median),col="red")+
+        geom_point(aes(x=year,y=median),col="purple",size=0.5)+
         scale_y_continuous(limits=c(-0.005,ymax),expand=c(0,0)) +
-        #scale_x_continuous(expand=c(0,0),breaks=yearRange[seq(6,length(strainIsolationTimes),by=12*5)],labels=labels1)+
+        scale_x_continuous(expand=c(0,0),breaks=yearBreak,labels=labels1)+
         theme_bw() +
         theme(axis.text.x=element_text(angle=45,hjust=1))+
         #theme(text=element_text(family="Arial")) +
