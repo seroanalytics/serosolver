@@ -37,12 +37,28 @@ NumericVector infection_model_indiv(NumericVector theta, // Parameter vector
   double mu_short = theta["mu_short"];
   double tau = theta["tau"];
   double wane = theta["wane"];
-  double kappa = theta["kappa"];
-  double t_change = theta["t_change"];
   
-  double wane_2 = -kappa*wane;
-  double wane_2_val; //interaction term
-  double time; //time since infection
+  // Time since infection
+  double time; 
+  
+  // How many parameters are there
+  int n_theta = theta.size();
+  
+  // Which function type should we use
+  // 0 is linear decrease
+  // 1 is piecewise linear
+  int wane_type;
+  
+  // If there are 10 parameters then use the linear decrease
+  if(n_theta == 10)   wane_type = 0;
+  else  wane_type = 1; // If there are 12 then use the piecewise linear and declare the additional parameters
+  
+  // if(wane_type==1){
+  //   double kappa = theta["kappa"];
+  //   double t_change = theta["t_change"];
+  //   double wane_2 = -kappa*wane;
+  //   double wane_2_val; // Interaction term
+  // }
   
   // We will need to loop over each strain that was tested
   int n_samples = measurementMapIndices.size(); // Number of time points sampled
@@ -67,16 +83,25 @@ NumericVector infection_model_indiv(NumericVector theta, // Parameter vector
   if(circulation_time > samplingTime) maskedInfectionHistory[0]=0;
   else maskedInfectionHistory[0] = infectionHistory[0];
   
+  // How long has the individual been infected
   time = (samplingTime - circulation_time);
   
-  //Calculate the interaction term
-  if(time > t_change){
-     wane_2_val = wane_2*(time - t_change); 
-  }else{
-     wane_2_val = 0;
-  }
-  waning[0] = MAX(0, 1.0-(wane*time+wane_2_val));
-                            
+  // If not linear
+  if(wane_type == 1){
+    double kappa = theta["kappa"];
+    double t_change = theta["t_change"];
+    double wane_2 = -kappa*wane;
+    double wane_2_val; // Interaction term
+    // Calculate the interaction term
+    if(time > t_change){
+      wane_2_val = wane_2*(time - t_change); 
+    }else{
+      wane_2_val = 0;
+    }
+    waning[0] = MAX(0, 1.0-(wane*time+wane_2_val));
+  } else waning[0] = MAX(0, 1.0-wane*time);// Else if linear
+
+  
   cumInfectionHistory[0] = maskedInfectionHistory[0];
 
   /* For strains that circulated before the isolation time,
@@ -98,14 +123,25 @@ NumericVector infection_model_indiv(NumericVector theta, // Parameter vector
     /* Get waning rate for this strain
        Note that circulation_time is implicitly the time at which
        an individual would have been infected */
+    
+    // How long has the individual been infected
     time = (samplingTime - circulation_time);
     
-    if(time > t_change){
-      wane_2_val = wane_2*(time - t_change); 
-    }else{
-      wane_2_val = 0;
-    }
-    waning[i] = MAX(0, 1.0-(wane*time+wane_2_val));
+    // If not linear
+    if(wane_type == 1){
+      double kappa = theta["kappa"];
+      double t_change = theta["t_change"];
+      double wane_2 = -kappa*wane;
+      double wane_2_val; // Interaction term
+      // Calculate the interaction term
+      if(time > t_change){
+        wane_2_val = wane_2*(time - t_change); 
+      }else{
+        wane_2_val = 0;
+      }
+      waning[i] = MAX(0, 1.0-(wane*time+wane_2_val));
+    } else waning[i] = MAX(0, 1.0-wane*time); // Else linear
+    
   }
   
   // For each strain we are testing against, find predicted titre

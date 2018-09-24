@@ -237,7 +237,7 @@ simulate_data <- function(parTab, group=1,n_indiv,buckets=12,
                           sampleSensoring=0, titreSensoring=0,
                           ageMin=5,ageMax=80,
                           simInfPars=c("mean"=0.15,"sd"=0.5,"bigMean"=0.5,"logSD"=1,"constant"=0),
-                          useSIR=FALSE){
+                          useSIR=FALSE,attackRates=NULL){
     ## Extract parameters
     pars <- parTab$values
     names(pars) <- parTab$names
@@ -260,11 +260,16 @@ simulate_data <- function(parTab, group=1,n_indiv,buckets=12,
     } else {
       if(simInfPars["constant"]==1){ ##If constant==1 then use the mean in simInfPars to simulate constant AR 
         pInf <- rep(simInfPars["mean"],length(strainIsolationTimes))
-      }else{
+      }else if(simInfPars["constant"]==0&is.null(attackRates)){
         pInf <- simulate_attack_rates(strainIsolationTimes, simInfPars["mean"],simInfPars["sd"],TRUE,simInfPars["bigMean"])
+      }else if(simInfPars["constant"]==0&!is.null(attackRates)){
+        pInf <- attackRates
+        
       }
     }
 
+    if(length(pInf)!=length(strainIsolationTimes)) stop('attackRates is not the same length as strainIsolationTimes')
+    
     ## Simulate infection histories
     tmp <- simulate_infection_histories(pInf, simInfPars["logSD"], strainIsolationTimes, samplingTimes, ages)
     infHist <- tmp[[1]]

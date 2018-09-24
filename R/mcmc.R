@@ -112,7 +112,6 @@ run_MCMC <- function(parTab,
     nInfs_vec <- rep(nInfs, n_indiv) # How many infection history moves to make with each proposal
     moveSizes <- rep(moveSize, n_indiv) # How many years to move in smart proposal step
     
-  
 ###############
     ## Create age mask
     ## -----------------------
@@ -196,7 +195,7 @@ run_MCMC <- function(parTab,
         ## PROPOSALS
 ######################
         ## If updating theta
-        if(i %% switch_sample != 0){
+        if(i %% switch_sample == 0){
           ## If all pars are fixed 
           if(length(unfixed_pars)==0){
             proposal <- current_pars ## Set proposal to be current parameters
@@ -253,7 +252,7 @@ run_MCMC <- function(parTab,
         #############################
         ## Check that all proposed parameters are in allowable range
         ## Skip if any parameters are outside of the allowable range
-        if(i %% switch_sample != 0){
+        if(i %% switch_sample == 0){
             log_prob <- new_probab-probab
             log_prob <- min(log_prob, 0)
             if(is.finite(log_prob) && log(runif(1)) < log_prob){
