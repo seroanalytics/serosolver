@@ -21,6 +21,7 @@ using namespace Rcpp ;
 arma::mat inf_hist_prop_cpp(arma::mat infHist, 
 			    IntegerVector sampledIndivs, 
 			    IntegerVector ageMask,
+			    IntegerVector strainMask,
 			    IntegerVector moveSizes, 
 			    IntegerVector nInfs,
 			    double alpha, 
@@ -34,10 +35,10 @@ arma::mat inf_hist_prop_cpp(arma::mat infHist,
   arma::mat y;
   IntegerVector samps;
   
-  int index = 0;
+  //int index = 0;
   
   int maxI_indiv;
-  int maxI = newInfHist.n_cols;
+ // int maxI = newInfHist.n_cols;
   int indiv;
   int k;
   int nInf;
@@ -57,7 +58,8 @@ arma::mat inf_hist_prop_cpp(arma::mat infHist,
     // Isolate that individual's infection histories
     indiv = sampledIndivs[i]-1;
     nInf = nInfs[indiv];
-    x = newInfHist.submat(indiv, ageMask[indiv]-1, indiv, maxI-1);
+    //x = newInfHist.submat(indiv, ageMask[indiv]-1, indiv, maxI-1);
+    x = newInfHist.submat(indiv, ageMask[indiv]-1, indiv, strainMask[indiv]-1);
     samps = seq_len(x.n_cols);
 
     // With 50% probability, add/remove infections or swap infections
@@ -104,7 +106,9 @@ arma::mat inf_hist_prop_cpp(arma::mat infHist,
         x[id2] = tmp;
       }
     }
-    newInfHist.submat(indiv, ageMask[indiv]-1, indiv, maxI-1) = x;
+   // newInfHist.submat(indiv, ageMask[indiv]-1, indiv, maxI-1) = x;
+    newInfHist.submat(indiv, ageMask[indiv]-1, indiv,  strainMask[indiv]-1) = x;
+    
   }
   return(newInfHist);
 }

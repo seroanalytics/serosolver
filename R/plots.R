@@ -105,7 +105,7 @@ get_titre_predictions <- function(chain, infectionHistories, dat,
 
     ## Need to align the iterations of the two MCMC chains
     ## and choose some random samples
-    tmpSamp <- sample(intersect(unique(infectionHistories$sampno),unique(chain$sampno)),nsamp)
+    tmpSamp <- sample(intersect(unique(infectionHistories$sampno),unique(chain$sampno)),nsamp,replace=T)
 
     ## See the function in posteriors.R
     f <- create_model_func(parTab,dat,antigenicMap)
@@ -287,8 +287,8 @@ plot_attack_rates <- function(infectionHistories, dat, ages, yearRange){
     ## and generate quantiles
     n_alive <- sapply(yearRange, function(x) nrow(ages[ages$DOB <= x,]) )
     quantiles <- apply(tmp[,2:ncol(tmp)],2, function(x) quantile(x,c(0.025,0.5,0.975)))
-    quantiles <- quantiles/n_alive
     quantiles <- as.data.frame(t(quantiles))
+    quantiles <- quantiles/n_alive
     colnames(quantiles) <- c("lower","median","upper")
     quantiles$year <- yearRange
     quantiles$taken <- quantiles$year %in% unique(dat$samples)

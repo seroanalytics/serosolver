@@ -42,6 +42,7 @@ mvr_proposal <- function(values, fixed, covMat, covMat0 = NULL, useLog=FALSE, be
 #' @param newInfHist a matrix of infection histories - rows for individuals, columns for infection epochs. Contents should be 1s and 0s
 #' @param sampledIndivs a vector of indices describing rows in the infection history matrix that should be updated
 #' @param ageMask a vector (one value for each individual) giving the first infection epoch that an individual could have been exposed in. That is, if an individual was born in the 7th epoch, their entry in ageMask would be 7.
+#' @param strainMask a vector (one value for each individual) giving the last infection epoch that an individual could have been exposed in. 
 #' @param moveSizes when performing a move step, how far should two epochs be swapped?
 #' @param nInfs number of infection epochs to flip
 #' @return a matrix of infection histories matching the input newInfHist
@@ -52,7 +53,8 @@ infection_history_symmetric<- function(newInfHist, sampledIndivs, ageMask, moveS
     for(i in 1:length(sampledIndivs)){
         indiv <- sampledIndivs[i]
         ## Isolate infection history
-        x <- newInfHist[indiv, ageMask[indiv]:ncol(newInfHist)]
+        #x <- newInfHist[indiv, ageMask[indiv]:ncol(newInfHist)]
+        x <- newInfHist[indiv, ageMask[indiv]:strainMask[indiv]]
         maxI <- length(x)
 
         ## Flip or swap with prob 50%
@@ -78,7 +80,8 @@ infection_history_symmetric<- function(newInfHist, sampledIndivs, ageMask, moveS
             x[id1] <- x[id2]
             x[id2] <- tmp       
         }
-        newInf[indiv,ageMask[indiv]:ncol(newInfHist)]=x
+        #newInf[indiv,ageMask[indiv]:ncol(newInfHist)]=x
+        newInf[indiv,ageMask[indiv]:strainMask[indiv]]=x
     }
     return(newInf)    
 }
@@ -89,16 +92,18 @@ infection_history_symmetric<- function(newInfHist, sampledIndivs, ageMask, moveS
 #' @param newInfHist a matrix of infection histories - rows for individuals, columns for infection epochs. Contents should be 1s and 0s
 #' @param sampledIndivs a vector of indices describing rows in the infection history matrix that should be updated
 #' @param ageMask a vector (one value for each individual) giving the first infection epoch that an individual could have been exposed in. That is, if an individual was born in the 7th epoch, their entry in ageMask would be 7.
+#' @param strainMask a vector (one value for each individual) giving the last infection epoch that an individual could have been exposed in. 
 #' @param moveSizes when performing a move step, how far should two epochs be swapped?
 #' @param alpha alpha parameter of beta binomial
 #' @param beta beta parameter of beta binomial
 #' @return a matrix of infection histories matching the input newInfHist
 #' @export
-infection_history_betabinom <- function(newInfHist, sampledIndivs, ageMask, moveSizes, alpha, beta){
+infection_history_betabinom <- function(newInfHist, sampledIndivs, ageMask,strainMask, moveSizes, alpha, beta){
     newInf <- newInfHist
     ## For each individual
     for(indiv in sampledIndivs){
-        x <- newInfHist[indiv, ageMask[indiv]:ncol(newInfHist)]
+        #x <- newInfHist[indiv, ageMask[indiv]:ncol(newInfHist)]
+        x <- newInfHist[indiv, ageMask[indiv]:strainMask[indiv]]
         maxI <- length(x)
         rand1 <- runif(1)
 
@@ -143,7 +148,9 @@ infection_history_betabinom <- function(newInfHist, sampledIndivs, ageMask, move
             x[id1] <- x[id2]
             x[id2] <- tmp       
         }
-        newInf[indiv,ageMask[indiv]:ncol(newInfHist)]=x
+        newInf[indiv,ageMask[indiv]:strainMask[indiv]]=x
+        #newInf[indiv,ageMask[indiv]:ncol(newInfHist)]=x
+        
     }
     return(newInf)    
 }
@@ -151,10 +158,12 @@ infection_history_betabinom <- function(newInfHist, sampledIndivs, ageMask, move
 
 #' DEPRECATED - implemented in Cpp for speed
 #' @export
-infection_history_betabinom_group <- function(newInfHist, sampledIndivs, ageMask, moveSizes, nInfs, alpha, beta){
+infection_history_betabinom_group <- function(newInfHist, sampledIndivs, ageMask,strainMask, moveSizes, nInfs, alpha, beta){
     newInf <- newInfHist
     for(indiv in sampledIndivs){
-        x <- newInf[indiv,ageMask[indiv]:ncol(newInfHist)]
+       # x <- newInf[indiv,ageMask[indiv]:ncol(newInfHist)]
+      x <- newInfHist[indiv, ageMask[indiv]:strainMask[indiv]]
+      
         maxI <- length(x)
         if(runif(1) < 1/2){
             
@@ -186,7 +195,9 @@ infection_history_betabinom_group <- function(newInfHist, sampledIndivs, ageMask
                 x[id2] <- tmp
             }
         }
-        newInf[indiv,ageMask[indiv]:ncol(newInfHist)]=x        
+        #newInf[indiv,ageMask[indiv]:ncol(newInfHist)]=x        
+        newInf[indiv,ageMask[indiv]:strainMask[indiv]]=x
+        
     }
     return(newInf)    
 }
@@ -324,15 +335,19 @@ setup_infection_histories_new <- function(data, ages, strainIsolationTimes, spac
   startInf <- NULL
   individuals <- unique(data$individual)
 
+  
   ## For each individual
   for(individual in individuals){
       ## Isolate that individual's data and date of birth
       dat <- data[data$individual == individual,]
       dob <- as.numeric(ages[ages$individual == individual,"DOB"])
       strains <- unique(dat$virus)
-
-      ## Only look at strains that circulated when an individual was alive
-      strains <- strains[strains >= dob]
+      ## What was the most recent strain that the individual could get 
+      strain_mask<-create_strain_mask(dat,strainIsolationTimes)
+      
+      ## Only look at strains that circulated when an individual was alive and for samples not in the future
+      strains <- strains[strains >= dob & strains <= strainIsolationTimes[strain_mask]]
+      
       infYears <- NULL
       i <- 0
       while(i < length(strains)){ ## Start going through each strain
@@ -382,3 +397,14 @@ create_age_mask <- function(ages, strainIsolationTimes, n_indiv){
     })
     return(ageMask)
 }
+
+#' @export
+create_strain_mask <- function(titreDat, strainIsolationTimes){
+  ids <- unique(titreDat$individual)
+  strainMask <- sapply(ids, function(x){
+    sampleTimes <- titreDat$samples[titreDat$individual==x]
+    which(max(sampleTimes) <= strainIsolationTimes)[1]
+  })
+  return(strainMask)
+}
+
