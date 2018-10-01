@@ -9,7 +9,7 @@ setwd("~/Documents/Fluscape/serosolver")
 devtools::load_all()
 
 ## How many individuals to simulate?
-n_indiv <- 1000
+n_indiv <- 100
 
 ## Which infection history proposal version to use?
 describe_proposals()
@@ -68,7 +68,7 @@ parTab[parTab$names %in% c("alpha","beta"),"values"] <- c(1,1)
 dat <- simulate_data(parTab, 1, n_indiv, buckets,strainIsolationTimes,
                      samplingTimes, 2, antigenicMap=fit_dat, 0, 0, 75*buckets,75*buckets,
                      simInfPars=c("mean"=0.15,"sd"=0.5,"bigMean"=0.5,"logSD"=1),
-                     useSIR=TRUE, pInf = NULL, useSpline=FALSE)
+                     useSIR=TRUE, attackRates = NULL, useSpline=FALSE)
 
 ## If we want to use a subset of isolated strains, uncomment the line below
 viruses <- c(1968, 1969, 1972, 1975, 1977, 1979, 1982, 1985, 1987, 
@@ -124,6 +124,7 @@ mvrPars <- list(covMat, scale, w)
 ageMask <- create_age_mask(ages, strainIsolationTimes,n_indiv)
 
 ## Run the MCMC using the inputs generated above
+lambdas_start <- AR[,2]
 for(year in 1:ncol(startInf)){ lambdas_start[year] <- (sum(startInf[,year])/sum(ages$DOB <= strainIsolationTimes[year]))}
 startTab[startTab$names == "lambda","values"] <- lambdas_start
 

@@ -96,7 +96,7 @@ inf_hist_prob_lambda <- function(newInf, sampledIndivs, ageMask, nInfs, lambdas)
 #' @param randNs pre-computed random numbers (0-1) for each individual, deciding whether to do a flip or swap
 #' @return a matrix of infection histories matching the input newInfHist
 #' @export
-infection_history_symmetric <- function(newInfHist, sampledIndivs, ageMask, moveSizes, nInfs, randNs){
+infection_history_symmetric <- function(newInfHist, sampledIndivs, ageMask, strainMask, moveSizes, nInfs, randNs){
     newInf <- newInfHist
     ks <- rpois(length(sampledIndivs),nInfs)
     ## For each individual
@@ -587,4 +587,4 @@ lambda_proposal <- function(current_pars, infHist, years, js, alpha, beta, n_ali
     ratio <- back - forward
     return(list(proposed, ratio))    
 }
->>>>>>> jameshaybranch
+

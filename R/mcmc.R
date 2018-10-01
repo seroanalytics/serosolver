@@ -150,7 +150,6 @@ run_MCMC <- function(parTab,
     
     ## Create strain mask
     strainMask<-create_strain_mask(data,strainIsolationTimes)
-    
     ## Create posterior calculating function
     posterior_simp <- protect(CREATE_POSTERIOR_FUNC(parTab,data,
                                                     antigenicMap,
@@ -273,7 +272,7 @@ run_MCMC <- function(parTab,
             
             ## Which infection history proposal to use?
             if(histProposal==1){
-                newInfectionHistories <- infection_history_symmetric(infectionHistories, indivSubSample, ageMask, moveSizes, nInfs_vec, randNs)
+                newInfectionHistories <- infection_history_symmetric(infectionHistories, indivSubSample, ageMask, strainMask, moveSizes, nInfs_vec, randNs)
             } else if(histProposal == 2){
                 newInfectionHistories <- infection_history_betabinom(infectionHistories, indivSubSample, ageMask, moveSizes, alpha, beta)
                 acceptance <- newInfectionHistories[[2]]

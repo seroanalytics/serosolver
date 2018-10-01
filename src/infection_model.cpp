@@ -53,8 +53,13 @@ NumericVector infection_model_indiv(NumericVector theta, // Parameter vector
   int wane_type;
   
   // If there are 10 parameters then use the linear decrease
-  if(n_theta == 10)   wane_type = 0;
-  else  wane_type = 1; // If there are 12 then use the piecewise linear and declare the additional parameters
+  if(n_theta == 10){
+    wane_type = 0;
+  } else if(n_theta==12){
+    wane_type = 1; // If there are 12 then use the piecewise linear and declare the additional parameters
+  } else {
+    wane_type = 0;
+  }
   
   // if(wane_type==1){
   //   double kappa = theta["kappa"];

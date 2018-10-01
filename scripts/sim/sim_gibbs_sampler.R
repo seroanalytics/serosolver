@@ -41,7 +41,7 @@ strainIsolationTimes <- unique(fit_dat$inf_years)
 dat <- simulate_data(parTab, 1, n_indiv, buckets, strainIsolationTimes,
                      samplingTimes, 2, antigenicMap=fit_dat, 0, 0, ageMin,ageMax,
                      simInfPars=c("mean"=0.15,"sd"=0.5,"bigMean"=0.5,"logSD"=1),
-                     useSIR=TRUE, pInf = NULL, useSpline=FALSE)
+                     useSIR=TRUE, attackRates = NULL, useSpline=FALSE)
 
 ## If we want to use a subset of isolated strains, uncomment the line below
 viruses <- c(1968, 1969, 1972, 1975, 1977, 1979, 1982, 1985, 1987, 
