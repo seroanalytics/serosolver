@@ -3,19 +3,22 @@ chains <- list.files(pattern="chain.csv")
 omg <- NULL
 for(chain in chains){
   tmp <- read.csv(chain)
-  tmp <- tmp[tmp$sampno > 100000 & tmp$sampno < 500000, ]#c("mu","mu_short","tau","wane","sigma1","sigma2","error","lnlike")]
+  tmp <- tmp[tmp$sampno > 200000 & tmp$sampno < 1200000, ]#c("mu","mu_short","tau","wane","sigma1","sigma2","error","lnlike")]
  
   #tmp <- tmp[tmp$sampno < 8000,c("mu","mu_short","tau","wane","sigma1","sigma2","error","lnlike")]
-  omg[[chain]] <- as.mcmc(tmp)
+omg[[chain]] <- as.mcmc(tmp)
 }
 omg <- as.mcmc.list(omg)
 #omg <- as.mcmc.list(omg[c(1,2,5,6,8)])
 #omg <- omg[c(-1,-6)]
 
 pdf("tmp.pdf")
-plot(omg)
+#plot(omg)
+plot(omg[c(2,3)])
 dev.off()
 
+
+setwd("/home/james/net/home/serosolver/outputs_Aug2018/real_measurement_2")
 library(ggplot2)
 library(data.table)
 library(plyr)
@@ -27,16 +30,16 @@ infHistFiles <- list.files(pattern="infectionHistories.csv")
 for(i in 1:length(infHistFiles)){
   infChainFile <- infHistFiles[i]
   infChain <- data.table::fread(infChainFile)
-   infChain <- infChain[infChain$sampno > 50000 & infChain$sampno < 100000,]
+   infChain <- infChain[infChain$sampno > 200000 & infChain$sampno < 1000000,]
    n_strain <- max(infChain$j)
    data.table::setkey(infChain, "j","sampno")
    n_inf_chain <- infChain[,list(V1=sum(x)),by=key(infChain)]
    n_inf_chain <- cbind(n_inf_chain,"chain"=i)
    all_chain <- rbind(all_chain, n_inf_chain)
 } 
-#all_chain <- all_chain[all_chain$chain %in% c(1,2,5,6,8),]
+all_chain <- all_chain[all_chain$chain %in% c(2,3,4),]
 all_chain$chain <- as.factor(all_chain$chain)
-all_chain <- all_chain[!(all_chain$chain %in% c(1,6)),]
+#all_chain <- all_chain[!(all_chain$chain %in% c(1,6)),]
 inf_chain_p <- ggplot(all_chain[all_chain$j %in% sample(unique(all_chain$j),50)]) + geom_line(aes(x=sampno,y=V1,col=chain)) + facet_wrap(~j)
 devtools::load_all("~/Documents/Fluscape/serosolver")
 titreFiles <- list.files(pattern="titreDat")
@@ -46,7 +49,7 @@ ages <- read.csv(ageFiles[1])
 mapFiles <- list.files(pattern="antigenic")
 fit_dat <- read.csv(mapFiles[1])
 strainIsolationTimes <- fit_dat$inf_years
-AR_p <- plot_attack_rates_monthly(infChain, titreDat, ages, seq(1968*1,2015*1,by=1),ymax=1,buckets=1)
+AR_p <- plot_attack_rates_monthly(infChain, titreDat, ages, seq(1968*4,2015*4,by=1),ymax=1,buckets=4)
 AR_p1 <- plot_attack_rates(infChain, titreDat, ages, seq(1968, 2015, by=1)) 
 pdf("AR.pdf")
 plot(AR_p)
@@ -59,17 +62,19 @@ dev.off()
 parTabFiles <- list.files(pattern="startTab")
 parTab <- read.csv(parTabFiles[1])
 
-chain <- read.csv(chains[1])
-chain <- chain[chain$sampno > 500000 & chain$sampno < 1700000,]
+chain <- read.csv(chains[2])
+chain <- chain[chain$sampno > 200000 & chain$sampno < 1000000,]
 
 clusters <- read.csv("~/Documents/Fluscape/serosolver/data/antigenic_maps/fonville_clusters.csv")
 n_clusters <- length(unique(clusters$cluster1))
+buckets <- 4
 measurement_indices <- clusters$cluster1
-infChain1 <- data.table::fread(infChainFile[1])
-infChain1 <- infChain1[infChain1$sampno > 50000 & infChain1$sampno < 100000,]
+measurement_indices <- rep(measurement_indices, each=buckets)
+infChain <- data.table::fread(infHistFiles[2])
+infChain <- infChain[infChain$sampno > 200000 & infChain$sampno < 1000000,]
 pdf("fits.pdf")
 plot_infection_histories(chain, infChain, titreDat, sample(1:100, 10), fit_dat, ages,parTab,nsamp=100, mu_indices=NULL,
-                         measurement_indices=NULL)
+                         measurement_indices=measurement_indices)
 dev.off()
 
 
