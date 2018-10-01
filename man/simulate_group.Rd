@@ -5,7 +5,9 @@
 \title{Simulate group data}
 \usage{
 simulate_group(n_indiv, theta, infectionHistories, strainIsolationTimes,
-  sampleTimes, nsamps, antigenicMapLong, antigenicMapShort)
+  sampleTimes, nsamps, antigenicMapLong, antigenicMapShort, repeats = 1,
+  mus = NULL, mu_indices = NULL, measurement_bias = NULL,
+  measurement_indices = NULL, addNoise = TRUE)
 }
 \arguments{
 \item{n_indiv}{the number of individuals to simulate}
@@ -23,6 +25,16 @@ simulate_group(n_indiv, theta, infectionHistories, strainIsolationTimes,
 \item{antigenicMapLong}{the collapsed antigenic map for long term cross reactivity, after multiplying by sigma1}
 
 \item{antigenicMapShort}{the collapsed antigenic map for short term cross reactivity, after multiplying by sigma2}
+
+\item{repeats}{number of repeated samples for each year}
+
+\item{mus}{default NULL, optional vector of boosting parameters for each strain}
+
+\item{mu_indices}{default NULL, optional vector giving the index of `mus` that each strain uses the boosting parameter from. eg. if there's 6 circulation years and 3 strain clusters, then this might be c(1,1,2,2,3,3)}
+
+\item{measurement_bias}{default NULL, optional vector of measurement bias shift parameters for each strain}
+
+\item{measurement_indices}{default NULL, optional vector giving the index of `measurement_bias` that each strain uses the measurement shift from from. eg. if there's 6 circulation years and 3 strain clusters, then this might be c(1,1,2,2,3,3)}
 }
 \value{
 a data frame with columns individual, samples, virus and titre of simulated data

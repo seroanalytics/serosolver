@@ -8,7 +8,9 @@ simulate_data(parTab, group = 1, n_indiv, buckets = 12,
   strainIsolationTimes, samplingTimes, nsamps = 2, antigenicMap,
   sampleSensoring = 0, titreSensoring = 0, ageMin = 5, ageMax = 80,
   simInfPars = c(mean = 0.15, sd = 0.5, bigMean = 0.5, logSD = 1),
-  useSIR = FALSE)
+  theta = rep(0.1, 5), knots = c(0.33, 0.66), useSIR = FALSE,
+  useSpline = TRUE, pInf = NULL, repeats = 1, mu_indices = NULL,
+  measurement_indices = NULL, addNoise = TRUE)
 }
 \arguments{
 \item{parTab}{the full parameter table controlling parameter ranges and values}
@@ -36,6 +38,14 @@ simulate_data(parTab, group = 1, n_indiv, buckets = 12,
 \item{simInfPars}{vector of parameters to pass to \code{\link{simulate_attack_rates}}}
 
 \item{useSIR}{boolean specifying whether to sample from an SIR model or just log normal distribution for each epoch. If TRUE, uses an SIR model}
+
+\item{useSpline}{if TRUE, calculates a spline to generate sub annual FOI from}
+
+\item{pInf}{if given, provides infection probabilities to sample from rather than simulating}
+
+\item{repeats}{number of repeats for each year}
+
+\item{mu_indices}{default NULL, optional vector giving the index of `mus` that each strain uses the boosting parameter from. eg. if there's 6 circulation years and 3 strain clusters, then this might be c(1,1,2,2,3,3)}
 }
 \value{
 a list with: 1) the data frame of titre data as returned by \code{\link{simulate_group}}; 2) a matrix of infection histories as returned by \code{\link{simulate_infection_histories}}; 3) a vector of ages

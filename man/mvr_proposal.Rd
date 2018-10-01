@@ -14,7 +14,7 @@ mvr_proposal(values, fixed, covMat, covMat0 = NULL, useLog = FALSE,
 Multivariate proposal function
 
 Function used to give multivariate normal proposals for free model parameters.
-Takes into account parameter covariance and ensures Containment condition with beta, if covMat0 (the iedntity matrix) is specified.}
+Takes into account parameter covariance and ensures Containment condition with beta, if covMat0 (the identity matrix) is specified.}
 
 \item{covMat}{the 2D covariance matrix for all of the parameters}
 

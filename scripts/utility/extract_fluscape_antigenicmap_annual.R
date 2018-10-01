@@ -12,7 +12,7 @@ fluscape_virus_key <- c("BJ89"=1989, "SC87"=1987, "PH82"=1982, "BR07"=2007, "WU9
   "PE09"=2010, "BJ92"=1992, "TX77"=1977, "VC09"=2009, "CL04"=2004, "VC98"=1998, "FJ00"=2000, "VC75"=1975, 
   "MS85"=1985, "FJ02"=2002, "EN72"=1972, "X31"=1969, "HK68"=1968)
 antigenicMap$Strain <- virus_key[antigenicMap$Strain]
-fit <- smooth.spline(antigenicMap$X,antigenicMap$Y,spar=0.3)
+fit <- smooth.spline(antigenicMap$X,antigenicMap$Y,spar=0.25)
 x_line <- lm(data = antigenicMap, X~Strain)
 Strain <- seq(1968,2015,by=1)
 x_predict <- predict(x_line,data.frame(Strain))
@@ -26,6 +26,6 @@ p1 <- ggplot(antigenicMap) +
     geom_point(data=antigenicMap,aes(x=X,y=Y)) + 
     geom_label(data=antigenicMap,aes(x=X+2,y=Y+0.25,label=Strain)) +
     theme_bw()
-
+p1
 colnames(fit_dat) <- c("x_coord","y_coord","inf_years")
 write.table(fit_dat,"data/fluscape_map.csv",row.names=FALSE,sep=",")

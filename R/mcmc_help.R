@@ -1,3 +1,30 @@
+#' Sample theta as in original code
+#' @export
+SampleTheta <-function(values,fixed,covMat,covMatbasic, parNames){
+    theta_star<- theta_initial <- values
+    names(theta_star) <- parNames
+    #theta_star[fixed] <- mvrnorm(1, log(values), Sigma=covMatbasic)
+    theta_star[fixed] <- as.numeric(exp(mvrnorm(1,log(values[fixed]),Sigma=covMatbasic)))
+                                        # sample from multivariate normal distribution - no adaptive sampling
+                                        #theta_star = as.numeric(exp(mvrnorm(1,log(theta_initial), Sigma=covarbasic)))
+    
+                                        #names(theta_star)=names(theta_initial)
+    
+                                        # reflective boundary condition for max boost=10
+    mu1=min(20-theta_star["mu"],theta_star["mu"])
+    theta_star["mu"]=ifelse(mu1<0,theta_initial["mu"],mu1)
+     
+                                        #mu2=min(20-theta_star[["muShort"]],theta_star[["muShort"]])
+                                        #theta_star[["muShort"]]=ifelse(mu2<0,theta_initial[["muShort"]],mu2)
+    
+                                        # reflective boundary condition for wane function = max is 1 for now # DEBUG
+    wane2=min(2-theta_star["wane"],theta_star["wane"])
+    theta_star["wane"]=ifelse(wane2<0,theta_initial["wane"],wane2)
+    
+                                        #print(rbind(theta_initial,theta_star1,theta_star2))
+    return(theta_star)
+}
+
 #' Multivariate proposal function
 #'
 #' Given the current parameters and a covariance matrix, returns a vector for a proposed jump from a multivariate normal distribution
@@ -6,7 +33,7 @@
 #' Multivariate proposal function
 #'
 #' Function used to give multivariate normal proposals for free model parameters.
-#' Takes into account parameter covariance and ensures Containment condition with beta, if covMat0 (the iedntity matrix) is specified.
+#' Takes into account parameter covariance and ensures Containment condition with beta, if covMat0 (the identity matrix) is specified.
 #' @param covMat the 2D covariance matrix for all of the parameters
 #' @param covMat0 optional, usually the identity matrix for theta
 #' @param useLog flag. If TRUE, propose on log scale
@@ -16,8 +43,11 @@
 #' @useDynLib serosolver
 mvr_proposal <- function(values, fixed, covMat, covMat0 = NULL, useLog=FALSE, beta=0.05){
     proposed <- values
-    # Sample either from a single covariance matrix or weighted average of the identity matrix and
-    # given cov matrix, if specified. On either a log or linear scale.
+    proposed[fixed] <- as.numeric(exp(mvrnorm(1,mu=log(proposed[fixed]),Sigma=covMat0)))
+    return(proposed)
+                               
+    ## Sample either from a single covariance matrix or weighted average of the identity matrix and
+    ## given cov matrix, if specified. On either a log or linear scale.
     if(is.null(covMat0)){
         if(!useLog) proposed[fixed] <- MASS::mvrnorm(n=1,mu=proposed[fixed],Sigma=(5.6644/length(fixed))*covMat)
         else proposed[fixed] <- exp(MASS::mvrnorm(n=1,mu=log(proposed[fixed]),Sigma=(5.6644/length(fixed))*covMat))
@@ -35,6 +65,24 @@ mvr_proposal <- function(values, fixed, covMat, covMat0 = NULL, useLog=FALSE, be
     return(proposed)
 }
 
+#' @export
+inf_hist_prob_lambda <- function(newInf, sampledIndivs, ageMask, nInfs, lambdas){
+    #ks <- rpois(length(sampledIndivs),nInfs)
+    for(i in 1:length(sampledIndivs)){
+        indiv <- sampledIndivs[i]
+        x <- newInf[indiv, ageMask[indiv]:ncol(newInf)]
+        probs <- lambdas[ageMask[indiv]:length(lambdas)]
+        maxI <- length(x)
+        #k <- min(maxI, max(ks[i],1))
+        #locs <- sample(length(x), k)
+        #x[locs] <- rbinom(rep(1, k),1,probs[locs])
+        x <- rbinom(rep(1,maxI), 1, probs)
+        newInf[indiv,ageMask[indiv]:ncol(newInf)]=x
+    }
+    return(newInf)
+        
+
+}
 
 #' Brute force infection history proposal
 #'
@@ -45,10 +93,12 @@ mvr_proposal <- function(values, fixed, covMat, covMat0 = NULL, useLog=FALSE, be
 #' @param strainMask a vector (one value for each individual) giving the last infection epoch that an individual could have been exposed in. 
 #' @param moveSizes when performing a move step, how far should two epochs be swapped?
 #' @param nInfs number of infection epochs to flip
+#' @param randNs pre-computed random numbers (0-1) for each individual, deciding whether to do a flip or swap
 #' @return a matrix of infection histories matching the input newInfHist
 #' @export
-infection_history_symmetric<- function(newInfHist, sampledIndivs, ageMask, moveSizes, nInfs,randNs){
+infection_history_symmetric <- function(newInfHist, sampledIndivs, ageMask, moveSizes, nInfs, randNs){
     newInf <- newInfHist
+    ks <- rpois(length(sampledIndivs),nInfs)
     ## For each individual
     for(i in 1:length(sampledIndivs)){
         indiv <- sampledIndivs[i]
@@ -60,7 +110,9 @@ infection_history_symmetric<- function(newInfHist, sampledIndivs, ageMask, moveS
         ## Flip or swap with prob 50%
         if(randNs[i] < 1/2){
             ## Choose a location and turn 0 -> 1 or 1 -> 0
-            locs <- sample(length(x), nInfs[indiv])            
+            ## Poisson number of changes?
+            k <- min(maxI,max(ks[i],1))
+            locs <- sample(length(x), k)
             x[locs] <- !x[locs]                                       
         } else {
             ## Choose a location
@@ -72,8 +124,8 @@ infection_history_symmetric<- function(newInfHist, sampledIndivs, ageMask, moveS
             id2 <- id1 + move
 
             ## Control boundaries
-            if(id2 < 1) id2 <- maxI + id2
-            if(id2 > maxI) id2 <- id2 - maxI
+            if(id2 < 1) id2 <- (move %% maxI) + id1
+            if(id2 > maxI) id2 <- (id2-1) %% maxI + 1
 
             ## Swap the contents of these locations
             tmp <- x[id1]
@@ -100,19 +152,19 @@ infection_history_symmetric<- function(newInfHist, sampledIndivs, ageMask, moveS
 #' @export
 infection_history_betabinom <- function(newInfHist, sampledIndivs, ageMask,strainMask, moveSizes, alpha, beta){
     newInf <- newInfHist
+    prob_ratio <- rep(1,nrow(newInfHist))
     ## For each individual
     for(indiv in sampledIndivs){
         #x <- newInfHist[indiv, ageMask[indiv]:ncol(newInfHist)]
         x <- newInfHist[indiv, ageMask[indiv]:strainMask[indiv]]
         maxI <- length(x)
         rand1 <- runif(1)
-
         ## With prob 0.5 swap or move/add
-        if(rand1 < 0.5){
+        if(rand1 < 1/2){
             ## Choose a location
             loc <- sample(length(x), 1)            
             x_new <- x_old <- x
-
+            old <- x[loc]
             ## This location can either be a 1 or a 0
             x_new[loc] <- 1
             x_old[loc] <- 0
@@ -124,12 +176,20 @@ infection_history_betabinom <- function(newInfHist, sampledIndivs, ageMask,strai
             ## (the sum(x[-loc]) gives the number of 1s in the vector less the location to be
             ## updated
             prob1 <- (alpha+sum(x[-loc]))/(alpha+beta+(length(x)-1))
+            
             if(runif(1)<prob1){
                 x[loc] <- 1
                 ## Otherwise, make a 0
             } else {
                 x[loc] <- 0
             }
+            if(x[loc] == old){
+                prob_ratio[indiv] <- 1
+            } else if(x[loc] == 1){ 
+                prob_ratio[indiv] <- (beta + length(x) - sum(x[-loc]) -1)/(alpha+beta+length(x)-1)
+            } else {
+                prob_ratio[indiv] <- (alpha+sum(x[-loc]))/(alpha+beta+length(x)-1)
+            } 
         } else {
             ## Choose a location
             id1 <- sample(length(x),1)
@@ -140,8 +200,8 @@ infection_history_betabinom <- function(newInfHist, sampledIndivs, ageMask,strai
             id2 <- id1 + move
 
             ## Control boundary conditions
-            if(id2 < 1) id2 <- maxI + id2
-            if(id2 > maxI) id2 <- id2 - maxI
+            if(id2 < 1) id2 <- (move %% maxI) + id1
+            if(id2 > maxI) id2 <- (id2-1) %% maxI + 1
 
             ## Swap contents
             tmp <- x[id1]
@@ -152,7 +212,7 @@ infection_history_betabinom <- function(newInfHist, sampledIndivs, ageMask,strai
         #newInf[indiv,ageMask[indiv]:ncol(newInfHist)]=x
         
     }
-    return(newInf)    
+    return(list(newInf, prob_ratio))    
 }
 
 
@@ -165,8 +225,7 @@ infection_history_betabinom_group <- function(newInfHist, sampledIndivs, ageMask
       x <- newInfHist[indiv, ageMask[indiv]:strainMask[indiv]]
       
         maxI <- length(x)
-        if(runif(1) < 1/2){
-            
+        if(runif(1) < 1/2){            
             k <- nInfs[indiv]
             locs <- sample(length(x), k)
             number_1s <- sum(x[-locs])
@@ -188,8 +247,9 @@ infection_history_betabinom_group <- function(newInfHist, sampledIndivs, ageMask
                 moveMax <- moveSizes[indiv]
                 move <- sample(-moveMax:moveMax,1)
                 id2 <- id1 + move
-                if(id2 < 1) id2 <- maxI + id2
-                if(id2 > maxI) id2 <- id2 - maxI
+                if(id2 < 1) id2 <- (move %% maxI) + id1
+                if(id2 > maxI) id2 <- (id2-1) %% maxI + 1
+                
                 tmp <- x[id1]
                 x[id1] <- x[id2]
                 x[id2] <- tmp
@@ -205,7 +265,7 @@ infection_history_betabinom_group <- function(newInfHist, sampledIndivs, ageMask
 
 #' MCMC proposal function
 #'
-#' Proposal function for MCMC random walk, taking random steps of a given size. Random walk may be on a linear or log scale
+#' Proposal function for MCMC random walk, taking random steps of a given size.
 #' @param values a vector of the parameters to be explored
 #' @param lower_bounds a vector of the low allowable bounds for the proposal
 #' @param upper_bounds a vector of the upper allowable bounds for the proposal
@@ -215,6 +275,9 @@ infection_history_betabinom_group <- function(newInfHist, sampledIndivs, ageMask
 #' @export
 #' @useDynLib serosolver
 univ_proposal <- function(values, lower_bounds, upper_bounds,steps, index){
+    rtn <- values
+    #rtn[index] <- rnorm(1,values[index],steps[index])
+    #return(rtn)
     mn <- lower_bounds[index]
     mx <- upper_bounds[index]
 
@@ -222,22 +285,23 @@ univ_proposal <- function(values, lower_bounds, upper_bounds,steps, index){
     
     x <- toUnitScale(values[index],mn,mx)
 
-    ## 5th index is step size
     stp <- steps[index]
 
     rv <- runif(1)
     rv <- (rv-0.5)*stp
     x <- x + rv
-
+    
     ## Bouncing boundary condition
     if (x < 0) x <- -x
     if (x > 1) x <- 2-x
 
     ## Cyclical boundary conditions
-    ##if (x < 0) x <- 1 + x	
-    ##if (x > 1) x <- x - 1
+    #if (x < 0) x <- 1 + x	
+    #if (x > 1) x <- x - 1
     
-    if(x < 0 | x > 1) print("Stepped outside of unit scale. Something went wrong...")
+    if(x < 0 | x > 1){
+        print("Stepped outside of unit scale. Something went wrong...")
+    }
 
     rtn[index] <- fromUnitScale(x,mn,mx)
     rtn
@@ -262,6 +326,23 @@ scaletuning <- function(step, popt,pcur){
 }
 
 #' @export
+rm_scale <- function(step_scale, mc, popt,log_prob, N_adapt)
+{
+	dd <- exp(log_prob)
+	if( dd < -30 ){ dd <- 0 }
+	dd <- min( dd, 1 )
+
+	rm_temp <- ( dd - popt )/( (mc+1)/(0.01*N_adapt+1) )
+	
+	out <- step_scale*exp(rm_temp)
+	
+	out <- max( out, 0.02 )
+	out <- min( out, 2)
+	out
+}
+
+
+#' @export
 ComputeProbability<-function(marg_likelihood,marg_likelihood_star){
   # Flat priors on theta => symmetric update probability
   calc.lik = exp(marg_likelihood_star-marg_likelihood)
@@ -279,8 +360,8 @@ ComputeProbability<-function(marg_likelihood,marg_likelihood_star){
 #' @param sample_prob given an infection seems likely based on titre, suggest infection with some probability
 #' @param titre_cutoff specifies how high the titre must be to imply an infection
 #' @return an nxm matrix of infection histories containing 1s and 0s, where n is the number of individuals and m is the number of potential infecting strains
+#' @export
 setup_infection_histories_OLD <- function(dat, strainIsolationTimes, ageMask,sample_prob, titre_cutoff=3){
-    # 
     SAMPLE_PROB <- sample_prob
     n_indiv <- length(unique(dat$individual))
     n_strain <- length(strainIsolationTimes)
@@ -386,6 +467,9 @@ setup_infection_histories_new <- function(data, ages, strainIsolationTimes, spac
   return(startInf)
 }
 
+#' Create age mask
+#'
+#' Converts a data frame of individual ages to give the index of the first infection that individual could have had
 #' @export
 create_age_mask <- function(ages, strainIsolationTimes, n_indiv){
     ageMask <- sapply(ages$DOB, function(x){
@@ -408,3 +492,99 @@ create_strain_mask <- function(titreDat, strainIsolationTimes){
   return(strainMask)
 }
 
+#' Write given infection history to disk
+#' @export
+save_infHist_to_disk <- function(infHist, file, sampno, append=TRUE,colNames=FALSE){
+    saveInfHist <- Matrix::Matrix(infHist, sparse=TRUE)
+    saveInfHist <- as.data.frame(Matrix::summary(saveInfHist))
+    if(nrow(saveInfHist) > 0){
+        saveInfHist$sampno <- sampno
+        try(data.table::fwrite(saveInfHist,file=file,col.names=colNames,row.names=FALSE,sep=",",append=append))
+    }
+}
+
+
+#' Infection history proposal - original version
+#'
+#' Proposes new infection histories for a vector of infection histories, where rows represent individuals and columns represent years. Proposals are either removal, addition or switching of infections.
+#' Also requires the indices of sampled individuals, the vector of strain isolation times, and a vector of age masks (ie. which index of the strainIsolationTimes vector is the first year in which
+#' an individual *could* be infected).
+#' NOTE - MIGHT NEED TO UPDATE THIS FOR GROUPS
+#' @param newInfectionHistories an n*m matrix of 1s & 0s indicating infection histories, where n is individuals and m i strains
+#' @param sampledIndivs the indices of sampled individuals to receive proposals
+#' @param strainIsolationTimes the vector of strain isolation times in real time
+#' @param ageMask the vector of indices for each individual specifiying which index of strainIsolationTimes is the first strain each individual could have seen
+#' @return a new matrix matching newInfectionHistories in dimensions with proposed moves
+#' @export
+infection_history_proposal <-function(newInfectionHistories,sampledIndivs,strainIsolationTimes,ageMask, nInfs){
+    newInf <- newInfectionHistories
+    #ks <- rpois(length(sampledIndivs), nInfs)
+    for(indiv in sampledIndivs){ # Resample subset of individuals
+        rand1=runif(1)
+        x=newInfectionHistories[indiv,ageMask[indiv]:length(strainIsolationTimes)] # Only resample years individual was alive
+        maxI <- length(x)
+        ## Remove infection
+        if(rand1<1/3){
+            infectID= which(x>0)
+                                        # Number of 1s in first place
+            n_1 <- length(infectID)
+            k_f <- min(n_1,max(nInfs[indiv],1))
+            if(n_1 > 0){
+                #x[sample(infectID,k_f)]=0 # Why double? DEBUG
+                x[sample(c(infectID),1)]=0
+            }
+        }
+        ## Add infection
+        if(rand1>1/3 & rand1<2/3){
+            ninfecID=which(x==0)
+            n_0 <- length(ninfecID)
+            k_f <- min(n_0,max(nInfs[indiv],1))
+            if(n_0>0){
+                x[sample(c(ninfecID),1)]=1
+                #x[sample(ninfecID,k_f)]=1
+            }
+        }
+        ## Move infection position
+        if(rand1>2/3){
+            infectID=which(x > 0)
+            ninfecID=which(x == 0)
+            n_1 <- length(infectID)
+            n_0 <- length(ninfecID)
+            if(n_1 > 0 & n_0 > 0){
+                x[sample(c(infectID),1)]=0
+                x[sample(c(ninfecID),1)]=1
+                #x[sample(infectID,1)]=0
+                #x[sample(ninfecID,1)]=1
+            }
+        }
+        newInf[indiv,ageMask[indiv]:length(strainIsolationTimes)]=x # Only =1 if individual was alive
+    } # end loop over individuals
+    return(newInf)
+}
+
+#' @export
+lambda_proposal <- function(current_pars, infHist, years, js, alpha, beta, n_alive){
+    proposed <- current_pars
+    if(length(years) > 1){
+        infs <- colSums(infHist[,years])
+                                        #current_pars[j] <- rbinom(1, n_alive[year],infs/n_alive[year])/n_alive[year]        
+        proposed[js] <- rbeta(length(years), alpha + infs, beta + (n_alive[years]- infs))
+        #proposed[js] <- rbeta(length(years), alpha, beta)
+    } else {
+        infs <- sum(infHist[,years])
+        proposed[js] <- rbeta(1, alpha + infs, beta + (n_alive[years]- infs))
+        #proposed[js] <- rbeta(1, alpha, beta)
+    }
+    #print(n_alive[years])
+    #print(infs)
+    #print(js)
+    #print(proposed[js])
+    #forward <- sum(dbeta(proposed[js], alpha + infs, beta + (n_alive[years] - infs), log=TRUE))
+    #back <- sum(dbeta(current_pars[js], alpha + infs, beta + (n_alive[years] - infs), log=TRUE))
+    forward <- sum(dbeta(proposed[js], alpha, beta, log=TRUE))
+    back <- sum(dbeta(current_pars[js], alpha, beta, log=TRUE))
+    
+    ratio <- back - forward
+    return(list(proposed, ratio))    
+}
+>>>>>>> jameshaybranch

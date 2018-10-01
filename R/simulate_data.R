@@ -9,12 +9,20 @@
 #' @param nsamps the number of samples per individual
 #' @param antigenicMapLong the collapsed antigenic map for long term cross reactivity, after multiplying by sigma1
 #' @param antigenicMapShort the collapsed antigenic map for short term cross reactivity, after multiplying by sigma2
+#' @param repeats number of repeated samples for each year
+#' @param mus default NULL, optional vector of boosting parameters for each strain
+#' @param mu_indices default NULL, optional vector giving the index of `mus` that each strain uses the boosting parameter from. eg. if there's 6 circulation years and 3 strain clusters, then this might be c(1,1,2,2,3,3)
+#' @param measurement_bias default NULL, optional vector of measurement bias shift parameters for each strain
+#' @param measurement_indices default NULL, optional vector giving the index of `measurement_bias` that each strain uses the measurement shift from from. eg. if there's 6 circulation years and 3 strain clusters, then this might be c(1,1,2,2,3,3)
 #' @return a data frame with columns individual, samples, virus and titre of simulated data
 #' @export
 #' @seealso \code{\link{simulate_individual}}
 simulate_group <- function(n_indiv, theta, infectionHistories,
                            strainIsolationTimes, sampleTimes,
-                           nsamps, antigenicMapLong, antigenicMapShort){
+                           nsamps, antigenicMapLong, antigenicMapShort,
+                           repeats=1, mus=NULL, mu_indices=NULL,
+                           measurement_bias=NULL, measurement_indices=NULL,
+                           addNoise=TRUE){
     dat <- NULL
     ## For each individual
     for(i in 1:n_indiv){
@@ -35,7 +43,10 @@ simulate_group <- function(n_indiv, theta, infectionHistories,
                                                virusIndices,
                                                antigenicMapLong,
                                                antigenicMapShort,
-                                               strainIsolationTimes))
+                                               strainIsolationTimes,
+                                               repeats, mus, mu_indices,
+                                               measurement_bias, measurement_indices,
+                                               addNoise))
         ## Record individual ID
         y$indiv <- i
         colnames(y) <- c("samples","virus","titre","individual")
@@ -59,6 +70,11 @@ simulate_group <- function(n_indiv, theta, infectionHistories,
 #' @param antigenicMapLong the collapsed antigenic map for long term cross reactivity, after multiplying by sigma1
 #' @param antigenicMapShort the collapsed antigenic map for short term cross reactivity, after multiplying by sigma2
 #' @param strains vector of all possible circulating strains
+#' @param repeats number of repeated samples for each year
+#' @param mus default NULL, optional vector of boosting parameters for each strain
+#' @param mu_indices default NULL, optional vector giving the index of `mus` that each strain uses the boosting parameter from. eg. if there's 6 circulation years and 3 strain clusters, then this might be c(1,1,2,2,3,3)
+#' @param measurement_bias default NULL, optional vector of measurement bias shift parameters for each strain
+#' @param measurement_indices default NULL, optional vector giving the index of `measurement_bias` that each strain uses the measurement shift from from. eg. if there's 6 circulation years and 3 strain clus
 #' @return a data frame with columns samples, virus and titre of simulated data
 #' @export
 #' @seealso \code{\link{infection_model_indiv}}
@@ -70,22 +86,40 @@ simulate_individual <- function(theta,
                                 virusIndices,
                                 antigenicMapLong,
                                 antigenicMapShort,
-                                strains){
+                                strains,
+                                repeats=1,
+                                mus=NULL,
+                                mu_indices=NULL,
+                                measurement_bias=NULL,
+                                measurement_indices=NULL,
+                                addNoise=TRUE){
     numberStrains <- length(strains)
+    dat <- matrix(ncol=3, nrow=length(strainIsolationTimes)*repeats)
     
-   
-    dat <- matrix(ncol=3, nrow=length(strainIsolationTimes))
-
-    titres <- titre_data_individual(theta, infectionHistory, strains, seq_along(strains)-1, samplingTimes,
-                                    dataIndices, match(strainIsolationTimes, strains)-1,
-                                    antigenicMapLong, antigenicMapShort, numberStrains)
-    dat[,1] <- rep(samplingTimes, dataIndices)
-    dat[,2] <- strainIsolationTimes
-    dat[,3] <- add_noise(titres,theta)
-    
-    ## Only return titres for the strains circulating at the time of sampling or before (i.e. strain is circulating in the future)
-    dat<-dat[dat[,1] >= dat[,2],]
-    
+    if(is.null(mu_indices)){    
+        titres <- titre_data_individual(theta, infectionHistory, strains, seq_along(strains)-1, samplingTimes,
+                                        dataIndices, match(strainIsolationTimes, strains)-1,
+                                        antigenicMapLong, antigenicMapShort, numberStrains)
+    } else {
+        titres <- titre_data_individual_mus(theta, mus, infectionHistory, strains, seq_along(strains)-1,
+                                        mu_indices, samplingTimes,
+                                        dataIndices, match(strainIsolationTimes, strains)-1,
+                                        antigenicMapLong, antigenicMapShort, numberStrains)
+    }
+    titres <- rep(titres, each=repeats)
+    samplingTimes <- rep(samplingTimes, dataIndices)
+    samplingTimes <- rep(samplingTimes, each=repeats)
+    dat[,1] <- samplingTimes
+    dat[,2] <- rep(strainIsolationTimes,each=repeats)
+    if(addNoise){
+        if(!is.null(measurement_indices)){
+            dat[,3] <- add_noise(titres,theta, measurement_bias, measurement_indices[match(dat[,2], strains)])
+        } else {
+            dat[,3] <- add_noise(titres,theta, NULL, NULL)
+        }
+    } else {
+        dat[,3] <- titres
+    }
     #dat[,3] <- titres
     #dat[,3] <- rnorm(length(titres),titres,sd=theta["error"])
     return(dat)
@@ -98,9 +132,13 @@ simulate_individual <- function(theta,
 #' @param theta a vector with MAX_TITRE and error parameters
 #' @return a noisy titre
 #' @export
-add_noise <- function(y, theta){
+add_noise <- function(y, theta, measurement_bias=NULL, indices=NULL){
     ## Draw from normal
-    noise_y <- floor(rnorm(length(y), mean=y, sd=theta["error"]))
+    if(!is.null(measurement_bias)) {
+        noise_y <- floor(rnorm(length(y), mean=y+measurement_bias[indices], sd=theta["error"]))
+    } else {
+        noise_y <- floor(rnorm(length(y), mean=y, sd=theta["error"]))
+    }
 
     ## If outside of bounds, truncate
     noise_y[noise_y < 0] <- 0
@@ -160,8 +198,8 @@ simulate_infection_histories <- function(pInf, infSD, strainIsolationTimes, samp
         }
      
         ## Sample a number of infections for the alive individuals, and set these entries to 1
-        #y <- round(length(indivs[alive])*attackRates[i])
-        y <- rbinom(1, length(indivs[alive]),attackRates[i])
+        y <- round(length(indivs[alive])*attackRates[i])
+        #y <- rbinom(1, length(indivs[alive]),attackRates[i])
         ARs[i] <- y/length(indivs[alive])
         x <- sample(indivs[alive], y)
         infectionHistories[x,i] <- 1
@@ -186,7 +224,7 @@ generate_ar_annual <- function(AR, buckets){
     dinc <- beta*S*I
     list(c(dS,dI,dR, dinc))
   }
-  R0 <- 1.5
+  R0 <- 1.2
   gamma <- 1/5
   beta <- R0*gamma
   t <- seq(0,360,by=0.1)
@@ -207,12 +245,26 @@ simulate_ars_buckets <- function(infectionYears, buckets, meanPar=0.15,sdPar=0.5
     attack_year <- rlnorm(n, meanlog=log(meanPar)-sdPar^2/2,sdlog=sdPar)
     if(largeFirstYear) attack_year[1] <- rlnorm(1,meanlog=log(bigYearMean)-(sdPar/2)^2/2,sdlog=sdPar/2)
     ars <- NULL
+    
     for(i in seq_along(attack_year)){
         ars <- c(ars, generate_ar_annual(attack_year[i],buckets))
     }
+    
     ars <- ars[1:length(infectionYears)]
     return(ars)
 }
+#' @export
+simulate_ars_spline <- function(infectionYears, buckets, meanPar=0.15,sdPar=0.5, largeFirstYear=FALSE,bigYearMean=0.5, knots,theta){
+    infectionYears <- infectionYears[seq(1,length(infectionYears),by=buckets)]/buckets
+    n <- length(infectionYears)
+    attack_year <- rlnorm(n, meanlog=log(meanPar)-sdPar^2/2,sdlog=sdPar)
+    if(largeFirstYear) attack_year[1] <- rlnorm(1,meanlog=log(bigYearMean)-(sdPar/2)^2/2,sdlog=sdPar/2)
+    ars <- generate_lambdas(attack_year, knots, theta, n, buckets) 
+    return(ars)
+}
+
+
+
 #' Simulate full data set
 #'
 #' Simulates a full data set for a given set of parameters etc.
@@ -229,6 +281,10 @@ simulate_ars_buckets <- function(infectionYears, buckets, meanPar=0.15,sdPar=0.5
 #' @param ageMax maximum age to simulate
 #' @param simInfPars vector of parameters to pass to \code{\link{simulate_attack_rates}}
 #' @param useSIR boolean specifying whether to sample from an SIR model or just log normal distribution for each epoch. If TRUE, uses an SIR model
+#' @param useSpline if TRUE, calculates a spline to generate sub annual FOI from
+#' @param pInf if given, provides infection probabilities to sample from rather than simulating
+#' @param repeats number of repeats for each year
+#' @param mu_indices default NULL, optional vector giving the index of `mus` that each strain uses the boosting parameter from. eg. if there's 6 circulation years and 3 strain clusters, then this might be c(1,1,2,2,3,3)
 #' @return a list with: 1) the data frame of titre data as returned by \code{\link{simulate_group}}; 2) a matrix of infection histories as returned by \code{\link{simulate_infection_histories}}; 3) a vector of ages
 #' @export
 simulate_data <- function(parTab, group=1,n_indiv,buckets=12,
@@ -236,11 +292,31 @@ simulate_data <- function(parTab, group=1,n_indiv,buckets=12,
                           antigenicMap,
                           sampleSensoring=0, titreSensoring=0,
                           ageMin=5,ageMax=80,
-                          simInfPars=c("mean"=0.15,"sd"=0.5,"bigMean"=0.5,"logSD"=1,"constant"=0),
-                          useSIR=FALSE,attackRates=NULL){
+                          simInfPars=c("mean"=0.15,"sd"=0.5,"bigMean"=0.5,"logSD"=1, "constant"=0),
+                          theta=rep(0.1,5),
+                          knots=c(0.33,0.66),
+                          useSIR=FALSE,
+                          attackRates=NULL,
+                          useSpline=TRUE,
+                          repeats=1,
+                          mu_indices=NULL,
+                          measurement_indices=NULL,
+                          addNoise=TRUE){
     ## Extract parameters
     pars <- parTab$values
     names(pars) <- parTab$names
+    if(!is.null(mu_indices)){
+        mus <- parTab[parTab$identity == 3,"values"]
+        pars <- parTab[parTab$identity == 1,"values"]
+        names(pars) <- parTab[parTab$identity==1,"names"]
+    }
+
+    if(!is.null(measurement_indices)){
+        measurement_bias <- parTab[parTab$identity == 4,"values"]
+        pars <- parTab[parTab$identity == 1,"values"]
+        names(pars) <- parTab[parTab$identity==1,"names"]
+    }
+    lambda_pars <- parTab[parTab$identity == 2,"values"]
 
     ## Create antigenic map for short and long term boosting
     antigenicMap1 <- outputdmatrix.fromcoord(antigenicMap[,c("x_coord","y_coord")])
@@ -255,38 +331,47 @@ simulate_data <- function(parTab, group=1,n_indiv,buckets=12,
     ages <- floor(runif(n_indiv,ageMin,ageMax))
     
     ## Simulate attack rates
-    if(useSIR){
-        pInf <- simulate_ars_buckets(strainIsolationTimes, buckets, simInfPars["mean"],simInfPars["sd"],TRUE,simInfPars["bigMean"])
+    if(is.null(attackRates)){
+        if(useSIR){
+            pInf <- simulate_ars_buckets(strainIsolationTimes, buckets, simInfPars["mean"],simInfPars["sd"],TRUE,simInfPars["bigMean"])
+        } else {
+            if(simInfPars["constant"]==1){ ##If constant==1 then use the mean in simInfPars to simulate constant AR 
+                pInf <- rep(simInfPars["mean"],length(strainIsolationTimes))
+            } else if(simInfPars["constant"]==0&is.null(attackRates)){
+                pInf <- simulate_attack_rates(strainIsolationTimes, simInfPars["mean"],simInfPars["sd"],TRUE,simInfPars["bigMean"])
+            } else if(simInfPars["constant"]==0&useSpline){
+                pInf <- simulate_ars_spline(strainIsolationTimes, buckets, simInfPars["mean"],simInfPars["sd"],TRUE,simInfPars["bigMean"], knots,theta)
+            } else {
+                pInf <- simulate_attack_rates(strainIsolationTimes, simInfPars["mean"],simInfPars["sd"],TRUE,simInfPars["bigMean"])
+            }
+        }
     } else {
-      if(simInfPars["constant"]==1){ ##If constant==1 then use the mean in simInfPars to simulate constant AR 
-        pInf <- rep(simInfPars["mean"],length(strainIsolationTimes))
-      }else if(simInfPars["constant"]==0&is.null(attackRates)){
-        pInf <- simulate_attack_rates(strainIsolationTimes, simInfPars["mean"],simInfPars["sd"],TRUE,simInfPars["bigMean"])
-      }else if(simInfPars["constant"]==0&!is.null(attackRates)){
         pInf <- attackRates
-        
-      }
     }
-
+    
     if(length(pInf)!=length(strainIsolationTimes)) stop('attackRates is not the same length as strainIsolationTimes')
     
-    ## Simulate infection histories
-    tmp <- simulate_infection_histories(pInf, simInfPars["logSD"], strainIsolationTimes, samplingTimes, ages)
+    ## Simulate infection histories    
+    tmp <- simulate_infection_histories(pInf, simInfPars["logSD"], strainIsolationTimes,
+                                        samplingTimes, ages)
+   
     infHist <- tmp[[1]]
     ARs <- tmp[[2]]
-    
+
     ## Simulate titre data
     y <- simulate_group(n_indiv, pars, infHist, strainIsolationTimes, samplingTimes,
-                        nsamps, antigenicMapLong,antigenicMapShort)
+                        nsamps, antigenicMapLong,antigenicMapShort,repeats,
+                        mus, mu_indices, measurement_bias, measurement_indices,addNoise)
+
     ## Randomly censor titre values
     y$titre <- y$titre*sample(c(NA,1),nrow(y),prob=c(titreSensoring,1-titreSensoring),replace=TRUE)
     y$run <- 1
     y$group <- 1
-
+    
     DOB <- max(samplingTimes) - ages
     ages <- data.frame("individual"=1:n_indiv, "DOB"=DOB)
     attackRates <- data.frame("year"=strainIsolationTimes,"AR"=ARs)
-    return(list(data=y, infectionHistories=infHist, ages=ages, attackRates=attackRates))
+    return(list(data=y, infectionHistories=infHist, ages=ages, attackRates=attackRates, lambdas=pInf))
 }
 
 #' Create useable antigenic map
@@ -319,7 +404,7 @@ generate_antigenic_map <- function(antigenicDistances, buckets=1){
   antigenicDistances$Strain <- virus_key[antigenicDistances$Strain]
   fit <- smooth.spline(antigenicDistances$X,antigenicDistances$Y,spar=0.3)
   x_line <- lm(data = antigenicDistances, X~Strain)
-  Strain <- seq(1968*buckets,2015*buckets,by=1)
+  Strain <- seq(1968*buckets,2016*buckets-1,by=1)
   x_predict <- predict(x_line,data.frame(Strain))
   y_predict <- predict(fit, x=x_predict)
   fit_dat <- data.frame(x=y_predict$x,y=y_predict$y)

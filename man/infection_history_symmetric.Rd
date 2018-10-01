@@ -17,6 +17,8 @@ infection_history_symmetric(newInfHist, sampledIndivs, ageMask, moveSizes,
 \item{moveSizes}{when performing a move step, how far should two epochs be swapped?}
 
 \item{nInfs}{number of infection epochs to flip}
+
+\item{randNs}{pre-computed random numbers (0-1) for each individual, deciding whether to do a flip or swap}
 }
 \value{
 a matrix of infection histories matching the input newInfHist

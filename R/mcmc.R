@@ -1,11 +1,11 @@
-#' Adaptive Metropolis-within-Gibbs Random Walk Algorithm.
+#' Adaptive Metropolis-within-Gibbs/Metropolis Hastings Random Walk Algorithm.
 #'
 #' The Adaptive Metropolis-within-Gibbs algorithm. Given a starting point and the necessary MCMC parameters as set out below, performs a random-walk of the posterior space to produce an MCMC chain that can be used to generate MCMC density and iteration plots. The algorithm undergoes an adaptive period, where it changes the step size of the random walk for each parameter to approach the desired acceptance rate, popt. The algorithm then uses \code{\link{univ_proposal}} or \code{\link{mvr_proposal}} to explore parameter space, recording the value and posterior value at each step. The MCMC chain is saved in blocks as a .csv file at the location given by filename. This version of the algorithm is also designed to explore posterior densities for infection histories.
 #' @param parTab the parameter table controlling information such as bounds, initial values etc
 #' @param data the data frame of data to be fitted. Must have columns: group (index of group); individual (integer ID of individual); samples (numeric time of sample taken); virus (numeric time of when the virus was circulating); titre (integer of titre value against the given virus at that sampling time)
-#' @param mcmcPars named vector named vector with parameters for the MCMC procedure. Iterations (number of post adaptive iterations), popt (desired acceptance rate), popt_hist (desired acceptance rate for infection histories) opt_freq (after how many iterations do we adapt proposal), thin (save every n iterations), adaptive_period (number of iterations to adapt), save_block (number of post thinning iterations to save at a time), thin2 (infection history thinning), histSampleProb (proportion of inf histories to resample), switch_sample (resample inf histories every n iterations); burnin (number of iterations to run before any adapting), nInfs (number of infections to resample for each individual at each iteration), moveSizes (number of infection years/months to move when performing swap step), histProposal (which infection history proposal version to use, see \code{\link{describe_proposals}}, histOpt (if 1, performs adaptive infection history proposals. If 0, retains the starting infection history proposal parameters)
+#' @param mcmcPars named vector named vector with parameters for the MCMC procedure. Iterations (number of post adaptive iterations), popt (desired acceptance rate), popt_hist (desired acceptance rate for infection histories), opt_freq (after how many iterations do we adapt proposal), thin (save every n iterations), adaptive_period (number of iterations to adapt), save_block (number of post thinning iterations to save at a time), thin2 (infection history thinning), histSampleProb (proportion of inf histories to resample), switch_sample (resample inf histories every n iterations), burnin (number of iterations to run before any adapting), nInfs (number of infections to resample for each individual at each iteration), moveSizes (number of infection years/months to move when performing swap step), histProposal (which infection history proposal version to use, see \code{\link{describe_proposals}}, histOpt (if 1, performs adaptive infection history proposals. If 0, retains the starting infection history proposal parameters, swapPropn (if using gibbs sampling of infection histories, what proportion of proposals should be swap steps)
 #' @param filename the full filepath at which the MCMC chain should be saved. "_chain.csv" will be appended to the end of this, so filename should have no file extensions
-#' @param CREATE_POSTERIOR_FUNC pointer to posterior function used to calculate a likelihood
+#' @param CREATE_POSTERIOR_FUNC pointer to posterior function used to calculate a likelihood. This will probably be \code{\link{create_post_func}}, but if using random effects on mu will use \code{\link{create_post_func_mu}}
 #' @param mvrPars leave NULL to use univariate proposals. Otherwise, a list of parameters if using a multivariate proposal. Must contain an initial covariance matrix, weighting for adapting cov matrix, and an initial scaling parameter (0-1)
 #' @param PRIOR_FUNC user function of prior for model parameters. Should take parameter values only
 #' @param version which version of the posterior function to use? See \code{\link{create_post_func}}
@@ -13,6 +13,8 @@
 #' @param antigenicMap a data frame of antigenic x and y coordinates. Must have column names: x_coord; y_coord; inf_years 
 #' @param ages data frame of ages and individual IDs for each participant, used to mask infection history proposals. Columns: age, individual. Can be left NULL
 #' @param startInfHist infection history matrix to start MCMC at. Can be left NULL
+#' @param mu_indices for random effects on boosting parameter, mu. If random mus are included in the parameter table, this vector specifies which mu to use for each circulation year. For example, if years 1970-1976 have unique boosting, then mu_indices should be c(1,2,3,4,5,6). If every 3 year block shares has a unique boosting parameter, then this should be c(1,1,1,2,2,2).
+#' @param measurement_indices wow
 #' @param ... other arguments to pass to CREATE_POSTERIOR_FUNC
 #' @return a list with: 1) full file path at which the MCMC chain is saved as a .csv file; 2) a full file path at which the infection history chain is saved as a .csv file; 3) the last used covariance matrix; 4) the last used scale/step size (if multivariate proposals)
 #' @export
@@ -20,7 +22,7 @@ run_MCMC <- function(parTab,
                      data,
                      mcmcPars=c("iterations"=50000,"popt"=0.44,"popt_hist"=0.44,"opt_freq"=2000,"thin"=10,"adaptive_period"=10000,
                                 "save_block"=100,"thin2"=100,"histSampleProb"=1,"switch_sample"=2, "burnin"=0, 
-                                "nInfs"=4, "moveSize"=5, "histProposal"=3, "histOpt"=1),
+                                "nInfs"=4, "moveSize"=5, "histProposal"=3, "histOpt"=1,"swapPropn"=0.5),
                      filename="test",
                      CREATE_POSTERIOR_FUNC,
                      mvrPars=NULL,
@@ -30,6 +32,10 @@ run_MCMC <- function(parTab,
                      antigenicMap,
                      ages=NULL,
                      startInfHist=NULL,
+                     mu_indices=NULL,
+                     measurement_indices=NULL,
+                     measurement_random_effects=FALSE,
+                     temp=1,
                      ...){
     ## Extract MCMC parameters
     iterations <- mcmcPars["iterations"] # How many iterations to run after adaptive period
@@ -47,13 +53,22 @@ run_MCMC <- function(parTab,
     nInfs <- mcmcPars["nInfs"] # Number of infections to move/remove/add in each proposal step
     histProposal <- mcmcPars["histProposal"] # Which infection history proposal version?
     histOpt <- mcmcPars["histOpt"] # Should infection history proposal step be adaptive?
+    swapPropn <- mcmcPars["swapPropn"]
     
     if(histProposal == 1){
         histPropPrint <- "symmetric"
     } else if(histProposal == 2){
         histPropPrint <- "single"
-    } else {
+    } else if(histProposal == 3){
         histPropPrint <- "multiple proposals"
+    } else if(histProposal ==4){
+        histPropPrint <- "original AK proposal func"
+    } else if(histProposal == 5){
+        histPropPrint <- "sampling inf histories from lambda"
+    } else if(histProposal ==6){
+        histPropPrint <- "gibbs sampling of inf hist"
+    } else {
+        histPropPrint <- "unknown - invalid proposal specified"
     }
     message(cat("Infection history proposal version: ", histPropPrint,sep="\t"))
     
@@ -66,14 +81,21 @@ run_MCMC <- function(parTab,
     ## Parameter constraints
     lower_bounds <- parTab$lower_bound # Parameters cannot step below this
     upper_bounds <- parTab$upper_bound # Parameters cannot step above this
-    steps <- parTab$steps
-    fixed <- parTab$fixed
+    steps <- parTab$steps # How far to step on unit scale to begin with?
+    fixed <- parTab$fixed # Index which parameters are fixed
 
-    ## Pull out alpha and beta for beta binomial proposals
-    alpha <- parTab[parTab$names == "alpha","values"]
-    beta <- parTab[parTab$names == "beta","values"]
+
+    ## If using lambda terms, pull their indices out of the parameter table
+    lambda_indices <- NULL
+    if("lambda" %in% par_names){
+        lambda_indices <- which(parTab$names == "lambda")
+    }
     
-    
+    ## If there, Pull out alpha and beta for beta binomial proposals
+    if("alpha" %in% par_names & "beta" %in% par_names){
+        alpha <- parTab[parTab$names == "alpha","values"]
+        beta <- parTab[parTab$names == "beta","values"]
+    }
     ## Arrays to store acceptance rates
     ## If univariate proposals, store vector of acceptances
     if(is.null(mvrPars)){
@@ -86,7 +108,6 @@ run_MCMC <- function(parTab,
         ## much weighting to give to previous covariance matrix upon adaptive update
         tempaccepted <- tempiter <- reset <- 0
         covMat <- mvrPars[[1]][unfixed_pars,unfixed_pars]
-        covMat0 <- diag(unfixed_par_length)
         steps <- mvrPars[[2]]
         w <- mvrPars[[3]]
     }
@@ -120,8 +141,10 @@ run_MCMC <- function(parTab,
 ###############
     if(!is.null(ages)){
         ageMask <- create_age_mask(ages, strainIsolationTimes, n_indiv)
+        n_alive <- sapply(strainIsolationTimes, function(x) nrow(ages[ages$DOB <=x,]))
     } else {
         ageMask <- rep(1, n_indiv)
+        n_alive <- rep(n_indiv, length(strainIsolationTimes))
     }
     
     
@@ -132,20 +155,46 @@ run_MCMC <- function(parTab,
     posterior_simp <- protect(CREATE_POSTERIOR_FUNC(parTab,data,
                                                     antigenicMap,
                                                     PRIOR_FUNC,version,
-                                                    ageMask,
+                                                    ageMask,mu_indices=mu_indices,
+                                                    measurement_indices=measurement_indices,
+                                                    temp=temp,
                                                     ...))
-
+    ## If using gibbs proposal on infHist, create here
+    if(histProposal == 6){
+        proposal_gibbs <- protect(CREATE_POSTERIOR_FUNC(parTab, data,
+                                                        antigenicMap,
+                                                        PRIOR_FUNC, 99,
+                                                        ageMask,mu_indices=mu_indices,
+                                                        measurement_indices=measurement_indices,
+                                                        temp=temp,
+                                                        ...))
+    }
+    
+    ## If using random effects on mu, need to include hyperprior term on mu
+    ## We can't do this in the main posterior function, because this term
+    ## applies to the overall posterior whereas the main posterior function
+    ## returns each individual's posterior
+    if(!is.null(mu_indices)){
+        prior_mu <- protect(create_post_func_mu(parTab,data,antigenicMap, PRIOR_FUNC,version=2,
+                                                ageMask,mu_indices,...))
+    }
+    if(measurement_random_effects) prior_shifts <- create_prob_shifts(parTab)
 ######################
     ## Setup initial conditions
     infectionHistories = startInfHist
     if(is.null(startInfHist)) infectionHistories <- setup_infection_histories_new(data, ages, strainIsolationTimes, space=5,titre_cutoff=3)
+
     ## Initial likelihood
     ## -----------------------
     ## NOTE
     ## IT MIGHT BE A BIT TOO SLOW PASSING INFECTION HISTORIES AS A MATRIX EACH ITERATION
     ## -----------------------
-    probabs <- posterior_simp(current_pars,infectionHistories)
+    probabs <- posterior_simp(current_pars,infectionHistories)/temp
     probab <- sum(probabs)
+
+    if(histProposal == 6) probab <- probab + inf_mat_prior_cpp(infectionHistories, n_alive, alpha, beta)
+    if(!is.null(mu_indices)) probab <- probab + prior_mu(current_pars)
+    if(measurement_random_effects) probab <- probab + prior_shifts(current_pars)
     message(cat("Starting theta likelihood: ",probab,sep="\t"))
 ###############
     
@@ -167,25 +216,16 @@ run_MCMC <- function(parTab,
     
     ## Write starting conditions to file
     data.table::fwrite(as.data.frame(tmp_table),file=mcmc_chain_file,row.names=FALSE,col.names=TRUE,sep=",",append=FALSE)
-
-    ## Table for storing infection histories
-    historyTab <- emptyHistoryTab <- matrix(NA, nrow=save_block*n_indiv,ncol=n_strain+2)
-    tmp_table <- matrix(NA, nrow=n_indiv,ncol=n_strain+2)
-    tmp_table[1:n_indiv,1:n_strain] <- infectionHistories
-    tmp_table[1:n_indiv,n_strain+1] <- individuals
-    tmp_table[1:n_indiv,n_strain+2] <- 1
-    colnames(tmp_table) <- c(as.character(strainIsolationTimes),"individual","sampno")
-    
-    ## Write starting infection histories
-    data.table::fwrite(as.data.frame(tmp_table), infectionHistory_file, row.names=FALSE, col.names=TRUE, sep=",",append=FALSE)
-
+    save_infHist_to_disk(infectionHistories, infectionHistory_file, 1, append=FALSE,colNames=TRUE)
     ## Initial indexing parameters
     no_recorded <- 1
     no_recorded_infHist <- 1
     sampno <- 2
     par_i <- 1
     chain_index <- 1
-    
+    last_index <- 1
+
+    cov_mat0 <- diag(unfixed_pars)
 #####################
     ## MCMC ALGORITHM
 #####################
@@ -213,38 +253,56 @@ run_MCMC <- function(parTab,
             } else {
                 ## NOTE
                 ## MIGHT WANT TO USE ADAM'S PROPOSAL FUNCTION
-                proposal <- mvr_proposal(current_pars, unfixed_pars, steps*covMat, covMat0, FALSE)
+                proposal <- mvr_proposal(current_pars, unfixed_pars, steps*covMat, cov_mat0, FALSE, beta=0.05)
+                #proposal <- SampleTheta(current_pars, unfixed_pars, cov_mat0*steps, cov_mat0*steps, par_names)
+                #print(proposal)
                 tempiter <- tempiter + 1
             }
         }
             ## Calculate new likelihood for these parameters
-            new_probabs <- posterior_simp(proposal, infectionHistories)
+            new_probabs <- posterior_simp(proposal,infectionHistories)/temp
             new_probab <- sum(new_probabs)
+            if(histProposal == 6) new_probab <- new_probab + inf_mat_prior_cpp(infectionHistories, n_alive, alpha, beta)
+            if(!is.null(mu_indices)) new_probab <- new_probab + prior_mu(proposal)
+            if(measurement_random_effects) new_probab <- new_probab + prior_shifts(proposal)
             ## Otherwise, resample infection history
         } else {
             ## Choose a random subset of individuals to update
             indivSubSample <- sample(1:n_indiv, ceiling(histSampleProb*n_indiv))
             randNs <- runif(length(indivSubSample))
+            
             ## Which infection history proposal to use?
             if(histProposal==1){
                 newInfectionHistories <- infection_history_symmetric(infectionHistories, indivSubSample, ageMask, moveSizes, nInfs_vec, randNs)
             } else if(histProposal == 2){
-                newInfectionHistories <- infection_history_betabinom(infectionHistories, indivSubSample, ageMask, strainMask, moveSizes, alpha, beta)
+                newInfectionHistories <- infection_history_betabinom(infectionHistories, indivSubSample, ageMask, moveSizes, alpha, beta)
+                acceptance <- newInfectionHistories[[2]]
+                newInfectionHistories <- newInfectionHistories[[1]]
+            } else if(histProposal==3){
+                newInfectionHistories <- inf_hist_prop_cpp(infectionHistories,indivSubSample,ageMask,strainMask,
+                                                           moveSizes, nInfs_vec, alpha,beta,randNs)
+            } else if(histProposal==4){
+                newInfectionHistories <- infection_history_proposal(infectionHistories, indivSubSample, strainIsolationTimes, ageMask,nInfs_vec)
+            } else if(histProposal==5){
+                newInfectionHistories <- inf_hist_prob_lambda(infectionHistories, indivSubSample,ageMask,nInfs_vec, current_pars[lambda_indices])
             } else {
-                newInfectionHistories <- inf_hist_prop_cpp(infectionHistories,indivSubSample,ageMask,strainMask,moveSizes, nInfs_vec, alpha,beta,randNs)
-                
+                newInfectionHistories <- proposal_gibbs(current_pars, infectionHistories, alpha, beta, histSampleProb, nInfs,swapPropn,moveSize)
             }
             ## The proposals are either a swap step or an add/remove step. Need to track which type was used for which individual,
             ## as we adapt the `step size` for these two update steps independently
-            move <- which(randNs > 1/2)
-            add <- which(randNs < 1/2)
-            histiter_add[indivSubSample[add]]<- histiter_add[indivSubSample[add]] + 1
-            histiter_move[indivSubSample[move]]<- histiter_move[indivSubSample[move]] + 1
-            
+            if(histProposal != 6){
+                move <- which(randNs > 1/2)
+                add <- which(randNs < 1/2)                
+                histiter_add[indivSubSample[add]]<- histiter_add[indivSubSample[add]] + 1
+                histiter_move[indivSubSample[move]]<- histiter_move[indivSubSample[move]] + 1
+                histiter[indivSubSample]<- histiter[indivSubSample] + 1
+            }
             ## Calculate new likelihood with these infection histories
-            new_probabs <- posterior_simp(current_pars, newInfectionHistories)            
+            new_probabs <- posterior_simp(current_pars, newInfectionHistories)/temp
             new_probab <- sum(new_probabs)
-            histiter[indivSubSample]<- histiter[indivSubSample] + 1
+            if(histProposal == 6) new_probab <- new_probab + inf_mat_prior_cpp(newInfectionHistories, n_alive, alpha, beta)
+            if(!is.null(mu_indices)) new_probab <- new_probab + prior_mu(current_pars)
+            if(measurement_random_effects) new_probab <- new_probab + prior_shifts(current_pars)
         }
 
 #############################
@@ -275,20 +333,27 @@ run_MCMC <- function(parTab,
             }
         } else {
             ## MH step for each individual
-            log_probs <- (new_probabs[indivSubSample] - probabs[indivSubSample])
-            log_probs[log_probs > 0] <- 0
-            x <- which(log(runif(length(indivSubSample))) < log_probs)
-            changeI <- indivSubSample[x]
-            infectionHistories[changeI,] <- newInfectionHistories[changeI,]
-            probabs[changeI] <- new_probabs[changeI]
-            probab <- sum(probabs)
-
-            ## Record acceptances for each add or move step
-            add <- intersect(add, changeI)
-            move <- intersect(move, changeI)
-            histaccepted_add[indivSubSample[add]] <- histaccepted_add[indivSubSample[add]] + 1
-            histaccepted_move[indivSubSample[move]] <- histaccepted_move[indivSubSample[move]] + 1
-            histaccepted[changeI] <- histaccepted[changeI] + 1
+            if(histProposal != 6){
+                log_probs <- (new_probabs[indivSubSample] - probabs[indivSubSample])#  + log(acceptance[indivSubSample])
+                log_probs[log_probs > 0] <- 0
+                x <- which(log(runif(length(indivSubSample))) < log_probs)
+                changeI <- indivSubSample[x]
+                infectionHistories[changeI,] <- newInfectionHistories[changeI,]
+                probabs[changeI] <- new_probabs[changeI]
+                probab <- sum(probabs)
+                if(!is.null(mu_indices)) probab <- probab + prior_mu(current_pars)
+                
+                ## Record acceptances for each add or move step
+                add <- intersect(add, changeI)
+                move <- intersect(move, changeI)
+                histaccepted_add[indivSubSample[add]] <- histaccepted_add[indivSubSample[add]] + 1
+                histaccepted_move[indivSubSample[move]] <- histaccepted_move[indivSubSample[move]] + 1
+                histaccepted[changeI] <- histaccepted[changeI] + 1
+            } else {
+                infectionHistories <- newInfectionHistories
+                probabs <- new_probabs
+                probab <- new_probab
+            }
         }
         
 ##############################
@@ -308,10 +373,11 @@ run_MCMC <- function(parTab,
 
         ## Save infection histories
         if(i %% histTabThin == 0){
-            historyTab[no_recorded_infHist:(no_recorded_infHist + n_indiv-1),1:n_strain] <- infectionHistories
-            historyTab[no_recorded_infHist:(no_recorded_infHist + n_indiv-1),n_strain+1] <- individuals
-            historyTab[no_recorded_infHist:(no_recorded_infHist + n_indiv-1),n_strain+2] <- sampno
-            no_recorded_infHist <- no_recorded_infHist + n_indiv
+           save_infHist_to_disk(infectionHistories, infectionHistory_file, sampno)
+                                        #historyTab[no_recorded_infHist:(no_recorded_infHist + n_indiv-1),1:n_strain] <- infectionHistories
+                                        #historyTab[no_recorded_infHist:(no_recorded_infHist + n_indiv-1),n_strain+1] <- individuals
+            #historyTab[no_recorded_infHist:(no_recorded_infHist + n_indiv-1),n_strain+2] <- sampno
+            #no_recorded_infHist <- no_recorded_infHist + n_indiv
         }
         
 ##############################
@@ -349,22 +415,20 @@ run_MCMC <- function(parTab,
                         covMat <- w*covMat + (1-w)*oldCovMat
                     }
                     ## Scale tuning for last 20% of the adaptive period
-                                        #if(chain_index > (0.8)*adaptive_period){
-                                        #    steps <- scaletuning(steps, popt,pcur)
-                                        #}
+                    if(chain_index > (0.8)*adaptive_period){
+                        steps <- scaletuning(steps, popt,pcur)
+                    }
                     ## As in Adam's version
-                    steps=max(0.00001,min(1,exp(log(steps)+(pcur-popt)*0.999^(i-burnin))))
+                                        #steps=max(0.00001,min(1,exp(log(steps)+(pcur-popt)*0.999^(i-burnin))))
                 }
+                #last_index <- chain_index
                 pcurHist <- histaccepted/histiter
-                                        #message(cat("Hist acceptance: ", pcurHist, cat="\t"))
                 pcurHist_add <- histaccepted_add/histiter_add
                 pcurHist_move <- histaccepted_move/histiter_move
-                #message(cat("Hist iter add: ", histiter_add, cat="\t"))
-                #message(cat("Hist accepted add: ", histaccepted_add, cat="\t"))
 
                 ## NOTE THAT THIS IS ONLY RELEVANT TO INFECTION HISTORY PROPOSAL 1 & 3
-                message(cat("Hist acceptance add: ", pcurHist_add, cat="\t"))
-                message(cat("Hist acceptance move: ", pcurHist_move, cat="\t"))
+                #message(cat("Hist acceptance add: ", pcurHist_add, cat="\t"))
+                #message(cat("Hist acceptance move: ", pcurHist_move, cat="\t"))
                 message(cat("Mean hist acceptance: ", mean(pcurHist),cat="\t"))
                 histiter <- histaccepted <- histaccepted_add <- histaccepted_move <- histiter_add <- histiter_move <- histreset
 
@@ -383,12 +447,12 @@ run_MCMC <- function(parTab,
                         nInfs_vec[ii] <- min(nInfs_vec[ii],n_strain - ageMask[ii])
                     }
                 }
-                message(cat("nInfs: ", nInfs_vec, sep="\t"))
-                message(cat("Move sizes: ", moveSizes, sep="\t"))
+                #message(cat("nInfs: ", nInfs_vec, sep="\t"))
+                #message(cat("Move sizes: ", moveSizes, sep="\t"))
                 message(cat("Pcur: ", pcur,sep="\t"))
                 message(cat("Step sizes: ", steps,sep="\t"))
                 tempaccepted <- tempiter <- reset
-                message(cat("Hist sample prob: ", histSampleProb))
+                #message(cat("Hist sample prob: ", histSampleProb))
             }
             chain_index <- chain_index + 1
         }
@@ -401,12 +465,12 @@ run_MCMC <- function(parTab,
             save_chain <- empty_save_chain
             no_recorded <- 1
         }
-        if((no_recorded_infHist-1)/n_indiv == save_block){
-            data.table::fwrite(as.data.frame(historyTab[1:(no_recorded_infHist-1),]), file=infectionHistory_file,
-                        col.names=FALSE,row.names=FALSE,sep=",",append=TRUE)
-            historyTab <- emptyHistoryTab
-            no_recorded_infHist <- 1
-        }
+        #if((no_recorded_infHist-1)/n_indiv == save_block){
+        #    data.table::fwrite(as.data.frame(historyTab[1:(no_recorded_infHist-1),]), file=infectionHistory_file,
+        #                col.names=FALSE,row.names=FALSE,sep=",",append=TRUE)
+        #    historyTab <- emptyHistoryTab
+        #    no_recorded_infHist <- 1
+        #}
         sampno <- sampno + 1
     }
 
@@ -416,12 +480,12 @@ run_MCMC <- function(parTab,
     if(no_recorded > 2){
         data.table::fwrite(as.data.frame(save_chain[1:(no_recorded-1),]),file=mcmc_chain_file,row.names=FALSE,col.names=FALSE,sep=",",append=TRUE)
     }
-    if(no_recorded_infHist > 2){
-        data.table::fwrite(as.data.frame(historyTab), file=infectionHistory_file,
-                    col.names=FALSE,row.names=FALSE,sep=",",append=TRUE)
-        historyTab <- emptyHistoryTab
-        no_recorded_infHist <- 1
-    }
+    #if(no_recorded_infHist > 2){
+    #    data.table::fwrite(as.data.frame(historyTab), file=infectionHistory_file,
+    #                col.names=FALSE,row.names=FALSE,sep=",",append=TRUE)
+    #    historyTab <- emptyHistoryTab
+    #    no_recorded_infHist <- 1
+    #}
 
     if(is.null(mvrPars)){
         covMat <- NULL

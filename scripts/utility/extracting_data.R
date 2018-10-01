@@ -4,7 +4,9 @@ setwd("~/Documents/Fluscape/serosolver")
 fluscapeWD <- "~/Documents/Fluscape"
 devtools::load_all()
 setwd(fluscapeWD)
-resolution <- "yearly"
+resolution <- "annual"
+buckets <- 12
+use_buckets <- 12/buckets
 firstYear <- 1968
 lastYear <- 2015
 
@@ -33,7 +35,7 @@ titreDat <- titreDat[,c("Visit","Virus","HI_Titer","Participant_ID")]
 titreDat[titreDat$Visit == "v1","Visit"] <- "V1"
 titreDat[titreDat$Visit == "20","Visit"] <- "V2"
 viruses <- unique(titreDat$Virus)
-colnames(titreDat) <- c("visit","virus","titre","individual")
+colnames(titreDat) <- c("visit","virus","titre","Participant_ID")
 v1 <- read.csv("fluscape/trunk/data/Participants_V1.csv",stringsAsFactors = FALSE)
 v2 <- read.csv("fluscape/trunk/data/Participants_V2.csv",stringsAsFactors = FALSE)
 v3 <- read.csv("fluscape/trunk/data/Participants_V3.csv",stringsAsFactors = FALSE)
@@ -76,7 +78,7 @@ birthDates <- apply(part_info, 1, function(x){
 birthDates <- as.Date(birthDates) 
 part_info$age <- as.numeric(round((maxTime - birthDates)/365))
 
-if(resolution == "yearly"){
+if(resolution == "annual"){
   part_info$DOB <- as.numeric(format(birthDates,"%Y"))
   part_info$V1 <-  as.numeric(format(part_info$V1, "%Y"))
   part_info$V2 <-  as.numeric(format(part_info$V2, "%Y"))
@@ -91,13 +93,13 @@ if(resolution == "yearly"){
 }
   
 part_info$ID <- PARTICIPANT_ID
-part_info <- part_info[part_info$ID %in% unique(titreDat$individual),]
+part_info <- part_info[part_info$ID %in% unique(titreDat$Participant_ID),]
 
 ##########################################
 ## Extract ages
 ages <- part_info[,c("ID","DOB")]
-ages <- ages[ages$ID %in% unique(titreDat$individual),]
-colnames(ages) <- c("individual","DOB")
+ages <- ages[ages$ID %in% unique(titreDat$Participant_ID),]
+colnames(ages) <- c("Participant_ID","DOB")
 ##########################################
 
 samplingTimes <- unique(c(as.matrix(part_info[,c("V1","V2","V3","V4")])))
@@ -106,22 +108,22 @@ samplingTimes <- samplingTimes[order(samplingTimes)]
 
 tmp <- part_info[,c("V1","V2","V3","V4","ID")]
 tmp <- reshape2::melt(tmp,id.vars="ID")
-colnames(tmp) <- c("individual","visit","samples")
+colnames(tmp) <- c("Participant_ID","visit","samples")
 tmp <- tmp[complete.cases(tmp),]
 
-titreDat$individual <- match(titreDat$individual, PARTICIPANT_ID)
-tmp$individual <- match(tmp$individual, PARTICIPANT_ID)
-ages$individual <- match(ages$individual,PARTICIPANT_ID)
+titreDat$individual <- match(titreDat$Participant_ID, PARTICIPANT_ID)
+tmp$individual <- match(tmp$Participant_ID, PARTICIPANT_ID)
+ages$individual <- match(ages$Participant_ID,PARTICIPANT_ID)
 
-finalDat <- merge(titreDat, tmp, by=c("visit","individual"))
+finalDat <- merge(titreDat, tmp, by=c("visit","individual","Participant_ID"))
 
 #### NEED TO FIX THIS - REMOVING DUPLICATED DATA FOR THE SAME SAMPLE TIME
 #finalDat <- finalDat[!duplicated(finalDat[,c("visit","individual","virus","samples")]),]
-finalDat <- finalDat[order(finalDat$indiv,finalDat$samples, finalDat$virus),]
+finalDat <- finalDat[order(finalDat$individual,finalDat$samples, finalDat$virus),]
 ids <- unique(finalDat$individual)
 ages$individual <- match(ages$individual, ids)
 finalDat$individual <- match(finalDat$individual,ids)
-finalDat <- finalDat[,c("individual","virus","samples","titre")]
+finalDat <- finalDat[,c("individual","virus","samples","titre","Participant_ID")]
 finalDat$virus <- fluscape_virus_key[finalDat$virus]
 
 
@@ -146,9 +148,12 @@ finalDat[!is.na(finalDat$titre),"titre"] <- log2(finalDat[!is.na(finalDat$titre)
 #####
 finalDat <- finalDat[complete.cases(finalDat),]
 finalDat <- plyr::ddply(finalDat,.(group,individual,virus,samples),function(x) cbind(x,"run"=1:nrow(x)))
-finalDat <- finalDat[order(finalDat$group,finalDat$individual,finalDat$samples,finalDat$run),c("group","individual","samples","virus","titre","run")]
+finalDat <- finalDat[order(finalDat$group,finalDat$individual,finalDat$samples,finalDat$run),c("group","individual","samples","virus","titre","run","Participant_ID")]
 
+finalDat$samples <- floor(finalDat$samples/use_buckets)
+finalDat$virus <- ceiling(finalDat$virus/use_buckets)
+ages$DOB <- ceiling(ages$DOB/use_buckets)
 
-setwd("~/Documents/Fluscape/serosolver")
-write.table(finalDat,"data/fluscape_data.csv",sep=",",row.names=FALSE)
-write.table(ages,"data/fluscape_ages.csv",sep=",",row.names=FALSE)
+setwd("~/net/home/serosolver/data_LSA")
+write.table(finalDat,paste0("fluscape_data_",buckets,".csv"),sep=",",row.names=FALSE)
+write.table(ages,paste0("fluscape_ages_",buckets,".csv"),sep=",",row.names=FALSE)

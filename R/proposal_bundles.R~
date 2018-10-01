@@ -1,0 +1,22 @@
+create_proposal_bundle <- function(parTab, proposal_ver, posterior_ver){
+    if(proposal_ver == 1){
+        bundle <- create_proposal_bundle_1(parTab)
+    } else if(proposal_ver == 2){
+        bundle <- create_proposal_bundle_2(parTab)
+    } else if(proposal_ver == 3){
+        bundle <- create_proposal_bundle_3(parTab)
+    } else {
+        bundle <- create_proposal_bundle_4(parTab)
+    }
+    
+    if(posterior_ver == 1){
+
+    }
+    
+    return(bundle)
+}
+
+create_proposal_bundle_1 <- function(parTab){
+    
+
+}

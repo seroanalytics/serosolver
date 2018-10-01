@@ -1,9 +1,13 @@
 #' @export
-infHistPrior <- function(pars, infHist){
+infHistPrior <- function(pars, infHist, ageMask){
+    N <- ncol(infHist) - ageMask  + 1
     a <- pars["alpha"]
     b <- pars["beta"]
-    N <- ncol(infHist)
-    priors <- log(apply(infHist, 1, function(x) dbb_prior(sum(x), N, a, b))  )
+    priors <- numeric(nrow(infHist))
+    for(i in 1:length(priors)){
+        priors[i] <- log(dbb_prior(sum(infHist[i,]),N[i],a,b))
+    }
+    return(priors)
 }
 
 #' @export
@@ -19,4 +23,15 @@ dbb_prior <- function(x, N, u, v){
 
 db <- function(x, a, b){
     x^(a-1)*(1-x^(b-1))/beta(a,b)
+}
+
+
+#' @export
+inf_mat_prior <- function(infHist, ageMask, alpha, beta1){
+    n_alive <- sapply(1:ncol(infHist), function(x) length(ageMask[ageMask <= x]))
+    lk <- 0
+    for(i in 1:length(n_alive)){
+        lk <- lk + log(beta(sum(infHist[,i]) + alpha, n_alive[i]- sum(infHist[,i]) + beta1)/beta(alpha, beta1))
+    }
+    return(lk)
 }

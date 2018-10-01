@@ -25,17 +25,23 @@ generate_all_plots <- function(outputDir, adaptive_period, chainFile, infHistFil
     ## Read in MCMC chains and discard burnin
     chain <- read.csv(chainFile)
     chain <- chain[chain$sampno > adaptive_period,]
-    infectionHistories <- data.table::fread(infHistFile,data.table=FALSE)
-    infectionHistories <- infectionHistories[infectionHistories$sampno > adaptive_period,]
+    infectionHistories <- data.table::fread(infHistFile)
+    #infectionHistories <- infectionHistories[infectionHistories$sampno > adaptive_period,]
+    infectionHistories <- subset(infectionHistories, sampno > adaptive_period)
     infectionHistories <- infectionHistories[complete.cases(infectionHistories),]
-
+    ## Attack rates for each year of circulation
+    xs <- min(strainIsolationTimes):max(strainIsolationTimes)
+    arP <- plot_attack_rates(infectionHistories, titreDat,ages,xs)
+    
     ## Thin infection history chain 
     sampnos <- unique(infectionHistories$sampno)
     sampnos <- sampnos[seq(1,length(sampnos),by=thin)]
 
     ## Take subset of individuals
-    infectionHistories <- infectionHistories[infectionHistories$sampno %in% sampnos,]
+                                        #infectionHistories <- infectionHistories[infectionHistories$sampno %in% sampnos,]
+    infectionHistories <- subset(infectionHistories, sampno %in% sampnos)
     individuals <- sample(unique(titreDat$individual),nIndiv)
+    infectionHistories <- subset(infectionHistories, i %in% individuals)
 
     ## Infection history plot
     p1 <- plot_infection_histories(chain, infectionHistories,titreDat, individuals, antigenicMap,
@@ -45,8 +51,7 @@ generate_all_plots <- function(outputDir, adaptive_period, chainFile, infHistFil
     
     xs <- min(strainIsolationTimes):max(strainIsolationTimes)
 
-    ## Attack rates for each year of circulation
-    arP <- plot_attack_rates(infectionHistories, titreDat,ages,xs)
+   
 
     ## Distribution of total number of infections by individual
     infP <- plot_number_infections(infectionHistories)
@@ -79,62 +84,103 @@ generate_quantiles <- function(x, sigF=3, qs=c(0.025,0.5,0.975),asText=TRUE){
 #' @param ages the data frame of ages for each individual, with columns for individual and DOB (date of birth)
 #' @param parTab the table controlling the parameters in the MCMC chain
 #' @param nsamp number of samples to take from posterior
+#' @param addResiduals if true, returns an extra output summarising residuals between the model prediction and data
+#' @param  mu_indices vector of integers. for random effects on boosting parameter, mu. If random mus are included in the parameter table, this vector specifies which mu to use for each circulation year. For example, if years 1970-1976 have unique boosting, then mu_indices should be c(1,2,3,4,5,6). If every 3 year block shares has a unique boosting parameter, then this should be c(1,1,1,2,2,2)
+#' @param measurement_indices default NULL
+#' @param for_res_plot TRUE/FALSE value. If using the output of this for plotting of residuals, returns the actual data points rather than summary statistics
 #' @return a list with the titre predictions (95% credible intervals, median and multivariate posterior mode) and the probabilities of infection for each individual in each epoch
 #' @export
-get_titre_predictions <- function(chain, infectionHistories, dat,
+get_titre_predictions <- function(chain, infectionHistories, titreDat,
                                   individuals, antigenicMap,
                                   ages, parTab,
-                                  nsamp=100){
-
+                                  nsamp=100, addResiduals=FALSE,
+                                  mu_indices=NULL,
+                                  measurement_indices=NULL,
+                                  for_res_plot=FALSE){
+    ## Need to align the iterations of the two MCMC chains
+    ## and choose some random samples
+    samps <- intersect(unique(infectionHistories$sampno), unique(chain$sampno))
+    chain <- chain[chain$sampno %in% samps,]
+    infectionHistories <- infectionHistories[infectionHistories$sampno %in% samps,]
+    
     ## Take subset of individuals
-    dat <- dat[dat$individual %in% individuals,]
-    infectionHistories <- infectionHistories[infectionHistories$individual %in% individuals,]
+    titreDat <- titreDat[titreDat$individual %in% individuals,]
+    infectionHistories <- infectionHistories[infectionHistories$i %in% individuals,]
     ages <- ages[ages$individual %in% individuals,]
 
-    ## Format the antigenic map to solve the model
-    antigenicMap <- antigenicMap[1:ncol(infectionHistories[,!(colnames(infectionHistories) %in% c("sampno","individual"))]),]
-    strainIsolationTimes <- unique(antigenicMap$inf_years)
-    antigenicMapMelted <- c(outputdmatrix.fromcoord(antigenicMap[,c("x_coord","y_coord")]))
+    titreDat$individual <- match(titreDat$individual, individuals)
+    infectionHistories$i <- match(infectionHistories$i, individuals)
+    ages$individual <- match(ages$individual, individuals)
     
-    nstrain <- length(unique(antigenicMap$inf_years))
 
+    ## Format the antigenic map to solve the model
+    strainIsolationTimes <- unique(antigenicMap$inf_years)
+    nstrain <- length(strainIsolationTimes)
+    n_indiv <- length(individuals)
+    
     ## Empty data structures to save output to
     allRes <- NULL
     infHistDens <- NULL
-    refTime <- max(dat$samples,na.rm=TRUE)
 
-    ## Need to align the iterations of the two MCMC chains
-    ## and choose some random samples
-    tmpSamp <- sample(intersect(unique(infectionHistories$sampno),unique(chain$sampno)),nsamp,replace=T)
+    refTime <- max(titreDat$samples,na.rm=TRUE)
+ 
+    
+    tmpSamp <- sample(samps, nsamp)
 
     ## See the function in posteriors.R
-    f <- create_model_func(parTab,dat,antigenicMap)
-    predicted_titres <- matrix(nrow=nrow(dat),ncol=nsamp)
-
-    ## For each sample, take values for theta and infection histories and simulate titres
-    for(i in 1:nsamp){
-        pars <- get_index_pars(chain, which(chain$sampno == tmpSamp[i]))
-        tmpInfHist <- as.matrix(infectionHistories[infectionHistories$sampno == tmpSamp[i], 1:(ncol(infectionHistories)-2)])
-        predicted_titres[,i] <- f(pars, tmpInfHist)
+    if(is.null(mu_indices)){
+        f <- create_post_func(parTab,titreDat,antigenicMap,NULL,100,measurement_indices=measurement_indices)
+    } else {
+        f <- create_post_func_mu(parTab,titreDat,antigenicMap,NULL,100, mu_indices=mu_indices, measurement_indices)
     }
+    predicted_titres <- residuals <- matrix(nrow=nrow(titreDat),ncol=nsamp)
+    samp_record <- numeric(nsamp)
+    ## For each sample, take values for theta and infection histories and simulate titres
 
+    for(i in 1:nsamp){
+        index <- tmpSamp[i]
+        pars <- get_index_pars(chain, which(chain$sampno == index))
+        tmpInfHist <- infectionHistories[infectionHistories$sampno == index,]
+        tmpInfHist <- as.matrix(Matrix::sparseMatrix(i=tmpInfHist$i, j=tmpInfHist$j, x=tmpInfHist$x,dims=c(n_indiv, nstrain)))
+        predicted_titres[,i] <- f(pars, tmpInfHist)
+        residuals[,i] <- titreDat$titre - floor(predicted_titres[,i])
+        samp_record[i] <- index
+    }
+    colnames(predicted_titres) <- tmpSamp
+    if(for_res_plot) return(list(residuals, samp_record, titreDat,predicted_titres))
+    residuals <- cbind(titreDat, residuals)
     ## Get 95% credible interval and means
     dat2 <- t(apply(predicted_titres,1, function(x) quantile(x, c(0.025,0.5,0.975))))
-
-    tmpInfChain <- infectionHistories[infectionHistories$sampno %in% tmpSamp,]
-
+    residuals <- t(apply(residuals,1, function(x) quantile(x, c(0.025,0.5,0.975))))
+    residuals <- cbind(titreDat, residuals)
+    ## Find multivariate posterior mode estimate from the chain
+    bestPars <- get_best_pars(chain)
+    bestI <- chain$sampno[which.max(chain$lnlike)]
+    bestInf <- infectionHistories[infectionHistories$sampno == bestI,]
+    bestInf <- as.matrix(Matrix::sparseMatrix(i=bestInf$i, j=bestInf$j, x=bestInf$x,dims=c(n_indiv, nstrain)))
+    ## Generate trajectory for best parameters
+    bestTraj <- f(bestPars, bestInf)
+    bestResiduals <- titreDat$titre - floor(bestTraj)
+    bestResiduals <- cbind(titreDat, bestResiduals, "sampno"=bestI)
+    dat2 <- as.data.frame(dat2)
+    colnames(dat2) <- c("lower","median","upper")
+    dat2$max <- bestTraj
+    dat2[dat2 < 0] <- 0
+    dat2 <- cbind(titreDat,dat2)
+    
+    tmpInfChain <- data.table(subset(infectionHistories, sampno %in% tmpSamp))
     ## Get infection history density for each individual and each epoch
-    infHistDens <- plyr::ddply(tmpInfChain, ~individual, function(x) colSums(x[,!(colnames(x) %in% c("individual","sampno"))])/nrow(x))
-    colnames(infHistDens) <- c("individual",strainIsolationTimes)
-    infHistDens <- reshape2::melt(infHistDens, id.vars="individual")
-    infHistDens$variable <- as.integer(as.character(infHistDens$variable))
+    data.table::setkey(tmpInfChain, "i","j")
+    infHistDens <- tmpInfChain[,list(V1=sum(x)/length(tmpSamp)),by=key(tmpInfChain)]
+    infHistDens$j <- strainIsolationTimes[infHistDens$j]
+    colnames(infHistDens) <- c("individual","variable","value")
     infHistFinal <- NULL
 
     ## For each individual, get density for the probability that an epoch was an infection time
     ## The point of the following loop is to mask the densities where infection epochs were either
     ## before an individual was born or after the time that a blood sample was taken
     for(indiv in unique(infHistDens$individual)){
-        sampleTimes <- unique(dat[dat$individual==indiv,"samples"])
+        sampleTimes <- unique(titreDat[titreDat$individual==indiv,"samples"])
         tmp <- NULL
         age <- ages[ages$individual == indiv, "DOB"]
         for(samp in sampleTimes){
@@ -144,26 +190,15 @@ get_titre_predictions <- function(chain, infectionHistories, dat,
             tmp <- rbind(tmp, indivInfHist)
         }
         infHistFinal <- rbind(infHistFinal, tmp)
-        
     }
-
-    ## Find multivariate posterior mode estimate from the chain
-    samps <- intersect(unique(infectionHistories$sampno), unique(chain$sampno))
-    tmpChain <- chain[chain$sampno %in% samps,]
-    tmpInfChain1 <- infectionHistories[infectionHistories$sampno %in% samps,]
-
-    bestPars <- get_best_pars(tmpChain)
-    bestI <- tmpChain$sampno[which.max(tmpChain$lnlike)]
-    bestInf <- as.matrix(tmpInfChain1[tmpInfChain1$sampno == bestI,1:(ncol(tmpInfChain1)-2)])
-
-    ## Generate trajectory for best parameters
-    bestTraj <- f(bestPars, bestInf)
-    dat2 <- as.data.frame(dat2)
-    colnames(dat2) <- c("lower","median","upper")
-    dat2$max <- bestTraj
-    dat2 <- cbind(dat,dat2)
-    
-    return(list("predictions"=dat2,"histories"=infHistFinal))
+    dat2$individual <- individuals[dat2$individual]
+    infHistFinal$individual <- individuals[infHistFinal$individual]
+    if(addResiduals){
+        result <- list("predictions"=dat2,"histories"=infHistFinal, "residuals"=residuals,"bestRes"=bestResiduals)
+    } else {
+        result <- list("predictions"=dat2,"histories"=infHistFinal)
+    }
+    return(result)
 }
 
 #' Plots infection histories and titre model fits
@@ -177,16 +212,27 @@ get_titre_predictions <- function(chain, infectionHistories, dat,
 #' @param ages the data frame of ages for each individual, with columns for individual and DOB (date of birth)
 #' @param parTab the table controlling the parameters in the MCMC chain
 #' @param nsamp number of samples to take from posterior
+#' @param mu_indices if random effects on boosting parameter, mu, this specifies which entry in the parameter table corresponds to which year. See \code{\link{run_MCMC}}
+#' @param measurement_indices default NULL, optional vector giving the index of `measurement_bias` that each strain uses the measurement shift from from. eg. if there's 6 circulation years and 3 strain clus
 #' @return a ggplot2 object
 #' @export
 plot_infection_histories <- function(chain, infectionHistories, dat,
                                      individuals, antigenicMap,ages,parTab,
-                                     nsamp=100){
-    tmp <- get_titre_predictions(chain, infectionHistories,dat, individuals, antigenicMap,ages, parTab, nsamp)
+                                     nsamp=100,
+                                     mu_indices=NULL,
+                                     measurement_indices=NULL){
+    individuals <- individuals[order(individuals)]
+
+    ## Generate titre predictions
+    tmp <- get_titre_predictions(chain, infectionHistories,dat, individuals,
+                                 antigenicMap,ages, parTab, nsamp, FALSE,mu_indices,
+                                 measurement_indices)
+
+    ## Use these titre predictions and summary statistics on infection histories
     dens <- tmp[[1]]
     infHist <- tmp[[2]]
     p <- ggplot(dens) + 
-        geom_line(aes(x=virus,y=max),col="blue") + 
+        geom_line(aes(x=virus,y=median),col="blue") +
         geom_ribbon(aes(x=virus,ymin=lower,ymax=upper),alpha=0.25,fill="blue") + 
         geom_vline(data=infHist,aes(xintercept=variable,alpha=value))+
         geom_point(data=dens,aes(x=virus,y=titre),col="red",size=0.5) + 
@@ -208,7 +254,6 @@ plot_posteriors <- function(chain, parTab,
                             savePlots=FALSE,
                             plotMCMC=TRUE,
                             saveLoc=""){
-
    
     ## Find best parameters and use only free parameters
     best_pars <- get_best_pars(chain)
@@ -267,6 +312,60 @@ plot_posteriors <- function(chain, parTab,
     return(list(results=allResults,corPlot=corP,densP=densP,traceP=traceP))    
 }
 
+#' Plot historical attack rates monthly
+#'
+#' Plots inferred historical attack rates from the MCMC output on infection histories for monthly. The main difference compared to the normal attack rate plot is that pointrange plots don't make as much sense at a very fine time resolution.
+#' @param infectionHistories the MCMC chain for infection histories
+#' @param dat the data frame of titre data
+#' @param ages the data frame of ages for each individual, with columns for individual and DOB (date of birth)
+#' @param yearRange vector of the first and last epoch of potential circulation
+#' @param ymax Numeric. the maximum y value to put on the axis
+#' @param buckets Integer. How many buckets of time is each year split into? ie. 12 for monthly data, 4 for quarterly etc.
+#' @return a ggplot2 object with the inferred attack rates for each potential epoch of circulation
+#' @export
+plot_attack_rates_monthly<- function(infectionHistories, dat, ages, yearRange,ymax=0.1, buckets=1){
+    ## Find inferred total number of infections from the MCMC output
+    ##tmp <- plyr::ddply(infectionHistories,~sampno,function(x) colSums(x[,1:(ncol(infectionHistories)-2)]))
+    ## Scale by number of individuals that were alive in each epoch
+    ## and generate quantiles
+    months <- 1:buckets
+    years <- range(floor(yearRange/buckets))
+    years <- years[1]:years[2]
+    labels <- c(sapply(years, function(x) paste0(months, "/",x)))
+    labels1 <- labels[1:length(yearRange)]
+    labels1 <- labels1[seq(1,length(labels1),by=buckets)]
+    yearBreak <- yearRange[seq(1,length(yearRange),by=buckets)]
+    n_alive <- sapply(yearRange, function(x) nrow(ages[ages$DOB <= x,]) )
+
+    ##quantiles <- apply(tmp[,2:ncol(tmp)],2, function(x) quantile(x,c(0.025,0.5,0.975)))
+    data.table::setkey(infectionHistories, "sampno","j")
+    tmp <- infectionHistories[,list(V1=sum(x)),by=key(infectionHistories)]
+    ##tmp <- ddply(infectionHistories, c("sampno","j"), function(x) sum(x$x))
+    quantiles <- ddply(tmp, ~j, function(x) quantile(x$V1, c(0.025,0.5,0.975)))
+    colnames(quantiles) <- c("j","lower","median","upper")
+    quantiles[c("lower","median","upper")] <- quantiles[c("lower","median","upper")]/n_alive
+    ##quantiles <- as.data.frame(t(quantiles))
+    quantiles$year <- yearRange[quantiles$j]
+    quantiles$taken <- quantiles$year %in% unique(dat$samples)
+
+    ## Colour depending on whether or not titres were taken in each year
+    quantiles$taken <- ifelse(quantiles$taken,"Yes","No")
+    
+    p <- ggplot(quantiles) + 
+        geom_ribbon(aes(x=year, ymin=lower,ymax=upper),fill="red",alpha=0.2) +
+        geom_line(aes(x=year,y=median),col="red")+
+        geom_point(aes(x=year,y=median),col="purple",size=0.5)+
+        scale_y_continuous(limits=c(-0.005,ymax),expand=c(0,0)) +
+        scale_x_continuous(expand=c(0,0),breaks=yearBreak,labels=labels1)+
+        theme_bw() +
+        theme(axis.text.x=element_text(angle=45,hjust=1))+
+        #theme(text=element_text(family="Arial")) +
+        ylab("Estimated monthly per capita incidence") +
+        xlab("Date")
+    return(p)   
+    
+}
+
 #' Plot historical attack rates
 #'
 #' Plots inferred historical attack rates from the MCMC output on infection histories
@@ -274,33 +373,38 @@ plot_posteriors <- function(chain, parTab,
 #' @param dat the data frame of titre data
 #' @param ages the data frame of ages for each individual, with columns for individual and DOB (date of birth)
 #' @param yearRange vector of the first and last epoch of potential circulation
+#' @param n_alive vector with the number of people alive in each year of circulation. Can be left as NULL, and ages will be used to infer this
+#' @param pointsize Numeric - how big should each point be?
+#' @param fatten Numeric - fatten parameter for ggplot pointrange
 #' @return a ggplot2 object with the inferred attack rates for each potential epoch of circulation
 #' @export
-plot_attack_rates <- function(infectionHistories, dat, ages, yearRange){
-    ## Maximum number of strains
-    nstrain <- ncol(infectionHistories[,!(infectionHistories$colnames %in% c("sampno","individual"))])
-
+plot_attack_rates <- function(infectionHistories, dat, ages, yearRange,n_alive=NULL,pointsize=1, fatten=1){
     ## Find inferred total number of infections from the MCMC output
-    tmp <- plyr::ddply(infectionHistories,~sampno,function(x) colSums(x[,1:(ncol(infectionHistories)-2)]))
-
+    ##tmp <- plyr::ddply(infectionHistories,~sampno,function(x) colSums(x[,1:(ncol(infectionHistories)-2)]))
     ## Scale by number of individuals that were alive in each epoch
     ## and generate quantiles
-    n_alive <- sapply(yearRange, function(x) nrow(ages[ages$DOB <= x,]) )
-    quantiles <- apply(tmp[,2:ncol(tmp)],2, function(x) quantile(x,c(0.025,0.5,0.975)))
-    quantiles <- as.data.frame(t(quantiles))
-    quantiles <- quantiles/n_alive
-    colnames(quantiles) <- c("lower","median","upper")
-    quantiles$year <- yearRange
+    if(is.null(n_alive)){
+        if(is.null(ages)) n_alive <- length(unique(dat$individual))
+        else n_alive <- sapply(yearRange, function(x) nrow(ages[ages$DOB <= x,]) )
+    }
+
+    ##quantiles <- apply(tmp[,2:ncol(tmp)],2, function(x) quantile(x,c(0.025,0.5,0.975)))
+    data.table::setkey(infectionHistories, "sampno","j")
+    tmp <- infectionHistories[,list(V1=sum(x)),by=key(infectionHistories)]
+    ##tmp <- ddply(infectionHistories, c("sampno","j"), function(x) sum(x$x))
+    quantiles <- ddply(tmp, ~j, function(x) quantile(x$V1, c(0.025,0.5,0.975)))
+    colnames(quantiles) <- c("j","lower","median","upper")
+    quantiles[c("lower","median","upper")] <- quantiles[c("lower","median","upper")]/n_alive
+    quantiles$year <- yearRange[quantiles$j]
     quantiles$taken <- quantiles$year %in% unique(dat$samples)
 
     ## Colour depending on whether or not titres were taken in each year
     quantiles$taken <- ifelse(quantiles$taken,"Yes","No")
     
     p <- ggplot(quantiles) + 
-        geom_pointrange(aes(x=year,y=median,ymin=lower,ymax=upper,col=taken)) +
-        scale_y_continuous(limits=c(0,1),expand=c(0,0)) +  
+        geom_pointrange(aes(x=year,y=median,ymin=lower,ymax=upper,col=taken),size=pointsize, fatten=fatten) +
+        scale_y_continuous(limits=c(-0.1,1),expand=c(0,0)) +  
         theme_bw() +
-        #theme(text=element_text(family="Arial")) +
         ylab("Estimated attack rate") +
         xlab("Year")
     return(p)   
@@ -309,18 +413,22 @@ plot_attack_rates <- function(infectionHistories, dat, ages, yearRange){
 
 #' @export
 plot_number_infections <- function(infChain){
-  n_infs <- ddply(infChain, ~individual, function(x) summary(rowSums(x[,1:(ncol(x)-2)])))
-  n_inf_chain <- ddply(infChain, c("individual","sampno"), function(x) rowSums(x[,1:(ncol(x)-2)]))
-  #n_hist_chain <- reshape2::dcast(n_inf_chain, sampno~individual, drop=TRUE)
-  indivHist <- plyr::ddply(n_inf_chain,.(individual),function(x) quantile(x$V1, c(0.025,0.5,0.975)))
-    #indivHist <- plyr::ddply(infectionHistories,.(individual),function(x) quantile(rowSums(x),c(0.025,0.5,0.975)))
+    ##n_infs <- ddply(infChain, ~individual, function(x) summary(rowSums(x[,1:(ncol(x)-2)])))
+    ##n_inf_chain <- ddply(infChain, c("individual","sampno"), function(x) rowSums(x[,1:(ncol(x)-2)]))
+    n_strain <- max(infChain$j)
+    data.table::setkey(infChain, "i","sampno")
+    n_inf_chain <- infChain[,list(V1=sum(x)),by=key(infChain)]
+    ##n_inf_chain <- ddply(infChain, c("sampno","i"), function(x) sum(x$x))
+    ##n_hist_chain <- reshape2::dcast(n_inf_chain, sampno~individual, drop=TRUE)
+    indivHist <- plyr::ddply(n_inf_chain,.(i),function(x) quantile(x$V1, c(0.025,0.5,0.975)))
+    ##indivHist <- plyr::ddply(infectionHistories,.(individual),function(x) quantile(rowSums(x),c(0.025,0.5,0.975)))
     colnames(indivHist) <- c("individual","lower","median","upper")
     indivHist <- indivHist[order(indivHist$median),]
     indivHist$individual <- 1:nrow(indivHist)
     p <- ggplot(indivHist) + 
         geom_pointrange(aes(x=individual,y=median,ymin=lower,ymax=upper),
                         size=0.1,shape=21,fatten=0.1) +
-        scale_y_continuous(limits=c(0,ncol(infChain)-2),expand=c(0,0)) +
+        scale_y_continuous(limits=c(0,n_strain),expand=c(0,0)) +
         scale_x_continuous(expand=c(0,0),breaks=seq(0,1100,by=100)) +
         xlab("Individual") +
         ylab("Estimated number of infections") +
@@ -361,47 +469,72 @@ plot_data <- function(data, infectionHistories, strainIsolationTimes, n_samps, s
 
 
 #' @export
-generate_cumulative_inf_plots <- function(infChainFile, burnin, nIndiv=10, realInfHist=NULL, startInf=NULL,
-                                          strainIsolationTimes){
-    infChain <- data.table::fread(infChainFile,data.table=FALSE)
+generate_cumulative_inf_plots <- function(infChainFile, burnin, indivs, realInfHist=NULL, startInf=NULL,
+                                          strainIsolationTimes, nsamp=100, ages=NULL, numberCol=1){
+    infChain <- data.table::fread(infChainFile)
+    firstSamp <- infChain[infChain$sampno == min(infChain$sampno),]
     infChain <- infChain[infChain$sampno >= burnin,]
-    indivs <- sample(unique(infChain$individual), nIndiv)
 
-    infChain1 <- infChain[infChain$individual %in% indivs,]
-    tmp <- plyr::ddply(infChain1, ~individual, function(x) colSums(x[,!(colnames(x) %in% c("individual","sampno"))])/nrow(x))
-    tmp <- reshape2::melt(tmp, id.vars="individual")
-    tmp$variable <- as.integer(tmp$variable)
+    samps <- sample(unique(infChain$sampno), nsamp)
+    infChain <- infChain[infChain$sampno %in% samps,]
+    
+    infChain1 <- infChain[infChain$i %in% indivs,]
+    data.table::setkey(infChain1, "i","j")
+    maxSampno <- length(unique(infChain1$sampno))
+    densities <- infChain1[,list(V1=sum(x)/maxSampno),by=key(infChain1)]
+    densities$j <- as.numeric(strainIsolationTimes[densities$j])
+    densities$i <- as.numeric(densities$i)
+    allCombos <- data.table(expand.grid(i=indivs,j=strainIsolationTimes))
+    allCombos$j <- as.numeric(allCombos$j)
+    allCombos$i <- as.numeric(allCombos$i)
+    allCombos <- data.table::fsetdiff(allCombos[,c("i","j")], densities[,c("i","j")])
+    allCombos$V1 <- 0
+    densities <- rbind(allCombos, densities)
 
     if(!is.null(realInfHist)){
         infHist1 <- as.data.frame(realInfHist)
-        infHist1$individual <- unique(infChain$individual)
-        infHist1 <- infHist1[infHist1$individual %in% indivs,]
-   
-        colnames(infHist1) <- c(strainIsolationTimes,"individual")
-        infHist1 <- reshape2::melt(infHist1, id.vars="individual")
+        infHist1 <- infHist1[indivs,]
+        infHist1$individual <- indivs
+        
+        colnames(infHist1) <- c(strainIsolationTimes,"i")
+        infHist1 <- reshape2::melt(infHist1, id.vars="i")
+        infHist1$variable <- as.numeric(as.character(infHist1$variable))                                                   
         infHist1 <- infHist1[infHist1$value == 1,]
     }
-
-    ## Generate data to plot the MCMC starting infection history
-    firstSamp <- infChain[infChain$sampno == 1,!(colnames(infChain) == "sampno")]
-    firstSamp <- reshape2::melt(firstSamp, id.vars="individual")
-    firstSamp <- firstSamp[firstSamp$value == 1,]
-
+    density_plot <- ggplot() +
+        geom_line(data=densities,aes(x=j,y=V1))
+    if(!is.null(realInfHist)){
+        density_plot <- density_plot +
+            geom_vline(data=infHist1,aes(xintercept=variable),col="red")
+    }
+    density_plot <- density_plot + 
+        facet_wrap(~i) +
+        xlab("Year") +
+        ylab("Density") +
+        theme_bw()
+    
     ## Generate lower, upper and median cumulative infection histories from the
     ## MCMC chain
-    histProfiles <- t(apply(infChain, 1, function(x) cumsum(x[1:(ncol(infChain)-2)])))
-    histProfiles <- as.data.frame(cbind(histProfiles, "individual"=infChain[,c("individual")]))
-
-    histProfiles_lower <- ddply(histProfiles, ~individual, function(x) apply(x, 2, function(y) quantile(y, c(0.025))))
-    histProfiles_lower <- reshape2::melt(histProfiles_lower, id.vars="individual")
+    tmpInfChain <- infChain[infChain$i %in% indivs,]
+    histProfiles <- ddply(tmpInfChain, .(i, sampno), function(x){
+        empty <- numeric(length(strainIsolationTimes))
+        empty[x$j] <- 1
+        cumsum(empty)
+    })
+    
+    
+    histProfiles <- histProfiles[,colnames(histProfiles) != "sampno"]
+    colnames(histProfiles) <- c("i",strainIsolationTimes)
+    histProfiles_lower <- ddply(histProfiles, ~i, function(x) apply(x, 2, function(y) quantile(y, c(0.025))))
+    histProfiles_lower <- reshape2::melt(histProfiles_lower, id.vars="i")
     colnames(histProfiles_lower) <- c("individual","variable","lower")
 
-    histProfiles_upper <- ddply(histProfiles, ~individual, function(x) apply(x, 2, function(y) quantile(y, c(0.975))))
-    histProfiles_upper <- reshape2::melt(histProfiles_upper, id.vars="individual")
+    histProfiles_upper <- ddply(histProfiles, ~i, function(x) apply(x, 2, function(y) quantile(y, c(0.975))))
+    histProfiles_upper <- reshape2::melt(histProfiles_upper, id.vars="i")
     colnames(histProfiles_upper) <- c("individual","variable","upper")
 
-    histProfiles_median <- ddply(histProfiles, ~individual, function(x) apply(x, 2, function(y) quantile(y, c(0.5))))
-    histProfiles_median <- reshape2::melt(histProfiles_median, id.vars="individual")
+    histProfiles_median <- ddply(histProfiles, ~i, function(x) apply(x, 2, function(y) quantile(y, c(0.5))))
+    histProfiles_median <- reshape2::melt(histProfiles_median, id.vars="i")
     colnames(histProfiles_median) <- c("individual","variable","median")
 
     ## Merge these quantiles into a data frame for plotting
@@ -413,8 +546,8 @@ generate_cumulative_inf_plots <- function(infChainFile, burnin, nIndiv=10, realI
         realHistProfiles <- as.data.frame(t(apply(realInfHist, 1, cumsum)))
         colnames(realHistProfiles) <- strainIsolationTimes
         
-        realHistProfiles$individual <- unique(infChain$individual)
-        realHistProfiles <- realHistProfiles[realHistProfiles$individual %in% indivs,]
+        realHistProfiles <- realHistProfiles[indivs,]
+        realHistProfiles$individual <- indivs
         realHistProfiles <- reshape2::melt(realHistProfiles,id.vars="individual")
     }
 
@@ -422,22 +555,33 @@ generate_cumulative_inf_plots <- function(infChainFile, burnin, nIndiv=10, realI
     if(!is.null(startInf)){
         startHistProfiles <- as.data.frame(t(apply(startInf, 1, cumsum)))
         colnames(startHistProfiles) <- strainIsolationTimes
-        startHistProfiles$individual <- unique(infChain$individual)
-        startHistProfiles <- startHistProfiles[startHistProfiles$individual %in% indivs,]
+        startHistProfiles <- startHistProfiles[indivs,]
+        startHistProfiles$individual <- indivs
         startHistProfiles <- reshape2::melt(startHistProfiles,id.vars="individual")
     }
     
     p1 <- ggplot(quantHist[quantHist$individual %in% indivs,]) + 
-        geom_line(aes(x=as.integer(variable),y=median)) + 
-        geom_ribbon(aes(x=as.integer(variable),ymin=lower,ymax=upper), alpha=0.2)
+        geom_line(aes(x=as.integer(as.character(variable)),y=median)) + 
+        geom_ribbon(aes(x=as.integer(as.character(variable)),ymin=lower,ymax=upper), alpha=0.2)
+       
     if(!is.null(realInfHist)){
         p1 <- p1 +         
-            geom_line(data=realHistProfiles[realHistProfiles$individual %in% indivs,],aes(x=as.integer(variable),y=value), col="blue")
+            geom_line(data=realHistProfiles[realHistProfiles$individual %in% indivs,],aes(x=as.integer(as.character(variable)),y=value), col="blue")
     }
     if(!is.null(startInf)){
         p1 <- p1 + 
-            geom_line(data=startHistProfiles[startHistProfiles$individual %in% indivs,],aes(x=as.integer(variable),y=value), col="red")
+            geom_line(data=startHistProfiles[startHistProfiles$individual %in% indivs,],aes(x=as.integer(as.character(variable)),y=value), col="red")
     }
-    p1 <- p1 + facet_wrap(~individual, scales="free_y") + theme_bw() + ylab("Cumulative infections") + xlab("Circulation time")
-    return(p1)
+
+    if(!is.null(ages)){
+        tmpAge <- ages[ages$individual %in% indivs,]
+        ageMask <- create_age_mask(tmpAge, strainIsolationTimes,length(indivs))
+        ageDat <- data.frame(j=ageMask,individual=indivs[order(indivs)])
+        p1 <- p1 + geom_vline(data=ageDat,aes(xintercept=strainIsolationTimes[j]),col="purple",linetype="dashed")
+    }
+    p1 <- p1 + facet_wrap(~individual, ncol=numberCol) +
+        theme_bw() +
+        ylab("Cumulative infections") +
+        xlab("Circulation time")
+    return(list(p1,density_plot))
 }

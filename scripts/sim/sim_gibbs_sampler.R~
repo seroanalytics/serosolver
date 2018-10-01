@@ -1,0 +1,95 @@
+library(ggplot2)
+library(coda)
+library(plyr)
+library(reshape2)
+library(data.table)
+
+## Set working directory and load code
+setwd("~/Documents/Fluscape/serosolver")
+devtools::load_all()
+
+filename <- "testing/full_sim_quarterly"
+
+## How many individuals to simulate?
+n_indiv <- 1000
+buckets <- 4
+parTab <- read.csv("~/Documents/Fluscape/serosolver/inputs/parTab_lambda.csv",stringsAsFactors=FALSE)
+parTab <- parTab[parTab$names != "lambda",]
+parTab[parTab$names == "wane","values"] <- 1/buckets
+parTab[parTab$names %in% c("alpha","beta"),"values"] <- c(1,1)
+
+
+samplingTimes <- seq(2010*buckets, 2015*buckets, by=1)
+yearMin <- 1968*buckets
+yearMax <- 2015*buckets
+ageMin <- 6*buckets
+ageMax <- 75*buckets
+
+
+antigenicMap <- read.csv("~/Documents/Fluscape/fluscape/trunk/data/Fonville2014AxMapPositionsApprox.csv",stringsAsFactors=FALSE)
+fit_dat <- generate_antigenic_map(antigenicMap, buckets)
+fit_dat <- fit_dat[fit_dat$inf_years >= yearMin & fit_dat$inf_years <= yearMax,]
+strainIsolationTimes <- unique(fit_dat$inf_years)
+
+dat <- simulate_data(parTab, 1, n_indiv, buckets, strainIsolationTimes,
+                     samplingTimes, 2, antigenicMap=fit_dat, 0, 0, ageMin,ageMax,
+                     simInfPars=c("mean"=0.15,"sd"=0.5,"bigMean"=0.5,"logSD"=1),
+                     useSIR=TRUE, pInf = NULL, useSpline=FALSE)
+
+## If we want to use a subset of isolated strains, uncomment the line below
+viruses <- c(1968, 1969, 1972, 1975, 1977, 1979, 1982, 1985, 1987, 
+             1989, 1992, 1995, 1998, 2000, 2002, 2004, 2007, 2009, 
+             2010, 2012, 2014)*buckets
+
+titreDat <- dat[[1]]
+titreDat <- titreDat[titreDat$virus %in% viruses,]
+infectionHistories <- infHist <- dat[[2]]
+ages <- dat[[3]]
+AR <- dat[[4]]
+
+startInf <- setup_infection_histories_new(titreDat, ages, unique(fit_dat$inf_years), space=5,titre_cutoff=2)
+ageMask <- create_age_mask(ages, strainIsolationTimes,n_indiv)
+
+startTab <- parTab
+for(i in 1:nrow(startTab)){
+  if(startTab[i,"fixed"] == 0){
+    startTab[i,"values"] <- runif(1,startTab[i,"lower_start"], 
+                                  startTab[i,"upper_start"])
+  }
+}
+
+mcmcPars <- c("iterations"=500000,"popt"=0.44,"popt_hist"=0.44,"opt_freq"=2000,"thin"=10,"adaptive_period"=100000,
+              "save_block"=1000,"thin2"=100,"histSampleProb"=1,"switch_sample"=2, "burnin"=0, 
+              "nInfs"=floor(ncol(infectionHistories)/buckets), "moveSize"=2*buckets, "histProposal"=6, "histOpt"=0,"n_par"=10, "swapPropn"=0.5)
+
+res <- run_MCMC(startTab, titreDat, mcmcPars, filename=filename,
+                 create_post_func, NULL,NULL,version=1, 0.2, 
+                 fit_dat, ages=ages, 
+                 startInfHist=startInf)
+beepr::beep(4)
+
+chain <- read.csv(res$chain_file)
+chain <- chain[chain$sampno >= (mcmcPars["adaptive_period"]+mcmcPars["burnin"]),]
+
+infChain <- data.table::fread(res$history_file)
+infChain <- infChain[infChain$sampno >= (mcmcPars["adaptive_period"]+mcmcPars["burnin"]+10000),]
+infChain <- infChain[infChain$sampno > 10000,]
+n_alive <- sapply(1:length(strainIsolationTimes), function(x) length(ageMask[ageMask<=x]))
+inf_prop <- colSums(infectionHistories)/n_alive
+inf_prop <- data.frame(AR=inf_prop,year=strainIsolationTimes)
+AR_p <- plot_attack_rates(infChain, titreDat, ages, seq(yearMin, yearMax, by=1)) + 
+  geom_point(data=AR,aes(x=year,y=AR)) + 
+  geom_point(data=inf_prop,aes(x=year,y=AR),col="purple") + scale_y_continuous(expand=c(0,0),limits=c(0,1))
+
+indivs <- sample(n_indiv, 10)
+sampd <- sample(n_indiv,20)
+infChain <- data.table::fread(res$history_file)
+infChain <- infChain[infChain$sampno >= (mcmcPars["adaptive_period"]+mcmcPars["burnin"]),]
+n_strain <- max(infChain$j)
+data.table::setkey(infChain, "j","sampno")
+n_inf_chain <- infChain[,list(V1=sum(x)),by=key(infChain)]
+
+inf_chain_p <- ggplot(n_inf_chain) + geom_line(aes(x=sampno,y=V1)) + facet_wrap(~j)
+
+ps <- generate_cumulative_inf_plots(res$history_file, 0, 
+                                    sampd, infHist, startInf,strainIsolationTimes, 100,ages,numberCol=4)
