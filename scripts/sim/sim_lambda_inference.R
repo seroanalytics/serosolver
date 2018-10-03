@@ -3,6 +3,7 @@ library(coda)
 library(plyr)
 library(reshape2)
 library(data.table)
+library(beepr)
 
 ## Set working directory and load code
 setwd("~/Documents/Fluscape/serosolver")
@@ -124,6 +125,7 @@ mvrPars <- list(covMat, scale, w)
 ageMask <- create_age_mask(ages, strainIsolationTimes,n_indiv)
 
 ## Run the MCMC using the inputs generated above
+lambdas_start<-vector('numeric',ncol(startInf))
 for(year in 1:ncol(startInf)){ lambdas_start[year] <- (sum(startInf[,year])/sum(ages$DOB <= strainIsolationTimes[year]))}
 startTab[startTab$names == "lambda","values"] <- lambdas_start
 
