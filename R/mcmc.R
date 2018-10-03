@@ -164,7 +164,7 @@ run_MCMC <- function(parTab,
         proposal_gibbs <- protect(CREATE_POSTERIOR_FUNC(parTab, data,
                                                         antigenicMap,
                                                         PRIOR_FUNC, 99,
-                                                        ageMask,mu_indices=mu_indices,
+                                                        ageMask,strainMask,mu_indices=mu_indices,
                                                         measurement_indices=measurement_indices,
                                                         temp=temp,
                                                         ...))
@@ -273,18 +273,18 @@ run_MCMC <- function(parTab,
             
             ## Which infection history proposal to use?
             if(histProposal==1){
-                newInfectionHistories <- infection_history_symmetric(infectionHistories, indivSubSample, ageMask, moveSizes, nInfs_vec, randNs)
+                newInfectionHistories <- infection_history_symmetric(infectionHistories, indivSubSample, ageMask,strainMask, moveSizes, nInfs_vec, randNs)
             } else if(histProposal == 2){
-                newInfectionHistories <- infection_history_betabinom(infectionHistories, indivSubSample, ageMask, moveSizes, alpha, beta)
+                newInfectionHistories <- infection_history_betabinom(infectionHistories, indivSubSample, ageMask,strainMask, moveSizes, alpha, beta)
                 acceptance <- newInfectionHistories[[2]]
                 newInfectionHistories <- newInfectionHistories[[1]]
             } else if(histProposal==3){
                 newInfectionHistories <- inf_hist_prop_cpp(infectionHistories,indivSubSample,ageMask,strainMask,
                                                            moveSizes, nInfs_vec, alpha,beta,randNs)
             } else if(histProposal==4){
-                newInfectionHistories <- infection_history_proposal(infectionHistories, indivSubSample, strainIsolationTimes, ageMask,nInfs_vec)
+                newInfectionHistories <- infection_history_proposal(infectionHistories, indivSubSample, strainIsolationTimes, ageMask,strainMask,nInfs_vec)
             } else if(histProposal==5){
-                newInfectionHistories <- inf_hist_prob_lambda(infectionHistories, indivSubSample,ageMask,nInfs_vec, current_pars[lambda_indices])
+                newInfectionHistories <- inf_hist_prob_lambda(infectionHistories, indivSubSample,ageMask,strainMask,nInfs_vec, current_pars[lambda_indices])
             } else {
                 newInfectionHistories <- proposal_gibbs(current_pars, infectionHistories, alpha, beta, histSampleProb, nInfs,swapPropn,moveSize)
             }
