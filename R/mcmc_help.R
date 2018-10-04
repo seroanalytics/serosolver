@@ -66,18 +66,18 @@ mvr_proposal <- function(values, fixed, covMat, covMat0 = NULL, useLog=FALSE, be
 }
 
 #' @export
-inf_hist_prob_lambda <- function(newInf, sampledIndivs, ageMask, nInfs, lambdas){
+inf_hist_prob_lambda <- function(newInf, sampledIndivs, ageMask,strainMask, nInfs, lambdas){
     #ks <- rpois(length(sampledIndivs),nInfs)
     for(i in 1:length(sampledIndivs)){
         indiv <- sampledIndivs[i]
-        x <- newInf[indiv, ageMask[indiv]:ncol(newInf)]
+        x <- newInf[indiv, ageMask[indiv]:strainMask[indiv]]
         probs <- lambdas[ageMask[indiv]:length(lambdas)]
         maxI <- length(x)
         #k <- min(maxI, max(ks[i],1))
         #locs <- sample(length(x), k)
         #x[locs] <- rbinom(rep(1, k),1,probs[locs])
         x <- rbinom(rep(1,maxI), 1, probs)
-        newInf[indiv,ageMask[indiv]:ncol(newInf)]=x
+        newInf[indiv,ageMask[indiv]:strainMask[indiv]]=x
     }
     return(newInf)
         
@@ -96,7 +96,7 @@ inf_hist_prob_lambda <- function(newInf, sampledIndivs, ageMask, nInfs, lambdas)
 #' @param randNs pre-computed random numbers (0-1) for each individual, deciding whether to do a flip or swap
 #' @return a matrix of infection histories matching the input newInfHist
 #' @export
-infection_history_symmetric <- function(newInfHist, sampledIndivs, ageMask, moveSizes, nInfs, randNs){
+infection_history_symmetric <- function(newInfHist, sampledIndivs, ageMask, strainMask,moveSizes, nInfs, randNs){
     newInf <- newInfHist
     ks <- rpois(length(sampledIndivs),nInfs)
     ## For each individual
@@ -516,12 +516,14 @@ save_infHist_to_disk <- function(infHist, file, sampno, append=TRUE,colNames=FAL
 #' @param ageMask the vector of indices for each individual specifiying which index of strainIsolationTimes is the first strain each individual could have seen
 #' @return a new matrix matching newInfectionHistories in dimensions with proposed moves
 #' @export
-infection_history_proposal <-function(newInfectionHistories,sampledIndivs,strainIsolationTimes,ageMask, nInfs){
+infection_history_proposal <-function(newInfectionHistories,sampledIndivs,strainIsolationTimes,ageMask, strainMask,nInfs){
     newInf <- newInfectionHistories
     #ks <- rpois(length(sampledIndivs), nInfs)
     for(indiv in sampledIndivs){ # Resample subset of individuals
         rand1=runif(1)
-        x=newInfectionHistories[indiv,ageMask[indiv]:length(strainIsolationTimes)] # Only resample years individual was alive
+       #x=newInfectionHistories[indiv,ageMask[indiv]:length(strainIsolationTimes)] # Only resample years individual was alive
+        x=newInfectionHistories[indiv,ageMask[indiv]:strainMask[indiv]] # Only resample years individual was alive
+        
         maxI <- length(x)
         ## Remove infection
         if(rand1<1/3){
@@ -557,7 +559,7 @@ infection_history_proposal <-function(newInfectionHistories,sampledIndivs,strain
                 #x[sample(ninfecID,1)]=1
             }
         }
-        newInf[indiv,ageMask[indiv]:length(strainIsolationTimes)]=x # Only =1 if individual was alive
+        newInf[indiv,ageMask[indiv]:strainMask[indiv]]=x # Only =1 if individual was alive
     } # end loop over individuals
     return(newInf)
 }
@@ -587,4 +589,4 @@ lambda_proposal <- function(current_pars, infHist, years, js, alpha, beta, n_ali
     ratio <- back - forward
     return(list(proposed, ratio))    
 }
->>>>>>> jameshaybranch
+#>>>>>>> jameshaybranch
