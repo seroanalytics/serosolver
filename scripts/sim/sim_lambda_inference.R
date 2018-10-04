@@ -68,8 +68,8 @@ parTab[parTab$names %in% c("alpha","beta"),"values"] <- c(1,1)
 ## Simulate some fake data
 dat <- simulate_data(parTab, 1, n_indiv, buckets,strainIsolationTimes,
                      samplingTimes, 2, antigenicMap=fit_dat, 0, 0, 75*buckets,75*buckets,
-                     simInfPars=c("mean"=0.15,"sd"=0.5,"bigMean"=0.5,"logSD"=1),
-                     useSIR=TRUE, attackRates = NULL, useSpline=FALSE)
+                     simInfPars=c("mean"=0.15,"sd"=0.5,"bigMean"=0.5,"logSD"=1,"constant"=0),
+                     useSIR=FALSE, attackRates = NULL, useSpline=FALSE)
 
 ## If we want to use a subset of isolated strains, uncomment the line below
 viruses <- c(1968, 1969, 1972, 1975, 1977, 1979, 1982, 1985, 1987, 
@@ -146,7 +146,7 @@ chain <- chain[chain$sampno >= (mcmcPars["adaptive_period"]+mcmcPars["burnin"]),
 plot(coda::as.mcmc(chain))
 infChain <- data.table::fread(res$history_file)
 infChain <- infChain[infChain$sampno >= (mcmcPars["adaptive_period"]+mcmcPars["burnin"]),]
-plot_infection_histories(chain, infChain, titreDat, sample(1:n_indiv, 10), fit_dat, ages,parTab1,100)
+plot_infection_histories(chain, infChain, titreDat, sample(1:n_indiv, 10), fit_dat, ages,parTab,100)
 
 y <- get_titre_predictions(chain, infChain, titreDat, 1:n_indiv, fit_dat, ages,parTab,100, TRUE)
 p1 <- ggplot(y[[3]]) + geom_histogram(aes(x=`50%`),binwidth=1) + 
