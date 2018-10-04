@@ -39,29 +39,11 @@ NumericVector infection_model_indiv(NumericVector theta, // Parameter vector
   double wane = theta["wane"];
   //double boost_limit = theta["boost_limit"];
   //double gradient = theta["gradient"];
-  double boost=0;
-
+  //double boost=0;
+  int waneType = theta["wane_type"]; //Which waning function to use, 0 is linear decrease, 1 is piecewise linear
+  
   // Time since infection
   double time; 
-  
-  // How many parameters are there
-  int n_theta = theta.size();
-  
-  // Which function type should we use
-  // 0 is linear decrease
-  // 1 is piecewise linear
-  int wane_type;
-  
-  // If there are 10 parameters then use the linear decrease
-  if(n_theta == 10)   wane_type = 0;
-  else  wane_type = 1; // If there are 12 then use the piecewise linear and declare the additional parameters
-  
-  // if(wane_type==1){
-  //   double kappa = theta["kappa"];
-  //   double t_change = theta["t_change"];
-  //   double wane_2 = -kappa*wane;
-  //   double wane_2_val; // Interaction term
-  // }
   
   // We will need to loop over each strain that was tested
   int n_samples = measurementMapIndices.size(); // Number of time points sampled
@@ -90,7 +72,7 @@ NumericVector infection_model_indiv(NumericVector theta, // Parameter vector
   time = (samplingTime - circulation_time);
   
   // If not linear
-  if(wane_type == 1){
+  if(waneType == 1){
     double kappa = theta["kappa"];
     double t_change = theta["t_change"];
     double wane_2 = -kappa*wane;
@@ -131,7 +113,7 @@ NumericVector infection_model_indiv(NumericVector theta, // Parameter vector
     time = (samplingTime - circulation_time);
     
     // If not linear
-    if(wane_type == 1){
+    if(waneType == 1){
       double kappa = theta["kappa"];
       double t_change = theta["t_change"];
       double wane_2 = -kappa*wane;
@@ -194,8 +176,7 @@ NumericVector titre_data_individual(NumericVector theta,
 				    IntegerVector measuredMapIndices, 
 				    NumericVector antigenicMapLong, 
 				    NumericVector antigenicMapShort,
-				    int numberStrains
-				    ){
+				    int numberStrains){
   int numberSamples = samplingTimes.size();
   int numberMeasuredStrains = measuredMapIndices.size();
   NumericVector titres(numberMeasuredStrains);
@@ -231,7 +212,8 @@ NumericVector titre_data_group(NumericVector theta,
 			       IntegerVector indicesSamples, // Split the sample times and runs for each individual
 			       IntegerVector measuredMapIndices, // For each titre measurement, corresponding entry in antigenic map
 			       NumericVector antigenicMapLong, 
-			       NumericVector antigenicMapShort){
+			       NumericVector antigenicMapShort
+			       ){
   int n = infectionHistories.nrow();
   int n_strains = infectionHistories.ncol();
 
@@ -307,7 +289,7 @@ double likelihood_data_individual(NumericVector theta,
 				  NumericVector antigenicMapLong, 
 				  NumericVector antigenicMapShort,
 				  int numberStrains,
-				  NumericVector data
+				  NumericVector data                         
 				  ){
   int numberSamples = samplingTimes.size();
   int numberMeasuredStrains = measuredMapIndices.size();

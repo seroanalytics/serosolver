@@ -73,18 +73,28 @@ run_MCMC <- function(parTab,
     message(cat("Infection history proposal version: ", histPropPrint,sep="\t"))
     
     ## Extract parameter settings
+    par_names <- as.character(parTab$names) # Parameter names
+    
+    ## Extract waneType
+    waneType <- parTab$values[which(par_names=="wane_type")]
+    if(is.na(waneType)) stop('wane_type is missing') ## If user has not entered wane_type in parTab
+    
+    ## Check that additional parameters are present
+    if(waneType==1&(!("kappa"%in%par_names)|!("t_change"%in%par_names))) stop('Parameters needed for wane_type=1 (piecewise linear) are missing')
+    
+    ## If wane_type=0 but kappa and t_change are in parTab, fix them and set to 0
+    if(waneType==0&(("kappa"%in%par_names)|("t_change"%in%par_names))) stop('wane_type=0 but additional parameters needed for wane_type=1 (piecewise linear) have been included in parTab')
+    
     param_length <- nrow(parTab)
     unfixed_pars <- which(parTab$fixed == 0) # Indices of free parameters
     unfixed_par_length <- nrow(parTab[parTab$fixed== 0,]) # How many free parameters?
     current_pars <- parTab$values # Starting parameters
-    par_names <- as.character(parTab$names) # Parameter names
     ## Parameter constraints
     lower_bounds <- parTab$lower_bound # Parameters cannot step below this
     upper_bounds <- parTab$upper_bound # Parameters cannot step above this
     steps <- parTab$steps # How far to step on unit scale to begin with?
     fixed <- parTab$fixed # Index which parameters are fixed
-
-
+    
     ## If using lambda terms, pull their indices out of the parameter table
     lambda_indices <- NULL
     if("lambda" %in% par_names){
