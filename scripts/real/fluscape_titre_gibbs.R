@@ -11,17 +11,20 @@ library(data.table)
 
 ## Set working directory and load code
 setwd("~/Documents/Fluscape/serosolver")
-devtools::load_all()
+#devtools::load_all()
 
 ## How many individuals to fit to?
-n_indiv <-1000
-buckets <- 1
+n_indiv <- 250
+
 ## The general output filename
-filename <- "chains/fluscape_1000_gibbs"
+filename <- "chains/fluscape_titre_dependent_2"
+buckets <- 1
 
 ## Read in parameter table to simulate from and change waning rate and alpha/beta if necessary
-parTab <- read.csv("~/Documents/Fluscape/serosolver/inputs/parTab.csv",stringsAsFactors=FALSE)
+parTab <- read.csv("~/Documents/Fluscape/serosolver/inputs/parTab_titre.csv",stringsAsFactors=FALSE)
 parTab[parTab$names %in% c("alpha","beta"),"values"] <- c(1,1)
+parTab[parTab$names == "boost_limit","values"] <- 2
+parTab[parTab$names == "gradient","values"] <- 0.1
 
 ## Read in and generate the antigenic map to read strain relationships from
 antigenicMap <- read.csv("~/Documents/Fluscape/fluscape/trunk/data/Fonville2014AxMapPositionsApprox.csv",stringsAsFactors=FALSE)
@@ -39,9 +42,8 @@ fluscapeAges <- fluscapeAges[-na_indiv,]
 ## Take random subset of individuals
 indivs <- sample(unique(fluscapeDat$individual),n_indiv)
 indivs <- indivs[order(indivs)]
-#indivs <- fluscapeAges[fluscapeAges$DOB >= 1990,"individual"]
 #indivs <- unique(fluscapeAges$individual)
-n_indiv <- length(indivs)
+
 titreDat <- fluscapeDat[fluscapeDat$individual %in% indivs,]
 ages <- fluscapeAges[fluscapeAges$individual %in% indivs,]
 titreDat$individual <- match(titreDat$individual, indivs)
@@ -69,13 +71,24 @@ ageMask <- create_age_mask(ages, strainIsolationTimes,n_indiv)
 #########################
 ## RUN MCMC
 #########################
-mcmcPars <- c("iterations"=100000,"popt"=0.44,"popt_hist"=0.44,"opt_freq"=2000,"thin"=10,"adaptive_period"=50000,
+mcmcPars <- c("iterations"=50000,"popt"=0.44,"popt_hist"=0.44,"opt_freq"=2000,"thin"=1,"adaptive_period"=20000,
               "save_block"=1000,"thin2"=100,"histSampleProb"=0.5,"switch_sample"=2, "burnin"=0, 
-              "nInfs"=floor(ncol(startInf)/2), "moveSize"=2*buckets, "histProposal"=6, "histOpt"=0,"n_par"=10, "swapPropn"=0.5,
-              "histSwitchProb"=0.2,"yearSwapPropn"=0.75)
+              "nInfs"=floor(ncol(startInf)/4), "moveSize"=3*buckets, "histProposal"=6, "histOpt"=0,"n_par"=10, "swapPropn"=0.5)
+prior <- function(pars){
+  mu <- pars[1] + pars[2]
+  switch_lim <- pars[7]
+  gamma <- pars[8]
+  if(gamma > 0 & mu*gamma >(mu-1)/switch_lim){
+    #message(cat("Gamma: ", gamma,sep="\t"))
+    return(-Inf)
+  }
+  if(gamma < 0 & mu*(-gamma) > (mu-1)/switch_lim) return(-Inf)
+  return(0)
+}
 
+startTab[startTab$names=="gradient","values"] <- 0.05
 res <- run_MCMC(startTab, titreDat, mcmcPars, filename=filename,
-                create_post_func, NULL,NULL,version=1, 0.2, 
+                create_post_func, NULL,PRIOR_FUNC=prior,version=1, 0.2, 
                 fit_dat, ages=ages, 
                 startInfHist=startInf,n_alive=NULL)
 beepr::beep(4)
@@ -105,10 +118,6 @@ data.table::setkey(infChain, "j","sampno")
 n_inf_chain <- infChain[,list(V1=sum(x)),by=key(infChain)]
 
 inf_chain_p <- ggplot(n_inf_chain) + geom_line(aes(x=sampno,y=V1)) + facet_wrap(~j)
-
-wow <- data.frame(n_inf_chain)
-wow1 <- dcast(wow, sampno~j)
-wow1[is.na(wow1)] <- 0
 
 ## Generate cumulative infection history plots for a random subset of individuals
 ## based on data and posterior

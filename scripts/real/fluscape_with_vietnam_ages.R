@@ -11,13 +11,12 @@ library(data.table)
 
 ## Set working directory and load code
 setwd("~/Documents/Fluscape/serosolver")
-devtools::load_all()
+#devtools::load_all()
 
 ## How many individuals to fit to?
-n_indiv <-1000
 buckets <- 1
 ## The general output filename
-filename <- "chains/fluscape_1000_gibbs"
+filename <- "chains/fluscape_vietnam_ages"
 
 ## Read in parameter table to simulate from and change waning rate and alpha/beta if necessary
 parTab <- read.csv("~/Documents/Fluscape/serosolver/inputs/parTab.csv",stringsAsFactors=FALSE)
@@ -30,14 +29,53 @@ strainIsolationTimes <- unique(fit_dat$inf_years)
 ## Read in Fluscape data
 fluscapeDat <- read.csv("data/real/fluscape_data.csv",stringsAsFactors=FALSE)
 fluscapeAges <- read.csv("data/real/fluscape_ages.csv")
+vietnamAges <- read.csv("data/real/vietnam_ages.csv")
+vietnamTitres <- read.csv("data/real/vietnam_data.csv")
+vietnamTitreDist <- table(vietnamTitres[vietnamTitres$run==1,"virus"])
+
+#use_viruses <- c(1968, 1972, 1982, 1989, 1992, unique(fluscapeDat$virus)[unique(fluscapeDat$virus > 1993)])
+#use_viruses <- unique(vietnamTitres$virus)[unique(vietnamTitres$virus) %in% unique(fluscapeDat$virus)]
+#vietnamTitreDist <- vietnamTitreDist[names(vietnamTitreDist) %in% use_viruses]
+vietnamTitreDist <- vietnamTitreDist/sum(vietnamTitreDist)
+viruses <- sapply(unique(vietnamTitres$virus), function(x) unique(fluscapeDat$virus)[which.min(abs(unique(fluscapeDat$virus)-x))])
+n_viruses <- table(viruses)
+vietnamTitreDist <- vietnamTitreDist[names(vietnamTitreDist) %in% viruses]
+n_viruses <- n_viruses[names(n_viruses) %in% names(vietnamTitreDist)]
+vietnamTitreDist <- vietnamTitreDist*n_viruses
+fluscapeDat <- fluscapeDat[fluscapeDat$virus %in% names(vietnamTitreDist),]
 
 ## Remove individuals with NA for DOB
 na_indiv <- fluscapeAges[which(is.na(fluscapeAges$DOB)),"individual"]
 fluscapeDat <- fluscapeDat[-na_indiv,]
 fluscapeAges <- fluscapeAges[-na_indiv,]
 
+## Resample titres based on vietnam titre distribution
+vietnamTitreDist <- vietnamTitreDist*nrow(fluscapeDat)
+fluscapeDat$i <- 1:nrow(fluscapeDat)
+titreDat1 <- NULL
+for(i in 1:length(vietnamTitreDist)){
+  tmp <- as.numeric(names(vietnamTitreDist)[i])
+  n <- min(round(vietnamTitreDist[i]), nrow(fluscapeDat[fluscapeDat$virus==tmp,]))
+  titreDat1 <- c(titreDat1,sample(fluscapeDat[fluscapeDat$virus==tmp,"i"], n))
+}
+fluscapeDat <- fluscapeDat[titreDat$i %in% titreDat1,]
+
+
+vietnam_age_dist <- table(vietnamAges$DOB)
+indivs <- NULL
+for(i in 1:length(vietnam_age_dist)){
+  test_age <- as.numeric(names(vietnam_age_dist)[i])
+  test_age <- max(test_age, min(fluscapeAges$DOB[fluscapeAges$DOB > test_age]))
+  tmpAges <- fluscapeAges[fluscapeAges$DOB == test_age,"individual"]
+  tmp <- sample(tmpAges, min(vietnam_age_dist[i]),length(tmpAges))
+  indivs <- c(indivs, tmp)
+}
+
+
+
+
 ## Take random subset of individuals
-indivs <- sample(unique(fluscapeDat$individual),n_indiv)
+#indivs <- sample(unique(fluscapeDat$individual),n_indiv)
 indivs <- indivs[order(indivs)]
 #indivs <- fluscapeAges[fluscapeAges$DOB >= 1990,"individual"]
 #indivs <- unique(fluscapeAges$individual)
@@ -47,6 +85,7 @@ ages <- fluscapeAges[fluscapeAges$individual %in% indivs,]
 titreDat$individual <- match(titreDat$individual, indivs)
 ages$individual <- match(ages$individual, indivs)
 titreDat <- titreDat[,c("individual", "samples", "virus", "titre", "run", "group")]
+
 
 startTab <- parTab
 for(i in 1:nrow(startTab)){
@@ -69,11 +108,9 @@ ageMask <- create_age_mask(ages, strainIsolationTimes,n_indiv)
 #########################
 ## RUN MCMC
 #########################
-mcmcPars <- c("iterations"=100000,"popt"=0.44,"popt_hist"=0.44,"opt_freq"=2000,"thin"=10,"adaptive_period"=50000,
-              "save_block"=1000,"thin2"=100,"histSampleProb"=0.5,"switch_sample"=2, "burnin"=0, 
-              "nInfs"=floor(ncol(startInf)/2), "moveSize"=2*buckets, "histProposal"=6, "histOpt"=0,"n_par"=10, "swapPropn"=0.5,
-              "histSwitchProb"=0.2,"yearSwapPropn"=0.75)
-
+mcmcPars <- c("iterations"=50000,"popt"=0.44,"popt_hist"=0.44,"opt_freq"=2000,"thin"=1,"adaptive_period"=20000,
+             "save_block"=1000,"thin2"=100,"histSampleProb"=0.5,"switch_sample"=2, "burnin"=0, 
+             "nInfs"=floor(ncol(startInf)/4), "moveSize"=3*buckets, "histProposal"=6, "histOpt"=0,"n_par"=10, "swapPropn"=0.5)
 res <- run_MCMC(startTab, titreDat, mcmcPars, filename=filename,
                 create_post_func, NULL,NULL,version=1, 0.2, 
                 fit_dat, ages=ages, 
@@ -92,7 +129,7 @@ infChain <- infChain[infChain$sampno >= (mcmcPars["adaptive_period"]+mcmcPars["b
 n_alive <- sapply(strainIsolationTimes, function(x) length(ages[ages$DOB <= x,]))
 inf_prop <- colSums(startInf)/n_alive
 inf_prop <- data.frame(AR=inf_prop,year=strainIsolationTimes)
-AR_p <- plot_attack_rates(infChain, titreDat, ages, seq(1968, 2015, by=1),n_alive=NULL) + 
+AR_p <- plot_attack_rates(infChain, titreDat, ages, seq(yearMin, yearMax, by=1),n_alive=NULL) + 
  scale_y_continuous(expand=c(0,0),limits=c(0,1))
 
 ## Density/trace plots on total number of infections
@@ -105,10 +142,6 @@ data.table::setkey(infChain, "j","sampno")
 n_inf_chain <- infChain[,list(V1=sum(x)),by=key(infChain)]
 
 inf_chain_p <- ggplot(n_inf_chain) + geom_line(aes(x=sampno,y=V1)) + facet_wrap(~j)
-
-wow <- data.frame(n_inf_chain)
-wow1 <- dcast(wow, sampno~j)
-wow1[is.na(wow1)] <- 0
 
 ## Generate cumulative infection history plots for a random subset of individuals
 ## based on data and posterior

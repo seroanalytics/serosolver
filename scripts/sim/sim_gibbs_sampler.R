@@ -14,10 +14,10 @@ library(data.table)
 setwd("~/Documents/Fluscape/serosolver")
 devtools::load_all()
 
-filename <- "chains/sim_temp_test"
+filename <- "chains/sim_temp_test1"
 
 ## How many individuals to simulate?
-n_indiv <- 50
+n_indiv <- 100
 buckets <- 1 ## Set to 1 for annual model. Greater than 1 gives subannual (eg. buckets = 2 is infection period every half year)
 
 ## Read in parameter table to simulate from and change waning rate and alpha/beta if necessary
@@ -76,7 +76,8 @@ for(i in 1:nrow(startTab)){
 ## Specify paramters controlling the MCMC procedure
 mcmcPars <- c("iterations"=50000,"popt"=0.44,"popt_hist"=0.44,"opt_freq"=2000,"thin"=10,"adaptive_period"=10000,
               "save_block"=1000,"thin2"=100,"histSampleProb"=0.5,"switch_sample"=2, "burnin"=0, 
-              "nInfs"=floor(ncol(infectionHistories)/2), "moveSize"=2*buckets, "histProposal"=6, "histOpt"=0,"n_par"=10, "swapPropn"=0.5)
+              "nInfs"=floor(ncol(infectionHistories)/2), "moveSize"=2*buckets, "histProposal"=6, "histOpt"=0,"n_par"=10, "swapPropn"=0.5,
+              "histSwitchProb"=0.2,"yearSwapPropn"=0.5)
 
 ## Run the MCMC using the inputs generated above
 res <- run_MCMC(startTab, titreDat, mcmcPars, filename=filename,

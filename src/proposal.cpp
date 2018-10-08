@@ -205,7 +205,6 @@ IntegerMatrix infection_history_proposal_gibbs(const NumericVector& pars, // Mod
 	  prior_1_new = R::lbeta(m_1_new + alpha, n_1_new - m_1_new + beta)-R::lbeta(alpha,beta);
 	  prior_2_new = R::lbeta(m_2_new + alpha, n_2_new - m_2_new + beta)-R::lbeta(alpha,beta);
 	  prior_new = prior_1_new + prior_2_new;
-
 	  old_prob = likelihood_data_individual(pars, indivHist, 
 						circulationTimes, circulationMapIndices,
 						samplingTimes[Range(startIndexSamples, endIndexSamples)], 

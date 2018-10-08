@@ -61,3 +61,20 @@ infection_history_proposal_gibbs_R <- function(pars, infHist, indivSampPropn,
     }
     return(newInfHist)
 }
+
+inf_hist_swap <- function(infHist, ageMask, swapPropn, moveSize){
+    y1 <- sample(1:ncol(infHist), 1)
+    move <- sample((-moveSize):moveSize,1)
+    y2 <- y1 + move
+    if(y2 < 0) y2 = y2 + ncol(infHist)
+    if(y2 >= ncol(infHist)) y2 = y2 - floor(y2/ncol(infHist))*ncol(infHist)
+    smallYear <- min(y1, y2)
+    indivs <- 1:nrow(infHist)
+    alive_indivs <- indivs[which(ageMask <= smallYear)]
+    samp_indivs <- sample(alive_indivs, floor(length(alive_indivs)*swapPropn))
+    tmp <- infHist[samp_indivs, y1]
+    infHist[samp_indivs, y1] <- infHist[samp_indivs, y2]
+    infHist[samp_indivs, y2] <- tmp
+    return(infHist)
+    
+}

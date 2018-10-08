@@ -1,27 +1,65 @@
 library(coda)
-chains <- list.files(pattern="chain.csv")
-omg <- NULL
-for(chain in chains){
-  tmp <- read.csv(chain)
-  tmp <- tmp[tmp$sampno > 200000 & tmp$sampno < 1200000, ]#c("mu","mu_short","tau","wane","sigma1","sigma2","error","lnlike")]
- 
-  #tmp <- tmp[tmp$sampno < 8000,c("mu","mu_short","tau","wane","sigma1","sigma2","error","lnlike")]
-omg[[chain]] <- as.mcmc(tmp)
-}
-omg <- as.mcmc.list(omg)
+library(bayesplot)
+library(ggplot2)
+library(data.table)
+library(plyr)
+color_scheme_set("viridis")
+setwd("~/net/home/serosolver/outputs_Aug2018/by_indiv")
+folders <- list.files(include.dirs = TRUE)
+for(j in folders){
+  setwd("~/net/home/serosolver/outputs_Aug2018/by_indiv")
+  setwd(paste0(j))
+  chains <- list.files(pattern="chain.csv")
+  omg <- NULL
+  maxSampno <- 999999999999
+  for(chain in chains){
+    tmp <- read.csv(chain)
+    maxSampno <- min(max(tmp$sampno),maxSampno)
+    omg[[chain]] <- tmp
+  }
+  for(i in 1:length(omg)){
+    tmp <- omg[[i]]
+    tmp <- tmp[tmp$sampno > 200000 & tmp$sampno < maxSampno, ]#c("mu","mu_short","tau","wane","sigma1","sigma2","error","lnlike")]
+    omg[[i]] <- as.mcmc(tmp)
+    #tmp <- tmp[tmp$sampno < 8000,c("mu","mu_short","tau","wane","sigma1","sigma2","error","lnlike")]
+  }
+  omg <- as.mcmc.list(omg)
 #omg <- as.mcmc.list(omg[c(1,2,5,6,8)])
 #omg <- omg[c(-1,-6)]
-
-pdf("tmp.pdf")
-#plot(omg)
-plot(omg[c(2,3)])
-dev.off()
+  
+  infHistFiles <- list.files(pattern="infectionHistories.csv")
+  all_chain <- NULL
+  for(i in 1:length(infHistFiles)){
+    infChainFile <- infHistFiles[i]
+    infChain <- data.table::fread(infChainFile)
+    infChain <- infChain[infChain$sampno > 200000 & infChain$sampno < maxSampno,]
+    n_strain <- max(infChain$j)
+    data.table::setkey(infChain, "j","sampno")
+    n_inf_chain <- infChain[,list(V1=sum(x)),by=key(infChain)]
+    n_inf_chain <- cbind(n_inf_chain,"chain"=i)
+    all_chain <- rbind(all_chain, n_inf_chain)
+  } 
+  #all_chain <- all_chain[all_chain$chain %in% c(2,3,4),]
+  all_chain$chain <- as.factor(all_chain$chain)
+  #all_chain <- all_chain[!(all_chain$chain %in% c(1,6)),]
+  inf_chain_p <- ggplot(all_chain[all_chain$j %in% sample(unique(all_chain$j),48)]) + geom_line(aes(x=sampno,y=V1,col=chain)) + facet_wrap(~j)
+  
+  pdf(paste0("~/tmp_infHist_",j,".pdf"))
+  plot(inf_chain_p)
+  dev.off()
+  #pdf(paste0("~/net/home/serosolver/outputs_Aug2018/by_strain/tmp_",j,".pdf"))
+  pdf(paste0("~/tmp_",j,".pdf"))
+  plot(mcmc_trace(omg))
+ # plot(omg[c(2,3)])
+  dev.off()
+}
 
 
 setwd("/home/james/net/home/serosolver/outputs_Aug2018/real_measurement_2")
 library(ggplot2)
 library(data.table)
 library(plyr)
+setwd("~/net/home/serosolver/outputs_Aug2018/by_strain/2002")
 n_indiv <- 1000
 indivs <- sample(n_indiv, 10)
 sampd <- sample(n_indiv,20)
@@ -30,17 +68,17 @@ infHistFiles <- list.files(pattern="infectionHistories.csv")
 for(i in 1:length(infHistFiles)){
   infChainFile <- infHistFiles[i]
   infChain <- data.table::fread(infChainFile)
-   infChain <- infChain[infChain$sampno > 200000 & infChain$sampno < 1000000,]
+   infChain <- infChain[infChain$sampno > 200000 & infChain$sampno < maxSampno,]
    n_strain <- max(infChain$j)
    data.table::setkey(infChain, "j","sampno")
    n_inf_chain <- infChain[,list(V1=sum(x)),by=key(infChain)]
    n_inf_chain <- cbind(n_inf_chain,"chain"=i)
    all_chain <- rbind(all_chain, n_inf_chain)
 } 
-all_chain <- all_chain[all_chain$chain %in% c(2,3,4),]
+#all_chain <- all_chain[all_chain$chain %in% c(2,3,4),]
 all_chain$chain <- as.factor(all_chain$chain)
 #all_chain <- all_chain[!(all_chain$chain %in% c(1,6)),]
-inf_chain_p <- ggplot(all_chain[all_chain$j %in% sample(unique(all_chain$j),50)]) + geom_line(aes(x=sampno,y=V1,col=chain)) + facet_wrap(~j)
+inf_chain_p <- ggplot(all_chain[all_chain$j %in% sample(unique(all_chain$j),48)]) + geom_line(aes(x=sampno,y=V1,col=chain)) + facet_wrap(~j)
 devtools::load_all("~/Documents/Fluscape/serosolver")
 titreFiles <- list.files(pattern="titreDat")
 titreDat <- read.csv(titreFiles[1])

@@ -12,19 +12,19 @@ library(data.table)
 
 ## Set working directory and load code
 setwd("~/Documents/Fluscape/serosolver")
-#devtools::load_all()
-
+devtools::load_all()
+set.seed(1)
 filename <- "chains/sim_temp_test"
 
 ## How many individuals to simulate?
-n_indiv <- 100
+n_indiv <- 50
 buckets <- 1 ## Set to 1 for annual model. Greater than 1 gives subannual (eg. buckets = 2 is infection period every half year)
 
 ## Read in parameter table to simulate from and change waning rate and alpha/beta if necessary
 parTab <- read.csv("~/Documents/Fluscape/serosolver/inputs/parTab_titre.csv",stringsAsFactors=FALSE)
 parTab[parTab$names %in% c("alpha","beta"),"values"] <- c(1,1)
-parTab[parTab$names == "boost_limit","values"] <- 5
-parTab[parTab$names == "gradient","values"] <- 0.5
+parTab[parTab$names == "boost_limit","values"] <- 3
+parTab[parTab$names == "gradient","values"] <- 0.1
 
 
 samplingTimes <- seq(2010*buckets, 2015*buckets, by=1)
@@ -43,7 +43,7 @@ strainIsolationTimes <- unique(fit_dat$inf_years)
 dat <- simulate_data(parTab, 1, n_indiv, buckets, strainIsolationTimes,
                      samplingTimes, 2, antigenicMap=fit_dat, 0, 0, ageMin,ageMax,
                      simInfPars=c("mean"=0.15,"sd"=0.5,"bigMean"=0.5,"logSD"=1),
-                     useSIR=TRUE, pInf = NULL, useSpline=FALSE)
+                     useSIR=TRUE, attackRates = NULL, useSpline=FALSE)
 
 ## If we want to use a subset of isolated strains, uncomment the line below
 viruses <- c(1968, 1969, 1972, 1975, 1977, 1979, 1982, 1985, 1987, 
@@ -67,7 +67,7 @@ startInf <- setup_infection_histories_new(titreDat, ages, unique(fit_dat$inf_yea
 ageMask <- create_age_mask(ages, strainIsolationTimes,n_indiv)
 
 ## Generate starting locations for MCMC
-parTab[parTab$names == "boost_limit","fixed"] <- 0
+#parTab[parTab$names == "boost_limit","fixed"] <- 0
 startTab <- parTab
 for(i in 1:nrow(startTab)){
   if(startTab[i,"fixed"] == 0){
@@ -80,10 +80,21 @@ for(i in 1:nrow(startTab)){
 mcmcPars <- c("iterations"=50000,"popt"=0.44,"popt_hist"=0.44,"opt_freq"=2000,"thin"=10,"adaptive_period"=10000,
               "save_block"=1000,"thin2"=100,"histSampleProb"=0.5,"switch_sample"=2, "burnin"=0, 
               "nInfs"=floor(ncol(infectionHistories)/2), "moveSize"=2*buckets, "histProposal"=6, "histOpt"=0,"n_par"=10, "swapPropn"=0.5)
-
+prior <- function(pars){
+  mu <- pars[1] + pars[2]
+  switch_lim <- pars[7]
+  gamma <- pars[8]
+  if(gamma > 0 & mu*gamma >(mu-1)/switch_lim){
+    #message(cat("Gamma: ", gamma,sep="\t"))
+    return(-Inf)
+  }
+  if(gamma < 0 & mu*(-gamma) > (mu-1)/switch_lim) return(-Inf)
+  return(0)
+}
+startTab[startTab$names=="gradient","values"] <- 0.05
 ## Run the MCMC using the inputs generated above
 res <- run_MCMC(startTab, titreDat, mcmcPars, filename=filename,
-                 create_post_func, NULL,NULL,version=1, 0.2, 
+                 create_post_func, NULL,PRIOR_FUNC=prior,version=1, 0.2, 
                  fit_dat, ages=ages, 
                  startInfHist=startInf,
                 measurement_indices=NULL,
@@ -96,7 +107,7 @@ beepr::beep(4)
 ## Density/trace plots
 chain <- read.csv(res$chain_file)
 chain <- chain[chain$sampno >= (mcmcPars["adaptive_period"]+mcmcPars["burnin"]),]
-plot(coda::as.mcmc(chain))
+#plot(coda::as.mcmc(chain))
 
 ## Plot inferred attack rates against true simulated attack rates
 infChain <- data.table::fread(res$history_file)
