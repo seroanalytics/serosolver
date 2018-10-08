@@ -317,6 +317,13 @@ simulate_data <- function(parTab, group=1,n_indiv,buckets=12,
         names(pars) <- parTab[parTab$identity==1,"names"]
     }
     lambda_pars <- parTab[parTab$identity == 2,"values"]
+    
+    ## Extract waneType
+    waneType <- pars["wane_type"]
+    if(is.na(waneType)) stop('wane_type is missing') ## If user has not entered wane_type in parTab
+    
+    ## Check that additional parameters are present
+    if(waneType==1&(!("kappa"%in%names(pars))|!("t_change"%in%names(pars)))) stop('Parameters needed for wane_type=1 (piecewise linear) are missing')
 
     ## Create antigenic map for short and long term boosting
     antigenicMap1 <- outputdmatrix.fromcoord(antigenicMap[,c("x_coord","y_coord")])

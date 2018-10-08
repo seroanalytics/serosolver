@@ -76,6 +76,8 @@ NumericVector infection_model_indiv(NumericVector theta, // Parameter vector
     wane_type = 0;
     }*/
    
+    //int waneType = theta["wane_type"]; //Which waning function to use, 0 is linear decrease, 1 is piecewise linear
+  
   // We will need to loop over each strain that was tested
   int n_samples = measurementMapIndices.size(); // Number of time points sampled
   int max_infections = infectionTimes.size(); // max number of infections is one for each strain
@@ -105,7 +107,7 @@ NumericVector infection_model_indiv(NumericVector theta, // Parameter vector
   time = (samplingTime - circulation_time);
   
   // If not linear
-  if(wane_type == 1){
+  if(waneType == 1){
     double kappa = theta["kappa"];
     double t_change = theta["t_change"];
     double wane_2 = -kappa*wane;
@@ -145,7 +147,7 @@ NumericVector infection_model_indiv(NumericVector theta, // Parameter vector
     time = (samplingTime - circulation_time);
     
     // If not linear
-    if(wane_type == 1){
+    if(waneType == 1){
       double kappa = theta["kappa"];
       double t_change = theta["t_change"];
       double wane_2 = -kappa*wane;
@@ -274,8 +276,7 @@ NumericVector titre_data_individual(NumericVector theta,
 				    IntegerVector measuredMapIndices, 
 				    NumericVector antigenicMapLong, 
 				    NumericVector antigenicMapShort,
-				    int numberStrains
-				    ){
+				    int numberStrains){
   int numberSamples = samplingTimes.size();
   int numberMeasuredStrains = measuredMapIndices.size();
   NumericVector titres(numberMeasuredStrains);
@@ -311,7 +312,8 @@ NumericVector titre_data_individual(NumericVector theta,
 			       IntegerVector indicesSamples, // Split the sample times and runs for each individual
 			       IntegerVector measuredMapIndices, // For each titre measurement, corresponding entry in antigenic map
 			       NumericVector antigenicMapLong, 
-			       NumericVector antigenicMapShort){
+			       NumericVector antigenicMapShort
+			       ){
   int n = infectionHistories.nrow();
   int n_strains = infectionHistories.ncol();
 
@@ -387,7 +389,7 @@ double likelihood_data_individual(NumericVector theta,
 				  NumericVector antigenicMapLong, 
 				  NumericVector antigenicMapShort,
 				  int numberStrains,
-				  NumericVector data
+				  NumericVector data                         
 				  ){
   int numberSamples = samplingTimes.size();
   int numberMeasuredStrains = measuredMapIndices.size();

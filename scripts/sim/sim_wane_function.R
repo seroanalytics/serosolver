@@ -10,7 +10,7 @@ setwd("~/Documents/Fluscape/serosolver")
 devtools::load_all()
 
 ## How many individuals to simulate?
-n_indiv <- 100
+n_indiv <- 1000
 
 ## Which infection history proposal version to use?
 describe_proposals()
@@ -22,10 +22,10 @@ histProposal <- 1
 buckets <- 1
 
 ## The general output filename
-filename <- "chains/lambda_1000_test"
+filename <- "chains/wane_function_test"
 
 ## Read in parameter table to simulate from and change waning rate if necessary
-parTab <- read.csv("~/Documents/Fluscape/serosolver/inputs/parTab_lambda.csv",stringsAsFactors=FALSE)
+parTab <- read.csv("~/Documents/Fluscape/serosolver/inputs/parTab_wane.csv",stringsAsFactors=FALSE)
 parTab[parTab$names == "wane","values"] <- 1
 parTab[parTab$names == "wane","values"] <- parTab[parTab$names == "wane","values"]/buckets
 
@@ -54,11 +54,6 @@ p1 <- ggplot(antigenicMap) +
 fit_dat <- fit_dat[fit_dat$inf_years >= yearMin*buckets & fit_dat$inf_years <= 2015*buckets,]
 strainIsolationTimes <- unique(fit_dat$inf_years)
 
-## Add rows for each lambda value to be inferred
-tmp <- parTab[parTab$names == "lambda",]
-for(i in 1:(length(strainIsolationTimes)-1)){
-  parTab <- rbind(parTab, tmp)
-}
 
 ## Change alpha and beta to change proposal distribution
 ## Setting to c(1,1) gives uniform distribution on total number of infections
@@ -97,11 +92,6 @@ p <- plot_data(titreDat, infHist, strainIsolationTimes, 5, NULL)
 startInf <- setup_infection_histories_new(titreDat, ages, unique(fit_dat$inf_years), space=5,titre_cutoff=2)
 ageMask <- create_age_mask(ages, strainIsolationTimes,n_indiv)
 
-## Housekeeping for force of infection parameters, lambda
-parTab[parTab$names == "lambda","values"] <- AR[,2]
-parTab[parTab$names == "lambda","fixed"] <- 0
-parTab[which(parTab$names == "lambda" & parTab$values <= 0),"values"] <- 0.00001
-
 
 ## Generate starting locations
 startTab <- parTab
@@ -125,13 +115,9 @@ mvrPars <- list(covMat, scale, w)
 ageMask <- create_age_mask(ages, strainIsolationTimes,n_indiv)
 
 ## Run the MCMC using the inputs generated above
-lambdas_start<-vector('numeric',ncol(startInf))
-
-for(year in 1:ncol(startInf)){ lambdas_start[year] <- (sum(startInf[,year])/sum(ages$DOB <= strainIsolationTimes[year]))}
-startTab[startTab$names == "lambda","values"] <- lambdas_start
 
 res <- run_MCMC(startTab, titreDat, mcmcPars, filename=filename,
-                create_post_func, NULL,NULL,version=4, 0.2, 
+                create_post_func, NULL,NULL,version=1, 0.2, 
                 fit_dat, ages=ages, 
                 startInfHist=startInf)
 beepr::beep(4)
@@ -164,42 +150,6 @@ plot_attack_rates(infChain, titreDat, ages, yearMin:2015) +
   geom_point(data=AR,aes(x=year,y=AR)) + 
   geom_point(data=inf_prop,aes(x=year,y=AR),col="purple") + scale_y_continuous(expand=c(0,0),limits=c(0,1))
 
-
-## Plot inferred attack rates against true simulated attack rates
-tmp <- summary(as.mcmc(chain[,2:(ncol(chain)-1)]))
-tmp <- as.data.frame(tmp[[2]])
-tmp$names <- rownames(tmp)
-lambda_names <- c("lambda",paste0("lambda.",1:(nrow(AR)-1)))
-tmp <- tmp[tmp$names %in% lambda_names,]
-tmpTab <- parTab[parTab$names == "lambda",]
-tmpTab$values <- AR[,2]
-tmpTab$names <- lambda_names
-tmp$names <- strainIsolationTimes
-tmpTab$names <- strainIsolationTimes
-AR_recovery <- ggplot() +
-  geom_pointrange(data=tmp,aes(x=names,y=`50%`,ymin=`2.5%`,ymax=`97.5%`)) +
-  geom_point(data=tmpTab,aes(x=names,y=values),col="red") +
-  ylab("Attack rate, lambda") +
-  xlab("Year") +
-  scale_y_continuous(limits=c(0,1)) +
- # scale_x_continuous(breaks=seq(1968,2015,by=1)) +
-  theme_bw() +
-  theme(axis.text.x=element_text(angle=45,hjust=1))
-svg(paste0(filename,"actual_AR.svg"))
-plot(AR_recovery)
-dev.off()
-
-## Density/trace plots on total number of infections
-indivs <- sample(n_indiv, 10)
-sampd <- sample(n_indiv,20)
-infChain <- data.table::fread(res$history_file)
-infChain <- infChain[infChain$sampno >= (mcmcPars["adaptive_period"]+mcmcPars["burnin"]),]
-n_strain <- max(infChain$j)
-data.table::setkey(infChain, "j","sampno")
-n_inf_chain <- infChain[,list(V1=sum(x)),by=key(infChain)]
-inf_chain_p <- ggplot(n_inf_chain[n_inf_chain$j %in% sampd,]) + geom_line(aes(x=sampno,y=V1)) + facet_wrap(~i)
-inf_chain_p <- ggplot(n_inf_chain) + geom_line(aes(x=sampno,y=V1)) + facet_wrap(~j)
-inf_chain_p <- ggplot(n_inf_chain) + geom_histogram(aes(x=sampno)) + facet_wrap(~j)
 
 ## Generate cumulative infection history plots for a random subset of individuals
 ## based on data and posterior
