@@ -48,35 +48,17 @@ NumericVector infection_model_indiv(NumericVector theta, // Parameter vector
   double last_circulation_time;
   double circulation_time;
 
-  // How many parameters are there
-  int n_theta = theta.size();
-
- 
   // Which function type should we use
   // 0 is linear decrease
   // 1 is piecewise linear
-  int wane_type=0;
+  int waneType = theta["wane_type"]; 
   int titre_dependent_boosting=0;
-  // If "kappa" is in the parameter vector, use piecewise linear waning
-  if(theta.containsElementNamed("kappa")) wane_type=1;
   // If "boost_limit" and "gradient" are in the parameter vector, then use titre-dependent boosting function
   if(theta.containsElementNamed("boost_limit") && theta.containsElementNamed("gradient")){
     titre_dependent_boosting=1;
     boost_limit = theta["boost_limit"];
     gradient = theta["gradient"];
   }
-
-  // ** DEPRECATED **
-  // If there are 10 parameters then use the linear decrease
-  /*if(n_theta == 10){
-    wane_type = 0;
-    } else if(n_theta==12){
-    wane_type = 1; // If there are 12 then use the piecewise linear and declare the additional parameters
-    } else {
-    wane_type = 0;
-    }*/
-   
-    //int waneType = theta["wane_type"]; //Which waning function to use, 0 is linear decrease, 1 is piecewise linear
   
   // We will need to loop over each strain that was tested
   int n_samples = measurementMapIndices.size(); // Number of time points sampled
