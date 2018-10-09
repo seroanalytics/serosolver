@@ -1,12 +1,8 @@
-<<<<<<< HEAD
-*.Rhistory
-*.DS_Store
-src/*.o
-src/*.so
-=======
 # History files
 .Rhistory
 .Rapp.history
+*.DS_Store
+
 
 # Session Data files
 .RData
@@ -24,5 +20,3 @@ binaries
 *~
 *.o
 *.so
-
->>>>>>> jameshaybranch
