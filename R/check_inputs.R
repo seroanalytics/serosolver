@@ -41,3 +41,15 @@ check_data <- function(data){
 
 }
 
+#' Checks the attackRates supplied in simulate_data
+#' @param attackRates a vector of attackRates to be used in the simulation
+#' @param strainIsolationTimes vector of strain ciruclation times
+#' @return nothing at the moment
+#' @export
+check_attackRates <- function(attackRates,strainIsolationTimes){
+  
+  if(length(attackRates)!=length(strainIsolationTimes)) stop('attackRates is not the same length as strainIsolationTimes')
+  if(any(attackRates<0)||any(attackRates>1)) stop('attackRates must be between 0 and 1')
+  
+}
+

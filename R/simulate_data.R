@@ -279,10 +279,7 @@ simulate_ars_spline <- function(infectionYears, buckets, meanPar=0.15,sdPar=0.5,
 #' @param titreSensoring what proportion of titres are randomly missing?
 #' @param ageMin minimum age to simulate
 #' @param ageMax maximum age to simulate
-#' @param simInfPars vector of parameters to pass to \code{\link{simulate_attack_rates}}
-#' @param useSIR boolean specifying whether to sample from an SIR model or just log normal distribution for each epoch. If TRUE, uses an SIR model
-#' @param useSpline if TRUE, calculates a spline to generate sub annual FOI from
-#' @param pInf if given, provides infection probabilities to sample from rather than simulating
+#' @param attackRates a vector of attackRates to be used in the simulation
 #' @param repeats number of repeats for each year
 #' @param mu_indices default NULL, optional vector giving the index of `mus` that each strain uses the boosting parameter from. eg. if there's 6 circulation years and 3 strain clusters, then this might be c(1,1,2,2,3,3)
 #' @return a list with: 1) the data frame of titre data as returned by \code{\link{simulate_group}}; 2) a matrix of infection histories as returned by \code{\link{simulate_infection_histories}}; 3) a vector of ages
@@ -292,16 +289,15 @@ simulate_data <- function(parTab, group=1,n_indiv,buckets=12,
                           antigenicMap,
                           sampleSensoring=0, titreSensoring=0,
                           ageMin=5,ageMax=80,
-                          simInfPars=c("mean"=0.15,"sd"=0.5,"bigMean"=0.5,"logSD"=1, "constant"=0),
-                          theta=rep(0.1,5),
-                          knots=c(0.33,0.66),
-                          useSIR=FALSE,
-                          attackRates=NULL,
-                          useSpline=TRUE,
+                          attackRates,
                           repeats=1,
                           mu_indices=NULL,
                           measurement_indices=NULL,
                           addNoise=TRUE){
+    
+    ## Check attackRates entry 
+    check_attackRates(attackRates,strainIsolationTimes)
+  
     ## Extract parameters
     pars <- parTab$values
     names(pars) <- parTab$names
@@ -332,30 +328,9 @@ simulate_data <- function(parTab, group=1,n_indiv,buckets=12,
 
     ## Simulate ages
     ages <- floor(runif(n_indiv,ageMin,ageMax))
-    
-    ## Simulate attack rates
-    if(is.null(attackRates)){
-        if(useSIR){
-            pInf <- simulate_ars_buckets(strainIsolationTimes, buckets, simInfPars["mean"],simInfPars["sd"],TRUE,simInfPars["bigMean"])
-        } else {
-            if(simInfPars["constant"]==1){ ##If constant==1 then use the mean in simInfPars to simulate constant AR 
-                pInf <- rep(simInfPars["mean"],length(strainIsolationTimes))
-            } else if(simInfPars["constant"]==0&is.null(attackRates)){
-                pInf <- simulate_attack_rates(strainIsolationTimes, simInfPars["mean"],simInfPars["sd"],TRUE,simInfPars["bigMean"])
-            } else if(simInfPars["constant"]==0&useSpline){
-                pInf <- simulate_ars_spline(strainIsolationTimes, buckets, simInfPars["mean"],simInfPars["sd"],TRUE,simInfPars["bigMean"], knots,theta)
-            } else {
-                pInf <- simulate_attack_rates(strainIsolationTimes, simInfPars["mean"],simInfPars["sd"],TRUE,simInfPars["bigMean"])
-            }
-        }
-    } else {
-        pInf <- attackRates
-    }
-    
-    if(length(pInf)!=length(strainIsolationTimes)) stop('attackRates is not the same length as strainIsolationTimes')
-    
+
     ## Simulate infection histories    
-    tmp <- simulate_infection_histories(pInf, simInfPars["logSD"], strainIsolationTimes,
+    tmp <- simulate_infection_histories(attackRates, simInfPars["logSD"], strainIsolationTimes,
                                         samplingTimes, ages)
    
     infHist <- tmp[[1]]
@@ -374,7 +349,7 @@ simulate_data <- function(parTab, group=1,n_indiv,buckets=12,
     DOB <- max(samplingTimes) - ages
     ages <- data.frame("individual"=1:n_indiv, "DOB"=DOB)
     attackRates <- data.frame("year"=strainIsolationTimes,"AR"=ARs)
-    return(list(data=y, infectionHistories=infHist, ages=ages, attackRates=attackRates, lambdas=pInf))
+    return(list(data=y, infectionHistories=infHist, ages=ages, attackRates=attackRates, lambdas=attackRates))
 }
 
 #' Create useable antigenic map
