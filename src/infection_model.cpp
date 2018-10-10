@@ -1,4 +1,5 @@
 #include <Rcpp.h>
+#include "wane_function.cpp"
 using namespace Rcpp;
 
 #define MAX(a,b) ((a) < (b) ? (b) : (a)) // define MAX function for use later
@@ -45,7 +46,7 @@ NumericVector infection_model_indiv(NumericVector theta, // Parameter vector
 
   // Time since infection
   double time; 
-  double last_circulation_time;
+ // double last_circulation_time;
   double circulation_time;
 
   // Which function type should we use
@@ -90,17 +91,9 @@ NumericVector infection_model_indiv(NumericVector theta, // Parameter vector
   
   // If not linear
   if(waneType == 1){
-    double kappa = theta["kappa"];
-    double t_change = theta["t_change"];
-    double wane_2 = -kappa*wane;
-    double wane_2_val; // Interaction term
-    // Calculate the interaction term
-    if(time > t_change){
-      wane_2_val = wane_2*(time - t_change); 
-    }else{
-      wane_2_val = 0;
-    }
-    waning[0] = MAX(0, 1.0-(wane*time+wane_2_val));
+    // Calculate the waning at the time since infection
+    double val= waning_function(theta, time, wane);
+    waning[0] = MAX(0, 1.0-val);
   } else waning[0] = MAX(0, 1.0-wane*time);// Else if linear
   cumInfectionHistory[0] = maskedInfectionHistory[0];
 
@@ -130,17 +123,8 @@ NumericVector infection_model_indiv(NumericVector theta, // Parameter vector
     
     // If not linear
     if(waneType == 1){
-      double kappa = theta["kappa"];
-      double t_change = theta["t_change"];
-      double wane_2 = -kappa*wane;
-      double wane_2_val; // Interaction term
-      // Calculate the interaction term
-      if(time > t_change){
-        wane_2_val = wane_2*(time - t_change); 
-      }else{
-        wane_2_val = 0;
-      }
-      waning[i] = MAX(0, 1.0-(wane*time+wane_2_val));
+      double val= waning_function(theta, time, wane);
+      waning[i] = MAX(0, 1.0-val);
     } else waning[i] = MAX(0, 1.0-wane*time); // Else linear
   }
   
