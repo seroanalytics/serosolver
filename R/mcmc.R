@@ -128,6 +128,10 @@ run_MCMC <- function(parTab,
 ###############
     ## Extract data parameters
 ##############
+    
+    ## Check the data input 
+    check_data(data)
+    
     strainIsolationTimes <- unique(antigenicMap$inf_years) # How many strains are we testing against and what time did they circulate
     samplingTimes <- unique(data$sample) # What are the range of sampling times?
     n_strain <- length(strainIsolationTimes) # How many strains could an individual see?
