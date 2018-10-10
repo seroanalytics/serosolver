@@ -7,7 +7,8 @@
 simulate_individual(theta, infectionHistory, samplingTimes, dataIndices,
   strainIsolationTimes, virusIndices, antigenicMapLong, antigenicMapShort,
   strains, repeats = 1, mus = NULL, mu_indices = NULL,
-  measurement_bias = NULL, measurement_indices = NULL, addNoise = TRUE)
+  measurement_bias = NULL, measurement_indices = NULL,
+  addNoise = TRUE)
 }
 \arguments{
 \item{theta}{the named parameter vector}
@@ -49,4 +50,3 @@ Simulates a full set of titre data for an individual with known theta and infect
 \seealso{
 \code{\link{infection_model_indiv}}
 }
-

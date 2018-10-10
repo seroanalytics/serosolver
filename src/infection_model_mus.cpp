@@ -3,7 +3,7 @@ using namespace Rcpp;
 
 #define MAX(a,b) ((a) < (b) ? (b) : (a)) // define MAX function for use later
   
-double likelihood_titre(NumericVector expected, NumericVector data, NumericVector theta);
+double likelihood_titre(NumericVector expected, NumericVector data, NumericVector theta, Nullable<NumericVector> to_add);
 
 //' Model function
 //'
@@ -276,6 +276,6 @@ double likelihood_data_individual_mus(NumericVector theta,
 								    numberStrains);
     startIndex = endIndex + 1;
   }
-  lnlike = likelihood_titre(titres, data, theta);
+  lnlike = likelihood_titre(titres, data, theta, R_NilValue);
   return(lnlike);
 }

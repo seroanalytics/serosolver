@@ -4,7 +4,7 @@
 \alias{likelihood_titre}
 \title{Calculate likelihood}
 \usage{
-likelihood_titre(expected, data, theta)
+likelihood_titre(expected, data, theta, to_add)
 }
 \arguments{
 \item{expected}{NumericVector, as returned by \code{\link{infection_model_indiv}}}
@@ -12,6 +12,8 @@ likelihood_titre(expected, data, theta)
 \item{data}{NumericVector, the vector of observed titres}
 
 \item{theta}{NumericVector, the vector of named model parameters, requiring MAX_TITRE and error}
+
+\item{to_add}{NumericVector, OPTIONAL if using measurement bias, gives the shift to add to each expected titre}
 }
 \value{
 a single log likelihood
@@ -19,4 +21,3 @@ a single log likelihood
 \description{
 Calculates the likelihood of a given set of observed titres given predicted titres. Based on truncated discritised normal.
 }
-

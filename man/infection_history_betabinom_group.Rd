@@ -4,10 +4,9 @@
 \alias{infection_history_betabinom_group}
 \title{DEPRECATED - implemented in Cpp for speed}
 \usage{
-infection_history_betabinom_group(newInfHist, sampledIndivs, ageMask, moveSizes,
-  nInfs, alpha, beta)
+infection_history_betabinom_group(newInfHist, sampledIndivs, ageMask,
+  strainMask, moveSizes, nInfs, alpha, beta)
 }
 \description{
 DEPRECATED - implemented in Cpp for speed
 }
-

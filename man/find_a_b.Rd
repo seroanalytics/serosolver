@@ -19,4 +19,3 @@ alpha and beta for the beta binomial
 \description{
 Finds the required alpha and beta to give a desired mean and variance of the beta binomal function
 }
-

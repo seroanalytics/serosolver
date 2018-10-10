@@ -4,11 +4,12 @@
 \alias{infection_history_proposal_gibbs}
 \title{Gibbs sampling of infection histories}
 \usage{
-infection_history_proposal_gibbs(pars, infHist, indivSampPropn, n_years_samp,
-  ageMask, n_alive, swapPropn, swapDistance, alpha, beta, circulationTimes,
-  circulationMapIndices, samplingTimes, indicesTitreDataSample,
-  indicesTitreDataOverall, indicesSamples, measuredMapIndices, antigenicMapLong,
-  antigenicMapShort, data, temp)
+infection_history_proposal_gibbs(pars, infHist, indivSampPropn,
+  n_years_samp, ageMask, n_alive, swapPropn, swapDistance, alpha, beta,
+  circulationTimes, circulationMapIndices, samplingTimes,
+  indicesTitreDataSample, indicesTitreDataOverall, indicesSamples,
+  measuredMapIndices, antigenicMapLong, antigenicMapShort, data, to_add,
+  temp)
 }
 \arguments{
 \item{pars}{NumericVector, the model parameters used to solve the model, extract likelihood function parameters and alpha/beta}
@@ -59,4 +60,3 @@ a matrix of 1s and 0s corresponding to the infection histories for all individua
 \description{
 Proposes a new matrix of infection histories by sampling from the prior on an individual's infection presence/absence in a particular time period, conditional on all other individuals in that time period. This allows us to integrate out the infection probability term for each time period. Should look at \code{\link{create_post_func}} for more details about the input parameters.
 }
-

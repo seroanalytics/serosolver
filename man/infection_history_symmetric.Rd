@@ -4,8 +4,8 @@
 \alias{infection_history_symmetric}
 \title{Brute force infection history proposal}
 \usage{
-infection_history_symmetric(newInfHist, sampledIndivs, ageMask, moveSizes,
-  nInfs, randNs)
+infection_history_symmetric(newInfHist, sampledIndivs, ageMask, strainMask,
+  moveSizes, nInfs, randNs)
 }
 \arguments{
 \item{newInfHist}{a matrix of infection histories - rows for individuals, columns for infection epochs. Contents should be 1s and 0s}
@@ -13,6 +13,8 @@ infection_history_symmetric(newInfHist, sampledIndivs, ageMask, moveSizes,
 \item{sampledIndivs}{a vector of indices describing rows in the infection history matrix that should be updated}
 
 \item{ageMask}{a vector (one value for each individual) giving the first infection epoch that an individual could have been exposed in. That is, if an individual was born in the 7th epoch, their entry in ageMask would be 7.}
+
+\item{strainMask}{a vector (one value for each individual) giving the last infection epoch that an individual could have been exposed in.}
 
 \item{moveSizes}{when performing a move step, how far should two epochs be swapped?}
 
@@ -26,4 +28,3 @@ a matrix of infection histories matching the input newInfHist
 \description{
 Performs a flipping/swapping infection history update step for a matrix of infection histories. 50/50 chance of performing a flip or a swap
 }
-

@@ -7,9 +7,7 @@
 simulate_data(parTab, group = 1, n_indiv, buckets = 12,
   strainIsolationTimes, samplingTimes, nsamps = 2, antigenicMap,
   sampleSensoring = 0, titreSensoring = 0, ageMin = 5, ageMax = 80,
-  simInfPars = c(mean = 0.15, sd = 0.5, bigMean = 0.5, logSD = 1),
-  theta = rep(0.1, 5), knots = c(0.33, 0.66), useSIR = FALSE,
-  useSpline = TRUE, pInf = NULL, repeats = 1, mu_indices = NULL,
+  attackRates, repeats = 1, mu_indices = NULL,
   measurement_indices = NULL, addNoise = TRUE)
 }
 \arguments{
@@ -35,13 +33,7 @@ simulate_data(parTab, group = 1, n_indiv, buckets = 12,
 
 \item{ageMax}{maximum age to simulate}
 
-\item{simInfPars}{vector of parameters to pass to \code{\link{simulate_attack_rates}}}
-
-\item{useSIR}{boolean specifying whether to sample from an SIR model or just log normal distribution for each epoch. If TRUE, uses an SIR model}
-
-\item{useSpline}{if TRUE, calculates a spline to generate sub annual FOI from}
-
-\item{pInf}{if given, provides infection probabilities to sample from rather than simulating}
+\item{attackRates}{a vector of attackRates to be used in the simulation}
 
 \item{repeats}{number of repeats for each year}
 
@@ -53,4 +45,3 @@ a list with: 1) the data frame of titre data as returned by \code{\link{simulate
 \description{
 Simulates a full data set for a given set of parameters etc.
 }
-

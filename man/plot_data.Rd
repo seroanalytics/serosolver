@@ -10,4 +10,3 @@ plot_data(data, infectionHistories, strainIsolationTimes, n_samps,
 \description{
 Useful plot for looking at simulated data
 }
-

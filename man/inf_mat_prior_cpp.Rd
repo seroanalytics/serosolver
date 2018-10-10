@@ -18,4 +18,3 @@ inf_mat_prior_cpp(infHist, n_alive, alpha, beta)
 \description{
 Marginal prior probability (p(Z)) of a particular infection history matrix
 }
-

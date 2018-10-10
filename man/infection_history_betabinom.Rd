@@ -4,8 +4,8 @@
 \alias{infection_history_betabinom}
 \title{Beta binomial infection history update}
 \usage{
-infection_history_betabinom(newInfHist, sampledIndivs, ageMask, moveSizes,
-  alpha, beta)
+infection_history_betabinom(newInfHist, sampledIndivs, ageMask, strainMask,
+  moveSizes, alpha, beta)
 }
 \arguments{
 \item{newInfHist}{a matrix of infection histories - rows for individuals, columns for infection epochs. Contents should be 1s and 0s}
@@ -13,6 +13,8 @@ infection_history_betabinom(newInfHist, sampledIndivs, ageMask, moveSizes,
 \item{sampledIndivs}{a vector of indices describing rows in the infection history matrix that should be updated}
 
 \item{ageMask}{a vector (one value for each individual) giving the first infection epoch that an individual could have been exposed in. That is, if an individual was born in the 7th epoch, their entry in ageMask would be 7.}
+
+\item{strainMask}{a vector (one value for each individual) giving the last infection epoch that an individual could have been exposed in.}
 
 \item{moveSizes}{when performing a move step, how far should two epochs be swapped?}
 
@@ -26,4 +28,3 @@ a matrix of infection histories matching the input newInfHist
 \description{
 Samples a new infection history from a beta binomial distribution for the specified number of individuals. Note that only one epoch is updated each time with either a flip or a swap step.
 }
-

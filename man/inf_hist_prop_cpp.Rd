@@ -4,8 +4,8 @@
 \alias{inf_hist_prop_cpp}
 \title{Fast infection history proposal function}
 \usage{
-inf_hist_prop_cpp(infHist, sampledIndivs, ageMask, moveSizes, nInfs, alpha,
-  beta, randNs)
+inf_hist_prop_cpp(infHist, sampledIndivs, ageMask, strainMask, moveSizes,
+  nInfs, alpha, beta, randNs)
 }
 \arguments{
 \item{infHist}{and RcppArmadillo matrix of infection histories, where rows represent individuals and columns represent potential infection times. The contents should be a set of 1s (presence of infection) and 0s (absence of infection)}
@@ -30,4 +30,3 @@ a matrix of 1s and 0s corresponding to the infection histories for all individua
 \description{
 Proposes a new matrix of infection histories using a beta binomial proposal distribution. This particular implementation allows for nInfs epoch times to be changed with each function call. Furthermore, the size of the swap step is specified for each individual by moveSizes.
 }
-

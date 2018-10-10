@@ -9,4 +9,3 @@ hist_rbb(n, mean, var)
 \description{
 Plots a histogram of the beta binomial function with given mean and variance
 }
-

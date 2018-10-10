@@ -26,4 +26,3 @@ a ggplot2 object with the inferred attack rates for each potential epoch of circ
 \description{
 Plots inferred historical attack rates from the MCMC output on infection histories for monthly. The main difference compared to the normal attack rate plot is that pointrange plots don't make as much sense at a very fine time resolution.
 }
-

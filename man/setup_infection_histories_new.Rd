@@ -4,8 +4,8 @@
 \alias{setup_infection_histories_new}
 \title{Propose initial infection histories}
 \usage{
-setup_infection_histories_new(data, ages, strainIsolationTimes, space = 5,
-  titre_cutoff = 2)
+setup_infection_histories_new(data, ages, strainIsolationTimes,
+  space = 5, titre_cutoff = 2)
 }
 \arguments{
 \item{data}{the matrix of titres data with columns for individual, sample, and titre}
@@ -26,4 +26,3 @@ Given a matrix of titre data, proposes plausible initial infection histories fro
 The idea is to move along time in the context of antigenic drift and look at an individual's titre against each strain. Where titres are raised, we suggest an infection. However, to avoid suggesting multiple infections for regions of high antigenic similarity, we place a necessary gap (defined by `space`) between proposed infection times.
 NOTE - MIGHT NEED TO UPDATE THIS FOR GROUPS
 }
-

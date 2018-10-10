@@ -63,4 +63,3 @@ a matrix of 1s and 0s corresponding to the infection histories for all individua
 \description{
 Proposes a new matrix of infection histories by sampling from the prior on an individual's infection presence/absence in a particular time period, conditional on all other individuals in that time period. This allows us to integrate out the infection probability term for each time period. Should look at \code{\link{create_post_func}} for more details about the input parameters.
 }
-

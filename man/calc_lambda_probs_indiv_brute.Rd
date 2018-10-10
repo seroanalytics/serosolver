@@ -9,4 +9,3 @@ calc_lambda_probs_indiv_brute(lambdas, infHist, ageMask)
 \description{
 Brute force implementation of calculating the explicit FOI
 }
-

@@ -4,9 +4,9 @@
 \alias{save_infHist_to_disk}
 \title{Write given infection history to disk}
 \usage{
-save_infHist_to_disk(infHist, file, sampno, append = TRUE, colNames = FALSE)
+save_infHist_to_disk(infHist, file, sampno, append = TRUE,
+  colNames = FALSE)
 }
 \description{
 Write given infection history to disk
 }
-

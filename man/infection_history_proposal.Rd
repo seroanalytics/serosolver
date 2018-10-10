@@ -5,7 +5,7 @@
 \title{Infection history proposal - original version}
 \usage{
 infection_history_proposal(newInfectionHistories, sampledIndivs,
-  strainIsolationTimes, ageMask, nInfs)
+  strainIsolationTimes, ageMask, strainMask, nInfs)
 }
 \arguments{
 \item{newInfectionHistories}{an n*m matrix of 1s & 0s indicating infection histories, where n is individuals and m i strains}
@@ -25,4 +25,3 @@ Also requires the indices of sampled individuals, the vector of strain isolation
 an individual *could* be infected).
 NOTE - MIGHT NEED TO UPDATE THIS FOR GROUPS
 }
-

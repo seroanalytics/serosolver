@@ -5,8 +5,9 @@
 \title{Model function}
 \usage{
 infection_model_indiv_mus(theta, mus, infectionHistory, infectionTimes,
-  boostingVecIndices, infectionMapIndices, samplingTime, measurementMapIndices,
-  antigenicMapLong, antigenicMapShort, numberStrains)
+  boostingVecIndices, infectionMapIndices, samplingTime,
+  measurementMapIndices, antigenicMapLong, antigenicMapShort,
+  numberStrains)
 }
 \arguments{
 \item{theta}{NumericVector, the named vector of model parameters}
@@ -40,4 +41,3 @@ NOTES:
 - Do we want infection history to be a vector of infection times?
 - Treat the contents of infectionHistory as a parameter (ie. exposure type)
 }
-

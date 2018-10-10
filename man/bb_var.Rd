@@ -19,4 +19,3 @@ calculates the variance of the beta binomial function
 \description{
 Beta binomial variance
 }
-

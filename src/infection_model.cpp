@@ -168,27 +168,12 @@ NumericVector infection_model_indiv(NumericVector theta, // Parameter vector
   } else {
     for(int i = 0; i < max_infections; ++i){
       circulation_time = infectionTimes[i];
-      //Rcpp::Rcout << infectionTimes[i] << std::endl;
       monitoredTitre = 0;
       monitoredTitres[i] = 0;
       // Need to find titre of infecting strain at time of this infection,
       // so need to sum boosts of all previous infections
       if(maskedInfectionHistory[i] == 1){
-	/*Rcpp::Rcout << std::endl<< std::endl << std::endl;
-	Rcpp::Rcout << "masked Infection history: " << maskedInfectionHistory << std::endl;
-	Rcpp::Rcout << "size: " << maskedInfectionHistory.size() << std::endl;
-	Rcpp::Rcout << std::endl<< std::endl << std::endl;
-	Rcpp::Rcout << "Infection times: " << infectionTimes << std::endl;
-	Rcpp::Rcout << "size: " << infectionTimes.size() << std::endl;
-	Rcpp::Rcout << "Sampling time: " << samplingTime << std::endl;
-	Rcpp::Rcout << std::endl<< std::endl << std::endl;*/
 	for(int ii = i-1; ii >= 0; --ii){
-	  /*Rcpp::Rcout << "ii: " << ii << std::endl;
-	  Rcpp::Rcout << "inf map indices: " << infectionMapIndices << std::endl;
-	  Rcpp::Rcout << "numberStrains: " << numberStrains << std::endl;
-	  Rcpp::Rcout << "Entry" << measurementMapIndices[i]*numberStrains+infectionMapIndices[ii] << std::endl;
-	  Rcpp::Rcout << "Dim antigenic map: " << antigenicMapLong.size() << std::endl;
-	  Rcpp::Rcout << std::endl<< std::endl << std::endl;*/
 	// How much boosting experienced from this infection?
 	long_boost = maskedInfectionHistory[ii]* // Ignore infections that couldn't have happened
 	  MAX(0, 1.0 - tau*(cumInfectionHistory[ii] - 1.0))* // Antigenic seniority
@@ -211,9 +196,7 @@ NumericVector infection_model_indiv(NumericVector theta, // Parameter vector
 	  boost = long_boost + short_boost*MAX(0, 1.0-wane*(circulation_time - infectionTimes[ii]));
 	  monitoredTitre += boost;
 	}
-	//Rcpp::Rcout << "Titre of infecting strain " << infectionTimes[i] << " is: " << monitoredTitre << std::endl;
 	monitoredTitres[i] = monitoredTitre;
-	//Rcpp::Rcout << "wow: " << monitoredTitre << std::endl;
 	// And now that we know the titre of the infecting strain at time of infection,
 	// can work out the boost given to each measured strain from this infection
 	boost = 0;
@@ -238,10 +221,8 @@ NumericVector infection_model_indiv(NumericVector theta, // Parameter vector
 	  long_boost = MAX(0, long_boost);
 	  short_boost = MAX(0, short_boost);
 	  boost = long_boost + short_boost*waning[i];
-	  //Rcpp::Rcout << "Boost to strain " << infectionTimes[k] << " at time " << infectionTimes[i] << " is " << boost << std::endl;
 	  predictedTitre[k] += boost;
 	}
-	//Rcpp::Rcout << "Boost: " << boost << std::endl;
       }
     }
   }
@@ -280,17 +261,17 @@ NumericVector titre_data_individual(NumericVector theta,
     startIndex = endIndex + 1;
   }
   return(titres);
-  }
+}
 
-  //# @export
-  //[[Rcpp::export]]
-  NumericVector titre_data_group(NumericVector theta, 
-				 IntegerMatrix infectionHistories, 
-				 NumericVector circulationTimes,
-				 IntegerVector circulationMapIndices,
-				 NumericVector samplingTimes,
-				 IntegerVector indicesTitreDataSample, // How many rows in titre data correspond to each individual, sample and repeat?
-				 IntegerVector indicesTitreDataOverall, // How many rows in the titre data correspond to each individual?
+//' @export
+//[[Rcpp::export]]
+NumericVector titre_data_group(NumericVector theta, 
+			       IntegerMatrix infectionHistories, 
+			       NumericVector circulationTimes,
+			       IntegerVector circulationMapIndices,
+			       NumericVector samplingTimes,
+			       IntegerVector indicesTitreDataSample, // How many rows in titre data correspond to each individual, sample and repeat?
+			       IntegerVector indicesTitreDataOverall, // How many rows in the titre data correspond to each individual?
 			       IntegerVector indicesSamples, // Split the sample times and runs for each individual
 			       IntegerVector measuredMapIndices, // For each titre measurement, corresponding entry in antigenic map
 			       NumericVector antigenicMapLong, 
@@ -331,16 +312,24 @@ NumericVector titre_data_individual(NumericVector theta,
 }
 
 
+
 //' Calculate likelihood
 //'
 //' Calculates the likelihood of a given set of observed titres given predicted titres. Based on truncated discritised normal.
 //' @param expected NumericVector, as returned by \code{\link{infection_model_indiv}}
 //' @param data NumericVector, the vector of observed titres
 //' @param theta NumericVector, the vector of named model parameters, requiring MAX_TITRE and error
+//' @param to_add NumericVector, OPTIONAL if using measurement bias, gives the shift to add to each expected titre
 //' @return a single log likelihood
 //' @export
 //[[Rcpp::export]]
-double likelihood_titre(NumericVector expected, NumericVector data, NumericVector theta){
+double likelihood_titre(NumericVector expected, NumericVector data, NumericVector theta,
+			Nullable<NumericVector> to_add){
+  NumericVector expected1 = expected;
+  if(to_add.isNotNull()){
+    NumericVector _to_add(to_add);
+    expected1 = expected1 + _to_add;
+  }
   int n = expected.size();
   double lnlike = 0;
   
@@ -359,6 +348,8 @@ double likelihood_titre(NumericVector expected, NumericVector data, NumericVecto
   return(lnlike);
 }
 
+
+
 //' @export
 //[[Rcpp::export]]
 double likelihood_data_individual(NumericVector theta, 
@@ -371,7 +362,8 @@ double likelihood_data_individual(NumericVector theta,
 				  NumericVector antigenicMapLong, 
 				  NumericVector antigenicMapShort,
 				  int numberStrains,
-				  NumericVector data                         
+				  NumericVector data,
+				  Nullable<NumericVector> to_add
 				  ){
   int numberSamples = samplingTimes.size();
   int numberMeasuredStrains = measuredMapIndices.size();
@@ -399,249 +391,8 @@ double likelihood_data_individual(NumericVector theta,
 								numberStrains);
     startIndex = endIndex + 1;
   }
-  lnlike = likelihood_titre(titres, data, theta);
+  lnlike = likelihood_titre(titres, data, theta, to_add);
   return(lnlike);
-}
-
-
-
-
-//' Calculate likelihood
-//'
-//' Calculates the likelihood of a given set of observed titres given predicted titres. Based on truncated discritised normal.
-//' @param expected NumericVector, as returned by \code{\link{infection_model_indiv}}
-//' @param data NumericVector, the vector of observed titres
-//' @param theta NumericVector, the vector of named model parameters, requiring MAX_TITRE and error
-//' @return a single log likelihood
-//' @export
-//[[Rcpp::export]]
-double likelihood_titre_bias(NumericVector expected, NumericVector data, NumericVector theta,
-			     NumericVector to_add){
-  NumericVector expected1 = expected;
-  expected1 = expected1 + to_add;
-  int n = expected.size();
-  double lnlike = 0;
-  
-  for(int i=0; i < n; ++i){
-    if(!NumericVector::is_na(data[i])){
-      if(data[i] > theta["MAX_TITRE"]){
-	lnlike += R::pnorm(theta["MAX_TITRE"], expected[i], theta["error"],0,1);
-      } else if(data[i] <= 0){
-	lnlike += R::pnorm(1, expected[i], theta["error"],1,1);
-      } else {
-	lnlike += log(R::pnorm(data[i]+1, expected[i],theta["error"], 1,0) - 
-		      R::pnorm(data[i], expected[i], theta["error"],1,0));
-      }
-    }
-  }
-  return(lnlike);
-}
-
-//' @export
-//[[Rcpp::export]]
-double likelihood_data_individual_bias(NumericVector theta, 
-				       IntegerVector infectionHistory, 
-				       NumericVector circulationTimes, 
-				       IntegerVector circulationMapIndices,
-				       NumericVector samplingTimes,
-				       IntegerVector dataIndices,
-				       IntegerVector measuredMapIndices, 
-				       NumericVector antigenicMapLong, 
-				       NumericVector antigenicMapShort,
-				       int numberStrains,
-				       NumericVector data,
-				       NumericVector to_add
-				       ){
-  int numberSamples = samplingTimes.size();
-  int numberMeasuredStrains = measuredMapIndices.size();
-  double lnlike=0;
-  NumericVector titres(numberMeasuredStrains);
-
-  int startIndex = 0;
-  int endIndex = 0;
-
-  LogicalVector indices = infectionHistory > 0;
-
-  IntegerVector conciseInfHist = infectionHistory[indices];
-  NumericVector infectionTimes = circulationTimes[indices];
-  IntegerVector infMapIndices = circulationMapIndices[indices];
-
-  for(int i = 0; i < numberSamples; ++i){ 
-    endIndex = startIndex + dataIndices[i] - 1;
-    titres[Range(startIndex, endIndex)] = infection_model_indiv(theta,
-								conciseInfHist,
-								infectionTimes,
-								infMapIndices,
-								samplingTimes[i],
-								measuredMapIndices[Range(startIndex,endIndex)],
-								antigenicMapLong, antigenicMapShort,
-								numberStrains);
-    startIndex = endIndex + 1;
-  }
-  lnlike = likelihood_titre_bias(titres, data, theta, to_add);
-  return(lnlike);
-}
-
-
-//' Individual likelihood
-//'
-//' Uses \code{\link{infection_model_indiv}} for a single individual and then calls \code{\link{likelihood_titre}}. Works with NA
-//' @param theta NumericVector, the named vector of model parameters
-//' @param infectionHistory NumericVector, the vector of 1s and 0s showing presence/absence of infection for each possible time. 
-//' @param samplingTimes NumericVector, the vector of real times that samples were taken
-//' @param strainIsolationTimes NumericVector, the vector of times at which each virus strain circulated
-//' @param antigenicMapLong NumericVector, the collapsed cross reactivity map for long term boosting, after multiplying by sigma1
-//' @param antigenicMapShort NumericVector, the collapsed cross reactivity map for short term boosting, after multiplying by sigma2
-//' @param titres NumericVector, the vector of observed titres.
-//' @return a single log likelihood
-//' @useDynLib serosolver
-//' @export
-//[[Rcpp::export]]
-double individual_likelihood(NumericVector theta, NumericVector infectionHistory,
-			     NumericVector samplingTimes, IntegerVector indivIndices, 
-			     NumericVector strainIsolationTimes, IntegerVector indivVirusIndices,
-			     NumericVector antigenicMapLong, NumericVector antigenicMapShort, 
-			     NumericVector titres, int numberStrains){
-  
-  int numberSamples = samplingTimes.size();
-  NumericVector predictedTitres;
-  NumericVector tmpTitres;
-  double lnlike = 0;
-
-  // These indices allow us to step through a vector as if it were a 
-  // matrix (ie. numberStrains at a time)
-  int startIndex = 0;
-  int endIndex = indivIndices[0] - 1;
-  
-  for(int i=0; i < numberSamples; ++i){
-    /*  predictedTitres = infection_model_indiv(theta, infectionHistory, 
-	samplingTimes[i],
-	strainIsolationTimes[Range(startIndex, endIndex)], 
-	indivVirusIndices[Range(startIndex, endIndex)],
-	antigenicMapLong, antigenicMapShort, numberStrains);
-    */
-    tmpTitres = titres[Range(startIndex,endIndex)];
-    lnlike += likelihood_titre(predictedTitres, tmpTitres,theta);
-
-    // Increase indices by max number of strains
-    startIndex = endIndex+1;
-    endIndex += indivIndices[i];
-  }
-  return(lnlike);
-}
-
-//' Group likelihood
-//'
-//' Uses \code{\link{individual_likelihood}} for each individual and returns a vector of log likelihoods for each individual
-//' @param theta NumericVector, the named vector of model parameters
-//' @param infectionHistories NumericMatrix, the matrix of 1s and 0s showing presence/absence of infection for each possible time for each individual 
-//' @param indicesSampling IntegerVector, the range of indices of the titre vector that correspond to each individual (eg. first 5 titres are for indiv 1, indicesA = c(0,5,...)
-//' @param indicesData IntegerVector, the range of indices of the sample vector that correspond to each individual (eg. first 2 sampling times are for indiv 1, indicesB = c(0,2,...)
-//' @param samplingTimes NumericVector, the vector of real times that samples were taken
-//' @param strainIsolationTimes NumericVector, the vector of times at which each virus strain circulated
-//' @param antigenicMapLong NumericVector, the collapsed cross reactivity map for long term boosting, after multiplying by sigma1
-//' @param antigenicMapShort NumericVector, the collapsed cross reactivity map for short term boosting, after multiplying by sigma2
-//' @param titres NumericVector, the vector of observed titres for all individuals.
-//' @param n_strains int, the maximum number of strains that could be tested against
-//' @return a NumericVector of log likelihoods for each individual
-//' @useDynLib serosolver
-//' @export
-//[[Rcpp::export]]
-NumericVector group_likelihood_vector(NumericVector theta, NumericMatrix infectionHistories, 
-				      IntegerVector indicesSamples, IntegerVector indicesData, IntegerVector indicesDataOverall,
-				      NumericVector samplingTimes, NumericVector strainIsolationTimes, IntegerVector virusIndices,
-				      NumericVector antigenicMapLong, NumericVector antigenicMapShort, 
-				      NumericVector titres){
-  int n = infectionHistories.nrow();
-  int n_strains = infectionHistories.ncol();
-  NumericVector lnlikes(n);
-  
-  // These indices allow us to step through the titre data vector
-  // as if it were a matrix ie. number of rows for each individual
-  // at a time
-  int startIndexSamples;
-  int endIndexSamples;
-  int startIndexData;
-  int endIndexData;
-
-  for(int i=0; i < n; ++i){
-    startIndexSamples = indicesSamples[i];
-    endIndexSamples = indicesSamples[i+1];
-
-    startIndexData = indicesDataOverall[i];
-    endIndexData = indicesDataOverall[i+1] - 1;
-    
-    endIndexSamples -= 1;
-    
-    lnlikes[i] = individual_likelihood(theta, 
-				       infectionHistories(i,_),
-				       samplingTimes[Range(startIndexSamples, endIndexSamples)],
-				       indicesData[Range(startIndexSamples,endIndexSamples)],
-				       strainIsolationTimes[Range(startIndexData,endIndexData)], 
-				       virusIndices[Range(startIndexData,endIndexData)],
-				       antigenicMapLong, 
-				       antigenicMapShort, 
-				       titres[Range(startIndexData,endIndexData)],
-				       n_strains);
-  }
-  return(lnlikes);  
-}
-
-
-//' Group likelihood
-//'
-//' Uses \code{\link{individual_likelihood}} for each individual and returns a summed log likelihood for all individuals
-//' @param theta NumericVector, the named vector of model parameters
-//' @param infectionHistories NumericMatrix, the matrix of 1s and 0s showing presence/absence of infection for each possible time for each individual 
-//' @param indicesA IntegerVector, the range of indices of the titre vector that correspond to each individual (eg. first 5 titres are for indiv 1, indicesA = c(0,5,...)
-//' @param indicesB IntegerVector, the range of indices of the sample vector that correspond to each individual (eg. first 2 sampling times are for indiv 1, indicesB = c(0,2,...)
-//' @param samplingTimes NumericVector, the vector of real times that samples were taken
-//' @param strainIsolationTimes NumericVector, the vector of times at which each virus strain circulated
-//' @param antigenicMapLong NumericVector, the collapsed cross reactivity map for long term boosting, after multiplying by sigma1
-//' @param antigenicMapShort NumericVector, the collapsed cross reactivity map for short term boosting, after multiplying by sigma2
-//' @param titres NumericVector, the vector of observed titres for all individuals.
-//' @return a single log likelihood
-//' @useDynLib serosolver
-//' @export
-//[[Rcpp::export]]
-double group_likelihood_total(NumericVector theta, NumericMatrix infectionHistories, 
-			      IntegerVector indicesSamples, IntegerVector indicesData, IntegerVector indicesDataOverall,
-			      NumericVector samplingTimes, NumericVector strainIsolationTimes, IntegerVector virusIndices,
-			      NumericVector antigenicMapLong, NumericVector antigenicMapShort, 
-			      NumericVector titres){
-  int n = infectionHistories.nrow();
-  int n_strains = infectionHistories.ncol();
-  double lnlike=0;
-  
-  // These indices allow us to step through the titre data vector
-  // as if it were a matrix ie. number of rows for each individual
-  // at a time
-  int startIndexSamples;
-  int endIndexSamples;
-  int startIndexData;
-  int endIndexData;
-  
-  for(int i=0; i < n; ++i){
-    startIndexSamples = indicesSamples[i];
-    endIndexSamples = indicesSamples[i+1];
-    
-    startIndexData = indicesDataOverall[i];
-    endIndexData = indicesDataOverall[i+1] - 1;
-    
-    endIndexSamples -= 1;
-    
-    lnlike += individual_likelihood(theta, 
-				    infectionHistories(i,_),
-				    samplingTimes[Range(startIndexSamples, endIndexSamples)],
-				    indicesData[Range(startIndexSamples,endIndexSamples)],
-				    strainIsolationTimes[Range(startIndexData,endIndexData)], 
-				    virusIndices[Range(startIndexData,endIndexData)],
-				    antigenicMapLong, 
-				    antigenicMapShort, 
-				    titres[Range(startIndexData,endIndexData)],
-				    n_strains);
-  }
-  return(lnlike);  
 }
 
 

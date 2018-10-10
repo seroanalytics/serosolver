@@ -9,4 +9,3 @@ c_model_original(n, nsamp, x, theta, dd, dd2, t_sample)
 \description{
 Original model reimplementation
 }
-

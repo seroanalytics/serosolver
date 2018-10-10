@@ -21,4 +21,3 @@ the probability density of the beta binomial with given input parameters
 \description{
 Beta binomial density
 }
-

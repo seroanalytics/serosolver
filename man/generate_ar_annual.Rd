@@ -9,4 +9,3 @@ generate_ar_annual(AR, buckets)
 \description{
 Generates attack rates from an SIR model with fixed beta/gamma, specified final attack rate and the number of time "buckets" to solve over ie. buckets=12 returns attack rates for 12 time periods
 }
-

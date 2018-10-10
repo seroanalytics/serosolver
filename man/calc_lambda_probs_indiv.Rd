@@ -19,4 +19,3 @@ a vector of log probabilities for each individual
 \description{
 Given a vector of FOIs for all circulating years, a matrix of infection histories and the vector specifying if individuals were alive or not, returns the log probability of the FOIs given the infection histories.
 }
-

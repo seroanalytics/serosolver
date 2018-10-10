@@ -21,4 +21,3 @@ the beta binomial quantile function
 \description{
 Beta binomial quantile function
 }
-

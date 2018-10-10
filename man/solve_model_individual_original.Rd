@@ -4,10 +4,9 @@
 \alias{solve_model_individual_original}
 \title{Solves the original model as in the original implementation}
 \usage{
-solve_model_individual_original(theta_star, sample, antigenic.map.in, years,
-  infHist)
+solve_model_individual_original(theta_star, sample, antigenic.map.in,
+  years, infHist)
 }
 \description{
 Solves the original model as in the original implementation
 }
-

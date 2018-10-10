@@ -4,8 +4,8 @@
 \alias{generate_all_plots}
 \title{Generates all output plots}
 \usage{
-generate_all_plots(outputDir, adaptive_period, chainFile, infHistFile, titreDat,
-  antigenicMap, parTab, ages, nIndiv = 10, nSamp = 1000,
+generate_all_plots(outputDir, adaptive_period, chainFile, infHistFile,
+  titreDat, antigenicMap, parTab, ages, nIndiv = 10, nSamp = 1000,
   filename = "test", thin = 100)
 }
 \arguments{
@@ -39,4 +39,3 @@ nothing
 \description{
 Given an output file location, locations of output files from the MCMC procedure and some control parameters, generates and saves infection history plots, posterior plots (trace and density), attack rates and total number of infections.
 }
-

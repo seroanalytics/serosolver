@@ -11,9 +11,12 @@
 #' @param ... other arguments to pass to the posterior solving function
 #' @return a single function pointer that takes only pars and infectionHistories as unnamed arguments. This function goes on to return a vector of posterior values for each individual
 #' @export
-create_post_func <- function(parTab, data, antigenicMap,
-                             PRIOR_FUNC,version=1,ageMask=NULL,
-                             measurement_indices=NULL,
+create_posterior_func <- function(parTab,
+                             data,
+                             antigenicMap,
+                             version=1,
+                             ageMask=NULL,
+                             measurement_indices_by_time=NULL,
                              ...){
   parNames <- parTab$names
 
@@ -29,22 +32,25 @@ create_post_func <- function(parTab, data, antigenicMap,
   
   ## The entry of each strain in the antigenic map table
   strainIndices <- match(strains, strains) - 1
-  
-  ## Note that the strain isolation times in the data set should have
-  ## corresponding indices in the antigenic map table
-  strainIsolationTimes <- data$virus
+
+  ## Generate distances between each pair of viruses from the antigenic map
   antigenicMapMelted <- c(outputdmatrix.fromcoord(antigenicMap[,c("x_coord","y_coord")]))
 
   ## Get unique measurement sets for each individual at
   ## each sampling time for each repeat
   samples <- unique(data[,c("individual","samples","run")])
   samples <- samples[order(samples$individual, samples$run, samples$samples),]
-  
+
+  ## Sort data in same way
+  data <- data[order(data$individual, data$run, data$samples, data$virus),]
+
   ## Extract vector of sampling times and individual indices for speed
   sampleTimes <- samples$samples
   individuals <- samples$individual  
   n_indiv <- length(unique(samples$individual))
-  
+
+  ## For each individual, sample and run, get the corresponding number of rows from the overall
+  ## data matrix. 
   indicesData <- NULL
   for(i in 1:nrow(samples)){
     indicesData <- c(indicesData, nrow(samples[data$individual == samples[i,"individual"] &
@@ -60,6 +66,7 @@ create_post_func <- function(parTab, data, antigenicMap,
       indicesSamples <- c(indicesSamples, length(individuals[individuals==individual]))
   }
   indicesSamples <- cumsum(indicesSamples)
+  
   ## How many rows in the titre data correspond to each individual?
   indicesDataOverall <- NULL
   for(individual in unique(individuals)){
@@ -70,278 +77,156 @@ create_post_func <- function(parTab, data, antigenicMap,
 
   if(is.null(ageMask)) ageMask <- rep(1, n_indiv)
   n_alive <- sapply(1:length(strains), function(x) length(ageMask[ageMask <= x]))
+
+
+  ## Extract parameter type indices from parTab, to split up
+  ## similar parameters in model solving functions
+  option_indices <- which(parTab$type == 0)
+  theta_indices <- which(parTab$type == 1)
+  lambda_indices <- which(parTab$type == 2)
+  measurement_indices_parTab <- which(parTab$type == 3)
+  weight_indices <- which(parTab$type == 4) ## For functional form version
+  knot_indices <- which(parTab$type == 5)
   
-  if(version==1){
-      print("likelihood only - prior implicit in proposal")
-      ## The function pointer
-       f <- function(pars, infectionHistories){
-          names(pars) <- parNames
-          ## Work out short and long term boosting cross reactivity - C++ function
-          antigenicMapLong <- create_cross_reactivity_vector(antigenicMapMelted, pars["sigma1"])
-          antigenicMapShort <- create_cross_reactivity_vector(antigenicMapMelted, pars["sigma2"])
-          
-          ## Now pass to the C++ function
-          y <- titre_data_group(pars, infectionHistories, strains, strainIndices, sampleTimes,
-                                indicesData,indicesDataOverall,indicesSamples, virusIndices, 
-                                antigenicMapLong, antigenicMapShort)
-          liks <- r_likelihood(y, titres, pars)                                        
-          return(sum_buckets(liks, indicesOverallDiff))
-      }
-  } else if(version==2){
-      print("nothing - posterior implicit in proposal")
-      theta_indices <- which(parTab$identity == 1)
-      lambda_indices <- which(parTab$identity == 2)
-      parNames_theta <- parTab[theta_indices,"names"]
-      f <- function(pars, infectionHistories){
-          lambdas <- pars[lambda_indices]
-          pars1 <- pars[theta_indices]
-          names(pars1) <- parNames_theta
-          liks <- rep(-100000,n_indiv)
-          if(length(lambda_indices) > 0){
-              liks <- liks + calc_lambda_probs_indiv(lambdas, infectionHistories, ageMask)
-          }
-          return(liks)
-      }
-  } else if(version == 3){
-      print("just likelihood from lambda")
-      theta_indices <- which(parTab$identity == 1)
-      lambda_indices <- which(parTab$identity == 2)
-      parNames <- parTab[theta_indices,"names"]
-      f <- function(pars, infectionHistories){
-          ##names(pars) <- parNames
-          ##liks <- rep(-100000,n_indiv)
-          ##liks <- liks + PRIOR_FUNC(pars, infectionHistories, ageMask)
-          lambdas <- pars[lambda_indices]
-          pars1 <- pars[theta_indices]
-          names(pars1) <- parNames
-          liks <- calc_lambda_probs_indiv(lambdas, infectionHistories, ageMask)
-          return(liks)
-      }
-  } else if(version==4) {
-      print("Explicit FOI inference, lambda. Using likelihood and no explicit prior")
-      theta_indices <- which(parTab$identity == 1)
-      lambda_indices <- which(parTab$identity == 2)
-      parNames_theta<- parTab[theta_indices,"names"]
-      ## The function pointer
-      f <- function(pars, infectionHistories){
-          lambdas <- pars[lambda_indices]
-          pars <- pars[theta_indices]
-          names(pars) <- parNames_theta
+  parNames_theta <- parTab[theta_indices,"names"]
 
-          ## Work out short and long term boosting cross reactivity
-          antigenicMapLong <- create_cross_reactivity_vector(antigenicMapMelted, pars["sigma1"])
-          antigenicMapShort <- create_cross_reactivity_vector(antigenicMapMelted, pars["sigma2"])
-          
-          ## Now pass to the C++ function
-          y <- titre_data_group(pars, infectionHistories, strains, strainIndices, sampleTimes,
-                                indicesData,indicesDataOverall,indicesSamples, virusIndices, 
-                                antigenicMapLong, antigenicMapShort)
-          liks <- r_likelihood(y, titres, pars)
-          liks <- sum_buckets(liks, indicesOverallDiff)
-          liks <- liks + calc_lambda_probs_indiv(lambdas, infectionHistories, ageMask)
-          return(liks)
-      }
-  } else if(version==5){
-      print("likelihood and prior - proposals should be symmetric")
+  ## Find which options are being used in advance for speed
+  explicit_lambda <- (length(lambda_indices) > 0)
+  spline_lambda <- (length(knot_indices) > 0)
+  use_measurement_bias <- (length(measurement_indices) > 0) & !is.null(measurement_indices_by_time)
+  to_add <- NULL
+  expected_indices <- NULL
+  measurement_bias <- NULL
+  
+  if (use_measurement_bias) {
+      expected_indices <- measurement_indices_by_time[match(data$virus,strains)]
+  }
+  
+  if (version==1) {
       f <- function(pars, infectionHistories){
-          names(pars) <- parNames
-          ## Work out short and long term boosting cross reactivity
-          antigenicMapLong <- create_cross_reactivity_vector(antigenicMapMelted, pars["sigma1"])
-          antigenicMapShort <- create_cross_reactivity_vector(antigenicMapMelted, pars["sigma2"])
-          ## Now pass to the C++ function
-          y <- titre_data_group(pars, infectionHistories, strains, strainIndices, sampleTimes,
-                                indicesData,indicesDataOverall,indicesSamples, virusIndices, 
-                                antigenicMapLong, antigenicMapShort)
-          liks <- r_likelihood(y, titres, pars)
-          liks <- sum_buckets(liks, indicesOverallDiff)
-          liks <- liks + PRIOR_FUNC(pars, infectionHistories)         
-          return(liks)
-      }
-  } else if(version == 6){
-      print("For use in optim")
-      f <- function(pars){
-          names(pars) <- parNames
-          ## Work out short and long term boosting cross reactivity
-          antigenicMapLong <- create_cross_reactivity_vector(antigenicMapMelted, pars["sigma1"])
-          antigenicMapShort <- create_cross_reactivity_vector(antigenicMapMelted, pars["sigma2"])
-          ## Now pass to the C++ function
-          y <- titre_data_group(pars, infectionHistories, strains, strainIndices, sampleTimes,
-                                indicesData,indicesDataOverall,indicesSamples, virusIndices, 
-                                antigenicMapLong, antigenicMapShort)
-          liks <- r_likelihood(y, titres, pars)
-          lik <- -sum(sum_buckets(liks, indicesOverallDiff))
-          lik
-      }
-  } else if(version == 7){
-      print("Explicit FOI inference, lambda is monthly. Using likelihood and no explicit prior")
-      theta_indices <- which(parTab$identity == 1)
-      foi_indices <- which(parTab$identity == 2)
-      weights_indices <- which(parTab$identity == 3)
-      knot_indices <- which(parTab$identity == 4)
-      parNames_theta<- parTab[theta_indices,"names"]
-      ## The function pointer
-      f <- function(pars, infectionHistories){
-          foi <- pars[foi_indices]
-          theta <- pars[weights_indices]
+          lambdas <- pars[lambda_indices]
+          theta <- pars[theta_indices]
+          weights <- pars[weights_indices]
           knots <- pars[knot_indices]
-          pars <- pars[theta_indices]
-          names(pars) <- parNames_theta
 
-          ## Work out short and long term boosting cross reactivity
-          antigenicMapLong <- create_cross_reactivity_vector(antigenicMapMelted, pars["sigma1"])
-          antigenicMapShort <- create_cross_reactivity_vector(antigenicMapMelted, pars["sigma2"])
-          
-          ## Now pass to the C++ function
-          y <- titre_data_group(pars, infectionHistories, strains, strainIndices, sampleTimes,
-                                indicesData,indicesDataOverall,indicesSamples, virusIndices, 
-                                antigenicMapLong, antigenicMapShort)
-          liks <- r_likelihood(y, titres, pars)
-          liks <- sum_buckets(liks, indicesOverallDiff)
-          liks <- liks + calc_lambda_probs_monthly(foi,  knots, theta, infectionHistories, ageMask)
-          return(liks)
-      }
-  } else if(version == 8){
-      print("Lambda likelihood only")
-      lambdas <- pars[lambda_indices]
-      pars <- pars[theta_indices]
-      names(pars) <- parNames_theta
-      liks <- calc_lambda_probs_indiv(lambdas, infectionHistories, ageMask)
-  } else if(version == 99){
-      ## Gibbs proposal on infection histories
-      if(is.null(measurement_indices)){
-          f <- function(pars, infectionHistories, alpha, beta, indivPropn, nYears, swapPropn=0.5,swapDistance=1, temp=1){
-                                        #n_years_samp <- floor(yearPropn*n_strains)
-              names(pars) <- parNames
-              ## Work out short and long term boosting cross reactivity - C++ function
-              antigenicMapLong <- create_cross_reactivity_vector(antigenicMapMelted, pars["sigma1"])
-              antigenicMapShort <- create_cross_reactivity_vector(antigenicMapMelted, pars["sigma2"])
-              ## Now pass to the C++ function
-              new_infectionHistories <- infection_history_proposal_gibbs(pars, infectionHistories,
-                                                                         indivPropn,nYears,
-                                                                         ageMask, n_alive,
-                                                                         swapPropn, swapDistance,
-                                                                         alpha, beta,
-                                                                         strains, strainIndices, sampleTimes,
-                                                                         indicesData,indicesDataOverall,
-                                                                         indicesSamples, virusIndices, 
-                                                                         antigenicMapLong, antigenicMapShort,
-                                                                         titres,
-                                                                         temp)
-                                        #liks <- r_likelihood(y, titres, pars)          
-              return(new_infectionHistories)
-          }
-      } else {
-          theta_indices <- which(parTab$identity != 4)
-          measurement_indices_parTab <- which(parTab$identity == 4)
-          expected_indices <- measurement_indices[match(data$virus,strains)]
-          f <- function(pars, infectionHistories, alpha, beta, indivPropn,
-                        nYears, swapPropn=0.5,swapDistance=1,temp=1){
-              names(pars) <- parNames
+          names(pars) <- parNames_theta
+          if (use_measurement_bias) {
               measurement_bias <- pars[measurement_indices_parTab]
               to_add <- measurement_bias[expected_indices]
-              pars <- pars[theta_indices]
-              ## Work out short and long term boosting cross reactivity - C++ function
-              antigenicMapLong <- create_cross_reactivity_vector(antigenicMapMelted, pars["sigma1"])
-              antigenicMapShort <- create_cross_reactivity_vector(antigenicMapMelted, pars["sigma2"])
-              ## Now pass to the C++ function
-              new_infectionHistories <- infection_history_proposal_gibbs_bias(pars, 
-                                                                              infectionHistories,
-                                                                              indivPropn,nYears,
-                                                                              ageMask, n_alive,
-                                                                              swapPropn, swapDistance,
-                                                                              alpha, beta,
-                                                                              strains, strainIndices, sampleTimes,
-                                                                              indicesData,indicesDataOverall,
-                                                                              indicesSamples, virusIndices, 
-                                                                              antigenicMapLong, antigenicMapShort,
-                                                                              titres,
-                                                                              to_add,
-                                                                              temp)
-              return(new_infectionHistories)
           }
-      }
-  } else if(version==9){
-      print("likelihood only and measurement bias")
-      theta_indices <- which(parTab$identity != 4)
-      measurement_indices_parTab <- which(parTab$identity == 4)
-      expected_indices <- measurement_indices[match(data$virus,strains)]
-      ## The function pointer
-      f <- function(pars, infectionHistories){
-          names(pars) <- parNames
-          measurement_bias <- pars[measurement_indices_parTab]
-          pars <- pars[theta_indices]
           
+          names(theta) <- parNames_theta
+
           ## Work out short and long term boosting cross reactivity - C++ function
-          antigenicMapLong <- create_cross_reactivity_vector(antigenicMapMelted, pars["sigma1"])
-          antigenicMapShort <- create_cross_reactivity_vector(antigenicMapMelted, pars["sigma2"])
+          antigenicMapLong <- create_cross_reactivity_vector(antigenicMapMelted, theta["sigma1"])
+          antigenicMapShort <- create_cross_reactivity_vector(antigenicMapMelted, theta["sigma2"])
           
           ## Now pass to the C++ function
-          y <- titre_data_group(pars, infectionHistories, strains, strainIndices, sampleTimes,
+          y <- titre_data_group(theta, infectionHistories, strains, strainIndices, sampleTimes,
                                 indicesData,indicesDataOverall,indicesSamples, virusIndices, 
                                 antigenicMapLong, antigenicMapShort)
-          liks <- r_likelihood_bias(y, titres, expected_indices,pars,measurement_bias)                                        
-          return(sum_buckets(liks, indicesOverallDiff))
+          liks <- r_likelihood(y, titres, theta, measurement_bias, expected_indices)
+          liks <- sum_buckets(liks, indicesOverallDiff)
+          
+          if (explicit_lambda) {
+              liks <- liks + calc_lambda_probs_indiv(lambdas, infectionHistories, ageMask)
+          }
+          if (spline_lambda) {
+              liks <- liks + calc_lambda_probs_monthly(lambdas,  knots, weights, infectionHistories, ageMask)
+          }          
+          return(liks)
+      }
+  } else if (version == 2) {
+      f <- function(pars, infectionHistories){
+          lambdas <- pars[lambda_indices]
+          weights <- pars[weights_indices]
+          knots <- pars[knot_indices]
+          
+          liks <- rep(-100000,n_indiv)
+          
+          if (explicit_lambda) {
+              liks <- liks + calc_lambda_probs_indiv(lambdas, infectionHistories, ageMask)
+          }
+          if (spline_lambda) {
+              liks <- liks + calc_lambda_probs_monthly(lambda,  knots, weights, infectionHistories, ageMask)
+          }
+          
+          return(liks)
+      }
+  } else if (version == 99) {
+      ## Gibbs proposal on infection histories
+      f <- function(pars, infectionHistories, alpha, beta, indivPropn, nYears,
+                    swapPropn=0.5,swapDistance=1, temp=1){
+          lambdas <- pars[lambda_indices]
+          theta <- pars[theta_indices]
+          weights <- pars[weights_indices]
+          knots <- pars[knot_indices]
+
+          names(pars) <- parNames_theta
+          if (use_measurement_bias) {
+              measurement_bias <- pars[measurement_indices_parTab]
+              to_add <- measurement_bias[expected_indices]
+          }
+          
+          names(theta) <- parNames_theta
+          
+          ## Work out short and long term boosting cross reactivity - C++ function
+          antigenicMapLong <- create_cross_reactivity_vector(antigenicMapMelted, theta["sigma1"])
+          antigenicMapShort <- create_cross_reactivity_vector(antigenicMapMelted, theta["sigma2"])
+          
+          ## Now pass to the C++ function
+          new_infectionHistories <- infection_history_proposal_gibbs(theta, infectionHistories,
+                                                                     indivPropn,nYears,
+                                                                     ageMask, n_alive,
+                                                                     swapPropn, swapDistance,
+                                                                     alpha, beta,
+                                                                     strains, strainIndices, sampleTimes,
+                                                                     indicesData,indicesDataOverall,
+                                                                     indicesSamples, virusIndices, 
+                                                                     antigenicMapLong, antigenicMapShort,
+                                                                     titres,
+                                                                     to_add,
+                                                                     temp
+                                                                     )
+          return(new_infectionHistories)
       }
   } else {
       print("Model solving function")
-      if(!is.null(measurement_indices)){
-          theta_indices <- which(parTab$identity != 4)
-          measurement_indices_parTab <- which(parTab$identity == 4)
-          expected_indices <- measurement_indices[match(data$virus,strains)]
           f <- function(pars, infectionHistories){
-              names(pars) <- parNames
-              measurement_bias <- pars[measurement_indices_parTab]
-              to_add <- measurement_bias[expected_indices]
-              pars <- pars[theta_indices]
+              lambdas <- pars[lambda_indices]
+              theta <- pars[theta_indices]
+              weights <- pars[weights_indices]
+              knots <- pars[knot_indices]
+              
+              names(theta) <- parNames_theta
 
               ## Work out short and long term boosting cross reactivity - C++ function
-              antigenicMapLong <- create_cross_reactivity_vector(antigenicMapMelted, pars["sigma1"])
-              antigenicMapShort <- create_cross_reactivity_vector(antigenicMapMelted, pars["sigma2"])
+              antigenicMapLong <- create_cross_reactivity_vector(antigenicMapMelted, theta["sigma1"])
+              antigenicMapShort <- create_cross_reactivity_vector(antigenicMapMelted, theta["sigma2"])
               
               ## Now pass to the C++ function
-              y <- titre_data_group(pars, infectionHistories, strains, strainIndices, sampleTimes,
+              y <- titre_data_group(theta, infectionHistories, strains, strainIndices, sampleTimes,
                                     indicesData,indicesDataOverall,indicesSamples, virusIndices, 
                                     antigenicMapLong, antigenicMapShort)
-              y <- y + to_add
-              return(y)
-          }
-      } else {
-          f <- function(pars, infectionHistories){
-              names(pars) <- parNames
-              ## Work out short and long term boosting cross reactivity - C++ function
-              antigenicMapLong <- create_cross_reactivity_vector(antigenicMapMelted, pars["sigma1"])
-              antigenicMapShort <- create_cross_reactivity_vector(antigenicMapMelted, pars["sigma2"])
               
-              ## Now pass to the C++ function
-              y <- titre_data_group(pars, infectionHistories, strains, strainIndices, sampleTimes,
-                                    indicesData,indicesDataOverall,indicesSamples, virusIndices, 
-                                    antigenicMapLong, antigenicMapShort)
+              if (use_measurement_bias) {
+                  measurement_bias <- pars[measurement_indices_parTab]
+                  to_add <- measurement_bias[expected_indices]
+                  y <- y + to_add
+              }
+              
               return(y)
           }
-      }
   }
   f
 }
 
 #' @export
-r_likelihood <- function(expected, data, theta){
-    liks <- numeric(length(expected))
-    largeI <- data > theta["MAX_TITRE"]
-    smallI <- data <= 0
-    restI <- data > 0 & data <= theta["MAX_TITRE"]
-    
-    liks[largeI] <- pnorm(theta["MAX_TITRE"], expected[largeI],theta["error"],lower.tail=FALSE,log.p=TRUE)
-    liks[smallI] <- pnorm(1, expected[smallI],theta["error"],lower.tail=TRUE,log.p=TRUE)
-    liks[restI] <- log(pnorm(data[restI]+1,expected[restI],theta["error"],lower.tail=TRUE,log.p=FALSE) - 
-                  pnorm(data[restI],expected[restI], theta["error"],lower.tail=TRUE,log.p=FALSE))
-    return(liks)
-  }
-
-
-#' @export
-r_likelihood_bias <- function(expected, data, expected_indices, theta, measurement_shifts){
-    expected <- expected + measurement_shifts[expected_indices]
-    
+r_likelihood <- function(expected, data, theta, expected_indices=NULL, measurement_shifts=NULL){
+    if(!is.null(expected_indices) & !is.null(measurement_shifts)){
+        expected <- expected + measurement_shifts[expected_indices]
+    }
+     
     liks <- numeric(length(expected))
     largeI <- data > theta["MAX_TITRE"]
     smallI <- data <= 0
@@ -389,9 +274,7 @@ calc_lambda_probs_indiv <- function(lambdas, infHist, ageMask){
 
 #' @export
 calc_lambda_probs_monthly <- function(foi, knots, theta, infHist, ageMask){
-  
     lambdas <- generate_lambdas(foi, knots, theta, length(foi), 12)
-
     lik <- numeric(nrow(infHist))
     for(i in 1:ncol(infHist)){
         #lik <- lik + log(((lambdas[i]^infHist[,i]) * (1-lambdas[i])^(1-infHist[,i]))) + as.numeric(ageMask <= i)
@@ -433,8 +316,7 @@ generate_lambdas <- function(foi, knots, theta, nYears, buckets, degree=2){
     allDat <- numeric(length(tmp)*length(foi))
     for(i in 1:nYears){        
         allDat[index:(index + length(tmp)-1)] <-  tmp*foi[i]
-        index <- index + length(tmp)
-    
+        index <- index + length(tmp)    
     }
     allDat
 }
@@ -472,4 +354,14 @@ create_prob_shifts <- function(parTab){
         return(sum(dnorm(rhos, rho_mean, rho_sd,log=TRUE)))
     }
     f
+}
+
+
+#' @export
+prob_mus <- function(mus, pars){
+    mu_mean <- pars["mu_mean"]
+    mu_sd <- pars["mu_sd"]
+    l_mean <- log(mu_mean) - (mu_sd^2)/2
+    #return(sum(dnorm(mus, mu_mean, mu_sd,log=TRUE)))
+    return(sum(dlnorm(mus, l_mean, mu_sd, log=TRUE)))
 }

@@ -10,4 +10,3 @@ outputdmatrix.fromcoord.original(thetasigma, inf_years, anti.map.in,
 \description{
 Needed to solve the original implementation of the model
 }
-

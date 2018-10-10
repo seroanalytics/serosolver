@@ -4,8 +4,8 @@
 \alias{plot_attack_rates}
 \title{Plot historical attack rates}
 \usage{
-plot_attack_rates(infectionHistories, dat, ages, yearRange, n_alive = NULL,
-  pointsize = 1, fatten = 1)
+plot_attack_rates(infectionHistories, dat, ages, yearRange,
+  n_alive = NULL, pointsize = 1, fatten = 1)
 }
 \arguments{
 \item{infectionHistories}{the MCMC chain for infection histories}
@@ -28,4 +28,3 @@ a ggplot2 object with the inferred attack rates for each potential epoch of circ
 \description{
 Plots inferred historical attack rates from the MCMC output on infection histories
 }
-

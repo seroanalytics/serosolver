@@ -17,4 +17,3 @@ the vector of summed a
 \description{
 Given a vector (a) and another vector of bucket sizes, returns the summed vector (a)
 }
-

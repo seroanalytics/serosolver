@@ -19,4 +19,3 @@ calculates the mean of the beta binomial function
 \description{
 Beta binomial mean
 }
-

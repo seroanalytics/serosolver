@@ -9,4 +9,3 @@ generate_lambdas(foi, knots, theta, nYears, buckets, degree = 2)
 \description{
 Generate FOI lambdas
 }
-

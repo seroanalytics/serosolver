@@ -21,4 +21,3 @@ alpha and beta for the second distribution
 \description{
 Given a beta binomial function with known N, alpha and beta, finds the alpha and beta for a beta binomial with a different N that gives the same mean and variance
 }
-

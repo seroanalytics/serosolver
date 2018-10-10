@@ -10,4 +10,3 @@ solve_model_individual(parTab, infectionHistory, sampleTime, antigenicMap,
 \description{
 Solves the re-implementation of the model for a single individual
 }
-

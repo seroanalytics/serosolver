@@ -175,12 +175,3 @@ create_post_func_mu <- function(parTab, data, antigenicMap,
     }
     f
 }
-
-#' @export
-prob_mus <- function(mus, pars){
-    mu_mean <- pars["mu_mean"]
-    mu_sd <- pars["mu_sd"]
-    l_mean <- log(mu_mean) - (mu_sd^2)/2
-    #return(sum(dnorm(mus, mu_mean, mu_sd,log=TRUE)))
-    return(sum(dlnorm(mus, l_mean, mu_sd, log=TRUE)))
-}

@@ -20,4 +20,3 @@ vector of length n: new temperatures of chains
 \description{
 calibrate temperatures for parallel chains
 }
-

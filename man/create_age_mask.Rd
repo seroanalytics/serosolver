@@ -9,4 +9,3 @@ create_age_mask(ages, strainIsolationTimes, n_indiv)
 \description{
 Converts a data frame of individual ages to give the index of the first infection that individual could have had
 }
-

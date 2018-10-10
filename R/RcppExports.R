@@ -28,6 +28,7 @@ titre_data_individual <- function(theta, infectionHistory, circulationTimes, cir
     .Call('_serosolver_titre_data_individual', PACKAGE = 'serosolver', theta, infectionHistory, circulationTimes, circulationMapIndices, samplingTimes, dataIndices, measuredMapIndices, antigenicMapLong, antigenicMapShort, numberStrains)
 }
 
+#' @export
 titre_data_group <- function(theta, infectionHistories, circulationTimes, circulationMapIndices, samplingTimes, indicesTitreDataSample, indicesTitreDataOverall, indicesSamples, measuredMapIndices, antigenicMapLong, antigenicMapShort) {
     .Call('_serosolver_titre_data_group', PACKAGE = 'serosolver', theta, infectionHistories, circulationTimes, circulationMapIndices, samplingTimes, indicesTitreDataSample, indicesTitreDataOverall, indicesSamples, measuredMapIndices, antigenicMapLong, antigenicMapShort)
 }
@@ -38,88 +39,16 @@ titre_data_group <- function(theta, infectionHistories, circulationTimes, circul
 #' @param expected NumericVector, as returned by \code{\link{infection_model_indiv}}
 #' @param data NumericVector, the vector of observed titres
 #' @param theta NumericVector, the vector of named model parameters, requiring MAX_TITRE and error
+#' @param to_add NumericVector, OPTIONAL if using measurement bias, gives the shift to add to each expected titre
 #' @return a single log likelihood
 #' @export
-likelihood_titre <- function(expected, data, theta) {
-    .Call('_serosolver_likelihood_titre', PACKAGE = 'serosolver', expected, data, theta)
+likelihood_titre <- function(expected, data, theta, to_add) {
+    .Call('_serosolver_likelihood_titre', PACKAGE = 'serosolver', expected, data, theta, to_add)
 }
 
 #' @export
-likelihood_data_individual <- function(theta, infectionHistory, circulationTimes, circulationMapIndices, samplingTimes, dataIndices, measuredMapIndices, antigenicMapLong, antigenicMapShort, numberStrains, data) {
-    .Call('_serosolver_likelihood_data_individual', PACKAGE = 'serosolver', theta, infectionHistory, circulationTimes, circulationMapIndices, samplingTimes, dataIndices, measuredMapIndices, antigenicMapLong, antigenicMapShort, numberStrains, data)
-}
-
-#' Calculate likelihood
-#'
-#' Calculates the likelihood of a given set of observed titres given predicted titres. Based on truncated discritised normal.
-#' @param expected NumericVector, as returned by \code{\link{infection_model_indiv}}
-#' @param data NumericVector, the vector of observed titres
-#' @param theta NumericVector, the vector of named model parameters, requiring MAX_TITRE and error
-#' @return a single log likelihood
-#' @export
-likelihood_titre_bias <- function(expected, data, theta, to_add) {
-    .Call('_serosolver_likelihood_titre_bias', PACKAGE = 'serosolver', expected, data, theta, to_add)
-}
-
-#' @export
-likelihood_data_individual_bias <- function(theta, infectionHistory, circulationTimes, circulationMapIndices, samplingTimes, dataIndices, measuredMapIndices, antigenicMapLong, antigenicMapShort, numberStrains, data, to_add) {
-    .Call('_serosolver_likelihood_data_individual_bias', PACKAGE = 'serosolver', theta, infectionHistory, circulationTimes, circulationMapIndices, samplingTimes, dataIndices, measuredMapIndices, antigenicMapLong, antigenicMapShort, numberStrains, data, to_add)
-}
-
-#' Individual likelihood
-#'
-#' Uses \code{\link{infection_model_indiv}} for a single individual and then calls \code{\link{likelihood_titre}}. Works with NA
-#' @param theta NumericVector, the named vector of model parameters
-#' @param infectionHistory NumericVector, the vector of 1s and 0s showing presence/absence of infection for each possible time. 
-#' @param samplingTimes NumericVector, the vector of real times that samples were taken
-#' @param strainIsolationTimes NumericVector, the vector of times at which each virus strain circulated
-#' @param antigenicMapLong NumericVector, the collapsed cross reactivity map for long term boosting, after multiplying by sigma1
-#' @param antigenicMapShort NumericVector, the collapsed cross reactivity map for short term boosting, after multiplying by sigma2
-#' @param titres NumericVector, the vector of observed titres.
-#' @return a single log likelihood
-#' @useDynLib serosolver
-#' @export
-individual_likelihood <- function(theta, infectionHistory, samplingTimes, indivIndices, strainIsolationTimes, indivVirusIndices, antigenicMapLong, antigenicMapShort, titres, numberStrains) {
-    .Call('_serosolver_individual_likelihood', PACKAGE = 'serosolver', theta, infectionHistory, samplingTimes, indivIndices, strainIsolationTimes, indivVirusIndices, antigenicMapLong, antigenicMapShort, titres, numberStrains)
-}
-
-#' Group likelihood
-#'
-#' Uses \code{\link{individual_likelihood}} for each individual and returns a vector of log likelihoods for each individual
-#' @param theta NumericVector, the named vector of model parameters
-#' @param infectionHistories NumericMatrix, the matrix of 1s and 0s showing presence/absence of infection for each possible time for each individual 
-#' @param indicesSampling IntegerVector, the range of indices of the titre vector that correspond to each individual (eg. first 5 titres are for indiv 1, indicesA = c(0,5,...)
-#' @param indicesData IntegerVector, the range of indices of the sample vector that correspond to each individual (eg. first 2 sampling times are for indiv 1, indicesB = c(0,2,...)
-#' @param samplingTimes NumericVector, the vector of real times that samples were taken
-#' @param strainIsolationTimes NumericVector, the vector of times at which each virus strain circulated
-#' @param antigenicMapLong NumericVector, the collapsed cross reactivity map for long term boosting, after multiplying by sigma1
-#' @param antigenicMapShort NumericVector, the collapsed cross reactivity map for short term boosting, after multiplying by sigma2
-#' @param titres NumericVector, the vector of observed titres for all individuals.
-#' @param n_strains int, the maximum number of strains that could be tested against
-#' @return a NumericVector of log likelihoods for each individual
-#' @useDynLib serosolver
-#' @export
-group_likelihood_vector <- function(theta, infectionHistories, indicesSamples, indicesData, indicesDataOverall, samplingTimes, strainIsolationTimes, virusIndices, antigenicMapLong, antigenicMapShort, titres) {
-    .Call('_serosolver_group_likelihood_vector', PACKAGE = 'serosolver', theta, infectionHistories, indicesSamples, indicesData, indicesDataOverall, samplingTimes, strainIsolationTimes, virusIndices, antigenicMapLong, antigenicMapShort, titres)
-}
-
-#' Group likelihood
-#'
-#' Uses \code{\link{individual_likelihood}} for each individual and returns a summed log likelihood for all individuals
-#' @param theta NumericVector, the named vector of model parameters
-#' @param infectionHistories NumericMatrix, the matrix of 1s and 0s showing presence/absence of infection for each possible time for each individual 
-#' @param indicesA IntegerVector, the range of indices of the titre vector that correspond to each individual (eg. first 5 titres are for indiv 1, indicesA = c(0,5,...)
-#' @param indicesB IntegerVector, the range of indices of the sample vector that correspond to each individual (eg. first 2 sampling times are for indiv 1, indicesB = c(0,2,...)
-#' @param samplingTimes NumericVector, the vector of real times that samples were taken
-#' @param strainIsolationTimes NumericVector, the vector of times at which each virus strain circulated
-#' @param antigenicMapLong NumericVector, the collapsed cross reactivity map for long term boosting, after multiplying by sigma1
-#' @param antigenicMapShort NumericVector, the collapsed cross reactivity map for short term boosting, after multiplying by sigma2
-#' @param titres NumericVector, the vector of observed titres for all individuals.
-#' @return a single log likelihood
-#' @useDynLib serosolver
-#' @export
-group_likelihood_total <- function(theta, infectionHistories, indicesSamples, indicesData, indicesDataOverall, samplingTimes, strainIsolationTimes, virusIndices, antigenicMapLong, antigenicMapShort, titres) {
-    .Call('_serosolver_group_likelihood_total', PACKAGE = 'serosolver', theta, infectionHistories, indicesSamples, indicesData, indicesDataOverall, samplingTimes, strainIsolationTimes, virusIndices, antigenicMapLong, antigenicMapShort, titres)
+likelihood_data_individual <- function(theta, infectionHistory, circulationTimes, circulationMapIndices, samplingTimes, dataIndices, measuredMapIndices, antigenicMapLong, antigenicMapShort, numberStrains, data, to_add) {
+    .Call('_serosolver_likelihood_data_individual', PACKAGE = 'serosolver', theta, infectionHistory, circulationTimes, circulationMapIndices, samplingTimes, dataIndices, measuredMapIndices, antigenicMapLong, antigenicMapShort, numberStrains, data, to_add)
 }
 
 #' Sums a vector based on bucket sizes
@@ -197,33 +126,8 @@ inf_mat_prior_cpp <- function(infHist, n_alive, alpha, beta) {
     .Call('_serosolver_inf_mat_prior_cpp', PACKAGE = 'serosolver', infHist, n_alive, alpha, beta)
 }
 
-#' Gibbs sampling of infection histories
-#'
-#' Proposes a new matrix of infection histories by sampling from the prior on an individual's infection presence/absence in a particular time period, conditional on all other individuals in that time period. This allows us to integrate out the infection probability term for each time period. Should look at \code{\link{create_post_func}} for more details about the input parameters.
-#' @param pars NumericVector, the model parameters used to solve the model, extract likelihood function parameters and alpha/beta
-#' @param infHist IntegerMatrix the matrix of 1s and 0s corresponding to individual infection histories
-#' @param indivSampPropn double, what proportion of individuals to resample in this proposal step
-#' @param n_years_samp int, for each individual, how many time periods to resample infections for?
-#' @param ageMask IntegerVector, length of the number of individuals, with indices specifying first time period that an individual can be infected (indexed from 1, such that a value of 1 allows an individual to be infected in any time period)
-#' @param n_alive IntegerVector, length of the number of time periods that an individual could be infected, giving the number of individual alive in each time period
-#' @param swapPropn double, what proportion of proposals should be swap steps (ie. swap contents of two cells in infHist rather than adding/removing infections)
-#' @param swapDistance int, in a swap step, how many time steps either side of the chosen time period to swap with
-#' @param alpha double, alpha parameter for beta prior on infection probability
-#' @param beta double, beta parameter for beta prior on infection probability
-#' @param circulationTimes NumericVector, the times that each strain circulated
-#' @param circulationMapIndices IntegerVector, indexing vector from 1:number of strains
-#' @param samplingTimes NumericVector, the vector of real times that samples were taken
-#' @param indicesTitreDataSamples IntegerVector, How many rows in titre data correspond to each individual, sample and repeat?
-#' @param indicesTitreDataOverall IntegerVector, How many rows in the titre data correspond to each individual?
-#' @param indicesSamples IntegerVector, Split the sample times and runs for each individual
-#' @param measuredMapIndices IntegerVector, For each titre measurement, corresponding entry in antigenic map
-#' @param antigenicMapLong NumericVector, the collapsed cross reactivity map for long term boosting, after multiplying by sigma1
-#' @param antigenicMapShort NumericVector, the collapsed cross reactivity map for short term boosting, after multiplying by sigma2
-#' @param data NumericVector, the titre data for all individuals
-#' @param temp double, temperature for parallel tempering MCMC
-#' @return a matrix of 1s and 0s corresponding to the infection histories for all individuals
-infection_history_proposal_gibbs <- function(pars, infHist, indivSampPropn, n_years_samp, ageMask, n_alive, swapPropn, swapDistance, alpha, beta, circulationTimes, circulationMapIndices, samplingTimes, indicesTitreDataSample, indicesTitreDataOverall, indicesSamples, measuredMapIndices, antigenicMapLong, antigenicMapShort, data, temp) {
-    .Call('_serosolver_infection_history_proposal_gibbs', PACKAGE = 'serosolver', pars, infHist, indivSampPropn, n_years_samp, ageMask, n_alive, swapPropn, swapDistance, alpha, beta, circulationTimes, circulationMapIndices, samplingTimes, indicesTitreDataSample, indicesTitreDataOverall, indicesSamples, measuredMapIndices, antigenicMapLong, antigenicMapShort, data, temp)
+subset_nullable_vector <- function(x, index1, index2) {
+    .Call('_serosolver_subset_nullable_vector', PACKAGE = 'serosolver', x, index1, index2)
 }
 
 #' Gibbs sampling of infection histories
@@ -249,10 +153,10 @@ infection_history_proposal_gibbs <- function(pars, infHist, indivSampPropn, n_ye
 #' @param antigenicMapLong NumericVector, the collapsed cross reactivity map for long term boosting, after multiplying by sigma1
 #' @param antigenicMapShort NumericVector, the collapsed cross reactivity map for short term boosting, after multiplying by sigma2
 #' @param data NumericVector, the titre data for all individuals
-#' @param temp double, tepmerature for parallel tempering
+#' @param temp double, temperature for parallel tempering MCMC
 #' @return a matrix of 1s and 0s corresponding to the infection histories for all individuals
-infection_history_proposal_gibbs_bias <- function(pars, infHist, indivSampPropn, n_years_samp, ageMask, n_alive, swapPropn, swapDistance, alpha, beta, circulationTimes, circulationMapIndices, samplingTimes, indicesTitreDataSample, indicesTitreDataOverall, indicesSamples, measuredMapIndices, antigenicMapLong, antigenicMapShort, data, to_add, temp) {
-    .Call('_serosolver_infection_history_proposal_gibbs_bias', PACKAGE = 'serosolver', pars, infHist, indivSampPropn, n_years_samp, ageMask, n_alive, swapPropn, swapDistance, alpha, beta, circulationTimes, circulationMapIndices, samplingTimes, indicesTitreDataSample, indicesTitreDataOverall, indicesSamples, measuredMapIndices, antigenicMapLong, antigenicMapShort, data, to_add, temp)
+infection_history_proposal_gibbs <- function(pars, infHist, indivSampPropn, n_years_samp, ageMask, n_alive, swapPropn, swapDistance, alpha, beta, circulationTimes, circulationMapIndices, samplingTimes, indicesTitreDataSample, indicesTitreDataOverall, indicesSamples, measuredMapIndices, antigenicMapLong, antigenicMapShort, data, to_add, temp) {
+    .Call('_serosolver_infection_history_proposal_gibbs', PACKAGE = 'serosolver', pars, infHist, indivSampPropn, n_years_samp, ageMask, n_alive, swapPropn, swapDistance, alpha, beta, circulationTimes, circulationMapIndices, samplingTimes, indicesTitreDataSample, indicesTitreDataOverall, indicesSamples, measuredMapIndices, antigenicMapLong, antigenicMapShort, data, to_add, temp)
 }
 
 #' Gibbs sampling of infection histories with random effects boosting

@@ -9,4 +9,3 @@ SampleTheta(values, fixed, covMat, covMatbasic, parNames)
 \description{
 Sample theta as in original code
 }
-

@@ -35,4 +35,3 @@ a ggplot2 object
 \description{
 Given outputs from an MCMC run and the data used for fitting, generates an NxM matrix of plots where N is the number of individuals to be plotted and M is the range of sampling times. Where data are available, plots the observed titres and model predicted trajectories
 }
-

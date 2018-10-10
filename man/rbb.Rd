@@ -21,4 +21,3 @@ the beta binomial random draw function
 \description{
 Beta binomial random generation
 }
-

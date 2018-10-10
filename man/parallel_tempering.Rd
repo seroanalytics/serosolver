@@ -20,4 +20,3 @@ a list of lists: values, log likelihood etc. of paralle chains after parallel te
 \description{
 performs parallel tempering
 }
-

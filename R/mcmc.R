@@ -1,59 +1,88 @@
 #' Adaptive Metropolis-within-Gibbs/Metropolis Hastings Random Walk Algorithm.
 #'
-#' The Adaptive Metropolis-within-Gibbs algorithm. Given a starting point and the necessary MCMC parameters as set out below, performs a random-walk of the posterior space to produce an MCMC chain that can be used to generate MCMC density and iteration plots. The algorithm undergoes an adaptive period, where it changes the step size of the random walk for each parameter to approach the desired acceptance rate, popt. The algorithm then uses \code{\link{univ_proposal}} or \code{\link{mvr_proposal}} to explore parameter space, recording the value and posterior value at each step. The MCMC chain is saved in blocks as a .csv file at the location given by filename. This version of the algorithm is also designed to explore posterior densities for infection histories.
-#' @param parTab the parameter table controlling information such as bounds, initial values etc
-#' @param data the data frame of data to be fitted. Must have columns: group (index of group); individual (integer ID of individual); samples (numeric time of sample taken); virus (numeric time of when the virus was circulating); titre (integer of titre value against the given virus at that sampling time)
-#' @param mcmcPars named vector named vector with parameters for the MCMC procedure. Iterations (number of post adaptive iterations), popt (desired acceptance rate), popt_hist (desired acceptance rate for infection histories), opt_freq (after how many iterations do we adapt proposal), thin (save every n iterations), adaptive_period (number of iterations to adapt), save_block (number of post thinning iterations to save at a time), thin2 (infection history thinning), histSampleProb (proportion of inf histories to resample), switch_sample (resample inf histories every n iterations), burnin (number of iterations to run before any adapting), nInfs (number of infections to resample for each individual at each iteration), moveSizes (number of infection years/months to move when performing swap step), histProposal (which infection history proposal version to use, see \code{\link{describe_proposals}}, histOpt (if 1, performs adaptive infection history proposals. If 0, retains the starting infection history proposal parameters, swapPropn (if using gibbs sampling of infection histories, what proportion of proposals should be swap steps)
-#' @param filename the full filepath at which the MCMC chain should be saved. "_chain.csv" will be appended to the end of this, so filename should have no file extensions
-#' @param CREATE_POSTERIOR_FUNC pointer to posterior function used to calculate a likelihood. This will probably be \code{\link{create_post_func}}, but if using random effects on mu will use \code{\link{create_post_func_mu}}
-#' @param mvrPars leave NULL to use univariate proposals. Otherwise, a list of parameters if using a multivariate proposal. Must contain an initial covariance matrix, weighting for adapting cov matrix, and an initial scaling parameter (0-1)
-#' @param PRIOR_FUNC user function of prior for model parameters. Should take parameter values only
-#' @param version which version of the posterior function to use? See \code{\link{create_post_func}}
-#' @param OPT_TUNING constant describing the amount of leeway when adapting the proposals steps to reach a desired acceptance rate (ie. does not change step size if within OPT_TUNING of the specified acceptance rate)
-#' @param antigenicMap a data frame of antigenic x and y coordinates. Must have column names: x_coord; y_coord; inf_years 
-#' @param ages data frame of ages and individual IDs for each participant, used to mask infection history proposals. Columns: age, individual. Can be left NULL
-#' @param startInfHist infection history matrix to start MCMC at. Can be left NULL
-#' @param mu_indices for random effects on boosting parameter, mu. If random mus are included in the parameter table, this vector specifies which mu to use for each circulation year. For example, if years 1970-1976 have unique boosting, then mu_indices should be c(1,2,3,4,5,6). If every 3 year block shares has a unique boosting parameter, then this should be c(1,1,1,2,2,2).
-#' @param measurement_indices wow
-#' @param ... other arguments to pass to CREATE_POSTERIOR_FUNC
-#' @return a list with: 1) full file path at which the MCMC chain is saved as a .csv file; 2) a full file path at which the infection history chain is saved as a .csv file; 3) the last used covariance matrix; 4) the last used scale/step size (if multivariate proposals)
+#' The Adaptive Metropolis-within-Gibbs algorithm. Given a starting point and the necessary MCMC parameters as set out below, performs a random-walk of the posterior space to produce an MCMC chain that can be used to generate MCMC density and iteration plots. The algorithm undergoes an adaptive period, where it changes the step size of the random walk for each parameter to approach the desired acceptance rate, popt. The algorithm then uses \code{\link{univ_proposal}} or \code{\link{mvr_proposal}} to explore parameter space, recording the value and posterior value at each step. The MCMC chain is saved in blocks as a .csv file at the location given by filename. This version of the algorithm is also designed to explore posterior densities for infection histories
+#' @param parTab The parameter table controlling information such as bounds, initial values etc
+#' @param data The data frame of data to be fitted. Must have columns: group (index of group); individual (integer ID of individual); samples (numeric time of sample taken); virus (numeric time of when the virus was circulating); titre (integer of titre value against the given virus at that sampling time)
+#' @param antigenicMap A data frame of antigenic x and y coordinates. Must have column names: x_coord; y_coord; inf_years 
+#' @param ages Data frame of ages and individual IDs for each participant, used to mask infection history proposals. Columns: age, individual. Can be left NULL
+#' @param mcmcPars Named vector named vector with parameters for the MCMC procedure. See details
+#' @param mvrPars Leave NULL to use univariate proposals. Otherwise, a list of parameters if using a multivariate proposal. Must contain an initial covariance matrix, weighting for adapting cov matrix, and an initial scaling parameter (0-1)
+#' @param startInfHist Infection history matrix to start MCMC at. Can be left NULL
+#' @param filename The full filepath at which the MCMC chain should be saved. "_chain.csv" will be appended to the end of this, so filename should have no file extensions
+#' @param CREATE_POSTERIOR_FUNC Pointer to posterior function used to calculate a likelihood. This will probably be \code{\link{create_posterior_func}}, but if using random effects on mu will use \code{\link{create_post_func_mu}}
+#' @param PRIOR_FUNC User function of prior for model parameters. Should take parameter values only
+#' @param version Which version of the posterior function to use? See \code{\link{create_post_func}}
+#' @param mu_indices For random effects on boosting parameter, mu. Vector of indices of length equal to number of circulation times. If random mus are included in the parameter table, this vector specifies which mu to use for each circulation year. For example, if years 1970-1976 have unique boosting, then mu_indices should be c(1,2,3,4,5,6). If every 3 year block shares has a unique boosting parameter, then this should be c(1,1,1,2,2,2)
+#' @param measurement_indices For measurement bias function. Vector of indices of length equal to number of circulation times. For each year, gives the index of parameters named "rho" that correspond to each time period
+#' @param measurement_random_effects Boolean indicating if measurement bias is a random effects term. If TRUE adds a component to the posterior calculation that calculates the probability of a set of measurement shifts "rho", given a mean and standard deviation
+#' @param OPT_TUNING Constant describing the amount of leeway when adapting the proposals steps to reach a desired acceptance rate (ie. does not change step size if within OPT_TUNING of the specified acceptance rate)
+#' @param temp Temperature term for parallel tempering, raises likelihood to this value. Just used for testing at this point
+#' @param ... Other arguments to pass to CREATE_POSTERIOR_FUNC
+#' @return A list with: 1) full file path at which the MCMC chain is saved as a .csv file; 2) a full file path at which the infection history chain is saved as a .csv file; 3) the last used covariance matrix; 4) the last used scale/step size (if multivariate proposals)
+#' @details
+#' The `mcmcPars` argument has the following options:
+#'  * iterations (number of post adaptive period iterations to run)
+#'  * adaptive_period (for this many iterations, change proposal step size adaptively every `opt_freq` iterations)
+#'  * opt_freq (adapt proposal step size every opt_freq iterations)
+#'  * thin (save every n iterations)
+#'  * thin_hist (infection history thinning)  
+#'  * save_block (after this many iterations (post thinning), save to disk)
+#'  * popt (desired acceptance rate for parameters)
+#'  * popt_hist (desired acceptance rate for infection histories)
+#'  * switch_sample (resample inf histories every n iterations)
+#'  * histSampleProb (proportion of individuals that have infection histories resampled every proposal step)
+#'  * nInfs (number of infections to resample for each individual at each iteration)
+#'  * moveSizes (number of infection years/months to move when performing infection history swap step)
+#'  * histProposal (which infection history proposal version to use, see \code{\link{describe_proposals}}
+#'  * histOpt (if 1, performs adaptive infection history proposals. If 0, retains the starting infection history proposal parameters
+#'  * swapPropn (if using gibbs sampling of infection histories, what proportion of proposals should be swap steps)
+#'  * hist_switch_prob (proportion of infection history proposal steps to swap year_swap_propn of two time periods' contents)
+#'  * year_swap_propn (when swapping contents of two time points, what proportion of individuals should have their contents swapped)
 #' @export
 run_MCMC <- function(parTab,
                      data,
-                     mcmcPars=c("iterations"=50000,"popt"=0.44,"popt_hist"=0.44,"opt_freq"=2000,"thin"=10,"adaptive_period"=10000,
-                                "save_block"=100,"thin2"=100,"histSampleProb"=1,"switch_sample"=2, "burnin"=0, 
-                                "nInfs"=4, "moveSize"=5, "histProposal"=3, "histOpt"=1,"swapPropn"=0.5),
-                     filename="test",
-                     CREATE_POSTERIOR_FUNC,
-                     mvrPars=NULL,
-                     PRIOR_FUNC=NULL,
-                     version=1,
-                     OPT_TUNING=0.1,
                      antigenicMap,
                      ages=NULL,
+                     mcmcPars=c(),
+                     mvrPars=NULL,
                      startInfHist=NULL,
+                     filename="test",
+                     CREATE_POSTERIOR_FUNC,
+                     PRIOR_FUNC=NULL,
+                     version=1,                   
                      mu_indices=NULL,
                      measurement_indices=NULL,
                      measurement_random_effects=FALSE,
+                     OPT_TUNING=0.1,
                      temp=1,
                      ...){
+    mcmcPars_used <- c("iterations"=50000,"popt"=0.44,"popt_hist"=0.44,"opt_freq"=2000,"thin"=10,
+                       "adaptive_period"=10000,
+                       "save_block"=100,"thin2"=100,"histSampleProb"=1,"switch_sample"=2, "burnin"=0, 
+                       "nInfs"=4, "moveSize"=5, "histProposal"=3, "histOpt"=1,"swapPropn"=0.5,
+                       "hist_switch_prob"=0,"year_swap_propn"=1)
+    mcmcPars_used[names(mcmcPars)] <- mcmcPars
+    
     ## Extract MCMC parameters
-    iterations <- mcmcPars["iterations"] # How many iterations to run after adaptive period
-    popt <- mcmcPars["popt"] # Desired optimal acceptance rate
-    popt_hist <- mcmcPars["popt_hist"]
-    opt_freq<- mcmcPars["opt_freq"] # How often to adjust step size
-    thin <- mcmcPars["thin"] # Save only every nth iterations for theta sampling
-    adaptive_period<- mcmcPars["adaptive_period"] # How many iterations for adaptive period
-    save_block <- mcmcPars["save_block"] # How many post-thinning iterations to store before saving to disk
-    histTabThin <- mcmcPars["thin2"] # Save only every nth iterations for infection history sampling
-    histSampleProb <- mcmcPars["histSampleProb"] # What proportion of infection histories to sample each step
-    switch_sample <- mcmcPars["switch_sample"] # Resample infection histories every n iterations
-    burnin <- mcmcPars["burnin"] # Run this many iterations before attempting adaptation. Idea is to reduce getting stuck in local maxima
-    moveSize <- mcmcPars["moveSize"] # Number of infections to move/remove/add in each proposal step
-    nInfs <- mcmcPars["nInfs"] # Number of infections to move/remove/add in each proposal step
-    histProposal <- mcmcPars["histProposal"] # Which infection history proposal version?
-    histOpt <- mcmcPars["histOpt"] # Should infection history proposal step be adaptive?
-    swapPropn <- mcmcPars["swapPropn"]
+    iterations <- mcmcPars_used["iterations"] # How many iterations to run after adaptive period
+    popt <- mcmcPars_used["popt"] # Desired optimal acceptance rate
+    popt_hist <- mcmcPars_used["popt_hist"]
+    opt_freq<- mcmcPars_used["opt_freq"] # How often to adjust step size
+    thin <- mcmcPars_used["thin"] # Save only every nth iterations for theta sampling
+    adaptive_period<- mcmcPars_used["adaptive_period"] # How many iterations for adaptive period
+    save_block <- mcmcPars_used["save_block"] # How many post-thinning iterations to store before saving to disk
+    histTabThin <- mcmcPars_used["thin2"] # Save only every nth iterations for infection history sampling
+    histSampleProb <- mcmcPars_used["histSampleProb"] # What proportion of infection histories to sample each step
+    switch_sample <- mcmcPars_used["switch_sample"] # Resample infection histories every n iterations
+    burnin <- mcmcPars_used["burnin"] # Run this many iterations before attempting adaptation. Idea is to reduce getting stuck in local maxima
+    moveSize <- mcmcPars_used["moveSize"] # Number of infections to move/remove/add in each proposal step
+    nInfs <- mcmcPars_used["nInfs"] # Number of infections to move/remove/add in each proposal step
+    histProposal <- mcmcPars_used["histProposal"] # Which infection history proposal version?
+    histOpt <- mcmcPars_used["histOpt"] # Should infection history proposal step be adaptive?
+    swapPropn <- mcmcPars_used["swapPropn"]
+    hist_switch_prob <- mcmcPars_used["hist_switch_prob"]
+    year_swap_propn <- mcmcPars_used["year_swap_propn"]
+    
     
     if(histProposal == 1){
         histPropPrint <- "symmetric"
@@ -303,10 +332,10 @@ run_MCMC <- function(parTab,
             } else if(histProposal==5){
                 newInfectionHistories <- inf_hist_prob_lambda(infectionHistories, indivSubSample,ageMask,strainMask,nInfs_vec, current_pars[lambda_indices])
             } else {
-                if(histSwitchProb > mcmcPars["histSwitchProb"]){
+                if(histSwitchProb > hist_switch_prob){
                     newInfectionHistories <- proposal_gibbs(current_pars, infectionHistories, alpha, beta, histSampleProb, nInfs,swapPropn,moveSize)
                 } else {
-                    newInfectionHistories <- inf_hist_swap(infectionHistories, ageMask, mcmcPars["yearSwapPropn"], moveSize)
+                    newInfectionHistories <- inf_hist_swap(infectionHistories, ageMask, year_swap_propn, moveSize)
                     if(!identical(newInfectionHistories, infectionHistories)) infHistSwapN <- infHistSwapN + 1
                 }
             } 
@@ -374,7 +403,7 @@ run_MCMC <- function(parTab,
                 histaccepted_move[indivSubSample[move]] <- histaccepted_move[indivSubSample[move]] + 1
                 histaccepted[changeI] <- histaccepted[changeI] + 1
             } else {
-                if(histSwitchProb > mcmcPars["histSwitchProb"]){
+                if(histSwitchProb > hist_switch_prob){
                     infectionHistories <- newInfectionHistories
                     probabs <- new_probabs
                     probab <- new_probab

@@ -21,4 +21,3 @@ the beta binomial distribution function
 \description{
 Beta binomial distribution function
 }
-

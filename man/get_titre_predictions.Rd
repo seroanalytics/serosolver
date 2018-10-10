@@ -6,7 +6,8 @@
 \usage{
 get_titre_predictions(chain, infectionHistories, titreDat, individuals,
   antigenicMap, ages, parTab, nsamp = 100, addResiduals = FALSE,
-  mu_indices = NULL, measurement_indices = NULL, for_res_plot = FALSE)
+  mu_indices = NULL, measurement_indices = NULL,
+  for_res_plot = FALSE)
 }
 \arguments{
 \item{chain}{the full MCMC chain to generate titre trajectories from}
@@ -39,4 +40,3 @@ a list with the titre predictions (95% credible intervals, median and multivaria
 \description{
 Generates credible intervals on titres and infection histories from an MCMC chain output.
 }
-
