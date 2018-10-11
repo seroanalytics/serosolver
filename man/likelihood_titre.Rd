@@ -4,7 +4,7 @@
 \alias{likelihood_titre}
 \title{Calculate likelihood}
 \usage{
-likelihood_titre(expected, data, theta, to_add)
+likelihood_titre(expected, data, theta, titre_shifts = NULL)
 }
 \arguments{
 \item{expected}{NumericVector, as returned by \code{\link{infection_model_indiv}}}
@@ -13,7 +13,7 @@ likelihood_titre(expected, data, theta, to_add)
 
 \item{theta}{NumericVector, the vector of named model parameters, requiring MAX_TITRE and error}
 
-\item{to_add}{NumericVector, OPTIONAL if using measurement bias, gives the shift to add to each expected titre}
+\item{titre_shifts}{NumericVector, OPTIONAL if using measurement bias, gives the shift to add to each expected titre}
 }
 \value{
 a single log likelihood

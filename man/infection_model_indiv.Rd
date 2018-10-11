@@ -6,7 +6,8 @@
 \usage{
 infection_model_indiv(theta, infectionHistory, infectionTimes,
   infectionMapIndices, samplingTime, measurementMapIndices,
-  antigenicMapLong, antigenicMapShort, numberStrains)
+  antigenicMapLong, antigenicMapShort, numberStrains, age = 0L,
+  additional_arguments = NULL)
 }
 \arguments{
 \item{theta}{NumericVector, the named vector of model parameters}

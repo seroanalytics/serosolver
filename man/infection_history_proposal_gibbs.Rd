@@ -9,7 +9,7 @@ infection_history_proposal_gibbs(pars, infHist, indivSampPropn,
   circulationTimes, circulationMapIndices, samplingTimes,
   indicesTitreDataSample, indicesTitreDataOverall, indicesSamples,
   measuredMapIndices, antigenicMapLong, antigenicMapShort, data, to_add,
-  temp)
+  additional_arguments, ages, temp)
 }
 \arguments{
 \item{pars}{NumericVector, the model parameters used to solve the model, extract likelihood function parameters and alpha/beta}

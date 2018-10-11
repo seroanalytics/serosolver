@@ -1,4 +1,4 @@
 library(testthat)
-library(sero-solver)
+library(serosolver)
 
-test_check("sero-solver")
+test_check("serosolver")

@@ -94,7 +94,7 @@ create_posterior_func <- function(parTab,
   explicit_lambda <- (length(lambda_indices) > 0)
   spline_lambda <- (length(knot_indices) > 0)
   use_measurement_bias <- (length(measurement_indices) > 0) & !is.null(measurement_indices_by_time)
-  to_add <- NULL
+  titre_shifts <- NULL
   expected_indices <- NULL
   measurement_bias <- NULL
   
@@ -165,7 +165,7 @@ create_posterior_func <- function(parTab,
           names(pars) <- parNames_theta
           if (use_measurement_bias) {
               measurement_bias <- pars[measurement_indices_parTab]
-              to_add <- measurement_bias[expected_indices]
+              titre_shifts <- measurement_bias[expected_indices]
           }
           
           names(theta) <- parNames_theta
@@ -185,7 +185,7 @@ create_posterior_func <- function(parTab,
                                                                      indicesSamples, virusIndices, 
                                                                      antigenicMapLong, antigenicMapShort,
                                                                      titres,
-                                                                     to_add,
+                                                                     titre_shifts,
                                                                      temp
                                                                      )
           return(new_infectionHistories)
@@ -211,8 +211,8 @@ create_posterior_func <- function(parTab,
               
               if (use_measurement_bias) {
                   measurement_bias <- pars[measurement_indices_parTab]
-                  to_add <- measurement_bias[expected_indices]
-                  y <- y + to_add
+                  titre_shifts <- measurement_bias[expected_indices]
+                  y <- y + titre_shifts
               }
               
               return(y)

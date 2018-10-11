@@ -4,7 +4,7 @@
 #include <Rcpp.h>
 using namespace Rcpp;
 
-// Function to calculate non-linear waning
-inline double waning_function(NumericVector theta, double time_infected, double wane);
+//' Function to calculate non-linear waning
+double waning_function(NumericVector theta, double time_infected, double wane);
 
 #endif

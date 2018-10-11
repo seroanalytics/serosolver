@@ -2,15 +2,15 @@
 #include "wane_function.h"
 using namespace Rcpp;
 
-// Function to calculate non-linear waning
-// All additional parameters for the function are declared here
+//' Function to calculate non-linear waning
+//'  All additional parameters for the function are declared here
 //' @param theta NumericVector, the named vector of model parameters
 //' @param time_infected double the time infected (samplingTime - circulation_time)
 //' @return value of waning parameter based on time since infected 
 //' @useDynLib serosolver
 //' @export
 // [[Rcpp::export]]
-inline double waning_function(NumericVector theta, double time_infected, double wane) {
+double waning_function(NumericVector theta, double time_infected, double wane){
   // Declare variables 
   double kappa = theta["kappa"];
   double t_change = theta["t_change"];
@@ -26,4 +26,3 @@ inline double waning_function(NumericVector theta, double time_infected, double 
 
   return (wane*time_infected+wane_2_val);
 }
-

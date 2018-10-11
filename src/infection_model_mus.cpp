@@ -3,7 +3,7 @@ using namespace Rcpp;
 
 #define MAX(a,b) ((a) < (b) ? (b) : (a)) // define MAX function for use later
   
-double likelihood_titre(NumericVector expected, NumericVector data, NumericVector theta, Nullable<NumericVector> to_add);
+double likelihood_titre(const NumericVector &expected, const NumericVector &data, const NumericVector &theta, const Nullable<NumericVector> &to_add);
 
 //' Model function
 //'

@@ -1,6 +1,6 @@
-context("sero-solver")
+context("serosolver")
 
-test_that("sero-solver works", {
+test_that("serosolver works", {
     expect_true(TRUE)
 
 })
