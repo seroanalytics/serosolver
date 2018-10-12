@@ -5,6 +5,6 @@
 using namespace Rcpp;
 
 //' Function to calculate non-linear waning
-double waning_function(NumericVector theta, double time_infected, double wane);
+double wane_function(NumericVector theta, double time_infected, double wane);
 
 #endif

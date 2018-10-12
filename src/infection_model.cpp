@@ -5,7 +5,7 @@ using namespace Rcpp;
 
 #define MAX(a,b) ((a) < (b) ? (b) : (a)) // define MAX function for use later
   
-inline void setup_waning_and_masked_cumulative(const NumericVector &theta,
+void setup_waning_and_masked_cumulative(const NumericVector &theta,
 					const IntegerVector &infection_history,
 					IntegerVector &cumu_infection_history, 
 					IntegerVector &masked_infection_history,
@@ -14,11 +14,12 @@ inline void setup_waning_and_masked_cumulative(const NumericVector &theta,
 					const int &max_infections, 
 					const double &sampling_time,
 					const int &wane_type,
-					const double age=0,
+					const double DOB=0,
 					const Nullable<List> &additional_arguments=R_NilValue){
   double circulation_time=infection_times[0];
   double time = sampling_time - circulation_time;
   double wane = theta["wane"];
+  double val;  
   
   /* =========================================
   ======== SET UP WANING RATE VECTOR =========
@@ -26,7 +27,7 @@ inline void setup_waning_and_masked_cumulative(const NumericVector &theta,
   // If not linear
   if(wane_type == 1){
     // Calculate the waning at the time since infection
-    double val= waning_function(theta, time, wane);
+    val= wane_function(theta, time, wane);
     waning[0] = MAX(0, 1.0-val);
   } else {
     waning[0] = MAX(0, 1.0-wane*time);// Else if linear
@@ -61,13 +62,15 @@ inline void setup_waning_and_masked_cumulative(const NumericVector &theta,
        ========================================= */ 
     // If not linear
     if(wane_type == 1){
-      double val= waning_function(theta, time, wane);
+      val= wane_function(theta, time, wane);
       waning[i] = MAX(0, 1.0-val);
     } else {
       waning[i] = MAX(0, 1.0-wane*time); // Else linear
     }
   }  
 }
+
+
 
 
 //' Model function
@@ -98,7 +101,7 @@ NumericVector infection_model_indiv(const NumericVector &theta, // Parameter vec
 				    const NumericVector &antigenicMapLong,
 				    const NumericVector &antigenicMapShort, 
 				    const int &numberStrains, // Maximum number of infections an individual could experience, if alive the whole time
-				    const double &age=0,
+				    const double &DOB=0,
 				    const Nullable<List> &additional_arguments=R_NilValue
 				    ){
   double circulation_time;
@@ -107,11 +110,9 @@ NumericVector infection_model_indiv(const NumericVector &theta, // Parameter vec
   // 0 is linear decrease
   // 1 is piecewise linear
   int waneType = theta["wane_type"]; 
-  // Titre dependent boosting type
-  // 0 if not used
-  // 1 if boost is dependent on titre at time of infection
-  int titre_dependent_boosting = theta["titre_dependent"];
-  
+  // If titre dependent boosting or not
+  bool titre_dependent_boosting = theta["titre_dependent"] == 1;
+
   // We will need to loop over each strain that was tested
   int n_samples = measurementMapIndices.size(); // Number of time points sampled
   int max_infections = infectionTimes.size(); // max number of infections is one for each strain
@@ -135,9 +136,8 @@ NumericVector infection_model_indiv(const NumericVector &theta, // Parameter vec
 				     max_infections, 
 				     samplingTime,
 				     waneType, 
-				     age,
+				     DOB,
 				     additional_arguments);
- 
   add_multiple_infections_boost(predictedTitre, monitored_titres,
 				theta, 
 				infectionTimes, cumInfectionHistory, maskedInfectionHistory, 
@@ -146,219 +146,10 @@ NumericVector infection_model_indiv(const NumericVector &theta, // Parameter vec
 				waning, 
 				numberStrains, 
 				titre_dependent_boosting, 
-				age,
-				additional_arguments);
+				DOB,
+				additional_arguments
+				);
 
-  return(predictedTitre);
-}
-
-//[[Rcpp::export]]
-NumericVector infection_model_indiv_OLD(NumericVector theta, // Parameter vector
-					IntegerVector infectionHistory, // vector of 1s and 0s for infections
-					NumericVector infectionTimes, // Time of these infections
-					IntegerVector infectionMapIndices, // Where these infection times fit in antigenic map
-					double samplingTime,  // This sampling time
-					IntegerVector measurementMapIndices, // Indices of measured strains in antigenic map
-					NumericVector antigenicMapLong,
-					NumericVector antigenicMapShort, 
-					int numberStrains // Maximum number of infections an individual could experience
-					){
-  // Extract model parameters
-  double mu = theta["mu"];
-  double mu_short = theta["mu_short"];
-  double tau = theta["tau"];
-  double wane = theta["wane"];
-  double boost_limit;
-  double gradient;
-  double long_boost=0; // Store long term boosting
-  double short_boost=0; // Store short term boosting
-  double boost=0; // Store full boost
-
-  // Time since infection
-  double time; 
- // double last_circulation_time;
-  double circulation_time;
-
-  // Which function type should we use
-  // 0 is linear decrease
-  // 1 is piecewise linear
-  int waneType = theta["wane_type"]; 
-  int titre_dependent_boosting=0;
-  // If "boost_limit" and "gradient" are in the parameter vector, then use titre-dependent boosting function
-  if(theta.containsElementNamed("boost_limit") && theta.containsElementNamed("gradient")){
-    titre_dependent_boosting=1;
-    boost_limit = theta["boost_limit"];
-    gradient = theta["gradient"];
-  }
-  
-  // We will need to loop over each strain that was tested
-  int n_samples = measurementMapIndices.size(); // Number of time points sampled
-  int max_infections = infectionTimes.size(); // max number of infections is one for each strain
-  
-  // Only recording titres for which we have data
-  NumericVector predictedTitre(n_samples);
-
- // To store temporary boosts
-  NumericVector monitoredTitres(max_infections);
-  double monitoredTitre=0;
-  double tmpTitre=0;
-  
-  // But need to record infection info for each strain that individual could have been
-  // infected with
-  IntegerVector cumInfectionHistory(max_infections);
-  IntegerVector maskedInfectionHistory(max_infections);
-  NumericVector waning(max_infections);
-
-  // Set up cumulative infection history and waning vector
-  /* Check if isolation time is after the sampling time.
-     if so, then we do not test against this strain */ 
-  circulation_time = infectionTimes[0];
-  if(circulation_time > samplingTime) maskedInfectionHistory[0]=0;
-  else maskedInfectionHistory[0] = infectionHistory[0];
-  
-  // How long has the individual been infected
-  time = (samplingTime - circulation_time);
-  
-  // If not linear
-  if(waneType == 1){
-    // Calculate the waning at the time since infection
-    double val= waning_function(theta, time, wane);
-    waning[0] = MAX(0, 1.0-val);
-  } else waning[0] = MAX(0, 1.0-wane*time);// Else if linear
-  cumInfectionHistory[0] = maskedInfectionHistory[0];
-
-  /* For strains that circulated before the isolation time,
-     add to cumulative infection history */
-  for(int i=1; i < max_infections; ++i){
-    /* At which time did this strain circulate?
-       This might change to a range of times in the future */
-    circulation_time = infectionTimes[i];
-
-    // If circulated after the sample, then could not have been infected
-    if(circulation_time > samplingTime){
-      maskedInfectionHistory[i]=0;
-    } else {
-      maskedInfectionHistory[i] = infectionHistory[i];
-    }
-
-    // Make cumulative infection history
-    cumInfectionHistory[i] = maskedInfectionHistory[i] + cumInfectionHistory[i-1];   
-
-    /* Get waning rate for this strain
-       Note that circulation_time is implicitly the time at which
-       an individual would have been infected */
-    
-    // How long since individual was infected
-    time = (samplingTime - circulation_time);
-    
-    // If not linear
-    if(waneType == 1){
-      double val= waning_function(theta, time, wane);
-      waning[i] = MAX(0, 1.0-val);
-    } else waning[i] = MAX(0, 1.0-wane*time); // Else linear
-  }
-  
-  // If no titre dependent boosting
-  // For each strain we are testing against, find predicted titre
-  if(titre_dependent_boosting == 0){
-    for(int k=0; k < n_samples; ++k){
-      tmpTitre=0;
-      // Sum contributions from all infections
-      // Note that measurementMapIndices[k] finds the correct entry in the
-      // antigenicMap vector for the *tested* strain (row), whereas
-      // infectionMapIndices[i] finds the entry for the *infecting* strain (column)
-      for(int i=0; i < max_infections; ++i){
-	// THE ACTUAL MODEL
-	tmpTitre += maskedInfectionHistory[i]* // Ignore infections that couldn't have happened
-	    MAX(0, 1.0 - tau*(cumInfectionHistory[i] - 1.0))* // Antigenic seniority
-	  ((mu*antigenicMapLong[measurementMapIndices[k]*numberStrains+infectionMapIndices[i]]) +  // Long term boost
-	   (mu_short*antigenicMapShort[measurementMapIndices[k]*numberStrains+infectionMapIndices[i]])* // Short term cross reactive boost
-	   waning[i]); // Waning rate
-      }
-      // Total titre for strain k at this time
-      predictedTitre[k] = tmpTitre;
-    }
-    // If titre dependent boosting
-  } else {
-    for(int i = 0; i < max_infections; ++i){
-      circulation_time = infectionTimes[i];
-      //Rcpp::Rcout << infectionTimes[i] << std::endl;
-      monitoredTitre = 0;
-      monitoredTitres[i] = 0;
-      // Need to find titre of infecting strain at time of this infection,
-      // so need to sum boosts of all previous infections
-      if(maskedInfectionHistory[i] == 1){
-	/*Rcpp::Rcout << std::endl<< std::endl << std::endl;
-	Rcpp::Rcout << "masked Infection history: " << maskedInfectionHistory << std::endl;
-	Rcpp::Rcout << "size: " << maskedInfectionHistory.size() << std::endl;
-	Rcpp::Rcout << std::endl<< std::endl << std::endl;
-	Rcpp::Rcout << "Infection times: " << infectionTimes << std::endl;
-	Rcpp::Rcout << "size: " << infectionTimes.size() << std::endl;
-	Rcpp::Rcout << "Sampling time: " << samplingTime << std::endl;
-	Rcpp::Rcout << std::endl<< std::endl << std::endl;*/
-	for(int ii = i-1; ii >= 0; --ii){
-	  /*Rcpp::Rcout << "ii: " << ii << std::endl;
-	  Rcpp::Rcout << "inf map indices: " << infectionMapIndices << std::endl;
-	  Rcpp::Rcout << "numberStrains: " << numberStrains << std::endl;
-	  Rcpp::Rcout << "Entry" << measurementMapIndices[i]*numberStrains+infectionMapIndices[ii] << std::endl;
-	  Rcpp::Rcout << "Dim antigenic map: " << antigenicMapLong.size() << std::endl;
-	  Rcpp::Rcout << std::endl<< std::endl << std::endl;*/
-	// How much boosting experienced from this infection?
-	long_boost = maskedInfectionHistory[ii]* // Ignore infections that couldn't have happened
-	  MAX(0, 1.0 - tau*(cumInfectionHistory[ii] - 1.0))* // Antigenic seniority
-	    (mu*antigenicMapLong[infectionMapIndices[i]*numberStrains+infectionMapIndices[ii]]);
-    
-	  // Short term cross reactive boost
-	  short_boost =  maskedInfectionHistory[ii]* // Ignore infections that couldn't have happened
-	    MAX(0, 1.0 - tau*(cumInfectionHistory[ii] - 1.0))* // Antigenic seniority
-	    (mu_short*antigenicMapShort[infectionMapIndices[i]*numberStrains+infectionMapIndices[ii]]);
-    
-	  if(monitoredTitres[ii] >= boost_limit){
-	    long_boost =  long_boost*(1-gradient*boost_limit); // Titre dependent boosting - at ceiling
-	    short_boost =  short_boost*(1-gradient*boost_limit); // Titre dependent boosting - at ceiling
-	  } else {
-	    long_boost = long_boost*(1-gradient*monitoredTitres[ii]); // Titre dependent boosting - below ceiling
-	    short_boost = short_boost*(1-gradient*monitoredTitres[ii]); // Titre dependent boosting - below ceiling
-	  }
-	  long_boost = MAX(0, long_boost);
-	  short_boost = MAX(0, short_boost);
-	  boost = long_boost + short_boost*MAX(0, 1.0-wane*(circulation_time - infectionTimes[ii]));
-	  monitoredTitre += boost;
-	}
-	//Rcpp::Rcout << "Titre of infecting strain " << infectionTimes[i] << " is: " << monitoredTitre << std::endl;
-	monitoredTitres[i] = monitoredTitre;
-	//Rcpp::Rcout << "wow: " << monitoredTitre << std::endl;
-	// And now that we know the titre of the infecting strain at time of infection,
-	// can work out the boost given to each measured strain from this infection
-	boost = 0;
-	for(int k = 0; k < n_samples; ++k){
-	  // How much boosting experienced from this infection?
-	  long_boost = maskedInfectionHistory[i]* // Ignore infections that couldn't have happened
-	    MAX(0, 1.0 - tau*(cumInfectionHistory[i] - 1.0))* // Antigenic seniority
-	    (mu*antigenicMapLong[measurementMapIndices[k]*numberStrains+infectionMapIndices[i]]);
-    
-	  // Short term cross reactive boost
-	  short_boost =  maskedInfectionHistory[i]* // Ignore infections that couldn't have happened
-	    MAX(0, 1.0 - tau*(cumInfectionHistory[i] - 1.0))* // Antigenic seniority
-	    (mu_short*antigenicMapShort[measurementMapIndices[k]*numberStrains+infectionMapIndices[i]]);
-    
-	  if(monitoredTitres[i] >= boost_limit){
-	    long_boost =  long_boost*(1-gradient*boost_limit); // Titre dependent boosting - at ceiling
-	    short_boost =  short_boost*(1-gradient*boost_limit); // Titre dependent boosting - at ceiling
-	  } else {
-	    long_boost = long_boost*(1-gradient*monitoredTitres[i]); // Titre dependent boosting - below ceiling
-	    short_boost = short_boost*(1-gradient*monitoredTitres[i]); // Titre dependent boosting - below ceiling
-	  }
-	  long_boost = MAX(0, long_boost);
-	  short_boost = MAX(0, short_boost);
-	  boost = long_boost + short_boost*waning[i];
-	  //Rcpp::Rcout << "Boost to strain " << infectionTimes[k] << " at time " << infectionTimes[i] << " is " << boost << std::endl;
-	  predictedTitre[k] += boost;
-	}
-	//Rcpp::Rcout << "Boost: " << boost << std::endl;
-      }
-    }
-  }
   return(predictedTitre);
 }
 
@@ -375,7 +166,7 @@ NumericVector titre_data_individual(const NumericVector &theta,
 				    const NumericVector &antigenicMapLong, 
 				    const NumericVector &antigenicMapShort,
 				    const int &numberStrains,
-				    const double &age=0,
+				    const double &DOB=0,
 				    const Nullable<List>& additional_arguments=R_NilValue){
   int numberSamples = samplingTimes.size();
   int numberMeasuredStrains = measuredMapIndices.size();
@@ -395,7 +186,7 @@ NumericVector titre_data_individual(const NumericVector &theta,
     titres[Range(startIndex, endIndex)] = infection_model_indiv(theta,conciseInfHist,infectionTimes,infMapIndices,
 								samplingTimes[i],measuredMapIndices[Range(startIndex,endIndex)],
 								antigenicMapLong, antigenicMapShort,numberStrains,
-								age, additional_arguments);
+								DOB, additional_arguments);
     startIndex = endIndex + 1;
   }
   return(titres);
@@ -414,15 +205,17 @@ NumericVector titre_data_group(const NumericVector &theta,
 			       const IntegerVector &measuredMapIndices, // For each titre measurement, corresponding entry in antigenic map
 			       const NumericVector &antigenicMapLong, 
 			       const NumericVector &antigenicMapShort,
-			       const NumericVector &ages,
+			       const NumericVector &DOBs,
 			       const Nullable<List> &additional_arguments=R_NilValue
-
 			       ){
   int n = infectionHistories.nrow();
   int n_strains = infectionHistories.ncol();
 
   NumericVector titres(measuredMapIndices.size());
   
+  bool check_additional_arguments = additional_arguments.isNotNull(); // Precompute this check so only have to do it once
+  bool titre_dependent_boosting = theta["titre_dependent"] == 1;
+
   // These indices allow us to step through the titre data vector
   // as if it were a matrix ie. number of rows for each individual
   // at a time
@@ -430,7 +223,7 @@ NumericVector titre_data_group(const NumericVector &theta,
   int endIndexSamples;
   int startIndexData;
   int endIndexData;
-  int age;
+  int DOB;
 
   for(int i=1; i <= n; ++i){
     startIndexSamples = indicesSamples[i-1];
@@ -439,7 +232,7 @@ NumericVector titre_data_group(const NumericVector &theta,
     startIndexData = indicesTitreDataOverall[i-1];
     endIndexData = indicesTitreDataOverall[i] - 1;
 
-    age = ages[i-1];
+    DOB = DOBs[i-1];
 
     titres[Range(startIndexData, endIndexData)] = titre_data_individual(theta,   // Vector of named model parameters
 									infectionHistories(i-1,_), // Vector of infection history for individual i
@@ -451,7 +244,7 @@ NumericVector titre_data_group(const NumericVector &theta,
 									antigenicMapLong, 
 									antigenicMapShort,  
 									n_strains,
-									age, 
+									DOB, 
 									additional_arguments); // The total number of strains that circulated
   }
 
@@ -513,7 +306,7 @@ double likelihood_data_individual(const NumericVector &theta,
 				  const int &numberStrains,
 				  const NumericVector &data,
 				  const Nullable<NumericVector> &titre_shifts,
-				  const double &age=0,
+				  const double &DOB=0,
 				  const Nullable<List> &additional_arguments=R_NilValue
 				  ){
   int numberSamples = samplingTimes.size();
@@ -539,7 +332,7 @@ double likelihood_data_individual(const NumericVector &theta,
 								samplingTimes[i],
 								measuredMapIndices[Range(startIndex,endIndex)],
 								antigenicMapLong, antigenicMapShort,
-								numberStrains, age, additional_arguments);
+								numberStrains, DOB, additional_arguments);
     startIndex = endIndex + 1;
   }
   lnlike = likelihood_titre(titres, data, theta, titre_shifts);

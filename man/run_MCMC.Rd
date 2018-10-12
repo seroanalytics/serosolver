@@ -4,12 +4,11 @@
 \alias{run_MCMC}
 \title{Adaptive Metropolis-within-Gibbs/Metropolis Hastings Random Walk Algorithm.}
 \usage{
-run_MCMC(parTab, data, antigenicMap, ages = NULL, mcmcPars = c(),
-  mvrPars = NULL, startInfHist = NULL, filename = "test",
-  CREATE_POSTERIOR_FUNC, PRIOR_FUNC = NULL, version = 1,
-  mu_indices = NULL, measurement_indices = NULL,
-  measurement_random_effects = FALSE, OPT_TUNING = 0.1, temp = 1,
-  ...)
+run_MCMC(parTab, data, antigenicMap, mcmcPars = c(), mvrPars = NULL,
+  startInfHist = NULL, filename = "test", CREATE_POSTERIOR_FUNC,
+  PRIOR_FUNC = NULL, version = 1, mu_indices = NULL,
+  measurement_indices = NULL, measurement_random_effects = FALSE,
+  OPT_TUNING = 0.1, temp = 1, ...)
 }
 \arguments{
 \item{parTab}{The parameter table controlling information such as bounds, initial values etc}
@@ -17,8 +16,6 @@ run_MCMC(parTab, data, antigenicMap, ages = NULL, mcmcPars = c(),
 \item{data}{The data frame of data to be fitted. Must have columns: group (index of group); individual (integer ID of individual); samples (numeric time of sample taken); virus (numeric time of when the virus was circulating); titre (integer of titre value against the given virus at that sampling time)}
 
 \item{antigenicMap}{A data frame of antigenic x and y coordinates. Must have column names: x_coord; y_coord; inf_years}
-
-\item{ages}{Data frame of ages and individual IDs for each participant, used to mask infection history proposals. Columns: age, individual. Can be left NULL}
 
 \item{mcmcPars}{Named vector named vector with parameters for the MCMC procedure. See details}
 
@@ -63,7 +60,6 @@ The `mcmcPars` argument has the following options:
  * popt (desired acceptance rate for parameters)
  * popt_hist (desired acceptance rate for infection histories)
  * switch_sample (resample inf histories every n iterations)
- * histSampleProb (proportion of individuals that have infection histories resampled every proposal step)
  * nInfs (number of infections to resample for each individual at each iteration)
  * moveSizes (number of infection years/months to move when performing infection history swap step)
  * histProposal (which infection history proposal version to use, see \code{\link{describe_proposals}}

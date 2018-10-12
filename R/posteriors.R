@@ -12,107 +12,132 @@
 #' @return a single function pointer that takes only pars and infectionHistories as unnamed arguments. This function goes on to return a vector of posterior values for each individual
 #' @export
 create_posterior_func <- function(parTab,
-                             data,
-                             antigenicMap,
-                             version=1,
-                             ageMask=NULL,
-                             measurement_indices_by_time=NULL,
-                             ...){
-  parNames <- parTab$names
+                                  data,
+                                  antigenicMap,
+                                  version=1,
+                                  ageMask=NULL,
+                                  measurement_indices_by_time=NULL,
+                                  mu_indices=NULL,
+                                  ...){
+    ## Isolate data table as vectors for speed
+    titres <- data$titre
+    
+    ## The entry of each virus in the data corresponding to the antigenic map
+    ## Note 0 indexed for C++ code
+    virusIndices <- match(data$virus, antigenicMap$inf_years) - 1
+    ## Unique strains that an individual could be exposed to
+    strains <- unique(antigenicMap$inf_years)
+    n_strains <- length(strains)
+    
+    ## The entry of each strain in the antigenic map table
+    strainIndices <- match(strains, strains) - 1
 
-  ## Isolate data table as vectors for speed
-  titres <- data$titre
-  
-  ## The entry of each virus in the data corresponding to the antigenic map
-  ## Note 0 indexed for C++ code
-  virusIndices <- match(data$virus, antigenicMap$inf_years) - 1
-  ## Unique strains that an individual could be exposed to
-  strains <- unique(antigenicMap$inf_years)
-  n_strains <- length(strains)
-  
-  ## The entry of each strain in the antigenic map table
-  strainIndices <- match(strains, strains) - 1
+    ## Generate distances between each pair of viruses from the antigenic map
+    antigenicMapMelted <- c(outputdmatrix.fromcoord(antigenicMap[,c("x_coord","y_coord")]))
 
-  ## Generate distances between each pair of viruses from the antigenic map
-  antigenicMapMelted <- c(outputdmatrix.fromcoord(antigenicMap[,c("x_coord","y_coord")]))
+    ## Get unique measurement sets for each individual at
+    ## each sampling time for each repeat
+    samples <- unique(data[,c("individual","samples","run")])
+    samples <- samples[order(samples$individual, samples$run, samples$samples),]
 
-  ## Get unique measurement sets for each individual at
-  ## each sampling time for each repeat
-  samples <- unique(data[,c("individual","samples","run")])
-  samples <- samples[order(samples$individual, samples$run, samples$samples),]
+    ## Sort data in same way
+    data <- data[order(data$individual, data$run, data$samples, data$virus),]
 
-  ## Sort data in same way
-  data <- data[order(data$individual, data$run, data$samples, data$virus),]
+    ## Extract vector of sampling times and individual indices for speed
+    sampleTimes <- samples$samples
+    individuals <- samples$individual  
+    n_indiv <- length(unique(samples$individual))
 
-  ## Extract vector of sampling times and individual indices for speed
-  sampleTimes <- samples$samples
-  individuals <- samples$individual  
-  n_indiv <- length(unique(samples$individual))
+    ## For each individual, sample and run, get the corresponding number of rows from the overall
+    ## data matrix. 
+    indicesData <- NULL
+    for(i in 1:nrow(samples)){
+        indicesData <- c(indicesData, nrow(samples[data$individual == samples[i,"individual"] &
+                                                   data$samples == samples[i,"samples"] &
+                                                   data$run == samples[i,"run"],]))
+    }
+    
+    ## Get indexing for individuals. This works out which rows in the titre data correspond
+    ## to which individuals.
+    ## Firstly, how many runs/samples correspond to each individual?
+    indicesSamples <- c(0)
+    for(individual in unique(individuals)){
+        indicesSamples <- c(indicesSamples, length(individuals[individuals==individual]))
+    }
+    indicesSamples <- cumsum(indicesSamples)
+    
+    ## How many rows in the titre data correspond to each individual?
+    indicesDataOverall <- NULL
+    for(individual in unique(individuals)){
+        indicesDataOverall <- c(indicesDataOverall, nrow(data[data$individual == individual,]))
+    }
+    indicesDataOverall <- cumsum(c(0,indicesDataOverall))    
+    indicesOverallDiff <- diff(indicesDataOverall)
 
-  ## For each individual, sample and run, get the corresponding number of rows from the overall
-  ## data matrix. 
-  indicesData <- NULL
-  for(i in 1:nrow(samples)){
-    indicesData <- c(indicesData, nrow(samples[data$individual == samples[i,"individual"] &
-                                        data$samples == samples[i,"samples"] &
-                                        data$run == samples[i,"run"],]))
-  }
-  
-  ## Get indexing for individuals. This works out which rows in the titre data correspond
-  ## to which individuals.
-  ## Firstly, how many runs/samples correspond to each individual?
-  indicesSamples <- c(0)
-  for(individual in unique(individuals)){
-      indicesSamples <- c(indicesSamples, length(individuals[individuals==individual]))
-  }
-  indicesSamples <- cumsum(indicesSamples)
-  
-  ## How many rows in the titre data correspond to each individual?
-  indicesDataOverall <- NULL
-  for(individual in unique(individuals)){
-      indicesDataOverall <- c(indicesDataOverall, nrow(data[data$individual == individual,]))
-  }
-  indicesDataOverall <- cumsum(c(0,indicesDataOverall))    
-  indicesOverallDiff <- diff(indicesDataOverall)
+    if(!is.null(titreDat$DOB)){
+        DOBs <- unique(titreDat[,c("individual","DOB")])[,2]
+    } else {
+        DOBs <- rep(min(strainIsolationTimes), n_indiv)
+    }
+    
+    if(is.null(ageMask)){
+        if(!is.null(titreDat$DOB)){
+            ageMask <- create_age_mask(DOBs, strainIsolationTimes, n_indiv)
+        } else {
+            ageMask <- rep(1, n_indiv)
+        }
+    }
+    n_alive <- sapply(1:length(strains), function(x) length(ageMask[ageMask <= x]))
 
-  if(is.null(ageMask)) ageMask <- rep(1, n_indiv)
-  n_alive <- sapply(1:length(strains), function(x) length(ageMask[ageMask <= x]))
+#########################################################
+    ## Extract parameter type indices from parTab, to split up
+    ## similar parameters in model solving functions
+    option_indices <- which(parTab$type == 0)
+    theta_indices <- which(parTab$type == 1)
+    lambda_indices <- which(parTab$type == 2)
+    measurement_indices_parTab <- which(parTab$type == 3)
+    weight_indices <- which(parTab$type == 4) ## For functional form version
+    knot_indices <- which(parTab$type == 5)
+    mu_indices_parTab <- which(parTab$type == 6)
+#########################################################
 
+    
+    parNames_theta <- parTab[theta_indices,"names"]
 
-  ## Extract parameter type indices from parTab, to split up
-  ## similar parameters in model solving functions
-  option_indices <- which(parTab$type == 0)
-  theta_indices <- which(parTab$type == 1)
-  lambda_indices <- which(parTab$type == 2)
-  measurement_indices_parTab <- which(parTab$type == 3)
-  weight_indices <- which(parTab$type == 4) ## For functional form version
-  knot_indices <- which(parTab$type == 5)
-  
-  parNames_theta <- parTab[theta_indices,"names"]
+    ## Find which options are being used in advance for speed
+    explicit_lambda <- (length(lambda_indices) > 0)
+    spline_lambda <- (length(knot_indices) > 0)
+    use_measurement_bias <- (length(measurement_indices) > 0) & !is.null(measurement_indices_by_time)
+    titre_shifts <- NULL
+    expected_indices <- NULL
+    measurement_bias <- NULL
+    use_strain_dependent_mu <- (length(mu_indices) > 0) & !is.null(mu_indices)
+    additional_arguments <- NULL
+    
+    if (use_measurement_bias) {
+        expected_indices <- measurement_indices_by_time[match(data$virus,strains)]
+    }
 
-  ## Find which options are being used in advance for speed
-  explicit_lambda <- (length(lambda_indices) > 0)
-  spline_lambda <- (length(knot_indices) > 0)
-  use_measurement_bias <- (length(measurement_indices) > 0) & !is.null(measurement_indices_by_time)
-  titre_shifts <- NULL
-  expected_indices <- NULL
-  measurement_bias <- NULL
-  
-  if (use_measurement_bias) {
-      expected_indices <- measurement_indices_by_time[match(data$virus,strains)]
-  }
-  
-  if (version==1) {
-      f <- function(pars, infectionHistories){
-          lambdas <- pars[lambda_indices]
-          theta <- pars[theta_indices]
-          weights <- pars[weights_indices]
-          knots <- pars[knot_indices]
+    if (use_strain_dependent) {
+        additional_arguments <- list("boosting_vec_indices"=mu_indices,
+                                     "mus"=rep(2,length(strainIsolationTimes)))
+    }
+    
+    if (version==1) {
+        f <- function(pars, infectionHistories){
+            lambdas <- pars[lambda_indices]
+            theta <- pars[theta_indices]
+            weights <- pars[weights_indices]
+            knots <- pars[knot_indices]
+            mus <- pars[mu_indices_parTab]
+            
+            if (use_measurement_bias) {
+                measurement_bias <- pars[measurement_indices_parTab]
+                to_add <- measurement_bias[expected_indices]
+            }
 
-          names(pars) <- parNames_theta
-          if (use_measurement_bias) {
-              measurement_bias <- pars[measurement_indices_parTab]
-              to_add <- measurement_bias[expected_indices]
+            if (use_strain_dependent) {
+                additional_arguments[["mus"]] <- mus
           }
           
           names(theta) <- parNames_theta
@@ -124,7 +149,7 @@ create_posterior_func <- function(parTab,
           ## Now pass to the C++ function
           y <- titre_data_group(theta, infectionHistories, strains, strainIndices, sampleTimes,
                                 indicesData,indicesDataOverall,indicesSamples, virusIndices, 
-                                antigenicMapLong, antigenicMapShort)
+                                antigenicMapLong, antigenicMapShort, DOBs, additional_arguments)
           liks <- r_likelihood(y, titres, theta, measurement_bias, expected_indices)
           liks <- sum_buckets(liks, indicesOverallDiff)
           
@@ -138,9 +163,11 @@ create_posterior_func <- function(parTab,
       }
   } else if (version == 2) {
       f <- function(pars, infectionHistories){
-          lambdas <- pars[lambda_indices]
+          lambdas <- pars[lambda_indices]          
+          theta <- pars[theta_indices]
           weights <- pars[weights_indices]
           knots <- pars[knot_indices]
+          mus <- pars[mu_indices_parTab]
           
           liks <- rep(-100000,n_indiv)
           
@@ -161,11 +188,16 @@ create_posterior_func <- function(parTab,
           theta <- pars[theta_indices]
           weights <- pars[weights_indices]
           knots <- pars[knot_indices]
-
+          mus <- pars[mu_indices_parTab]
+          
           names(pars) <- parNames_theta
           if (use_measurement_bias) {
               measurement_bias <- pars[measurement_indices_parTab]
               titre_shifts <- measurement_bias[expected_indices]
+          }
+
+          if (use_strain_dependent) {
+              additional_arguments[["mus"]] <- mus
           }
           
           names(theta) <- parNames_theta
@@ -186,6 +218,8 @@ create_posterior_func <- function(parTab,
                                                                      antigenicMapLong, antigenicMapShort,
                                                                      titres,
                                                                      titre_shifts,
+                                                                     additional_arguments,
+                                                                     DOBs,
                                                                      temp
                                                                      )
           return(new_infectionHistories)
@@ -197,9 +231,14 @@ create_posterior_func <- function(parTab,
               theta <- pars[theta_indices]
               weights <- pars[weights_indices]
               knots <- pars[knot_indices]
+              mus <- pars[mu_indices_parTab]
+              
+              if (use_strain_dependent) {
+                  additional_arguments[["mus"]] <- mus
+              }
               
               names(theta) <- parNames_theta
-
+              
               ## Work out short and long term boosting cross reactivity - C++ function
               antigenicMapLong <- create_cross_reactivity_vector(antigenicMapMelted, theta["sigma1"])
               antigenicMapShort <- create_cross_reactivity_vector(antigenicMapMelted, theta["sigma2"])
@@ -207,7 +246,7 @@ create_posterior_func <- function(parTab,
               ## Now pass to the C++ function
               y <- titre_data_group(theta, infectionHistories, strains, strainIndices, sampleTimes,
                                     indicesData,indicesDataOverall,indicesSamples, virusIndices, 
-                                    antigenicMapLong, antigenicMapShort)
+                                    antigenicMapLong, antigenicMapShort, DOBs, additional_arguments)
               
               if (use_measurement_bias) {
                   measurement_bias <- pars[measurement_indices_parTab]
@@ -356,6 +395,24 @@ create_prob_shifts <- function(parTab){
     f
 }
 
+create_prior_mu <- function(parTab){
+    ## Extract parameter type indices from parTab, to split up
+    ## similar parameters in model solving functions
+    option_indices <- which(parTab$type == 0)
+    theta_indices <- which(parTab$type == 1)
+    lambda_indices <- which(parTab$type == 2)
+    measurement_indices_parTab <- which(parTab$type == 3)
+    weight_indices <- which(parTab$type == 4) ## For functional form version
+    knot_indices <- which(parTab$type == 5)
+    mu_indices_parTab <- which(parTab$type == 6)
+    
+    f <- function(pars){
+        mus <- pars[mu_indices_parTab]
+        pars <- pars[theta_indices]
+        names(pars) <- parNames_theta
+        return(prob_mus(mus, pars))
+    }
+}
 
 #' @export
 prob_mus <- function(mus, pars){

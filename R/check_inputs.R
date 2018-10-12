@@ -4,8 +4,7 @@
 #' @param parTab the parameter table controlling information such as bounds, initial values etc
 #' @return nothing at the moment
 #' @export
-check_parTab <- function(parTab,mcmc=FALSE){
-  
+check_parTab <- function(parTab,mcmc=FALSE){  
   ## Checks that should happen in simulate_data and run_MCMC
   pars <- parTab$values
   names(pars) <- parTab$names
@@ -23,6 +22,13 @@ check_parTab <- function(parTab,mcmc=FALSE){
     op_pars<-parTab[which(parTab$type==0),]
     if(all(op_pars$fixed==1)==FALSE) stop('All optional parameters must be fixed')
   }
+
+
+    ## Check that alpha and beta there for beta distribution
+     ## If there, Pull out alpha and beta for beta binomial proposals
+    if(!("alpha" %in% par_names) | !("beta" %in% par_names)){
+        stop("parTab must have entries for `alpha` and `beta` for infection history prior")
+    }
   
 }
 

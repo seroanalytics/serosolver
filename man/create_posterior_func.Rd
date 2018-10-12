@@ -5,7 +5,8 @@
 \title{Posterior function pointer}
 \usage{
 create_posterior_func(parTab, data, antigenicMap, version = 1,
-  ageMask = NULL, measurement_indices_by_time = NULL, ...)
+  ageMask = NULL, measurement_indices_by_time = NULL,
+  mu_indices = NULL, ...)
 }
 \arguments{
 \item{parTab}{the parameter table controlling information such as bounds, initial values etc}

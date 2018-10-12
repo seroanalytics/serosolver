@@ -471,8 +471,8 @@ setup_infection_histories_new <- function(data, ages, strainIsolationTimes, spac
 #'
 #' Converts a data frame of individual ages to give the index of the first infection that individual could have had
 #' @export
-create_age_mask <- function(ages, strainIsolationTimes, n_indiv){
-    ageMask <- sapply(ages$DOB, function(x){
+create_age_mask <- function(DOBs, strainIsolationTimes){
+    ageMask <- sapply(DOBs, function(x){
         if(is.na(x)){
             1
         } else {

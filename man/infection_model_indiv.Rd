@@ -6,7 +6,7 @@
 \usage{
 infection_model_indiv(theta, infectionHistory, infectionTimes,
   infectionMapIndices, samplingTime, measurementMapIndices,
-  antigenicMapLong, antigenicMapShort, numberStrains, age = 0L,
+  antigenicMapLong, antigenicMapShort, numberStrains, DOB = 0,
   additional_arguments = NULL)
 }
 \arguments{

@@ -4,7 +4,7 @@
 \alias{create_age_mask}
 \title{Create age mask}
 \usage{
-create_age_mask(ages, strainIsolationTimes, n_indiv)
+create_age_mask(DOBs, strainIsolationTimes)
 }
 \description{
 Converts a data frame of individual ages to give the index of the first infection that individual could have had
