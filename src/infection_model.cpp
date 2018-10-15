@@ -149,7 +149,6 @@ NumericVector infection_model_indiv(const NumericVector &theta, // Parameter vec
 				DOB,
 				additional_arguments
 				);
-
   return(predictedTitre);
 }
 

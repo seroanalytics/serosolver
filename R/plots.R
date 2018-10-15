@@ -129,9 +129,9 @@ get_titre_predictions <- function(chain, infectionHistories, titreDat,
 
     ## See the function in posteriors.R
     if(is.null(mu_indices)){
-        f <- create_post_func(parTab,titreDat,antigenicMap,NULL,100,measurement_indices=measurement_indices)
+        f <- create_posterior_func(parTab,titreDat,antigenicMap, 100,measurement_indices=measurement_indices)
     } else {
-        f <- create_post_func_mu(parTab,titreDat,antigenicMap,NULL,100, mu_indices=mu_indices, measurement_indices)
+        f <- create_posterior_func_mu(parTab,titreDat,antigenicMap,100, mu_indices=mu_indices, measurement_indices)
     }
     predicted_titres <- residuals <- matrix(nrow=nrow(titreDat),ncol=nsamp)
     samp_record <- numeric(nsamp)
@@ -575,7 +575,7 @@ generate_cumulative_inf_plots <- function(infChainFile, burnin, indivs, realInfH
 
     if(!is.null(ages)){
         tmpAge <- ages[ages$individual %in% indivs,]
-        ageMask <- create_age_mask(tmpAge, strainIsolationTimes,length(indivs))
+        ageMask <- create_age_mask(tmpAge[,2], strainIsolationTimes)
         ageDat <- data.frame(j=ageMask,individual=indivs[order(indivs)])
         p1 <- p1 + geom_vline(data=ageDat,aes(xintercept=strainIsolationTimes[j]),col="purple",linetype="dashed")
     }

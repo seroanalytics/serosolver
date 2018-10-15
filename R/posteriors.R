@@ -82,21 +82,25 @@ create_posterior_func <- function(parTab,
     
     if(is.null(ageMask)){
         if(!is.null(titreDat$DOB)){
-            ageMask <- create_age_mask(DOBs, strainIsolationTimes, n_indiv)
+            ageMask <- create_age_mask(DOBs, strainIsolationTimes)
         } else {
             ageMask <- rep(1, n_indiv)
         }
     }
-    n_alive <- sapply(1:length(strains), function(x) length(ageMask[ageMask <= x]))
+    ageMask <- create_age_mask(DOBs, strainIsolationTimes)
+    strainMask <- create_strain_mask(data,strainIsolationTimes)
+    masks <- data.frame(cbind(ageMask, strainMask))
+    n_alive <- sapply(seq(1,length(strains)), function(x)
+        nrow(masks[masks$ageMask <=x & masks$strainMask >= x,]))    
 
 #########################################################
     ## Extract parameter type indices from parTab, to split up
     ## similar parameters in model solving functions
     option_indices <- which(parTab$type == 0)
-    theta_indices <- which(parTab$type == 1)
+    theta_indices <- which(parTab$type %in% c(0,1))
     lambda_indices <- which(parTab$type == 2)
     measurement_indices_parTab <- which(parTab$type == 3)
-    weight_indices <- which(parTab$type == 4) ## For functional form version
+    weights_indices <- which(parTab$type == 4) ## For functional form version
     knot_indices <- which(parTab$type == 5)
     mu_indices_parTab <- which(parTab$type == 6)
 #########################################################
@@ -107,11 +111,11 @@ create_posterior_func <- function(parTab,
     ## Find which options are being used in advance for speed
     explicit_lambda <- (length(lambda_indices) > 0)
     spline_lambda <- (length(knot_indices) > 0)
-    use_measurement_bias <- (length(measurement_indices) > 0) & !is.null(measurement_indices_by_time)
+    use_measurement_bias <- (length(measurement_indices_parTab) > 0) & !is.null(measurement_indices_by_time)
     titre_shifts <- NULL
     expected_indices <- NULL
     measurement_bias <- NULL
-    use_strain_dependent_mu <- (length(mu_indices) > 0) & !is.null(mu_indices)
+    use_strain_dependent <- (length(mu_indices) > 0) & !is.null(mu_indices)
     additional_arguments <- NULL
     
     if (use_measurement_bias) {
@@ -141,7 +145,6 @@ create_posterior_func <- function(parTab,
           }
           
           names(theta) <- parNames_theta
-
           ## Work out short and long term boosting cross reactivity - C++ function
           antigenicMapLong <- create_cross_reactivity_vector(antigenicMapMelted, theta["sigma1"])
           antigenicMapShort <- create_cross_reactivity_vector(antigenicMapMelted, theta["sigma2"])
@@ -189,8 +192,9 @@ create_posterior_func <- function(parTab,
           weights <- pars[weights_indices]
           knots <- pars[knot_indices]
           mus <- pars[mu_indices_parTab]
+
+          names(theta) <- parNames_theta
           
-          names(pars) <- parNames_theta
           if (use_measurement_bias) {
               measurement_bias <- pars[measurement_indices_parTab]
               titre_shifts <- measurement_bias[expected_indices]
@@ -209,7 +213,8 @@ create_posterior_func <- function(parTab,
           ## Now pass to the C++ function
           new_infectionHistories <- infection_history_proposal_gibbs(theta, infectionHistories,
                                                                      indivPropn,nYears,
-                                                                     ageMask, n_alive,
+                                                                     ageMask, strainMask,
+                                                                     n_alive,
                                                                      swapPropn, swapDistance,
                                                                      alpha, beta,
                                                                      strains, strainIndices, sampleTimes,
@@ -238,7 +243,7 @@ create_posterior_func <- function(parTab,
               }
               
               names(theta) <- parNames_theta
-              
+
               ## Work out short and long term boosting cross reactivity - C++ function
               antigenicMapLong <- create_cross_reactivity_vector(antigenicMapMelted, theta["sigma1"])
               antigenicMapShort <- create_cross_reactivity_vector(antigenicMapMelted, theta["sigma2"])
@@ -397,14 +402,16 @@ create_prob_shifts <- function(parTab){
 
 create_prior_mu <- function(parTab){
     ## Extract parameter type indices from parTab, to split up
-    ## similar parameters in model solving functions
+    ## similar parameters in model solving functions    
     option_indices <- which(parTab$type == 0)
-    theta_indices <- which(parTab$type == 1)
+    theta_indices <- which(parTab$type %in% c(0,1))
     lambda_indices <- which(parTab$type == 2)
     measurement_indices_parTab <- which(parTab$type == 3)
-    weight_indices <- which(parTab$type == 4) ## For functional form version
+    weights_indices <- which(parTab$type == 4) ## For functional form version
     knot_indices <- which(parTab$type == 5)
     mu_indices_parTab <- which(parTab$type == 6)
+
+    parNames_theta <- parTab[theta_indices,"names"]
     
     f <- function(pars){
         mus <- pars[mu_indices_parTab]

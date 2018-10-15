@@ -68,6 +68,7 @@ IntegerMatrix infection_history_proposal_gibbs(const NumericVector& pars, // Mod
 					       double indivSampPropn, // Proportion of individuals to resample
 					       int n_years_samp, // Number of years to resample for each year
  					       const IntegerVector& ageMask, // Age mask
+ 					       const IntegerVector& strainMask, // Age mask
 					       const IntegerVector& n_alive, // Number of individuals alive in each year
 					       double swapPropn,
 					       int swapDistance,
@@ -165,7 +166,7 @@ IntegerMatrix infection_history_proposal_gibbs(const NumericVector& pars, // Mod
     
       // Make vector of year indices to sample from
       // These are the indices in the matrix Z
-      sample_years = seq(ageMask[indiv]-1,maxYears-1);
+      sample_years = seq(ageMask[indiv]-1,strainMask[indiv]-1);
       // Sample the minimum of either the number of years alive, or 
       // the number of years that are asked to be changed
       n_samp_max = sample_years.size();

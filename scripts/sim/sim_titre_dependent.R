@@ -17,18 +17,18 @@ set.seed(1)
 filename <- "chains/sim_temp_test"
 
 ## How many individuals to simulate?
-n_indiv <- 50
+n_indiv <- 500
 buckets <- 1 ## Set to 1 for annual model. Greater than 1 gives subannual (eg. buckets = 2 is infection period every half year)
 
 ## Read in parameter table to simulate from and change waning rate and alpha/beta if necessary
-parTab <- read.csv("~/Documents/Fluscape/serosolver/inputs/parTab_titre.csv",stringsAsFactors=FALSE)
+parTab <- read.csv("~/Documents/Fluscape/serosolver/inputs/parTab_base.csv",stringsAsFactors=FALSE)
 parTab[parTab$names %in% c("alpha","beta"),"values"] <- c(1,1)
 parTab[parTab$names == "boost_limit","values"] <- 3
 parTab[parTab$names == "gradient","values"] <- 0.1
 
 
 samplingTimes <- seq(2010*buckets, 2015*buckets, by=1)
-yearMin <- 1990*buckets
+yearMin <- 1968*buckets
 yearMax <- 2015*buckets
 ageMin <- 6*buckets
 ageMax <- 75*buckets
@@ -40,10 +40,10 @@ fit_dat <- fit_dat[fit_dat$inf_years >= yearMin & fit_dat$inf_years <= yearMax,]
 strainIsolationTimes <- unique(fit_dat$inf_years)
 
 ## Simulate data
+ARs <- simulate_attack_rates(strainIsolationTimes,0.15,0.5,TRUE,0.5)
 dat <- simulate_data(parTab, 1, n_indiv, buckets, strainIsolationTimes,
                      samplingTimes, 2, antigenicMap=fit_dat, 0, 0, ageMin,ageMax,
-                     simInfPars=c("mean"=0.15,"sd"=0.5,"bigMean"=0.5,"logSD"=1),
-                     useSIR=TRUE, attackRates = NULL, useSpline=FALSE)
+                     attackRates=ARs,repeats=1)
 
 ## If we want to use a subset of isolated strains, uncomment the line below
 viruses <- c(1968, 1969, 1972, 1975, 1977, 1979, 1982, 1985, 1987, 
@@ -64,7 +64,7 @@ AR <- dat[[4]]
 
 ## Starting infection histories based on data
 startInf <- setup_infection_histories_new(titreDat, ages, unique(fit_dat$inf_years), space=5,titre_cutoff=2)
-ageMask <- create_age_mask(ages, strainIsolationTimes,n_indiv)
+ageMask <- create_age_mask(ages$DOB, strainIsolationTimes)
 
 ## Generate starting locations for MCMC
 #parTab[parTab$names == "boost_limit","fixed"] <- 0
@@ -91,12 +91,19 @@ prior <- function(pars){
   if(gamma < 0 & mu*(-gamma) > (mu-1)/switch_lim) return(-Inf)
   return(0)
 }
+prior<-NULL
 startTab[startTab$names=="gradient","values"] <- 0.05
 ## Run the MCMC using the inputs generated above
-res <- run_MCMC(startTab, titreDat, mcmcPars, filename=filename,
-                 create_post_func, NULL,PRIOR_FUNC=prior,version=1, 0.2, 
-                 fit_dat, ages=ages, 
-                 startInfHist=startInf,
+devtools::load_all()
+f <- create_posterior_func(parTab,titreDat,fit_dat,1,ageMask)
+#f(parTab$values, startInf)
+f <- create_posterior_func(parTab,titreDat,fit_dat,99,ageMask)
+#f(parTab$values, startInf, 1,1,1,20,0.5,3,1)
+titreDat <- merge(titreDat, ages)
+startTab <- startTab[startTab$names != "lambda",]
+res <- run_MCMC(startTab, titreDat=titreDat, antigenicMap=fit_dat,mcmcPars=c(save_block=1000, hist_switch_prob=0.5,year_swap_propn=0.5),mvrPars=NULL, filename=filename,
+                 create_posterior_func, PRIOR_FUNC=prior,version=2, 0.2, 
+                           startInfHist=startInf,mu_indices=NULL,measurement_random_effects=FALSE,
                 measurement_indices=NULL,
                 temp=1)
 beepr::beep(4)
@@ -107,7 +114,7 @@ beepr::beep(4)
 ## Density/trace plots
 chain <- read.csv(res$chain_file)
 chain <- chain[chain$sampno >= (mcmcPars["adaptive_period"]+mcmcPars["burnin"]),]
-#plot(coda::as.mcmc(chain))
+plot(coda::as.mcmc(chain))
 
 ## Plot inferred attack rates against true simulated attack rates
 infChain <- data.table::fread(res$history_file)
@@ -116,7 +123,13 @@ infChain <- infChain[infChain$sampno > 10000,]
 n_alive <- sapply(1:length(strainIsolationTimes), function(x) length(ageMask[ageMask<=x]))
 inf_prop <- colSums(infectionHistories)/n_alive
 inf_prop <- data.frame(AR=inf_prop,year=strainIsolationTimes)
-AR_p <- plot_attack_rates(infChain, titreDat, ages, seq(yearMin, yearMax, by=1)) + 
+ageMask <- create_age_mask(ages[,2], strainIsolationTimes)
+strainMask <- create_strain_mask(titreDat,strainIsolationTimes)
+masks <- data.frame(cbind(ageMask, strainMask))
+n_alive <- sapply(seq(1,length(strainIsolationTimes)), function(x) nrow(masks[masks$ageMask <=x & masks$strainMask >= x,]))    
+
+
+AR_p <- plot_attack_rates(infChain, titreDat, ages=NULL,n_alive=n_alive, seq(yearMin, yearMax, by=1)) + 
   geom_point(data=AR,aes(x=year,y=AR)) + 
   geom_point(data=inf_prop,aes(x=year,y=AR),col="purple") + scale_y_continuous(expand=c(0,0),limits=c(0,1))
 
@@ -148,7 +161,7 @@ ps <- generate_cumulative_inf_plots(res$history_file, 0,
 ## based on data and posterior
 plot_infection_histories(chain, infChain, titreDat, sample(1:n_indiv, 10), fit_dat, ages,parTab,100)
 
-f <- create_post_func(parTab,titreDat, fit_dat, NULL, 99, ageMask, mu_indices=NULL,measurement_indices=NULL,temp=1000000)
+f <- create_posterior_func(parTab,titreDat, fit_dat, 99, ageMask, mu_indices=NULL,measurement_indices=NULL,temp=1000000)
 tmpInf <- f(parTab$values, startInf,1,1,1,1,1,1)
 samps <- 50000
 tmpInf <- startInf

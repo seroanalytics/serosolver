@@ -35,8 +35,8 @@ fluscapeAges <- read.csv("data/real/fluscape_ages.csv")
 
 ## Remove individuals with NA for DOB
 na_indiv <- fluscapeAges[which(is.na(fluscapeAges$DOB)),"individual"]
-fluscapeDat <- fluscapeDat[-na_indiv,]
-fluscapeAges <- fluscapeAges[-na_indiv,]
+fluscapeDat <- fluscapeDat[fluscapeDat$individual != na_indiv,]
+fluscapeAges <- fluscapeAges[fluscapeAges$individual != na_indiv,]
 
 ## Take random subset of individuals
 indivs <- sample(unique(fluscapeDat$individual),n_indiv)

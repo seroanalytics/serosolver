@@ -25,7 +25,7 @@ buckets <- 1
 filename <- "chains/lambda_1000_test"
 
 ## Read in parameter table to simulate from and change waning rate if necessary
-parTab <- read.csv("~/Documents/Fluscape/serosolver/inputs/parTab_lambda.csv",stringsAsFactors=FALSE)
+parTab <- read.csv("~/Documents/Fluscape/serosolver/inputs/parTab_base.csv",stringsAsFactors=FALSE)
 parTab[parTab$names == "wane","values"] <- 1
 parTab[parTab$names == "wane","values"] <- parTab[parTab$names == "wane","values"]/buckets
 
@@ -102,7 +102,7 @@ p <- plot_data(titreDat, infHist, strainIsolationTimes, 5, NULL)
 
 ## Starting infection histories based on data
 startInf <- setup_infection_histories_new(titreDat, ages, unique(fit_dat$inf_years), space=5,titre_cutoff=2)
-ageMask <- create_age_mask(ages, strainIsolationTimes,n_indiv)
+ageMask <- create_age_mask(ages$DOB, strainIsolationTimes)
 
 ## Housekeeping for force of infection parameters, lambda
 parTab[parTab$names == "lambda","values"] <- AR[,2]
@@ -129,18 +129,22 @@ scale <- 0.5
 w <- 1
 mvrPars <- list(covMat, scale, w)
 
-ageMask <- create_age_mask(ages, strainIsolationTimes,n_indiv)
+ageMask <- create_age_mask(ages$DOB, strainIsolationTimes)
 
 ## Run the MCMC using the inputs generated above
 lambdas_start<-vector('numeric',ncol(startInf))
 
 for(year in 1:ncol(startInf)){ lambdas_start[year] <- (sum(startInf[,year])/sum(ages$DOB <= strainIsolationTimes[year]))}
 startTab[startTab$names == "lambda","values"] <- lambdas_start
-
-res <- run_MCMC(startTab, titreDat, mcmcPars, filename=filename,
-                create_post_func, NULL,NULL,version=4, 0.2, 
-                fit_dat, ages=ages, 
-                startInfHist=startInf)
+titreDat <- merge(titreDat, ages)
+res <- run_MCMC(startTab, titreDat=titreDat, 
+                antigenicMap=fit_dat,mcmcPars=c(save_block=1000),
+                mvrPars=NULL, filename=filename,
+                create_posterior_func, PRIOR_FUNC=prior,
+                version=1,  
+                startInfHist=startInf,mu_indices=NULL,measurement_random_effects=FALSE,
+                measurement_indices=NULL,
+                temp=1)
 beepr::beep(4)
 
 

@@ -11,25 +11,25 @@ check_parTab <- function(parTab,mcmc=FALSE){
   
   ## Checks for waneType
   # Extract waneType
-  waneType <- pars["wane_type"]
-  if(is.na(waneType)) stop('wane_type is missing from parTab (specify 0 for linear decrease or 1 for piecewise linear) ') ## If user has not entered wane_type in parTab
-  # Check that additional parameters are present
-  if(waneType==1&(!("kappa"%in%names(pars))|!("t_change"%in%names(pars)))) stop('Parameters needed for wane_type=1 (piecewise linear) are missing')
-  
-  ## Additional checks that should happen in run_MCMC
-  if(mcmc==TRUE){
-    ## Check that all optional parameters are fixed, if not, fix them
-    op_pars<-parTab[which(parTab$type==0),]
-    if(all(op_pars$fixed==1)==FALSE) stop('All optional parameters must be fixed')
-  }
+    waneType <- pars["wane_type"]
+    if(is.na(waneType)) stop('wane_type is missing from parTab (specify 0 for linear decrease or 1 for piecewise linear) ') ## If user has not entered wane_type in parTab
+                                        # Check that additional parameters are present
+    if(waneType==1&(!("kappa"%in%names(pars))|!("t_change"%in%names(pars)))) stop('Parameters needed for wane_type=1 (piecewise linear) are missing')
+    
+    ## Additional checks that should happen in run_MCMC
+    if(mcmc==TRUE){
+        ## Check that all optional parameters are fixed, if not, fix them
+        op_pars<-parTab[which(parTab$type==0),]
+        if(all(op_pars$fixed==1)==FALSE) stop('All optional parameters must be fixed')
+    }
 
 
     ## Check that alpha and beta there for beta distribution
-     ## If there, Pull out alpha and beta for beta binomial proposals
-    if(!("alpha" %in% par_names) | !("beta" %in% par_names)){
+    ## If there, Pull out alpha and beta for beta binomial proposals
+    if(!("alpha" %in% parTab$names) | !("beta" %in% parTab$names)){
         stop("parTab must have entries for `alpha` and `beta` for infection history prior")
     }
-  
+    
 }
 
 #' Checks the entries of data used in run_MCMC
