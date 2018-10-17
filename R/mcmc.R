@@ -326,7 +326,7 @@ run_MCMC <- function(parTab,
                                                             alpha, beta,
                                                             histSampleProb, nInfs,swapPropn,moveSize)
                 } else {
-                    newInfectionHistories <- inf_hist_swap(infectionHistories, ageMask, year_swap_propn, moveSize)
+                    newInfectionHistories <- inf_hist_swap(infectionHistories, ageMask, strainMask, year_swap_propn, moveSize)
                     if(!identical(newInfectionHistories, infectionHistories)) infHistSwapN <- infHistSwapN + 1
                 }
             } else if(histProposal == 3){
@@ -401,7 +401,8 @@ run_MCMC <- function(parTab,
                     infectionHistories <- newInfectionHistories
                     probabs <- new_probabs
                     probab <- new_probab
-                    #probab <- probab + extra_probabilities(current_pars, infectionHistories)
+                    
+                                        #probab <- probab + extra_probabilities(current_pars, infectionHistories)
                 } else {
                     if(!identical(newInfectionHistories, infectionHistories)){
                         log_prob <- new_probab - probab
@@ -411,7 +412,8 @@ run_MCMC <- function(parTab,
                             infectionHistories <- newInfectionHistories
                             probabs <- new_probabs
                             probab <- new_probab
-                            #probab <- probab + extra_probabilities(current_pars, infectionHistories)
+                                        #probab <- probab + extra_probabilities(current_pars, infectionHistories)
+                            
                         }
                     }
                 }

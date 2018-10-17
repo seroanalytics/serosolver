@@ -4,13 +4,11 @@
 \alias{setup_infection_histories_new}
 \title{Propose initial infection histories}
 \usage{
-setup_infection_histories_new(data, ages, strainIsolationTimes,
-  space = 5, titre_cutoff = 2)
+setup_infection_histories_new(data, strainIsolationTimes, space = 5,
+  titre_cutoff = 2)
 }
 \arguments{
 \item{data}{the matrix of titres data with columns for individual, sample, and titre}
-
-\item{ages}{a matrix of ages for each individual. Columns should be 1) the individual's ID; 2) the individual's date of birth (called DOB) in the same time resolution of the model (ie. 1991 for years, 1991*12 for months etc)}
 
 \item{strainIsolationTimes}{vector of real times for all strains}
 

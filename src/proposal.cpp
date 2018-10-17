@@ -167,6 +167,10 @@ IntegerMatrix infection_history_proposal_gibbs(const NumericVector& pars, // Mod
       // Make vector of year indices to sample from
       // These are the indices in the matrix Z
       sample_years = seq(ageMask[indiv]-1,strainMask[indiv]-1);
+      //Rcpp::Rcout << "Indiv: " << indiv+1 << std::endl;
+      //Rcpp::Rcout << "Age mask: " << ageMask[indiv] << std::endl;
+      //Rcpp::Rcout << "Strain mask: " << strainMask[indiv] << std::endl;
+      //Rcpp::Rcout << "Sample years: " << sample_years << std::endl;
       // Sample the minimum of either the number of years alive, or 
       // the number of years that are asked to be changed
       n_samp_max = sample_years.size();
@@ -285,7 +289,7 @@ IntegerMatrix infection_history_proposal_gibbs(const NumericVector& pars, // Mod
 	    new_entry = 0;
 	    proposedIndivHist(year) = 0;
 	  }
-	
+	  if(year > strainMask[indiv]-1) Rcpp::Rcout << "wut" << std::endl;
 	  // If proposing a change, need to check likelihood ratio
 	  if(new_entry != newInfHist(indiv,year)){
 	    old_prob = likelihood_data_individual(pars, indivHist, circulationTimes, circulationMapIndices,

@@ -53,7 +53,7 @@ chains <- foreach(i=1:5) %dopar% {
   res <- run_MCMC_group(startPars, startProbs, 
                         fixed, fixed_probs, 
                         start_coins,dat,samps, iter, 
-                        covMat_theta, covMat_probs, thin=100,
+                        covMat_theta=covMat_theta, covMat_probs=covMat_probs, thin=100,
                         step_theta=rep(0.01,length(startPars)),step_prob=rep(0.001,length(startProbs)),
                         adapt_freq=10000,adaptive_period=20000,
                         printF=1000,temp=1,
@@ -206,8 +206,8 @@ coin_prob_chain <- ddply(coin_prob_chain, ~variable, function(x) quantile(x$valu
 samp_tmp <- data.frame(xmin=samps-0.5,xmax=samps+0.5,ymin=0,ymax=1)
 p3 <- ggplot() + 
   geom_rect(data=samp_tmp,aes(xmin=xmin,xmax=xmax,ymin=ymin,ymax=ymax,fill="gray80"),alpha=0.5)+
-  geom_pointrange(data=coin_prob_chain,aes(x=variable-0.2,ymin=`2.5%`,y=`50%`,ymax=`97.5%`,col="coin prob chain")) + 
-  geom_pointrange(data=casted_coin_chain,aes(x=variable+0.2,ymin=`2.5%`,y=`50%`,ymax=`97.5%`,col="coin chain")) + 
+#  geom_pointrange(data=coin_prob_chain,aes(x=variable-0.2,ymin=`2.5%`,y=`50%`,ymax=`97.5%`,col="coin prob chain")) + 
+#  geom_pointrange(data=casted_coin_chain,aes(x=variable+0.2,ymin=`2.5%`,y=`50%`,ymax=`97.5%`,col="coin chain")) + 
   geom_point(data=real_coins, aes(x=variable,y=y,col="real coin prob")) +
   geom_point(data=real_coins_data,aes(x=variable,y=y,col="real coin data")) +
   theme_bw() +

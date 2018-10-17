@@ -399,13 +399,14 @@ plot_attack_rates <- function(infectionHistories, dat, ages, yearRange,n_alive=N
     ##tmp <- ddply(infectionHistories, c("sampno","j"), function(x) sum(x$x))
     quantiles <- ddply(tmp, ~j, function(x) quantile(x$V1, c(0.025,0.5,0.975)))
     colnames(quantiles) <- c("j","lower","median","upper")
+    return(quantiles)
     quantiles[c("lower","median","upper")] <- quantiles[c("lower","median","upper")]/n_alive
     quantiles$year <- yearRange[quantiles$j]
     quantiles$taken <- quantiles$year %in% unique(dat$samples)
 
     ## Colour depending on whether or not titres were taken in each year
     quantiles$taken <- ifelse(quantiles$taken,"Yes","No")
-    
+    return(quantiles)
     p <- ggplot(quantiles) + 
         geom_pointrange(aes(x=year,y=median,ymin=lower,ymax=upper,col=taken),size=pointsize, fatten=fatten) +
         scale_y_continuous(limits=c(-0.1,1),expand=c(0,0)) +  

@@ -17,7 +17,7 @@ set.seed(1)
 filename <- "chains/sim_temp_test"
 
 ## How many individuals to simulate?
-n_indiv <- 500
+n_indiv <- 50
 buckets <- 1 ## Set to 1 for annual model. Greater than 1 gives subannual (eg. buckets = 2 is infection period every half year)
 
 ## Read in parameter table to simulate from and change waning rate and alpha/beta if necessary
@@ -101,7 +101,9 @@ f <- create_posterior_func(parTab,titreDat,fit_dat,99,ageMask)
 #f(parTab$values, startInf, 1,1,1,20,0.5,3,1)
 titreDat <- merge(titreDat, ages)
 startTab <- startTab[startTab$names != "lambda",]
-res <- run_MCMC(startTab, titreDat=titreDat, antigenicMap=fit_dat,mcmcPars=c(save_block=1000, hist_switch_prob=0.5,year_swap_propn=0.5),mvrPars=NULL, filename=filename,
+res <- run_MCMC(startTab, titreDat=titreDat, antigenicMap=fit_dat,
+                mcmcPars=c(save_block=1000, hist_switch_prob=0.5,year_swap_propn=0.5),
+                mvrPars=NULL, filename=filename,
                  create_posterior_func, PRIOR_FUNC=prior,version=2, 0.2, 
                            startInfHist=startInf,mu_indices=NULL,measurement_random_effects=FALSE,
                 measurement_indices=NULL,
@@ -133,6 +135,8 @@ AR_p <- plot_attack_rates(infChain, titreDat, ages=NULL,n_alive=n_alive, seq(yea
   geom_point(data=AR,aes(x=year,y=AR)) + 
   geom_point(data=inf_prop,aes(x=year,y=AR),col="purple") + scale_y_continuous(expand=c(0,0),limits=c(0,1))
 
+
+
 ## Density/trace plots on total number of infections
 indivs <- sample(n_indiv, 10)
 sampd <- sample(n_indiv,20)
@@ -143,7 +147,6 @@ data.table::setkey(infChain, "j","sampno")
 n_inf_chain <- infChain[,list(V1=sum(x)),by=key(infChain)]
 
 inf_chain_p <- ggplot(n_inf_chain) + geom_line(aes(x=sampno,y=V1)) + facet_wrap(~j)
-
 
 n_indiv <- max(infChain$i)
 data.table::setkey(infChain, "i","sampno")

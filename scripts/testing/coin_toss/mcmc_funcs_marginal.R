@@ -73,7 +73,7 @@ run_MCMC_marginal <- function(pars,
     } else {
       sampledI <- sample(1:n_indiv, floor(n_indiv*samplePropn))
       k <- floor(n_years*yearPropn)
-      # 1:n_indiv
+                                        # 1:n_indivmodl
       proposed_coin_results <- coin_proposal_symmetric_group(coin_results,k,sampledI)
       #proposed_coin_results <- coin_proposal_by_year(coin_results,1,floor(n_indiv*samplePropn))
       new_probabs <- likelihood_group(pars, proposed_coin_results, dat, samps)/temp
