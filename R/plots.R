@@ -319,11 +319,12 @@ plot_posteriors <- function(chain, parTab,
 #' @param dat the data frame of titre data
 #' @param ages the data frame of ages for each individual, with columns for individual and DOB (date of birth)
 #' @param yearRange vector of the first and last epoch of potential circulation
+#' @param n_alive vector with the number of people alive in each year of circulation. Can be left as NULL, and ages will be used to infer this
 #' @param ymax Numeric. the maximum y value to put on the axis
 #' @param buckets Integer. How many buckets of time is each year split into? ie. 12 for monthly data, 4 for quarterly etc.
 #' @return a ggplot2 object with the inferred attack rates for each potential epoch of circulation
 #' @export
-plot_attack_rates_monthly<- function(infectionHistories, dat, ages, yearRange,ymax=0.1, buckets=1){
+plot_attack_rates_monthly<- function(infectionHistories, dat, ages, yearRange,n_alive=NULL,ymax=0.1, buckets=1){
     ## Find inferred total number of infections from the MCMC output
     ##tmp <- plyr::ddply(infectionHistories,~sampno,function(x) colSums(x[,1:(ncol(infectionHistories)-2)]))
     ## Scale by number of individuals that were alive in each epoch
@@ -335,7 +336,11 @@ plot_attack_rates_monthly<- function(infectionHistories, dat, ages, yearRange,ym
     labels1 <- labels[1:length(yearRange)]
     labels1 <- labels1[seq(1,length(labels1),by=buckets)]
     yearBreak <- yearRange[seq(1,length(yearRange),by=buckets)]
-    n_alive <- sapply(yearRange, function(x) nrow(ages[ages$DOB <= x,]) )
+    if(is.null(n_alive)){
+      if(is.null(ages)) n_alive <- length(unique(dat$individual))
+      else n_alive <- sapply(yearRange, function(x) nrow(ages[ages$DOB <= x,]) )
+    }
+    
 
     ##quantiles <- apply(tmp[,2:ncol(tmp)],2, function(x) quantile(x,c(0.025,0.5,0.975)))
     data.table::setkey(infectionHistories, "sampno","j")
