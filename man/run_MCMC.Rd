@@ -4,16 +4,15 @@
 \alias{run_MCMC}
 \title{Adaptive Metropolis-within-Gibbs/Metropolis Hastings Random Walk Algorithm.}
 \usage{
-run_MCMC(parTab, data, antigenicMap, mcmcPars = c(), mvrPars = NULL,
-  startInfHist = NULL, filename = "test", CREATE_POSTERIOR_FUNC,
-  PRIOR_FUNC = NULL, version = 1, mu_indices = NULL,
-  measurement_indices = NULL, measurement_random_effects = FALSE,
-  OPT_TUNING = 0.1, temp = 1, ...)
+run_MCMC(parTab, titreDat, antigenicMap, mcmcPars = c(),
+  mvrPars = NULL, startInfHist = NULL, filename = "test",
+  CREATE_POSTERIOR_FUNC, PRIOR_FUNC = NULL, version = 1,
+  mu_indices = NULL, measurement_indices = NULL,
+  measurement_random_effects = FALSE, OPT_TUNING = 0.1, temp = 1,
+  ...)
 }
 \arguments{
 \item{parTab}{The parameter table controlling information such as bounds, initial values etc}
-
-\item{data}{The data frame of data to be fitted. Must have columns: group (index of group); individual (integer ID of individual); samples (numeric time of sample taken); virus (numeric time of when the virus was circulating); titre (integer of titre value against the given virus at that sampling time)}
 
 \item{antigenicMap}{A data frame of antigenic x and y coordinates. Must have column names: x_coord; y_coord; inf_years}
 
@@ -42,6 +41,8 @@ run_MCMC(parTab, data, antigenicMap, mcmcPars = c(), mvrPars = NULL,
 \item{temp}{Temperature term for parallel tempering, raises likelihood to this value. Just used for testing at this point}
 
 \item{...}{Other arguments to pass to CREATE_POSTERIOR_FUNC}
+
+\item{data}{The data frame of data to be fitted. Must have columns: group (index of group); individual (integer ID of individual); samples (numeric time of sample taken); virus (numeric time of when the virus was circulating); titre (integer of titre value against the given virus at that sampling time)}
 }
 \value{
 A list with: 1) full file path at which the MCMC chain is saved as a .csv file; 2) a full file path at which the infection history chain is saved as a .csv file; 3) the last used covariance matrix; 4) the last used scale/step size (if multivariate proposals)

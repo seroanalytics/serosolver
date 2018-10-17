@@ -62,3 +62,23 @@ plot(density(lambdas))
 #plot(as.mcmc(tmp/indivs))
 summary(as.mcmc(tmp[,1]/indivs))[[1]]
 summary(as.mcmc(lambdas))[[1]]
+
+
+library(data.table)
+library(plyr)
+chain <- read.csv("real_lambda_1_1_chain.csv")
+ages <- read.csv("real_lambda_1_1_ages.csv")
+
+chain <- chain[chain$sampno > 100000,]
+infChain <- data.table::fread("real_lambda_1_1_infectionHistories.csv")
+infChain <- infChain[infChain$sampno > 100000,]
+setkey(infChain, "sampno","j")
+infChain1 <- infChain[,list(V1=sum(x)),by=key(infChain)]
+
+plot(density(chain$lambda.2))
+lines(density(infChain1[infChain1$j==3,]$V1/n_alive[3]),col="red")
+
+
+
+plot(density(chain$lambda.5))
+lines(density(infChain1[infChain1$j==6,]$V1/n_alive[6]),col="red")

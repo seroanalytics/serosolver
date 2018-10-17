@@ -406,16 +406,15 @@ setup_infection_histories_OLD <- function(dat, strainIsolationTimes, ageMask,sam
 #' The idea is to move along time in the context of antigenic drift and look at an individual's titre against each strain. Where titres are raised, we suggest an infection. However, to avoid suggesting multiple infections for regions of high antigenic similarity, we place a necessary gap (defined by `space`) between proposed infection times.
 #' NOTE - MIGHT NEED TO UPDATE THIS FOR GROUPS
 #' @param data the matrix of titres data with columns for individual, sample, and titre
-#' @param ages a matrix of ages for each individual. Columns should be 1) the individual's ID; 2) the individual's date of birth (called DOB) in the same time resolution of the model (ie. 1991 for years, 1991*12 for months etc)
 #' @param strainIsolationTimes vector of real times for all strains
 #' @param space how many epochs must separate proposed infections
 #' @param titre_cutoff specifies how high the titre must be to imply an infection
 #' @return an nxm matrix of infection histories containing 1s and 0s, where n is the number of individuals and m is the number of potential infecting strains
 #' @export
-setup_infection_histories_new <- function(data, ages, strainIsolationTimes, space=5, titre_cutoff=2){
+setup_infection_histories_new <- function(data, strainIsolationTimes, space=5, titre_cutoff=2){
   startInf <- NULL
   individuals <- unique(data$individual)
-
+  ages <- unique(data[,c("individual","DOB")])
   
   ## For each individual
   for(individual in individuals){
@@ -588,4 +587,25 @@ lambda_proposal <- function(current_pars, infHist, years, js, alpha, beta, n_ali
     
     ratio <- back - forward
     return(list(proposed, ratio))    
+}
+
+#' Expands default MCMC saved infChain
+#'
+#' The MCMC function saves sparse matrix summaries of the infection history chain to 
+#' save space and run time. This function returns the expanded infection history chain,
+#' as in the original version of the code. Returned value is a data table with leftmost columns
+#' giving sample number and individual, with columns expanded to the right for each infection
+#' period.
+#' @param infChain a data table with the MCMC saved infection history chain
+#' @return the MCMC saved infection history expanded with infection times as columns
+#' @export
+expand_summary_infChain <- function(infChain){
+  full_inf_chain <- data.table::CJ(i=1:max(infChain$i), j=1:max(infChain$j), sampno=min(infChain$sampno):max(infChain$sampno))
+  infChain <- data.table::data.table(apply(infChain, 2, as.numeric))
+  summary_with_non_infections <- merge(infChain,full_inf_chain,by=c("sampno","j","i"),all=TRUE)
+  summary_with_non_infections[is.na(summary_with_non_infections$x),"x"] <- 0
+  colnames(summary_with_non_infections) <- c("sampno","j","individual","x")
+  expanded_chain <- data.table::dcast(summary_with_non_infections, sampno + individual ~ j,value.var="x")
+  
+  return(expanded_chain)
 }

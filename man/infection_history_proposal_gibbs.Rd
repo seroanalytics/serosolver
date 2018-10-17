@@ -5,11 +5,11 @@
 \title{Gibbs sampling of infection histories}
 \usage{
 infection_history_proposal_gibbs(pars, infHist, indivSampPropn,
-  n_years_samp, ageMask, n_alive, swapPropn, swapDistance, alpha, beta,
-  circulationTimes, circulationMapIndices, samplingTimes,
+  n_years_samp, ageMask, strainMask, n_alive, swapPropn, swapDistance,
+  alpha, beta, circulationTimes, circulationMapIndices, samplingTimes,
   indicesTitreDataSample, indicesTitreDataOverall, indicesSamples,
   measuredMapIndices, antigenicMapLong, antigenicMapShort, data, to_add,
-  additional_arguments, ages, temp)
+  additional_arguments, DOBs, temp)
 }
 \arguments{
 \item{pars}{NumericVector, the model parameters used to solve the model, extract likelihood function parameters and alpha/beta}

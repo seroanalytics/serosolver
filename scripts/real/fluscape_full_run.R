@@ -10,33 +10,41 @@ library(reshape2)
 library(data.table)
 
 
-
 ## Set working directory and load code
 setwd("~/Documents/Fluscape/serosolver")
 devtools::load_all()
+set.seed(1)
 
 ## How many individuals to fit to?
 n_indiv <-50
 buckets <- 1
 ## The general output filename
-filename <- "chains/fluscape_100_gibbs"
+filename <- "chains/fluscape_quarter_test"
 
 ## Read in parameter table to simulate from and change waning rate and alpha/beta if necessary
 parTab <- read.csv("~/Documents/Fluscape/serosolver/inputs/parTab_base.csv",stringsAsFactors=FALSE)
 parTab[parTab$names %in% c("alpha","beta"),"values"] <- c(1,1)
 parTab <- parTab[parTab$names != "lambda",]
+
+
 ## Read in and generate the antigenic map to read strain relationships from
 antigenicMap <- read.csv("~/Documents/Fluscape/fluscape/trunk/data/Fonville2014AxMapPositionsApprox.csv",stringsAsFactors=FALSE)
 fit_dat <- generate_antigenic_map(antigenicMap, 1)
 strainIsolationTimes <- unique(fit_dat$inf_years)
+
+
+if("lambda" %in% parTab$names){
+  ## Add rows for each lambda value to be inferred
+  tmp <- parTab[parTab$names == "lambda",]
+  for(i in 1:(length(strainIsolationTimes)-1)){
+    parTab <- rbind(parTab, tmp)
+  }
+}
 ## Read in Fluscape data
-fluscapeDat <- read.csv("data/real/fluscape_data.csv",stringsAsFactors=FALSE)
-fluscapeAges <- read.csv("data/real/fluscape_ages.csv")
+fluscapeDat <- read.csv("data/real/combined_fluscape_data_12.csv",stringsAsFactors=FALSE)
 
 ## Remove individuals with NA for DOB
-na_indiv <- fluscapeAges[which(is.na(fluscapeAges$DOB)),"individual"]
-fluscapeDat <- fluscapeDat[fluscapeDat$individual != na_indiv,]
-fluscapeAges <- fluscapeAges[fluscapeAges$individual != na_indiv,]
+fluscapeDat <- fluscapeDat[complete.cases(fluscapeDat),]
 
 ## Take random subset of individuals
 indivs <- sample(unique(fluscapeDat$individual),n_indiv)
@@ -44,12 +52,10 @@ indivs <- indivs[order(indivs)]
 #indivs <- fluscapeAges[fluscapeAges$DOB >= 1990,"individual"]
 #indivs <- unique(fluscapeAges$individual)
 n_indiv <- length(indivs)
+
 titreDat <- fluscapeDat[fluscapeDat$individual %in% indivs,]
-ages <- fluscapeAges[fluscapeAges$individual %in% indivs,]
 titreDat$individual <- match(titreDat$individual, indivs)
-ages$individual <- match(ages$individual, indivs)
-titreDat <- titreDat[,c("individual", "samples", "virus", "titre", "run", "group")]
-titreDat <- merge(titreDat, ages)
+titreDat <- titreDat[,c("individual", "samples", "virus", "titre", "run", "group","DOB")]
 
 startTab <- parTab
 for(i in 1:nrow(startTab)){
@@ -65,9 +71,9 @@ scale <- 0.00005
 w <- 1
 mvrPars <- list(covMat, scale, w)
 mvrPars <- NULL
-
-startInf <- setup_infection_histories_new(titreDat, ages, unique(fit_dat$inf_years), space=5,titre_cutoff=2)
-ageMask <- create_age_mask(ages$DOB, strainIsolationTimes)
+DOBs <- unique(titreDat[,c("individual","DOB")])[,2]
+startInf <- setup_infection_histories_new(titreDat, unique(fit_dat$inf_years), space=5,titre_cutoff=2)
+ageMask <- create_age_mask(DOBs, strainIsolationTimes)
 
 #########################
 ## RUN MCMC
@@ -95,10 +101,14 @@ chain <- chain[chain$sampno >= (mcmcPars["adaptive_period"]+mcmcPars["burnin"]),
 ## Plot inferred attack rates
 infChain <- data.table::fread(res$history_file)
 infChain <- infChain[infChain$sampno >= (mcmcPars["adaptive_period"]+mcmcPars["burnin"]),]
-n_alive <- sapply(strainIsolationTimes, function(x) length(ages[ages$DOB <= x,]))
+ageMask <- create_age_mask(DOBs, strainIsolationTimes)
+strainMask <- create_strain_mask(titreDat,strainIsolationTimes)
+masks <- data.frame(cbind(ageMask, strainMask))
+n_alive <- sapply(seq(1,length(strainIsolationTimes)), function(x) nrow(masks[masks$ageMask <=x & masks$strainMask >= x,]))    
+
 inf_prop <- colSums(startInf)/n_alive
 inf_prop <- data.frame(AR=inf_prop,year=strainIsolationTimes)
-AR_p <- plot_attack_rates(infChain, titreDat, ages, seq(1968, 2015, by=1),n_alive=NULL) + 
+AR_p <- plot_attack_rates(infChain, titreDat, ages, seq(min(strainIsolationTimes), max(strainIsolationTimes), by=1),n_alive=n_alive) + 
  scale_y_continuous(expand=c(0,0),limits=c(0,1))
 
 ## Density/trace plots on total number of infections
@@ -110,7 +120,7 @@ n_strain <- max(infChain$j)
 data.table::setkey(infChain, "j","sampno")
 n_inf_chain <- infChain[,list(V1=sum(x)),by=key(infChain)]
 
-inf_chain_p <- ggplot(n_inf_chain) + geom_line(aes(x=sampno,y=V1)) + facet_wrap(~j)
+inf_chain_p <- ggplot(n_inf_chain[n_inf_chain$j < 10,]) + geom_line(aes(x=sampno,y=V1)) + facet_wrap(~j)
 
 wow <- data.frame(n_inf_chain)
 wow1 <- dcast(wow, sampno~j)

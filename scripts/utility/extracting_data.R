@@ -4,8 +4,8 @@ setwd("~/Documents/Fluscape/serosolver")
 fluscapeWD <- "~/Documents/Fluscape"
 devtools::load_all()
 setwd(fluscapeWD)
-resolution <- "annual"
-buckets <- 12
+resolution <- "monthly"
+buckets <- 4
 use_buckets <- 12/buckets
 firstYear <- 1968
 lastYear <- 2015
@@ -19,7 +19,7 @@ virus_key <- c("HK68"=1968, "EN72"=1972, "VI75"=1975, "TX77"=1977, "BK79"=1979, 
 
 fluscape_virus_key <- c("BJ89"=1989, "SC87"=1987, "PH82"=1982, "BR07"=2007, "WU95"=1995, "BK79"=1979, "HK14"=2014, "TX12"=2012, 
                         "PE09"=2010, "BJ92"=1992, "TX77"=1977, "VC09"=2009, "CL04"=2004, "VC98"=1998, "FJ00"=2000, "VC75"=1975, 
-                        "MS85"=1985, "FJ02"=2002, "EN72"=1972, "X31"=1969, "HK68"=1968)
+                        "MS85"=1985, "FJ02"=2002, "EN72"=1972, "X31"=1970, "HK68"=1968)
 
 if(resolution == "monthly"){
   firstYear <- firstYear*12
@@ -155,5 +155,9 @@ finalDat$virus <- ceiling(finalDat$virus/use_buckets)
 ages$DOB <- ceiling(ages$DOB/use_buckets)
 
 setwd("~/net/home/serosolver/data_LSA")
+all_dat <- merge(finalDat, ages)
+all_dat <- all_dat[order(all_dat$group,all_dat$individual,all_dat$samples,all_dat$run),c("group","individual","samples","virus","titre","run","DOB","Participant_ID")]
+
+write.table(all_dat,paste0("combined_fluscape_data_",buckets,".csv"),sep=",",row.names=FALSE)
 write.table(finalDat,paste0("fluscape_data_",buckets,".csv"),sep=",",row.names=FALSE)
 write.table(ages,paste0("fluscape_ages_",buckets,".csv"),sep=",",row.names=FALSE)
