@@ -435,7 +435,6 @@ setup_infection_histories_new <- function(data, strainIsolationTimes, space=5, t
           strain <- strains[i] ## Get current strain of interest
           measurement <- -1
           dist <- 0
-          
           titre <- max(dat[dat$virus == strain, "titre"]) ## Get max titre against this strain
           if(titre >= titre_cutoff){ ## If elevated against this strain, assume an infection
               newInf <- strain
@@ -486,7 +485,7 @@ create_strain_mask <- function(titreDat, strainIsolationTimes){
   ids <- unique(titreDat$individual)
   strainMask <- sapply(ids, function(x){
     sampleTimes <- titreDat$samples[titreDat$individual==x]
-    which(max(sampleTimes) <= strainIsolationTimes)[1]
+    max(which(max(sampleTimes) >= strainIsolationTimes))
   })
   return(strainMask)
 }
