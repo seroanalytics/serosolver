@@ -1,0 +1,17 @@
+"parName","distribution","dist_par_name_1","dist_par_value_1","dist_par_name_2","dist_par_value_2"
+"mu","dnorm","mean",1.97497031718798,"mean",0.0329782572035894
+"mu_short","dnorm","mean",2.72727926143672,"mean",0.118153962787113
+"tau","dnorm","mean",0.0465097267495518,"mean",0.00184727294240525
+"wane","dnorm","mean",0.708195660155575,"mean",0.0315449682619901
+"sigma1","dnorm","mean",0.11332079764269,"mean",0.00142363800793187
+"sigma2","dnorm","mean",0.025731028579677,"mean",0.00191341267700369
+"error","dnorm","mean",1.29463904137982,"mean",0.010693790130527
+"wane_quarter","dnorm","mean",0.177048915038894,"mean",0.00788624206549752
+"mu","dbeta","shape1",36.5722200141754,"shape2",99.8648699871264
+"mu_short","dbeta","shape1",81.8266759971157,"shape2",82.0872711059637
+"tau","dbeta","shape1",98.7406772649847,"shape2",94.3085058319848
+"wane","dbeta","shape1",15.4627945350949,"shape2",84.2732682805508
+"sigma1","dbeta","shape1",92.9938680680934,"shape2",3.03551443829201
+"sigma2","dbeta","shape1",17.884617659729,"shape2",69.1786824350245
+"error","dbeta","shape1",86.8358833622187,"shape2",6.75536081055179
+"wane_quarter","dbeta","shape1",53.0899757551961,"shape2",69.4409326958703

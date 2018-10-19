@@ -2,7 +2,7 @@
 #'
 #' Essential for the MCMC algorithm. Takes all of the input data/parameters and returns a function pointer. This function finds the posterior for a given set of input parameters (theta) and infection histories without needing to pass the data set back and forth.
 #' @param parTab the parameter table controlling information such as bounds, initial values etc
-#' @param data the data frame of data to be fitted. Must have columns: group (index of group); individual (integer ID of individual); samples (numeric time of sample taken); virus (numeric time of when the virus was circulating); titre (integer of titre value against the given virus at that sampling time)
+#' @param titreDat the data frame of data to be fitted. Must have columns: group (index of group); individual (integer ID of individual); samples (numeric time of sample taken); virus (numeric time of when the virus was circulating); titre (integer of titre value against the given virus at that sampling time)
 #' @param antigenicMap a data frame of antigenic x and y coordinates. Must have column names: x_coord; y_coord; inf_years
 #' @param PRIOR_FUNC user function of prior for model parameters. Should take parameter values only
 #' @param version integer specifying which version of the posterior function to use. This is mainly used for turning off or on the likelihood for debugging the implicit prior. The versions are as follows: 1) Likelihood turned on and no explicit prior. Any prior is implicit from the proposal distribution; 2) No likelihood and no explicit prior; 3) Explicit prior term (as specified by PRIOR_FUNC) and no likelihood. Any implicit prior from the proposal will also be included; 4) Version of the posterior distribution where we infer an explicit force of infection for each epoch; 5) Explicit likelihood and prior - any implicit prior from the proposal will also be included, so proposals should be symmetric; 6) just the negative log likelihood, but function only expects vector of pars (not infectionHistories), which must be specified with ...; 7+) Returns the predicted titres (model solving function); 99) Returns a gibbs-sampled infection history matrix
@@ -12,7 +12,7 @@
 #' @return a single function pointer that takes only pars and infectionHistories as unnamed arguments. This function goes on to return a vector of posterior values for each individual
 #' @export
 create_posterior_func <- function(parTab,
-                                  data,
+                                  titreDat,
                                   antigenicMap,
                                   version=1,
                                   ageMask=NULL,
@@ -20,11 +20,11 @@ create_posterior_func <- function(parTab,
                                   mu_indices=NULL,
                                   ...){
     ## Isolate data table as vectors for speed
-    titres <- data$titre
+    titres <- titreDat$titre
     
     ## The entry of each virus in the data corresponding to the antigenic map
     ## Note 0 indexed for C++ code
-    virusIndices <- match(data$virus, antigenicMap$inf_years) - 1
+    virusIndices <- match(titreDat$virus, antigenicMap$inf_years) - 1
     ## Unique strains that an individual could be exposed to
     strains <- unique(antigenicMap$inf_years)
     n_strains <- length(strains)
@@ -37,11 +37,11 @@ create_posterior_func <- function(parTab,
 
     ## Get unique measurement sets for each individual at
     ## each sampling time for each repeat
-    samples <- unique(data[,c("individual","samples","run")])
+    samples <- unique(titreDat[,c("individual","samples","run")])
     samples <- samples[order(samples$individual, samples$run, samples$samples),]
 
     ## Sort data in same way
-    data <- data[order(data$individual, data$run, data$samples, data$virus),]
+    titreDat <- titreDat[order(titreDat$individual, titreDat$run, titreDat$samples, titreDat$virus),]
 
     ## Extract vector of sampling times and individual indices for speed
     sampleTimes <- samples$samples
@@ -52,9 +52,9 @@ create_posterior_func <- function(parTab,
     ## data matrix. 
     indicesData <- NULL
     for(i in 1:nrow(samples)){
-        indicesData <- c(indicesData, nrow(samples[data$individual == samples[i,"individual"] &
-                                                   data$samples == samples[i,"samples"] &
-                                                   data$run == samples[i,"run"],]))
+        indicesData <- c(indicesData, nrow(samples[titreDat$individual == samples[i,"individual"] &
+                                                   titreDat$samples == samples[i,"samples"] &
+                                                   titreDat$run == samples[i,"run"],]))
     }
     
     ## Get indexing for individuals. This works out which rows in the titre data correspond
@@ -69,7 +69,7 @@ create_posterior_func <- function(parTab,
     ## How many rows in the titre data correspond to each individual?
     indicesDataOverall <- NULL
     for(individual in unique(individuals)){
-        indicesDataOverall <- c(indicesDataOverall, nrow(data[data$individual == individual,]))
+        indicesDataOverall <- c(indicesDataOverall, nrow(titreDat[titreDat$individual == individual,]))
     }
     indicesDataOverall <- cumsum(c(0,indicesDataOverall))    
     indicesOverallDiff <- diff(indicesDataOverall)
@@ -79,7 +79,6 @@ create_posterior_func <- function(parTab,
     } else {
         DOBs <- rep(min(strainIsolationTimes), n_indiv)
     }
-    
     if(is.null(ageMask)){
         if(!is.null(titreDat$DOB)){
             ageMask <- create_age_mask(DOBs, strainIsolationTimes)
@@ -88,7 +87,7 @@ create_posterior_func <- function(parTab,
         }
     }
     ageMask <- create_age_mask(DOBs, strainIsolationTimes)
-    strainMask <- create_strain_mask(data,strainIsolationTimes)
+    strainMask <- create_strain_mask(titreDat,strainIsolationTimes)
     masks <- data.frame(cbind(ageMask, strainMask))
     n_alive <- sapply(seq(1,length(strains)), function(x)
         nrow(masks[masks$ageMask <=x & masks$strainMask >= x,]))    
@@ -119,7 +118,7 @@ create_posterior_func <- function(parTab,
     additional_arguments <- NULL
     
     if (use_measurement_bias) {
-        expected_indices <- measurement_indices_by_time[match(data$virus,strains)]
+        expected_indices <- measurement_indices_by_time[match(titreDat$virus,strains)]
     }
 
     if (use_strain_dependent) {
@@ -142,7 +141,7 @@ create_posterior_func <- function(parTab,
 
             if (use_strain_dependent) {
                 additional_arguments[["mus"]] <- mus
-          }
+            }
           
           names(theta) <- parNames_theta
           ## Work out short and long term boosting cross reactivity - C++ function
@@ -157,7 +156,7 @@ create_posterior_func <- function(parTab,
           liks <- sum_buckets(liks, indicesOverallDiff)
           
           if (explicit_lambda) {
-              liks <- liks + calc_lambda_probs_indiv(lambdas, infectionHistories, ageMask)
+              liks <- liks + calc_lambda_probs_indiv(lambdas, infectionHistories, ageMask, strainMask)
           }
           if (spline_lambda) {
               liks <- liks + calc_lambda_probs_monthly(lambdas,  knots, weights, infectionHistories, ageMask)
@@ -175,7 +174,7 @@ create_posterior_func <- function(parTab,
           liks <- rep(-100000,n_indiv)
           
           if (explicit_lambda) {
-              liks <- liks + calc_lambda_probs_indiv(lambdas, infectionHistories, ageMask)
+              liks <- liks + calc_lambda_probs_indiv(lambdas, infectionHistories, ageMask, strainMask)
           }
           if (spline_lambda) {
               liks <- liks + calc_lambda_probs_monthly(lambda,  knots, weights, infectionHistories, ageMask)
@@ -292,10 +291,12 @@ r_likelihood <- function(expected, data, theta, expected_indices=NULL, measureme
 #' @param ageMask the age mask vector as returned by \code{\link{create_age_mask}}
 #' @return a single log probability
 #' @export
-calc_lambda_probs <- function(lambdas, infHist, ageMask){
+calc_lambda_probs <- function(lambdas, infHist, ageMask, strainMask){
     lik <- 0
     for(i in 1:ncol(infHist)){
-        lik <- lik + sum(log((lambdas[i]^infHist[which(ageMask <= i),i] * (1-lambdas[i])^(1-infHist[which(ageMask <= i),i]))))
+        use_indivs <- intersect(which(ageMask <= i), which(strainMask >= i))
+        lik <- lik + sum(log((lambdas[i]^infHist[use_indivs,i] *
+                              (1-lambdas[i])^(1-infHist[use_indivs,i]))))
     }
     lik
 }
@@ -308,10 +309,10 @@ calc_lambda_probs <- function(lambdas, infHist, ageMask){
 #' @param ageMask the age mask vector as returned by \code{\link{create_age_mask}}
 #' @return a vector of log probabilities for each individual
 #' @export
-calc_lambda_probs_indiv <- function(lambdas, infHist, ageMask){
+calc_lambda_probs_indiv <- function(lambdas, infHist, ageMask, strainMask){
   lik <- numeric(nrow(infHist))
   for(i in 1:ncol(infHist)){
-    lik <- lik + log(((lambdas[i]^infHist[,i]) * (1-lambdas[i])^(1-infHist[,i])))* as.numeric(ageMask <= i)
+    lik <- lik + log(((lambdas[i]^infHist[,i]) * (1-lambdas[i])^(1-infHist[,i])))* as.numeric(ageMask <= i)*as.numeric(strainMask >= i)
   }
   lik
 }

@@ -35,3 +35,67 @@ inf_mat_prior <- function(infHist, ageMask, alpha, beta1){
     }
     return(lk)
 }
+
+fit_beta_prior <- function(chain_samples,parName="",error_tol=999999999,try_attempts=10){
+  data <- density(chain_samples)
+  data <- data.frame(x=data$x, y=data$y)
+  x <- data$x
+  
+  f <- function(pars){
+    shape1 <- pars[1]
+    shape2 <- pars[2]
+    out <- dbeta(x, shape1, shape2)
+    return(sum((out - data$y)^2))
+  }
+  res <- list(value=error_tol+1)
+  try_no <- 1
+  while(res$value > error_tol & try_no < try_attempts){
+    message(cat("Try no: ", try_no))
+    res <- optim(runif(2,1,100),f,method="Nelder-Mead",control=list(abstol=1e-8,reltol=1e-8))    
+    try_no <- try_no + 1
+  }
+  if(try_no == try_attempts){
+    message("Fitting did not work - does this distribution make sense?")
+    return(list(par=c(NA,NA)))
+  }
+  plot(dbeta(x,res$par[1],res$par[2])~x,type='l',col="blue",
+       main=paste0("Beta dist fit to posterior of ",parName),
+       xlab="Value",
+       ylab="Density")
+  legend(x=x[1],y=max(data$y),box.lty=0, lty=1,col=c("blue","red"),legend=c("Model fit","Posterior density"))
+  lines(data,col="red")
+  return(res)
+}
+
+fit_normal_prior <- function(chain_samples, parName="",error_tol=999999999,try_attempts=10){
+  data <- density(chain_samples)
+  data <- data.frame(x=data$x, y=data$y)
+  x <- data$x
+  
+  f <- function(pars){
+    shape1 <- pars[1]
+    shape2 <- pars[2]
+    out <- dnorm(x, mean=shape1, sd=shape2)
+    return(sum((out - data$y)^2))
+  }
+  start_mean <- mean(chain_samples)
+  start_sd <- sd(chain_samples)
+  res <- list(value=error_tol+1)
+  try_no <- 1
+  while(res$value > error_tol & try_no < try_attempts){
+    message(cat("Try no: ", try_no))
+    res <- optim(c(start_mean, start_sd),f,method="Nelder-Mead",control=list(abstol=1e-8,reltol=1e-8))
+    try_no <- try_no + 1
+  }
+  if(try_no == try_attempts){
+    message("Fitting did not work - does this distribution make sense?")
+    return(list(par=c(NA,NA)))
+  }
+  plot(dnorm(x,res$par[1],res$par[2])~x,type='l',col="blue",
+       main=paste0("Normal dist fit to posterior of ",parName),
+       xlab="Value",
+       ylab="Density")
+  legend(x=x[1],y=max(data$y),box.lty=0, lty=1,col=c("blue","red"),legend=c("Model fit","Posterior density"))
+  lines(data,col="red")
+  return(res)
+}

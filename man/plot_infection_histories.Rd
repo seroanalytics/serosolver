@@ -5,7 +5,7 @@
 \title{Plots infection histories and titre model fits}
 \usage{
 plot_infection_histories(chain, infectionHistories, dat, individuals,
-  antigenicMap, ages, parTab, nsamp = 100, mu_indices = NULL,
+  antigenicMap, parTab, nsamp = 100, mu_indices = NULL,
   measurement_indices = NULL)
 }
 \arguments{
@@ -19,8 +19,6 @@ plot_infection_histories(chain, infectionHistories, dat, individuals,
 
 \item{antigenicMap}{the unmelted antigenic map}
 
-\item{ages}{the data frame of ages for each individual, with columns for individual and DOB (date of birth)}
-
 \item{parTab}{the table controlling the parameters in the MCMC chain}
 
 \item{nsamp}{number of samples to take from posterior}
@@ -28,6 +26,8 @@ plot_infection_histories(chain, infectionHistories, dat, individuals,
 \item{mu_indices}{if random effects on boosting parameter, mu, this specifies which entry in the parameter table corresponds to which year. See \code{\link{run_MCMC}}}
 
 \item{measurement_indices}{default NULL, optional vector giving the index of `measurement_bias` that each strain uses the measurement shift from from. eg. if there's 6 circulation years and 3 strain clus}
+
+\item{ages}{the data frame of ages for each individual, with columns for individual and DOB (date of birth)}
 }
 \value{
 a ggplot2 object

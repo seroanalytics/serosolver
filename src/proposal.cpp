@@ -370,7 +370,8 @@ arma::mat inf_hist_prop_cpp(arma::mat infHist,
   int id1;
   int id2;
   int tmp;
-  
+  int n_samp_max;
+
   double rand1;
   double ratio;
   
@@ -382,7 +383,9 @@ arma::mat inf_hist_prop_cpp(arma::mat infHist,
     nInf = nInfs[indiv];
     x = newInfHist.submat(indiv, ageMask[indiv]-1, indiv, strainMask[indiv]-1);
     samps = seq_len(x.n_cols);
-
+    n_samp_max = samps.size();
+    n_samp_max = std::min(nInf, n_samp_max);
+    
     // With 50% probability, add/remove infections or swap infections
     if(randNs[i] < 1.0/2.0){
       // Sample N random locations

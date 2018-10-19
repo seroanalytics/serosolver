@@ -6,10 +6,10 @@
 \usage{
 run_MCMC(parTab, titreDat, antigenicMap, mcmcPars = c(),
   mvrPars = NULL, startInfHist = NULL, filename = "test",
-  CREATE_POSTERIOR_FUNC, PRIOR_FUNC = NULL, version = 1,
+  CREATE_POSTERIOR_FUNC, CREATE_PRIOR_FUNC = NULL, version = 1,
   mu_indices = NULL, measurement_indices = NULL,
   measurement_random_effects = FALSE, OPT_TUNING = 0.1, temp = 1,
-  ...)
+  posterior_version = 1, ...)
 }
 \arguments{
 \item{parTab}{The parameter table controlling information such as bounds, initial values etc}
@@ -26,8 +26,6 @@ run_MCMC(parTab, titreDat, antigenicMap, mcmcPars = c(),
 
 \item{CREATE_POSTERIOR_FUNC}{Pointer to posterior function used to calculate a likelihood. This will probably be \code{\link{create_posterior_func}}, but if using random effects on mu will use \code{\link{create_post_func_mu}}}
 
-\item{PRIOR_FUNC}{User function of prior for model parameters. Should take parameter values only}
-
 \item{version}{Which version of the posterior function to use? See \code{\link{create_post_func}}}
 
 \item{mu_indices}{For random effects on boosting parameter, mu. Vector of indices of length equal to number of circulation times. If random mus are included in the parameter table, this vector specifies which mu to use for each circulation year. For example, if years 1970-1976 have unique boosting, then mu_indices should be c(1,2,3,4,5,6). If every 3 year block shares has a unique boosting parameter, then this should be c(1,1,1,2,2,2)}
@@ -43,6 +41,8 @@ run_MCMC(parTab, titreDat, antigenicMap, mcmcPars = c(),
 \item{...}{Other arguments to pass to CREATE_POSTERIOR_FUNC}
 
 \item{data}{The data frame of data to be fitted. Must have columns: group (index of group); individual (integer ID of individual); samples (numeric time of sample taken); virus (numeric time of when the virus was circulating); titre (integer of titre value against the given virus at that sampling time)}
+
+\item{PRIOR_FUNC}{User function of prior for model parameters. Should take parameter values only}
 }
 \value{
 A list with: 1) full file path at which the MCMC chain is saved as a .csv file; 2) a full file path at which the infection history chain is saved as a .csv file; 3) the last used covariance matrix; 4) the last used scale/step size (if multivariate proposals)

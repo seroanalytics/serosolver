@@ -5,7 +5,7 @@
 \title{Plot historical attack rates monthly}
 \usage{
 plot_attack_rates_monthly(infectionHistories, dat, ages, yearRange,
-  ymax = 0.1, buckets = 1)
+  n_alive = NULL, ymax = 0.1, buckets = 1)
 }
 \arguments{
 \item{infectionHistories}{the MCMC chain for infection histories}
@@ -15,6 +15,8 @@ plot_attack_rates_monthly(infectionHistories, dat, ages, yearRange,
 \item{ages}{the data frame of ages for each individual, with columns for individual and DOB (date of birth)}
 
 \item{yearRange}{vector of the first and last epoch of potential circulation}
+
+\item{n_alive}{vector with the number of people alive in each year of circulation. Can be left as NULL, and ages will be used to infer this}
 
 \item{ymax}{Numeric. the maximum y value to put on the axis}
 

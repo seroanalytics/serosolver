@@ -5,7 +5,7 @@
 \title{Generate titre credible intervals}
 \usage{
 get_titre_predictions(chain, infectionHistories, titreDat, individuals,
-  antigenicMap, ages, parTab, nsamp = 100, addResiduals = FALSE,
+  antigenicMap, parTab, nsamp = 100, addResiduals = FALSE,
   mu_indices = NULL, measurement_indices = NULL,
   for_res_plot = FALSE)
 }
@@ -17,8 +17,6 @@ get_titre_predictions(chain, infectionHistories, titreDat, individuals,
 \item{individuals}{the subset of individuals to generate credible intervals for}
 
 \item{antigenicMap}{the unmelted antigenic map}
-
-\item{ages}{the data frame of ages for each individual, with columns for individual and DOB (date of birth)}
 
 \item{parTab}{the table controlling the parameters in the MCMC chain}
 
@@ -33,6 +31,8 @@ get_titre_predictions(chain, infectionHistories, titreDat, individuals,
 \item{for_res_plot}{TRUE/FALSE value. If using the output of this for plotting of residuals, returns the actual data points rather than summary statistics}
 
 \item{dat}{the data frame of titre data}
+
+\item{ages}{the data frame of ages for each individual, with columns for individual and DOB (date of birth)}
 }
 \value{
 a list with the titre predictions (95% credible intervals, median and multivariate posterior mode) and the probabilities of infection for each individual in each epoch

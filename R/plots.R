@@ -92,7 +92,7 @@ generate_quantiles <- function(x, sigF=3, qs=c(0.025,0.5,0.975),asText=TRUE){
 #' @export
 get_titre_predictions <- function(chain, infectionHistories, titreDat,
                                   individuals, antigenicMap,
-                                  ages, parTab,
+                                  parTab,
                                   nsamp=100, addResiduals=FALSE,
                                   mu_indices=NULL,
                                   measurement_indices=NULL,
@@ -102,16 +102,15 @@ get_titre_predictions <- function(chain, infectionHistories, titreDat,
     samps <- intersect(unique(infectionHistories$sampno), unique(chain$sampno))
     chain <- chain[chain$sampno %in% samps,]
     infectionHistories <- infectionHistories[infectionHistories$sampno %in% samps,]
-    
+
     ## Take subset of individuals
     titreDat <- titreDat[titreDat$individual %in% individuals,]
     infectionHistories <- infectionHistories[infectionHistories$i %in% individuals,]
-    ages <- ages[ages$individual %in% individuals,]
 
     titreDat$individual <- match(titreDat$individual, individuals)
     infectionHistories$i <- match(infectionHistories$i, individuals)
-    ages$individual <- match(ages$individual, individuals)
-    
+
+    ages <- unique(titreDat[,c("individual","DOB")])    
 
     ## Format the antigenic map to solve the model
     strainIsolationTimes <- unique(antigenicMap$inf_years)
@@ -128,11 +127,8 @@ get_titre_predictions <- function(chain, infectionHistories, titreDat,
     tmpSamp <- sample(samps, nsamp)
 
     ## See the function in posteriors.R
-    if(is.null(mu_indices)){
-        f <- create_posterior_func(parTab,titreDat,antigenicMap, 100,measurement_indices=measurement_indices)
-    } else {
-        f <- create_posterior_func_mu(parTab,titreDat,antigenicMap,100, mu_indices=mu_indices, measurement_indices)
-    }
+    f <- create_posterior_func(parTab,titreDat,antigenicMap, 100,mu_indices=mu_indices,measurement_indices=measurement_indices)
+    
     predicted_titres <- residuals <- matrix(nrow=nrow(titreDat),ncol=nsamp)
     samp_record <- numeric(nsamp)
     ## For each sample, take values for theta and infection histories and simulate titres
@@ -146,6 +142,7 @@ get_titre_predictions <- function(chain, infectionHistories, titreDat,
         residuals[,i] <- titreDat$titre - floor(predicted_titres[,i])
         samp_record[i] <- index
     }
+
     colnames(predicted_titres) <- tmpSamp
     if(for_res_plot) return(list(residuals, samp_record, titreDat,predicted_titres))
     residuals <- cbind(titreDat, residuals)
@@ -217,15 +214,16 @@ get_titre_predictions <- function(chain, infectionHistories, titreDat,
 #' @return a ggplot2 object
 #' @export
 plot_infection_histories <- function(chain, infectionHistories, dat,
-                                     individuals, antigenicMap,ages,parTab,
+                                     individuals, antigenicMap,parTab,
                                      nsamp=100,
                                      mu_indices=NULL,
                                      measurement_indices=NULL){
+    ages <- unique(titreDat[,c("individual","DOB")])
     individuals <- individuals[order(individuals)]
 
     ## Generate titre predictions
     tmp <- get_titre_predictions(chain, infectionHistories,dat, individuals,
-                                 antigenicMap,ages, parTab, nsamp, FALSE,mu_indices,
+                                 antigenicMap, parTab, nsamp, FALSE,mu_indices,
                                  measurement_indices)
 
     ## Use these titre predictions and summary statistics on infection histories
@@ -399,14 +397,13 @@ plot_attack_rates <- function(infectionHistories, dat, ages, yearRange,n_alive=N
     ##tmp <- ddply(infectionHistories, c("sampno","j"), function(x) sum(x$x))
     quantiles <- ddply(tmp, ~j, function(x) quantile(x$V1, c(0.025,0.5,0.975)))
     colnames(quantiles) <- c("j","lower","median","upper")
-    return(quantiles)
     quantiles[c("lower","median","upper")] <- quantiles[c("lower","median","upper")]/n_alive
     quantiles$year <- yearRange[quantiles$j]
     quantiles$taken <- quantiles$year %in% unique(dat$samples)
 
     ## Colour depending on whether or not titres were taken in each year
     quantiles$taken <- ifelse(quantiles$taken,"Yes","No")
-    return(quantiles)
+
     p <- ggplot(quantiles) + 
         geom_pointrange(aes(x=year,y=median,ymin=lower,ymax=upper,col=taken),size=pointsize, fatten=fatten) +
         scale_y_continuous(limits=c(-0.1,1),expand=c(0,0)) +  
