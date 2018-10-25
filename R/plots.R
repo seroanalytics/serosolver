@@ -85,7 +85,7 @@ generate_quantiles <- function(x, sigF=3, qs=c(0.025,0.5,0.975),asText=TRUE){
 #' @param parTab the table controlling the parameters in the MCMC chain
 #' @param nsamp number of samples to take from posterior
 #' @param addResiduals if true, returns an extra output summarising residuals between the model prediction and data
-#' @param  mu_indices vector of integers. for random effects on boosting parameter, mu. If random mus are included in the parameter table, this vector specifies which mu to use for each circulation year. For example, if years 1970-1976 have unique boosting, then mu_indices should be c(1,2,3,4,5,6). If every 3 year block shares has a unique boosting parameter, then this should be c(1,1,1,2,2,2)
+#' @param mu_indices vector of integers. for random effects on boosting parameter, mu. If random mus are included in the parameter table, this vector specifies which mu to use for each circulation year. For example, if years 1970-1976 have unique boosting, then mu_indices should be c(1,2,3,4,5,6). If every 3 year block shares has a unique boosting parameter, then this should be c(1,1,1,2,2,2)
 #' @param measurement_indices default NULL
 #' @param for_res_plot TRUE/FALSE value. If using the output of this for plotting of residuals, returns the actual data points rather than summary statistics
 #' @return a list with the titre predictions (95% credible intervals, median and multivariate posterior mode) and the probabilities of infection for each individual in each epoch
@@ -203,7 +203,7 @@ get_titre_predictions <- function(chain, infectionHistories, titreDat,
 #' Given outputs from an MCMC run and the data used for fitting, generates an NxM matrix of plots where N is the number of individuals to be plotted and M is the range of sampling times. Where data are available, plots the observed titres and model predicted trajectories
 #' @param chain the full MCMC chain to generate titre trajectories from
 #' @param infectionHistories the MCMC chain for infection histories
-#' @param dat the data frame of titre data
+#' @param titreDat the data frame of titre data
 #' @param individuals the subset of individuals to generate credible intervals for
 #' @param antigenicMap the unmelted antigenic map
 #' @param ages the data frame of ages for each individual, with columns for individual and DOB (date of birth)
@@ -213,7 +213,7 @@ get_titre_predictions <- function(chain, infectionHistories, titreDat,
 #' @param measurement_indices default NULL, optional vector giving the index of `measurement_bias` that each strain uses the measurement shift from from. eg. if there's 6 circulation years and 3 strain clus
 #' @return a ggplot2 object
 #' @export
-plot_infection_histories <- function(chain, infectionHistories, dat,
+plot_infection_histories <- function(chain, infectionHistories, titreDat,
                                      individuals, antigenicMap,parTab,
                                      nsamp=100,
                                      mu_indices=NULL,
@@ -222,7 +222,7 @@ plot_infection_histories <- function(chain, infectionHistories, dat,
     individuals <- individuals[order(individuals)]
 
     ## Generate titre predictions
-    tmp <- get_titre_predictions(chain, infectionHistories,dat, individuals,
+    tmp <- get_titre_predictions(chain, infectionHistories,titreDat, individuals,
                                  antigenicMap, parTab, nsamp, FALSE,mu_indices,
                                  measurement_indices)
 

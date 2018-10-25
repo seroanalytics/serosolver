@@ -54,12 +54,12 @@ titre_data_group <- function(theta, infectionHistories, circulationTimes, circul
 #' @param titre_shifts NumericVector, OPTIONAL if using measurement bias, gives the shift to add to each expected titre
 #' @return a single log likelihood
 #' @export
-likelihood_titre <- function(expected, data, theta, titre_shifts = NULL) {
+likelihood_titre <- function(expected, data, theta, titre_shifts) {
     .Call('_serosolver_likelihood_titre', PACKAGE = 'serosolver', expected, data, theta, titre_shifts)
 }
 
 #' @export
-likelihood_data_individual <- function(theta, infectionHistory, circulationTimes, circulationMapIndices, samplingTimes, dataIndices, measuredMapIndices, antigenicMapLong, antigenicMapShort, numberStrains, data, titre_shifts, DOB = 0, additional_arguments = NULL) {
+likelihood_data_individual <- function(theta, infectionHistory, circulationTimes, circulationMapIndices, samplingTimes, dataIndices, measuredMapIndices, antigenicMapLong, antigenicMapShort, numberStrains, data, titre_shifts, DOB, additional_arguments) {
     .Call('_serosolver_likelihood_data_individual', PACKAGE = 'serosolver', theta, infectionHistory, circulationTimes, circulationMapIndices, samplingTimes, dataIndices, measuredMapIndices, antigenicMapLong, antigenicMapShort, numberStrains, data, titre_shifts, DOB, additional_arguments)
 }
 
@@ -96,6 +96,7 @@ c_model_original <- function(n, nsamp, x, theta, dd, dd2, t_sample) {
 #' @param n_alive IntegerVector, vector giving the number of individuals alive in each year
 #' @param alpha double, alpha parameter for beta distribution prior
 #' @param beta double, beta parameter for beta distribution prior
+#' @export
 inf_mat_prior_cpp <- function(infHist, n_alive, alpha, beta) {
     .Call('_serosolver_inf_mat_prior_cpp', PACKAGE = 'serosolver', infHist, n_alive, alpha, beta)
 }

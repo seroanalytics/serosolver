@@ -14,6 +14,7 @@ using namespace Rcpp ;
 //' @param n_alive IntegerVector, vector giving the number of individuals alive in each year
 //' @param alpha double, alpha parameter for beta distribution prior
 //' @param beta double, beta parameter for beta distribution prior
+//' @export
 // [[Rcpp::export]]
 double inf_mat_prior_cpp(const IntegerMatrix& infHist, const IntegerVector& n_alive, double alpha, double beta){
   double m, n;
@@ -28,12 +29,15 @@ double inf_mat_prior_cpp(const IntegerMatrix& infHist, const IntegerVector& n_al
 }
 
 // [[Rcpp::export]]
-Nullable<NumericVector> subset_nullable_vector(const Nullable<NumericVector> &x, int index1, int index2) {
+NumericVector subset_nullable_vector(const Nullable<NumericVector> &x, int index1, int index2) {
   if(x.isNotNull()){
+    // Rcpp::Rcout << "getting subset" << std::endl << std::endl;
+    //Rcpp::Rcout << "x location: " << x << std::endl;
     NumericVector y = as<NumericVector>(x)[Range(index1, index2)];
-    return as<Nullable<NumericVector> >(y);
+    return y;
   } else {
-    return R_NilValue;
+    NumericVector y(1);
+    return y;
   }
 }
 
@@ -142,7 +146,8 @@ IntegerMatrix infection_history_proposal_gibbs(const NumericVector& pars, // Mod
 
   
   // ########################################################################
-  Nullable<NumericVector> to_add_tmp = R_NilValue;
+  NumericVector to_add_tmp(1);
+  //NumericVector to_add_tmp;
 
   // ########################################################################
   // For each individual
@@ -153,11 +158,11 @@ IntegerMatrix infection_history_proposal_gibbs(const NumericVector& pars, // Mod
 
     startIndexData = indicesTitreDataOverall[i-1];
     endIndexData = indicesTitreDataOverall[i] - 1;
-    
+    //    Rcpp::Rcout << "Indiv: " << i << std::endl;
     if (to_add.isNotNull()){
       to_add_tmp = subset_nullable_vector(to_add, startIndexData, endIndexData);
     }
-    
+
       // Choose whether to sample this individual or not
     if(R::runif(0,1) < indivSampPropn){
       // Index of this individual
@@ -179,6 +184,8 @@ IntegerMatrix infection_history_proposal_gibbs(const NumericVector& pars, // Mod
    
       // Swap contents of a year for an individual
       if(R::runif(0,1) > swapPropn){
+	//Rcpp::Rcout << "Swap" << std::endl;
+
 	proposedIndivHist = newInfHist(indiv,_);
 	indivHist = newInfHist(indiv,_);
 	  
@@ -220,7 +227,6 @@ IntegerMatrix infection_history_proposal_gibbs(const NumericVector& pars, // Mod
 	  prior_1_new = R::lbeta(m_1_new + alpha, n_1_new - m_1_new + beta)-R::lbeta(alpha,beta);
 	  prior_2_new = R::lbeta(m_2_new + alpha, n_2_new - m_2_new + beta)-R::lbeta(alpha,beta);
 	  prior_new = prior_1_new + prior_2_new;
- 
 	  old_prob = likelihood_data_individual(pars, 
 						indivHist, 
 						circulationTimes, 
@@ -259,6 +265,7 @@ IntegerMatrix infection_history_proposal_gibbs(const NumericVector& pars, // Mod
 	  }
 	}
       } else {
+	//Rcpp::Rcout << "Resample" << std::endl;
 	// Sample n_samp_real years from 0:length. Ths will be used to pull years from
 	// sample_years
 	// Note sampling indices in the individual's infection history, not the matrix Z
@@ -289,7 +296,6 @@ IntegerMatrix infection_history_proposal_gibbs(const NumericVector& pars, // Mod
 	    new_entry = 0;
 	    proposedIndivHist(year) = 0;
 	  }
-	  if(year > strainMask[indiv]-1) Rcpp::Rcout << "wut" << std::endl;
 	  // If proposing a change, need to check likelihood ratio
 	  if(new_entry != newInfHist(indiv,year)){
 	    old_prob = likelihood_data_individual(pars, indivHist, circulationTimes, circulationMapIndices,
@@ -389,16 +395,16 @@ arma::mat inf_hist_prop_cpp(arma::mat infHist,
     // With 50% probability, add/remove infections or swap infections
     if(randNs[i] < 1.0/2.0){
       // Sample N random locations
-      locs = RcppArmadillo::sample(samps, nInf, FALSE, NumericVector::create());
+      locs = RcppArmadillo::sample(samps, n_samp_max, FALSE, NumericVector::create());
       locs1 = as<arma::uvec>(locs)-1;
       y = x.elem(locs1);
       // Count the number of 1s and 0s
       k = accu(x) - accu(y);
-      n = x.size() - nInf;
+      n = x.size() - n_samp_max;
       
       // For each sampled location, choose to turn into a 1 or 0 depending
       // on the beta binomial distribution.
-      for(int j = 0; j < nInf; ++j){
+      for(int j = 0; j < n_samp_max; ++j){
         ratio = (alpha + k)/(alpha + beta + n);
         rand1 = R::runif(0,1);
 	// With probability 'ratio', add a 1. ie. if many 1s already, less likely
@@ -415,7 +421,7 @@ arma::mat inf_hist_prop_cpp(arma::mat infHist,
       // Otherwise, swap the contents of N random locations
       maxI_indiv = x.size();
       IntegerVector moves;
-      for(int j = 0; j < nInf; j++){
+      for(int j = 0; j < n_samp_max; j++){
         id1 = floor(R::runif(0,1)*x.size());
         moveMax = moveSizes[indiv];
         move = floor(R::runif(0,1)*2*moveMax) - moveMax;

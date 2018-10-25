@@ -9,7 +9,7 @@ run_MCMC(parTab, titreDat, antigenicMap, mcmcPars = c(),
   CREATE_POSTERIOR_FUNC, CREATE_PRIOR_FUNC = NULL, version = 1,
   mu_indices = NULL, measurement_indices = NULL,
   measurement_random_effects = FALSE, OPT_TUNING = 0.1, temp = 1,
-  posterior_version = 1, ...)
+  posterior_version = 1, n_alive = NULL, ...)
 }
 \arguments{
 \item{parTab}{The parameter table controlling information such as bounds, initial values etc}
@@ -51,21 +51,23 @@ A list with: 1) full file path at which the MCMC chain is saved as a .csv file; 
 The Adaptive Metropolis-within-Gibbs algorithm. Given a starting point and the necessary MCMC parameters as set out below, performs a random-walk of the posterior space to produce an MCMC chain that can be used to generate MCMC density and iteration plots. The algorithm undergoes an adaptive period, where it changes the step size of the random walk for each parameter to approach the desired acceptance rate, popt. The algorithm then uses \code{\link{univ_proposal}} or \code{\link{mvr_proposal}} to explore parameter space, recording the value and posterior value at each step. The MCMC chain is saved in blocks as a .csv file at the location given by filename. This version of the algorithm is also designed to explore posterior densities for infection histories
 }
 \details{
-The `mcmcPars` argument has the following options:
- * iterations (number of post adaptive period iterations to run)
- * adaptive_period (for this many iterations, change proposal step size adaptively every `opt_freq` iterations)
- * opt_freq (adapt proposal step size every opt_freq iterations)
- * thin (save every n iterations)
- * thin_hist (infection history thinning)  
- * save_block (after this many iterations (post thinning), save to disk)
- * popt (desired acceptance rate for parameters)
- * popt_hist (desired acceptance rate for infection histories)
- * switch_sample (resample inf histories every n iterations)
- * nInfs (number of infections to resample for each individual at each iteration)
- * moveSizes (number of infection years/months to move when performing infection history swap step)
- * histProposal (which infection history proposal version to use, see \code{\link{describe_proposals}}
- * histOpt (if 1, performs adaptive infection history proposals. If 0, retains the starting infection history proposal parameters
- * swapPropn (if using gibbs sampling of infection histories, what proportion of proposals should be swap steps)
- * hist_switch_prob (proportion of infection history proposal steps to swap year_swap_propn of two time periods' contents)
- * year_swap_propn (when swapping contents of two time points, what proportion of individuals should have their contents swapped)
+The \code{mcmcPars} argument has the following options:
+\itemize{
+\item iterations (number of post adaptive period iterations to run)
+\item adaptive_period (for this many iterations, change proposal step size adaptively every \code{opt_freq} iterations)
+\item opt_freq (adapt proposal step size every opt_freq iterations)
+\item thin (save every n iterations)
+\item thin_hist (infection history thinning)
+\item save_block (after this many iterations (post thinning), save to disk)
+\item popt (desired acceptance rate for parameters)
+\item popt_hist (desired acceptance rate for infection histories)
+\item switch_sample (resample inf histories every n iterations)
+\item inf_propn (proportion of infection times to resample for each individual at each iteration)
+\item moveSizes (number of infection years/months to move when performing infection history swap step)
+\item histProposal (which infection history proposal version to use, see \code{\link{describe_proposals}}
+\item histOpt (if 1, performs adaptive infection history proposals. If 0, retains the starting infection history proposal parameters
+\item swapPropn (if using gibbs sampling of infection histories, what proportion of proposals should be swap steps)
+\item hist_switch_prob (proportion of infection history proposal steps to swap year_swap_propn of two time periods' contents)
+\item year_swap_propn (when swapping contents of two time points, what proportion of individuals should have their contents swapped)
+}
 }

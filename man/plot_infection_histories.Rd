@@ -4,7 +4,7 @@
 \alias{plot_infection_histories}
 \title{Plots infection histories and titre model fits}
 \usage{
-plot_infection_histories(chain, infectionHistories, dat, individuals,
+plot_infection_histories(chain, infectionHistories, titreDat, individuals,
   antigenicMap, parTab, nsamp = 100, mu_indices = NULL,
   measurement_indices = NULL)
 }
@@ -13,7 +13,7 @@ plot_infection_histories(chain, infectionHistories, dat, individuals,
 
 \item{infectionHistories}{the MCMC chain for infection histories}
 
-\item{dat}{the data frame of titre data}
+\item{titreDat}{the data frame of titre data}
 
 \item{individuals}{the subset of individuals to generate credible intervals for}
 

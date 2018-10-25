@@ -133,7 +133,7 @@ BEGIN_RCPP
 END_RCPP
 }
 // likelihood_titre
-double likelihood_titre(const NumericVector& expected, const NumericVector& data, const NumericVector& theta, const Nullable<NumericVector>& titre_shifts);
+double likelihood_titre(const NumericVector& expected, const NumericVector& data, const NumericVector& theta, const NumericVector& titre_shifts);
 RcppExport SEXP _serosolver_likelihood_titre(SEXP expectedSEXP, SEXP dataSEXP, SEXP thetaSEXP, SEXP titre_shiftsSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
@@ -141,13 +141,13 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< const NumericVector& >::type expected(expectedSEXP);
     Rcpp::traits::input_parameter< const NumericVector& >::type data(dataSEXP);
     Rcpp::traits::input_parameter< const NumericVector& >::type theta(thetaSEXP);
-    Rcpp::traits::input_parameter< const Nullable<NumericVector>& >::type titre_shifts(titre_shiftsSEXP);
+    Rcpp::traits::input_parameter< const NumericVector& >::type titre_shifts(titre_shiftsSEXP);
     rcpp_result_gen = Rcpp::wrap(likelihood_titre(expected, data, theta, titre_shifts));
     return rcpp_result_gen;
 END_RCPP
 }
 // likelihood_data_individual
-double likelihood_data_individual(const NumericVector& theta, const IntegerVector& infectionHistory, const NumericVector& circulationTimes, const IntegerVector& circulationMapIndices, const NumericVector& samplingTimes, const IntegerVector& dataIndices, const IntegerVector& measuredMapIndices, const NumericVector& antigenicMapLong, const NumericVector& antigenicMapShort, const int& numberStrains, const NumericVector& data, const Nullable<NumericVector>& titre_shifts, const double& DOB, const Nullable<List>& additional_arguments);
+double likelihood_data_individual(const NumericVector& theta, const IntegerVector& infectionHistory, const NumericVector& circulationTimes, const IntegerVector& circulationMapIndices, const NumericVector& samplingTimes, const IntegerVector& dataIndices, const IntegerVector& measuredMapIndices, const NumericVector& antigenicMapLong, const NumericVector& antigenicMapShort, const int& numberStrains, const NumericVector& data, const NumericVector& titre_shifts, const double& DOB, const Nullable<List>& additional_arguments);
 RcppExport SEXP _serosolver_likelihood_data_individual(SEXP thetaSEXP, SEXP infectionHistorySEXP, SEXP circulationTimesSEXP, SEXP circulationMapIndicesSEXP, SEXP samplingTimesSEXP, SEXP dataIndicesSEXP, SEXP measuredMapIndicesSEXP, SEXP antigenicMapLongSEXP, SEXP antigenicMapShortSEXP, SEXP numberStrainsSEXP, SEXP dataSEXP, SEXP titre_shiftsSEXP, SEXP DOBSEXP, SEXP additional_argumentsSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
@@ -163,7 +163,7 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< const NumericVector& >::type antigenicMapShort(antigenicMapShortSEXP);
     Rcpp::traits::input_parameter< const int& >::type numberStrains(numberStrainsSEXP);
     Rcpp::traits::input_parameter< const NumericVector& >::type data(dataSEXP);
-    Rcpp::traits::input_parameter< const Nullable<NumericVector>& >::type titre_shifts(titre_shiftsSEXP);
+    Rcpp::traits::input_parameter< const NumericVector& >::type titre_shifts(titre_shiftsSEXP);
     Rcpp::traits::input_parameter< const double& >::type DOB(DOBSEXP);
     Rcpp::traits::input_parameter< const Nullable<List>& >::type additional_arguments(additional_argumentsSEXP);
     rcpp_result_gen = Rcpp::wrap(likelihood_data_individual(theta, infectionHistory, circulationTimes, circulationMapIndices, samplingTimes, dataIndices, measuredMapIndices, antigenicMapLong, antigenicMapShort, numberStrains, data, titre_shifts, DOB, additional_arguments));
@@ -226,7 +226,7 @@ BEGIN_RCPP
 END_RCPP
 }
 // subset_nullable_vector
-Nullable<NumericVector> subset_nullable_vector(const Nullable<NumericVector>& x, int index1, int index2);
+NumericVector subset_nullable_vector(const Nullable<NumericVector>& x, int index1, int index2);
 RcppExport SEXP _serosolver_subset_nullable_vector(SEXP xSEXP, SEXP index1SEXP, SEXP index2SEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;

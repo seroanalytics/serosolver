@@ -13,13 +13,13 @@ library(data.table)
 ## Set working directory and load code
 setwd("~/Documents/Fluscape/serosolver")
 devtools::load_all()
-set.seed(1)
+set.seed(3)
 
 ## How many individuals to fit to?
-n_indiv <-50
+n_indiv <-100
 buckets <- 1
 ## The general output filename
-filename <- "chains/fluscape_quarter_test"
+filename <- "chains/vietnam"
 
 ## Read in parameter table to simulate from and change waning rate and alpha/beta if necessary
 parTab <- read.csv("~/Documents/Fluscape/serosolver/inputs/parTab_base.csv",stringsAsFactors=FALSE)
@@ -29,7 +29,7 @@ parTab <- parTab[parTab$names != "lambda",]
 
 ## Read in and generate the antigenic map to read strain relationships from
 antigenicMap <- read.csv("~/Documents/Fluscape/fluscape/trunk/data/Fonville2014AxMapPositionsApprox.csv",stringsAsFactors=FALSE)
-fit_dat <- generate_antigenic_map(antigenicMap, 1)
+fit_dat <- generate_antigenic_map(antigenicMap, buckets)
 strainIsolationTimes <- unique(fit_dat$inf_years)
 
 
@@ -83,10 +83,37 @@ mcmcPars <- c("iterations"=100000,"popt"=0.44,"popt_hist"=0.44,"opt_freq"=2000,"
               "nInfs"=floor(ncol(startInf)/2), "moveSize"=2*buckets, "histProposal"=6, "histOpt"=0,"n_par"=10, "swapPropn"=0.5,
               "histSwitchProb"=0.2,"yearSwapPropn"=0.75)
 
+create_prior_func_1 <- function(parTab){
+  parNames <- parTab$names
+  prior_vals <- read.csv("~/Documents/Fluscape/serosolver/data/priors/vietnam_priors.csv")
+  
+  wane_beta_shape1 <- prior_vals[prior_vals$parName == "wane_quarter","dist_par_value_1"]
+  wane_beta_shape2 <- prior_vals[prior_vals$parName == "wane_quarter","dist_par_value_2"]
+  
+  mu_norm_mean <- prior_vals[prior_vals$parName == "mu","dist_par_value_1"]
+  mu_norm_sd <- prior_vals[prior_vals$parName == "mu","dist_par_value_2"]
+  
+  mu_short_norm_mean <- prior_vals[prior_vals$parName == "mu_short","dist_par_value_1"]
+  mu_short_norm_sd <- prior_vals[prior_vals$parName == "mu_short","dist_par_value_2"]
+  
+  wane_index <- which(parNames == "wane")
+  mu_index <- which(parNames == "mu")
+  mushort_index <- which(parNames == "mu_short")
+    
+  prior <- function(pars){
+    a <- dbeta(pars[wane_index],wane_beta_shape1,wane_beta_shape2,log=TRUE)
+    #a <- c <- b <- 0
+    b <- dnorm(pars[mu_index], mu_norm_mean,mu_norm_sd,log=TRUE)
+    c <- dnorm(pars[mushort_index], mu_short_norm_mean,mu_short_norm_sd,log=TRUE)
+    return(sum(a,b,c))
+  }
+}
+create_prior_func_1 <- NULL
 res <- run_MCMC(startTab, titreDat=titreDat, antigenicMap=fit_dat,
-                mcmcPars=c(save_block=1000, hist_switch_prob=0.5,year_swap_propn=0.5),
+                mcmcPars=c(save_block=1000, hist_switch_prob=0.5,year_swap_propn=1,nInfs=ncol(startInf),thin=10,
+                           histSampleProb=1,iterations=50000,adaptive_period=10000,moveSize=1),
                 mvrPars=NULL, filename=filename,
-                create_posterior_func, PRIOR_FUNC=NULL,version=2, 0.2, 
+                create_posterior_func, CREATE_PRIOR_FUNC=create_prior_func_1,version=2, 0.2, 
                 startInfHist=startInf,mu_indices=NULL,measurement_random_effects=FALSE,
                 measurement_indices=NULL,
                 temp=1)
@@ -110,17 +137,22 @@ inf_prop <- colSums(startInf)/n_alive
 inf_prop <- data.frame(AR=inf_prop,year=strainIsolationTimes)
 AR_p <- plot_attack_rates(infChain, titreDat, ages, seq(min(strainIsolationTimes), max(strainIsolationTimes), by=1),n_alive=n_alive) + 
  scale_y_continuous(expand=c(0,0),limits=c(0,1))
+AR_p <- plot_attack_rates_monthly(infChain, titreDat, ages, seq(min(strainIsolationTimes), max(strainIsolationTimes), by=1),
+                                  n_alive=n_alive,buckets=4) + 
+  scale_y_continuous(expand=c(0,0),limits=c(0,1))
 
 ## Density/trace plots on total number of infections
 indivs <- sample(n_indiv, 10)
-sampd <- sample(n_indiv,20)
+sampd <- sample(n_indiv,10)
 infChain <- data.table::fread(res$history_file)
 infChain <- infChain[infChain$sampno >= (mcmcPars["adaptive_period"]+mcmcPars["burnin"]),]
 n_strain <- max(infChain$j)
 data.table::setkey(infChain, "j","sampno")
 n_inf_chain <- infChain[,list(V1=sum(x)),by=key(infChain)]
 
-inf_chain_p <- ggplot(n_inf_chain[n_inf_chain$j < 10,]) + geom_line(aes(x=sampno,y=V1)) + facet_wrap(~j)
+inf_chain_p <- ggplot(n_inf_chain[n_inf_chain$j %in% 151:200,]) + geom_line(aes(x=sampno,y=V1)) + facet_wrap(~j)
+inf_chain_p
+
 
 wow <- data.frame(n_inf_chain)
 wow1 <- dcast(wow, sampno~j)
@@ -128,5 +160,9 @@ wow1[is.na(wow1)] <- 0
 
 ## Generate cumulative infection history plots for a random subset of individuals
 ## based on data and posterior
-plot_infection_histories(chain, infChain, titreDat, sample(1:n_indiv, 10), fit_dat, ages,parTab,100)
+infChain1 <- infChain
+titreDat1 <- titreDat
+chain1 <- chain
+
+plot_infection_histories(chain, infChain, titreDat, sampd, fit_dat, parTab,100)
 

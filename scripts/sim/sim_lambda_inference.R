@@ -75,7 +75,7 @@ attackRates <- simulate_attack_rates(strainIsolationTimes, simInfPars["mean"],si
 
 ## Simulate some fake data
 dat <- simulate_data(parTab, 1, n_indiv, buckets,strainIsolationTimes,
-                     samplingTimes, 2, antigenicMap=fit_dat, 0, 0, 75*buckets,75*buckets,
+                     samplingTimes, 2, antigenicMap=fit_dat, 0, 0, ageMin*buckets,ageMax*buckets,
                      attackRates)
 
 ## If we want to use a subset of isolated strains, uncomment the line below
@@ -101,7 +101,7 @@ AR <- dat[[4]]
 p <- plot_data(titreDat, infHist, strainIsolationTimes, 5, NULL)
 
 ## Starting infection histories based on data
-startInf <- setup_infection_histories_new(titreDat, ages, unique(fit_dat$inf_years), space=5,titre_cutoff=2)
+startInf <- setup_infection_histories_new(titreDat, unique(fit_dat$inf_years), space=5,titre_cutoff=2)
 ageMask <- create_age_mask(ages$DOB, strainIsolationTimes)
 
 ## Housekeeping for force of infection parameters, lambda
@@ -133,10 +133,9 @@ ageMask <- create_age_mask(ages$DOB, strainIsolationTimes)
 
 ## Run the MCMC using the inputs generated above
 lambdas_start<-vector('numeric',ncol(startInf))
-
 for(year in 1:ncol(startInf)){ lambdas_start[year] <- (sum(startInf[,year])/sum(ages$DOB <= strainIsolationTimes[year]))}
 startTab[startTab$names == "lambda","values"] <- lambdas_start
-titreDat <- merge(titreDat, ages)
+
 res <- run_MCMC(startTab, titreDat=titreDat, 
                 antigenicMap=fit_dat,mcmcPars=c(save_block=1000),
                 mvrPars=NULL, filename=filename,
@@ -169,9 +168,10 @@ p1 <- ggplot(y[[3]]) + geom_histogram(aes(x=`50%`),binwidth=1) +
 infChain <- data.table::fread(res$history_file)
 infChain <- infChain[infChain$sampno >= (mcmcPars["adaptive_period"]+mcmcPars["burnin"]+10000),]
 n_alive <- sapply(1:length(strainIsolationTimes), function(x) length(ageMask[ageMask<=x]))
+
 inf_prop <- colSums(infectionHistories)/n_alive
 inf_prop <- data.frame(AR=inf_prop,year=strainIsolationTimes)
-plot_attack_rates(infChain, titreDat, ages, yearMin:2015) + 
+plot_attack_rates(infChain, titreDat, ages=NULL,yearMin:2015,n_alive) + 
   geom_point(data=AR,aes(x=year,y=AR)) + 
   geom_point(data=inf_prop,aes(x=year,y=AR),col="purple") + scale_y_continuous(expand=c(0,0),limits=c(0,1))
 

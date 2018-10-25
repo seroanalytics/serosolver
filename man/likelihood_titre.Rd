@@ -4,7 +4,7 @@
 \alias{likelihood_titre}
 \title{Calculate likelihood}
 \usage{
-likelihood_titre(expected, data, theta, titre_shifts = NULL)
+likelihood_titre(expected, data, theta, titre_shifts)
 }
 \arguments{
 \item{expected}{NumericVector, as returned by \code{\link{infection_model_indiv}}}

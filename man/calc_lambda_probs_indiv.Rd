@@ -4,7 +4,7 @@
 \alias{calc_lambda_probs_indiv}
 \title{Calculate FOI log probability vector}
 \usage{
-calc_lambda_probs_indiv(lambdas, infHist, ageMask)
+calc_lambda_probs_indiv(lambdas, infHist, ageMask, strainMask)
 }
 \arguments{
 \item{lambdas}{a vector of FOIs}

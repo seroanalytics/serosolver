@@ -6,7 +6,7 @@
 \usage{
 create_posterior_func(parTab, titreDat, antigenicMap, version = 1,
   ageMask = NULL, measurement_indices_by_time = NULL,
-  mu_indices = NULL, ...)
+  mu_indices = NULL, n_alive = NULL, ...)
 }
 \arguments{
 \item{parTab}{the parameter table controlling information such as bounds, initial values etc}

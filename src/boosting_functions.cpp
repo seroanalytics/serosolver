@@ -29,6 +29,10 @@ void multiple_infection_strain_dependent(NumericVector &predicted_titres,
     n_inf = cumu_infection_history[i] - 1.0;
     inf_map_index = infection_map_indices[i];
     mu = mus[boosting_vec_indices[inf_map_index]];
+    //Rcpp::Rcout << "Mus: " << mus << std::endl;
+    //Rcpp::Rcout << "Boosting vec index: " << boosting_vec_indices << std::endl;
+    //Rcpp::Rcout << "Infection map index: " << inf_map_index << std::endl;
+    //Rcpp::Rcout << "Mu used: " << mu << std::endl;
     wane = waning[i];
     if(masked_infection_history[i] > 0){
       for(int k = 0; k < n_samples; ++k){
@@ -58,6 +62,8 @@ void multiple_infection_base_boosting(NumericVector &predicted_titres,
   int max_infections = masked_infection_history.size();
   double mu = theta["mu"];
   double mu_short = theta["mu_short"];
+  //Rcpp::Rcout << "mu_short: " << mu_short << std::endl;
+  
   double tau = theta["tau"];
   double n_inf, inf_map_index, wane;
 

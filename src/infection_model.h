@@ -15,8 +15,8 @@ double likelihood_data_individual(const NumericVector &theta,
 				  const NumericVector &antigenicMapShort,
 				  const int &numberStrains,
 				  const NumericVector &data,
-				  const Nullable<NumericVector> &titre_shifts,
-				  const double &age=0,
-				  const Nullable<List> &additional_arguments=R_NilValue
+				  const NumericVector &to_add,
+				  const double &age,
+				  const Nullable<List> &additional_arguments
 				  ) ;
 #endif

@@ -265,11 +265,12 @@ NumericVector titre_data_group(const NumericVector &theta,
 double likelihood_titre(const NumericVector &expected, 
 			const NumericVector &data, 
 			const NumericVector &theta,
-			const Nullable<NumericVector> &titre_shifts=R_NilValue){
+			const NumericVector &titre_shifts
+			){
+
   NumericVector expected1 = expected;
-  if(titre_shifts.isNotNull()){
-    NumericVector _titre_shifts(titre_shifts);
-    expected1 = expected1 + _titre_shifts;
+  if(titre_shifts.size() == expected.size()){
+    expected1 = expected1 + titre_shifts;
   }
   int n = expected.size();
   double lnlike = 0;
@@ -304,9 +305,9 @@ double likelihood_data_individual(const NumericVector &theta,
 				  const NumericVector &antigenicMapShort,
 				  const int &numberStrains,
 				  const NumericVector &data,
-				  const Nullable<NumericVector> &titre_shifts,
-				  const double &DOB=0,
-				  const Nullable<List> &additional_arguments=R_NilValue
+				  const NumericVector &titre_shifts,
+				  const double &DOB,
+				  const Nullable<List> &additional_arguments
 				  ){
   int numberSamples = samplingTimes.size();
   int numberMeasuredStrains = measuredMapIndices.size();

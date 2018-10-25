@@ -373,22 +373,48 @@ outputdmatrix.fromcoord <- function(anti.map.in){ #anti.map.in can be vector or 
 }
 
 #' @export
-generate_antigenic_map <- function(antigenicDistances, buckets=1){
+generate_antigenic_map <- function(antigenicDistances, buckets=1, clusters=NULL, use_clusters=FALSE){
     ## Following assumptions:
-  ## 1. X31 == 1969
-  ## 2. PE2009 is like the strain circulating in 2010
-  virus_key <- c("HK68"=1968, "EN72"=1972, "VI75"=1975, "TX77"=1977, "BK79"=1979, "SI87"=1987, "BE89"=1989, "BJ89"=1989,
-                 "BE92"=1992, "WU95"=1995, "SY97"=1997, "FU02"=2002, "CA04"=2004, "WI05"=2005, "PE06"=2006)*buckets
-  antigenicDistances$Strain <- virus_key[antigenicDistances$Strain]
-  fit <- smooth.spline(antigenicDistances$X,antigenicDistances$Y,spar=0.3)
-  x_line <- lm(data = antigenicDistances, X~Strain)
-  Strain <- seq(1968*buckets,2016*buckets-1,by=1)
-  x_predict <- predict(x_line,data.frame(Strain))
-  y_predict <- predict(fit, x=x_predict)
-  fit_dat <- data.frame(x=y_predict$x,y=y_predict$y)
-  fit_dat$strain <- Strain
-  colnames(fit_dat) <- c("x_coord","y_coord","inf_years")
-  return(fit_dat)
+    ## 1. X31 == 1969
+    ## 2. PE2009 is like the strain circulating in 2010
+    virus_key <- c("HK68"=1968, "EN72"=1972, "VI75"=1975, "TX77"=1977, "BK79"=1979, "SI87"=1987, "BE89"=1989, "BJ89"=1989,
+                   "BE92"=1992, "WU95"=1995, "SY97"=1997, "FU02"=2002, "CA04"=2004, "WI05"=2005, "PE06"=2006)*buckets
+    antigenicDistances$Strain <- virus_key[antigenicDistances$Strain]
+    fit <- smooth.spline(antigenicDistances$X,antigenicDistances$Y,spar=0.3)
+    x_line <- lm(data = antigenicDistances, X~Strain)
+    Strain <- seq(1968*buckets,2016*buckets-1,by=1)
+    x_predict <- predict(x_line,data.frame(Strain))
+    y_predict <- predict(fit, x=x_predict)
+    fit_dat <- data.frame(x=y_predict$x,y=y_predict$y)
+    fit_dat$strain <- Strain
+    colnames(fit_dat) <- c("x_coord","y_coord","inf_years")
+    return(fit_dat)
+}
+
+#' @export
+generate_antigenic_map_flexible<- function(antigenicDistances, buckets=1, clusters=NULL, use_clusters=FALSE){
+    ## Following assumptions:
+    ## 1. X31 == 1969
+    ## 2. PE2009 is like the strain circulating in 2010
+    spar=0.3
+    if(use_clusters) spar = 0
+    fit <- smooth.spline(antigenicDistances$X,antigenicDistances$Y,spar=spar)
+    x_line <- lm(data = antigenicDistances, X~Strain)
+    Strain <- seq(1968*buckets,2016*buckets-1,by=1)
+    x_predict <- predict(x_line,data.frame(Strain))
+    y_predict <- predict(fit, x=x_predict)
+    fit_dat <- data.frame(x=y_predict$x,y=y_predict$y)
+    fit_dat$strain <- Strain
+    colnames(fit_dat) <- c("x_coord","y_coord","inf_years")
+    if (use_clusters) {
+        cluster_starts <- ddply(clusters, ~cluster_used, function(x) x$year[1])
+        fit_dat <- fit_dat[fit_dat$inf_years %in% cluster_starts$V1,]
+        cluster_sizes <- data.frame(table(clusters$cluster_used))$Freq
+        fit_dat <- mefa:::rep.data.frame(fit_dat,cluster_sizes)
+    }
+    
+
+    return(fit_dat)
 }
 
 #' @export
