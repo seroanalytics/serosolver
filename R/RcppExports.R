@@ -135,8 +135,8 @@ subset_nullable_vector <- function(x, index1, index2) {
 #' @param total_alive int, if a positive number, uses this rather than the vector of alive individuals
 #' @param temp double, temperature for parallel tempering MCMC
 #' @return a matrix of 1s and 0s corresponding to the infection histories for all individuals
-infection_history_proposal_gibbs <- function(pars, infHist, indivSampPropn, n_years_samp, ageMask, strainMask, n_alive, swapPropn, swapDistance, alpha, beta, circulationTimes, circulationMapIndices, samplingTimes, indicesTitreDataSample, indicesTitreDataOverall, indicesSamples, measuredMapIndices, antigenicMapLong, antigenicMapShort, data, to_add, additional_arguments, DOBs, solve_likelihood = TRUE, total_alive = -1L, temp = 1) {
-    .Call('_serosolver_infection_history_proposal_gibbs', PACKAGE = 'serosolver', pars, infHist, indivSampPropn, n_years_samp, ageMask, strainMask, n_alive, swapPropn, swapDistance, alpha, beta, circulationTimes, circulationMapIndices, samplingTimes, indicesTitreDataSample, indicesTitreDataOverall, indicesSamples, measuredMapIndices, antigenicMapLong, antigenicMapShort, data, to_add, additional_arguments, DOBs, solve_likelihood, total_alive, temp)
+infection_history_proposal_gibbs <- function(pars, infHist, indivSampPropn, n_years_samp_vec, ageMask, strainMask, n_alive, swapPropn, swapDistance, alpha, beta, circulationTimes, circulationMapIndices, samplingTimes, indicesTitreDataSample, indicesTitreDataOverall, indicesSamples, measuredMapIndices, antigenicMapLong, antigenicMapShort, data, to_add, additional_arguments, DOBs, solve_likelihood = TRUE, total_alive = -1L, temp = 1) {
+    .Call('_serosolver_infection_history_proposal_gibbs', PACKAGE = 'serosolver', pars, infHist, indivSampPropn, n_years_samp_vec, ageMask, strainMask, n_alive, swapPropn, swapDistance, alpha, beta, circulationTimes, circulationMapIndices, samplingTimes, indicesTitreDataSample, indicesTitreDataOverall, indicesSamples, measuredMapIndices, antigenicMapLong, antigenicMapShort, data, to_add, additional_arguments, DOBs, solve_likelihood, total_alive, temp)
 }
 
 #' Fast infection history proposal function

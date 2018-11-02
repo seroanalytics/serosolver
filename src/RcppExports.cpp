@@ -239,15 +239,15 @@ BEGIN_RCPP
 END_RCPP
 }
 // infection_history_proposal_gibbs
-IntegerMatrix infection_history_proposal_gibbs(const NumericVector& pars, const IntegerMatrix& infHist, double indivSampPropn, int n_years_samp, const IntegerVector& ageMask, const IntegerVector& strainMask, const IntegerVector& n_alive, double swapPropn, int swapDistance, double alpha, double beta, const NumericVector& circulationTimes, const IntegerVector& circulationMapIndices, const NumericVector& samplingTimes, const IntegerVector& indicesTitreDataSample, const IntegerVector& indicesTitreDataOverall, const IntegerVector& indicesSamples, const IntegerVector& measuredMapIndices, const NumericVector& antigenicMapLong, const NumericVector& antigenicMapShort, const NumericVector& data, const Nullable<NumericVector>& to_add, const Nullable<List>& additional_arguments, const NumericVector& DOBs, bool solve_likelihood, int total_alive, double temp);
-RcppExport SEXP _serosolver_infection_history_proposal_gibbs(SEXP parsSEXP, SEXP infHistSEXP, SEXP indivSampPropnSEXP, SEXP n_years_sampSEXP, SEXP ageMaskSEXP, SEXP strainMaskSEXP, SEXP n_aliveSEXP, SEXP swapPropnSEXP, SEXP swapDistanceSEXP, SEXP alphaSEXP, SEXP betaSEXP, SEXP circulationTimesSEXP, SEXP circulationMapIndicesSEXP, SEXP samplingTimesSEXP, SEXP indicesTitreDataSampleSEXP, SEXP indicesTitreDataOverallSEXP, SEXP indicesSamplesSEXP, SEXP measuredMapIndicesSEXP, SEXP antigenicMapLongSEXP, SEXP antigenicMapShortSEXP, SEXP dataSEXP, SEXP to_addSEXP, SEXP additional_argumentsSEXP, SEXP DOBsSEXP, SEXP solve_likelihoodSEXP, SEXP total_aliveSEXP, SEXP tempSEXP) {
+IntegerMatrix infection_history_proposal_gibbs(const NumericVector& pars, const IntegerMatrix& infHist, double indivSampPropn, const IntegerVector& n_years_samp_vec, const IntegerVector& ageMask, const IntegerVector& strainMask, const IntegerVector& n_alive, double swapPropn, int swapDistance, double alpha, double beta, const NumericVector& circulationTimes, const IntegerVector& circulationMapIndices, const NumericVector& samplingTimes, const IntegerVector& indicesTitreDataSample, const IntegerVector& indicesTitreDataOverall, const IntegerVector& indicesSamples, const IntegerVector& measuredMapIndices, const NumericVector& antigenicMapLong, const NumericVector& antigenicMapShort, const NumericVector& data, const Nullable<NumericVector>& to_add, const Nullable<List>& additional_arguments, const NumericVector& DOBs, bool solve_likelihood, int total_alive, double temp);
+RcppExport SEXP _serosolver_infection_history_proposal_gibbs(SEXP parsSEXP, SEXP infHistSEXP, SEXP indivSampPropnSEXP, SEXP n_years_samp_vecSEXP, SEXP ageMaskSEXP, SEXP strainMaskSEXP, SEXP n_aliveSEXP, SEXP swapPropnSEXP, SEXP swapDistanceSEXP, SEXP alphaSEXP, SEXP betaSEXP, SEXP circulationTimesSEXP, SEXP circulationMapIndicesSEXP, SEXP samplingTimesSEXP, SEXP indicesTitreDataSampleSEXP, SEXP indicesTitreDataOverallSEXP, SEXP indicesSamplesSEXP, SEXP measuredMapIndicesSEXP, SEXP antigenicMapLongSEXP, SEXP antigenicMapShortSEXP, SEXP dataSEXP, SEXP to_addSEXP, SEXP additional_argumentsSEXP, SEXP DOBsSEXP, SEXP solve_likelihoodSEXP, SEXP total_aliveSEXP, SEXP tempSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< const NumericVector& >::type pars(parsSEXP);
     Rcpp::traits::input_parameter< const IntegerMatrix& >::type infHist(infHistSEXP);
     Rcpp::traits::input_parameter< double >::type indivSampPropn(indivSampPropnSEXP);
-    Rcpp::traits::input_parameter< int >::type n_years_samp(n_years_sampSEXP);
+    Rcpp::traits::input_parameter< const IntegerVector& >::type n_years_samp_vec(n_years_samp_vecSEXP);
     Rcpp::traits::input_parameter< const IntegerVector& >::type ageMask(ageMaskSEXP);
     Rcpp::traits::input_parameter< const IntegerVector& >::type strainMask(strainMaskSEXP);
     Rcpp::traits::input_parameter< const IntegerVector& >::type n_alive(n_aliveSEXP);
@@ -271,7 +271,7 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< bool >::type solve_likelihood(solve_likelihoodSEXP);
     Rcpp::traits::input_parameter< int >::type total_alive(total_aliveSEXP);
     Rcpp::traits::input_parameter< double >::type temp(tempSEXP);
-    rcpp_result_gen = Rcpp::wrap(infection_history_proposal_gibbs(pars, infHist, indivSampPropn, n_years_samp, ageMask, strainMask, n_alive, swapPropn, swapDistance, alpha, beta, circulationTimes, circulationMapIndices, samplingTimes, indicesTitreDataSample, indicesTitreDataOverall, indicesSamples, measuredMapIndices, antigenicMapLong, antigenicMapShort, data, to_add, additional_arguments, DOBs, solve_likelihood, total_alive, temp));
+    rcpp_result_gen = Rcpp::wrap(infection_history_proposal_gibbs(pars, infHist, indivSampPropn, n_years_samp_vec, ageMask, strainMask, n_alive, swapPropn, swapDistance, alpha, beta, circulationTimes, circulationMapIndices, samplingTimes, indicesTitreDataSample, indicesTitreDataOverall, indicesSamples, measuredMapIndices, antigenicMapLong, antigenicMapShort, data, to_add, additional_arguments, DOBs, solve_likelihood, total_alive, temp));
     return rcpp_result_gen;
 END_RCPP
 }

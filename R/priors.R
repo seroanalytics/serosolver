@@ -99,3 +99,15 @@ fit_normal_prior <- function(chain_samples, parName="",error_tol=999999999,try_a
   lines(data,col="red")
   return(res)
 }
+
+#' @export
+find_beta_parameters <- function(mean, var){
+    #if(mean < 0 | mean > 1) stop("Mean is outside of bounds (0, 1)")
+    #if(var < 0 | var > 0.25^2) stop("Var is outside of bounds (0, 0.25^2)")
+    alpha <- ((1 - mean)/(var) - (1/mean))*mean^2
+    beta <- alpha*(1/mean - 1)
+    x <- seq(0,1,by=0.001)
+    y <- dbeta(x, alpha,beta)
+    plot(y~x)
+    return(list(alpha=alpha,beta=beta))
+}

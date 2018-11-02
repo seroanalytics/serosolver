@@ -75,7 +75,7 @@ NumericVector subset_nullable_vector(const Nullable<NumericVector> &x, int index
 IntegerMatrix infection_history_proposal_gibbs(const NumericVector& pars, // Model parameters
 					       const IntegerMatrix& infHist,  // Current infection history
 					       double indivSampPropn, // Proportion of individuals to resample
-					       int n_years_samp, // Number of years to resample for each year
+					       const IntegerVector& n_years_samp_vec, // Number of years to resample for each year
  					       const IntegerVector& ageMask, // Age mask
  					       const IntegerVector& strainMask, // Age mask
 					       const IntegerVector& n_alive, // Number of individuals alive in each year
@@ -134,7 +134,7 @@ IntegerMatrix infection_history_proposal_gibbs(const NumericVector& pars, // Mod
   int old_entry;
   int n_infected=0;
   int loc1, loc2, tmp;
-
+  int n_years_samp;
   // ########################################################################
 
   // ########################################################################
@@ -179,7 +179,8 @@ IntegerMatrix infection_history_proposal_gibbs(const NumericVector& pars, // Mod
       // Index of this individual
       indiv = i-1;
       DOB = DOBs[indiv];
-    
+      n_years_samp = n_years_samp_vec[indiv];
+
       // Make vector of year indices to sample from
       // These are the indices in the matrix Z
       sample_years = seq(ageMask[indiv]-1,strainMask[indiv]-1);
@@ -188,7 +189,6 @@ IntegerMatrix infection_history_proposal_gibbs(const NumericVector& pars, // Mod
       n_samp_max = sample_years.size();
       samps = seq(0, n_samp_max-1);    // Create vector from 0:length of alive years
       n_samp_max = std::min(n_years_samp, n_samp_max);
-   
       // Swap contents of a year for an individual
       if(R::runif(0,1) < swapPropn){
 	proposedIndivHist = newInfHist(indiv,_);
@@ -284,13 +284,25 @@ IntegerMatrix infection_history_proposal_gibbs(const NumericVector& pars, // Mod
 	// Note sampling indices in the individual's infection history, not the matrix Z
 	locs = RcppArmadillo::sample(samps, n_samp_max, FALSE, NumericVector::create());
 	// For each sampled year
+	/*int k = sum(newInfHist);
+	  int nn = total_alive;
+	  for(int ii = 0; ii < locs.size(); ++ii){
+	  k -= newInfHist(indiv, sample_years(locs[ii]));
+	  }
+	  nn -= locs.size();
+	  proposedIndivHist = newInfHist(indiv,_);
+	  indivHist = newInfHist(indiv,_);
+	*/
 	for(int j = 0; j < n_samp_max; ++j){
 	  proposedIndivHist = newInfHist(indiv,_);
 	  indivHist = newInfHist(indiv,_);
+	
+	  //  ratio = (k + alpha)/(nn + alpha + beta);
 	  // Which year under consideration
 	  // Get index for the matrix Z (not index for individual's inf hist)
 	  // Note that locs[j] is the index in the individual's inf hist
 	  year = sample_years(locs[j]);
+	
 	  if(prior_on_total){
 	    old_entry = newInfHist(indiv, year);
 	    // NUmber infected overall
@@ -311,11 +323,14 @@ IntegerMatrix infection_history_proposal_gibbs(const NumericVector& pars, // Mod
 	  //if(indivRatioRands[i] < ratio){
 	  if(rand1 < ratio){
 	    new_entry = 1;
+	    //k++;
 	    proposedIndivHist(year) = 1;
 	  } else {
 	    new_entry = 0;
 	    proposedIndivHist(year) = 0;
 	  }
+	  //nn++;
+	
 	  // If proposing a change, need to check likelihood ratio
 	  if(new_entry != newInfHist(indiv,year)){
 	    if(solve_likelihood){

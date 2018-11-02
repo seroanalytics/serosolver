@@ -173,7 +173,6 @@ run_MCMC <- function(parTab,
     
     nInfs_vec <- rep(nInfs, n_indiv) # How many infection history moves to make with each proposal
     moveSizes <- rep(moveSize, n_indiv) # How many years to move in smart proposal step
-    
 ###############
     ## Create age mask
     ## -----------------------
@@ -366,7 +365,7 @@ run_MCMC <- function(parTab,
                 if(histSwitchProb > hist_switch_prob){
                   newInfectionHistories <- proposal_gibbs(proposal, infectionHistories,
                                                             alpha, beta,
-                                                            histSampleProb, nInfs,swapPropn,moveSize,
+                                                            histSampleProb, nInfs_vec,swapPropn,moveSize,
                                                           temp)
                 } else {
                     newInfectionHistories <- inf_hist_swap(infectionHistories, ageMask, strainMask,
