@@ -4,10 +4,13 @@
 #' @param parTab the parameter table controlling information such as bounds, initial values etc
 #' @param titreDat the data frame of data to be fitted. Must have columns: group (index of group); individual (integer ID of individual); samples (numeric time of sample taken); virus (numeric time of when the virus was circulating); titre (integer of titre value against the given virus at that sampling time)
 #' @param antigenicMap a data frame of antigenic x and y coordinates. Must have column names: x_coord; y_coord; inf_years
-#' @param PRIOR_FUNC user function of prior for model parameters. Should take parameter values only
-#' @param version integer specifying which version of the posterior function to use. This is mainly used for turning off or on the likelihood for debugging the implicit prior. The versions are as follows: 1) Likelihood turned on and no explicit prior. Any prior is implicit from the proposal distribution; 2) No likelihood and no explicit prior; 3) Explicit prior term (as specified by PRIOR_FUNC) and no likelihood. Any implicit prior from the proposal will also be included; 4) Version of the posterior distribution where we infer an explicit force of infection for each epoch; 5) Explicit likelihood and prior - any implicit prior from the proposal will also be included, so proposals should be symmetric; 6) just the negative log likelihood, but function only expects vector of pars (not infectionHistories), which must be specified with ...; 7+) Returns the predicted titres (model solving function); 99) Returns a gibbs-sampled infection history matrix
+#' @param version which version of the posterior function to solve (corresponds mainly to the infection history prior). Mostly just left to 1, but there is one special case where this should be set to 4 for the gibbs sampler. This is only really used by \code{\link{run_MCMC}} to place the infection history prior on the total number of infections across all years and individuals when version = 4
+#' @param solve_likelihood usually set to TRUE. If FALSE< does not solve the likelihood and instead just samples/solves based on the model prior
 #' @param ageMask see \code{\link{create_age_mask}} - a vector with one entry for each individual specifying the first epoch of circulation in which an individual could have been exposed
-#' @param temp temperature for parallel tempering
+#' @param measurement_indices_by_time if not NULL, then use these indices to specify which measurement bias parameter index corresponds to which time
+#' @param mu_indices if not NULL, then use these indices to specify which boosting parameter index corresponds to which time
+#' @param n_alive if not NULL, uses this as the number alive in a given year rather than calculating from the ages. This is needed if the number of alive individuals is known, but individual birth dates are not
+#' @param function_type integer specifying which version of this function to use. Specify 1 to give a posterior solving function; 2 to give the gibbs sampler for infection history proposals; otherwise just solves the titre model and returns predicted titres
 #' @param ... other arguments to pass to the posterior solving function
 #' @return a single function pointer that takes only pars and infectionHistories as unnamed arguments. This function goes on to return a vector of posterior values for each individual
 #' @export
@@ -15,10 +18,12 @@ create_posterior_func <- function(parTab,
                                   titreDat,
                                   antigenicMap,
                                   version=1,
+                                  solve_likelihood=TRUE,
                                   ageMask=NULL,
                                   measurement_indices_by_time=NULL,
                                   mu_indices=NULL,
                                   n_alive=NULL,
+                                  function_type=1,
                                   ...){
     ## Sort data in same way
     titreDat <- titreDat[order(titreDat$individual, titreDat$run, titreDat$samples, titreDat$virus),]
@@ -87,7 +92,6 @@ create_posterior_func <- function(parTab,
             ageMask <- rep(1, n_indiv)
         }
     }
-    ageMask <- create_age_mask(DOBs, strains)
     strainMask <- create_strain_mask(titreDat,strains)
     masks <- data.frame(cbind(ageMask, strainMask))
     if (is.null(n_alive)) {
@@ -128,64 +132,74 @@ create_posterior_func <- function(parTab,
                                      "mus"=rep(2,length(strains)))
     }
     
-    if (version==1) {
-        f <- function(pars, infectionHistories){
-            lambdas <- pars[lambda_indices]
-            theta <- pars[theta_indices]
-            weights <- pars[weights_indices]
-            knots <- pars[knot_indices]
-            mus <- pars[mu_indices_parTab]
-            
-            if (use_measurement_bias) {
-                measurement_bias <- pars[measurement_indices_parTab]
-                to_add <- measurement_bias[expected_indices]
-            }
+    if (function_type==1) {
+        if(solve_likelihood){
+             f <- function(pars, infectionHistories){
+                lambdas <- pars[lambda_indices]
+                theta <- pars[theta_indices]
+                weights <- pars[weights_indices]
+                knots <- pars[knot_indices]
+                mus <- pars[mu_indices_parTab]
+                
+                if (use_measurement_bias) {
+                    measurement_bias <- pars[measurement_indices_parTab]
+                    to_add <- measurement_bias[expected_indices]
+                }
 
-            if (use_strain_dependent) {
-                additional_arguments[["mus"]] <- mus
+                if (use_strain_dependent) {
+                    additional_arguments[["mus"]] <- mus
+                }
+                names(theta) <- parNames_theta
+                ## Work out short and long term boosting cross reactivity - C++ function
+                antigenicMapLong <- create_cross_reactivity_vector(antigenicMapMelted, theta["sigma1"])
+                antigenicMapShort <- create_cross_reactivity_vector(antigenicMapMelted, theta["sigma2"])
+                
+                ## Now pass to the C++ function
+                y <- titre_data_group(theta, infectionHistories, strains, strainIndices, sampleTimes,
+                                      indicesData,indicesDataOverall,indicesSamples, virusIndices, 
+                                      antigenicMapLong, antigenicMapShort, DOBs, additional_arguments)
+                liks <- r_likelihood(y, titres, theta, expected_indices, measurement_bias)
+                liks <- sum_buckets(liks, indicesOverallDiff)
+                
+                if (explicit_lambda) {
+                    liks <- liks + calc_lambda_probs_indiv(lambdas, infectionHistories, ageMask, strainMask)
+                }
+                if (spline_lambda) {
+                    liks <- liks + calc_lambda_probs_monthly(lambdas,  knots, weights, infectionHistories, ageMask)
+                }          
+                return(liks)
             }
-            names(theta) <- parNames_theta
-            ## Work out short and long term boosting cross reactivity - C++ function
-            antigenicMapLong <- create_cross_reactivity_vector(antigenicMapMelted, theta["sigma1"])
-            antigenicMapShort <- create_cross_reactivity_vector(antigenicMapMelted, theta["sigma2"])
-            
-            ## Now pass to the C++ function
-            y <- titre_data_group(theta, infectionHistories, strains, strainIndices, sampleTimes,
-                                  indicesData,indicesDataOverall,indicesSamples, virusIndices, 
-                                  antigenicMapLong, antigenicMapShort, DOBs, additional_arguments)
-            liks <- r_likelihood(y, titres, theta, expected_indices, measurement_bias)
-            liks <- sum_buckets(liks, indicesOverallDiff)
-            
-            if (explicit_lambda) {
-                liks <- liks + calc_lambda_probs_indiv(lambdas, infectionHistories, ageMask, strainMask)
+        } else {
+           
+            f <- function(pars, infectionHistories){
+                lambdas <- pars[lambda_indices]          
+                theta <- pars[theta_indices]
+                weights <- pars[weights_indices]
+                knots <- pars[knot_indices]
+                mus <- pars[mu_indices_parTab]
+                
+                liks <- rep(-100000,n_indiv)
+                
+                if (explicit_lambda) {
+                    liks <- liks + calc_lambda_probs_indiv(lambdas, infectionHistories, ageMask, strainMask)
+                }
+                if (spline_lambda) {
+                    liks <- liks + calc_lambda_probs_monthly(lambda,  knots, weights, infectionHistories, ageMask)
+                }
+                
+                return(liks)
             }
-            if (spline_lambda) {
-                liks <- liks + calc_lambda_probs_monthly(lambdas,  knots, weights, infectionHistories, ageMask)
-            }          
-            return(liks)
         }
-    } else if (version == 2) {
-        f <- function(pars, infectionHistories){
-            lambdas <- pars[lambda_indices]          
-            theta <- pars[theta_indices]
-            weights <- pars[weights_indices]
-            knots <- pars[knot_indices]
-            mus <- pars[mu_indices_parTab]
-            
-            liks <- rep(-100000,n_indiv)
-            
-            if (explicit_lambda) {
-                liks <- liks + calc_lambda_probs_indiv(lambdas, infectionHistories, ageMask, strainMask)
-            }
-            if (spline_lambda) {
-                liks <- liks + calc_lambda_probs_monthly(lambda,  knots, weights, infectionHistories, ageMask)
-            }
-            
-            return(liks)
+    } else if (function_type == 2) {
+        if (version == 4) {
+            n_alive_total <- sum(n_alive)
+        } else {
+            n_alive_total <- -1
         }
-    } else if (version == 99) {
+        
         ## Gibbs proposal on infection histories
-        f <- function(pars, infectionHistories, alpha, beta, indivPropn, nYears,
+        f <- function(pars, infectionHistories, alpha, beta,
+                      indivPropn, nYears,
                       swapPropn=0.5,swapDistance=1, temp=1){
             lambdas <- pars[lambda_indices]
             theta <- pars[theta_indices]
@@ -195,9 +209,6 @@ create_posterior_func <- function(parTab,
             names(theta) <- parNames_theta
             if (use_measurement_bias) {
                 measurement_bias <- pars[measurement_indices_parTab]
-                #print(measurement_indices_parTab)
-                #print(parTab$names[measurement_indices_parTab])
-                #print(measurement_bias)
                 titre_shifts <- measurement_bias[expected_indices]
             }
 
@@ -209,11 +220,6 @@ create_posterior_func <- function(parTab,
             antigenicMapLong <- create_cross_reactivity_vector(antigenicMapMelted, theta["sigma1"])
             antigenicMapShort <- create_cross_reactivity_vector(antigenicMapMelted, theta["sigma2"])
             ## Now pass to the C++ function
-            #print(tracemem(titre_shifts))
-            #for(i in 2:length(indicesDataOverall)){
-            #    print(tracemem(titre_shifts[indicesDataOverall[i-1]:indicesDataOverall[i]]))
-            #    
-            #}
             new_infectionHistories <- infection_history_proposal_gibbs(theta,
                                                                        infectionHistories,
                                                                        indivPropn,
@@ -238,6 +244,8 @@ create_posterior_func <- function(parTab,
                                                                        titre_shifts,
                                                                        additional_arguments,
                                                                        DOBs,
+                                                                       solve_likelihood,
+                                                                       n_alive_total,
                                                                        temp
                                                                        )
             return(new_infectionHistories)

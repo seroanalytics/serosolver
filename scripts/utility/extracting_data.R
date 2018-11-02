@@ -4,9 +4,9 @@ setwd("~/Documents/Fluscape/serosolver")
 fluscapeWD <- "~/Documents/Fluscape"
 devtools::load_all()
 setwd(fluscapeWD)
-resolution <- "monthly"
-buckets <- 4
-use_buckets <- 12/buckets
+resolution <- "annual"
+buckets <- 1
+use_buckets <- 1/buckets
 firstYear <- 1968
 lastYear <- 2015
 
@@ -85,11 +85,11 @@ if(resolution == "annual"){
   part_info$V3 <-  as.numeric(format(part_info$V3, "%Y"))
   part_info$V4 <-  as.numeric(format(part_info$V4, "%Y"))
 } else {
-  part_info$DOB <- as.numeric(format(birthDates,"%Y"))*12 + as.numeric(format(birthDates,"%m"))
-  part_info$V1 <-  as.numeric(format(part_info$V1, "%Y"))*12 + as.numeric(format(part_info$V1,"%m"))
-  part_info$V2 <-  as.numeric(format(part_info$V2, "%Y"))*12 + as.numeric(format(part_info$V2,"%m"))
-  part_info$V3 <-  as.numeric(format(part_info$V3, "%Y"))*12 + as.numeric(format(part_info$V3,"%m"))
-  part_info$V4 <-  as.numeric(format(part_info$V4, "%Y"))*12 + as.numeric(format(part_info$V4,"%m"))
+  part_info$DOB <- as.numeric(format(birthDates,"%Y"))*12 + as.numeric(format(birthDates,"%m"))-1
+  part_info$V1 <-  as.numeric(format(part_info$V1, "%Y"))*12 + as.numeric(format(part_info$V1,"%m"))-1
+  part_info$V2 <-  as.numeric(format(part_info$V2, "%Y"))*12 + as.numeric(format(part_info$V2,"%m"))-1
+  part_info$V3 <-  as.numeric(format(part_info$V3, "%Y"))*12 + as.numeric(format(part_info$V3,"%m"))-1
+  part_info$V4 <-  as.numeric(format(part_info$V4, "%Y"))*12 + as.numeric(format(part_info$V4,"%m"))-1
 }
   
 part_info$ID <- PARTICIPANT_ID
@@ -153,8 +153,9 @@ finalDat <- finalDat[order(finalDat$group,finalDat$individual,finalDat$samples,f
 finalDat$samples <- floor(finalDat$samples/use_buckets)
 finalDat$virus <- ceiling(finalDat$virus/use_buckets)
 ages$DOB <- ceiling(ages$DOB/use_buckets)
+ages[is.na(ages$DOB),"DOB"] <- 1933*use_buckets
 
-setwd("~/net/home/serosolver/data_LSA")
+setwd("~/net/home/serosolver/data_Oct2018")
 all_dat <- merge(finalDat, ages)
 all_dat <- all_dat[order(all_dat$group,all_dat$individual,all_dat$samples,all_dat$run),c("group","individual","samples","virus","titre","run","DOB","Participant_ID")]
 

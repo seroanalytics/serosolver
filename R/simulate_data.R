@@ -392,12 +392,12 @@ generate_antigenic_map <- function(antigenicDistances, buckets=1, clusters=NULL,
 }
 
 #' @export
-generate_antigenic_map_flexible<- function(antigenicDistances, buckets=1, clusters=NULL, use_clusters=FALSE){
+generate_antigenic_map_flexible<- function(antigenicDistances, buckets=1, clusters=NULL,
+                                           use_clusters=FALSE, spar=0.3){
     ## Following assumptions:
     ## 1. X31 == 1969
     ## 2. PE2009 is like the strain circulating in 2010
-    spar=0.3
-    if(use_clusters) spar = 0
+    antigenicDistances$Strain <- antigenicDistances$Strain*buckets
     fit <- smooth.spline(antigenicDistances$X,antigenicDistances$Y,spar=spar)
     x_line <- lm(data = antigenicDistances, X~Strain)
     Strain <- seq(1968*buckets,2016*buckets-1,by=1)
@@ -407,10 +407,12 @@ generate_antigenic_map_flexible<- function(antigenicDistances, buckets=1, cluste
     fit_dat$strain <- Strain
     colnames(fit_dat) <- c("x_coord","y_coord","inf_years")
     if (use_clusters) {
+        clusters$year <- clusters$year*buckets
         cluster_starts <- ddply(clusters, ~cluster_used, function(x) x$year[1])
         fit_dat <- fit_dat[fit_dat$inf_years %in% cluster_starts$V1,]
-        cluster_sizes <- data.frame(table(clusters$cluster_used))$Freq
+        cluster_sizes <- data.frame(table(clusters$cluster_used))$Freq*buckets
         fit_dat <- mefa:::rep.data.frame(fit_dat,cluster_sizes)
+        fit_dat$inf_years <- Strain
     }
     
 

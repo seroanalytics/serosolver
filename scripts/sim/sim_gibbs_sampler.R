@@ -18,15 +18,18 @@ filename <- "chains/sim_temp_test1"
 
 ## How many individuals to simulate?
 n_indiv <- 100
-buckets <- 1 ## Set to 1 for annual model. Greater than 1 gives subannual (eg. buckets = 2 is infection period every half year)
+buckets <- 4 ## Set to 1 for annual model. Greater than 1 gives subannual (eg. buckets = 2 is infection period every half year)
 
 ## Read in parameter table to simulate from and change waning rate and alpha/beta if necessary
-parTab <- read.csv("~/Documents/Fluscape/serosolver/inputs/parTab.csv",stringsAsFactors=FALSE)
+parTab <- read.csv("~/Documents/Fluscape/serosolver/inputs/parTab_base.csv",stringsAsFactors=FALSE)
 parTab[parTab$names %in% c("alpha","beta"),"values"] <- c(1,1)
+parTab[parTab$names == "wane","values"] <- 1
+parTab[parTab$names == "wane","values"] <- parTab[parTab$names == "wane","values"]/buckets
+parTab <- parTab[parTab$names != "lambda",]
 
 
 samplingTimes <- seq(2010*buckets, 2015*buckets, by=1)
-yearMin <- 1990*buckets
+yearMin <- 1968*buckets
 yearMax <- 2015*buckets
 ageMin <- 6*buckets
 ageMax <- 75*buckets
@@ -37,11 +40,17 @@ fit_dat <- generate_antigenic_map(antigenicMap, buckets)
 fit_dat <- fit_dat[fit_dat$inf_years >= yearMin & fit_dat$inf_years <= yearMax,]
 strainIsolationTimes <- unique(fit_dat$inf_years)
 
+simInfPars=c("mean"=0.15/buckets,"sd"=0.5,"bigMean"=0.5/buckets/2,"logSD"=1)
+##useSIR
+#attackRates  <- simulate_ars_buckets(strainIsolationTimes, buckets, simInfPars["mean"],simInfPars["sd"],TRUE,simInfPars["bigMean"])
+#attackRates  <- simulate_attack_rates(strainIsolationTimes, simInfPars["mean"],simInfPars["sd"],TRUE,simInfPars["bigMean"])
+#attackRates  <- simulate_ars_spline(strainIsolationTimes, buckets, simInfPars["mean"],simInfPars["sd"],TRUE,simInfPars["bigMean"], knots,theta)
+attackRates <- simulate_attack_rates(strainIsolationTimes, simInfPars["mean"],simInfPars["sd"],TRUE,simInfPars["bigMean"])
+
 ## Simulate data
-dat <- simulate_data(parTab, 1, n_indiv, buckets, strainIsolationTimes,
-                     samplingTimes, 2, antigenicMap=fit_dat, 0, 0, ageMin,ageMax,
-                     simInfPars=c("mean"=0.15,"sd"=0.5,"bigMean"=0.5,"logSD"=1),
-                     useSIR=TRUE, attackRates = NULL, useSpline=FALSE)
+dat <- simulate_data(parTab, 1, n_indiv, buckets,strainIsolationTimes,
+                     samplingTimes, 2, antigenicMap=fit_dat, 0, 0, ageMin*buckets,ageMax*buckets,
+                     attackRates)
 
 ## If we want to use a subset of isolated strains, uncomment the line below
 viruses <- c(1968, 1969, 1972, 1975, 1977, 1979, 1982, 1985, 1987, 
@@ -53,6 +62,7 @@ titreDat <- titreDat[titreDat$virus %in% viruses,]
 infectionHistories <- infHist <- dat[[2]]
 ages <- dat[[3]]
 AR <- dat[[4]]
+titreDat <- merge(titreDat, ages)
 
 ## If we want to use or save pre-simulated data
 #write.table(titreDat,"~/net/home/serosolver/data/sim_1000_data.csv",sep=",",row.names=FALSE)
@@ -61,8 +71,8 @@ AR <- dat[[4]]
 #write.table(AR,"~/net/home/serosolver/data/sim_1000_AR.csv",sep=",",row.names=FALSE)
 
 ## Starting infection histories based on data
-startInf <- setup_infection_histories_new(titreDat, ages, unique(fit_dat$inf_years), space=5,titre_cutoff=2)
-ageMask <- create_age_mask(ages, strainIsolationTimes,n_indiv)
+startInf <- setup_infection_histories_new(titreDat, unique(fit_dat$inf_years), space=5,titre_cutoff=2)
+ageMask <- create_age_mask(ages[,2], strainIsolationTimes)
 
 ## Generate starting locations for MCMC
 startTab <- parTab
@@ -80,12 +90,16 @@ mcmcPars <- c("iterations"=50000,"popt"=0.44,"popt_hist"=0.44,"opt_freq"=2000,"t
               "histSwitchProb"=0.2,"yearSwapPropn"=0.5)
 
 ## Run the MCMC using the inputs generated above
-res <- run_MCMC(startTab, titreDat, mcmcPars, filename=filename,
-                 create_post_func, NULL,NULL,version=1, 0.2, 
-                 fit_dat, ages=ages, 
-                 startInfHist=startInf,
+#startTab$values <- parTab$values
+#startInf <- infHist
+res <- run_MCMC(startTab, titreDat=titreDat, 
+                antigenicMap=fit_dat,mcmcPars=c(save_block=1000,hist_switch_prob=0),
+                mvrPars=NULL, filename=filename,
+                create_posterior_func, PRIOR_FUNC=NULL,
+                version=2,  
+                startInfHist=startInf,mu_indices=NULL,measurement_random_effects=FALSE,
                 measurement_indices=NULL,
-                temp=2)
+                temp=1)
 beepr::beep(4)
 
 #########################
@@ -132,7 +146,7 @@ ps <- generate_cumulative_inf_plots(res$history_file, 0,
 
 ## Generate cumulative infection history plots for a random subset of individuals
 ## based on data and posterior
-plot_infection_histories(chain, infChain, titreDat, sample(1:n_indiv, 10), fit_dat, ages,parTab,100)
+plot_infection_histories(chain, infChain, titreDat, sample(1:n_indiv, 10), fit_dat, parTab,100)
 
 f <- create_post_func(parTab,titreDat, fit_dat, NULL, 99, ageMask, mu_indices=NULL,measurement_indices=NULL,temp=1000000)
 tmpInf <- f(parTab$values, startInf,1,1,1,1,1,1)

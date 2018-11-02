@@ -68,7 +68,7 @@ strainIsolationTimes <- unique(fit_dat$inf_years)
 
 ## Simulate some fake data
 ## CHANGE PINF TO NULL IF WE WANT TO GENERATE NEW ATTACK RATES
-simInfPars=c("mean"=0.15,"sd"=0.5,"bigMean"=0.5,"logSD"=1)
+simInfPars=c("mean"=0.15/buckets,"sd"=0.5,"bigMean"=0.5,"logSD"=1)
 attackRates <- simulate_attack_rates(strainIsolationTimes, simInfPars["mean"],simInfPars["sd"],TRUE,simInfPars["bigMean"])
 dat <- simulate_data(parTab, 1, n_indiv, buckets,strainIsolationTimes,
                      samplingTimes, nsamps, antigenicMap=fit_dat, 0, 0, 10*buckets,75*buckets,
