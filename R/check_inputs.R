@@ -21,6 +21,11 @@ check_parTab <- function(parTab,mcmc=FALSE){
         ## Check that all optional parameters are fixed, if not, fix them
         op_pars<-parTab[which(parTab$type==0),]
         if(all(op_pars$fixed==1)==FALSE) stop('All optional parameters must be fixed')
+        
+        ## Check that the correct number of lambdas are present
+        tmp <- parTab[parTab$names == "lambda",]
+        if(dim(tmp)[1]!=length(strainIsolationTimes)) stop('Incorrect number of lambdas in parTab')
+        
     }
 
 
