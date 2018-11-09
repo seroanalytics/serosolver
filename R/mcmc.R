@@ -57,7 +57,7 @@ run_MCMC <- function(parTab,
                      solve_likelihood=TRUE,
                      n_alive=NULL,...){
     ## Error checks --------------------------------------
-    check_parTab(parTab, TRUE)
+    check_parTab(parTab, TRUE,version)
     
     ## Sort out MCMC parameters --------------------------------------
     ###################################################################
