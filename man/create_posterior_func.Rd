@@ -5,8 +5,9 @@
 \title{Posterior function pointer}
 \usage{
 create_posterior_func(parTab, titreDat, antigenicMap, version = 1,
-  ageMask = NULL, measurement_indices_by_time = NULL,
-  mu_indices = NULL, n_alive = NULL, ...)
+  solve_likelihood = TRUE, ageMask = NULL,
+  measurement_indices_by_time = NULL, mu_indices = NULL,
+  n_alive = NULL, function_type = 1, ...)
 }
 \arguments{
 \item{parTab}{the parameter table controlling information such as bounds, initial values etc}
@@ -15,15 +16,21 @@ create_posterior_func(parTab, titreDat, antigenicMap, version = 1,
 
 \item{antigenicMap}{a data frame of antigenic x and y coordinates. Must have column names: x_coord; y_coord; inf_years}
 
-\item{version}{integer specifying which version of the posterior function to use. This is mainly used for turning off or on the likelihood for debugging the implicit prior. The versions are as follows: 1) Likelihood turned on and no explicit prior. Any prior is implicit from the proposal distribution; 2) No likelihood and no explicit prior; 3) Explicit prior term (as specified by PRIOR_FUNC) and no likelihood. Any implicit prior from the proposal will also be included; 4) Version of the posterior distribution where we infer an explicit force of infection for each epoch; 5) Explicit likelihood and prior - any implicit prior from the proposal will also be included, so proposals should be symmetric; 6) just the negative log likelihood, but function only expects vector of pars (not infectionHistories), which must be specified with ...; 7+) Returns the predicted titres (model solving function); 99) Returns a gibbs-sampled infection history matrix}
+\item{version}{which version of the posterior function to solve (corresponds mainly to the infection history prior). Mostly just left to 1, but there is one special case where this should be set to 4 for the gibbs sampler. This is only really used by \code{\link{run_MCMC}} to place the infection history prior on the total number of infections across all years and individuals when version = 4}
+
+\item{solve_likelihood}{usually set to TRUE. If FALSE< does not solve the likelihood and instead just samples/solves based on the model prior}
 
 \item{ageMask}{see \code{\link{create_age_mask}} - a vector with one entry for each individual specifying the first epoch of circulation in which an individual could have been exposed}
 
+\item{measurement_indices_by_time}{if not NULL, then use these indices to specify which measurement bias parameter index corresponds to which time}
+
+\item{mu_indices}{if not NULL, then use these indices to specify which boosting parameter index corresponds to which time}
+
+\item{n_alive}{if not NULL, uses this as the number alive in a given year rather than calculating from the ages. This is needed if the number of alive individuals is known, but individual birth dates are not}
+
+\item{function_type}{integer specifying which version of this function to use. Specify 1 to give a posterior solving function; 2 to give the gibbs sampler for infection history proposals; otherwise just solves the titre model and returns predicted titres}
+
 \item{...}{other arguments to pass to the posterior solving function}
-
-\item{PRIOR_FUNC}{user function of prior for model parameters. Should take parameter values only}
-
-\item{temp}{temperature for parallel tempering}
 }
 \value{
 a single function pointer that takes only pars and infectionHistories as unnamed arguments. This function goes on to return a vector of posterior values for each individual

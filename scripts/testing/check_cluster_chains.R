@@ -4,7 +4,7 @@ library(ggplot2)
 library(data.table)
 library(plyr)
 color_scheme_set("viridis")
-setwd("~/net/home/serosolver/outputs_Oct2018")
+setwd("~/net/home/serosolver/outputs_Oct2018/")
 wd <- getwd()
 #j <- ""
 #setwd("~/net/home/serosolver/outputs_Aug2018/by_indiv")
@@ -16,14 +16,26 @@ for(j in folders){
   chains <- list.files(pattern="chain.csv")
   omg <- NULL
   maxSampno <- 999999999999
+  minSampno <- -1
   for(chain in chains){
     tmp <- read.csv(chain)
+    tmp <- tmp[tmp$sampno > 200000,]
     maxSampno <- min(max(tmp$sampno),maxSampno)
+    #print(min(tmp$sampno))
+    minSampno <- max(min(tmp$sampno), minSampno)
+    #print(minSampno)
     omg[[chain]] <- tmp
   }
   for(i in 1:length(omg)){
     tmp <- omg[[i]]
-    tmp <- tmp[tmp$sampno > 50000 & tmp$sampno < maxSampno, c("sampno","mu","mu_short","tau","wane","sigma1","sigma2","error","lnlike","likelihood","prior_prob")]
+    #a <- ddply(tmp, ~chainNo, function(x) length(unique((x$sampno))))
+    #chainUse <- a[which.max(a$V1),"chainNo"]
+    #tmp <- tmp[tmp$chainNo == chainUse,]
+    
+    colnames_use<- intersect(colnames(tmp), c("sampno","mu","mu_short","tau","wane","sigma1","sigma2","error","lnlike","prior_prob"))
+    tmp <- tmp[tmp$sampno > minSampno & tmp$sampno < maxSampno, colnames_use]
+    
+  
     omg[[i]] <- as.mcmc(tmp)
     #tmp <- tmp[tmp$sampno < 8000,c("mu","mu_short","tau","wane","sigma1","sigma2","error","lnlike")]
   }
@@ -36,7 +48,13 @@ for(j in folders){
   for(i in 1:length(infHistFiles)){
     infChainFile <- infHistFiles[i]
     infChain <- data.table::fread(infChainFile)
-    infChain <- infChain[infChain$sampno > 10000 & infChain$sampno < maxSampno,]
+    infChain <- infChain[infChain$sampno > minSampno & infChain$sampno < maxSampno,]
+    #########################
+   # a <- ddply(infChain, ~chainNo, function(x) length(unique(x$sampno)))
+  #  chainUse <- a[which.max(a$V1),"chainNo"]
+  #  infChain <- infChain[infChain$chainNo == chainUse,]
+    ##########################
+    
     n_strain <- max(infChain$j)
     data.table::setkey(infChain, "j","sampno")
     n_inf_chain <- infChain[,list(V1=sum(x)),by=key(infChain)]
@@ -51,7 +69,7 @@ for(j in folders){
   all_chain$chain <- as.factor(all_chain$chain)
   total_inf_chain$chain <- as.factor(total_inf_chain$chain)
   #all_chain <- all_chain[!(all_chain$chain %in% c(1,6)),]
-  inf_chain_p <- ggplot(all_chain[all_chain$j %in% sample(unique(all_chain$j),48)]) + geom_line(aes(x=sampno,y=V1,col=chain)) + facet_wrap(~j)
+  inf_chain_p <- ggplot(all_chain[all_chain$j %in% sample(unique(all_chain$j),min(48,length(unique(all_chain$j))))]) + geom_line(aes(x=sampno,y=V1,col=chain)) + facet_wrap(~j)
   tot_p <- ggplot(total_inf_chain) + geom_line(aes(x=sampno,y=V1,col=chain))
   pdf(paste0(wd,"/tmp_infHist_",j,".pdf"))
   plot(inf_chain_p)

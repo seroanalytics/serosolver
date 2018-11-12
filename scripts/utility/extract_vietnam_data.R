@@ -36,7 +36,7 @@ inf_years=seq(min(strain_years),max(c(test_years,strain_years))) #annual infecti
 inf.n=length(inf_years) # number of possible infecting strains
 
 # Set up list of test data for quick access
-dataMelt <- melt(data1, id.vars=c("Subject.number","Sample.year"))
+dataMelt <- reshape2::melt(data1, id.vars=c("Subject.number","Sample.year"))
 dataMelt$variable <- as.character(dataMelt$variable)
 dataMelt$variable <- strain_years[dataMelt$variable]
 colnames(dataMelt) <- c("individual","samples","virus","titre")
@@ -44,4 +44,5 @@ dataMelt <- dataMelt[complete.cases(dataMelt),]
 dataMelt <- dataMelt[order(dataMelt$individual, dataMelt$samples, dataMelt$virus),]
 finalDat <- plyr::ddply(dataMelt,.(individual,virus,samples),function(x) cbind(x,"run"=1:nrow(x)))
 finalDat <- finalDat[order(finalDat$individual, finalDat$run, finalDat$samples, finalDat$virus),]
+write.table(finalDat[finalDat$run == 1,], "~/net/home/serosolver/data_Oct2018/vietnam_data_annual_1_repeat.csv",sep=",",row.names=FALSE)
 write.table(finalDat,"~/Documents/Fluscape/serosolver/data/real/vietnam_data_primary.csv",sep=",",row.names=FALSE)

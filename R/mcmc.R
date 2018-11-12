@@ -46,7 +46,7 @@ run_MCMC <- function(parTab,
                      mvrPars=NULL,
                      startInfHist=NULL,
                      filename="test",
-                     CREATE_POSTERIOR_FUNC,
+                     CREATE_POSTERIOR_FUNC=create_posterior_func,
                      CREATE_PRIOR_FUNC=NULL,
                      version=1,
                      mu_indices=NULL,
@@ -55,7 +55,18 @@ run_MCMC <- function(parTab,
                      OPT_TUNING=0.1,
                      temp=1,
                      solve_likelihood=TRUE,
-                     n_alive=NULL,...){
+                     n_alive=NULL,
+                     message_slack=FALSE,
+                     message_slack_pars=NULL,
+                     ...){
+    ## If we want to message ourselves on slack with intermediate progress
+    if(message_slack & !is.null(message_slack_pars)){
+        slackr::slackrSetup(api_token=message_slack_pars$api_token,
+                            channel=message_slack_pars$channel,
+                            username=message_slack_pars$username)        
+    }
+
+    
     ## Error checks --------------------------------------
     check_parTab(parTab, TRUE)
     
@@ -308,6 +319,10 @@ run_MCMC <- function(parTab,
         ## Whether to swap entire year contents or not - only applies to gibbs sampling
         histSwitchProb <- runif(1)
         if(i %% save_block == 0) message(cat("Current iteration: ", i, sep="\t"))
+        if(message_slack & i %% message_slack_pars$message_freq == 0){
+            text_slackr(paste0(message_slack_pars$username, " iteration ", i),channel=message_slack_pars$channel,
+                        username=message_slack_pars$username)
+        }
 ######################
         ## PROPOSALS
 ######################
@@ -333,6 +348,7 @@ run_MCMC <- function(parTab,
                     proposal <- mvr_proposal(current_pars, unfixed_pars, steps*covMat, cov_mat0, FALSE, beta=0.05)
                                         #proposal <- SampleTheta(current_pars, unfixed_pars, cov_mat0*steps, cov_mat0*steps, par_names)
                     tempiter <- tempiter + 1
+                    #print(proposal)
                 }
             }
             ## Calculate new likelihood for these parameters
@@ -382,7 +398,7 @@ run_MCMC <- function(parTab,
             }
             ## The proposals are either a swap step or an add/remove step. Need to track which type was used for which individual,
             ## as we adapt the `step size` for these two update steps independently
-            if(histProposal != 2 & histSwitchProb > hist_switch_prob){
+            if(histProposal != 2 & (hist_switch_prob > 0 | histSwitchProb > hist_switch_prob)){
                 move <- which(randNs > 1/2)
                 add <- which(randNs < 1/2)                
                 histiter_add[indivSubSample[add]]<- histiter_add[indivSubSample[add]] + 1
@@ -539,7 +555,7 @@ run_MCMC <- function(parTab,
                         covMat <- w*covMat + (1-w)*oldCovMat
                     }
                     ## Scale tuning for last 20% of the adaptive period
-                    if(chain_index > (0.8)*adaptive_period){
+                    if(chain_index > (0.2)*adaptive_period){
                         steps <- scaletuning(steps, popt,pcur)
                     }
                     ## As in Adam's version
@@ -564,22 +580,31 @@ run_MCMC <- function(parTab,
                     ## being changed to modify acceptance rate. If not accepting enough,
                     ## reduce number. If accepting too many, increase number                    
                     nInfs_vec[which(pcurHist_add < popt_hist*(1-OPT_TUNING))] <- nInfs_vec[which(pcurHist_add< popt_hist*(1-OPT_TUNING))] - 1
-                    #nInfs_vec[which(pcurHist >= popt_hist*(1+OPT_TUNING))] <- nInfs_vec[which(pcurHist >= popt_hist*(1+OPT_TUNING))] +1
+                    nInfs_vec[which(pcurHist >= popt_hist*(1+OPT_TUNING))] <- nInfs_vec[which(pcurHist >= popt_hist*(1+OPT_TUNING))] +1
                     nInfs_vec[nInfs_vec < 1] <- 1
-                    moveSizes[which(pcurHist_move< popt_hist*(1-OPT_TUNING))] <- moveSizes[which(pcurHist_move < popt_hist*(1-OPT_TUNING))] - 1
-                    ##moveSizes[which(pcurHist >= popt_hist*(1+OPT_TUNING))] <- moveSizes[which(pcurHist >= popt_hist*(1+OPT_TUNING))] +1
-                    moveSizes[moveSizes < 1] <- 1
+                    #moveSizes[which(pcurHist_move< popt_hist*(1-OPT_TUNING))] <- moveSizes[which(pcurHist_move < popt_hist*(1-OPT_TUNING))] - 1
+                    #moveSizes[which(pcurHist >= popt_hist*(1+OPT_TUNING))] <- moveSizes[which(pcurHist >= popt_hist*(1+OPT_TUNING))] +1
+                    #moveSizes[moveSizes < 1] <- 1
 
                     for(ii in seq_along(nInfs_vec)){
                         moveSizes[ii] <- min(moveSizes[ii], length(ageMask[ii]:strainMask[ii]))
                         nInfs_vec[ii] <- min(nInfs_vec[ii],length(ageMask[ii]:strainMask[ii]))
                     }
                 }
-                ##message(cat("nInfs: ", nInfs_vec, sep="\t"))
-                ##message(cat("Move sizes: ", moveSizes, sep="\t"))
+                message(cat("nInfs: ", head(nInfs_vec), sep="\t"))
+                message(cat("Move sizes: ", head(moveSizes), sep="\t"))
                 message(cat("Inf hist swap pcur: ", signif(infHistSwapAccept/infHistSwapN,3),sep="\t"))
                 message(cat("Pcur: ", signif(pcur,3),sep="\t"))
                 message(cat("Step sizes: ", signif(steps,3),sep="\t"))
+                if(all(pcur == 0)){
+                    message("Warning: acceptance rates are 0. Might be an error with the theta proposal?")
+                    if(message_slack){
+                        text_slackr(paste0("Warning in ", message_slack_pars$username,": acceptance rates are 0. Might be an error with the theta proposal?"),
+                                    channel=message_slack_pars$channel,
+                                    username=message_slack_pars$username)
+                    }
+                }
+                
                 tempaccepted <- tempiter <- reset
             }
             chain_index <- chain_index + 1
@@ -593,12 +618,12 @@ run_MCMC <- function(parTab,
             save_chain <- empty_save_chain
             no_recorded <- 1
         }
-        #if((no_recorded_infHist-1)/n_indiv == save_block){
-        #    data.table::fwrite(as.data.frame(historyTab[1:(no_recorded_infHist-1),]), file=infectionHistory_file,
-        #                col.names=FALSE,row.names=FALSE,sep=",",append=TRUE)
-        #    historyTab <- emptyHistoryTab
-        #    no_recorded_infHist <- 1
-        #}
+                                        #if((no_recorded_infHist-1)/n_indiv == save_block){
+                                        #    data.table::fwrite(as.data.frame(historyTab[1:(no_recorded_infHist-1),]), file=infectionHistory_file,
+                                        #                col.names=FALSE,row.names=FALSE,sep=",",append=TRUE)
+                                        #    historyTab <- emptyHistoryTab
+                                        #    no_recorded_infHist <- 1
+                                        #}
         sampno <- sampno + 1
     }
 
@@ -608,15 +633,18 @@ run_MCMC <- function(parTab,
     if(no_recorded > 2){
         data.table::fwrite(as.data.frame(save_chain[1:(no_recorded-1),]),file=mcmc_chain_file,row.names=FALSE,col.names=FALSE,sep=",",append=TRUE)
     }
-    #if(no_recorded_infHist > 2){
-    #    data.table::fwrite(as.data.frame(historyTab), file=infectionHistory_file,
-    #                col.names=FALSE,row.names=FALSE,sep=",",append=TRUE)
-    #    historyTab <- emptyHistoryTab
-    #    no_recorded_infHist <- 1
-    #}
+                                        #if(no_recorded_infHist > 2){
+                                        #    data.table::fwrite(as.data.frame(historyTab), file=infectionHistory_file,
+                                        #                col.names=FALSE,row.names=FALSE,sep=",",append=TRUE)
+                                        #    historyTab <- emptyHistoryTab
+                                        #    no_recorded_infHist <- 1
+                                        #}
 
     if(is.null(mvrPars)){
         covMat <- NULL
+    }
+    if(message_slack & !is.null(message_slack_pars)){
+        text_slackr(paste0(message_slack_pars$username, " is done!"))
     }
     return(list("chain_file"=mcmc_chain_file,"history_file"=infectionHistory_file,
                 "covMat"=covMat,"step_scale"=steps))

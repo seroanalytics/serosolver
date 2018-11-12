@@ -127,7 +127,7 @@ get_titre_predictions <- function(chain, infectionHistories, titreDat,
     tmpSamp <- sample(samps, nsamp)
 
     ## See the function in posteriors.R
-    f <- create_posterior_func(parTab,titreDat,antigenicMap, 100,mu_indices=mu_indices,measurement_indices=measurement_indices)
+    f <- create_posterior_func(parTab,titreDat,antigenicMap, 100,mu_indices=mu_indices,measurement_indices=measurement_indices, function_type=3)
     
     predicted_titres <- residuals <- matrix(nrow=nrow(titreDat),ncol=nsamp)
     samp_record <- numeric(nsamp)

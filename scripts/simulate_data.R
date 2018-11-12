@@ -53,10 +53,10 @@ hAR <- hAR[,1]
 antigenicMap <- read.csv("~/Documents/Fluscape/fluscape/trunk/data/Fonville2014AxMapPositionsApprox.csv",stringsAsFactors=FALSE)
 virus_key <- c("HK68"=1968, "EN72"=1972, "VI75"=1975, "TX77"=1977, "BK79"=1979, "SI87"=1987, "BE89"=1989, "BJ89"=1989,
                "BE92"=1992, "WU95"=1995, "SY97"=1997, "FU02"=2002, "CA04"=2004, "WI05"=2005, "PE06"=2006)*buckets
-antigenicMap$Strain <- virus_key[antigenicMap$Strain]
+#antigenicMap$Strain <- virus_key[antigenicMap$Strain]
 
 
-fit_dat <- generate_antigenic_map_flexible(antigenicMap, buckets)
+fit_dat <- generate_antigenic_map(antigenicMap, buckets)
 #fit_dat <- read.csv("data/antigenic_maps/antigenicMap_vietnam.csv")
 
 ## All possible circulation times
@@ -79,16 +79,16 @@ viruses <- c(1968, 1969, 1972, 1975, 1977, 1979, 1982, 1985, 1987,
              1989, 1992, 1995, 1998, 2000, 2002, 2004, 2007, 2009, 
              2010, 2012, 2014)*buckets
 
-viruses <- HaNam_viruses <- c(1968, 1972, 1976, 1982, 1989, 1992, 1993, 1994, 1995, 1996, 
-                   1997, 1999, 2000, 2002, 2003, 2004, 2005, 2007, 2008, 2009, 2010, 
-                   2011)
+#viruses <- HaNam_viruses <- c(1968, 1972, 1976, 1982, 1989, 1992, 1993, 1994, 1995, 1996, 
+#                   1997, 1999, 2000, 2002, 2003, 2004, 2005, 2007, 2008, 2009, 2010, 
+#                   2011)
 
 ## If using HaNam data, need to filter the simulated data such that it matches the distribution of HaNam data
 titreDat <- dat[[1]]
 
 ## Create identifier for repeats
-titreDat$run <- NULL
-titreDat <- plyr::ddply(titreDat,.(individual,virus,samples),function(x) cbind(x,"run"=1:nrow(x)))
+#titreDat$run <- NULL
+#titreDat <- plyr::ddply(titreDat,.(individual,virus,samples),function(x) cbind(x,"run"=1:nrow(x)))
 #for(indiv in unique(titreDat$individual)){
 #  print(indiv)
 #  tmp1 <- titreDat[titreDat$individual == indiv,]
@@ -105,9 +105,9 @@ titreDat <- plyr::ddply(titreDat,.(individual,virus,samples),function(x) cbind(x
 titreDat <- titreDat[order(titreDat$individual,titreDat$run,titreDat$samples,titreDat$virus),]
 
 ## Merge with HaNam data to get same dimensions
-res <- read.csv("~/Documents/Fluscape/serosolver/data/real/vietnam_data.csv")
-wow <- dplyr::inner_join(res[,c("individual","samples","virus","run")], titreDat[,c("individual","samples","virus","run")])
-titreDat <- dplyr::left_join(wow, titreDat)
+#res <- read.csv("~/Documents/Fluscape/serosolver/data/real/vietnam_data.csv")
+#wow <- dplyr::inner_join(res[,c("individual","samples","virus","run")], titreDat[,c("individual","samples","virus","run")])
+#titreDat <- dplyr::left_join(wow, titreDat)
 #res <- read.csv("~/net/home/serosolver/data_LSA/HaNam_samples.csv")
 #titreDat <- merge(res[,c("individual","samples","virus","run")], titreDat)
 #titreDat <- titreDat[order(titreDat$individual,titreDat$run,titreDat$samples,titreDat$virus),]

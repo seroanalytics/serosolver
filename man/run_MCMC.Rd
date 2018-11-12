@@ -6,10 +6,12 @@
 \usage{
 run_MCMC(parTab, titreDat, antigenicMap, mcmcPars = c(),
   mvrPars = NULL, startInfHist = NULL, filename = "test",
-  CREATE_POSTERIOR_FUNC, CREATE_PRIOR_FUNC = NULL, version = 1,
-  mu_indices = NULL, measurement_indices = NULL,
-  measurement_random_effects = FALSE, OPT_TUNING = 0.1, temp = 1,
-  posterior_version = 1, n_alive = NULL, ...)
+  CREATE_POSTERIOR_FUNC = create_posterior_func,
+  CREATE_PRIOR_FUNC = NULL, version = 1, mu_indices = NULL,
+  measurement_indices = NULL, measurement_random_effects = FALSE,
+  OPT_TUNING = 0.1, temp = 1, solve_likelihood = TRUE,
+  n_alive = NULL, message_slack = FALSE, message_slack_pars = NULL,
+  ...)
 }
 \arguments{
 \item{parTab}{The parameter table controlling information such as bounds, initial values etc}
@@ -38,9 +40,11 @@ run_MCMC(parTab, titreDat, antigenicMap, mcmcPars = c(),
 
 \item{temp}{Temperature term for parallel tempering, raises likelihood to this value. Just used for testing at this point}
 
+\item{solve_likelihood}{if FALSE, returns only the prior and does not solve the likelihood}
+
 \item{...}{Other arguments to pass to CREATE_POSTERIOR_FUNC}
 
-\item{data}{The data frame of data to be fitted. Must have columns: group (index of group); individual (integer ID of individual); samples (numeric time of sample taken); virus (numeric time of when the virus was circulating); titre (integer of titre value against the given virus at that sampling time)}
+\item{data}{The data frame of data to be fitted. Must have columns: group (index of group); individual (integer ID of individual); samples (numeric time of sample taken); virus (numeric time of when the virus was circulating); titre (integer of titre value against the given virus at that sampling time); run (integer giving the repeated number of this titre); DOB (integer giving date of birth matching time units used in model)}
 
 \item{PRIOR_FUNC}{User function of prior for model parameters. Should take parameter values only}
 }

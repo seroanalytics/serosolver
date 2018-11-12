@@ -101,13 +101,31 @@ fit_normal_prior <- function(chain_samples, parName="",error_tol=999999999,try_a
 }
 
 #' @export
-find_beta_parameters <- function(mean, var){
+find_beta_parameters <- function(mean, var, make_plot=FALSE){
     #if(mean < 0 | mean > 1) stop("Mean is outside of bounds (0, 1)")
     #if(var < 0 | var > 0.25^2) stop("Var is outside of bounds (0, 0.25^2)")
     alpha <- ((1 - mean)/(var) - (1/mean))*mean^2
     beta <- alpha*(1/mean - 1)
     x <- seq(0,1,by=0.001)
     y <- dbeta(x, alpha,beta)
-    plot(y~x)
+    if(make_plot) plot(y~x, type='l')
     return(list(alpha=alpha,beta=beta))
+}
+
+#' @export
+generate_beta_prior_pars <- function(desired_annual_mean, buckets){
+  mean1 <- desired_annual_mean/buckets
+  max_var <- mean1*(1-mean1) - 0.000001
+  pars <- find_beta_parameters(mean1,max_var)
+  alpha <- pars$alpha
+  beta <- pars$beta
+  y <- dbeta(seq(0.01,1-0.01,by=0.01),alpha,beta,log=FALSE)
+  while(!(all(y==cummin(y)))){
+    max_var <- max_var - 0.001
+    pars <- find_beta_parameters(mean1,max_var)
+    alpha <- pars$alpha
+    beta <- pars$beta
+    y <- dbeta(seq(0.01,1-0.01,by=0.01),alpha,beta,log=FALSE)
+  }
+  return(pars)
 }

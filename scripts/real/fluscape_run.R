@@ -115,7 +115,7 @@ for(i in 1:nrow(startTab)){
 
 ## Multivariate proposals or univariate? Use univariate for now
 covMat <- diag(nrow(parTab))
-scale <- 0.00005
+scale <- 0.005
 w <- 1
 mvrPars <- list(covMat, scale, w)
 mvrPars <- NULL
