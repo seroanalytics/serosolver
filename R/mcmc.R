@@ -60,7 +60,7 @@ run_MCMC <- function(parTab,
                      message_slack_pars=NULL,
                      ...){
     ## If we want to message ourselves on slack with intermediate progress
-    if(message_slack & !is.null(message_slack_pars)){
+    if(message_slack && !is.null(message_slack_pars)){
         slackr::slackrSetup(api_token=message_slack_pars$api_token,
                             channel=message_slack_pars$channel,
                             username=message_slack_pars$username)        
@@ -319,7 +319,7 @@ run_MCMC <- function(parTab,
         ## Whether to swap entire year contents or not - only applies to gibbs sampling
         histSwitchProb <- runif(1)
         if(i %% save_block == 0) message(cat("Current iteration: ", i, sep="\t"))
-        if(message_slack & i %% message_slack_pars$message_freq == 0){
+        if(message_slack && i %% message_slack_pars$message_freq == 0){
             text_slackr(paste0(message_slack_pars$username, " iteration ", i),channel=message_slack_pars$channel,
                         username=message_slack_pars$username)
         }
@@ -643,7 +643,7 @@ run_MCMC <- function(parTab,
     if(is.null(mvrPars)){
         covMat <- NULL
     }
-    if(message_slack & !is.null(message_slack_pars)){
+    if(message_slack && !is.null(message_slack_pars)){
         text_slackr(paste0(message_slack_pars$username, " is done!"))
     }
     return(list("chain_file"=mcmc_chain_file,"history_file"=infectionHistory_file,
