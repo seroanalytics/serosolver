@@ -28,12 +28,12 @@ check_parTab <- function(parTab,mcmc=FALSE,version=NULL){
         op_pars<-parTab[which(parTab$type==0),]
         if(all(op_pars$fixed==1)==FALSE) stop('All optional parameters must be fixed')
         
-        if(version==1||version==2){
+        if(version==1){
           ## Check that the correct number of lambdas are present
           if( no_lambda!=length(strainIsolationTimes)) stop(paste('Incorrect number of lambdas in parTab,', no_lambda,'passed but was expecting',length(strainIsolationTimes))) #Should we add the correct number?
         }
         
-        if(version==3){
+        if( version %in% c(2,3)){
           if(explicit_lambda) stop(paste('lambdas are not required for version 3 but parTab contains',no_lambda, 'lambda(s)')) ##Should we remove them?
         }
     }
