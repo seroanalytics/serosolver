@@ -2,9 +2,11 @@
 #'
 #' Checks the entries of parTab used in simulate_data
 #' @param parTab the parameter table controlling information such as bounds, initial values etc
+#' @param mcmc logical, if TRUE then checks are performed for the MCMC algorithm. Use FALSE when simulating data 
+#' @param version which version of the posterior function is being used? See \code{\link{create_post_func}}
 #' @return nothing at the moment
 #' @export
-check_parTab <- function(parTab,mcmc=FALSE){  
+check_parTab <- function(parTab,mcmc=FALSE,version=NULL){  
   ## Checks that should happen in simulate_data and run_MCMC
   pars <- parTab$values
   names(pars) <- parTab$names
@@ -13,16 +15,28 @@ check_parTab <- function(parTab,mcmc=FALSE){
   # Extract waneType
     waneType <- pars["wane_type"]
     if(is.na(waneType)) stop('wane_type is missing from parTab (specify 0 for linear decrease or 1 for piecewise linear) ') ## If user has not entered wane_type in parTab
-                                        # Check that additional parameters are present
+    # Check that additional parameters are present
     if(waneType==1&(!("kappa"%in%names(pars))|!("t_change"%in%names(pars)))) stop('Parameters needed for wane_type=1 (piecewise linear) are missing')
     
     ## Additional checks that should happen in run_MCMC
     if(mcmc==TRUE){
+        lambda_indices <- which(parTab$type == 2)
+        no_lambda <- length(lambda_indices)
+        explicit_lambda <- ( no_lambda > 0)
+      
         ## Check that all optional parameters are fixed, if not, fix them
         op_pars<-parTab[which(parTab$type==0),]
         if(all(op_pars$fixed==1)==FALSE) stop('All optional parameters must be fixed')
+        
+        if(version==1||version==2){
+          ## Check that the correct number of lambdas are present
+          if( no_lambda!=length(strainIsolationTimes)) stop(paste('Incorrect number of lambdas in parTab,', no_lambda,'passed but was expecting',length(strainIsolationTimes))) #Should we add the correct number?
+        }
+        
+        if(version==3){
+          if(explicit_lambda) stop(paste('lambdas are not required for version 3 but parTab contains',no_lambda, 'lambda(s)')) ##Should we remove them?
+        }
     }
-
 
     ## Check that alpha and beta there for beta distribution
     ## If there, Pull out alpha and beta for beta binomial proposals

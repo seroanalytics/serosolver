@@ -68,7 +68,7 @@ run_MCMC <- function(parTab,
 
     
     ## Error checks --------------------------------------
-    check_parTab(parTab, TRUE)
+    check_parTab(parTab, TRUE,version)
     
     ## Sort out MCMC parameters --------------------------------------
     ###################################################################
