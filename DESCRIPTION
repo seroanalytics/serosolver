@@ -19,8 +19,9 @@ Suggests:
     plyr,
     Matrix,
     data.table
-LinkingTo: Rcpp,
-    RcppArmadillo
+LinkingTo: Rcpp,	
+    RcppArmadillo,
+    RcppParallel
 SystemRequirements: C++11
 RoxygenNote: 6.1.0
 VignetteBuilder: knitr

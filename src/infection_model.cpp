@@ -2,8 +2,8 @@
 #include "wane_function.h"
 #include "boosting_functions.h"
 #include <chrono>
-#include <omp.h>
-//[[Rcpp::plugins(openmp)]]
+// [[Rcpp::depends(RcppParallel)]]
+#include <RcppParallel.h>
 using namespace Rcpp;
 
 #define MAX(a,b) ((a) < (b) ? (b) : (a)) // define MAX function for use later
@@ -285,8 +285,6 @@ NumericVector titre_data_group(const NumericVector &theta,
     auto time_total = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double> elapsed;
   */
-  omp_set_num_threads(6);
-#pragma omp parallel for
   for(int i=1; i <= n; ++i){
     //Rcpp::Rcout << "Individual: " << i << std::endl;
     startIndexSamples = indicesSamples[i-1];
