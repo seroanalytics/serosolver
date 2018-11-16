@@ -8,18 +8,25 @@ library(data.table)
 setwd("~/Documents/Fluscape/serosolver")
 devtools::load_all()
 saveWD <- "~/net/home/serosolver/data_Oct2018/"
-filename <- "fluscape_sim_quarterly"
-
-## How many individuals to simulate?
-n_indiv <- 1000
+filename <- "fluscape_sim_quarter_titredep"
 
 ## Buckets indicates the time resolution of the analysis. Setting
 ## this to 1 uses annual epochs, whereas setting this to 12 gives
 ## monthly epochs
 buckets <- 4
 
+## Antigenic map for cross reactivity parameters
+#antigenicMap <- read.csv("~/Documents/Fluscape/fluscape/trunk/data/Fonville2014AxMapPositionsApprox.csv",stringsAsFactors=FALSE)
+#fit_dat <- generate_antigenic_map(antigenicMap, buckets)
+
+fit_dat <- read.csv("data/antigenic_maps/created_maps/fonville_quarterly.csv")
+
+## How many individuals to simulate?
+n_indiv <- 1000
+
+
 ## Read in parameter table to simulate from and change waning rate if necessary
-parTab <- read.csv("~/Documents/Fluscape/serosolver/inputs/parTab_base.csv",stringsAsFactors=FALSE)
+parTab <- read.csv("~/Documents/Fluscape/serosolver/inputs/parTab_base_titre.csv",stringsAsFactors=FALSE)
 parTab[parTab$names == "wane","values"] <- 0.8
 parTab[parTab$names == "wane","values"] <- parTab[parTab$names == "wane","values"]/buckets
 
@@ -48,17 +55,6 @@ hAR <- hAR[,1]
 #hAR[c(1,3)] <- rlnorm(2, meanlog=log(0.5)-(sdPar/2)^2/2,sdlog=sdPar/2)
 #hAR[c(2,4)] <- rlnorm(2, meanlog=log(0.05)-(sdPar/2)^2/2,sdlog=sdPar/2)
 
-
-## Antigenic map for cross reactivity parameters
-antigenicMap <- read.csv("~/Documents/Fluscape/fluscape/trunk/data/Fonville2014AxMapPositionsApprox.csv",stringsAsFactors=FALSE)
-virus_key <- c("HK68"=1968, "EN72"=1972, "VI75"=1975, "TX77"=1977, "BK79"=1979, "SI87"=1987, "BE89"=1989, "BJ89"=1989,
-               "BE92"=1992, "WU95"=1995, "SY97"=1997, "FU02"=2002, "CA04"=2004, "WI05"=2005, "PE06"=2006)*buckets
-#antigenicMap$Strain <- virus_key[antigenicMap$Strain]
-
-
-fit_dat <- generate_antigenic_map(antigenicMap, buckets)
-#fit_dat <- read.csv("data/antigenic_maps/antigenicMap_vietnam.csv")
-
 ## All possible circulation times
 fit_dat <- fit_dat[fit_dat$inf_years >= 1968*buckets & fit_dat$inf_years <= max(samplingTimes),]
 strainIsolationTimes <- unique(fit_dat$inf_years)
@@ -81,14 +77,14 @@ viruses <- c(1968, 1969, 1972, 1975, 1977, 1979, 1982, 1985, 1987,
 
 #viruses <- HaNam_viruses <- c(1968, 1972, 1976, 1982, 1989, 1992, 1993, 1994, 1995, 1996, 
 #                   1997, 1999, 2000, 2002, 2003, 2004, 2005, 2007, 2008, 2009, 2010, 
-#                   2011)
+#                   2011)*buckets
 
 ## If using HaNam data, need to filter the simulated data such that it matches the distribution of HaNam data
 titreDat <- dat[[1]]
 
 ## Create identifier for repeats
-#titreDat$run <- NULL
-#titreDat <- plyr::ddply(titreDat,.(individual,virus,samples),function(x) cbind(x,"run"=1:nrow(x)))
+titreDat$run <- NULL
+titreDat <- plyr::ddply(titreDat,.(individual,virus,samples),function(x) cbind(x,"run"=1:nrow(x)))
 #for(indiv in unique(titreDat$individual)){
 #  print(indiv)
 #  tmp1 <- titreDat[titreDat$individual == indiv,]
@@ -118,9 +114,16 @@ AR <- dat[[4]]
 titreDat <- merge(titreDat,ages)
 
 saveWD <- "~/Documents/Fluscape/serosolver/data/"
-saveWD <- "~/net/home/serosolver/data_Oct2018/"
+saveWD2 <- "~/net/home/serosolver/data_Oct2018/"
 write.table(parTab,paste0(saveWD,filename,"_pars_",buckets,".csv"),row.names=FALSE,sep=",")
 write.table(titreDat,paste0(saveWD,filename,"_dat_",buckets,".csv"),row.names=FALSE,sep=",")
 write.table(infHist,paste0(saveWD,filename,"_infHist_",buckets,".csv"),row.names=FALSE,sep=",")
 write.table(ages,paste0(saveWD,filename,"_ages_",buckets,".csv"),row.names=FALSE,sep=",")
 write.table(AR,paste0(saveWD,filename,"_AR_",buckets,".csv"),row.names=FALSE,sep=",")
+
+write.table(parTab,paste0(saveWD2,filename,"_pars_",buckets,".csv"),row.names=FALSE,sep=",")
+write.table(titreDat,paste0(saveWD2,filename,"_dat_",buckets,".csv"),row.names=FALSE,sep=",")
+write.table(infHist,paste0(saveWD2,filename,"_infHist_",buckets,".csv"),row.names=FALSE,sep=",")
+write.table(ages,paste0(saveWD2,filename,"_ages_",buckets,".csv"),row.names=FALSE,sep=",")
+write.table(AR,paste0(saveWD2,filename,"_AR_",buckets,".csv"),row.names=FALSE,sep=",")
+

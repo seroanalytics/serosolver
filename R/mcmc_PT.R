@@ -236,6 +236,7 @@ run_MCMC_pt <- function(parTab,
                 mcmc_list <- lapply(mcmc_list, function(x) reset_acceptance(x, reset))
                 ## calibrate temperatures
                 swap_ratio <- swaps / potential_swaps
+                message(cat("Swap ratio: ", swap_ratio,sep="\t"))
                 temperatures <- calibrate_temperatures(temperatures, swap_ratio)
                 mcmc_list <- Map(function(x,y) modifyList(x,list(temp = y)), mcmc_list, temperatures)
                 swaps <- potential_swaps <- 0

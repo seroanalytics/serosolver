@@ -7,14 +7,13 @@
 using namespace Rcpp;
 
 // multiple_infection_strain_dependent
-void multiple_infection_strain_dependent(NumericVector& predicted_titres, const NumericVector& theta, const IntegerVector& cumu_infection_history, const IntegerVector& masked_infection_history, const IntegerVector& infection_map_indices, const IntegerVector& measurement_map_indices, const NumericVector& antigenic_map_long, const NumericVector& antigenic_map_short, const NumericVector& waning, const int& number_strains, List additional_arguments);
-RcppExport SEXP _serosolver_multiple_infection_strain_dependent(SEXP predicted_titresSEXP, SEXP thetaSEXP, SEXP cumu_infection_historySEXP, SEXP masked_infection_historySEXP, SEXP infection_map_indicesSEXP, SEXP measurement_map_indicesSEXP, SEXP antigenic_map_longSEXP, SEXP antigenic_map_shortSEXP, SEXP waningSEXP, SEXP number_strainsSEXP, SEXP additional_argumentsSEXP) {
+void multiple_infection_strain_dependent(NumericVector& predicted_titres, const NumericVector& theta, const IntegerVector& cumu_infection_history, const IntegerVector& infection_map_indices, const IntegerVector& measurement_map_indices, const NumericVector& antigenic_map_long, const NumericVector& antigenic_map_short, const NumericVector& waning, const int& number_strains, List additional_arguments);
+RcppExport SEXP _serosolver_multiple_infection_strain_dependent(SEXP predicted_titresSEXP, SEXP thetaSEXP, SEXP cumu_infection_historySEXP, SEXP infection_map_indicesSEXP, SEXP measurement_map_indicesSEXP, SEXP antigenic_map_longSEXP, SEXP antigenic_map_shortSEXP, SEXP waningSEXP, SEXP number_strainsSEXP, SEXP additional_argumentsSEXP) {
 BEGIN_RCPP
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< NumericVector& >::type predicted_titres(predicted_titresSEXP);
     Rcpp::traits::input_parameter< const NumericVector& >::type theta(thetaSEXP);
     Rcpp::traits::input_parameter< const IntegerVector& >::type cumu_infection_history(cumu_infection_historySEXP);
-    Rcpp::traits::input_parameter< const IntegerVector& >::type masked_infection_history(masked_infection_historySEXP);
     Rcpp::traits::input_parameter< const IntegerVector& >::type infection_map_indices(infection_map_indicesSEXP);
     Rcpp::traits::input_parameter< const IntegerVector& >::type measurement_map_indices(measurement_map_indicesSEXP);
     Rcpp::traits::input_parameter< const NumericVector& >::type antigenic_map_long(antigenic_map_longSEXP);
@@ -22,26 +21,28 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< const NumericVector& >::type waning(waningSEXP);
     Rcpp::traits::input_parameter< const int& >::type number_strains(number_strainsSEXP);
     Rcpp::traits::input_parameter< List >::type additional_arguments(additional_argumentsSEXP);
-    multiple_infection_strain_dependent(predicted_titres, theta, cumu_infection_history, masked_infection_history, infection_map_indices, measurement_map_indices, antigenic_map_long, antigenic_map_short, waning, number_strains, additional_arguments);
+    multiple_infection_strain_dependent(predicted_titres, theta, cumu_infection_history, infection_map_indices, measurement_map_indices, antigenic_map_long, antigenic_map_short, waning, number_strains, additional_arguments);
     return R_NilValue;
 END_RCPP
 }
 // multiple_infection_base_boosting
-void multiple_infection_base_boosting(NumericVector& predicted_titres, const NumericVector& theta, const IntegerVector& cumu_infection_history, const IntegerVector& masked_infection_history, const IntegerVector& infection_map_indices, const IntegerVector& measurement_map_indices, const NumericVector& antigenic_map_long, const NumericVector& antigenic_map_short, const NumericVector& waning, const int& number_strains);
-RcppExport SEXP _serosolver_multiple_infection_base_boosting(SEXP predicted_titresSEXP, SEXP thetaSEXP, SEXP cumu_infection_historySEXP, SEXP masked_infection_historySEXP, SEXP infection_map_indicesSEXP, SEXP measurement_map_indicesSEXP, SEXP antigenic_map_longSEXP, SEXP antigenic_map_shortSEXP, SEXP waningSEXP, SEXP number_strainsSEXP) {
+void multiple_infection_base_boosting(NumericVector& predicted_titres, const NumericVector& theta, const IntegerVector& cumu_infection_history, const IntegerVector& infection_map_indices, const IntegerVector& measurement_map_indices, const NumericVector& antigenic_map_long, const NumericVector& antigenic_map_short, const NumericVector& waning, const NumericVector& seniority, const int& number_strains, const int& n_samples, const int& max_infections);
+RcppExport SEXP _serosolver_multiple_infection_base_boosting(SEXP predicted_titresSEXP, SEXP thetaSEXP, SEXP cumu_infection_historySEXP, SEXP infection_map_indicesSEXP, SEXP measurement_map_indicesSEXP, SEXP antigenic_map_longSEXP, SEXP antigenic_map_shortSEXP, SEXP waningSEXP, SEXP senioritySEXP, SEXP number_strainsSEXP, SEXP n_samplesSEXP, SEXP max_infectionsSEXP) {
 BEGIN_RCPP
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< NumericVector& >::type predicted_titres(predicted_titresSEXP);
     Rcpp::traits::input_parameter< const NumericVector& >::type theta(thetaSEXP);
     Rcpp::traits::input_parameter< const IntegerVector& >::type cumu_infection_history(cumu_infection_historySEXP);
-    Rcpp::traits::input_parameter< const IntegerVector& >::type masked_infection_history(masked_infection_historySEXP);
     Rcpp::traits::input_parameter< const IntegerVector& >::type infection_map_indices(infection_map_indicesSEXP);
     Rcpp::traits::input_parameter< const IntegerVector& >::type measurement_map_indices(measurement_map_indicesSEXP);
     Rcpp::traits::input_parameter< const NumericVector& >::type antigenic_map_long(antigenic_map_longSEXP);
     Rcpp::traits::input_parameter< const NumericVector& >::type antigenic_map_short(antigenic_map_shortSEXP);
     Rcpp::traits::input_parameter< const NumericVector& >::type waning(waningSEXP);
+    Rcpp::traits::input_parameter< const NumericVector& >::type seniority(senioritySEXP);
     Rcpp::traits::input_parameter< const int& >::type number_strains(number_strainsSEXP);
-    multiple_infection_base_boosting(predicted_titres, theta, cumu_infection_history, masked_infection_history, infection_map_indices, measurement_map_indices, antigenic_map_long, antigenic_map_short, waning, number_strains);
+    Rcpp::traits::input_parameter< const int& >::type n_samples(n_samplesSEXP);
+    Rcpp::traits::input_parameter< const int& >::type max_infections(max_infectionsSEXP);
+    multiple_infection_base_boosting(predicted_titres, theta, cumu_infection_history, infection_map_indices, measurement_map_indices, antigenic_map_long, antigenic_map_short, waning, seniority, number_strains, n_samples, max_infections);
     return R_NilValue;
 END_RCPP
 }
@@ -359,8 +360,8 @@ END_RCPP
 }
 
 static const R_CallMethodDef CallEntries[] = {
-    {"_serosolver_multiple_infection_strain_dependent", (DL_FUNC) &_serosolver_multiple_infection_strain_dependent, 11},
-    {"_serosolver_multiple_infection_base_boosting", (DL_FUNC) &_serosolver_multiple_infection_base_boosting, 10},
+    {"_serosolver_multiple_infection_strain_dependent", (DL_FUNC) &_serosolver_multiple_infection_strain_dependent, 10},
+    {"_serosolver_multiple_infection_base_boosting", (DL_FUNC) &_serosolver_multiple_infection_base_boosting, 12},
     {"_serosolver_multiple_infection_titre_dependent_boost", (DL_FUNC) &_serosolver_multiple_infection_titre_dependent_boost, 12},
     {"_serosolver_infection_model_indiv", (DL_FUNC) &_serosolver_infection_model_indiv, 11},
     {"_serosolver_titre_data_individual", (DL_FUNC) &_serosolver_titre_data_individual, 12},

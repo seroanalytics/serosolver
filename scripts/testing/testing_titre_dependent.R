@@ -3,8 +3,8 @@ Rcpp::compileAttributes()
 devtools::load_all()
 devtools::test()
 
-theta <- c("mu"=2,"mu_short"=2.7,"tau"=0,"wane"=0,"sigma1"=0.1,"sigma2"=0.03,"boost_limit"=6,"gradient"=1,
-           "error"=1,"wane_type"=1,"titre_dependent"=0,"kappa"=0.9,"t_change"=6)
+theta <- c("mu"=2,"mu_short"=2.7,"tau"=0,"wane"=0,"sigma1"=0.1,"sigma2"=0.03,"boost_limit"=6,"gradient"=0.01,
+           "error"=1,"wane_type"=1,"titre_dependent"=1,"kappa"=0.9,"t_change"=6)
 theta1 <- theta[names(theta) != "gradient"]
 parTab <- read.csv("~/Documents/Fluscape/serosolver/inputs/parTab_titre.csv",
                    stringsAsFactors=FALSE)
@@ -43,7 +43,7 @@ boosting_vec_indices <- rep(seq(1,4),each=12)-1
 additional_arguments <- list("boosting_vec_indices"=boosting_vec_indices,"mus"=c(1,3,5,5))
 y <- infection_model_indiv(theta, infectionHistory, strainIsolationTimes,
                       infectionMapIndices, t2, measurementMapIndices, antigenicMapLong,
-                      antigenicMapShort,numberStrains,age=0,additional_arguments)
+                      antigenicMapShort,numberStrains,DOB=0,additional_arguments)
 
 
 y <- infection_model_indiv(theta, infectionHistory, strainIsolationTimes,
@@ -55,9 +55,9 @@ y1 <- infection_model_indiv(theta, infectionHistory, strainIsolationTimes,
 y2 <- infection_model_indiv(theta, infectionHistory, strainIsolationTimes,
                             infectionMapIndices, 2010, measurementMapIndices, antigenicMapLong,
                             antigenicMapShort,numberStrains)
-plot(y,type='l',ylim=c(0,5))
-lines(y1)
-lines(y2)
+plot(y,type='l',ylim=c(0,8))
+lines(y1,col="red")
+lines(y2,col="blue")
 
 
 y <- infection_model_indiv_many(theta, infectionHistory, strainIsolationTimes,

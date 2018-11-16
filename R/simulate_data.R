@@ -407,14 +407,22 @@ generate_antigenic_map_flexible<- function(antigenicDistances, buckets=1, cluste
     fit_dat$strain <- Strain
     colnames(fit_dat) <- c("x_coord","y_coord","inf_years")
     if (use_clusters) {
-        clusters$year <- clusters$year*buckets
+        clusters <- clusters[rep(seq_len(nrow(clusters)),each=buckets),]
+        clusters$year <- seq(1968*buckets, length.out=nrow(clusters))
         cluster_starts <- ddply(clusters, ~cluster_used, function(x) x$year[1])
-        fit_dat <- fit_dat[fit_dat$inf_years %in% cluster_starts$V1,]
-        cluster_sizes <- data.frame(table(clusters$cluster_used))$Freq*buckets
-        fit_dat <- mefa:::rep.data.frame(fit_dat,cluster_sizes)
-        fit_dat$inf_years <- Strain
-    }
-    
+        colnames(cluster_starts)[2] <- "first_cluster_year"
+        clusters1 <- merge(clusters, cluster_starts,by=c("cluster_used"))
+        clusters1 <- clusters1[,c("cluster_used","first_cluster_year","year")]
+        colnames(fit_dat)[3] <- "first_cluster_year"
+        fit_dat <- fit_dat[fit_dat$first_cluster_year %in% clusters1$first_cluster_year,]
+        fit_dat <- merge(clusters1, fit_dat, by="first_cluster_year")
+        #cluster_sizes <- data.frame(table(clusters$cluster_used))$Freq*buckets
+        #fit_dat <- mefa:::rep.data.frame(fit_dat,cluster_sizes)
+        #fit_dat$inf_years <- Strain
+        fit_dat <- fit_dat[,c("x_coord","y_coord","year")]
+        colnames(fit_dat)[3] <- "inf_years"
+        fit_dat <- fit_dat[order(fit_dat$inf_years),]
+    }   
 
     return(fit_dat)
 }

@@ -345,7 +345,7 @@ run_MCMC <- function(parTab,
                 } else {
                     ## NOTE
                     ## MIGHT WANT TO USE ADAM'S PROPOSAL FUNCTION
-                    proposal <- mvr_proposal(current_pars, unfixed_pars, steps*covMat, cov_mat0, FALSE, beta=0.05)
+                    proposal <- mvr_proposal(current_pars, unfixed_pars, steps*covMat, steps*cov_mat0, FALSE, beta=0.05)
                                         #proposal <- SampleTheta(current_pars, unfixed_pars, cov_mat0*steps, cov_mat0*steps, par_names)
                     tempiter <- tempiter + 1
                     #print(proposal)

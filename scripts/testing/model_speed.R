@@ -1,6 +1,6 @@
 pars <- c("mu"=2,"mu_short"=2,"tau"=0.05,"wane"=1,"sigma1"=0.1,"sigma2"=0.03,"MAX_TITRE"=8,"error"=1)
 
-buckets <- 24
+buckets <- 4
 antigenicMap <- read.csv("~/Documents/Fluscape/fluscape/trunk/data/Fonville2014AxMapPositionsApprox.csv",stringsAsFactors=FALSE)
 fit_dat <- generate_antigenic_map(antigenicMap, buckets)
 antigenicMapMelted <- c(outputdmatrix.fromcoord(fit_dat[,c("x_coord","y_coord")]))

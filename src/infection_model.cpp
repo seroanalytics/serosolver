@@ -1,6 +1,9 @@
 #include <Rcpp.h>
 #include "wane_function.h"
 #include "boosting_functions.h"
+#include <chrono>
+#include <omp.h>
+//[[Rcpp::plugins(openmp)]]
 using namespace Rcpp;
 
 #define MAX(a,b) ((a) < (b) ? (b) : (a)) // define MAX function for use later
@@ -10,6 +13,7 @@ void setup_waning_and_masked_cumulative(const NumericVector &theta,
 					IntegerVector &cumu_infection_history, 
 					IntegerVector &masked_infection_history,
 					NumericVector &waning,
+					NumericVector &seniority,
 					const NumericVector &infection_times,
 					const int &max_infections, 
 					const double &sampling_time,
@@ -19,11 +23,12 @@ void setup_waning_and_masked_cumulative(const NumericVector &theta,
   double circulation_time=infection_times[0];
   double time = sampling_time - circulation_time;
   double wane = theta["wane"];
+  double tau = theta["tau"];
   double val;  
   
   /* =========================================
-  ======== SET UP WANING RATE VECTOR =========
-  ========================================= */ 
+     ======== SET UP WANING RATE VECTOR =========
+     ========================================= */ 
   // If not linear
   if(wane_type == 1){
     // Calculate the waning at the time since infection
@@ -33,14 +38,18 @@ void setup_waning_and_masked_cumulative(const NumericVector &theta,
     waning[0] = MAX(0, 1.0-wane*time);// Else if linear
   }
 
+  // Seniority
+  seniority[0] = 0;
+
   /* =========================================
      ====== SET UP CUMULATIVE INFECTIONS =====
      ========================================= */ 
+  
   if(circulation_time > sampling_time) masked_infection_history[0]=0;
   else masked_infection_history[0] = infection_history[0];
-
+  
   cumu_infection_history[0] = masked_infection_history[0];
-
+  
   for(int i = 1; i < max_infections; ++i){
     circulation_time = infection_times[i];
     time = (sampling_time - circulation_time);
@@ -56,7 +65,7 @@ void setup_waning_and_masked_cumulative(const NumericVector &theta,
       masked_infection_history[i] = infection_history[i];
     }
     cumu_infection_history[i] = masked_infection_history[i] + cumu_infection_history[i-1];
-
+    
     /* =========================================
        ======== SET UP WANING RATE VECTOR =========
        ========================================= */ 
@@ -67,10 +76,11 @@ void setup_waning_and_masked_cumulative(const NumericVector &theta,
     } else {
       waning[i] = MAX(0, 1.0-wane*time); // Else linear
     }
+
+    // Seniority
+    seniority[i] = MAX(0, 1.0 - tau*cumu_infection_history[i-1]);
   }  
 }
-
-
 
 
 //' Model function
@@ -104,6 +114,11 @@ NumericVector infection_model_indiv(const NumericVector &theta, // Parameter vec
 				    const double &DOB=0,
 				    const Nullable<List> &additional_arguments=R_NilValue
 				    ){
+  //auto before_total = std::chrono::high_resolution_clock::now();
+  //auto before_t = std::chrono::high_resolution_clock::now();
+  //auto after_t = std::chrono::high_resolution_clock::now();
+  //std::chrono::duration<double> elapsed;
+
   double circulation_time;
   
   // Which waning function type should we use
@@ -123,32 +138,56 @@ NumericVector infection_model_indiv(const NumericVector &theta, // Parameter vec
   // But need to record infection info for each strain that individual could have been
   // infected with
   IntegerVector cumInfectionHistory(max_infections);
+  //IntegerVector cumInfectionHistory = cumsum(infectionHistory);
+
+  // Trying just ignoring this, as subset in function above
   IntegerVector maskedInfectionHistory(max_infections); // To avoid solving the model for infections that didn't happen
   NumericVector waning(max_infections);
+  NumericVector seniority(max_infections);
+  
+  //after_t = std::chrono::high_resolution_clock::now();
+  //elapsed = after_t - before_t;
+  //before_t = after_t;
+  //Rcpp::Rcout << "Time of arguments: " << elapsed.count()*1000 << " milli seconds" << std::endl;
 
   // Set up cumulative infection history, masked infection history and waning vector
   setup_waning_and_masked_cumulative(theta,
 				     infectionHistory,
 				     cumInfectionHistory, 
 				     maskedInfectionHistory, 
-				     waning,				     
+				     waning,	
+				     seniority,			     
 				     infectionTimes, 
 				     max_infections, 
 				     samplingTime,
 				     waneType, 
 				     DOB,
 				     additional_arguments);
+  //after_t = std::chrono::high_resolution_clock::now();
+  //elapsed = after_t - before_t;
+  //before_t = after_t;
+  //Rcpp::Rcout << "Time of setup: " << elapsed.count()*1000  << " milli seconds" << std::endl;
   add_multiple_infections_boost(predictedTitre, monitored_titres,
 				theta, 
-				infectionTimes, cumInfectionHistory, maskedInfectionHistory, 
+				infectionTimes, cumInfectionHistory, 
+				maskedInfectionHistory, 
 				infectionMapIndices, measurementMapIndices, 
 				antigenicMapLong, antigenicMapShort,
 				waning, 
+				seniority,
 				numberStrains, 
+				n_samples,
+				max_infections,
 				titre_dependent_boosting, 
 				DOB,
 				additional_arguments
 				);
+  //after_t = std::chrono::high_resolution_clock::now();
+  //elapsed = after_t - before_t;
+  //before_t = after_t;
+  //Rcpp::Rcout << "Time of boosting: " << elapsed.count()*1000 << " milli seconds" << std::endl;
+  //elapsed = std::chrono::high_resolution_clock::now() - before_total;
+  //Rcpp::Rcout << "Total time: " << elapsed.count()*1000 << " milli seconds" << std::endl;
   return(predictedTitre);
 }
 
@@ -167,10 +206,15 @@ NumericVector titre_data_individual(const NumericVector &theta,
 				    const int &numberStrains,
 				    const double &DOB=0,
 				    const Nullable<List>& additional_arguments=R_NilValue){
+  /*
+    auto after_t  = std::chrono::high_resolution_clock::now();
+    auto before_t = std::chrono::high_resolution_clock::now();
+    std::chrono::duration<double> elapsed;
+  */
   int numberSamples = samplingTimes.size();
   int numberMeasuredStrains = measuredMapIndices.size();
   NumericVector titres(numberMeasuredStrains);
-
+  
   int startIndex = 0;
   int endIndex = 0;
 
@@ -180,14 +224,25 @@ NumericVector titre_data_individual(const NumericVector &theta,
   NumericVector infectionTimes = circulationTimes[indices];
   IntegerVector infMapIndices = circulationMapIndices[indices];
 
+  IntegerVector tmp_range;
+
   for(int i = 0; i < numberSamples; ++i){
+    //Rcpp::Rcout << "Sample: " << i << std::endl;
     endIndex = startIndex + dataIndices[i] - 1;
-    titres[Range(startIndex, endIndex)] = infection_model_indiv(theta,conciseInfHist,infectionTimes,infMapIndices,
-								samplingTimes[i],measuredMapIndices[Range(startIndex,endIndex)],
-								antigenicMapLong, antigenicMapShort,numberStrains,
-								DOB, additional_arguments);
+    // Range index twice
+    tmp_range = Range(startIndex, endIndex);
+    titres[tmp_range] = infection_model_indiv(theta,conciseInfHist,infectionTimes,infMapIndices,
+					       samplingTimes[i],measuredMapIndices[tmp_range],
+					       antigenicMapLong, antigenicMapShort,numberStrains,
+					       DOB, additional_arguments);
     startIndex = endIndex + 1;
+    //Rcpp::Rcout << std::endl;
   }
+  /*after_t = std::chrono::high_resolution_clock::now();
+  elapsed = after_t - before_t;
+  before_t = after_t;
+  Rcpp::Rcout << "Time for indiv: " << elapsed.count()*1000 << " milli seconds" << std::endl;
+  */
   return(titres);
 }
 
@@ -222,9 +277,18 @@ NumericVector titre_data_group(const NumericVector &theta,
   int endIndexSamples;
   int startIndexData;
   int endIndexData;
+  IntegerVector tmp_range;
+  IntegerVector tmp_range_samples;
   int DOB;
-
+  /*auto before_t  = std::chrono::high_resolution_clock::now();
+    auto after_t  = std::chrono::high_resolution_clock::now();
+    auto time_total = std::chrono::high_resolution_clock::now();
+    std::chrono::duration<double> elapsed;
+  */
+  omp_set_num_threads(6);
+#pragma omp parallel for
   for(int i=1; i <= n; ++i){
+    //Rcpp::Rcout << "Individual: " << i << std::endl;
     startIndexSamples = indicesSamples[i-1];
     endIndexSamples = indicesSamples[i] - 1;
 
@@ -233,20 +297,35 @@ NumericVector titre_data_group(const NumericVector &theta,
 
     DOB = DOBs[i-1];
 
-    titres[Range(startIndexData, endIndexData)] = titre_data_individual(theta,   // Vector of named model parameters
-									infectionHistories(i-1,_), // Vector of infection history for individual i
-									circulationTimes, // Vector of all virus circulation times, same length and ncol infectionHistories
-									circulationMapIndices, // Gives the corresponding index in the antigenic map vector
-									samplingTimes[Range(startIndexSamples, endIndexSamples)],  // Get sampling times for this individual
-									indicesTitreDataSample[Range(startIndexSamples,endIndexSamples)], // The 
-									measuredMapIndices[Range(startIndexData,endIndexData)],  // For the indices in the antigenic map to which each titre corresponds
-									antigenicMapLong, 
-									antigenicMapShort,  
-									n_strains,
-									DOB, 
-									additional_arguments); // The total number of strains that circulated
+    //before_t = std::chrono::high_resolution_clock::now();
+    tmp_range = Range(startIndexData, endIndexData);
+    tmp_range_samples = Range(startIndexSamples, endIndexSamples);
+    /*after_t = std::chrono::high_resolution_clock::now();
+    elapsed = after_t - before_t;
+    before_t = after_t;
+    Rcpp::Rcout << "Time taken to subset " << elapsed.count()*1000 << " milli seconds" << std::endl;
+    */
+    titres[tmp_range] = titre_data_individual(theta,   // Vector of named model parameters
+					      infectionHistories(i-1,_), // Vector of infection history for individual i
+					      circulationTimes, // Vector of all virus circulation times, same length and ncol infectionHistories
+					      circulationMapIndices, // Gives the corresponding index in the antigenic map vector
+					      samplingTimes[tmp_range_samples],  // Get sampling times for this individual
+					      indicesTitreDataSample[tmp_range_samples], // The 
+					      measuredMapIndices[tmp_range],  // For the indices in the antigenic map to which each titre corresponds
+					      antigenicMapLong, 
+					      antigenicMapShort,  
+					      n_strains,
+					      DOB, 
+					      additional_arguments); // The total number of strains that circulated
+    /*after_t = std::chrono::high_resolution_clock::now();
+    elapsed = after_t - before_t;
+    before_t = after_t;
+    Rcpp::Rcout << "Time taken for individual " << i << ": " << elapsed.count()*1000 << " milli seconds" << std::endl;
+    */
+    
   }
-
+  //elapsed = std::chrono::high_resolution_clock::now() - time_total;
+  //Rcpp::Rcout << "Time total: " << elapsed.count()*1000  << " milli seconds" << std::endl;
   return(titres);
 }
 

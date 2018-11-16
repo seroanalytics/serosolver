@@ -114,3 +114,15 @@ logistic_transform <- function(x, maxX){
 logit_transform <- function(p, maxX){
   return(log(p/(maxX-p)))
 }
+
+
+#' @export
+pad_alphas_and_betas <- function(parTab, n_times){
+    alpha_row <- parTab[parTab$names == "alpha",]
+    beta_row <- parTab[parTab$names == "beta",]
+
+    for(i in 1:(n_times-1)){
+        parTab <- rbind(parTab, alpha_row, beta_row)
+    }
+    parTab    
+}

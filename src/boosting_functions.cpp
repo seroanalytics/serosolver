@@ -9,7 +9,6 @@ using namespace Rcpp;
 void multiple_infection_strain_dependent(NumericVector &predicted_titres,
 					 const NumericVector &theta,
 					 const IntegerVector &cumu_infection_history,
-					 const IntegerVector &masked_infection_history,
 					 const IntegerVector &infection_map_indices, 
 					 const IntegerVector &measurement_map_indices,
 					 const NumericVector &antigenic_map_long, 
@@ -18,7 +17,7 @@ void multiple_infection_strain_dependent(NumericVector &predicted_titres,
 					 const int &number_strains,
 					 List additional_arguments){
   int n_samples = measurement_map_indices.size();
-  int max_infections = masked_infection_history.size();
+  int max_infections = cumu_infection_history.size();
   double mu;
   double mu_short = theta["mu_short"];
   double tau = theta["tau"];
@@ -34,50 +33,52 @@ void multiple_infection_strain_dependent(NumericVector &predicted_titres,
     //Rcpp::Rcout << "Infection map index: " << inf_map_index << std::endl;
     //Rcpp::Rcout << "Mu used: " << mu << std::endl;
     wane = waning[i];
-    if(masked_infection_history[i] > 0){
-      for(int k = 0; k < n_samples; ++k){
-	predicted_titres[k] += MAX(0, 1.0 - tau * n_inf)*
-	  ((mu * antigenic_map_long[measurement_map_indices[k] * number_strains + inf_map_index]) + 
-	   (mu_short * antigenic_map_short[measurement_map_indices[k] * number_strains + inf_map_index]) * 
-	   wane);    
-      }
+    //if(masked_infection_history[i] > 0){
+    for(int k = 0; k < n_samples; ++k){
+      predicted_titres[k] += MAX(0, 1.0 - tau * n_inf)*
+	((mu * antigenic_map_long[measurement_map_indices[k] * number_strains + inf_map_index]) + 
+	 (mu_short * antigenic_map_short[measurement_map_indices[k] * number_strains + inf_map_index]) * 
+	 wane);    
+      //  }
     }
-  }
-  
+  }  
 }
 
 //[[Rcpp::export]]
 void multiple_infection_base_boosting(NumericVector &predicted_titres,
 				      const NumericVector &theta,
 				      const IntegerVector &cumu_infection_history,
-				      const IntegerVector &masked_infection_history,
 				      const IntegerVector &infection_map_indices, 
 				      const IntegerVector &measurement_map_indices,
 				      const NumericVector &antigenic_map_long, 
 				      const NumericVector &antigenic_map_short, 
 				      const NumericVector &waning,
-				      const int &number_strains
+				      const NumericVector &seniority,
+				      const int &number_strains,
+				      const int &n_samples,
+				      const int &max_infections
 				      ){
-  int n_samples = measurement_map_indices.size();
-  int max_infections = masked_infection_history.size();
+  // int n_samples = measurement_map_indices.size();
+  // int max_infections = cumu_infection_history.size();
+  int index;
   double mu = theta["mu"];
   double mu_short = theta["mu_short"];
   //Rcpp::Rcout << "mu_short: " << mu_short << std::endl;
-  
-  double tau = theta["tau"];
-  double n_inf, inf_map_index, wane;
+  double senior, inf_map_index, wane;
 
   for(int i = 0; i < max_infections; ++i){
-    n_inf = cumu_infection_history[i] - 1.0;
+    //n_inf = cumu_infection_history[i] - 1.0;
     inf_map_index = infection_map_indices[i];
     wane = waning[i];
-    if(masked_infection_history[i] > 0){
-      for(int k = 0; k < n_samples; ++k){
-	predicted_titres[k] += MAX(0, 1.0 - tau * n_inf)*
-	  ((mu * antigenic_map_long[measurement_map_indices[k] * number_strains + inf_map_index]) + 
-	   (mu_short * antigenic_map_short[measurement_map_indices[k] * number_strains + inf_map_index]) * 
-	   wane);    
-      }
+    senior = seniority[i];
+    //if(masked_infection_history[i] > 0){
+    for(int k = 0; k < n_samples; ++k){
+      index = measurement_map_indices[k] * number_strains + inf_map_index;
+      predicted_titres[k] += senior *
+	((mu * antigenic_map_long[index]) + 
+	 (mu_short * antigenic_map_short[index]) * 
+	 wane);    
+      //}
     }
   }
 }
@@ -187,7 +188,10 @@ void add_multiple_infections_boost(NumericVector &predicted_titres,
 				   const NumericVector &antigenic_map_long, 
 				   const NumericVector &antigenic_map_short, 
 				   const NumericVector &waning,
+				   const NumericVector &seniority,
 				   const int &number_strains,
+				   const int &n_samples,
+				   const int &max_infections,
 				   const bool &titre_dependent_boosting,
 				   const int &DOB,
 				   const Nullable<List> &additional_arguments
@@ -210,7 +214,7 @@ void add_multiple_infections_boost(NumericVector &predicted_titres,
     multiple_infection_strain_dependent(predicted_titres,
 					theta, 
 					cumu_infection_history,
-					masked_infection_history,
+					//masked_infection_history,
 					infection_map_indices,
 					measurement_map_indices,
 					antigenic_map_long,
@@ -222,12 +226,15 @@ void add_multiple_infections_boost(NumericVector &predicted_titres,
     multiple_infection_base_boosting(predicted_titres,
 				     theta, 
 				     cumu_infection_history,
-				     masked_infection_history,
+				     //masked_infection_history,
 				     infection_map_indices,
 				     measurement_map_indices,
 				     antigenic_map_long,
 				     antigenic_map_short,
 				     waning,
-				     number_strains);							       
+				     seniority,
+				     number_strains,
+				     n_samples,
+				     max_infections);							       
   }
 }

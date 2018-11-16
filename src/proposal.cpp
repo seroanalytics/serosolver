@@ -11,18 +11,20 @@ using namespace Rcpp ;
 //' Marginal prior probability (p(Z)) of a particular infection history matrix
 //' 
 //' @param infHist IntegerMatrix, the infection history matrix
-//' @param n_alive IntegerVector, vector giving the number of individuals alive in each year
-//' @param alpha double, alpha parameter for beta distribution prior
-//' @param beta double, beta parameter for beta distribution prior
+//' @param n_alive IntegerVector, vector giving the number of individuals alive in each time unit
+//' @param alpha NumericVector, alpha parameter for beta distribution prior, one for each time unit
+//' @param beta NumericVector, beta parameter for beta distribution prior, one for each time unit
 //' @export
 // [[Rcpp::export]]
 double inf_mat_prior_cpp(const IntegerMatrix& infHist, const IntegerVector& n_alive, double alpha, double beta){
+//double inf_mat_prior_cpp(const IntegerMatrix& infHist, const IntegerVector& n_alive, const NumericVector& alphas, const NumericVector& betas){
+  // Prior on each year
   double m, n;
   double lik=0;
   for(int i = 0; i < n_alive.size(); ++i){
     m = sum(infHist(_,i));
     n = n_alive(i);
-
+    //lik += R::lbeta(m+alphas[i],n-m+betas[i])-R::lbeta(alphas[i],betas[i]);
     lik += R::lbeta(m+alpha,n-m+beta)-R::lbeta(alpha,beta);
   }
   return(lik);
@@ -140,6 +142,9 @@ IntegerMatrix infection_history_proposal_gibbs(const NumericVector& pars, // Mod
   // ########################################################################
   double m; // number of infections in a given year
   double n; // number alive in a particular year
+
+  //double alpha;
+  //double beta;
 
   double m_1_new, m_1_old,m_2_new,m_2_old;
   double n_1_new, n_1_old, n_2_new, n_2_old;
@@ -303,6 +308,9 @@ IntegerMatrix infection_history_proposal_gibbs(const NumericVector& pars, // Mod
 	  // Note that locs[j] is the index in the individual's inf hist
 	  year = sample_years(locs[j]);
 	
+	  // alpha = alphas[year];
+	  // beta = betas[year];
+
 	  if(prior_on_total){
 	    old_entry = newInfHist(indiv, year);
 	    // NUmber infected overall

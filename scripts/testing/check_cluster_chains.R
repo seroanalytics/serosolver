@@ -4,7 +4,7 @@ library(ggplot2)
 library(data.table)
 library(plyr)
 color_scheme_set("viridis")
-setwd("~/net/home/serosolver/outputs_Oct2018/")
+setwd("~/net/home/serosolver/outputs_titredep/")
 wd <- getwd()
 #j <- ""
 #setwd("~/net/home/serosolver/outputs_Aug2018/by_indiv")
@@ -17,22 +17,34 @@ for(j in folders){
   omg <- NULL
   maxSampno <- 999999999999
   minSampno <- -1
+  all_sampnos <- NULL
   for(chain in chains){
     tmp <- read.csv(chain)
     tmp <- tmp[tmp$sampno > 200000,]
+#    a <- ddply(tmp, ~chainNo, function(x) length(unique((x$sampno))))
+ #   chainUse <- a[which.max(a$V1),"chainNo"]
+  #  tmp <- tmp[tmp$chainNo == chainUse,]
+    
     maxSampno <- min(max(tmp$sampno),maxSampno)
     #print(min(tmp$sampno))
     minSampno <- max(min(tmp$sampno), minSampno)
+    tmp_sampnos <- unique(tmp$sampno)
+
+    if(!is.null(all_sampnos)){
+      all_sampnos <- intersect(all_sampnos, tmp_sampnos)
+    } else {
+      all_sampnos <- tmp_sampnos
+    }
     #print(minSampno)
     omg[[chain]] <- tmp
   }
   for(i in 1:length(omg)){
     tmp <- omg[[i]]
-    #a <- ddply(tmp, ~chainNo, function(x) length(unique((x$sampno))))
-    #chainUse <- a[which.max(a$V1),"chainNo"]
-    #tmp <- tmp[tmp$chainNo == chainUse,]
+    tmp <- tmp[tmp$sampno %in% all_sampnos,]
+
     
-    colnames_use<- intersect(colnames(tmp), c("sampno","mu","mu_short","tau","wane","sigma1","sigma2","error","lnlike","prior_prob"))
+    colnames_use<- intersect(colnames(tmp), c("sampno","mu","mu_short","tau","wane","sigma1","sigma2","gradient",
+                                              "error","lnlike","prior_prob"))
     tmp <- tmp[tmp$sampno > minSampno & tmp$sampno < maxSampno, colnames_use]
     
   
@@ -50,9 +62,9 @@ for(j in folders){
     infChain <- data.table::fread(infChainFile)
     infChain <- infChain[infChain$sampno > minSampno & infChain$sampno < maxSampno,]
     #########################
-   # a <- ddply(infChain, ~chainNo, function(x) length(unique(x$sampno)))
-  #  chainUse <- a[which.max(a$V1),"chainNo"]
-  #  infChain <- infChain[infChain$chainNo == chainUse,]
+    #a <- ddply(infChain, ~chainNo, function(x) length(unique(x$sampno)))
+    #chainUse <- a[which.max(a$V1),"chainNo"]
+    #infChain <- infChain[infChain$chainNo == chainUse,]
     ##########################
     
     n_strain <- max(infChain$j)
@@ -105,6 +117,12 @@ for(i in 1:length(infHistFiles)){
    data.table::setkey(infChain, "j","sampno")
    n_inf_chain <- infChain[,list(V1=sum(x)),by=key(infChain)]
    n_inf_chain <- cbind(n_inf_chain,"chain"=i)
+   all_combs <- data.table(expand.grid(j=min(n_inf_chain$j):max(n_inf_chain$j), sampno = unique(n_inf_chain$sampno),
+                                       chainNo=unique(n_inf_chain$chainNo),chain=unique(n_inf_chain$chain)))
+   cols <- colnames(n_inf_chain)[colnames(n_inf_chain) != "V1"]
+   all_combs <- fsetdiff(all_combs,n_inf_chain[,..cols])
+   all_combs$V1 <- 0
+   n_inf_chain <- rbind(n_inf_chain,all_combs)
    all_chain <- rbind(all_chain, n_inf_chain)
 } 
 #all_chain <- all_chain[all_chain$chain %in% c(2,3,4),]
