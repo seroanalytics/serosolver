@@ -166,33 +166,8 @@ inf_mat_prior_total_cpp <- function(infHist, n_alive, alpha, beta) {
     .Call('_serosolver_inf_mat_prior_total_cpp', PACKAGE = 'serosolver', infHist, n_alive, alpha, beta)
 }
 
-#' Gibbs sampling of infection histories
-#'
-#' Proposes a new matrix of infection histories by sampling from the prior on an individual's infection presence/absence in a particular time period, conditional on all other individuals in that time period. This allows us to integrate out the infection probability term for each time period. Should look at \code{\link{create_post_func}} for more details about the input parameters.
-#' @param pars NumericVector, the model parameters used to solve the model, extract likelihood function parameters and alpha/beta
-#' @param infHist IntegerMatrix the matrix of 1s and 0s corresponding to individual infection histories
-#' @param indivSampPropn double, what proportion of individuals to resample in this proposal step
-#' @param n_years_samp int, for each individual, how many time periods to resample infections for?
-#' @param ageMask IntegerVector, length of the number of individuals, with indices specifying first time period that an individual can be infected (indexed from 1, such that a value of 1 allows an individual to be infected in any time period)
-#' @param n_alive IntegerVector, length of the number of time periods that an individual could be infected, giving the number of individual alive in each time period
-#' @param swapPropn double, what proportion of proposals should be swap steps (ie. swap contents of two cells in infHist rather than adding/removing infections)
-#' @param swapDistance int, in a swap step, how many time steps either side of the chosen time period to swap with
-#' @param alpha double, alpha parameter for beta prior on infection probability
-#' @param beta double, beta parameter for beta prior on infection probability
-#' @param circulationTimes NumericVector, the times that each strain circulated
-#' @param circulationMapIndices IntegerVector, indexing vector from 1:number of strains
-#' @param samplingTimes NumericVector, the vector of real times that samples were taken
-#' @param indicesTitreDataSamples IntegerVector, How many rows in titre data correspond to each individual, sample and repeat?
-#' @param indicesTitreDataOverall IntegerVector, How many rows in the titre data correspond to each individual?
-#' @param indicesSamples IntegerVector, Split the sample times and runs for each individual
-#' @param measuredMapIndices IntegerVector, For each titre measurement, corresponding entry in antigenic map
-#' @param antigenicMapLong NumericVector, the collapsed cross reactivity map for long term boosting, after multiplying by sigma1
-#' @param antigenicMapShort NumericVector, the collapsed cross reactivity map for short term boosting, after multiplying by sigma2
-#' @param data NumericVector, the titre data for all individuals
-#' @param temp double, temperature for parallel tempering MCMC
-#' @return a matrix of 1s and 0s corresponding to the infection histories for all individuals
-infection_history_proposal_total_gibbs <- function(pars, infHist, indivSampPropn, n_years_samp, ageMask, strainMask, n_alive, swapPropn, swapDistance, alpha, beta, circulationTimes, circulationMapIndices, samplingTimes, indicesTitreDataSample, indicesTitreDataOverall, indicesSamples, measuredMapIndices, antigenicMapLong, antigenicMapShort, data, to_add, additional_arguments, DOBs, temp, version = 1L) {
-    .Call('_serosolver_infection_history_proposal_total_gibbs', PACKAGE = 'serosolver', pars, infHist, indivSampPropn, n_years_samp, ageMask, strainMask, n_alive, swapPropn, swapDistance, alpha, beta, circulationTimes, circulationMapIndices, samplingTimes, indicesTitreDataSample, indicesTitreDataOverall, indicesSamples, measuredMapIndices, antigenicMapLong, antigenicMapShort, data, to_add, additional_arguments, DOBs, temp, version)
+infection_history_proposal_gibbs_fast <- function(pars, infHist, indivSampPropn, n_years_samp_vec, ageMask, strainMask, n_alive, swapPropn, swapDistance, alpha, beta, circulationTimes, circulationMapIndices, samplingTimes, indicesTitreDataSample, indicesTitreDataOverall, indicesSamples, measuredMapIndices, antigenicMapLong, antigenicMapShort, data, to_add, additional_arguments, DOBs, solve_likelihood = TRUE, total_alive = -1L, temp = 1) {
+    .Call('_serosolver_infection_history_proposal_gibbs_fast', PACKAGE = 'serosolver', pars, infHist, indivSampPropn, n_years_samp_vec, ageMask, strainMask, n_alive, swapPropn, swapDistance, alpha, beta, circulationTimes, circulationMapIndices, samplingTimes, indicesTitreDataSample, indicesTitreDataOverall, indicesSamples, measuredMapIndices, antigenicMapLong, antigenicMapShort, data, to_add, additional_arguments, DOBs, solve_likelihood, total_alive, temp)
 }
 
 #' @export

@@ -102,6 +102,7 @@ IntegerMatrix infection_history_proposal_gibbs(const NumericVector& pars, // Mod
 					       int total_alive=-1,
 					       double temp=1
 					       ){
+  Rcpp::Rcout << "Wow..." << std::endl;
   // ########################################################################
   // Parameters to control indexing of data
   IntegerMatrix newInfHist(infHist);
@@ -307,8 +308,7 @@ IntegerMatrix infection_history_proposal_gibbs(const NumericVector& pars, // Mod
 	  // Get index for the matrix Z (not index for individual's inf hist)
 	  // Note that locs[j] is the index in the individual's inf hist
 	  year = sample_years(locs[j]);
-	
-	  // alpha = alphas[year];
+	  	  // alpha = alphas[year];
 	  // beta = betas[year];
 
 	  if(prior_on_total){
@@ -506,59 +506,35 @@ double inf_mat_prior_total_cpp(const IntegerMatrix& infHist, const int& n_alive,
 
 
 
-//' Gibbs sampling of infection histories
-//'
-//' Proposes a new matrix of infection histories by sampling from the prior on an individual's infection presence/absence in a particular time period, conditional on all other individuals in that time period. This allows us to integrate out the infection probability term for each time period. Should look at \code{\link{create_post_func}} for more details about the input parameters.
-//' @param pars NumericVector, the model parameters used to solve the model, extract likelihood function parameters and alpha/beta
-//' @param infHist IntegerMatrix the matrix of 1s and 0s corresponding to individual infection histories
-//' @param indivSampPropn double, what proportion of individuals to resample in this proposal step
-//' @param n_years_samp int, for each individual, how many time periods to resample infections for?
-//' @param ageMask IntegerVector, length of the number of individuals, with indices specifying first time period that an individual can be infected (indexed from 1, such that a value of 1 allows an individual to be infected in any time period)
-//' @param n_alive IntegerVector, length of the number of time periods that an individual could be infected, giving the number of individual alive in each time period
-//' @param swapPropn double, what proportion of proposals should be swap steps (ie. swap contents of two cells in infHist rather than adding/removing infections)
-//' @param swapDistance int, in a swap step, how many time steps either side of the chosen time period to swap with
-//' @param alpha double, alpha parameter for beta prior on infection probability
-//' @param beta double, beta parameter for beta prior on infection probability
-//' @param circulationTimes NumericVector, the times that each strain circulated
-//' @param circulationMapIndices IntegerVector, indexing vector from 1:number of strains
-//' @param samplingTimes NumericVector, the vector of real times that samples were taken
-//' @param indicesTitreDataSamples IntegerVector, How many rows in titre data correspond to each individual, sample and repeat?
-//' @param indicesTitreDataOverall IntegerVector, How many rows in the titre data correspond to each individual?
-//' @param indicesSamples IntegerVector, Split the sample times and runs for each individual
-//' @param measuredMapIndices IntegerVector, For each titre measurement, corresponding entry in antigenic map
-//' @param antigenicMapLong NumericVector, the collapsed cross reactivity map for long term boosting, after multiplying by sigma1
-//' @param antigenicMapShort NumericVector, the collapsed cross reactivity map for short term boosting, after multiplying by sigma2
-//' @param data NumericVector, the titre data for all individuals
-//' @param temp double, temperature for parallel tempering MCMC
-//' @return a matrix of 1s and 0s corresponding to the infection histories for all individuals
 // [[Rcpp::export]]
-IntegerMatrix infection_history_proposal_total_gibbs(const NumericVector& pars, // Model parameters
-						     const IntegerMatrix& infHist,  // Current infection history
-						     double indivSampPropn, // Proportion of individuals to resample
-						     int n_years_samp, // Number of years to resample for each year
-						     const IntegerVector& ageMask, // Age mask
-						     const IntegerVector& strainMask, // Age mask
-						     const int& n_alive, // Number of individuals alive in each year
-						     double swapPropn,
-						     int swapDistance,
-						     double alpha, // Alpha for prior
-						     double beta, // Beta for prior
-						     const NumericVector &circulationTimes,
-						     const IntegerVector &circulationMapIndices,
-						     const NumericVector &samplingTimes,
-						     const IntegerVector &indicesTitreDataSample, // How many rows in titre data correspond to each individual, sample and repeat?
-						     const IntegerVector &indicesTitreDataOverall, // How many rows in the titre data correspond to each individual?
-						     const IntegerVector &indicesSamples, // Split the sample times and runs for each individual
-						     const IntegerVector &measuredMapIndices, // For each titre measurement, corresponding entry in antigenic map
-						     const NumericVector &antigenicMapLong, 
-						     const NumericVector &antigenicMapShort,
-						     const NumericVector &data,
-						     const Nullable<NumericVector> &to_add,
-						     const Nullable<List> &additional_arguments,
-						     const NumericVector &DOBs,
-						     double temp,
-						     int version=1
-						     ){
+IntegerMatrix infection_history_proposal_gibbs_fast(const NumericVector& pars, // Model parameters
+						    const IntegerMatrix& infHist,  // Current infection history
+						    double indivSampPropn, // Proportion of individuals to resample
+						    const IntegerVector& n_years_samp_vec, // Number of years to resample for each year
+						    const IntegerVector& ageMask, // Age mask
+						    const IntegerVector& strainMask, // Age mask
+						    const IntegerVector& n_alive, // Number of individuals alive in each year
+						    double swapPropn,
+						    int swapDistance,
+						    double alpha, // Alpha for prior
+						    double beta, // Beta for prior
+						    const NumericVector &circulationTimes,
+						    const IntegerVector &circulationMapIndices,
+						    const NumericVector &samplingTimes,
+						    const IntegerVector &indicesTitreDataSample, // How many rows in titre data correspond to each individual, sample and repeat?
+						    const IntegerVector &indicesTitreDataOverall, // How many rows in the titre data correspond to each individual?
+						    const IntegerVector &indicesSamples, // Split the sample times and runs for each individual
+						    const IntegerVector &measuredMapIndices, // For each titre measurement, corresponding entry in antigenic map
+						    const NumericVector &antigenicMapLong, 
+						    const NumericVector &antigenicMapShort,
+						    const NumericVector &data,
+						    const Nullable<NumericVector> &to_add,
+						    const Nullable<List> &additional_arguments,
+						    const NumericVector &DOBs,
+						    bool solve_likelihood=true,
+						    int total_alive=-1,
+						    double temp=1
+						    ){
   // ########################################################################
   // Parameters to control indexing of data
   IntegerMatrix newInfHist(infHist);
@@ -590,13 +566,18 @@ IntegerMatrix infection_history_proposal_total_gibbs(const NumericVector& pars, 
   int maxYears = newInfHist.ncol(); // Number of epochs of circulation
   int n_samp_max; // Maximum number of years to sample
   int new_entry;
+  int old_entry;
+  int n_infected=0;
   int loc1, loc2, tmp;
-
+  int n_years_samp;
   // ########################################################################
 
   // ########################################################################
   double m; // number of infections in a given year
   double n; // number alive in a particular year
+
+  //double alpha;
+  //double beta;
 
   double m_1_new, m_1_old,m_2_new,m_2_old;
   double n_1_new, n_1_old, n_2_new, n_2_old;
@@ -609,15 +590,15 @@ IntegerMatrix infection_history_proposal_total_gibbs(const NumericVector& pars, 
   double new_prob; // Likelihood of new number
   double log_prob; // Likelihood ratio
   // ########################################################################
-
   
+  bool prior_on_total = total_alive > 0;
   // ########################################################################
   NumericVector to_add_tmp(1);
   //NumericVector to_add_tmp;
 
-  int n_infected = sum(infHist);
-  int old_entry;
-  
+  if(prior_on_total){
+    n_infected = sum(infHist);
+  }
   // ########################################################################
   // For each individual
   for(int i = 1; i <= n_indivs; ++i){
@@ -627,7 +608,8 @@ IntegerMatrix infection_history_proposal_total_gibbs(const NumericVector& pars, 
 
     startIndexData = indicesTitreDataOverall[i-1];
     endIndexData = indicesTitreDataOverall[i] - 1;
-    //    Rcpp::Rcout << "Indiv: " << i << std::endl;
+
+  //    Rcpp::Rcout << "Indiv: " << i << std::endl;
     if (to_add.isNotNull()){
       to_add_tmp = subset_nullable_vector(to_add, startIndexData, endIndexData);
     }
@@ -637,7 +619,8 @@ IntegerMatrix infection_history_proposal_total_gibbs(const NumericVector& pars, 
       // Index of this individual
       indiv = i-1;
       DOB = DOBs[indiv];
-    
+      n_years_samp = n_years_samp_vec[indiv];
+
       // Make vector of year indices to sample from
       // These are the indices in the matrix Z
       sample_years = seq(ageMask[indiv]-1,strainMask[indiv]-1);
@@ -646,10 +629,8 @@ IntegerMatrix infection_history_proposal_total_gibbs(const NumericVector& pars, 
       n_samp_max = sample_years.size();
       samps = seq(0, n_samp_max-1);    // Create vector from 0:length of alive years
       n_samp_max = std::min(n_years_samp, n_samp_max);
-   
       // Swap contents of a year for an individual
-
-      if(R::runif(0,1) > swapPropn){
+      if(R::runif(0,1) < swapPropn){
 	proposedIndivHist = newInfHist(indiv,_);
 	indivHist = newInfHist(indiv,_);
 	  
@@ -668,42 +649,68 @@ IntegerMatrix infection_history_proposal_total_gibbs(const NumericVector& pars, 
 	  proposedIndivHist(loc1) = proposedIndivHist(loc2);
 	  proposedIndivHist(loc2) = tmp;
 
+	  if(!prior_on_total){
+	    // Prior for previous state
+	    m_1_old = sum(newInfHist(_,loc1));      
+	    m_2_old = sum(newInfHist(_,loc2));
+	    
+	    // Number alive is number alive overall
+	    n_1_old = n_alive(loc1);
+	    n_2_old = n_alive(loc2);
 
-	  old_prob = likelihood_data_individual(pars, 
-						indivHist, 
-						circulationTimes, 
-						circulationMapIndices,
-						samplingTimes[Range(startIndexSamples, endIndexSamples)], 
-						indicesTitreDataSample[Range(startIndexSamples,endIndexSamples)], 
-						measuredMapIndices[Range(startIndexData,endIndexData)],
-						antigenicMapLong, 
-						antigenicMapShort,  
-						n_strains,
-						data[Range(startIndexData,endIndexData)],
-						to_add_tmp,
-						DOB,
-						additional_arguments);
+	    prior_1_old = R::lbeta(m_1_old + alpha, n_1_old - m_1_old + beta)-R::lbeta(alpha,beta);
+	    prior_2_old = R::lbeta(m_2_old + alpha, n_2_old - m_2_old + beta)-R::lbeta(alpha,beta);
+	    prior_old = prior_1_old + prior_2_old;
 
-	  new_prob = likelihood_data_individual(pars, proposedIndivHist,
-						circulationTimes, circulationMapIndices,
-						samplingTimes[Range(startIndexSamples, endIndexSamples)], 
-						indicesTitreDataSample[Range(startIndexSamples,endIndexSamples)], 
-						measuredMapIndices[Range(startIndexData,endIndexData)],
-						antigenicMapLong, 
-						antigenicMapShort,  
-						n_strains,
-						data[Range(startIndexData,endIndexData)],
-						to_add_tmp,
-						DOB,
-						additional_arguments);
-	  // As prior is on total number of infections and we aren't changing that, priors cancel
-	  log_prob = std::min<double>(0.0, new_prob - old_prob);
-	  if(version == 2){
-	    log_prob = 0;
+	    // Prior for new state
+	    m_1_new = sum(newInfHist(_,loc1)) - newInfHist(indiv,loc1) + proposedIndivHist(loc1);      
+	    m_2_new = sum(newInfHist(_,loc2)) - newInfHist(indiv,loc2) + proposedIndivHist(loc2);
+
+	    // Number alive is number alive overall
+	    n_1_new = n_alive(loc1);
+	    n_2_new = n_alive(loc2);
+
+	    prior_1_new = R::lbeta(m_1_new + alpha, n_1_new - m_1_new + beta)-R::lbeta(alpha,beta);
+	    prior_2_new = R::lbeta(m_2_new + alpha, n_2_new - m_2_new + beta)-R::lbeta(alpha,beta);
+	    prior_new = prior_1_new + prior_2_new;
+	  } else {
+	    prior_old = prior_new = 0;
 	  }
 
-	  rand1 = R::runif(0,1);
+	  if(solve_likelihood){
+	    old_prob = likelihood_data_individual(pars, 
+						  indivHist, 
+						  circulationTimes, 
+						  circulationMapIndices,
+						  samplingTimes[Range(startIndexSamples, endIndexSamples)], 
+						  indicesTitreDataSample[Range(startIndexSamples,endIndexSamples)], 
+						  measuredMapIndices[Range(startIndexData,endIndexData)],
+						  antigenicMapLong, 
+						  antigenicMapShort,  
+						  n_strains,
+						  data[Range(startIndexData,endIndexData)],
+						  to_add_tmp,
+						  DOB,
+						  additional_arguments);
 
+	    new_prob = likelihood_data_individual(pars, proposedIndivHist,
+						  circulationTimes, circulationMapIndices,
+						  samplingTimes[Range(startIndexSamples, endIndexSamples)], 
+						  indicesTitreDataSample[Range(startIndexSamples,endIndexSamples)], 
+						  measuredMapIndices[Range(startIndexData,endIndexData)],
+						  antigenicMapLong, 
+						  antigenicMapShort,  
+						  n_strains,
+						  data[Range(startIndexData,endIndexData)],
+						  to_add_tmp,
+						  DOB,
+						  additional_arguments);
+	  } else {
+	    old_prob = new_prob = 0;
+	  }
+
+	  log_prob = std::min<double>(0.0, (new_prob+prior_new)/temp - (old_prob+prior_old));
+	  rand1 = R::runif(0,1);
 	  if(log(rand1) < log_prob){
 	    // Update the entry in the new matrix Z
 	    tmp = newInfHist(indiv,loc1);
@@ -717,24 +724,41 @@ IntegerMatrix infection_history_proposal_total_gibbs(const NumericVector& pars, 
 	// Note sampling indices in the individual's infection history, not the matrix Z
 	locs = RcppArmadillo::sample(samps, n_samp_max, FALSE, NumericVector::create());
 	// For each sampled year
-	
-	
-	//Rcpp::Rcout << "Before proposal: " << indivHist << std::endl;
-	//Rcpp::Rcout << "N samps: " << n_samp_max << std::endl;
+	/*int k = sum(newInfHist);
+	  int nn = total_alive;
+	  for(int ii = 0; ii < locs.size(); ++ii){
+	  k -= newInfHist(indiv, sample_years(locs[ii]));
+	  }
+	  nn -= locs.size();
+	  proposedIndivHist = newInfHist(indiv,_);
+	  indivHist = newInfHist(indiv,_);
+	*/
 	for(int j = 0; j < n_samp_max; ++j){
 	  proposedIndivHist = newInfHist(indiv,_);
 	  indivHist = newInfHist(indiv,_);
+	
+	  //  ratio = (k + alpha)/(nn + alpha + beta);
 	  // Which year under consideration
 	  // Get index for the matrix Z (not index for individual's inf hist)
 	  // Note that locs[j] is the index in the individual's inf hist
 	  year = sample_years(locs[j]);
-	  // Get number of individuals that were alive and/or infected in that year,
-	  // less the current individual
-	  // Number of infections in this year, less infection status of this individual in this year
-	  old_entry = newInfHist(indiv,year);
-	  m = n_infected - old_entry;
-	  // Number alive is number alive overall
-	  n = n_alive - 1;
+	
+	  // alpha = alphas[year];
+	  // beta = betas[year];
+
+	  if(prior_on_total){
+	    old_entry = newInfHist(indiv, year);
+	    // NUmber infected overall
+	    m = n_infected - old_entry;
+	    // Number alive is number alive overall
+	    n = total_alive - 1;
+	  } else {
+	    // Get number of individuals that were alive and/or infected in that year,
+	    // less the current individual
+	    // Number of infections in this year, less infection status of this individual in this year
+	    m = sum(newInfHist(_,year)) - newInfHist(indiv,year);     
+	    n = n_alive(year) - 1;
+	  }
 	  // Work out proposal ratio - prior from alpha, beta and number of other infections
 	  ratio = (m + alpha)/(n + alpha + beta);
 	  // Propose 1 or 0 based on this ratio
@@ -742,46 +766,49 @@ IntegerMatrix infection_history_proposal_total_gibbs(const NumericVector& pars, 
 	  //if(indivRatioRands[i] < ratio){
 	  if(rand1 < ratio){
 	    new_entry = 1;
+	    //k++;
 	    proposedIndivHist(year) = 1;
 	  } else {
 	    new_entry = 0;
 	    proposedIndivHist(year) = 0;
 	  }
+	  //nn++;
 	
-	  //Rcpp::Rcout << "After proposal: " << proposedIndivHist << std::endl;
 	  // If proposing a change, need to check likelihood ratio
 	  if(new_entry != newInfHist(indiv,year)){
-	    old_prob = likelihood_data_individual(pars, indivHist, circulationTimes, circulationMapIndices,
-						  samplingTimes[Range(startIndexSamples, endIndexSamples)], 
-						  indicesTitreDataSample[Range(startIndexSamples,endIndexSamples)], 
-						  measuredMapIndices[Range(startIndexData,endIndexData)],
-						  antigenicMapLong, 
-						  antigenicMapShort,  
-						  n_strains,
-						  data[Range(startIndexData,endIndexData)],
-						  to_add_tmp,
-						  DOB,
-						  additional_arguments);
-	    new_prob = likelihood_data_individual(pars, proposedIndivHist,
-						  circulationTimes, circulationMapIndices,
-						  samplingTimes[Range(startIndexSamples, endIndexSamples)], 
-						  indicesTitreDataSample[Range(startIndexSamples,endIndexSamples)], 
-						  measuredMapIndices[Range(startIndexData,endIndexData)],
-						  antigenicMapLong, 
-						  antigenicMapShort,  
-						  n_strains,
-						  data[Range(startIndexData,endIndexData)],
-						  to_add_tmp,
-						  DOB,
-						  additional_arguments);
-	    log_prob = std::min<double>(0.0, new_prob - old_prob);
-	    if(version == 2){
-	      log_prob = 0;
+	    if(solve_likelihood){
+	      old_prob = likelihood_data_individual(pars, indivHist, circulationTimes, circulationMapIndices,
+						    samplingTimes[Range(startIndexSamples, endIndexSamples)], 
+						    indicesTitreDataSample[Range(startIndexSamples,endIndexSamples)], 
+						    measuredMapIndices[Range(startIndexData,endIndexData)],
+						    antigenicMapLong, 
+						    antigenicMapShort,  
+						    n_strains,
+						    data[Range(startIndexData,endIndexData)],
+						    to_add_tmp,
+						    DOB,
+						    additional_arguments);
+	      new_prob = likelihood_data_individual(pars, proposedIndivHist,
+						    circulationTimes, circulationMapIndices,
+						    samplingTimes[Range(startIndexSamples, endIndexSamples)], 
+						    indicesTitreDataSample[Range(startIndexSamples,endIndexSamples)], 
+						    measuredMapIndices[Range(startIndexData,endIndexData)],
+						    antigenicMapLong, 
+						    antigenicMapShort,  
+						    n_strains,
+						    data[Range(startIndexData,endIndexData)],
+						    to_add_tmp,
+						    DOB,
+						    additional_arguments);
+	    } else {
+	      old_prob = new_prob = 0;
 	    }
-	  
+	    log_prob = std::min<double>(0.0, new_prob - old_prob);
 	    rand1 = R::runif(0,1);
 	    if(log(rand1) < log_prob/temp){
-	      n_infected = m + new_entry;
+	      if(prior_on_total){
+		n_infected = m + new_entry;
+	      }
 	      // Update the entry in the new matrix Z
 	      newInfHist(indiv, year) = new_entry;
 	      //newInfHist(indiv, _) = proposedIndivHist;
