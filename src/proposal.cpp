@@ -181,6 +181,7 @@ IntegerMatrix infection_history_proposal_gibbs(const NumericVector& pars, // Mod
 
     // Choose whether to sample this individual or not
     if(R::runif(0,1) < indivSampPropn){
+
       // Index of this individual
       indiv = i-1;
       DOB = DOBs[indiv];
@@ -198,14 +199,14 @@ IntegerMatrix infection_history_proposal_gibbs(const NumericVector& pars, // Mod
       if(R::runif(0,1) < swapPropn){
 	proposedIndivHist = newInfHist(indiv,_);
 	indivHist = newInfHist(indiv,_);
-	  
 	loc1 = samps(floor(R::runif(0,samps.size())));
 	swapSize = seq(-swapDistance,swapDistance);
-	loc2 = loc1 + swapSize(floor(R::runif(0,swapSize.size())));
 
-	if(loc2 < 0) loc2 = loc2 + samps.size();
-	if(loc2 >= samps.size()) loc2 = loc2 - floor(loc2/samps.size())*samps.size();
-	
+	loc2 = loc1 + swapSize(floor(R::runif(0,swapSize.size())));	
+
+	while(loc2 < 0) loc2 +=  samps.size();
+	if(loc2 >= samps.size()) loc2 -= floor(loc2/samps.size())*samps.size();
+ 
 	loc1 = sample_years(loc1);
 	loc2 = sample_years(loc2);
 

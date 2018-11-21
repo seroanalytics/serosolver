@@ -8,7 +8,7 @@ create_run_MCMC_single_iter_fn <- function(unfixed_pars,unfixed_par_length,
     f <- function(i, par_i,
                   current_pars,infectionHistories,
                   likelihoods, total_likelihood,
-                  prior_prob, posterior,,
+                  prior_prob, posterior,
                   tempaccepted,tempiter,
                   steps,temp){
         ## Whether to swap entire year contents or not - only applies to gibbs sampling

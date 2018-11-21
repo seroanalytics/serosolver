@@ -234,7 +234,6 @@ run_MCMC <- function(parTab,
                                                         function_type=2,
                                                         ...))
     }
-    
     ## If using random effects on mu, need to include hyperprior term on mu
     ## We can't do this in the main posterior function, because this term
     ## applies to the overall posterior whereas the main posterior function
@@ -646,8 +645,8 @@ run_MCMC <- function(parTab,
     if(message_slack && !is.null(message_slack_pars)){
         text_slackr(paste0(message_slack_pars$username, " is done!"))
     }
-    return(list("chain_file"=mcmc_chain_file,"history_file"=infectionHistory_file,
-                "covMat"=covMat,"step_scale"=steps))
+    return(list(chain_file=mcmc_chain_file,history_file=infectionHistory_file,
+                covMat=covMat,step_scale=steps))
 }
 
 

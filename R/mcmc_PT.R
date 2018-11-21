@@ -13,8 +13,8 @@ run_MCMC_pt <- function(parTab,
                         measurement_random_effects=FALSE,
                         OPT_TUNING=0.1,
                         temp=1,
-                        solve_likelihood=TRUE
-                        n_alive=NULL
+                        solve_likelihood=TRUE,
+                        n_alive=NULL,
                         ...){
     ## Extract MCMC parameters
     mcmcPars_used <- c("iterations"=50000,"popt"=0.44,"popt_hist"=0.44,"opt_freq"=2000,"thin"=1,
