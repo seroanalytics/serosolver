@@ -160,7 +160,7 @@ create_posterior_func <- function(parTab,
                                       antigenicMapLong, antigenicMapShort, DOBs, additional_arguments)
                 liks <- r_likelihood(y, titres, theta, expected_indices, measurement_bias)
                 liks <- sum_buckets(liks, indicesOverallDiff)
-                
+
                 if (explicit_lambda) {
                     liks <- liks + calc_lambda_probs_indiv(lambdas, infectionHistories, ageMask, strainMask)
                 }

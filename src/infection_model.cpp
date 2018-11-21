@@ -30,21 +30,20 @@ void setup_waning_and_masked_cumulative(const NumericVector &theta,
      ======== SET UP WANING RATE VECTOR =========
      ========================================= */ 
   // If not linear
-  if(wane_type == 1){
+  if(wane_type == 0){
+    waning[0] = MAX(0, 1.0-wane*time);// Else if linear
+  } else {
     // Calculate the waning at the time since infection
     val= wane_function(theta, time, wane);
     waning[0] = MAX(0, 1.0-val);
-  } else {
-    waning[0] = MAX(0, 1.0-wane*time);// Else if linear
   }
 
   // Seniority
-  seniority[0] = 0;
+  seniority[0] = 1;
 
   /* =========================================
      ====== SET UP CUMULATIVE INFECTIONS =====
-     ========================================= */ 
-  
+     ========================================= */   
   if(circulation_time > sampling_time) masked_infection_history[0]=0;
   else masked_infection_history[0] = infection_history[0];
   
@@ -70,15 +69,15 @@ void setup_waning_and_masked_cumulative(const NumericVector &theta,
        ======== SET UP WANING RATE VECTOR =========
        ========================================= */ 
     // If not linear
-    if(wane_type == 1){
+    if(wane_type == 0){
+      waning[i] = MAX(0, 1.0-wane*time); // Else linear
+    } else {
       val= wane_function(theta, time, wane);
       waning[i] = MAX(0, 1.0-val);
-    } else {
-      waning[i] = MAX(0, 1.0-wane*time); // Else linear
     }
 
     // Seniority
-    seniority[i] = MAX(0, 1.0 - tau*cumu_infection_history[i-1]);
+    seniority[i] = MAX(0, 1.0 - tau*(cumu_infection_history[i]-1));
   }  
 }
 
