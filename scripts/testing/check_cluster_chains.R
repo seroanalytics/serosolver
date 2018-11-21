@@ -4,63 +4,77 @@ library(ggplot2)
 library(data.table)
 library(plyr)
 color_scheme_set("viridis")
-setwd("~/net/home/serosolver/outputs_titredep/")
+setwd("~/net/home/serosolver/outputs_clustered/")
 wd <- getwd()
 #j <- ""
 #setwd("~/net/home/serosolver/outputs_Aug2018/by_indiv")
 folders <- list.files(include.dirs = TRUE)
 for(j in folders){
     print(j)
-  setwd(wd)
-  setwd(paste0(j))
-  chains <- list.files(pattern="chain.csv")
-  omg <- NULL
-  maxSampno <- 999999999999
-  minSampno <- -1
-  all_sampnos <- NULL
-  for(chain in chains){
-    tmp <- read.csv(chain)
-    tmp <- tmp[tmp$sampno > 200000,]
+    setwd(wd)
+    setwd(paste0(j))
+    chains <- list.files(pattern="chain.csv")
+    omg <- NULL
+    maxSampno <- 999999999999
+    minSampno <- -1
+    all_sampnos <- NULL
+    index <- 1
+    for(chain in chains){
+        tmp <- read.csv(chain)
+        tmp <- tmp[tmp$sampno > 200000,]
+        if(max(tmp$sampno) < 3000000){
+            next
+        }
+        #maxSampno <- max(tmp$sampno)
 #    a <- ddply(tmp, ~chainNo, function(x) length(unique((x$sampno))))
  #   chainUse <- a[which.max(a$V1),"chainNo"]
   #  tmp <- tmp[tmp$chainNo == chainUse,]
-    
-    maxSampno <- min(max(tmp$sampno),maxSampno)
-    #print(min(tmp$sampno))
-    minSampno <- max(min(tmp$sampno), minSampno)
-    tmp_sampnos <- unique(tmp$sampno)
+        
+        maxSampno <- min(max(tmp$sampno),maxSampno)
+                                        #print(min(tmp$sampno))
+        minSampno <- max(min(tmp$sampno), minSampno)
+        tmp_sampnos <- unique(tmp$sampno)
 
-    if(!is.null(all_sampnos)){
-      all_sampnos <- intersect(all_sampnos, tmp_sampnos)
-    } else {
-      all_sampnos <- tmp_sampnos
+        if(!is.null(all_sampnos)){
+            all_sampnos <- intersect(all_sampnos, tmp_sampnos)
+        } else {
+            all_sampnos <- tmp_sampnos
+        }
+                                        #print(minSampno)
+        omg[[index]] <- tmp
+        index <- index + 1
     }
-    #print(minSampno)
-    omg[[chain]] <- tmp
-  }
-  for(i in 1:length(omg)){
-    tmp <- omg[[i]]
-    tmp <- tmp[tmp$sampno %in% all_sampnos,]
+    index <- 1
+    for(i in 1:length(omg)){
+        tmp <- omg[[i]]
+        print(max(tmp$sampno))
+        tmp <- tmp[tmp$sampno %in% all_sampnos,]
 
-    
-    colnames_use<- intersect(colnames(tmp), c("sampno","mu","mu_short","tau","wane","sigma1","sigma2","gradient",
-                                              "error","lnlike","prior_prob"))
-    tmp <- tmp[tmp$sampno > minSampno & tmp$sampno < maxSampno, colnames_use]
-    
-  
-    omg[[i]] <- as.mcmc(tmp)
-    #tmp <- tmp[tmp$sampno < 8000,c("mu","mu_short","tau","wane","sigma1","sigma2","error","lnlike")]
-  }
-  omg <- as.mcmc.list(omg)
-#omg <- as.mcmc.list(omg[c(1,2,5,6,8)])
-#omg <- omg[c(-1,-6)]
+        
+        colnames_use<- intersect(colnames(tmp), c("sampno","mu","mu_short","tau","wane","sigma1","sigma2","gradient",
+                                                  "error","lnlike","prior_prob"))
+        tmp <- tmp[tmp$sampno > minSampno, colnames_use]
+        
+        
+        omg[[i]] <- as.mcmc(tmp)
+                                        #tmp <- tmp[tmp$sampno < 8000,c("mu","mu_short","tau","wane","sigma1","sigma2","error","lnlike")]
+    }
+    omg <- as.mcmc.list(omg)
+                                        #omg <- as.mcmc.list(omg[c(1,2,5,6,8)])
+                                        #omg <- omg[c(-1,-6)]
   
   infHistFiles <- list.files(pattern="infectionHistories.csv")
   all_chain <- total_inf_chain <- NULL
   for(i in 1:length(infHistFiles)){
     infChainFile <- infHistFiles[i]
     infChain <- data.table::fread(infChainFile)
+    print(max(infChain$sampno))
+    if(max(infChain$sampno) < 3000000){
+        next
+    }
+    
     infChain <- infChain[infChain$sampno > minSampno & infChain$sampno < maxSampno,]
+
     #########################
     #a <- ddply(infChain, ~chainNo, function(x) length(unique(x$sampno)))
     #chainUse <- a[which.max(a$V1),"chainNo"]
