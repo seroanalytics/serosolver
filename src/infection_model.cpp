@@ -451,6 +451,21 @@ NumericVector create_cross_reactivity_vector(NumericVector x, double sigma) {
   return(x2);
 }
 
+//' Convert melted antigenic map to cross reactivity
+//'
+//' Multiplies all elements of the provided vector, x such that y = 1 - sigma*x. Also makes sure that no calculated value is less than 0
+//' @param x the melted antigenic map
+//' @param sigma the cross reactivity waning parameter
+//' @return a vector of cross reactivity
+// [[Rcpp::export]]
+NumericVector create_cross_reactivity_vector_mu(NumericVector x, double sigma, double mu) {
+  NumericVector x2(x.size());
+  for(int i = 0; i < x2.size(); ++i){
+    x2[i] = mu*MAX(1 - x[i]*sigma,0);
+  }
+  return(x2);
+}
+
 
  
 //' Original model reimplementation

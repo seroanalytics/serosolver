@@ -84,6 +84,16 @@ create_cross_reactivity_vector <- function(x, sigma) {
     .Call('_serosolver_create_cross_reactivity_vector', PACKAGE = 'serosolver', x, sigma)
 }
 
+#' Convert melted antigenic map to cross reactivity
+#'
+#' Multiplies all elements of the provided vector, x such that y = 1 - sigma*x. Also makes sure that no calculated value is less than 0
+#' @param x the melted antigenic map
+#' @param sigma the cross reactivity waning parameter
+#' @return a vector of cross reactivity
+create_cross_reactivity_vector_mu <- function(x, sigma, mu) {
+    .Call('_serosolver_create_cross_reactivity_vector_mu', PACKAGE = 'serosolver', x, sigma, mu)
+}
+
 #' Original model reimplementation
 #' @export
 c_model_original <- function(n, nsamp, x, theta, dd, dd2, t_sample) {
@@ -166,8 +176,8 @@ inf_mat_prior_total_cpp <- function(infHist, n_alive, alpha, beta) {
     .Call('_serosolver_inf_mat_prior_total_cpp', PACKAGE = 'serosolver', infHist, n_alive, alpha, beta)
 }
 
-infection_history_proposal_gibbs_fast <- function(pars, infHist, indivSampPropn, n_years_samp_vec, ageMask, strainMask, n_alive, swapPropn, swapDistance, alpha, beta, circulationTimes, circulationMapIndices, samplingTimes, indicesTitreDataSample, indicesTitreDataOverall, indicesSamples, measuredMapIndices, antigenicMapLong, antigenicMapShort, data, to_add, additional_arguments, DOBs, solve_likelihood = TRUE, total_alive = -1L, temp = 1) {
-    .Call('_serosolver_infection_history_proposal_gibbs_fast', PACKAGE = 'serosolver', pars, infHist, indivSampPropn, n_years_samp_vec, ageMask, strainMask, n_alive, swapPropn, swapDistance, alpha, beta, circulationTimes, circulationMapIndices, samplingTimes, indicesTitreDataSample, indicesTitreDataOverall, indicesSamples, measuredMapIndices, antigenicMapLong, antigenicMapShort, data, to_add, additional_arguments, DOBs, solve_likelihood, total_alive, temp)
+infection_history_proposal_gibbs_fast <- function(theta, infection_history_mat, old_probsA, sampled_indivs, n_years_samp_vec, age_mask, strain_mask, n_alive, swap_propn, swap_distance, alpha, beta, circulation_times, circulation_times_indices, sample_times, rows_per_indiv_in_samples, cum_nrows_per_individual_in_data, nrows_per_blood_sample, measurement_strain_indices, antigenic_map_long, antigenic_map_short, data, temp = 1, solve_likelihood = TRUE) {
+    .Call('_serosolver_infection_history_proposal_gibbs_fast', PACKAGE = 'serosolver', theta, infection_history_mat, old_probsA, sampled_indivs, n_years_samp_vec, age_mask, strain_mask, n_alive, swap_propn, swap_distance, alpha, beta, circulation_times, circulation_times_indices, sample_times, rows_per_indiv_in_samples, cum_nrows_per_individual_in_data, nrows_per_blood_sample, measurement_strain_indices, antigenic_map_long, antigenic_map_short, data, temp, solve_likelihood)
 }
 
 #' @export
@@ -183,6 +193,11 @@ likelihood_func_fast <- function(theta, obs, predicted_titres) {
 #' @export
 likelihood_func_fast_native <- function(theta, obs, predicted_titres) {
     .Call('_serosolver_likelihood_func_fast_native', PACKAGE = 'serosolver', theta, obs, predicted_titres)
+}
+
+#' @export
+titre_data_fast_mu <- function(theta, infection_history_mat, circulation_times, circulation_times_indices, sample_times, rows_per_indiv_in_samples, cum_nrows_per_individual_in_data, nrows_per_blood_sample, measurement_strain_indices, antigenic_map_long, antigenic_map_short) {
+    .Call('_serosolver_titre_data_fast_mu', PACKAGE = 'serosolver', theta, infection_history_mat, circulation_times, circulation_times_indices, sample_times, rows_per_indiv_in_samples, cum_nrows_per_individual_in_data, nrows_per_blood_sample, measurement_strain_indices, antigenic_map_long, antigenic_map_short)
 }
 
 #' Function to calculate non-linear waning
