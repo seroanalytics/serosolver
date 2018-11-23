@@ -436,6 +436,8 @@ NumericVector sum_buckets(NumericVector a, NumericVector buckets){
   return(results);
 }
 
+
+
 //' Convert melted antigenic map to cross reactivity
 //'
 //' Multiplies all elements of the provided vector, x such that y = 1 - sigma*x. Also makes sure that no calculated value is less than 0

@@ -269,3 +269,16 @@ NumericVector titre_data_fast_mu(const NumericVector &theta,
   }  
   return(predicted_titres);
 }
+
+
+//' @export
+//[[Rcpp::export]]
+NumericVector sum_likelihoods(NumericVector liks, IntegerVector indices, int n_indivs){
+  NumericVector results(n_indivs);
+  int end = liks.size();
+  for(int i = 0; i < end; ++i){
+    results[indices[i]] += liks[i];
+  }
+  return(results);
+}
+

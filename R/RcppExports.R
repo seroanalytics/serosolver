@@ -176,8 +176,8 @@ inf_mat_prior_total_cpp <- function(infHist, n_alive, alpha, beta) {
     .Call('_serosolver_inf_mat_prior_total_cpp', PACKAGE = 'serosolver', infHist, n_alive, alpha, beta)
 }
 
-infection_history_proposal_gibbs_fast <- function(theta, infection_history_mat, old_probsA, sampled_indivs, n_years_samp_vec, age_mask, strain_mask, n_alive, swap_propn, swap_distance, alpha, beta, circulation_times, circulation_times_indices, sample_times, rows_per_indiv_in_samples, cum_nrows_per_individual_in_data, nrows_per_blood_sample, measurement_strain_indices, antigenic_map_long, antigenic_map_short, data, temp = 1, solve_likelihood = TRUE) {
-    .Call('_serosolver_infection_history_proposal_gibbs_fast', PACKAGE = 'serosolver', theta, infection_history_mat, old_probsA, sampled_indivs, n_years_samp_vec, age_mask, strain_mask, n_alive, swap_propn, swap_distance, alpha, beta, circulation_times, circulation_times_indices, sample_times, rows_per_indiv_in_samples, cum_nrows_per_individual_in_data, nrows_per_blood_sample, measurement_strain_indices, antigenic_map_long, antigenic_map_short, data, temp, solve_likelihood)
+infection_history_proposal_gibbs_fast <- function(theta, infection_history_mat, old_probsA, sampled_indivs, n_years_samp_vec, age_mask, strain_mask, n_alive, swap_propn, swap_distance, alpha, beta, circulation_times, circulation_times_indices, sample_times, rows_per_indiv_in_samples, cum_nrows_per_individual_in_data, cum_nrows_per_individual_in_repeat_data, nrows_per_blood_sample, measurement_strain_indices, antigenic_map_long, antigenic_map_short, data, repeat_indices, temp = 1, solve_likelihood = TRUE) {
+    .Call('_serosolver_infection_history_proposal_gibbs_fast', PACKAGE = 'serosolver', theta, infection_history_mat, old_probsA, sampled_indivs, n_years_samp_vec, age_mask, strain_mask, n_alive, swap_propn, swap_distance, alpha, beta, circulation_times, circulation_times_indices, sample_times, rows_per_indiv_in_samples, cum_nrows_per_individual_in_data, cum_nrows_per_individual_in_repeat_data, nrows_per_blood_sample, measurement_strain_indices, antigenic_map_long, antigenic_map_short, data, repeat_indices, temp, solve_likelihood)
 }
 
 #' @export
@@ -198,6 +198,11 @@ likelihood_func_fast_native <- function(theta, obs, predicted_titres) {
 #' @export
 titre_data_fast_mu <- function(theta, infection_history_mat, circulation_times, circulation_times_indices, sample_times, rows_per_indiv_in_samples, cum_nrows_per_individual_in_data, nrows_per_blood_sample, measurement_strain_indices, antigenic_map_long, antigenic_map_short) {
     .Call('_serosolver_titre_data_fast_mu', PACKAGE = 'serosolver', theta, infection_history_mat, circulation_times, circulation_times_indices, sample_times, rows_per_indiv_in_samples, cum_nrows_per_individual_in_data, nrows_per_blood_sample, measurement_strain_indices, antigenic_map_long, antigenic_map_short)
+}
+
+#' @export
+sum_likelihoods <- function(liks, indices, n_indivs) {
+    .Call('_serosolver_sum_likelihoods', PACKAGE = 'serosolver', liks, indices, n_indivs)
 }
 
 #' Function to calculate non-linear waning

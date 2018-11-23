@@ -507,14 +507,14 @@ double inf_mat_prior_total_cpp(const IntegerMatrix& infHist, const int& n_alive,
 
 // @export
 // [[Rcpp::export]]
-List infection_history_proposal_gibbs_fast(const NumericVector& theta, // Model parameters
-					   const IntegerMatrix& infection_history_mat,  // Current infection history
-					   const NumericVector& old_probsA,
-					   const IntegerVector& sampled_indivs,
-					   const IntegerVector& n_years_samp_vec,
-					   const IntegerVector& age_mask, // Age mask
-					   const IntegerVector& strain_mask, // Age mask
-					   const IntegerVector& n_alive, // Number of individuals alive in each year
+List infection_history_proposal_gibbs_fast(const NumericVector &theta, // Model parameters
+					   const IntegerMatrix &infection_history_mat,  // Current infection history
+					   const NumericVector &old_probsA,
+					   const IntegerVector &sampled_indivs,
+					   const IntegerVector &n_years_samp_vec,
+					   const IntegerVector &age_mask, // Age mask
+					   const IntegerVector &strain_mask, // Age mask
+					   const IntegerVector &n_alive, // Number of individuals alive in each year
 					   const double &swap_propn,
 					   const int &swap_distance,
 					   const double &alpha, // Alpha for prior
@@ -522,50 +522,58 @@ List infection_history_proposal_gibbs_fast(const NumericVector& theta, // Model 
 					   const NumericVector &circulation_times,
 					   const IntegerVector &circulation_times_indices,
 					   const NumericVector &sample_times,
-					   const IntegerVector &rows_per_indiv_in_samples, // How many rows in titre data correspond to each individual, sample and repeat?
+					   const IntegerVector &rows_per_indiv_in_samples, // How many rows in unique sample times table correspond to each individual?
 					   const IntegerVector &cum_nrows_per_individual_in_data, // How many rows in the titre data correspond to each individual?
-					   const IntegerVector &nrows_per_blood_sample, // Split the sample times and runs for each individual
+					   const IntegerVector &cum_nrows_per_individual_in_repeat_data, // How many rows in the repeat titre data correspond to each individual?
+					   const IntegerVector &nrows_per_blood_sample, // How many rows in the titre data table correspond to each unique individual + sample time + repeat?
 					   const IntegerVector &measurement_strain_indices, // For each titre measurement, corresponding entry in antigenic map
 					   const NumericVector &antigenic_map_long, 
 					   const NumericVector &antigenic_map_short,
 					   const NumericVector &data,
+					   const NumericVector &repeat_data,
+					   const IntegerVector &repeat_indices,
 					   const double temp=1,
 					   bool solve_likelihood=true
 					   ){
   // ########################################################################
   // Parameters to control indexing of data
-  IntegerMatrix new_infection_history_mat(infection_history_mat); // Can this be avoided?
-  NumericVector predicted_titres(data.size());
-  NumericVector old_probs = clone(old_probsA);
+  IntegerMatrix new_infection_history_mat(infection_history_mat); // Can this be avoided? Create a copy of the inf hist matrix
+  int n_titres_total = data.size(); // How many titres are there in total?
+  NumericVector predicted_titres(n_titres_total); // Vector to store predicted titres
+  NumericVector old_probs = clone(old_probsA); // Create a copy of the current old probs
 
   // These can be pre-computed
-  int n_indivs = infection_history_mat.nrow(); 
-  int number_strains = infection_history_mat.ncol();
-  int n_sampled = sampled_indivs.size();
+  int n_indivs = infection_history_mat.nrow();  // How many individuals are there in total?
+  int number_strains = infection_history_mat.ncol(); // How many possible years are we interested in?
+  int n_sampled = sampled_indivs.size(); // How many individuals are we actually investigating?
 
   // These indices allow us to step through the titre data vector
   // as if it were a matrix ie. number of rows for each individual
   // at a time
-  int index_in_samples;
-  int end_index_in_samples;
-  int start_index_in_data;
-  int end_index_in_data;
-  int tmp_titre_index;
-  int inf_map_index;
-  int index;
-  int number_samples;
-  int max_infections;
-  int n_titres;
+  int index_in_samples; // Index in sample times vector to point to
+  int end_index_in_samples; // Index in sample times vector to end at
+  int start_index_in_data; // Index in titre data to start at
+  int end_index_in_data; // Index in titre data to end at
 
-  double sampling_time;
-  double time;
+  int start_index_in_repeat_data; // Index in repeat titre data to start at
+  int end_index_in_repeat_data; // Index in repeat titre data to end at
 
-  IntegerVector new_infection_history(number_strains);
-  IntegerVector infection_history(number_strains);
+  int tmp_titre_index; // Index in titre data that we are currently at
+  int inf_map_index; // Index in antigenic map of the infecting strain
+  int index; // 
+  int number_samples; // Tmp store number of blood samples for this individual
+  int max_infections; // Tmp store of number of infections for this individual
+  int n_titres; // Tmp store of number of titres to predict for this sample
+ 
+  double sampling_time; // Tmp store time that blood sample taken
+  double time; // Tmp store time between sample and exposure
+
+  IntegerVector new_infection_history(number_strains); // New proposed infection history
+  IntegerVector infection_history(number_strains); // Old infection history
   LogicalVector indices;
 
-  NumericVector infection_times;
-  IntegerVector infection_strain_indices_tmp;
+  NumericVector infection_times; // Tmp store infection times for this infection history, combined with indices
+  IntegerVector infection_strain_indices_tmp; // Tmp store which index in antigenic map these infection times relate to
 
   double mu = theta["mu"];
   double mu_short = theta["mu_short"];
@@ -577,26 +585,20 @@ List infection_history_proposal_gibbs_fast(const NumericVector& theta, // Model 
   // ########################################################################
 
   // ########################################################################
-  IntegerVector infs_in_year;
-  IntegerVector samps;
-  IntegerVector sample_years;
-  IntegerVector locs;
-  IntegerVector proposedIndivHist;
-  IntegerVector indivHist;
-  IntegerVector swapSize;
+  IntegerVector samps; // Variable vector to sample from
+  IntegerVector locs; // Vector of locations that were sampled
   // ########################################################################
 
   // ########################################################################
   int indiv; // Index of the individual under consideration
   int year; // Index of year being updated
 
-  int n_samp_max; // Maximum number of years to sample
-  int n_samp_length;
+  int n_samp_max; // Maximum number of years to sample for individual
+  int n_samp_length; // Number of years that COULD be sampled for this individual
   int new_entry;
   int old_entry;
-  int n_infected=0;
-  int loc1, loc2, tmp;
-  int n_years_samp;
+  int loc1, loc2, tmp; // Which indices are we looking at?
+  int n_years_samp; // How many years to sample for this individual?
   int loc1_val_old, loc2_val_old;
 
   // ########################################################################
@@ -623,60 +625,49 @@ List infection_history_proposal_gibbs_fast(const NumericVector& theta, // Model 
   const double den = sd*M_SQRT2;
   const double max_titre = theta["MAX_TITRE"];
   const double log_const = log(0.5);
-  double tmp_titre;
   // ########################################################################
   
   // ########################################################################
   // For each individual
   for(int i = 0; i < n_sampled; ++i){
-    //Rcpp::Rcout << std::endl << std::endl << std::endl;
-    Rcpp::Rcout << "Sampled indiv: " << sampled_indivs[i] << std::endl;
+    // Get index of individual under consideration and their current likelihood
     indiv = sampled_indivs[i]-1;
-    //Rcpp::Rcout << "Indiv: " << indiv << std::endl;
-    //Rcpp::Rcout << "Indiv: " << indiv << std::endl;
-    old_prob = old_probsA[indiv];
+    old_prob = old_probsA[indiv];  
 
     // Indexing for data upkeep
     index_in_samples = rows_per_indiv_in_samples[indiv];
     end_index_in_samples = rows_per_indiv_in_samples[indiv+1] - 1;
-
     number_samples = end_index_in_samples - index_in_samples;      
-    start_index_in_data = cum_nrows_per_individual_in_data[indiv];
 
-    n_years_samp = n_years_samp_vec[indiv];
-    n_samp_length  = strain_mask[indiv] - age_mask[indiv];
-    n_samp_max = std::min(n_years_samp, n_samp_length);      
+    n_years_samp = n_years_samp_vec[indiv]; // How many years are we intending to resample from for this individual?
+    n_samp_length  = strain_mask[indiv] - age_mask[indiv]; // How many years maximum can we sample from?
+    n_samp_max = std::min(n_years_samp, n_samp_length); // Use the smaller of these two numbers
 
     // Swap contents of a year for an individual
     if(R::runif(0,1) < swap_propn){
-      //Rcpp::Rcout << "Swap" << std::endl;
+      // Indexing for data upkeep
+      start_index_in_data = cum_nrows_per_individual_in_data[indiv];
+      start_index_in_repeat_data = cum_nrows_per_individual_in_repeat_data[indiv];
 
       new_infection_history = new_infection_history_mat(indiv,_);
-      //Rcpp::Rcout << "Current infection history: " << new_infection_history << std::endl;
-      
-      loc1 = floor(R::runif(0,n_samp_max));
-      //Rcpp::Rcout << "Loc1: " << loc1 << std::endl;
-      loc2 = loc1 + floor(R::runif(-swap_distance,swap_distance));
-      //Rcpp::Rcout << "Loc2: " << loc2 << std::endl;
 
+      loc1 = floor(R::runif(0,n_samp_length)); // Choose a location from age_mask to strain_mask
+      loc2 = loc1 + floor(R::runif(-swap_distance,swap_distance)); // Perturb +/- swap_distance
+
+      // If we have gone too far left or right, reflect at the boundaries
       while(loc2 < 0) loc2 += n_samp_length;
       if(loc2 >= n_samp_length) loc2 -= floor(loc2/n_samp_length)*n_samp_length;
-	
-      //Rcpp::Rcout << "Loc2 after adjust: " << loc2 << std::endl;
 
+      // Get onto right scale (starting at age mask)
       loc1 += age_mask[indiv] - 1;
       loc2 += age_mask[indiv] - 1;
-
-      // Rcpp::Rcout << "Loc1 with age mask: " << circulation_times[loc1] << std::endl;
-      //Rcpp::Rcout << "Loc2 with age mask: " << circulation_times[loc2] << std::endl;
 
       loc1_val_old = new_infection_history(loc1);
       loc2_val_old = new_infection_history(loc2);
 
-      //Rcpp::Rcout << "Swapping " << loc1_val_old << " and " << loc2_val_old << std::endl;
-
+      // Only proceed if we've actually made a change
       if(loc1_val_old != loc2_val_old){
-	//Rcpp::Rcout << "Calculating new likelihood swap" << std::endl;
+	// Swap contents
 	new_infection_history(loc1) = new_infection_history(loc2);
 	new_infection_history(loc2) = loc1_val_old;
 
@@ -708,14 +699,10 @@ List infection_history_proposal_gibbs_fast(const NumericVector& theta, // Model 
 	  infection_times = circulation_times[indices];
 	  infection_strain_indices_tmp = circulation_times_indices[indices];
 	  max_infections = infection_times.size();
-	  infection_strain_indices_tmp = circulation_times_indices[indices];	  
 	  
-	  // Rcpp::Rcout << "New infection times: " << infection_times << std::endl;
-	  //Rcpp::Rcout << "Index in samples: " << index_in_samples << std::endl;
-	  //Rcpp::Rcout << "End index in samples: " << end_index_in_samples << std::endl;
+	  // Don't need to check that no. infections >0, as would only swap if there was a 0 and a 1
 	  for(int j = index_in_samples; j <= end_index_in_samples; ++j){
 	    sampling_time = sample_times[j];
-	    //Rcpp::Rcout << "Sampling time: " << sampling_time << std::endl;
 	    n_inf = 1.0;	
 	    n_titres = nrows_per_blood_sample[j];
 	
@@ -726,7 +713,6 @@ List infection_history_proposal_gibbs_fast(const NumericVector& theta, // Model 
 	    // THE MODEL
 	    // ==================================
 	    for(int x = 0; x < max_infections; ++x){
-	      //Rcpp::Rcout << "Infection time: " << infection_times[x] << std::endl;
 	      if(sampling_time >= infection_times[x]){
 		time = sampling_time - infection_times[x];
 		wane_amount= MAX(0, 1.0 - (wane*time));
@@ -757,7 +743,7 @@ List infection_history_proposal_gibbs_fast(const NumericVector& theta, // Model 
 	    if(data[x] <= max_titre && data[x] > 0.0){
 	      new_prob += log_const + log((erf((data[x] + 1.0 - predicted_titres[x]) / den) -
 					   erf((data[x]     - predicted_titres[x]) / den)));    
-	    } else if(data[i] > max_titre) {
+	    } else if(data[x] > max_titre) {
 	      new_prob += log_const + log(1.0 + erf((max_titre - predicted_titres[x])/den));
 	    } else {
 	      new_prob += log_const + log(1.0 + erf((1.0 - predicted_titres[x])/den));
@@ -766,21 +752,31 @@ List infection_history_proposal_gibbs_fast(const NumericVector& theta, // Model 
 	  //Rcpp::Rcout << "End index in titre data: " << cum_nrows_per_individual_in_data[indiv+1]-1 << std::endl;
 	  // =====================
 	  // Do something for repeat data here
-	  //
-	  //
-	  //
+	  for(int x = cum_nrows_per_individual_in_repeat_data[indiv]; x < cum_nrows_per_individual_in_repeat_data[indiv+1]; ++x){
+	    if(repeat_data[x] <= max_titre && repeat_data[x] > 0.0){
+	      new_prob += log_const + log((erf((repeat_data[x] + 1.0 - predicted_titres[repeat_indices[x]]) / den) -
+					   erf((repeat_data[x]     - predicted_titres[repeat_indices[x]]) / den)));    
+	    } else if(repeat_data[x] > max_titre) {
+	      new_prob += log_const + log(1.0 + erf((max_titre - predicted_titres[repeat_indices[x]])/den));
+	    } else {
+	      new_prob += log_const + log(1.0 + erf((1.0 - predicted_titres[repeat_indices[x]])/den));
+	    }
+	  }
+	  // Need to erase the predicted titre data...
+	  for(int x = cum_nrows_per_individual_in_data[indiv]; x < cum_nrows_per_individual_in_data[indiv+1]; ++x){
+	    predicted_titres[x] = 0;
+	  }
+	  
+
 	  // =====================
 	} else {
 	  old_prob = new_prob = 0;
 	}
 
-	log_prob = std::min<double>(0.0, (new_prob+prior_new)/temp - (old_prob+prior_old));
-	//Rcpp::Rcout << "Old prob: " << old_prob << std::endl;
-	//Rcpp::Rcout << "New prob: " << new_prob << std::endl;
+	log_prob = std::min<double>(0.0, (new_prob+prior_new) - (old_prob+prior_old));
 	rand1 = R::runif(0,1);
-	if(log(rand1) < log_prob){
+	if(log(rand1) < log_prob/temp){
 	  // Update the entry in the new matrix Z
-	  //Rcpp::Rcout << "Updating prob from " << old_prob << " to " << new_prob << std::endl;
 	  old_prob = new_prob;
 	  old_probs[indiv] = new_prob;
 	  // Carry out the swap
@@ -790,16 +786,18 @@ List infection_history_proposal_gibbs_fast(const NumericVector& theta, // Model 
 	}
       }
     } else {
-      Rcpp::Rcout << "Add/remove" << std::endl;
       // Sample n_samp_real years from 0:length. Ths will be used to pull years from
       // sample_years
       // Note sampling indices in the individual's infection history, not the matrix Z
       // Take n_samp_max random samples 
-      //locs = floor(Rcpp::runif(n_samp_max)*n_samp_length);
-      samps = seq(0, n_samp_length-1);    // Create vector from 0:length of alive years
+      samps = seq(0, n_samp_length);    // Create vector from 0:length of alive years
       locs = RcppArmadillo::sample(samps, n_samp_max, FALSE, NumericVector::create());
 
+
       for(int j = 0; j < n_samp_max; ++j){
+	start_index_in_data = cum_nrows_per_individual_in_data[indiv];
+	start_index_in_repeat_data = cum_nrows_per_individual_in_repeat_data[indiv];
+
 	new_infection_history = new_infection_history_mat(indiv,_);
 	year = locs[j] + age_mask[indiv] - 1;
 	old_entry = new_infection_history(year);
@@ -825,12 +823,11 @@ List infection_history_proposal_gibbs_fast(const NumericVector& theta, // Model 
 	}
 	// If proposing a change, need to check likelihood ratio
 	if(new_entry != old_entry){
-	  //Rcpp::Rcout << "Calculating new likelihood" << std::endl;
 	  if(solve_likelihood){
 	    // Calculate likelihood!
 	    indices = new_infection_history > 0;
+	    infection_times = circulation_times[indices];
 	    if(infection_times.size() > 0){
-	      infection_times = circulation_times[indices];
 	      infection_strain_indices_tmp = circulation_times_indices[indices];
 	      max_infections = infection_times.size();	  
 	      infection_strain_indices_tmp = circulation_times_indices[indices];
@@ -872,44 +869,49 @@ List infection_history_proposal_gibbs_fast(const NumericVector& theta, // Model 
 	    // Go from first row in the data for this individual to up to the next one, accumlating
 	    // likelihood for this individual
 	    // For unique data
-	    //Rcpp::Rcout << "Starting index in titre data: " << cum_nrows_per_individual_in_data[indiv] << std::endl;
 	    for(int x = cum_nrows_per_individual_in_data[indiv]; x < cum_nrows_per_individual_in_data[indiv+1]; ++x){
 	      if(data[x] <= max_titre && data[x] > 0.0){
 		new_prob += log_const + log((erf((data[x] + 1.0 - predicted_titres[x]) / den) -
 					     erf((data[x]     - predicted_titres[x]) / den)));    
-	      } else if(data[i] > max_titre) {
+	      } else if(data[x] > max_titre) {
 		new_prob += log_const + log(1.0 + erf((max_titre - predicted_titres[x])/den));
 	      } else {
 		new_prob += log_const + log(1.0 + erf((1.0 - predicted_titres[x])/den));
 	      }
-	      predicted_titres[x] = 0; // Then change back to 0 for next time
 	    }
-	    //Rcpp::Rcout << "End index in titre data: " << cum_nrows_per_individual_in_data[indiv+1]-1 << std::endl;
 	    // =====================
-	    // Do something for repeat data here
-	    //
-	    //
-	    //
+	    // Do the same thing but for repeat data
+	    for(int x = cum_nrows_per_individual_in_repeat_data[indiv]; x < cum_nrows_per_individual_in_repeat_data[indiv+1]; ++x){
+	      if(repeat_data[x] <= max_titre && repeat_data[x] > 0.0){
+		new_prob += log_const + log((erf((repeat_data[x] + 1.0 - predicted_titres[repeat_indices[x]]) / den) -
+					     erf((repeat_data[x]     - predicted_titres[repeat_indices[x]]) / den)));    
+	      } else if(repeat_data[x] > max_titre) {
+		new_prob += log_const + log(1.0 + erf((max_titre - predicted_titres[repeat_indices[x]])/den));
+	      } else {
+		new_prob += log_const + log(1.0 + erf((1.0 - predicted_titres[repeat_indices[x]])/den));
+	      }
+	    }
+	    // Need to erase the predicted titre data...
+	    for(int x = cum_nrows_per_individual_in_data[indiv]; x < cum_nrows_per_individual_in_data[indiv+1]; ++x){
+	      predicted_titres[x] = 0;
+	    }	  
 	    // =====================
 
 
 	  } else {
 	    old_prob = new_prob = 0;
 	  }
-	  //Rcpp::Rcout << "Old prob: " << old_prob << std::endl;
-	  //Rcpp::Rcout << "New prob: " << new_prob << std::endl;
+	  // Don't need to take into account prior prob, as sampling from this
 	  log_prob = std::min<double>(0.0, new_prob - old_prob);
 	  rand1 = R::runif(0,1);
 	  if(log(rand1) < log_prob/temp){
 	    // Update the entry in the new matrix Z
-	    //Rcpp::Rcout << "Updating prob from " << old_prob << " to " << new_prob << std::endl;
 	    old_prob = new_prob;
 	    old_probs[indiv] = new_prob;
 	    new_infection_history_mat(indiv, year) = new_entry;
 	  }
 	}
       }
-      usleep(1000);
     }
   }
   List ret;
