@@ -36,6 +36,9 @@ check_parTab <- function(parTab,mcmc=FALSE,version=NULL){
         if( version %in% c(2,3)){
           if(explicit_lambda) stop(paste('lambdas are not required for version 3 but parTab contains',no_lambda, 'lambda(s)')) ##Should we remove them?
         }
+        
+        ## Check bounds are equal to starting bounds
+        if(any(parTab$upper_start>parTab$upper_bound)|any(parTab$lower_start<parTab$lower_bound)) warning('Lower and upper bounds are not equal to the starting upper and lower bounds. If parTab was used to create starting values, starting values may be out of bounds. ')
     }
 
     ## Check that alpha and beta there for beta distribution
