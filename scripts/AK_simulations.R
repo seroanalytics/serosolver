@@ -16,7 +16,7 @@ n_indiv <- 50
 ## CHANGE FOR LOCAL FILE SYSTEM
 ## Important input parameters and antigenic map
 parTab <- read.csv("~/Documents/serosolver/inputs/parTab.csv",stringsAsFactors=FALSE)
-antigenicMap <- read.csv("~/Documents/serosolver/data/fluscape_map.csv")
+antigenicMap <- read.csv("~/Documents/serosolver/data/antigenic_maps/fluscape_map_annual.csv")
 
 ## Simulation options
 samplingTimes <- 2007:2015
