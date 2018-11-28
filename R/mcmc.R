@@ -379,9 +379,9 @@ run_MCMC <- function(parTab,
                 }
             } else if(histProposal == 2){
                 if(histSwitchProb > hist_switch_prob){
-                  newInfectionHistories <- proposal_gibbs(proposal, infectionHistories,
-                                                            alpha, beta,
-                                                            histSampleProb, nInfs_vec,swapPropn,moveSize,
+                    newInfectionHistories<- proposal_gibbs(proposal, infectionHistories,
+                                                          alpha, beta,
+                                                          histSampleProb, nInfs_vec,swapPropn,moveSize,
                                                           temp)
                 } else {
                     newInfectionHistories <- inf_hist_swap(infectionHistories, ageMask, strainMask,
@@ -477,13 +477,16 @@ run_MCMC <- function(parTab,
                     if(!is.na(log_prob) & !is.nan(log_prob) & is.finite(log_prob)){
                         log_prob <- min(log_prob, 0)
                         if(log(runif(1)) < log_prob){
-                            infHistSwapAccept <- infHistSwapAccept + 1
-                            infectionHistories <- newInfectionHistories
-                            current_pars <- proposal
-                            likelihoods <- new_likelihoods
-                            total_likelihood <- new_total_likelihood
-                            prior_prob <- new_prior_prob
-                            posterior <- new_posterior                        
+                            if(!any(proposal[unfixed_pars] < lower_bounds[unfixed_pars] |
+                                    proposal[unfixed_pars] > upper_bounds[unfixed_pars])){
+                                infHistSwapAccept <- infHistSwapAccept + 1
+                                infectionHistories <- newInfectionHistories
+                                current_pars <- proposal
+                                likelihoods <- new_likelihoods
+                                total_likelihood <- new_total_likelihood
+                                prior_prob <- new_prior_prob
+                                posterior <- new_posterior
+                            }
                         }
                     }
                 }

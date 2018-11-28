@@ -9,7 +9,7 @@ row.match <- function (x, table, nomatch = NA) {
 }
 
 #' @export
-create_posterior_func <- function(parTab,
+create_posterior_func_fast <- function(parTab,
                                   titreDat,
                                   antigenicMap,
                                   version=1,
@@ -40,7 +40,7 @@ create_posterior_func <- function(parTab,
     samples <- unique(titreDat_unique[,c("individual","samples","run")])
     sample_times <- samples$samples ## What were the times that these samples were taken?
     individuals <- samples$individual ## Who are the individuals that these samples correspond to?
-    n_indiv - length(unique(individuals))
+    n_indiv <- length(unique(individuals))
 
     ## Firstly, how many rows in the titre data correspond to each unique individual, sample and titre repeat?
     ## ie. each element of this vector corresponds to one set of titres that need to be predicted
@@ -72,12 +72,34 @@ create_posterior_func <- function(parTab,
     for(individual in unique(individuals)){
         nrows_per_individual_in_data_repeats <- c(nrows_per_individual_in_data_repeats, nrow(titreDat_repeats[titreDat_repeats$individual == individual,]))
     }
-
+    cum_nrows_per_individual_in_data_repeats <- cumsum(c(0,nrows_per_individual_in_data_repeats))
     
     titres_unique <- titreDat_unique$titre
     titres_repeats <- titreDat_repeats$titre
     repeat_indices <- titreDat_repeats$index
+    repeat_indices_cpp <- repeat_indices - 1
+
     all_titres <- c(titres_unique, titres_repeats)
+
+
+    if(!is.null(titreDat$DOB)){
+        DOBs <- unique(titreDat[,c("individual","DOB")])[,2]
+    } else {
+        DOBs <- rep(min(strain_isolation_times), n_indiv)
+    }
+    if(is.null(ageMask)){
+        if(!is.null(titreDat$DOB)){
+            ageMask <- create_age_mask(DOBs, strain_isolation_times)
+        } else {
+            ageMask <- rep(1, n_indiv)
+        }
+    }
+    strainMask <- create_strain_mask(titreDat,strain_isolation_times)
+    masks <- data.frame(cbind(ageMask, strainMask))
+    if (is.null(n_alive)) {
+        n_alive <- sapply(seq(1,length(strain_isolation_times)), function(x)
+            nrow(masks[masks$ageMask <=x & masks$strainMask >= x,]))
+    }    
 
     par_names <- parTab$names
     
@@ -99,7 +121,7 @@ create_posterior_func <- function(parTab,
             liks <- sum_buckets(liks, nrows_per_individual_in_data) +
                 sum_buckets(liks_repeats, nrows_per_individual_in_data_repeats)
         }
-    } else {
+    } else if(function_type == 2){
         f <- function(pars, infection_history_mat,
                       probs, sampled_indivs,
                       alpha, beta,
@@ -110,7 +132,7 @@ create_posterior_func <- function(parTab,
             antigenic_map_long <- create_cross_reactivity_vector(antigenicMapMelted, pars["sigma1"])
             antigenic_map_short <- create_cross_reactivity_vector(antigenicMapMelted, pars["sigma2"])
             ## Now pass to the C++ function
-
+            
             res <- infection_history_proposal_gibbs_fast(pars,
                                                          infection_history_mat,
                                                          probs,
@@ -128,15 +150,28 @@ create_posterior_func <- function(parTab,
                                                          sample_times,
                                                          rows_per_indiv_in_samples,
                                                          cum_nrows_per_individual_in_data,
+                                                         cum_nrows_per_individual_in_data_repeats,
                                                          nrows_per_blood_sample,
                                                          measured_strain_indices, 
                                                          antigenic_map_long,
                                                          antigenic_map_short,
                                                          titres_unique,
+                                                         titres_repeats,
+                                                         repeat_indices_cpp,
                                                          temp,
                                                          solve_likelihood
                                                          )
             return(res)
+        }
+    } else {
+        f <- function(pars, infection_history_mat){
+            names(pars) <- par_names
+            antigenic_map_long <- create_cross_reactivity_vector(antigenicMapMelted, pars["sigma1"])
+            antigenic_map_short <- create_cross_reactivity_vector(antigenicMapMelted, pars["sigma2"])
+            y_new <- titre_data_fast(pars, infection_history_mat, strain_isolation_times, infection_strain_indices,
+                                     sample_times, rows_per_indiv_in_samples, cum_nrows_per_individual_in_data,
+                                     nrows_per_blood_sample, measured_strain_indices, antigenic_map_long,
+                                     antigenic_map_short)
         }
     }
     f

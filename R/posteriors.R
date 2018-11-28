@@ -197,7 +197,8 @@ create_posterior_func <- function(parTab,
         }
         
         ## Gibbs proposal on infection histories
-        f <- function(pars, infectionHistories, alpha, beta,
+        f <- function(pars, infectionHistories,
+                      alpha, beta,
                       indivPropn, nYears,
                       swapPropn=0.5,swapDistance=1, temp=1){
             lambdas <- pars[lambda_indices]
