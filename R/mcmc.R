@@ -409,8 +409,10 @@ run_MCMC <- function(parTab,
             new_total_likelihood <- sum(new_likelihoods)
             new_prior_prob <- extra_probabilities(proposal, newInfectionHistories)
             new_posterior <- new_total_likelihood + new_prior_prob
+
         }
 
+        
 #############################
         ## METROPOLIS HASTINGS STEP
         #############################
@@ -476,13 +478,16 @@ run_MCMC <- function(parTab,
                     if(!is.na(log_prob) & !is.nan(log_prob) & is.finite(log_prob)){
                         log_prob <- min(log_prob, 0)
                         if(log(runif(1)) < log_prob){
+                          if(!any(proposal[unfixed_pars] < lower_bounds[unfixed_pars] |
+                                  proposal[unfixed_pars] > upper_bounds[unfixed_pars])){ 
                             infHistSwapAccept <- infHistSwapAccept + 1
                             infectionHistories <- newInfectionHistories
                             current_pars <- proposal
                             likelihoods <- new_likelihoods
                             total_likelihood <- new_total_likelihood
                             prior_prob <- new_prior_prob
-                            posterior <- new_posterior                        
+                            posterior <- new_posterior       
+                          }
                         }
                     }
                 }
