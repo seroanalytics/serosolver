@@ -10,33 +10,11 @@ using namespace Rcpp ;
 #define MAX(a,b) ((a) < (b) ? (b) : (a)) // define MAX function for use later
 #endif
 
-//' Marginal prior probability (p(Z)) of a particular infection history matrix
-//' 
-//' @param infHist IntegerMatrix, the infection history matrix
-//' @param n_alive IntegerVector, vector giving the number of individuals alive in each time unit
-//' @param alpha NumericVector, alpha parameter for beta distribution prior, one for each time unit
-//' @param beta NumericVector, beta parameter for beta distribution prior, one for each time unit
-//' @export
-// [[Rcpp::export]]
-double inf_mat_prior_cpp(const IntegerMatrix& infHist, const IntegerVector& n_alive, double alpha, double beta){
-//double inf_mat_prior_cpp(const IntegerMatrix& infHist, const IntegerVector& n_alive, const NumericVector& alphas, const NumericVector& betas){
-  // Prior on each year
-  double m, n;
-  double lik=0;
-  for(int i = 0; i < n_alive.size(); ++i){
-    m = sum(infHist(_,i));
-    n = n_alive(i);
-    //lik += R::lbeta(m+alphas[i],n-m+betas[i])-R::lbeta(alphas[i],betas[i]);
-    lik += R::lbeta(m+alpha,n-m+beta)-R::lbeta(alpha,beta);
-  }
-  return(lik);
-}
+
 
 // [[Rcpp::export]]
 NumericVector subset_nullable_vector(const Nullable<NumericVector> &x, int index1, int index2) {
   if(x.isNotNull()){
-    // Rcpp::Rcout << "getting subset" << std::endl << std::endl;
-    //Rcpp::Rcout << "x location: " << x << std::endl;
     NumericVector y = as<NumericVector>(x)[Range(index1, index2)];
     return y;
   } else {
@@ -44,6 +22,7 @@ NumericVector subset_nullable_vector(const Nullable<NumericVector> &x, int index
     return y;
   }
 }
+
 
 //' Gibbs sampling of infection histories
 //'
@@ -204,9 +183,9 @@ IntegerMatrix infection_history_proposal_gibbs(const NumericVector& pars, // Mod
 	swapSize = seq(-swapDistance,swapDistance);
 	loc2 = loc1 + swapSize(floor(R::runif(0,swapSize.size())));
 
-	if(loc2 < 0) loc2 = loc2 + samps.size();
+	while(loc2 < 0) loc2 = loc2 + samps.size();
 	if(loc2 >= samps.size()) loc2 = loc2 - floor(loc2/samps.size())*samps.size();
-	
+
 	loc1 = sample_years(loc1);
 	loc2 = sample_years(loc2);
 
@@ -488,22 +467,6 @@ arma::mat inf_hist_prop_cpp(arma::mat infHist,
 }
 
 
-//' Marginal prior probability (p(Z)) of a particular infection history matrix
-//' 
-//' @param infHist IntegerMatrix, the infection history matrix
-//' @param n_alive IntegerVector, vector giving the number of individuals alive in each year
-//' @param alpha double, alpha parameter for beta distribution prior
-//' @param beta double, beta parameter for beta distribution prior
-//' @export
-// [[Rcpp::export]]
-double inf_mat_prior_total_cpp(const IntegerMatrix& infHist, const int& n_alive, double alpha, double beta){
-  double m, n;
-  double lik=0;
-  int n_infections = sum(infHist);
-  lik = R::lbeta(n_infections + alpha, n_alive - n_infections + beta) - R::lbeta(alpha, beta);
-  return(lik);
-}
-
 
 // @export
 // [[Rcpp::export]]
@@ -749,7 +712,7 @@ List infection_history_proposal_gibbs_fast(const NumericVector &theta, // Model 
 	      new_prob += log_const + log(1.0 + erf((1.0 - predicted_titres[x])/den));
 	    }
 	  }
-	  //Rcpp::Rcout << "End index in titre data: " << cum_nrows_per_individual_in_data[indiv+1]-1 << std::endl;
+
 	  // =====================
 	  // Do something for repeat data here
 	  for(int x = cum_nrows_per_individual_in_repeat_data[indiv]; x < cum_nrows_per_individual_in_repeat_data[indiv+1]; ++x){
@@ -813,7 +776,7 @@ List infection_history_proposal_gibbs_fast(const NumericVector &theta, // Model 
 
 	// Propose 1 or 0 based on this ratio
 	rand1 = R::runif(0,1);
-	//if(indivRatioRands[i] < ratio){
+
 	if(rand1 < ratio){
 	  new_entry = 1;
 	  new_infection_history(year) = 1;
@@ -896,8 +859,6 @@ List infection_history_proposal_gibbs_fast(const NumericVector &theta, // Model 
 	      predicted_titres[x] = 0;
 	    }	  
 	    // =====================
-
-
 	  } else {
 	    old_prob = new_prob = 0;
 	  }

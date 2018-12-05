@@ -9,11 +9,11 @@ inf_mat_prior_cpp(infHist, n_alive, alpha, beta)
 \arguments{
 \item{infHist}{IntegerMatrix, the infection history matrix}
 
-\item{n_alive}{IntegerVector, vector giving the number of individuals alive in each year}
+\item{n_alive}{IntegerVector, vector giving the number of individuals alive in each time unit}
 
-\item{alpha}{double, alpha parameter for beta distribution prior}
+\item{alpha}{NumericVector, alpha parameter for beta distribution prior, one for each time unit}
 
-\item{beta}{double, beta parameter for beta distribution prior}
+\item{beta}{NumericVector, beta parameter for beta distribution prior, one for each time unit}
 }
 \description{
 Marginal prior probability (p(Z)) of a particular infection history matrix

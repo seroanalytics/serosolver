@@ -2,7 +2,7 @@
 % Please edit documentation in R/RcppExports.R
 \name{infection_model_indiv}
 \alias{infection_model_indiv}
-\title{Model function}
+\title{Model function sample}
 \usage{
 infection_model_indiv(theta, infectionHistory, infectionTimes,
   infectionMapIndices, samplingTime, measurementMapIndices,
@@ -27,12 +27,14 @@ infection_model_indiv(theta, infectionHistory, infectionTimes,
 \item{antigenicMapShort}{NumericVector, the collapsed cross reactivity map for short term boosting, after multiplying by sigma2}
 
 \item{numberStrains}{int, the maximum number of infections that an individual could experience}
+
+\item{DOB}{double, the date of birth of this individual. Currently not used.}
 }
 \value{
 NumericVector of predicted titres for each entry in measurementMapIndices
 }
 \description{
-The main model solving function for a single individual.
+The main model solving function for a single individual for a single blood sample.
 NOTES:
 - Do we want infection history to be a vector of infection times?
 - Treat the contents of infectionHistory as a parameter (ie. exposure type)

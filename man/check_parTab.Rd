@@ -4,10 +4,14 @@
 \alias{check_parTab}
 \title{Check parTab for simulate_data}
 \usage{
-check_parTab(parTab, mcmc = FALSE)
+check_parTab(parTab, mcmc = FALSE, version = NULL)
 }
 \arguments{
 \item{parTab}{the parameter table controlling information such as bounds, initial values etc}
+
+\item{mcmc}{logical, if TRUE then checks are performed for the MCMC algorithm. Use FALSE when simulating data}
+
+\item{version}{which version of the posterior function is being used? See \code{\link{create_post_func}}}
 }
 \value{
 nothing at the moment

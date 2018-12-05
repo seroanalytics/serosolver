@@ -13,54 +13,64 @@ multiple_infection_titre_dependent_boost <- function(predicted_titres, monitored
     invisible(.Call('_serosolver_multiple_infection_titre_dependent_boost', PACKAGE = 'serosolver', predicted_titres, monitored_titres, theta, infection_times, cumu_infection_history, masked_infection_history, infection_map_indices, measurement_map_indices, antigenic_map_long, antigenic_map_short, waning, number_strains))
 }
 
-#' Model function
+#' Marginal prior probability (p(Z)) of a particular infection history matrix
+#' 
+#' @param infHist IntegerMatrix, the infection history matrix
+#' @param n_alive IntegerVector, vector giving the number of individuals alive in each time unit
+#' @param alpha NumericVector, alpha parameter for beta distribution prior, one for each time unit
+#' @param beta NumericVector, beta parameter for beta distribution prior, one for each time unit
+#' @export
+inf_mat_prior_cpp <- function(infHist, n_alive, alpha, beta) {
+    .Call('_serosolver_inf_mat_prior_cpp', PACKAGE = 'serosolver', infHist, n_alive, alpha, beta)
+}
+
+#' Marginal prior probability (p(Z)) of a particular infection history matrix
+#' 
+#' @param infHist IntegerMatrix, the infection history matrix
+#' @param n_alive IntegerVector, vector giving the number of individuals alive in each year
+#' @param alpha double, alpha parameter for beta distribution prior
+#' @param beta double, beta parameter for beta distribution prior
+#' @export
+inf_mat_prior_total_cpp <- function(infHist, n_alive, alpha, beta) {
+    .Call('_serosolver_inf_mat_prior_total_cpp', PACKAGE = 'serosolver', infHist, n_alive, alpha, beta)
+}
+
+#' @export
+likelihood_func_fast <- function(theta, obs, predicted_titres) {
+    .Call('_serosolver_likelihood_func_fast', PACKAGE = 'serosolver', theta, obs, predicted_titres)
+}
+
+#' @export
+likelihood_func_fast_native <- function(theta, obs, predicted_titres) {
+    .Call('_serosolver_likelihood_func_fast_native', PACKAGE = 'serosolver', theta, obs, predicted_titres)
+}
+
+#' Calculate likelihood basic
 #'
-#' The main model solving function for a single individual.
-#' NOTES:
-#' - Do we want infection history to be a vector of infection times?
-#' - Treat the contents of infectionHistory as a parameter (ie. exposure type)
-#' @param theta NumericVector, the named vector of model parameters
-#' @param infectionHistory IntegerVector, the vector of 1s and 0s showing presence/absence of infection for each possible time. 
-#' @param infectionTimes NumericVector, the actual times of circulation that the infection history vector corresponds to
-#' @param infectionMapIndices IntegerVector, which entry in the melted antigenic map that these infection times correspond to
-#' @param samplingTime double, the real time that the sample was taken
-#' @param measurementMapIndices IntegerVector, the indices of all measured strains in the melted antigenic map
-#' @param antigenicMapLong NumericVector, the collapsed cross reactivity map for long term boosting, after multiplying by sigma1
-#' @param antigenicMapShort NumericVector, the collapsed cross reactivity map for short term boosting, after multiplying by sigma2
-#' @param numberStrains int, the maximum number of infections that an individual could experience
-#' @return NumericVector of predicted titres for each entry in measurementMapIndices
-#' @useDynLib serosolver
-#' @export
-infection_model_indiv <- function(theta, infectionHistory, infectionTimes, infectionMapIndices, samplingTime, measurementMapIndices, antigenicMapLong, antigenicMapShort, numberStrains, DOB = 0, additional_arguments = NULL) {
-    .Call('_serosolver_infection_model_indiv', PACKAGE = 'serosolver', theta, infectionHistory, infectionTimes, infectionMapIndices, samplingTime, measurementMapIndices, antigenicMapLong, antigenicMapShort, numberStrains, DOB, additional_arguments)
-}
-
-#' @export
-titre_data_individual <- function(theta, infectionHistory, circulationTimes, circulationMapIndices, samplingTimes, dataIndices, measuredMapIndices, antigenicMapLong, antigenicMapShort, numberStrains, DOB = 0, additional_arguments = NULL) {
-    .Call('_serosolver_titre_data_individual', PACKAGE = 'serosolver', theta, infectionHistory, circulationTimes, circulationMapIndices, samplingTimes, dataIndices, measuredMapIndices, antigenicMapLong, antigenicMapShort, numberStrains, DOB, additional_arguments)
-}
-
-#' @export
-titre_data_group <- function(theta, infectionHistories, circulationTimes, circulationMapIndices, samplingTimes, indicesTitreDataSample, indicesTitreDataOverall, indicesSamples, measuredMapIndices, antigenicMapLong, antigenicMapShort, DOBs, additional_arguments = NULL) {
-    .Call('_serosolver_titre_data_group', PACKAGE = 'serosolver', theta, infectionHistories, circulationTimes, circulationMapIndices, samplingTimes, indicesTitreDataSample, indicesTitreDataOverall, indicesSamples, measuredMapIndices, antigenicMapLong, antigenicMapShort, DOBs, additional_arguments)
-}
-
-#' Calculate likelihood
-#'
-#' Calculates the likelihood of a given set of observed titres given predicted titres. Based on truncated discritised normal.
+#' Calculates the likelihood of a given set of observed titres given predicted titres. Based on truncated discritised normal. DEPRECATED, as this is a very slow (but obvious) implementation
 #' @param expected NumericVector, as returned by \code{\link{infection_model_indiv}}
 #' @param data NumericVector, the vector of observed titres
 #' @param theta NumericVector, the vector of named model parameters, requiring MAX_TITRE and error
 #' @param titre_shifts NumericVector, OPTIONAL if using measurement bias, gives the shift to add to each expected titre
 #' @return a single log likelihood
 #' @export
-likelihood_titre <- function(expected, data, theta, titre_shifts) {
-    .Call('_serosolver_likelihood_titre', PACKAGE = 'serosolver', expected, data, theta, titre_shifts)
+likelihood_titre_basic <- function(expected, data, theta, titre_shifts) {
+    .Call('_serosolver_likelihood_titre_basic', PACKAGE = 'serosolver', expected, data, theta, titre_shifts)
 }
 
 #' @export
-likelihood_data_individual <- function(theta, infectionHistory, circulationTimes, circulationMapIndices, samplingTimes, dataIndices, measuredMapIndices, antigenicMapLong, antigenicMapShort, numberStrains, data, titre_shifts, DOB, additional_arguments) {
-    .Call('_serosolver_likelihood_data_individual', PACKAGE = 'serosolver', theta, infectionHistory, circulationTimes, circulationMapIndices, samplingTimes, dataIndices, measuredMapIndices, antigenicMapLong, antigenicMapShort, numberStrains, data, titre_shifts, DOB, additional_arguments)
+sum_likelihoods <- function(liks, indices, n_indivs) {
+    .Call('_serosolver_sum_likelihoods', PACKAGE = 'serosolver', liks, indices, n_indivs)
+}
+
+#' Convert melted antigenic map to cross reactivity
+#'
+#' Multiplies all elements of the provided vector, x such that y = 1 - sigma*x. Also makes sure that no calculated value is less than 0
+#' @param x the melted antigenic map
+#' @param sigma the cross reactivity waning parameter
+#' @return a vector of cross reactivity
+create_cross_reactivity_vector <- function(x, sigma) {
+    .Call('_serosolver_create_cross_reactivity_vector', PACKAGE = 'serosolver', x, sigma)
 }
 
 #' Sums a vector based on bucket sizes
@@ -74,41 +84,64 @@ sum_buckets <- function(a, buckets) {
     .Call('_serosolver_sum_buckets', PACKAGE = 'serosolver', a, buckets)
 }
 
-#' Convert melted antigenic map to cross reactivity
+#' Model function sample
 #'
-#' Multiplies all elements of the provided vector, x such that y = 1 - sigma*x. Also makes sure that no calculated value is less than 0
-#' @param x the melted antigenic map
-#' @param sigma the cross reactivity waning parameter
-#' @return a vector of cross reactivity
-create_cross_reactivity_vector <- function(x, sigma) {
-    .Call('_serosolver_create_cross_reactivity_vector', PACKAGE = 'serosolver', x, sigma)
+#' The main model solving function for a single individual for a single blood sample.
+#' NOTES:
+#' - Do we want infection history to be a vector of infection times?
+#' - Treat the contents of infectionHistory as a parameter (ie. exposure type)
+#' @param theta NumericVector, the named vector of model parameters
+#' @param infectionHistory IntegerVector, the vector of 1s and 0s showing presence/absence of infection for each possible time. 
+#' @param infectionTimes NumericVector, the actual times of circulation that the infection history vector corresponds to
+#' @param infectionMapIndices IntegerVector, which entry in the melted antigenic map that these infection times correspond to
+#' @param samplingTime double, the real time that the sample was taken
+#' @param measurementMapIndices IntegerVector, the indices of all measured strains in the melted antigenic map
+#' @param antigenicMapLong NumericVector, the collapsed cross reactivity map for long term boosting, after multiplying by sigma1
+#' @param antigenicMapShort NumericVector, the collapsed cross reactivity map for short term boosting, after multiplying by sigma2
+#' @param numberStrains int, the maximum number of infections that an individual could experience
+#' @param DOB double, the date of birth of this individual. Currently not used.
+#' @param additional_arguments, Nullable<List> currently not used, but the idea is to use thsi object to pass more flexible additional arguments to the bottom of the call stack
+#' @return NumericVector of predicted titres for each entry in measurementMapIndices
+#' @useDynLib serosolver
+#' @export
+infection_model_indiv <- function(theta, infectionHistory, infectionTimes, infectionMapIndices, samplingTime, measurementMapIndices, antigenicMapLong, antigenicMapShort, numberStrains, DOB = 0, additional_arguments = NULL) {
+    .Call('_serosolver_infection_model_indiv', PACKAGE = 'serosolver', theta, infectionHistory, infectionTimes, infectionMapIndices, samplingTime, measurementMapIndices, antigenicMapLong, antigenicMapShort, numberStrains, DOB, additional_arguments)
 }
 
-#' Convert melted antigenic map to cross reactivity
+#' Model function individual
 #'
-#' Multiplies all elements of the provided vector, x such that y = 1 - sigma*x. Also makes sure that no calculated value is less than 0
-#' @param x the melted antigenic map
-#' @param sigma the cross reactivity waning parameter
-#' @return a vector of cross reactivity
-create_cross_reactivity_vector_mu <- function(x, sigma, mu) {
-    .Call('_serosolver_create_cross_reactivity_vector_mu', PACKAGE = 'serosolver', x, sigma, mu)
+#' The main model solving function for a single individual for a vector of sampling times
+#' @param theta NumericVector, the named vector of model parameters
+#' @param infectionHistory IntegerVector, the vector of 1s and 0s showing presence/absence of infection for each possible time. 
+#' @param circulationTimes NumericVector, the actual times of circulation that the infection history vector corresponds to
+#' @param circualtionaMapIndices IntegerVector, which entry in the melted antigenic map that these infection times correspond to
+#' @param samplingTime NumericVector, the times that each blood sample was taken
+#' @param dataIndices IntegerVector, the indices in the overall titre data vector (of observations) that each sample corresponds to
+#' @param measuredMapIndices IntegerVector, the indices of all measured strains in the melted antigenic map
+#' @param antigenicMapLong NumericVector, the collapsed cross reactivity map for long term boosting, after multiplying by sigma1
+#' @param antigenicMapShort NumericVector, the collapsed cross reactivity map for short term boosting, after multiplying by sigma2
+#' @param numberStrains int, the maximum number of infections that an individual could experience
+#' @param DOB double, the date of birth of this individual. Currently not used.
+#' @param additional_arguments, Nullable<List> currently not used, but the idea is to use thsi object to pass more flexible additional arguments to the bottom of the call stack
+#' @return NumericVector of predicted titres for each entry in measuredMapIndices
+#' @export
+titre_data_individual <- function(theta, infectionHistory, circulationTimes, circulationMapIndices, samplingTimes, dataIndices, measuredMapIndices, antigenicMapLong, antigenicMapShort, numberStrains, DOB = 0, additional_arguments = NULL) {
+    .Call('_serosolver_titre_data_individual', PACKAGE = 'serosolver', theta, infectionHistory, circulationTimes, circulationMapIndices, samplingTimes, dataIndices, measuredMapIndices, antigenicMapLong, antigenicMapShort, numberStrains, DOB, additional_arguments)
 }
 
-#' Original model reimplementation
 #' @export
-c_model_original <- function(n, nsamp, x, theta, dd, dd2, t_sample) {
-    .Call('_serosolver_c_model_original', PACKAGE = 'serosolver', n, nsamp, x, theta, dd, dd2, t_sample)
+titre_data_group <- function(theta, infectionHistories, circulationTimes, circulationMapIndices, samplingTimes, indicesTitreDataSample, indicesTitreDataOverall, indicesSamples, measuredMapIndices, antigenicMapLong, antigenicMapShort, DOBs, additional_arguments = NULL) {
+    .Call('_serosolver_titre_data_group', PACKAGE = 'serosolver', theta, infectionHistories, circulationTimes, circulationMapIndices, samplingTimes, indicesTitreDataSample, indicesTitreDataOverall, indicesSamples, measuredMapIndices, antigenicMapLong, antigenicMapShort, DOBs, additional_arguments)
 }
 
-#' Marginal prior probability (p(Z)) of a particular infection history matrix
-#' 
-#' @param infHist IntegerMatrix, the infection history matrix
-#' @param n_alive IntegerVector, vector giving the number of individuals alive in each time unit
-#' @param alpha NumericVector, alpha parameter for beta distribution prior, one for each time unit
-#' @param beta NumericVector, beta parameter for beta distribution prior, one for each time unit
 #' @export
-inf_mat_prior_cpp <- function(infHist, n_alive, alpha, beta) {
-    .Call('_serosolver_inf_mat_prior_cpp', PACKAGE = 'serosolver', infHist, n_alive, alpha, beta)
+titre_data_fast <- function(theta, infection_history_mat, circulation_times, circulation_times_indices, sample_times, rows_per_indiv_in_samples, cum_nrows_per_individual_in_data, nrows_per_blood_sample, measurement_strain_indices, antigenic_map_long, antigenic_map_short) {
+    .Call('_serosolver_titre_data_fast', PACKAGE = 'serosolver', theta, infection_history_mat, circulation_times, circulation_times_indices, sample_times, rows_per_indiv_in_samples, cum_nrows_per_individual_in_data, nrows_per_blood_sample, measurement_strain_indices, antigenic_map_long, antigenic_map_short)
+}
+
+#' @export
+likelihood_data_individual <- function(theta, infectionHistory, circulationTimes, circulationMapIndices, samplingTimes, dataIndices, measuredMapIndices, antigenicMapLong, antigenicMapShort, numberStrains, data, titre_shifts, DOB, additional_arguments) {
+    .Call('_serosolver_likelihood_data_individual', PACKAGE = 'serosolver', theta, infectionHistory, circulationTimes, circulationMapIndices, samplingTimes, dataIndices, measuredMapIndices, antigenicMapLong, antigenicMapShort, numberStrains, data, titre_shifts, DOB, additional_arguments)
 }
 
 subset_nullable_vector <- function(x, index1, index2) {
@@ -165,44 +198,8 @@ inf_hist_prop_cpp <- function(infHist, sampledIndivs, ageMask, strainMask, moveS
     .Call('_serosolver_inf_hist_prop_cpp', PACKAGE = 'serosolver', infHist, sampledIndivs, ageMask, strainMask, moveSizes, nInfs, alpha, beta, randNs)
 }
 
-#' Marginal prior probability (p(Z)) of a particular infection history matrix
-#' 
-#' @param infHist IntegerMatrix, the infection history matrix
-#' @param n_alive IntegerVector, vector giving the number of individuals alive in each year
-#' @param alpha double, alpha parameter for beta distribution prior
-#' @param beta double, beta parameter for beta distribution prior
-#' @export
-inf_mat_prior_total_cpp <- function(infHist, n_alive, alpha, beta) {
-    .Call('_serosolver_inf_mat_prior_total_cpp', PACKAGE = 'serosolver', infHist, n_alive, alpha, beta)
-}
-
 infection_history_proposal_gibbs_fast <- function(theta, infection_history_mat, old_probsA, sampled_indivs, n_years_samp_vec, age_mask, strain_mask, n_alive, swap_propn, swap_distance, alpha, beta, circulation_times, circulation_times_indices, sample_times, rows_per_indiv_in_samples, cum_nrows_per_individual_in_data, cum_nrows_per_individual_in_repeat_data, nrows_per_blood_sample, measurement_strain_indices, antigenic_map_long, antigenic_map_short, data, repeat_data, repeat_indices, temp = 1, solve_likelihood = TRUE) {
     .Call('_serosolver_infection_history_proposal_gibbs_fast', PACKAGE = 'serosolver', theta, infection_history_mat, old_probsA, sampled_indivs, n_years_samp_vec, age_mask, strain_mask, n_alive, swap_propn, swap_distance, alpha, beta, circulation_times, circulation_times_indices, sample_times, rows_per_indiv_in_samples, cum_nrows_per_individual_in_data, cum_nrows_per_individual_in_repeat_data, nrows_per_blood_sample, measurement_strain_indices, antigenic_map_long, antigenic_map_short, data, repeat_data, repeat_indices, temp, solve_likelihood)
-}
-
-#' @export
-titre_data_fast <- function(theta, infection_history_mat, circulation_times, circulation_times_indices, sample_times, rows_per_indiv_in_samples, cum_nrows_per_individual_in_data, nrows_per_blood_sample, measurement_strain_indices, antigenic_map_long, antigenic_map_short) {
-    .Call('_serosolver_titre_data_fast', PACKAGE = 'serosolver', theta, infection_history_mat, circulation_times, circulation_times_indices, sample_times, rows_per_indiv_in_samples, cum_nrows_per_individual_in_data, nrows_per_blood_sample, measurement_strain_indices, antigenic_map_long, antigenic_map_short)
-}
-
-#' @export
-likelihood_func_fast <- function(theta, obs, predicted_titres) {
-    .Call('_serosolver_likelihood_func_fast', PACKAGE = 'serosolver', theta, obs, predicted_titres)
-}
-
-#' @export
-likelihood_func_fast_native <- function(theta, obs, predicted_titres) {
-    .Call('_serosolver_likelihood_func_fast_native', PACKAGE = 'serosolver', theta, obs, predicted_titres)
-}
-
-#' @export
-titre_data_fast_mu <- function(theta, infection_history_mat, circulation_times, circulation_times_indices, sample_times, rows_per_indiv_in_samples, cum_nrows_per_individual_in_data, nrows_per_blood_sample, measurement_strain_indices, antigenic_map_long, antigenic_map_short) {
-    .Call('_serosolver_titre_data_fast_mu', PACKAGE = 'serosolver', theta, infection_history_mat, circulation_times, circulation_times_indices, sample_times, rows_per_indiv_in_samples, cum_nrows_per_individual_in_data, nrows_per_blood_sample, measurement_strain_indices, antigenic_map_long, antigenic_map_short)
-}
-
-#' @export
-sum_likelihoods <- function(liks, indices, n_indivs) {
-    .Call('_serosolver_sum_likelihoods', PACKAGE = 'serosolver', liks, indices, n_indivs)
 }
 
 #' Function to calculate non-linear waning
