@@ -15,12 +15,12 @@ source("~/net/home/serosolver/scripts_Oct2018/submit_run_PT.R")
 setwd("~/Documents/Fluscape/serosolver")
 devtools::load_all()
 output_wd <- "testing_cluster_script_Oct2018"
-runName <- "parallel_tempering_test"
+runName <- "parallel_tempering_fast"
 
 ## How many individuals to fit to?
 n_indiv <-50
-indivs <- 1:25
-indivs <- NULL
+indivs <- 1:100
+#indivs <- NULL
 buckets <- 1
 
 alpha <- beta <- 1
@@ -45,6 +45,7 @@ fit_dat <- generate_antigenic_map(antigenicMap, buckets)
 strainIsolationTimes <- unique(fit_dat$inf_years)
 
 temperatures <- c(seq(1,1.2,by=0.05),seq(1.3,1.9,by=1),seq(2,10,by=1))
+temperatures <- c(1,100)
 #Rprof(tmp<-tempfile())
 res <- submit_serosolver_run_PT(output_wd=output_wd, runName=runName, chainNo=1,buckets=buckets,
                              parTab_file=parTab_file, titreDat_file=titreDat_file,
@@ -57,12 +58,12 @@ res <- submit_serosolver_run_PT(output_wd=output_wd, runName=runName, chainNo=1,
                              measurement_indices = measurement_indices,measurement_random_effects=FALSE,
                              indivs=indivs,
                              mcmcPars=list("save_block"=100,"thin"=1,"thin2"=10,"iterations"=50000,"adaptive_period"=20000,
-                                        "burnin"=0,"switch_sample"=2,"hist_switch_prob"=0,"year_swap_propn"=0.2,swapPropn=0.5,
+                                        "burnin"=0,"switch_sample"=2,"hist_switch_prob"=0,"year_swap_propn"=0,swapPropn=0.5,
                                         "temperature"=temperatures, "parallel_tempering_iter"=5,
                                         "inf_propn"=0.05,"histSampleProb"=0.5,moveSize=2,histOpt=0,popt=0.44,opt_freq=1000),
                              inf_propn=0.5,
                              histSampleProb = 0.5,
-                             hist_switch_prob=0.5,
+                             hist_switch_prob=0,
                              year_swap_propn=0.2,
                              inf_hist_func=3,
                              message_slack=FALSE,

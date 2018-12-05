@@ -453,6 +453,8 @@ BEGIN_RCPP
 END_RCPP
 }
 
+RcppExport SEXP _serosolver_run_MCMC_cpp(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
+
 static const R_CallMethodDef CallEntries[] = {
     {"_serosolver_multiple_infection_strain_dependent", (DL_FUNC) &_serosolver_multiple_infection_strain_dependent, 11},
     {"_serosolver_multiple_infection_base_boosting", (DL_FUNC) &_serosolver_multiple_infection_base_boosting, 13},
@@ -478,6 +480,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_serosolver_titre_data_fast_mu", (DL_FUNC) &_serosolver_titre_data_fast_mu, 11},
     {"_serosolver_sum_likelihoods", (DL_FUNC) &_serosolver_sum_likelihoods, 3},
     {"_serosolver_wane_function", (DL_FUNC) &_serosolver_wane_function, 3},
+    {"_serosolver_run_MCMC_cpp",                             (DL_FUNC) &_serosolver_run_MCMC_cpp,                             25},
     {NULL, NULL, 0}
 };
 

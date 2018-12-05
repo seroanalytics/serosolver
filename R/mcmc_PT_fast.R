@@ -1,27 +1,31 @@
-run_MCMC_pt <- function(parTab,
-                        titreDat,
-                        antigenicMap,
-                        mcmcPars=c(),
-                        startInfHist=NULL,
-                        filename="test",
-                        CREATE_POSTERIOR_FUNC=create_posterior_func,
-                        CREATE_PRIOR_FUNC=NULL,
-                        version=2,
-                        seed,
-                        mu_indices=NULL,
-                        measurement_indices=NULL,
-                        measurement_random_effects=FALSE,
-                        OPT_TUNING=0.1,
-                        solve_likelihood=TRUE,
-                        n_alive=NULL,
-                        ...){
+    
+    
+
+run_MCMC_pt_fast <- function(parTab,
+                             titreDat,
+                             antigenicMap,
+                             mcmcPars=c(),
+                             startInfHist=NULL,
+                             filename="test",
+                             CREATE_POSTERIOR_FUNC=create_posterior_func_fast,
+                             CREATE_PRIOR_FUNC=NULL,
+                             seed,
+                             mu_indices=NULL,
+                             measurement_indices=NULL,
+                             measurement_random_effects=FALSE,
+                             OPT_TUNING=0.1,
+                             solve_likelihood=TRUE,
+                             n_alive=NULL,
+                             ...){
+    version <- 1
+    
     ## Extract MCMC parameters
     mcmcPars_used <- list("iterations"=50000,"popt"=0.44,"popt_hist"=0.44,"opt_freq"=2000,"thin"=1,
                        "adaptive_period"=10000,
                        "save_block"=100,"thin2"=10,"histSampleProb"=1,"switch_sample"=2, "burnin"=0, 
                        "inf_propn"=1, "moveSize"=5,"histOpt"=1,"swapPropn"=0.5,
                        "hist_switch_prob"=0,"year_swap_propn"=1,
-                       "temperature"=seq(1,10,by=1),"parallel_tempering_iter"=5)
+                       "temperature"=seq(1,10,by=1),"parallel_tempering_iter"=5, "n_iter"=5)
     mcmcPars_used[names(mcmcPars)] <- mcmcPars
 
     ## Extract MCMC parameters
@@ -45,6 +49,7 @@ run_MCMC_pt <- function(parTab,
     year_swap_propn <- mcmcPars_used[["year_swap_propn"]] # If gibbs and swapping contents, what proportion of these time periods should be swapped?
     temperatures <- mcmcPars[["temperature"]]
     parallel_tempering_iter <- mcmcPars[["parallel_tempering_iter"]]
+    n_iter <- mcmcPars[["n_iter"]]
 ###################################################################
 
     ###############
@@ -129,37 +134,36 @@ run_MCMC_pt <- function(parTab,
     masks <- data.frame(cbind(ageMask, strainMask))
     ## Number of people that were born before each year and have had a sample taken since that year happened
     if(is.null(n_alive)) n_alive <- sapply(seq(1,length(strainIsolationTimes)), function(x) nrow(masks[masks$ageMask <=x & masks$strainMask >= x,]))   
-
     
     ## Create posterior calculating function
     posterior_simp <- protect(CREATE_POSTERIOR_FUNC(parTab,
-                                                    titreDat,
-                                                    antigenicMap,
-                                                    version,
-                                                    solve_likelihood,
-                                                    ageMask,
-                                                    measurement_indices_by_time=measurement_indices,
-                                                    mu_indices=mu_indices,
-                                                    n_alive=n_alive,
-                                                    function_type=1,
-                                                    ...))
+                                            titreDat,
+                                            antigenicMap,
+                                            version,
+                                            solve_likelihood,
+                                            ageMask,
+                                            measurement_indices_by_time=measurement_indices,
+                                            mu_indices=mu_indices,
+                                            n_alive=n_alive,
+                                            function_type=1,
+                                            ...))
     if(!is.null(CREATE_PRIOR_FUNC)){
         prior_func <- CREATE_PRIOR_FUNC(parTab)
     }
     ## If using gibbs proposal on infHist, create here
-    proposal_gibbs <- protect(CREATE_POSTERIOR_FUNC(parTab,
-                                                        titreDat,
-                                                        antigenicMap,
-                                                        version,
-                                                        solve_likelihood,
-                                                        ageMask,
-                                                        measurement_indices_by_time=measurement_indices,
-                                                        mu_indices=mu_indices,
-                                                        n_alive=n_alive,
-                                                        function_type=2,
-                                                        ...))
-    
-   ## If using random effects on mu, need to include hyperprior term on mu
+    proposal_gibbs <- CREATE_POSTERIOR_FUNC(parTab,
+                                            titreDat,
+                                            antigenicMap,
+                                            version,
+                                            solve_likelihood,
+                                            ageMask,
+                                            measurement_indices_by_time=measurement_indices,
+                                            mu_indices=mu_indices,
+                                            n_alive=n_alive,
+                                            function_type=2,
+                                            ...)
+
+    ## If using random effects on mu, need to include hyperprior term on mu
     ## We can't do this in the main posterior function, because this term
     ## applies to the overall posterior whereas the main posterior function
     ## returns each individual's posterior
@@ -247,18 +251,10 @@ run_MCMC_pt <- function(parTab,
             .Random.seed <- seed
         }
     }
+  
 
-    run_MCMC_single_iter <- lapply(seq_along(temperatures),
-                                   function(x) create_run_MCMC_single_iter_fn(unfixed_pars,unfixed_par_length,
-                                                                              lower_bounds,upper_bounds,
-                                                                              ageMask, strainMask,
-                                                                              posterior_simp, extra_probabilities,
-                                                                              proposal_gibbs,
-                                                                              alpha,beta,histSampleProb,nInfs_vec,
-                                                                              swapPropn,moveSize,n_alive,
-                                                                              switch_sample,
-                                                                              hist_switch_prob,
-                                                                              year_swap_propn))
+    
+    
     ## initialise MCMC
     mcmc_list <- list("i"=i,"par_i" = par_i, "current_pars" = current_pars,
                       "infectionHistories"=infectionHistories,
@@ -268,24 +264,65 @@ run_MCMC_pt <- function(parTab,
                       "steps"=NULL,"temp"=1)
     ## replicate list for parallel tempering
     mcmc_list <- rep(list(mcmc_list),length(temperatures))
+
     ## start values for parallel tempering
     mcmc_list <- Map(function(x,y) modifyList(x,list(current_pars = y)), mcmc_list, start_pars)
     mcmc_list <- Map(function(x,y) modifyList(x,list(steps = y)), mcmc_list, steps)
     mcmc_list <- Map(function(x,y) modifyList(x,list(temp = y)), mcmc_list, temperatures)
     ##mcmc_list <- Map(function(x,y) modifyList(x,list(infectionHistories = y)), mcmc_list, infectionHistories)
-
-    #parallelStartSocket(6)
-    #parallelLibrary("serosolver")
     
+    
+    
+
+    
+                                        # registerDoMC(cores=6)
+    
+    run_multiple_iter <- function(tmp_list){
+        startI <- tmp_list$i
+        for(i in startI:(startI+n_iter)){
+            tmp_list <- run_MCMC_single_iter(i, tmp_list$par_i,
+                                             tmp_list$current_pars, tmp_list$infectionHistories,
+                                             tmp_list$likelihoods, tmp_list$total_likelihood,
+                                             tmp_list$prior_prob, tmp_list$posterior,
+                                             tmp_list$tempaccepted, tmp_list$tempiter,
+                                             tmp_list$steps, tmp_list$temp)
+            startI <- startI + 1
+        }
+        tmp_list$i <- startI
+        tmp_list        
+    }
+    
+    run_MCMC_single_iter <- lapply(1:length(temperatures),
+                                   function(x) create_run_MCMC_single_iter_fn_fast(unfixed_pars,unfixed_par_length,
+                                                                                   lower_bounds,upper_bounds,
+                                                                                   ageMask, strainMask,
+                                                                                   posterior_simp,
+                                                                                   extra_probabilities,
+                                                                                   proposal_gibbs,
+                                                                                   alpha,beta,histSampleProb,
+                                                                                   nInfs_vec,
+                                                                                   swapPropn,moveSize,n_alive,
+                                                                                   switch_sample,
+                                                                                   hist_switch_prob,
+                                                                                   year_swap_propn))
+    #cl <- makeForkCluster(6, useXDR=FALSE)
+
     ## main body of running MCMC
     while (i <= (iterations+adaptive_period)){
         for(jh in 1:length(mcmc_list)) mcmc_list[[jh]][["i"]] <- i
 ##############
         ## Can probably parallelise this bit
-        #mcmc_list <- parallelMap(do.call, run_MCMC_single_iter, mcmc_list,show.info=FALSE)
         mcmc_list <- Map(do.call, run_MCMC_single_iter, mcmc_list)
+                                        #mcmc_list <- lapply(mcmc_list, run_multiple_iter)
+                                        #mcmc_list <- lapply(mcmc_list, do.call, run_MCMC_single_iter[[1]])
+                                        #mcmc_list <- mclapply(mcmc_list, run_multiple_iter)
+                                        #mcmc_list <- parLapply(cl, mcmc_list, run_multiple_iter)
+                                        #foreach(jh=1:length(mcmc_list)) %dopar%{
+                                        #    mcmc_list[[jh]] <- run_multiple_iter(mcmc_list[[jh]])
+                                        #}
+                                        #mcmc_list <- clusterApply(NULL, mcmc_list, run_multiple_iter)
+                                        #mcmc_list <- Map(do.call, run_MCMC_single_iter, mcmc_list)
 ##############
-        
         ## perform parallel tempering
         if(i %% parallel_tempering_iter == 0){
             parallel_tempering_list <- parallel_tempering(mcmc_list, temperatures, offset)
@@ -362,7 +399,7 @@ run_MCMC_pt <- function(parTab,
             infectionHistories <- mcmc_list[[1]][["infectionHistories"]]
             save_infHist_to_disk(infectionHistories, infectionHistory_file, sampno)                                      
         }
-        sampno <- sampno + 1
+        sampno <- sampno + n_iter
         i <- i + 1
 
     }

@@ -31,7 +31,7 @@ create_posterior_func_fast <- function(parTab,
     tmp <- row.match(titreDat_repeats[,c("individual","samples","virus")], titreDat_unique[,c("individual","samples","virus")])
     titreDat_repeats$index <- tmp
 
-    measured_strain_indices <- match(titreDat_unique$virus, antigenic_map$inf_years) - 1 ## For each virus tested, what is its index in the antigenic map?
+    measured_strain_indices <- match(titreDat_unique$virus, antigenicMap$inf_years) - 1 ## For each virus tested, what is its index in the antigenic map?
     infection_strain_indices <- match(strain_isolation_times, strain_isolation_times) -1 ## For each virus that circulated, what is its index in the antigenic map?
 
     ## Get unique measurement sets for each individual at
@@ -128,6 +128,7 @@ create_posterior_func_fast <- function(parTab,
                       nInfs, swap_propn, swap_dist,
                       temp){
             names(pars) <- par_names
+
             ## Work out short and long term boosting cross reactivity - C++ function
             antigenic_map_long <- create_cross_reactivity_vector(antigenicMapMelted, pars["sigma1"])
             antigenic_map_short <- create_cross_reactivity_vector(antigenicMapMelted, pars["sigma2"])
