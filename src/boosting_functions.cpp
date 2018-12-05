@@ -1,7 +1,4 @@
-#include <Rcpp.h>
 #include "boosting_functions.h"
-using namespace Rcpp;
-
 
 #define MAX(a,b) ((a) < (b) ? (b) : (a)) // define MAX function for use later
 
@@ -230,5 +227,66 @@ void add_multiple_infections_boost(NumericVector &predicted_titres,
 				     number_strains,
 				     n_samples,
 				     max_infections);							       
+  }
+}
+
+
+void titre_data_fast_individual_base(NumericVector &predicted_titres,
+				     const double &mu, 
+				     const double &mu_short, 
+				     const double &wane, 
+				     const double &tau,
+				     const NumericVector &infection_times,
+				     const IntegerVector &infection_strain_indices_tmp,
+				     const IntegerVector &measurement_strain_indices,
+				     const NumericVector &sample_times,
+				     const int &index_in_samples,
+				     const int &end_index_in_samples,
+				     const int &start_index_in_data1,
+				     const IntegerVector &nrows_per_blood_sample,
+				     const int &number_strains,
+				     const NumericVector &antigenic_map_short,
+				     const NumericVector &antigenic_map_long
+				     ){
+  double sampling_time;
+  double time;
+  double n_inf;
+  double wane_amount;
+  double seniority;
+  
+  int n_titres;
+  int max_infections = infection_times.size();
+  int end_index_in_data;
+  int tmp_titre_index;
+  int start_index_in_data = start_index_in_data1;
+  int inf_map_index;
+  int index;    
+
+  // For each sample this individual has
+  for(int j = index_in_samples; j <= end_index_in_samples; ++j){
+    sampling_time = sample_times[j];
+    n_inf = 1.0;	
+    n_titres = nrows_per_blood_sample[j];
+	
+    end_index_in_data = start_index_in_data + n_titres;
+    tmp_titre_index = start_index_in_data;
+
+    // Sum all infections that would contribute towards observed titres at this time
+    for(int x = 0; x < max_infections; ++x){
+      if(sampling_time >= infection_times[x]){
+	time = sampling_time - infection_times[x];
+	wane_amount= MAX(0, 1.0 - (wane*time));
+	seniority = MAX(0, 1.0 - tau*(n_inf - 1.0));
+	inf_map_index = infection_strain_indices_tmp[x];
+
+	for(int k = 0; k < n_titres; ++k){
+	  index = measurement_strain_indices[tmp_titre_index + k]*number_strains + inf_map_index;
+	  predicted_titres[tmp_titre_index + k] += seniority * 
+	    ((mu*antigenic_map_long[index]) + (mu_short*antigenic_map_short[index])*wane_amount);
+	}
+	++n_inf;
+      }	     
+    }
+    start_index_in_data = end_index_in_data;
   }
 }

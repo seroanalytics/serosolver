@@ -29,6 +29,8 @@ infection_model_indiv(theta, infectionHistory, infectionTimes,
 \item{numberStrains}{int, the maximum number of infections that an individual could experience}
 
 \item{DOB}{double, the date of birth of this individual. Currently not used.}
+
+\item{additional_arguments, }{Nullable<List> currently not used, but the idea is to use thsi object to pass more flexible additional arguments to the bottom of the call stack}
 }
 \value{
 NumericVector of predicted titres for each entry in measurementMapIndices

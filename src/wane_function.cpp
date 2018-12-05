@@ -1,6 +1,4 @@
-#include <Rcpp.h>
 #include "wane_function.h"
-using namespace Rcpp;
 
 //' Function to calculate non-linear waning
 //'  All additional parameters for the function are declared here
