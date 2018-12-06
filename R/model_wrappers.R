@@ -1,29 +1,29 @@
 #' Solves the re-implementation of the model for a single individual
 #' @export
-solve_model_individual <- function(parTab, infectionHistory, sampleTime, antigenicMap, mu_indices=NULL){
+solve_model_individual <- function(par_tab, infectionHistory, sampleTime, antigenic_map, mu_indices=NULL){
     ## Unique strains that an individual could be exposed to
-    strains <- unique(antigenicMap$inf_years)
+    strains <- unique(antigenic_map$inf_years)
     ## The entry of each strain in the antigenic map table
     strainIndices <- match(strains, strains) - 1
-    antigenicMapMelted <- c(outputdmatrix.fromcoord(antigenicMap[,c("x_coord","y_coord")]))
+    antigenic_map_melted <- c(outputdmatrix.fromcoord(antigenic_map[,c("x_coord","y_coord")]))
 
-    pars <- parTab$values
-    names(pars) <- parTab$names
+    pars <- par_tab$values
+    names(pars) <- par_tab$names
     ## Work out short and long term boosting cross reactivity - C++ function
-    antigenicMapLong <- create_cross_reactivity_vector(antigenicMapMelted, pars["sigma1"])
-    antigenicMapShort <- create_cross_reactivity_vector(antigenicMapMelted, pars["sigma2"])
+    antigenic_map_long <- create_cross_reactivity_vector(antigenic_map_melted, pars["sigma1"])
+    antigenic_map_short <- create_cross_reactivity_vector(antigenic_map_melted, pars["sigma2"])
 
     if(is.null(mu_indices)){
         y <- infection_model_indiv(pars, infectionHistory, strains, strainIndices, sampleTime,
-                               strainIndices,antigenicMapLong, antigenicMapShort, length(infectionHistory))
+                               strainIndices,antigenic_map_long, antigenic_map_short, length(infectionHistory))
     } else {
-        mus <- parTab[parTab$identity == 3,"values"]
+        mus <- par_tab[par_tab$identity == 3,"values"]
         print(mus)
         print(mu_indices)
         y <- infection_model_indiv_mus(pars, mus, infectionHistory,
                                        strains, mu_indices, strainIndices, sampleTime,
-                                       strainIndices,antigenicMapLong,
-                                       antigenicMapShort, length(infectionHistory))
+                                       strainIndices,antigenic_map_long,
+                                       antigenic_map_short, length(infectionHistory))
     }
     return(y)
 
@@ -31,7 +31,7 @@ solve_model_individual <- function(parTab, infectionHistory, sampleTime, antigen
 
 #' Solves the original model as in the original implementation
 #' @export
-solve_model_individual_original <- function(theta_star, sample, antigenic.map.in, years, infHist){ 
+solve_model_individual_original <- function(theta_star, sample, antigenic.map.in, years, infection_history){ 
     dmatrix = 1- theta_star[["sigma1"]]*outputdmatrix.fromcoord.original(theta_star[["sigma1"]],years,antigenic.map.in,linearD=T)
     dmatrix[dmatrix<0]=0
     dmatrix2 = 1- theta_star[["sigma2"]]*outputdmatrix.fromcoord.original(theta_star[["sigma2"]],years,antigenic.map.in,linearD=T)
@@ -49,8 +49,8 @@ solve_model_individual_original <- function(theta_star, sample, antigenic.map.in
     d_vector=melt(t(d.ij))$value #melt is by column
     d.ij2=dmatrix2[test.part,] # Define cross-immunity matrix 2 for sample strain
     d_vector2=melt(t(d.ij2))$value #melt is by column
-    expect=c_model_original(length(infHist),length(years),infHist, theta_star, d_vector,d_vector2,testyear_index);
-    #expect=func1(as.numeric(infHist),titredat,d_vector,d_vector2,theta_star,testyear_index) # Output expectation
+    expect=c_model_original(length(infection_history),length(years),infection_history, theta_star, d_vector,d_vector2,testyear_index);
+    #expect=func1(as.numeric(infection_history),titredat,d_vector,d_vector2,theta_star,testyear_index) # Output expectation
     dat <- data.frame(years=years, y=expect)
     return(dat)
 }

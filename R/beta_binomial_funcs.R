@@ -91,7 +91,7 @@ hist_rbb <- function(n, mean, var){
 #' @param var desired variance
 #' @return alpha and beta for the beta binomial
 #' @export
-find_a_b <- function(n, mean, var){
+find_prior_alpha_beta <- function(n, mean, var){
   y <- mean
   z <- var
   x <- (n-y)/y

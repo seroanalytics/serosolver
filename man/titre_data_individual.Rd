@@ -4,39 +4,45 @@
 \alias{titre_data_individual}
 \title{Model function individual}
 \usage{
-titre_data_individual(theta, infectionHistory, circulationTimes,
-  circulationMapIndices, samplingTimes, dataIndices, measuredMapIndices,
-  antigenicMapLong, antigenicMapShort, numberStrains, DOB = 0,
-  additional_arguments = NULL)
+titre_data_individual(theta, infection_history, circulation_times,
+  circulation_times_indices, sample_times, data_indices,
+  measurement_strain_indices, antigenic_map_long, antigenic_map_short,
+  number_strains, DOB = 0, additional_arguments = NULL)
 }
 \arguments{
 \item{theta}{NumericVector, the named vector of model parameters}
 
-\item{infectionHistory}{IntegerVector, the vector of 1s and 0s showing presence/absence of infection for each possible time.}
+\item{infection_history}{IntegerVector, the vector of 1s and 0s showing presence/absence of infection for each possible time.}
 
-\item{circulationTimes}{NumericVector, the actual times of circulation that the infection history vector corresponds to}
+\item{circulation_times}{NumericVector, the actual times of circulation that the infection history vector corresponds to}
 
-\item{circulationMapIndices}{IntegerVector, which entry in the melted antigenic map that these infection times correspond to}
+\item{sample_times}{NumericVector, the times that each blood sample was taken}
 
-\item{samplingTimes}{NumericVector, the times that each blood sample was taken}
+\item{measurement_strain_indices}{IntegerVector, the indices of all measured strains in the melted antigenic map}
 
-\item{dataIndices}{IntegerVector, the indices in the overall titre data vector (of observations) that each sample corresponds to}
+\item{antigenic_map_long}{NumericVector, the collapsed cross reactivity map for long term boosting, after multiplying by sigma1}
 
-\item{measuredMapIndices}{IntegerVector, the indices of all measured strains in the melted antigenic map}
+\item{antigenic_map_short}{NumericVector, the collapsed cross reactivity map for short term boosting, after multiplying by sigma2}
 
-\item{antigenicMapLong}{NumericVector, the collapsed cross reactivity map for long term boosting, after multiplying by sigma1}
-
-\item{antigenicMapShort}{NumericVector, the collapsed cross reactivity map for short term boosting, after multiplying by sigma2}
-
-\item{numberStrains}{int, the maximum number of infections that an individual could experience}
+\item{number_strains}{int, the maximum number of infections that an individual could experience}
 
 \item{DOB}{double, the date of birth of this individual. Currently not used.}
 
 \item{additional_arguments, }{Nullable<List> currently not used, but the idea is to use thsi object to pass more flexible additional arguments to the bottom of the call stack}
+
+\item{circulationMapIndices}{IntegerVector, which entry in the melted antigenic map that these infection times correspond to}
+
+\item{dataIndices}{IntegerVector, the indices in the overall titre data vector (of observations) that each sample corresponds to}
 }
 \value{
-NumericVector of predicted titres for each entry in measuredMapIndices
+NumericVector of predicted titres for each entry in measurement_strain_indices
 }
 \description{
 The main model solving function for a single individual for a vector of sampling times
 }
+\seealso{
+Other titre_model: \code{\link{infection_model_indiv}},
+  \code{\link{titre_data_fast}},
+  \code{\link{titre_data_group}}
+}
+\concept{titre_model}

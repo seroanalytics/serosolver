@@ -91,7 +91,7 @@ NumericVector likelihood_func_fast(const NumericVector &theta, const NumericVect
 				erf((obs[i]     - predicted_titres[i]) / den)));    
       // For titres above the maximum, 
     } else if(obs[i] >= max_titre) {
-      ret[i] = log_const + log(1.0 + erf((max_titre - predicted_titres[i])/den));
+      ret[i] = log_const + log(erfc((max_titre - predicted_titres[i])/den));
     } else {
       ret[i] = log_const + log(1.0 + erf((1.0 - predicted_titres[i])/den));
     }
@@ -99,63 +99,8 @@ NumericVector likelihood_func_fast(const NumericVector &theta, const NumericVect
   return(ret);
 } 
 
-//' Approximation of Gauss error function
-//'  Used to attempt a fast implementation of the normal observation error function
-double erf_native(double x)
-{
-    // constants
-    double a1 =  0.254829592;
-    double a2 = -0.284496736;
-    double a3 =  1.421413741;
-    double a4 = -1.453152027;
-    double a5 =  1.061405429;
-    double p  =  0.3275911;
-
-    // Save the sign of x
-    int sign = 1;
-    if (x < 0)
-        sign = -1;
-    x = fabs(x);
-
-    // A&S formula 7.1.26
-    double t = 1.0/(1.0 + p*x);
-    double y = 1.0 - (((((a5*t + a4)*t) + a3)*t + a2)*t + a1)*t*exp(-x*x);
-
-    return sign*y;
-}
-
-//' Likelihood function, fast but with native ERF implementation
-//'  Calculate the probability of a set of observed titres given a corresponding set of predicted titres. SLIGHTLY SLOWER
-//' @param theta NumericVector, a named parameter vector giving the normal distribution standard deviation and the max observable titre
-//' @param obs NumericVector, the vector of observed log titres
-//' @param predicted_titres NumericVector, the vector of predicted log titres
-//' @param a vector of same length as the input data giving the probability of observing each observation given the predictions
-//' @return a likelihood for each observed titre
-//' @export
-//' @family likelihood_functions
-// [[Rcpp::export]]
-NumericVector likelihood_func_fast_native(const NumericVector &theta, const NumericVector &obs, const NumericVector &predicted_titres){
-  int total_titres = predicted_titres.size();
-  NumericVector ret(total_titres);
-  const double sd = theta["error"];
-  const double den = sd*M_SQRT2;
-  const double max_titre = theta["MAX_TITRE"];
-  const double log_const = log(0.5);
-
-  for(int i = 0; i < total_titres; ++i){
-    if(obs[i] < max_titre && obs[i] >= 1.0){
-      ret[i] = log_const + log((erf_native((obs[i] + 1.0 - predicted_titres[i]) / den) -
-				erf_native((obs[i]     - predicted_titres[i]) / den)));    
-    } else if(obs[i] >= max_titre) {
-      ret[i] = log_const + log(1.0 + erf_native((max_titre - predicted_titres[i])/den));
-    } else {
-      ret[i] = log_const + log(1.0 + erf_native((1.0 - predicted_titres[i])/den));
-    }
-  }
-  return(ret);
-} 
-
-
+// Likelihood calculation for infection history proposal
+// Not really to be used elsewhere other than in \code{\link{infection_history_proposal_gibbs_fast}}, as requires correct indexing for the predicted titres vector. Also, be very careful, as predicted_titres is set to 0 at the end!
 void proposal_likelihood_func(double &new_prob,
 			      NumericVector &predicted_titres,
 			      const int &indiv,
@@ -172,7 +117,7 @@ void proposal_likelihood_func(double &new_prob,
       new_prob += log_const + log((erf((data[x] + 1.0 - predicted_titres[x]) / den) -
 				   erf((data[x]     - predicted_titres[x]) / den)));    
     } else if(data[x] >= max_titre) {
-      new_prob += log_const + log(1.0 + erf((max_titre - predicted_titres[x])/den));
+      new_prob += log_const + log_const + log(erfc((max_titre - predicted_titres[x])/den));
     } else {
       new_prob += log_const + log(1.0 + erf((1.0 - predicted_titres[x])/den));
     }
@@ -185,7 +130,7 @@ void proposal_likelihood_func(double &new_prob,
       new_prob += log_const + log((erf((repeat_data[x] + 1.0 - predicted_titres[repeat_indices[x]]) / den) -
 				   erf((repeat_data[x]     - predicted_titres[repeat_indices[x]]) / den)));    
     } else if(repeat_data[x] >= max_titre) {
-      new_prob += log_const + log(1.0 + erf((max_titre - predicted_titres[repeat_indices[x]])/den));
+      new_prob += log_const + log(erfc((max_titre - predicted_titres[repeat_indices[x]])/den));
     } else {
       new_prob += log_const + log(1.0 + erf((1.0 - predicted_titres[repeat_indices[x]])/den));
     }
@@ -226,7 +171,7 @@ double likelihood_titre_basic(const NumericVector &expected,
     if(!NumericVector::is_na(data[i])){
       if(data[i] >= theta["MAX_TITRE"]){
 	lnlike += R::pnorm(theta["MAX_TITRE"], expected[i], theta["error"],0,1);
-      } else if(data[i] <= 0.0){
+      } else if(data[i] < 1.0){
 	lnlike += R::pnorm(1, expected[i], theta["error"],1,1);
       } else {
 	lnlike += log(R::pnorm(data[i]+1, expected[i],theta["error"], 1,0) - 

@@ -6,10 +6,10 @@
 #' @export
 #' @useDynLib serosolver
 get_best_pars <- function(chain){
-    tmpNames <- colnames(chain)[2:(ncol(chain)-1)]
-    bestPars <- as.numeric(chain[which.max(chain[,"lnlike"]),2:(ncol(chain)-1)])
-    names(bestPars) <- tmpNames
-    return(bestPars)
+    tmp_names <- colnames(chain)[2:(ncol(chain)-1)]
+    best_pars <- as.numeric(chain[which.max(chain[,"lnlike"]),2:(ncol(chain)-1)])
+    names(best_pars) <- tmp_names
+    return(best_pars)
 }
 
 #' Index pars
@@ -20,9 +20,9 @@ get_best_pars <- function(chain){
 #' @return a named vector of the best parameters
 #' @export
 get_index_pars <- function(chain, index){
-    tmpNames <- colnames(chain)[2:(ncol(chain)-1)]
+    tmp_names <- colnames(chain)[2:(ncol(chain)-1)]
     pars <- as.numeric(chain[index,2:(ncol(chain)-1)])
-    names(pars) <- tmpNames
+    names(pars) <- tmp_names
     return(pars)
 }
     
@@ -97,13 +97,12 @@ fromUnitScale <- function(x,min,max){
 
 #' @export
 describe_proposals <- function(){
-    print("The following text describes the proposal step for updating infection histories.")
-    print("Version 1: performs N `flip` proposals at random locations in an individual's infectoin history, switching 1->0 or 0->1. Otherwise, swaps the contents of two random locations")
-    print("Version 2: samples from a beta binomial with alpha and beta specified by the parTab input. Only proposes one move at a time")
-    print("Version 3: samples from a beta binomial with alpha and beta specified by the parTab input. Proposes nInfs moves at a time for add/remove, or when swapping, swaps locations up to moveSize time steps away")
-    print("Version 4: samples from Adam's original proposal")
-    print("Version 5: samples directly from the current value of lambda")
-    print("Version 6: gibbs sampling of infection histories as in Indian Buffet Process papers")
+    print("Which version to use in run_MCMC? The following text describes the proposal step for updating infection histories.")
+    print("Version 1: Explicit FOI on each epoch using lambda term. Proposal performs N `flip` proposals at random locations in an individual's infectoin history, switching 1->0 or 0->1. Otherwise, swaps the contents of two random locations")
+    print("Version 2: gibbs sampling of infection histories as in Indian Buffet Process papers")
+    print("Version 3: samples from a beta binomial with alpha and beta specified by the par_tab input. Proposes nInfs moves at a time for add/remove, or when swapping, swaps locations up to moveSize time steps away")
+    print("Version 4: gibbs sampling of infection histories using total number of infections across all years and all individuals as the prior")
+
 }
 
 #' @export
@@ -116,19 +115,23 @@ logit_transform <- function(p, maxX){
 }
 
 
+#' Pad par_tab with alpha and betas
+#'
+#' Pads par_tab with a new row for each infection epoch, such that each epoch has its own alpha and beta
+#' @param par_tab as per usual
+#' @param n_times the number of additional rows to add for each alpha and beta
 #' @export
-pad_alphas_and_betas <- function(parTab, n_times){
-    alpha_row <- parTab[parTab$names == "alpha",]
-    beta_row <- parTab[parTab$names == "beta",]
+pad_alphas_and_betas <- function(par_tab, n_times){
+    alpha_row <- par_tab[par_tab$names == "alpha",]
+    beta_row <- par_tab[par_tab$names == "beta",]
 
     for(i in 1:(n_times-1)){
-        parTab <- rbind(parTab, alpha_row, beta_row)
+        par_tab <- rbind(par_tab, alpha_row, beta_row)
     }
-    parTab    
+    par_tab    
 }
 
-
-
+## From prodlim package - finds matching rows between two data frames. "Thus the function returns a vector with the row numbers of (first) matches of its first argument in its second.", https://www.rdocumentation.org/packages/prodlim/versions/2018.04.18/topics/row.match
 row.match <- function (x, table, nomatch = NA) {
   if (class(table) == "matrix") 
     table <- as.data.frame(table)
@@ -139,20 +142,29 @@ row.match <- function (x, table, nomatch = NA) {
   match(cx, ct, nomatch = nomatch)
 }
 
-
+#' Setup titre data indices
+#'
+#' Sets up a large list of pre-indexing and pre-processing to speed up the model solving during MCMC fitting.
+#' @param par_tab the parameter table controlling information such as bounds, initial values etc
+#' @param titre_dat the data frame of data to be fitted. Must have columns: group (index of group); individual (integer ID of individual); samples (numeric time of sample taken); virus (numeric time of when the virus was circulating); titre (integer of titre value against the given virus at that sampling time)
+#' @param antigenic_map a data frame of antigenic x and y coordinates. Must have column names: x_coord; y_coord; inf_years
+#' @param age_mask @param age_mask see \code{\link{create_age_mask}} - a vector with one entry for each individual specifying the first epoch of circulation in which an individual could have been exposed. Only calculates if set to NULL.
+#' @param n_alive if not NULL, uses this as the number alive in a given year rather than calculating from the ages. This is needed if the number of alive individuals is known, but individual birth dates are not
+#' @return a very long list. See source code directly.
+#' @seealso \code{\link{create_posterior_func}}
 #' @export
-setup_titredat_for_posterior_func <- function(titreDat, antigenicMap, ageMask, n_alive){
-    strain_isolation_times <- antigenicMap$inf_years
+setup_titredat_for_posterior_func <- function(titre_dat, antigenic_map, age_mask=NULL, n_alive=NULL){
+    strain_isolation_times <- antigenic_map$inf_years
     number_strains <- length(strain_isolation_times)
-    antigenicMapMelted <- c(outputdmatrix.fromcoord(antigenicMap[,c("x_coord","y_coord")]))
+    antigenic_map_melted <- c(outputdmatrix.fromcoord(antigenic_map[,c("x_coord","y_coord")]))
     
-    measured_strain_indices <- match(titreDat$virus, antigenicMap$inf_years) - 1 ## For each virus tested, what is its index in the antigenic map?
+    measured_strain_indices <- match(titre_dat$virus, antigenic_map$inf_years) - 1 ## For each virus tested, what is its index in the antigenic map?
     infection_strain_indices <- match(strain_isolation_times, strain_isolation_times) -1 ## For each virus that circulated, what is its index in the antigenic map?
 
     ## Get unique measurement sets for each individual at
     ## each sampling time for each repeat
     ## ie. each row of this is a unique blood sample taken
-    samples <- unique(titreDat[,c("individual","samples","run")])
+    samples <- unique(titre_dat[,c("individual","samples","run")])
     sample_times <- samples$samples ## What were the times that these samples were taken?
     individuals <- samples$individual ## Who are the individuals that these samples correspond to?
     n_indiv <- length(unique(individuals))
@@ -161,9 +173,9 @@ setup_titredat_for_posterior_func <- function(titreDat, antigenicMap, ageMask, n
     ## ie. each element of this vector corresponds to one set of titres that need to be predicted
     nrows_per_blood_sample <- NULL
     for(i in 1:nrow(samples)){
-        nrows_per_blood_sample <- c(nrows_per_blood_sample, nrow(samples[titreDat$individual == samples[i,"individual"] &
-                                                                         titreDat$samples == samples[i,"samples"] &
-                                                                         titreDat$run == samples[i,"run"],]))
+        nrows_per_blood_sample <- c(nrows_per_blood_sample, nrow(samples[titre_dat$individual == samples[i,"individual"] &
+                                                                         titre_dat$samples == samples[i,"samples"] &
+                                                                         titre_dat$run == samples[i,"run"],]))
     }
 
     ## Which indices in the sampling times vector correspond to each individual?
@@ -179,30 +191,30 @@ setup_titredat_for_posterior_func <- function(titreDat, antigenicMap, ageMask, n
     ## And, how many rows match each individual?
     nrows_per_individual_in_data <- NULL
     for(individual in unique(individuals)){
-        nrows_per_individual_in_data <- c(nrows_per_individual_in_data, nrow(titreDat[titreDat$individual == individual,]))
+        nrows_per_individual_in_data <- c(nrows_per_individual_in_data, nrow(titre_dat[titre_dat$individual == individual,]))
     }
     cum_nrows_per_individual_in_data <- cumsum(c(0,nrows_per_individual_in_data))
 
-    if(!is.null(titreDat$DOB)){
-        DOBs <- unique(titreDat[,c("individual","DOB")])[,2]
+    if(!is.null(titre_dat$DOB)){
+        DOBs <- unique(titre_dat[,c("individual","DOB")])[,2]
     } else {
         DOBs <- rep(min(strain_isolation_times), n_indiv)
     }
-    if(is.null(ageMask)){
-        if(!is.null(titreDat$DOB)){
-            ageMask <- create_age_mask(DOBs, strain_isolation_times)
+    if(is.null(age_mask)){
+        if(!is.null(titre_dat$DOB)){
+            age_mask <- create_age_mask(DOBs, strain_isolation_times)
         } else {
-            ageMask <- rep(1, n_indiv)
+            age_mask <- rep(1, n_indiv)
         }
     }
-    strainMask <- create_strain_mask(titreDat,strain_isolation_times)
-    masks <- data.frame(cbind(ageMask, strainMask))
+    strain_mask <- create_strain_mask(titre_dat,strain_isolation_times)
+    masks <- data.frame(cbind(age_mask, strain_mask))
     if (is.null(n_alive)) {
         n_alive <- sapply(seq(1,length(strain_isolation_times)), function(x)
-            nrow(masks[masks$ageMask <=x & masks$strainMask >= x,]))
+            nrow(masks[masks$age_mask <=x & masks$strain_mask >= x,]))
     }    
     return(list("individuals"=individuals,
-                "antigenicMapMelted"=antigenicMapMelted,
+                "antigenic_map_melted"=antigenic_map_melted,
                 "strain_isolation_times"=strain_isolation_times,
                 "infection_strain_indices"=infection_strain_indices,
                 "sample_times"=sample_times,
@@ -212,8 +224,8 @@ setup_titredat_for_posterior_func <- function(titreDat, antigenicMap, ageMask, n
                 "nrows_per_blood_sample"=nrows_per_blood_sample,
                 "measured_strain_indices"=measured_strain_indices,
                 "n_indiv"=n_indiv,
-                "ageMask"=ageMask,
-                "strainMask"=strainMask,
+                "age_mask"=age_mask,
+                "strain_mask"=strain_mask,
                 "n_alive"=n_alive,
                 "DOBs"=DOBs))   
     

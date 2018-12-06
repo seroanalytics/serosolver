@@ -1,12 +1,12 @@
 create_run_MCMC_single_iter_fn_fast<- function(unfixed_pars,unfixed_par_length,
                                                lower_bounds,upper_bounds,
-                                               ageMask, strainMask,
+                                               age_mask, strain_mask,
                                                posterior_simp, extra_probabilities, proposal_gibbs,
                                                alpha, beta, histSampleProb, nInfs_vec, swapPropn, moveSize,
                                                n_alive, switch_sample, hist_switch_prob, year_swap_propn
                                                ){
     f <- function(i, par_i,
-                  current_pars,infectionHistories,
+                  current_pars,infection_histories,
                   likelihoods, total_likelihood,
                   prior_prob, posterior,
                   tempaccepted,tempiter,
@@ -31,9 +31,9 @@ create_run_MCMC_single_iter_fn_fast<- function(unfixed_pars,unfixed_par_length,
                 )
                ){
                 ## Calculate new likelihood and find difference to old likelihood
-                new_likelihoods <- posterior_simp(proposal,infectionHistories)
+                new_likelihoods <- posterior_simp(proposal,infection_histories)
                 new_total_likelihood <- sum(new_likelihoods) # Total
-                new_prior_prob <- extra_probabilities(proposal, infectionHistories) # Prior
+                new_prior_prob <- extra_probabilities(proposal, infection_histories) # Prior
                 new_posterior <- new_total_likelihood + new_prior_prob # Posterior
 
                 log_prob <- new_posterior-posterior
@@ -55,11 +55,11 @@ create_run_MCMC_single_iter_fn_fast<- function(unfixed_pars,unfixed_par_length,
         } else {
             ## Need to temporarily store current parameters as new pars, as
             ## might change with lambda swap step
-            n_indiv <- nrow(infectionHistories)
+            n_indiv <- nrow(infection_histories)
             indivSubSample <- sample(1:n_indiv, ceiling(histSampleProb*n_indiv))
             proposal <- current_pars
                                         #if(histSwitchProb > hist_switch_prob){
-            prop_gibbs <- proposal_gibbs(proposal, infectionHistories,
+            prop_gibbs <- proposal_gibbs(proposal, infection_histories,
                                          likelihoods,
                                          indivSubSample, 
                                          alpha, beta,
@@ -68,7 +68,7 @@ create_run_MCMC_single_iter_fn_fast<- function(unfixed_pars,unfixed_par_length,
             new_likelihoods <- prop_gibbs$old_probs
             newInfectionHistories <- prop_gibbs$new_infection_history
                                         #} else {
-                                        #    newInfectionHistories <- inf_hist_swap(infectionHistories, ageMask, strainMask,
+                                        #    newInfectionHistories <- inf_hist_swap(infection_histories, age_mask, strain_mask,
                                         #                                           year_swap_propn, moveSize)
                                         #    new_likelihoods <- posterior_simp(proposal, newInfectionHistories)/temp
                                         #}
@@ -81,20 +81,20 @@ create_run_MCMC_single_iter_fn_fast<- function(unfixed_pars,unfixed_par_length,
             log_prob <- new_posterior - posterior
 #            if(histSwitchProb > hist_switch_prob){
             if(!is.na(log_prob) & !is.nan(log_prob) & is.finite(log_prob)){
-                infectionHistories <- newInfectionHistories
+                infection_histories <- newInfectionHistories
                 likelihoods <- new_likelihoods
                 total_likelihood <- new_total_likelihood
                 prior_prob <- new_prior_prob
                 posterior <- new_posterior
             }
                                         #   } else {
-                                        # if(!identical(newInfectionHistories, infectionHistories)){
+                                        # if(!identical(newInfectionHistories, infection_histories)){
                                         #     log_prob <- new_posterior - posterior
                                         #      if(!is.na(log_prob) & !is.nan(log_prob) & is.finite(log_prob)){
                                         #        log_prob <- min(log_prob, 0)
                                         #        if(log(runif(1)) < log_prob){
-                                        #infHistSwapAccept <- infHistSwapAccept + 1
-                                        #            infectionHistories <- newInfectionHistories
+                                        #infection_historySwapAccept <- infection_historySwapAccept + 1
+                                        #            infection_histories <- newInfectionHistories
                                         #            current_pars <- proposal
                                         #            likelihoods <- new_likelihoods
                                         #            total_likelihood <- new_total_likelihood
@@ -106,7 +106,7 @@ create_run_MCMC_single_iter_fn_fast<- function(unfixed_pars,unfixed_par_length,
                                         #}
         }
         list("i"=i, "par_i" = par_i,
-             "current_pars" = current_pars,"infectionHistories"=infectionHistories,
+             "current_pars" = current_pars,"infection_histories"=infection_histories,
              "likelihoods"=likelihoods,"total_likelihood" = total_likelihood,
              "prior_prob"=prior_prob,"posterior"=posterior,
              "tempaccepted" = tempaccepted,"tempiter" = tempiter,
@@ -135,7 +135,7 @@ parallel_tempering <- function(mcmc_list, temperatures, offset){
     all_likelihoods <- lapply(mcmc_list, function(x) x$likelihoods)
     
     all_current_pars <- lapply(mcmc_list, function(x) x$current_pars)
-    all_infectionHistories <- lapply(mcmc_list, function(x) x$infectionHistories)
+    all_infection_histories <- lapply(mcmc_list, function(x) x$infection_histories)
     
     ## decide which chains to swap
     if((offset + 1) <= (length(mcmc_list) - 1)){
@@ -162,12 +162,12 @@ parallel_tempering <- function(mcmc_list, temperatures, offset){
         all_likelihoods <- perform_swap(all_likelihoods, swap_ind)
         all_prior_prob <- perform_swap(all_prior_prob, swap_ind)
         all_posterior <- perform_swap(all_posterior, swap_ind)
-        all_infectionHistories <- perform_swap(all_infectionHistories, swap_ind)
-        new_list <- Map(function(x,y,z,b,c,q) list(current_pars = x, infectionHistories=y,
+        all_infection_histories <- perform_swap(all_infection_histories, swap_ind)
+        new_list <- Map(function(x,y,z,b,c,q) list(current_pars = x, infection_histories=y,
                                                    likelihoods=z, total_likelihood = b, 
                                                    prior_prob=c,posterior=q
                                                    ),
-                        all_current_pars, all_infectionHistories,
+                        all_current_pars, all_infection_histories,
                         all_likelihoods, all_likelihood, 
                         all_prior_prob, all_posterior
                         )

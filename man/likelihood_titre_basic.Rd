@@ -16,7 +16,7 @@ likelihood_titre_basic(expected, data, theta, titre_shifts)
 \item{titre_shifts}{NumericVector, OPTIONAL if using measurement bias, gives the shift to add to each expected titre}
 }
 \value{
-a single log likelihood
+a single log likelihood value
 }
 \description{
 Calculates the likelihood of a given set of observed titres given predicted titres. Based on truncated discritised normal. DEPRECATED, as this is a very slow (but obvious) implementation

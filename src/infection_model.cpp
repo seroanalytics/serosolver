@@ -5,7 +5,12 @@
 #include "likelihood_funcs.h"
 #include "infection_model.h"
 
+//' Overall model function, fast implementation
+//'
+//' See documentation for \code{\link{titre_data_group}}, as the interface is almost identical
+//' @return NumericVector of predicted titres for each entry in measurement_strain_indices
 //' @export
+//' @family titre_model
 // [[Rcpp::export(rng = false)]]
 NumericVector titre_data_fast(const NumericVector &theta, 
 			      const IntegerMatrix &infection_history_mat, 
@@ -99,6 +104,7 @@ NumericVector titre_data_fast(const NumericVector &theta,
 
   
 // Does some precomputation to speed up the model solving code
+// Sets up the waning rate and masked infectoin history vectors
 void setup_waning_and_masked_cumulative(const NumericVector &theta,
 					const IntegerVector &infection_history,
 					IntegerVector &cumu_infection_history, 
@@ -189,10 +195,11 @@ void setup_waning_and_masked_cumulative(const NumericVector &theta,
 //' @param antigenic_map_short NumericVector, the collapsed cross reactivity map for short term boosting, after multiplying by sigma2
 //' @param number_strains int, the maximum number of infections that an individual could experience
 //' @param DOB double, the date of birth of this individual. Currently not used.
-//' @param additional_arguments, Nullable<List> currently not used, but the idea is to use thsi object to pass more flexible additional arguments to the bottom of the call stack
+//' @param additional_arguments, Nullable<List> the idea is to use this object to pass more flexible additional arguments to the bottom of the call stack (used for strain dependent boosting right now)
 //' @return NumericVector of predicted titres for each entry in measurement_strain_indices
 //' @useDynLib serosolver
 //' @export
+//' @family titre_model
 //[[Rcpp::export]]
 NumericVector infection_model_indiv(const NumericVector &theta, // Parameter vector
 				    const IntegerVector &infection_history, // vector of 1s and 0s for infections
@@ -211,7 +218,7 @@ NumericVector infection_model_indiv(const NumericVector &theta, // Parameter vec
   // Which waning function type should we use
   // 0 is linear decrease
   // 1 is piecewise linear
-  int waneType = theta["wane_type"]; 
+  int wane_type = theta["wane_type"]; 
   // If titre dependent boosting or not
   bool titre_dependent_boosting = theta["titre_dependent"] == 1;
 
@@ -242,7 +249,7 @@ NumericVector infection_model_indiv(const NumericVector &theta, // Parameter vec
 				     infection_times, 
 				     max_infections, 
 				     samplingTime,
-				     waneType, 
+				     wane_type, 
 				     DOB,
 				     additional_arguments);
 
@@ -281,6 +288,7 @@ NumericVector infection_model_indiv(const NumericVector &theta, // Parameter vec
 //' @param additional_arguments, Nullable<List> currently not used, but the idea is to use thsi object to pass more flexible additional arguments to the bottom of the call stack
 //' @return NumericVector of predicted titres for each entry in measurement_strain_indices
 //' @export
+//' @family titre_model
 //[[Rcpp::export]]
 NumericVector titre_data_individual(const NumericVector &theta, 
 				    const IntegerVector &infection_history, 
@@ -294,30 +302,30 @@ NumericVector titre_data_individual(const NumericVector &theta,
 				    const int &number_strains,
 				    const double &DOB=0,
 				    const Nullable<List>& additional_arguments=R_NilValue){
-  int numberSamples = sample_times.size();
-  int numberMeasuredStrains = measurement_strain_indices.size();
-  NumericVector titres(numberMeasuredStrains);
+  int number_samples = sample_times.size();
+  int number_measured_strains = measurement_strain_indices.size();
+  NumericVector titres(number_measured_strains);
   
-  int startIndex = 0;
-  int endIndex = 0;
+  int start_index = 0;
+  int end_index = 0;
 
   LogicalVector indices = infection_history > 0;
 
-  IntegerVector conciseInfHist = infection_history[indices];
+  IntegerVector concise_inf_hist = infection_history[indices];
   NumericVector infection_times = circulation_times[indices];
-  IntegerVector infMapIndices = circulation_times_indices[indices];
+  IntegerVector inf_map_indices = circulation_times_indices[indices];
 
   IntegerVector tmp_range;
 
-  for(int i = 0; i < numberSamples; ++i){
-    endIndex = startIndex + data_indices[i] - 1;
+  for(int i = 0; i < number_samples; ++i){
+    end_index = start_index + data_indices[i] - 1;
     // Range index twice
-    tmp_range = Range(startIndex, endIndex);
-    titres[tmp_range] = infection_model_indiv(theta,conciseInfHist,infection_times,infMapIndices,
+    tmp_range = Range(start_index, end_index);
+    titres[tmp_range] = infection_model_indiv(theta,concise_inf_hist,infection_times,inf_map_indices,
 					       sample_times[i],measurement_strain_indices[tmp_range],
 					       antigenic_map_long, antigenic_map_short,number_strains,
 					       DOB, additional_arguments);
-    startIndex = endIndex + 1;
+    start_index = end_index + 1;
   }
   return(titres);
 }
@@ -330,16 +338,17 @@ NumericVector titre_data_individual(const NumericVector &theta,
 //' @param circulation_times NumericVector, the actual times of circulation that the infection history vector corresponds to
 //' @param circulation_times_indices IntegerVector, which entry in the melted antigenic map that these infection times correspond to
 //' @param sample_times NumericVector, the times that each blood sample was taken
-//' @param indicesTitreDataSample IntegerVector, How many rows in titre data correspond to each individual, sample and repeat?
-//' @param indicesTitreDataOverall IntegerVector, How many rows in the titre data correspond to each individual?
 //' @param rows_per_indiv_in_samples IntegerVector, Split the sample times and runs for each individual
+//' @param cum_nrows_per_individual_in_data IntegerVector, How many rows in the titre data correspond to each individual?
+//' @param rows_per_indiv_in_samples IntegerVector, How many rows in titre data correspond to each individual, sample and repeat?
 //' @param measurement_strain_indices IntegerVector, the indices of all measured strains in the melted antigenic map
-//' @param antigenic_map_long NumericVector, the collapsed cross reactivity map for long term boosting, after multiplying by sigma1
-//' @param antigenic_map_short NumericVector, the collapsed cross reactivity map for short term boosting, after multiplying by sigma2
-//' @param DOB NumericVector, the date of birth of all individuals. Currently not used.
-//' @param additional_arguments, Nullable<List> currently not used, but the idea is to use thsi object to pass more flexible additional arguments to the bottom of the call stack
+//' @param antigenic_map_long NumericVector, the collapsed cross reactivity map for long term boosting, after multiplying by sigma1 \code{\link{create_cross_reactivity_vector}}
+//' @param antigenic_map_short NumericVector, the collapsed cross reactivity map for short term boosting, after multiplying by sigma2, see \code{\link{create_cross_reactivity_vector}}
+//' @param DOBs NumericVector, the date of birth of all individuals. Currently not used.
+//' @param additional_arguments, Nullable<List> the idea is to use thsi object to pass more flexible additional arguments to the bottom of the call stack
 //' @return NumericVector of predicted titres for each entry in measurement_strain_indices
 //' @export
+//' @family titre_model
 //[[Rcpp::export]]
 NumericVector titre_data_group(const NumericVector &theta, 
 			       const IntegerMatrix &infection_history_mat, 
@@ -366,25 +375,25 @@ NumericVector titre_data_group(const NumericVector &theta,
   // These indices allow us to step through the titre data vector
   // as if it were a matrix ie. number of rows for each individual
   // at a time
-  int startIndexSamples;
-  int endIndexSamples;
-  int startIndexData;
-  int endIndexData;
+  int start_index_samples;
+  int end_index_samples;
+  int start_index_data;
+  int end_index_data;
   IntegerVector tmp_range;
   IntegerVector tmp_range_samples;
   int DOB;
 
   for(int i=1; i <= n; ++i){
-    startIndexSamples = rows_per_indiv_in_samples[i-1];
-    endIndexSamples = rows_per_indiv_in_samples[i] - 1;
+    start_index_samples = rows_per_indiv_in_samples[i-1];
+    end_index_samples = rows_per_indiv_in_samples[i] - 1;
 
-    startIndexData = cum_nrows_per_individual_in_data[i-1];
-    endIndexData = cum_nrows_per_individual_in_data[i] - 1;
+    start_index_data = cum_nrows_per_individual_in_data[i-1];
+    end_index_data = cum_nrows_per_individual_in_data[i] - 1;
 
     DOB = DOBs[i-1];
 
-    tmp_range = Range(startIndexData, endIndexData);
-    tmp_range_samples = Range(startIndexSamples, endIndexSamples);
+    tmp_range = Range(start_index_data, end_index_data);
+    tmp_range_samples = Range(start_index_samples, end_index_samples);
 
     titres[tmp_range] = titre_data_individual(theta,   // Vector of named model parameters
 					      infection_history_mat(i-1,_), // Vector of infection history for individual i
@@ -406,7 +415,7 @@ NumericVector titre_data_group(const NumericVector &theta,
 
 //' Likelihood for one individual
 //' 
-//' See infection_model_indiv, does the same thing but returns the log likelihood given some data. This is used by infection_history_proposal_gibbs
+//' See \code{\link{infection_model_indiv}}, does the same thing but returns the log likelihood given some data. This is used by infection_history_proposal_gibbs
 //' @export
 //[[Rcpp::export]]
 double likelihood_data_individual(const NumericVector &theta, 
@@ -424,31 +433,31 @@ double likelihood_data_individual(const NumericVector &theta,
 				  const double &DOB,
 				  const Nullable<List> &additional_arguments
 				  ){
-  int numberSamples = sample_times.size();
-  int numberMeasuredStrains = measurement_strain_indices.size();
+  int number_samples = sample_times.size();
+  int number_measured_strains = measurement_strain_indices.size();
   double lnlike=0;
-  NumericVector titres(numberMeasuredStrains);
+  NumericVector titres(number_measured_strains);
 
-  int startIndex = 0;
-  int endIndex = 0;
+  int start_index = 0;
+  int end_index = 0;
 
   LogicalVector indices = infection_history > 0;
 
-  IntegerVector conciseInfHist = infection_history[indices];
+  IntegerVector concise_inf_hist = infection_history[indices];
   NumericVector infection_times = circulation_times[indices];
-  IntegerVector infMapIndices = circulation_times_indices[indices];
+  IntegerVector inf_map_indices = circulation_times_indices[indices];
 
-  for(int i = 0; i < numberSamples; ++i){ 
-    endIndex = startIndex + data_indices[i] - 1;
-    titres[Range(startIndex, endIndex)] = infection_model_indiv(theta,
-								conciseInfHist,
+  for(int i = 0; i < number_samples; ++i){ 
+    end_index = start_index + data_indices[i] - 1;
+    titres[Range(start_index, end_index)] = infection_model_indiv(theta,
+								concise_inf_hist,
 								infection_times,
-								infMapIndices,
+								inf_map_indices,
 								sample_times[i],
-								measurement_strain_indices[Range(startIndex,endIndex)],
+								measurement_strain_indices[Range(start_index,end_index)],
 								antigenic_map_long, antigenic_map_short,
 								number_strains, DOB, additional_arguments);
-    startIndex = endIndex + 1;
+    start_index = end_index + 1;
   }
   lnlike = likelihood_titre_basic(titres, data, theta, titre_shifts);
   return(lnlike);

@@ -1,9 +1,9 @@
     
     
 
-run_MCMC_pt_fast <- function(parTab,
-                             titreDat,
-                             antigenicMap,
+run_MCMC_pt_fast <- function(par_tab,
+                             titre_dat,
+                             antigenic_map,
                              mcmcPars=c(),
                              startInfHist=NULL,
                              filename="test",
@@ -42,7 +42,7 @@ run_MCMC_pt_fast <- function(parTab,
     burnin <- mcmcPars_used[["burnin"]] # Run this many iterations before attempting adaptation. Idea is to reduce getting stuck in local maxima
     moveSize <- mcmcPars_used[["moveSize"]] # Number of infections to move/remove/add in each proposal step
     inf_propn <- mcmcPars_used[["inf_propn"]] # Number of infections to move/remove/add in each proposal step
-    nInfs <- floor(length(antigenicMap$inf_years)*inf_propn)
+    nInfs <- floor(length(antigenic_map$inf_years)*inf_propn)
     histOpt <- mcmcPars_used[["histOpt"]] # Should infection history proposal step be adaptive?
     swapPropn <- mcmcPars_used[["swapPropn"]] # If using gibbs, what proportion of proposals should be swap steps?
     hist_switch_prob <- mcmcPars_used[["hist_switch_prob"]] # If using gibbs, what proportion of iterations should be swapping contents of two time periods?
@@ -58,34 +58,34 @@ run_MCMC_pt_fast <- function(parTab,
     histProposal <- 2
     prior_on_total <- FALSE
     
-    ## Extract current pars from first parTab
-    current_pars <- parTab[[1]]$values
+    ## Extract current pars from first par_tab
+    current_pars <- par_tab[[1]]$values
 
     ## Starting pars and step sizes for each rung seperately -
     ## this is the only bit we need for each rung
-    start_pars <- lapply(parTab, function(x) x$values)
-    steps <- lapply(parTab, function(x) x$steps)
-    parTab <- parTab[[1]]
+    start_pars <- lapply(par_tab, function(x) x$values)
+    steps <- lapply(par_tab, function(x) x$steps)
+    par_tab <- par_tab[[1]]
 
     ## All these bits the same for each rung
-    param_length <- nrow(parTab)
-    unfixed_pars <- which(parTab$fixed == 0)
-    unfixed_par_length <- nrow(parTab[parTab$fixed== 0,])
-    par_names <- as.character(parTab$names)
+    param_length <- nrow(par_tab)
+    unfixed_pars <- which(par_tab$fixed == 0)
+    unfixed_par_length <- nrow(par_tab[par_tab$fixed== 0,])
+    par_names <- as.character(par_tab$names)
     
     ## Parameter constraints
-    lower_bounds <- parTab$lower_bound
-    upper_bounds <- parTab$upper_bound
-    fixed <- parTab$fixed
+    lower_bounds <- par_tab$lower_bound
+    upper_bounds <- par_tab$upper_bound
+    fixed <- par_tab$fixed
 
     ## CURRENTLY NOT USED, AS USING GIBBS VERSION
     ## If using lambda terms, pull their indices out of the parameter table
     lambda_indices <- NULL
     if("lambda" %in% par_names){
-        lambda_indices <- which(parTab$names == "lambda")
+        lambda_indices <- which(par_tab$names == "lambda")
     }
-    alpha <- parTab[parTab$names == "alpha","values"]
-    beta <- parTab[parTab$names == "beta","values"]
+    alpha <- par_tab[par_tab$names == "alpha","values"]
+    beta <- par_tab[par_tab$names == "beta","values"]
 
     ## Only doing univariate proposals
     tempaccepted <- tempiter <- integer(param_length)
@@ -94,13 +94,13 @@ run_MCMC_pt_fast <- function(parTab,
 
     ## Setup MCMC chain file with correct column names
     mcmc_chain_file <- paste0(filename,"_chain.csv")
-    infectionHistory_file <- paste0(filename,"_infectionHistories.csv")
+    infectionHistory_file <- paste0(filename,"_infection_histories.csv")
 
-    strainIsolationTimes <- unique(antigenicMap$inf_years) # How many strains are we testing against and what time did they circulate
-    samplingTimes <- unique(titreDat$sample) # What are the range of sampling times?
-    n_strain <- length(strainIsolationTimes) # How many strains could an individual see?
-    n_indiv <- length(unique(titreDat$individual)) # How many individuals in the titreDat?
-    n_groups <- length(unique(titreDat$group)) # How many groups in the titreDat?
+    strain_isolation_times <- unique(antigenic_map$inf_years) # How many strains are we testing against and what time did they circulate
+    samplingTimes <- unique(titre_dat$sample) # What are the range of sampling times?
+    n_strain <- length(strain_isolation_times) # How many strains could an individual see?
+    n_indiv <- length(unique(titre_dat$individual)) # How many individuals in the titre_dat?
+    n_groups <- length(unique(titre_dat$group)) # How many groups in the titre_dat?
     individuals <- 1:n_indiv # Create vector of individuals
     groups <- 1:n_groups # Create vector of groups
 
@@ -109,7 +109,7 @@ run_MCMC_pt_fast <- function(parTab,
     ## Housekeeping for infection history chain
     ###################
     ## To store acceptance rate of entire time period infection history swaps
-    infHistSwapN <- infHistSwapAccept <- 0
+    infection_historySwapN <- infection_historySwapAccept <- 0
 
     histiter <- histaccepted <- histiter_add <- histaccepted_add <- histiter_move <- histaccepted_move <- histreset <- integer(n_indiv)
     
@@ -123,40 +123,40 @@ run_MCMC_pt_fast <- function(parTab,
     ## Note that ages for all groups must be from same reference point
     ## -----------------------
 ###############
-    if(!is.null(titreDat$DOB)){
-        DOBs <- unique(titreDat[,c("individual","DOB")])[,2]
+    if(!is.null(titre_dat$DOB)){
+        DOBs <- unique(titre_dat[,c("individual","DOB")])[,2]
     } else {
-        DOBs <- rep(min(strainIsolationTimes), n_indiv)
+        DOBs <- rep(min(strain_isolation_times), n_indiv)
     }
-    ageMask <- create_age_mask(DOBs, strainIsolationTimes)
+    age_mask <- create_age_mask(DOBs, strain_isolation_times)
     ## Create strain mask
-    strainMask <- create_strain_mask(titreDat,strainIsolationTimes)
-    masks <- data.frame(cbind(ageMask, strainMask))
+    strain_mask <- create_strain_mask(titre_dat,strain_isolation_times)
+    masks <- data.frame(cbind(age_mask, strain_mask))
     ## Number of people that were born before each year and have had a sample taken since that year happened
-    if(is.null(n_alive)) n_alive <- sapply(seq(1,length(strainIsolationTimes)), function(x) nrow(masks[masks$ageMask <=x & masks$strainMask >= x,]))   
+    if(is.null(n_alive)) n_alive <- sapply(seq(1,length(strain_isolation_times)), function(x) nrow(masks[masks$age_mask <=x & masks$strain_mask >= x,]))   
     
     ## Create posterior calculating function
-    posterior_simp <- protect(CREATE_POSTERIOR_FUNC(parTab,
-                                            titreDat,
-                                            antigenicMap,
+    posterior_simp <- protect(CREATE_POSTERIOR_FUNC(par_tab,
+                                            titre_dat,
+                                            antigenic_map,
                                             version,
                                             solve_likelihood,
-                                            ageMask,
+                                            age_mask,
                                             measurement_indices_by_time=measurement_indices,
                                             mu_indices=mu_indices,
                                             n_alive=n_alive,
                                             function_type=1,
                                             ...))
     if(!is.null(CREATE_PRIOR_FUNC)){
-        prior_func <- CREATE_PRIOR_FUNC(parTab)
+        prior_func <- CREATE_PRIOR_FUNC(par_tab)
     }
-    ## If using gibbs proposal on infHist, create here
-    proposal_gibbs <- CREATE_POSTERIOR_FUNC(parTab,
-                                            titreDat,
-                                            antigenicMap,
+    ## If using gibbs proposal on infection_history, create here
+    proposal_gibbs <- CREATE_POSTERIOR_FUNC(par_tab,
+                                            titre_dat,
+                                            antigenic_map,
                                             version,
                                             solve_likelihood,
-                                            ageMask,
+                                            age_mask,
                                             measurement_indices_by_time=measurement_indices,
                                             mu_indices=mu_indices,
                                             n_alive=n_alive,
@@ -168,30 +168,30 @@ run_MCMC_pt_fast <- function(parTab,
     ## applies to the overall posterior whereas the main posterior function
     ## returns each individual's posterior
     if (!is.null(mu_indices)) {
-        prior_mu <- create_prior_mu(parTab)
+        prior_mu <- create_prior_mu(par_tab)
     }
     if (measurement_random_effects) {
-        prior_shifts <- create_prob_shifts(parTab)
+        prior_shifts <- create_prob_shifts(par_tab)
     }
 ######################
     
     ## Setup initial conditions
     ## I think this needs to be a list
-    infectionHistories = startInfHist[[1]]
+    infection_histories = startInfHist[[1]]
 
     ## Initial likelihood
-    likelihoods <- posterior_simp(current_pars,infectionHistories)
+    likelihoods <- posterior_simp(current_pars,infection_histories)
     ## Initial total likelihood
     total_likelihood <- sum(likelihoods)
     n_alive_tot <- sum(n_alive)
     ## Create closure to add extra prior probabilities, to avoid re-typing later
-    extra_probabilities <- function(prior_pars, prior_infHist){
+    extra_probabilities <- function(prior_pars, prior_infection_history){
         prior_probab <- 0
         if(histProposal == 2){
             if(prior_on_total){
-                prior_probab <- prior_probab + inf_mat_prior_total_cpp(prior_infHist, n_alive_tot, alpha, beta)
+                prior_probab <- prior_probab + inf_mat_prior_total_cpp(prior_infection_history, n_alive_tot, alpha, beta)
             } else {
-                prior_probab <- prior_probab + inf_mat_prior_cpp(prior_infHist, n_alive, alpha, beta)
+                prior_probab <- prior_probab + inf_mat_prior_cpp(prior_infection_history, n_alive, alpha, beta)
             }
         }
         if(!is.null(CREATE_PRIOR_FUNC)) prior_probab <- prior_probab + prior_func(prior_pars)
@@ -200,7 +200,7 @@ run_MCMC_pt_fast <- function(parTab,
         prior_probab
     }
     ## Initial total prior prob
-    prior_prob <- extra_probabilities(current_pars, infectionHistories)
+    prior_prob <- extra_probabilities(current_pars, infection_histories)
 
     ## Initial posterior prob
     posterior <- total_likelihood + prior_prob
@@ -228,11 +228,11 @@ run_MCMC_pt_fast <- function(parTab,
     
     ## Write starting conditions to file
     data.table::fwrite(as.data.frame(tmp_table),file=mcmc_chain_file,row.names=FALSE,col.names=TRUE,sep=",",append=FALSE)
-    save_infHist_to_disk(infectionHistories, infectionHistory_file, 1, append=FALSE,colNames=TRUE)
+    save_infection_history_to_disk(infection_histories, infectionHistory_file, 1, append=FALSE,colNames=TRUE)
 
     ## Initial indexing parameters
     no_recorded <- 1
-    no_recorded_infHist <- 1
+    no_recorded_infection_history <- 1
     sampno <- 2
     par_i <- 1
     i <- 1
@@ -257,7 +257,7 @@ run_MCMC_pt_fast <- function(parTab,
     
     ## initialise MCMC
     mcmc_list <- list("i"=i,"par_i" = par_i, "current_pars" = current_pars,
-                      "infectionHistories"=infectionHistories,
+                      "infection_histories"=infection_histories,
                       "likelihoods"=likelihoods,"total_likelihood" = total_likelihood,
                       "prior_prob"=prior_prob,"posterior"=posterior,
                       "tempaccepted" = tempaccepted,"tempiter" = tempiter,
@@ -269,7 +269,7 @@ run_MCMC_pt_fast <- function(parTab,
     mcmc_list <- Map(function(x,y) modifyList(x,list(current_pars = y)), mcmc_list, start_pars)
     mcmc_list <- Map(function(x,y) modifyList(x,list(steps = y)), mcmc_list, steps)
     mcmc_list <- Map(function(x,y) modifyList(x,list(temp = y)), mcmc_list, temperatures)
-    ##mcmc_list <- Map(function(x,y) modifyList(x,list(infectionHistories = y)), mcmc_list, infectionHistories)
+    ##mcmc_list <- Map(function(x,y) modifyList(x,list(infection_histories = y)), mcmc_list, infection_histories)
     
     
     
@@ -281,7 +281,7 @@ run_MCMC_pt_fast <- function(parTab,
         startI <- tmp_list$i
         for(i in startI:(startI+n_iter)){
             tmp_list <- run_MCMC_single_iter(i, tmp_list$par_i,
-                                             tmp_list$current_pars, tmp_list$infectionHistories,
+                                             tmp_list$current_pars, tmp_list$infection_histories,
                                              tmp_list$likelihoods, tmp_list$total_likelihood,
                                              tmp_list$prior_prob, tmp_list$posterior,
                                              tmp_list$tempaccepted, tmp_list$tempiter,
@@ -295,7 +295,7 @@ run_MCMC_pt_fast <- function(parTab,
     run_MCMC_single_iter <- lapply(1:length(temperatures),
                                    function(x) create_run_MCMC_single_iter_fn_fast(unfixed_pars,unfixed_par_length,
                                                                                    lower_bounds,upper_bounds,
-                                                                                   ageMask, strainMask,
+                                                                                   age_mask, strain_mask,
                                                                                    posterior_simp,
                                                                                    extra_probabilities,
                                                                                    proposal_gibbs,
@@ -396,8 +396,8 @@ run_MCMC_pt_fast <- function(parTab,
         
         ## Save infection histories
         if(i %% histTabThin == 0){
-            infectionHistories <- mcmc_list[[1]][["infectionHistories"]]
-            save_infHist_to_disk(infectionHistories, infectionHistory_file, sampno)                                      
+            infection_histories <- mcmc_list[[1]][["infection_histories"]]
+            save_infection_history_to_disk(infection_histories, infectionHistory_file, sampno)                                      
         }
         sampno <- sampno + n_iter
         i <- i + 1

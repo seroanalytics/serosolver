@@ -1,11 +1,11 @@
 #' @export
-infHistPrior <- function(pars, infHist, ageMask){
-    N <- ncol(infHist) - ageMask  + 1
+infection_history_prior <- function(pars, infection_history, age_mask){
+    N <- ncol(infection_history) - age_mask  + 1
     a <- pars["alpha"]
     b <- pars["beta"]
-    priors <- numeric(nrow(infHist))
+    priors <- numeric(nrow(infection_history))
     for(i in 1:length(priors)){
-        priors[i] <- log(dbb_prior(sum(infHist[i,]),N[i],a,b))
+        priors[i] <- log(dbb_prior(sum(infection_history[i,]),N[i],a,b))
     }
     return(priors)
 }
@@ -27,16 +27,26 @@ db <- function(x, a, b){
 
 
 #' @export
-inf_mat_prior <- function(infHist, ageMask, alpha, beta1){
-    n_alive <- sapply(1:ncol(infHist), function(x) length(ageMask[ageMask <= x]))
+inf_mat_prior <- function(infection_history, age_mask, alpha, beta1){
+    n_alive <- sapply(1:ncol(infection_history), function(x) length(age_mask[age_mask <= x]))
     lk <- 0
     for(i in 1:length(n_alive)){
-        lk <- lk + log(beta(sum(infHist[,i]) + alpha, n_alive[i]- sum(infHist[,i]) + beta1)/beta(alpha, beta1))
+        lk <- lk + log(beta(sum(infection_history[,i]) + alpha, n_alive[i]- sum(infection_history[,i]) + beta1)/beta(alpha, beta1))
     }
     return(lk)
 }
 
-fit_beta_prior <- function(chain_samples,parName="",error_tol=999999999,try_attempts=10){
+#' Fit beta distribution to MCMC output
+#'
+#' Attempts to fit a beta distribution to a data frame of MCMC output from a previous run.
+#' @param chain_samples the MCMC chain data frame to be fit to
+#' @param par_name the column label to fit to
+#' @param error_tol = 9999999999999, what's the error tolerance on the fit? Might take some tweaking
+#' @param try_attempts = 10 how many fitting attempts to try before giving up
+#' @param plot_fit = TRUE, if TRUE, plots the fit to the MCMC chain
+#' @return the model fit object as returned by optim
+#' @seealso \code{\link{fit_normal_prior}}
+fit_beta_prior <- function(chain_samples,par_name="",error_tol=999999999,try_attempts=10, plot_fit=TRUE){
   data <- density(chain_samples)
   data <- data.frame(x=data$x, y=data$y)
   x <- data$x
@@ -55,19 +65,30 @@ fit_beta_prior <- function(chain_samples,parName="",error_tol=999999999,try_atte
     try_no <- try_no + 1
   }
   if(try_no == try_attempts){
-    message("Fitting did not work - does this distribution make sense?")
-    return(list(par=c(NA,NA)))
+      message("Fitting did not work - does this distribution make sense?")
+      return(list(par=c(NA,NA)))
   }
-  plot(dbeta(x,res$par[1],res$par[2])~x,type='l',col="blue",
-       main=paste0("Beta dist fit to posterior of ",parName),
-       xlab="Value",
-       ylab="Density")
-  legend(x=x[1],y=max(data$y),box.lty=0, lty=1,col=c("blue","red"),legend=c("Model fit","Posterior density"))
-  lines(data,col="red")
+  if(plot_fit){
+      plot(dbeta(x,res$par[1],res$par[2])~x,type='l',col="blue",
+           main=paste0("Beta dist fit to posterior of ",par_name),
+           xlab="Value",
+           ylab="Density")
+      legend(x=x[1],y=max(data$y),box.lty=0, lty=1,col=c("blue","red"),legend=c("Model fit","Posterior density"))
+      lines(data,col="red")
+  }
   return(res)
 }
-
-fit_normal_prior <- function(chain_samples, parName="",error_tol=999999999,try_attempts=10){
+#' Fit normal distribution to MCMC output
+#'
+#' Attempts to fit a normal distribution to a data frame of MCMC output from a previous run.
+#' @param chain_samples the MCMC chain data frame to be fit to
+#' @param par_name the column label to fit to
+#' @param error_tol = 9999999999999, what's the error tolerance on the fit? Might take some tweaking
+#' @param try_attempts = 10 how many fitting attempts to try before giving up
+#' @param plot_fit = TRUE, if TRUE, plots the fit to the MCMC chain
+#' @return the model fit object as returned by optim
+#' @seealso \code{\link{fit_normal_prior}}
+fit_normal_prior <- function(chain_samples, par_name="",error_tol=999999999,try_attempts=10, plot_fit=TRUE){
   data <- density(chain_samples)
   data <- data.frame(x=data$x, y=data$y)
   x <- data$x
@@ -91,12 +112,14 @@ fit_normal_prior <- function(chain_samples, parName="",error_tol=999999999,try_a
     message("Fitting did not work - does this distribution make sense?")
     return(list(par=c(NA,NA)))
   }
-  plot(dnorm(x,res$par[1],res$par[2])~x,type='l',col="blue",
-       main=paste0("Normal dist fit to posterior of ",parName),
-       xlab="Value",
-       ylab="Density")
-  legend(x=x[1],y=max(data$y),box.lty=0, lty=1,col=c("blue","red"),legend=c("Model fit","Posterior density"))
-  lines(data,col="red")
+  if(plot_fit){
+      plot(dnorm(x,res$par[1],res$par[2])~x,type='l',col="blue",
+           main=paste0("Normal dist fit to posterior of ",par_name),
+           xlab="Value",
+           ylab="Density")
+      legend(x=x[1],y=max(data$y),box.lty=0, lty=1,col=c("blue","red"),legend=c("Model fit","Posterior density"))
+      lines(data,col="red")
+  }
   return(res)
 }
 

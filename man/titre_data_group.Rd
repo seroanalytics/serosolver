@@ -4,41 +4,48 @@
 \alias{titre_data_group}
 \title{Model function overall}
 \usage{
-titre_data_group(theta, infectionHistories, circulationTimes,
-  circulationMapIndices, samplingTimes, indicesTitreDataSample,
-  indicesTitreDataOverall, indicesSamples, measuredMapIndices,
-  antigenicMapLong, antigenicMapShort, DOBs, additional_arguments = NULL)
+titre_data_group(theta, infection_history_mat, circulation_times,
+  circulation_times_indices, sample_times, rows_per_indiv_in_samples,
+  cum_nrows_per_individual_in_data, nrows_per_blood_sample,
+  measurement_strain_indices, antigenic_map_long, antigenic_map_short,
+  DOBs, additional_arguments = NULL)
 }
 \arguments{
 \item{theta}{NumericVector, the named vector of model parameters}
 
-\item{infectionHistories}{IntegerMatrix, the matrix of 1s and 0s showing presence/absence of infection for each possible time for each individual.}
+\item{infection_history_mat}{IntegerMatrix, the matrix of 1s and 0s showing presence/absence of infection for each possible time for each individual.}
 
-\item{circulationTimes}{NumericVector, the actual times of circulation that the infection history vector corresponds to}
+\item{circulation_times}{NumericVector, the actual times of circulation that the infection history vector corresponds to}
 
-\item{circulationMapIndices}{IntegerVector, which entry in the melted antigenic map that these infection times correspond to}
+\item{circulation_times_indices}{IntegerVector, which entry in the melted antigenic map that these infection times correspond to}
 
-\item{samplingTimes}{NumericVector, the times that each blood sample was taken}
+\item{sample_times}{NumericVector, the times that each blood sample was taken}
 
-\item{indicesTitreDataSample}{IntegerVector, How many rows in titre data correspond to each individual, sample and repeat?}
+\item{rows_per_indiv_in_samples}{IntegerVector, Split the sample times and runs for each individual}
 
-\item{indicesTitreDataOverall}{IntegerVector, How many rows in the titre data correspond to each individual?}
+\item{cum_nrows_per_individual_in_data}{IntegerVector, How many rows in the titre data correspond to each individual?}
 
-\item{indicesSamples}{IntegerVector, Split the sample times and runs for each individual}
+\item{measurement_strain_indices}{IntegerVector, the indices of all measured strains in the melted antigenic map}
 
-\item{measuredMapIndices}{IntegerVector, the indices of all measured strains in the melted antigenic map}
+\item{antigenic_map_long}{NumericVector, the collapsed cross reactivity map for long term boosting, after multiplying by sigma1 \code{\link{create_cross_reactivity_vector}}}
 
-\item{antigenicMapLong}{NumericVector, the collapsed cross reactivity map for long term boosting, after multiplying by sigma1}
+\item{antigenic_map_short}{NumericVector, the collapsed cross reactivity map for short term boosting, after multiplying by sigma2, see \code{\link{create_cross_reactivity_vector}}}
 
-\item{antigenicMapShort}{NumericVector, the collapsed cross reactivity map for short term boosting, after multiplying by sigma2}
+\item{DOBs}{NumericVector, the date of birth of all individuals. Currently not used.}
 
-\item{additional_arguments, }{Nullable<List> currently not used, but the idea is to use thsi object to pass more flexible additional arguments to the bottom of the call stack}
+\item{additional_arguments, }{Nullable<List> the idea is to use thsi object to pass more flexible additional arguments to the bottom of the call stack}
 
-\item{DOB}{NumericVector, the date of birth of all individuals. Currently not used.}
+\item{rows_per_indiv_in_samples}{IntegerVector, How many rows in titre data correspond to each individual, sample and repeat?}
 }
 \value{
-NumericVector of predicted titres for each entry in measuredMapIndices
+NumericVector of predicted titres for each entry in measurement_strain_indices
 }
 \description{
 The main model solving function for a single individual for a vector of sampling timesthe entire titreDat structure
 }
+\seealso{
+Other titre_model: \code{\link{infection_model_indiv}},
+  \code{\link{titre_data_fast}},
+  \code{\link{titre_data_individual}}
+}
+\concept{titre_model}

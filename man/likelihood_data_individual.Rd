@@ -4,11 +4,11 @@
 \alias{likelihood_data_individual}
 \title{Likelihood for one individual}
 \usage{
-likelihood_data_individual(theta, infectionHistory, circulationTimes,
-  circulationMapIndices, samplingTimes, dataIndices, measuredMapIndices,
-  antigenicMapLong, antigenicMapShort, numberStrains, data, titre_shifts,
-  DOB, additional_arguments)
+likelihood_data_individual(theta, infection_history, circulation_times,
+  circulation_times_indices, sample_times, data_indices,
+  measurement_strain_indices, antigenic_map_long, antigenic_map_short,
+  number_strains, data, titre_shifts, DOB, additional_arguments)
 }
 \description{
-See infection_model_indiv, does the same thing but returns the log likelihood given some data. This is used by infection_history_proposal_gibbs
+See \code{\link{infection_model_indiv}}, does the same thing but returns the log likelihood given some data. This is used by infection_history_proposal_gibbs
 }

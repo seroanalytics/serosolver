@@ -1,47 +1,47 @@
-#' Check parTab for simulate_data
+#' Check par_tab for simulate_data
 #'
-#' Checks the entries of parTab used in simulate_data
-#' @param parTab the parameter table controlling information such as bounds, initial values etc
+#' Checks the entries of par_tab used in simulate_data
+#' @param par_tab the parameter table controlling information such as bounds, initial values etc
 #' @param mcmc logical, if TRUE then checks are performed for the MCMC algorithm. Use FALSE when simulating data 
-#' @param version which version of the posterior function is being used? See \code{\link{create_post_func}}
+#' @param version which version of the posterior function is being used? See \code{\link{create_posterior_func}}
 #' @return nothing at the moment
 #' @export
-check_parTab <- function(parTab,mcmc=FALSE,version=NULL){  
+check_par_tab <- function(par_tab,mcmc=FALSE,version=NULL){  
   ## Checks that should happen in simulate_data and run_MCMC
-  pars <- parTab$values
-  names(pars) <- parTab$names
+  pars <- par_tab$values
+  names(pars) <- par_tab$names
   
   ## Checks for waneType
   # Extract waneType
     waneType <- pars["wane_type"]
-    if(is.na(waneType)) stop('wane_type is missing from parTab (specify 0 for linear decrease or 1 for piecewise linear) ') ## If user has not entered wane_type in parTab
+    if(is.na(waneType)) stop('wane_type is missing from par_tab (specify 0 for linear decrease or 1 for piecewise linear) ') ## If user has not entered wane_type in par_tab
     # Check that additional parameters are present
     if(waneType==1&(!("kappa"%in%names(pars))|!("t_change"%in%names(pars)))) stop('Parameters needed for wane_type=1 (piecewise linear) are missing')
     
     ## Additional checks that should happen in run_MCMC
     if(mcmc==TRUE){
-        lambda_indices <- which(parTab$type == 2)
+        lambda_indices <- which(par_tab$type == 2)
         no_lambda <- length(lambda_indices)
         explicit_lambda <- ( no_lambda > 0)
       
         ## Check that all optional parameters are fixed, if not, fix them
-        op_pars<-parTab[which(parTab$type==0),]
+        op_pars<-par_tab[which(par_tab$type==0),]
         if(all(op_pars$fixed==1)==FALSE) stop('All optional parameters must be fixed')
         
         if(version==1){
           ## Check that the correct number of lambdas are present
-            #if( no_lambda!=length(strainIsolationTimes)) stop(paste('Incorrect number of lambdas in parTab,', no_lambda,'passed but was expecting',length(strainIsolationTimes))) #Should we add the correct number?
+            #if( no_lambda!=length(strain_isolation_times)) stop(paste('Incorrect number of lambdas in par_tab,', no_lambda,'passed but was expecting',length(strain_isolation_times))) #Should we add the correct number?
         }
         
         if( version %in% c(2,3)){
-          if(explicit_lambda) stop(paste('lambdas are not required for version 3 but parTab contains',no_lambda, 'lambda(s)')) ##Should we remove them?
+          if(explicit_lambda) stop(paste('lambdas are not required for version 3 but par_tab contains',no_lambda, 'lambda(s)')) ##Should we remove them?
         }
     }
 
     ## Check that alpha and beta there for beta distribution
     ## If there, Pull out alpha and beta for beta binomial proposals
-    if(!("alpha" %in% parTab$names) | !("beta" %in% parTab$names)){
-        stop("parTab must have entries for `alpha` and `beta` for infection history prior")
+    if(!("alpha" %in% par_tab$names) | !("beta" %in% par_tab$names)){
+        stop("par_tab must have entries for `alpha` and `beta` for infection history prior")
     }
     
 }
@@ -63,12 +63,12 @@ check_data <- function(data){
 
 #' Checks the attackRates supplied in simulate_data
 #' @param attackRates a vector of attackRates to be used in the simulation
-#' @param strainIsolationTimes vector of strain ciruclation times
+#' @param strain_isolation_times vector of strain ciruclation times
 #' @return nothing at the moment
 #' @export
-check_attackRates <- function(attackRates,strainIsolationTimes){
+check_attackRates <- function(attackRates,strain_isolation_times){
   
-  if(length(attackRates)!=length(strainIsolationTimes)) stop('attackRates is not the same length as strainIsolationTimes')
+  if(length(attackRates)!=length(strain_isolation_times)) stop('attackRates is not the same length as strain_isolation_times')
   if(any(attackRates<0)||any(attackRates>1)) stop('attackRates must be between 0 and 1')
   
 }

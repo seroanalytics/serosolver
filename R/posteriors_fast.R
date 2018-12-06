@@ -1,11 +1,11 @@
 
 #' @export
-create_posterior_func_fast <- function(parTab,
-                                       titreDat,
-                                       antigenicMap,
+create_posterior_func_fast <- function(par_tab,
+                                       titre_dat,
+                                       antigenic_map,
                                        version=1,
                                        solve_likelihood=TRUE,
-                                       ageMask=NULL,
+                                       age_mask=NULL,
                                        measurement_indices_by_time=NULL,
                                        mu_indices=NULL,
                                        n_alive=NULL,
@@ -15,16 +15,16 @@ create_posterior_func_fast <- function(parTab,
 
     ## Seperate out initial readings and repeat readings - we only
     ## want to solve the model once for each unique indiv/sample/virus year tested
-    titreDat_unique <- titreDat[titreDat$run == 1,]
-    titreDat_repeats <- titreDat[titreDat$run != 1,]
-    tmp <- row.match(titreDat_repeats[,c("individual","samples","virus")], titreDat_unique[,c("individual","samples","virus")])
-    titreDat_repeats$index <- tmp
+    titre_dat_unique <- titre_dat[titre_dat$run == 1,]
+    titre_dat_repeats <- titre_dat[titre_dat$run != 1,]
+    tmp <- row.match(titre_dat_repeats[,c("individual","samples","virus")], titre_dat_unique[,c("individual","samples","virus")])
+    titre_dat_repeats$index <- tmp
     
     ## Setup data vectors and extract
-    setup_dat <- setup_titredat_for_posterior_func(titreDat_unique, antigenicMap, ageMask, n_alive)
+    setup_dat <- setup_titredat_for_posterior_func(titre_dat_unique, antigenic_map, age_mask, n_alive)
 
     individuals <- setup_dat$individuals
-    antigenicMapMelted <- setup_dat$antigenicMapMelted
+    antigenic_map_melted <- setup_dat$antigenic_map_melted
     strain_isolation_times <- setup_dat$strain_isolation_times
     infection_strain_indices <- setup_dat$infection_strain_indices
     sample_times <- setup_dat$sample_times
@@ -34,31 +34,31 @@ create_posterior_func_fast <- function(parTab,
     nrows_per_blood_sample <- setup_dat$nrows_per_blood_sample
     measured_strain_indices <- setup_dat$measured_strain_indices
     n_alive <- setup_dat$n_alive
-    ageMask <- setup_dat$ageMask
-    strainMask <- setup_dat$strainMask
+    age_mask <- setup_dat$age_mask
+    strain_mask <- setup_dat$strain_mask
     n_indiv <- setup_dat$n_indiv
     DOBs <- setup_dat$DOBs
 
 ## Some additional setup for the repeat data    
     nrows_per_individual_in_data_repeats <- NULL
     for(individual in unique(individuals)){
-        nrows_per_individual_in_data_repeats <- c(nrows_per_individual_in_data_repeats, nrow(titreDat_repeats[titreDat_repeats$individual == individual,]))
+        nrows_per_individual_in_data_repeats <- c(nrows_per_individual_in_data_repeats, nrow(titre_dat_repeats[titre_dat_repeats$individual == individual,]))
     }
     cum_nrows_per_individual_in_data_repeats <- cumsum(c(0,nrows_per_individual_in_data_repeats))
     
-    titres_unique <- titreDat_unique$titre
-    titres_repeats <- titreDat_repeats$titre
-    repeat_indices <- titreDat_repeats$index
+    titres_unique <- titre_dat_unique$titre
+    titres_repeats <- titre_dat_repeats$titre
+    repeat_indices <- titre_dat_repeats$index
     repeat_indices_cpp <- repeat_indices - 1
 
     all_titres <- c(titres_unique, titres_repeats)   
-    par_names <- parTab$names
+    par_names <- par_tab$names
     
     if(function_type == 1){
         f <- function(pars, infection_history_mat){
             names(pars) <- par_names
-            antigenic_map_long <- create_cross_reactivity_vector(antigenicMapMelted, pars["sigma1"])
-            antigenic_map_short <- create_cross_reactivity_vector(antigenicMapMelted, pars["sigma2"])
+            antigenic_map_long <- create_cross_reactivity_vector(antigenic_map_melted, pars["sigma1"])
+            antigenic_map_short <- create_cross_reactivity_vector(antigenic_map_melted, pars["sigma2"])
             y_new <- titre_data_fast(pars, infection_history_mat, strain_isolation_times, infection_strain_indices,
                                      sample_times, rows_per_indiv_in_samples, cum_nrows_per_individual_in_data,
                                      nrows_per_blood_sample, measured_strain_indices, antigenic_map_long,
@@ -81,8 +81,8 @@ create_posterior_func_fast <- function(parTab,
             names(pars) <- par_names
 
             ## Work out short and long term boosting cross reactivity - C++ function
-            antigenic_map_long <- create_cross_reactivity_vector(antigenicMapMelted, pars["sigma1"])
-            antigenic_map_short <- create_cross_reactivity_vector(antigenicMapMelted, pars["sigma2"])
+            antigenic_map_long <- create_cross_reactivity_vector(antigenic_map_melted, pars["sigma1"])
+            antigenic_map_short <- create_cross_reactivity_vector(antigenic_map_melted, pars["sigma2"])
             ## Now pass to the C++ function
             
             res <- infection_history_proposal_gibbs_fast(pars,
@@ -90,8 +90,8 @@ create_posterior_func_fast <- function(parTab,
                                                          probs,
                                                          sampled_indivs,
                                                          nInfs,
-                                                         ageMask,
-                                                         strainMask,
+                                                         age_mask,
+                                                         strain_mask,
                                                          n_alive,
                                                          swap_propn,
                                                          swap_dist,
@@ -118,8 +118,8 @@ create_posterior_func_fast <- function(parTab,
     } else {
         f <- function(pars, infection_history_mat){
             names(pars) <- par_names
-            antigenic_map_long <- create_cross_reactivity_vector(antigenicMapMelted, pars["sigma1"])
-            antigenic_map_short <- create_cross_reactivity_vector(antigenicMapMelted, pars["sigma2"])
+            antigenic_map_long <- create_cross_reactivity_vector(antigenic_map_melted, pars["sigma1"])
+            antigenic_map_short <- create_cross_reactivity_vector(antigenic_map_melted, pars["sigma2"])
             y_new <- titre_data_fast(pars, infection_history_mat, strain_isolation_times, infection_strain_indices,
                                      sample_times, rows_per_indiv_in_samples, cum_nrows_per_individual_in_data,
                                      nrows_per_blood_sample, measured_strain_indices, antigenic_map_long,
