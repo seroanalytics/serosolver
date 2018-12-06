@@ -1,17 +1,23 @@
 #include "helpers.h"
 
+//' Takes a subset of a Nullable NumericVector, but only if it isn't NULL
 // [[Rcpp::export]]
 NumericVector subset_nullable_vector(const Nullable<NumericVector> &x, int index1, int index2) {
   if(x.isNotNull()){
     NumericVector y = as<NumericVector>(x)[Range(index1, index2)];
     return y;
   } else {
-    NumericVector y(1);
+    NumericVector y(0);
     return y;
   }
 }
 
-
+//' Sum likelihoods into buckets
+//' 
+//' Given a large vector of likelihood values and a vector, indices, of length n_indivs, sums the likelihoods to give one value per individual, where indices indicates which individual each index of liks corresponds to.
+//' @param liks NumericVector of likelihoods
+//' @param indices IntegerVector of indices of same length as liks, where the max value of this should be the same as n_indivs - 1
+//' @param n_indivs int, number of individuals to generate bucketed likelihoods for
 //' @export
 //[[Rcpp::export]]
 NumericVector sum_likelihoods(NumericVector liks, IntegerVector indices, int n_indivs){

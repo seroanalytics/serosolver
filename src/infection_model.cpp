@@ -187,7 +187,7 @@ void setup_waning_and_masked_cumulative(const NumericVector &theta,
 //' @param measurement_strain_indices IntegerVector, the indices of all measured strains in the melted antigenic map
 //' @param antigenic_map_long NumericVector, the collapsed cross reactivity map for long term boosting, after multiplying by sigma1
 //' @param antigenic_map_short NumericVector, the collapsed cross reactivity map for short term boosting, after multiplying by sigma2
-//' @param numberStrains int, the maximum number of infections that an individual could experience
+//' @param number_strains int, the maximum number of infections that an individual could experience
 //' @param DOB double, the date of birth of this individual. Currently not used.
 //' @param additional_arguments, Nullable<List> currently not used, but the idea is to use thsi object to pass more flexible additional arguments to the bottom of the call stack
 //' @return NumericVector of predicted titres for each entry in measurement_strain_indices
@@ -202,7 +202,7 @@ NumericVector infection_model_indiv(const NumericVector &theta, // Parameter vec
 				    const IntegerVector &measurement_strain_indices, // Indices of measured strains in antigenic map
 				    const NumericVector &antigenic_map_long,
 				    const NumericVector &antigenic_map_short, 
-				    const int &numberStrains, // Maximum number of infections an individual could experience, if alive the whole time
+				    const int &number_strains, // Maximum number of infections an individual could experience, if alive the whole time
 				    const double &DOB=0,
 				    const Nullable<List> &additional_arguments=R_NilValue
 				    ){
@@ -254,7 +254,7 @@ NumericVector infection_model_indiv(const NumericVector &theta, // Parameter vec
 				antigenic_map_long, antigenic_map_short,
 				waning, 
 				seniority,
-				numberStrains, 
+				number_strains, 
 				n_samples,
 				max_infections,
 				titre_dependent_boosting, 
@@ -276,7 +276,7 @@ NumericVector infection_model_indiv(const NumericVector &theta, // Parameter vec
 //' @param measurement_strain_indices IntegerVector, the indices of all measured strains in the melted antigenic map
 //' @param antigenic_map_long NumericVector, the collapsed cross reactivity map for long term boosting, after multiplying by sigma1
 //' @param antigenic_map_short NumericVector, the collapsed cross reactivity map for short term boosting, after multiplying by sigma2
-//' @param numberStrains int, the maximum number of infections that an individual could experience
+//' @param number_strains int, the maximum number of infections that an individual could experience
 //' @param DOB double, the date of birth of this individual. Currently not used.
 //' @param additional_arguments, Nullable<List> currently not used, but the idea is to use thsi object to pass more flexible additional arguments to the bottom of the call stack
 //' @return NumericVector of predicted titres for each entry in measurement_strain_indices
@@ -291,7 +291,7 @@ NumericVector titre_data_individual(const NumericVector &theta,
 				    const IntegerVector &measurement_strain_indices, 
 				    const NumericVector &antigenic_map_long, 
 				    const NumericVector &antigenic_map_short,
-				    const int &numberStrains,
+				    const int &number_strains,
 				    const double &DOB=0,
 				    const Nullable<List>& additional_arguments=R_NilValue){
   int numberSamples = sample_times.size();
@@ -315,7 +315,7 @@ NumericVector titre_data_individual(const NumericVector &theta,
     tmp_range = Range(startIndex, endIndex);
     titres[tmp_range] = infection_model_indiv(theta,conciseInfHist,infection_times,infMapIndices,
 					       sample_times[i],measurement_strain_indices[tmp_range],
-					       antigenic_map_long, antigenic_map_short,numberStrains,
+					       antigenic_map_long, antigenic_map_short,number_strains,
 					       DOB, additional_arguments);
     startIndex = endIndex + 1;
   }
@@ -418,7 +418,7 @@ double likelihood_data_individual(const NumericVector &theta,
 				  const IntegerVector &measurement_strain_indices, 
 				  const NumericVector &antigenic_map_long, 
 				  const NumericVector &antigenic_map_short,
-				  const int &numberStrains,
+				  const int &number_strains,
 				  const NumericVector &data,
 				  const NumericVector &titre_shifts,
 				  const double &DOB,
@@ -447,7 +447,7 @@ double likelihood_data_individual(const NumericVector &theta,
 								sample_times[i],
 								measurement_strain_indices[Range(startIndex,endIndex)],
 								antigenic_map_long, antigenic_map_short,
-								numberStrains, DOB, additional_arguments);
+								number_strains, DOB, additional_arguments);
     startIndex = endIndex + 1;
   }
   lnlike = likelihood_titre_basic(titres, data, theta, titre_shifts);
