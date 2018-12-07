@@ -1,3 +1,11 @@
+#' Beta binomial infection history prior
+#'
+#' Calculates the beta binomial infection history prior for each individual, taking into account the number of years they could be infected.
+#' @param pars the named parameter vector with alpha and beta
+#' @param infection_history the infection hsitory matrix
+#' @param age_mask the age mask, giving the first index of the infection_history matrix that each individual can be exposed to. One entry per individual
+#' @return a prior probability for each individual
+#' @family priors
 #' @export
 infection_history_prior <- function(pars, infection_history, age_mask){
     N <- ncol(infection_history) - age_mask  + 1
@@ -10,22 +18,32 @@ infection_history_prior <- function(pars, infection_history, age_mask){
     return(priors)
 }
 
+#' Beta binomial density
 #' @export
 density_beta_binom<- function(x, N, u, v) {
     (beta(x+u, N-x+v)/beta(u,v))*choose(N,x)
 }
 
+#' Beta binomial prior used here (no choose constant)
 #' @export
 dbb_prior <- function(x, N, u, v){
     (beta(x+u, N-x+v)/beta(u,v))
 }
 
-
+#' Beta prior on an infection
 db <- function(x, a, b){
     x^(a-1)*(1-x^(b-1))/beta(a,b)
 }
 
-
+#' Infection history prior R
+#'
+#' R implementation of the infection history prior assuming common infection risk across individuals in a given year
+#' @param infection_history the infection history matrix
+#' @param age_mask the age mask, giving the first index of the infection_history matrix that each individual can be exposed to. One entry per individual
+#' @param alpha alpha parameter for beta distribution
+#' @param beta beta parameter for beta distribution
+#' @return a prior probability for each individual
+#' @family priors
 #' @export
 inf_mat_prior <- function(infection_history, age_mask, alpha, beta1){
     n_alive <- sapply(1:ncol(infection_history), function(x) length(age_mask[age_mask <= x]))
@@ -123,6 +141,13 @@ fit_normal_prior <- function(chain_samples, par_name="",error_tol=999999999,try_
   return(res)
 }
 
+#' Find beta parameters for mean and variance
+#'
+#' Finds the alpha and beta parameters for a beta distribution that gives the desired mean and variance
+#' @param mean the mean of the beta distribution (between 0 and 1)
+#' @param var the variance of the beta distribution (this is likely going to be somewhere less than 0.25)
+#' @param make_plot if TRUE, plots the resulting beta distibution to the R device
+#' @return a list with alpha and beta
 #' @export
 find_beta_parameters <- function(mean, var, make_plot=FALSE){
     #if(mean < 0 | mean > 1) stop("Mean is outside of bounds (0, 1)")
@@ -135,6 +160,12 @@ find_beta_parameters <- function(mean, var, make_plot=FALSE){
     return(list(alpha=alpha,beta=beta))
 }
 
+#' Find beta parameters with maximum variance
+#'
+#' Given a desired annual mean attack rate and the number of epochs to consider per year, gives the alpha and beta parameters with the desired mean but maximum variance
+#' @param desired_annual_mean the desired ANNUAL mean attack rate
+#' @param the number of buckets to split each year into
+#' @return a list with alpha and beta
 #' @export
 generate_beta_prior_pars <- function(desired_annual_mean, buckets){
   mean1 <- desired_annual_mean/buckets

@@ -4,26 +4,26 @@
 \alias{simulate_individual}
 \title{Simulate individual data}
 \usage{
-simulate_individual(theta, infectionHistory, samplingTimes, dataIndices,
-  strainIsolationTimes, virusIndices, antigenicMapLong, antigenicMapShort,
-  strains, repeats = 1, mus = NULL, mu_indices = NULL,
-  measurement_bias = NULL, measurement_indices = NULL,
-  addNoise = TRUE)
+simulate_individual(theta, infection_history, sampling_times, dataIndices,
+  strain_isolation_times, virusIndices, antigenic_map_long,
+  antigenic_map_short, strains, repeats = 1, mus = NULL,
+  mu_indices = NULL, measurement_bias = NULL,
+  measurement_indices = NULL, add_noise = TRUE)
 }
 \arguments{
 \item{theta}{the named parameter vector}
 
-\item{infectionHistory}{the vector of 1s and 0s giving presence/absence of infections}
+\item{infection_history}{the vector of 1s and 0s giving presence/absence of infections}
 
-\item{dataIndices}{see \code{\link{create_post_func}}}
+\item{dataIndices}{see \code{\link{create_posterior_func}}}
 
-\item{strainIsolationTimes}{see \code{\link{create_post_func}}}
+\item{strain_isolation_times}{see \code{\link{create_posterior_func}}}
 
-\item{virusIndices}{see \code{\link{create_post_func}}}
+\item{virusIndices}{see \code{\link{create_posterior_func}}}
 
-\item{antigenicMapLong}{the collapsed antigenic map for long term cross reactivity, after multiplying by sigma1}
+\item{antigenic_map_long}{the collapsed antigenic map for long term cross reactivity, after multiplying by sigma1}
 
-\item{antigenicMapShort}{the collapsed antigenic map for short term cross reactivity, after multiplying by sigma2}
+\item{antigenic_map_short}{the collapsed antigenic map for short term cross reactivity, after multiplying by sigma2}
 
 \item{strains}{vector of all possible circulating strains}
 
@@ -37,15 +37,17 @@ simulate_individual(theta, infectionHistory, samplingTimes, dataIndices,
 
 \item{measurement_indices}{default NULL, optional vector giving the index of `measurement_bias` that each strain uses the measurement shift from from. eg. if there's 6 circulation years and 3 strain clus}
 
-\item{sampleTimes}{the vector of times at which samples are taken}
+\item{add_noise}{defaults TRUE, adds observation error to simulated titres}
 
-\item{strainIsolationTimes}{the vector of strain circulation times (ie. possible infection times)}
+\item{sample_times}{the vector of times at which samples are taken}
+
+\item{strain_isolation_times}{the vector of strain circulation times (ie. possible infection times)}
 }
 \value{
 a data frame with columns samples, virus and titre of simulated data
 }
 \description{
-Simulates a full set of titre data for an individual with known theta and infectionHistory.
+Simulates a full set of titre data for an individual with known theta and infection_history.
 }
 \seealso{
 \code{\link{infection_model_indiv}}

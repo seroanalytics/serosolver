@@ -317,7 +317,7 @@ simulate_data <- function(par_tab, group=1,n_indiv,buckets=12,
     check_par_tab(par_tab)
 
     ## Create antigenic map for short and long term boosting
-    antigenic_map1 <- outputdmatrix.fromcoord(antigenic_map[,c("x_coord","y_coord")])
+    antigenic_map1 <- melt_antigenic_coords(antigenic_map[,c("x_coord","y_coord")])
     
     antigenic_map_long <- 1 - pars["sigma1"]*c(antigenic_map1)
     antigenic_map_short <- 1 - pars["sigma2"]*c(antigenic_map1)
@@ -357,7 +357,7 @@ simulate_data <- function(par_tab, group=1,n_indiv,buckets=12,
 #' @param anti.map.in can either be a 1D antigenic line to calculate distance from, or a two dimensional matrix with x and y coordinates on an antigenic map
 #' @return the euclidean antigenic distance between each pair of viruses in anti.map.in
 #' @export
-outputdmatrix.fromcoord <- function(anti.map.in){ #anti.map.in can be vector or matrix - rows give inf_years, columns give location
+melt_antigenic_coords <- function(anti.map.in){ #anti.map.in can be vector or matrix - rows give inf_years, columns give location
                                         # Calculate antigenic distances
     if(is.null(dim(anti.map.in))){ # check if input map is one or 2 dimensions
                                         # If 1D antigenic 'line' defined, calculate distances directory from input

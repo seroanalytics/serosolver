@@ -4,7 +4,7 @@
 \alias{run_MCMC}
 \title{Adaptive Metropolis-within-Gibbs/Metropolis Hastings Random Walk Algorithm.}
 \usage{
-run_MCMC(parTab, titreDat, antigenicMap, mcmcPars = c(),
+run_MCMC(par_tab, titre_dat, antigenic_map, mcmcPars = c(),
   mvrPars = NULL, startInfHist = NULL, filename = "test",
   CREATE_POSTERIOR_FUNC = create_posterior_func,
   CREATE_PRIOR_FUNC = NULL, version = 1, mu_indices = NULL,
@@ -14,9 +14,9 @@ run_MCMC(parTab, titreDat, antigenicMap, mcmcPars = c(),
   ...)
 }
 \arguments{
-\item{parTab}{The parameter table controlling information such as bounds, initial values etc}
+\item{par_tab}{The parameter table controlling information such as bounds, initial values etc}
 
-\item{antigenicMap}{A data frame of antigenic x and y coordinates. Must have column names: x_coord; y_coord; inf_years}
+\item{antigenic_map}{A data frame of antigenic x and y coordinates. Must have column names: x_coord; y_coord; inf_years}
 
 \item{mcmcPars}{Named vector named vector with parameters for the MCMC procedure. See details}
 

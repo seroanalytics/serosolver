@@ -4,9 +4,23 @@
 \alias{plot_data}
 \title{Useful plot for looking at simulated data}
 \usage{
-plot_data(data, infectionHistories, strainIsolationTimes, n_samps,
-  startInf = NULL)
+plot_data(titre_dat, infection_histories, strain_isolation_times, n_samps,
+  start_inf = NULL)
+}
+\arguments{
+\item{titre_dat}{the data frame of titre data}
+
+\item{infection_histories}{the infection history matrix}
+
+\item{strain_isolation_times}{the vector of times at which individuals could be infected}
+
+\item{n_samps}{how many individuals to plot}
+
+\item{start_inf}{if not NULL, plots the infection history matrix used as the starting point in the MCMC chain}
+}
+\value{
+a ggplot object
 }
 \description{
-Useful plot for looking at simulated data
+Plots measured titres and known infection histories for all individuals, facetted by sample time
 }

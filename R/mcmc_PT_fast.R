@@ -271,11 +271,7 @@ run_MCMC_pt_fast <- function(par_tab,
     mcmc_list <- Map(function(x,y) modifyList(x,list(temp = y)), mcmc_list, temperatures)
     ##mcmc_list <- Map(function(x,y) modifyList(x,list(infection_histories = y)), mcmc_list, infection_histories)
     
-    
-    
-
-    
-                                        # registerDoMC(cores=6)
+    ## registerDoMC(cores=6)
     
     run_multiple_iter <- function(tmp_list){
         startI <- tmp_list$i
@@ -305,7 +301,7 @@ run_MCMC_pt_fast <- function(par_tab,
                                                                                    switch_sample,
                                                                                    hist_switch_prob,
                                                                                    year_swap_propn))
-    #cl <- makeForkCluster(6, useXDR=FALSE)
+    ##cl <- makeForkCluster(6, useXDR=FALSE)
 
     ## main body of running MCMC
     while (i <= (iterations+adaptive_period)){
@@ -313,15 +309,7 @@ run_MCMC_pt_fast <- function(par_tab,
 ##############
         ## Can probably parallelise this bit
         mcmc_list <- Map(do.call, run_MCMC_single_iter, mcmc_list)
-                                        #mcmc_list <- lapply(mcmc_list, run_multiple_iter)
-                                        #mcmc_list <- lapply(mcmc_list, do.call, run_MCMC_single_iter[[1]])
-                                        #mcmc_list <- mclapply(mcmc_list, run_multiple_iter)
-                                        #mcmc_list <- parLapply(cl, mcmc_list, run_multiple_iter)
-                                        #foreach(jh=1:length(mcmc_list)) %dopar%{
-                                        #    mcmc_list[[jh]] <- run_multiple_iter(mcmc_list[[jh]])
-                                        #}
-                                        #mcmc_list <- clusterApply(NULL, mcmc_list, run_multiple_iter)
-                                        #mcmc_list <- Map(do.call, run_MCMC_single_iter, mcmc_list)
+        ##mcmc_list <- parLapply(cl, mcmc_list, run_multiple_iter)
 ##############
         ## perform parallel tempering
         if(i %% parallel_tempering_iter == 0){
@@ -414,7 +402,7 @@ run_MCMC_pt_fast <- function(par_tab,
     
     current_pars <- lapply(mcmc_list, function(x)x$current_pars)
     
-    #parallelStop()
+    ##parallelStop()
     
     return(list("chain_file" = mcmc_chain_file,
                 "history_file"=infectionHistory_file,

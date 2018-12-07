@@ -4,12 +4,12 @@
 \alias{check_attackRates}
 \title{Checks the attackRates supplied in simulate_data}
 \usage{
-check_attackRates(attackRates, strainIsolationTimes)
+check_attackRates(attackRates, strain_isolation_times)
 }
 \arguments{
 \item{attackRates}{a vector of attackRates to be used in the simulation}
 
-\item{strainIsolationTimes}{vector of strain ciruclation times}
+\item{strain_isolation_times}{vector of strain ciruclation times}
 }
 \value{
 nothing at the moment

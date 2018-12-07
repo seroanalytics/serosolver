@@ -1,3 +1,75 @@
+#' Get number alive
+#'
+#' Given the titre_dat data frame, calculates the number that are alive (alive to be infected, that is) for each time in times
+#' @param titre_dat the data frame of titre data
+#' @param times the vector of times to calculate number alive for
+#' @return a vector giving the number alive in each time point
+#' @export
+get_n_alive <- function(titre_dat, times){
+    DOBs <- unique(titre_dat[,c("individual","DOB")])[,2]
+    age_mask <- create_age_mask(DOBs, times)
+    strain_mask <- create_strain_mask(titre_dat,times)
+    masks <- data.frame(cbind(age_mask, strain_mask))
+    n_alive <- sapply(seq(1,length(times)), function(x)
+        nrow(masks[masks$age_mask <=x & masks$strain_mask >= x,]))
+}
+
+#' Create age mask
+#'
+#' Converts a data frame of individual ages to give the index of the first infection that individual could have had
+#' @param DOBs the vector of dates of birth, same time units as strain_isolation_times
+#' @param strain_isolation_times the vector of times that individuals can be infected
+#' @return a vector giving the first index of strain_isolation_times that an individual can be infected
+#' @export
+create_age_mask <- function(DOBs, strain_isolation_times){
+    age_mask <- sapply(DOBs, function(x){
+        if(is.na(x)){
+            1
+        } else {
+            which(as.numeric(x <= strain_isolation_times) > 0)[1]
+        }
+    })
+    return(age_mask)
+}
+#' Create strain mask
+#'
+#' Converts a data frame of individual sampling times to give the index of the last infection that individual could have had
+#' @param titre_dat the data frame of titre data
+#' @param strain_isolation_times the vector of times that individuals can be infected
+#' @return a vector giving the last index of strain_isolation_times that an individual can be infected
+#' @export
+create_strain_mask <- function(titre_dat, strain_isolation_times){
+  ids <- unique(titre_dat$individual)
+  strain_mask <- sapply(ids, function(x){
+    sampleTimes <- titre_dat$samples[titre_dat$individual==x]
+    max(which(max(sampleTimes) >= strain_isolation_times))
+  })
+  return(strain_mask)
+}
+
+
+#' Expands default MCMC saved infChain
+#'
+#' The MCMC function saves sparse matrix summaries of the infection history chain to 
+#' save space and run time. This function returns the expanded infection history chain,
+#' as in the original version of the code. Returned value is a data table with leftmost columns
+#' giving sample number and individual, with columns expanded to the right for each infection
+#' period.
+#' @param inf_chain a data table with the MCMC saved infection history chain
+#' @return the MCMC saved infection history expanded with infection times as columns
+#' @export
+expand_summary_inf_chain <- function(inf_chain){
+  full_inf_chain <- data.table::CJ(i=1:max(inf_chain$i), j=1:max(inf_chain$j), sampno=min(inf_chain$sampno):max(inf_chain$sampno))
+  inf_chain <- data.table::data.table(apply(inf_chain, 2, as.numeric))
+  summary_with_non_infections <- merge(inf_chain,full_inf_chain,by=c("sampno","j","i"),all=TRUE)
+  summary_with_non_infections[is.na(summary_with_non_infections$x),"x"] <- 0
+  colnames(summary_with_non_infections) <- c("sampno","j","individual","x")
+  expanded_chain <- data.table::dcast(summary_with_non_infections, sampno + individual ~ j,value.var="x")
+  
+  return(expanded_chain)
+}
+
+
 #' Best pars
 #'
 #' Given an MCMC chain, returns the set of best fitting parameters (MLE)
@@ -101,7 +173,7 @@ describe_proposals <- function(){
     print("Version 1: Explicit FOI on each epoch using lambda term. Proposal performs N `flip` proposals at random locations in an individual's infectoin history, switching 1->0 or 0->1. Otherwise, swaps the contents of two random locations")
     print("Version 2: gibbs sampling of infection histories as in Indian Buffet Process papers")
     print("Version 3: samples from a beta binomial with alpha and beta specified by the par_tab input. Proposes nInfs moves at a time for add/remove, or when swapping, swaps locations up to moveSize time steps away")
-    print("Version 4: gibbs sampling of infection histories using total number of infections across all years and all individuals as the prior")
+    print("Version 4: gibbs sampling of infection histories using total number of infections across all times and all individuals as the prior")
 
 }
 
@@ -147,7 +219,7 @@ row.match <- function (x, table, nomatch = NA) {
 #' Sets up a large list of pre-indexing and pre-processing to speed up the model solving during MCMC fitting.
 #' @param par_tab the parameter table controlling information such as bounds, initial values etc
 #' @param titre_dat the data frame of data to be fitted. Must have columns: group (index of group); individual (integer ID of individual); samples (numeric time of sample taken); virus (numeric time of when the virus was circulating); titre (integer of titre value against the given virus at that sampling time)
-#' @param antigenic_map a data frame of antigenic x and y coordinates. Must have column names: x_coord; y_coord; inf_years
+#' @param antigenic_map a data frame of antigenic x and y coordinates. Must have column names: x_coord; y_coord; inf_yearhs
 #' @param age_mask @param age_mask see \code{\link{create_age_mask}} - a vector with one entry for each individual specifying the first epoch of circulation in which an individual could have been exposed. Only calculates if set to NULL.
 #' @param n_alive if not NULL, uses this as the number alive in a given year rather than calculating from the ages. This is needed if the number of alive individuals is known, but individual birth dates are not
 #' @return a very long list. See source code directly.
@@ -156,7 +228,7 @@ row.match <- function (x, table, nomatch = NA) {
 setup_titredat_for_posterior_func <- function(titre_dat, antigenic_map, age_mask=NULL, n_alive=NULL){
     strain_isolation_times <- antigenic_map$inf_years
     number_strains <- length(strain_isolation_times)
-    antigenic_map_melted <- c(outputdmatrix.fromcoord(antigenic_map[,c("x_coord","y_coord")]))
+    antigenic_map_melted <- c(melt_antigenic_coords(antigenic_map[,c("x_coord","y_coord")]))
     
     measured_strain_indices <- match(titre_dat$virus, antigenic_map$inf_years) - 1 ## For each virus tested, what is its index in the antigenic map?
     infection_strain_indices <- match(strain_isolation_times, strain_isolation_times) -1 ## For each virus that circulated, what is its index in the antigenic map?

@@ -27,7 +27,7 @@ titre_data_group(theta, infection_history_mat, circulation_times,
 
 \item{measurement_strain_indices}{IntegerVector, the indices of all measured strains in the melted antigenic map}
 
-\item{antigenic_map_long}{NumericVector, the collapsed cross reactivity map for long term boosting, after multiplying by sigma1 \code{\link{create_cross_reactivity_vector}}}
+\item{antigenic_map_long}{NumericVector, the collapsed cross reactivity map for long term boosting, after multiplying by sigma1 see \code{\link{create_cross_reactivity_vector}}}
 
 \item{antigenic_map_short}{NumericVector, the collapsed cross reactivity map for short term boosting, after multiplying by sigma2, see \code{\link{create_cross_reactivity_vector}}}
 
@@ -41,7 +41,7 @@ titre_data_group(theta, infection_history_mat, circulation_times,
 NumericVector of predicted titres for each entry in measurement_strain_indices
 }
 \description{
-The main model solving function for a single individual for a vector of sampling timesthe entire titreDat structure
+The main model solving function for a single individual for a vector of sampling times
 }
 \seealso{
 Other titre_model: \code{\link{infection_model_indiv}},

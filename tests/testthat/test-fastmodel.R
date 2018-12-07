@@ -4,16 +4,16 @@ library(serosolver)
 
 test_that("Fast solver returns the same titres as the original version, base case", {
     set.seed(1)
-    titreDat <- read.csv("../testdata/fluscape_sim_annual_dat.csv")
-    antigenicMap <- read.csv("../testdata/fonville_annual_continuous.csv")
-    strain_isolation_times <- antigenicMap$inf_years
-    infection_history_mat <- setup_infection_histories_new(titreDat,strain_isolation_times,5,2)
+    titre_dat <- read.csv("../testdata/fluscape_sim_annual_dat.csv")
+    antigenic_map <- read.csv("../testdata/fonville_annual_continuous.csv")
+    strain_isolation_times <- antigenic_map$inf_years
+    infection_history_mat <- setup_infection_histories_new(titre_dat,strain_isolation_times,5,2)
 
     parTab <- read.csv("../testdata/parTab_base.csv",stringsAsFactors=FALSE)
     parTab <- parTab[parTab$names != "lambda",]
 
-    f_slow <- create_posterior_func(parTab, titreDat, antigenicMap, 1, function_type=3)
-    f_fast <-  create_posterior_func_fast(parTab, titreDat, antigenicMap, 1, function_type=3)
+    f_slow <- create_posterior_func(parTab, titre_dat, antigenic_map, 1, function_type=3)
+    f_fast <-  create_posterior_func_fast(parTab, titre_dat, antigenic_map, 1, function_type=3)
     
     par_names <- parTab$names
     pars <- parTab$values
@@ -28,16 +28,16 @@ test_that("Fast solver returns the same titres as the original version, base cas
 
 test_that("Fast solver returns the same likelihood as the original version, base case", {
     set.seed(1)
-    titreDat <- read.csv("../testdata/fluscape_sim_annual_dat.csv")
-    antigenicMap <- read.csv("../testdata/fonville_annual_continuous.csv")
-    strain_isolation_times <- antigenicMap$inf_years
-    infection_history_mat <- setup_infection_histories_new(titreDat,strain_isolation_times,5,2)
+    titre_dat <- read.csv("../testdata/fluscape_sim_annual_dat.csv")
+    antigenic_map <- read.csv("../testdata/fonville_annual_continuous.csv")
+    strain_isolation_times <- antigenic_map$inf_years
+    infection_history_mat <- setup_infection_histories_new(titre_dat,strain_isolation_times,5,2)
 
     parTab <- read.csv("../testdata/parTab_base.csv",stringsAsFactors=FALSE)
     parTab <- parTab[parTab$names != "lambda",]
 
-    f_slow <- create_posterior_func(parTab, titreDat, antigenicMap, 1, function_type=1)
-    f_fast <- create_posterior_func_fast(parTab, titreDat, antigenicMap, 1, function_type=1)    
+    f_slow <- create_posterior_func(parTab, titre_dat, antigenic_map, 1, function_type=1)
+    f_fast <- create_posterior_func_fast(parTab, titre_dat, antigenic_map, 1, function_type=1)    
 
     par_names <- parTab$names
     pars <- parTab$values
@@ -49,10 +49,10 @@ test_that("Fast solver returns the same likelihood as the original version, base
 })
 
 test_that("Inf hist proposal returns the correct post proposal probability after one run, base case", {
-    titreDat <- read.csv("../testdata/fluscape_sim_annual_dat.csv")
-    antigenicMap <- read.csv("../testdata/fonville_annual_continuous.csv")
-    strain_isolation_times <- antigenicMap$inf_years
-    infection_history_mat <- setup_infection_histories_new(titreDat,strain_isolation_times,5,2)
+    titre_dat <- read.csv("../testdata/fluscape_sim_annual_dat.csv")
+    antigenic_map <- read.csv("../testdata/fonville_annual_continuous.csv")
+    strain_isolation_times <- antigenic_map$inf_years
+    infection_history_mat <- setup_infection_histories_new(titre_dat,strain_isolation_times,5,2)
 
     parTab <- read.csv("../testdata/parTab_base.csv",stringsAsFactors=FALSE)
     parTab <- parTab[parTab$names != "lambda",]
@@ -61,15 +61,15 @@ test_that("Inf hist proposal returns the correct post proposal probability after
     pars <- parTab$values
     names(pars) <- par_names
     
-    f_slow <- create_posterior_func(parTab, titreDat, antigenicMap, 1, function_type=2)
-    f_slow_prob <- create_posterior_func(parTab, titreDat, antigenicMap, 1, function_type=1)
-    f_fast <- create_posterior_func_fast(parTab, titreDat, antigenicMap, 1, function_type=2) 
-    f_fast_prob<- create_posterior_func_fast(parTab, titreDat, antigenicMap, 1, function_type=1)
+    f_slow <- create_posterior_func(parTab, titre_dat, antigenic_map, 1, function_type=2)
+    f_slow_prob <- create_posterior_func(parTab, titre_dat, antigenic_map, 1, function_type=1)
+    f_fast <- create_posterior_func_fast(parTab, titre_dat, antigenic_map, 1, function_type=2) 
+    f_fast_prob<- create_posterior_func_fast(parTab, titre_dat, antigenic_map, 1, function_type=1)
 
     probs_fast <- f_fast_prob(pars, infection_history_mat)
     probs_slow <- f_slow_prob(pars, infection_history_mat)
 
-    indivs <- unique(titreDat$individual)
+    indivs <- unique(titre_dat$individual)
     
     set.seed(1)
     res_fast <- f_fast(pars, infection_history_mat, probs_fast,

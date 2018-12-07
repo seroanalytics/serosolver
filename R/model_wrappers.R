@@ -1,90 +1,76 @@
-#' Solves the re-implementation of the model for a single individual
+#' Solves the antibody kinetics model for a single individual
+#'
+#' @param par_tab the parameter table controlling information such as bounds, initial values etc
+#' @param infection_history vector of 1s and 0s giving the infection history
+#' @param sample_time the time at which a blood sample is taken
+#' @param antigenic_map a data frame of antigenic x and y coordinates. Must have column names: x_coord; y_coord; inf_years
+#' @param measurement_indices_by_time if not NULL, then use these indices to specify which measurement bias parameter index corresponds to which time
+#' @param mu_indices if not NULL, then use these indices to specify which boosting parameter index corresponds to which time
+#' @param DOB the date of birth of this individual, matching the time resolution of the model
+#' @return a vector of predicted titres
 #' @export
-solve_model_individual <- function(par_tab, infectionHistory, sampleTime, antigenic_map, mu_indices=NULL){
+solve_model_individual <- function(par_tab, infection_history, sample_time, antigenic_map,
+                                   measurement_indices_by_time=NULL, mu_indices=NULL, DOB=0){
     ## Unique strains that an individual could be exposed to
-    strains <- unique(antigenic_map$inf_years)
+    strain_isolation_times <- unique(antigenic_map$inf_years)
     ## The entry of each strain in the antigenic map table
-    strainIndices <- match(strains, strains) - 1
-    antigenic_map_melted <- c(outputdmatrix.fromcoord(antigenic_map[,c("x_coord","y_coord")]))
+    strain_indices <- match(strain_isolation_times, strain_isolation_times) - 1
+    antigenic_map_melted <- c(melt_antigenic_coords(antigenic_map[,c("x_coord","y_coord")]))
 
+    ## Extract parameter type indices from par_tab, to split up
+    ## similar parameters in model solving functions
+    theta_indices <- which(par_tab$type %in% c(0,1))
+    measurement_indices_par_tab <- which(par_tab$type == 3)
+    mu_indices_par_tab <- which(par_tab$type == 6)
+#########################################################
+    
+    par_names_theta <- par_tab[theta_indices,"names"]
     pars <- par_tab$values
-    names(pars) <- par_tab$names
+    
+    ## Find which options are being used in advance for speed
+    use_measurement_bias <- (length(measurement_indices_par_tab) > 0) & !is.null(measurement_indices_by_time)
+    titre_shifts <- NULL
+    expected_indices <- NULL
+    measurement_bias <- NULL
+    use_strain_dependent <- (length(mu_indices) > 0) & !is.null(mu_indices)
+    additional_arguments <- NULL
+    
+    
+    if (use_measurement_bias) {
+        expected_indices <- measurement_indices_by_time[match(titre_dat$virus,strain_isolation_times)]
+    }
+
+    if (use_strain_dependent) {
+        additional_arguments <- list("boosting_vec_indices"=mu_indices-1,
+                                     "mus"=rep(2,length(strain_isolation_times)))
+    }
+
+    theta <- pars[theta_indices]
+    mus <- pars[mu_indices_par_tab]
+    
+    if (use_measurement_bias) {
+        measurement_bias <- pars[measurement_indices_par_tab]
+        to_add <- measurement_bias[expected_indices]
+    }
+
+    if (use_strain_dependent) {
+        additional_arguments[["mus"]] <- mus
+    }
+    names(theta) <- par_names_theta
+    
     ## Work out short and long term boosting cross reactivity - C++ function
-    antigenic_map_long <- create_cross_reactivity_vector(antigenic_map_melted, pars["sigma1"])
-    antigenic_map_short <- create_cross_reactivity_vector(antigenic_map_melted, pars["sigma2"])
-
-    if(is.null(mu_indices)){
-        y <- infection_model_indiv(pars, infectionHistory, strains, strainIndices, sampleTime,
-                               strainIndices,antigenic_map_long, antigenic_map_short, length(infectionHistory))
-    } else {
-        mus <- par_tab[par_tab$identity == 3,"values"]
-        print(mus)
-        print(mu_indices)
-        y <- infection_model_indiv_mus(pars, mus, infectionHistory,
-                                       strains, mu_indices, strainIndices, sampleTime,
-                                       strainIndices,antigenic_map_long,
-                                       antigenic_map_short, length(infectionHistory))
+    antigenic_map_long <- create_cross_reactivity_vector(antigenic_map_melted, theta["sigma1"])
+    antigenic_map_short <- create_cross_reactivity_vector(antigenic_map_melted, theta["sigma2"])
+    
+    y <- infection_model_indiv(theta, infection_history, strain_isolation_times, strain_indices, sample_time,
+                               strain_indices,antigenic_map_long, antigenic_map_short, length(infection_history),
+                               DOB, additional_arguments)
+    
+    if (use_measurement_bias) {
+        measurement_bias <- pars[measurement_indices_par_tab]
+        titre_shifts <- measurement_bias[expected_indices]
+        y <- y + titre_shifts
     }
-    return(y)
-
-}
-
-#' Solves the original model as in the original implementation
-#' @export
-solve_model_individual_original <- function(theta_star, sample, antigenic.map.in, years, infection_history){ 
-    dmatrix = 1- theta_star[["sigma1"]]*outputdmatrix.fromcoord.original(theta_star[["sigma1"]],years,antigenic.map.in,linearD=T)
-    dmatrix[dmatrix<0]=0
-    dmatrix2 = 1- theta_star[["sigma2"]]*outputdmatrix.fromcoord.original(theta_star[["sigma2"]],years,antigenic.map.in,linearD=T)
-    dmatrix2[dmatrix2<0]=0
-
-    ind_yearsA <- 1:length(years)
-    titredat <- rep(0, length(years))
-    ind_years <- years - 1968 + 1
-    testyear_index = sample - 1968 + 1
-    testyearI <- which(years == sample)
-                                        # Check test data available
-                                        # Set up test strains
-    test.part=ind_years # index of sample strains data available for
-    d.ij=dmatrix[test.part,] # Define cross-immunity matrix 1 for sample strain
-    d_vector=melt(t(d.ij))$value #melt is by column
-    d.ij2=dmatrix2[test.part,] # Define cross-immunity matrix 2 for sample strain
-    d_vector2=melt(t(d.ij2))$value #melt is by column
-    expect=c_model_original(length(infection_history),length(years),infection_history, theta_star, d_vector,d_vector2,testyear_index);
-    #expect=func1(as.numeric(infection_history),titredat,d_vector,d_vector2,theta_star,testyear_index) # Output expectation
-    dat <- data.frame(years=years, y=expect)
-    return(dat)
-}
-
-
-
-
-#' Needed to solve the original implementation of the model
-outputdmatrix.fromcoord.original <- function(thetasigma,inf_years,anti.map.in,linearD=F){ #anti.map.in can be vector or matrix - rows give inf_years, columns give location
-
-  # Check if map is 1D or 2D
-  #if(length(anti.map.in)==length(inf_years)){
-  if(linearD==F){
-    # Exponential decay function
-    if(is.null(dim(anti.map.in))){ # check if input map is one or 2 dimensions
-      (dmatrix=sapply(anti.map.in,function(x){exp(-thetasigma*abs(anti.map.in-x))}))
-    }else{ # If spline function defined, calculate directly from input
-      (dmatrix=apply(anti.map.in,1,function(x){exp(-thetasigma*sqrt(
-        colSums(apply(anti.map.in,1,function(y){(y-x)^2}))
-        ))}))
-    }
-  }else{
-    # Linear decay function
-    if(is.null(dim(anti.map.in))){ # check if input map is one or 2 dimensions
-      (dmatrix=sapply(anti.map.in,function(x){y=abs(anti.map.in-x); y   })) 
-      
-    }else{
-                                        # If spline function defined, calculate directly from input
-      (dmatrix=apply(anti.map.in,1,function(x){y=sqrt(
-        
-        colSums(apply(anti.map.in,1,function(y){(y-x)^2}))
-        
-      ); y # 1-1*thetasigma* //  y[y<0]=0; HAVE REMOVED BASE
-      }))
-    }
-  }
+    y
+    
 }

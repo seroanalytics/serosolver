@@ -332,7 +332,7 @@ NumericVector titre_data_individual(const NumericVector &theta,
 
 //' Model function overall
 //'
-//' The main model solving function for a single individual for a vector of sampling timesthe entire titreDat structure
+//' The main model solving function for a single individual for a vector of sampling times
 //' @param theta NumericVector, the named vector of model parameters
 //' @param infection_history_mat IntegerMatrix, the matrix of 1s and 0s showing presence/absence of infection for each possible time for each individual. 
 //' @param circulation_times NumericVector, the actual times of circulation that the infection history vector corresponds to
@@ -342,7 +342,7 @@ NumericVector titre_data_individual(const NumericVector &theta,
 //' @param cum_nrows_per_individual_in_data IntegerVector, How many rows in the titre data correspond to each individual?
 //' @param rows_per_indiv_in_samples IntegerVector, How many rows in titre data correspond to each individual, sample and repeat?
 //' @param measurement_strain_indices IntegerVector, the indices of all measured strains in the melted antigenic map
-//' @param antigenic_map_long NumericVector, the collapsed cross reactivity map for long term boosting, after multiplying by sigma1 \code{\link{create_cross_reactivity_vector}}
+//' @param antigenic_map_long NumericVector, the collapsed cross reactivity map for long term boosting, after multiplying by sigma1 see \code{\link{create_cross_reactivity_vector}}
 //' @param antigenic_map_short NumericVector, the collapsed cross reactivity map for short term boosting, after multiplying by sigma2, see \code{\link{create_cross_reactivity_vector}}
 //' @param DOBs NumericVector, the date of birth of all individuals. Currently not used.
 //' @param additional_arguments, Nullable<List> the idea is to use thsi object to pass more flexible additional arguments to the bottom of the call stack

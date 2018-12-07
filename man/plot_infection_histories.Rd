@@ -4,30 +4,28 @@
 \alias{plot_infection_histories}
 \title{Plots infection histories and titre model fits}
 \usage{
-plot_infection_histories(chain, infectionHistories, titreDat, individuals,
-  antigenicMap, parTab, nsamp = 100, mu_indices = NULL,
-  measurement_indices = NULL)
+plot_infection_histories(chain, infection_histories, titre_dat,
+  individuals, antigenic_map, par_tab, nsamp = 100, mu_indices = NULL,
+  measurement_indices_by_time = NULL)
 }
 \arguments{
 \item{chain}{the full MCMC chain to generate titre trajectories from}
 
-\item{infectionHistories}{the MCMC chain for infection histories}
+\item{infection_histories}{the MCMC chain for infection histories}
 
-\item{titreDat}{the data frame of titre data}
+\item{titre_dat}{the data frame of titre data}
 
 \item{individuals}{the subset of individuals to generate credible intervals for}
 
-\item{antigenicMap}{the unmelted antigenic map}
+\item{antigenic_map}{the unmelted antigenic map}
 
-\item{parTab}{the table controlling the parameters in the MCMC chain}
+\item{par_tab}{the table controlling the parameters in the MCMC chain}
 
 \item{nsamp}{number of samples to take from posterior}
 
 \item{mu_indices}{if random effects on boosting parameter, mu, this specifies which entry in the parameter table corresponds to which year. See \code{\link{run_MCMC}}}
 
-\item{measurement_indices}{default NULL, optional vector giving the index of `measurement_bias` that each strain uses the measurement shift from from. eg. if there's 6 circulation years and 3 strain clus}
-
-\item{ages}{the data frame of ages for each individual, with columns for individual and DOB (date of birth)}
+\item{measurement_indices_by_time}{default NULL, optional vector giving the index of `measurement_bias` that each strain uses the measurement shift from from. eg. if there's 6 circulation years and 3 strain clus}
 }
 \value{
 a ggplot2 object

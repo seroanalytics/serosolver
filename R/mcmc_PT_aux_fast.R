@@ -2,7 +2,7 @@ create_run_MCMC_single_iter_fn_fast<- function(unfixed_pars,unfixed_par_length,
                                                lower_bounds,upper_bounds,
                                                age_mask, strain_mask,
                                                posterior_simp, extra_probabilities, proposal_gibbs,
-                                               alpha, beta, histSampleProb, nInfs_vec, swapPropn, moveSize,
+                                               alpha, beta, hist_sample_prob, n_infs_vec, swap_propn, move_size,
                                                n_alive, switch_sample, hist_switch_prob, year_swap_propn
                                                ){
     f <- function(i, par_i,
@@ -12,7 +12,7 @@ create_run_MCMC_single_iter_fn_fast<- function(unfixed_pars,unfixed_par_length,
                   tempaccepted,tempiter,
                   steps,temp){
         ## Whether to swap entire year contents or not - only applies to gibbs sampling
-        histSwitchProb <- runif(1)
+        inf_swap_prob <- runif(1)
 
         if(i %% switch_sample != 0){
             ## If using univariate proposals
@@ -56,67 +56,65 @@ create_run_MCMC_single_iter_fn_fast<- function(unfixed_pars,unfixed_par_length,
             ## Need to temporarily store current parameters as new pars, as
             ## might change with lambda swap step
             n_indiv <- nrow(infection_histories)
-            indivSubSample <- sample(1:n_indiv, ceiling(histSampleProb*n_indiv))
+            indivSubSample <- sample(1:n_indiv, ceiling(hist_sample_prob*n_indiv))
             proposal <- current_pars
-                                        #if(histSwitchProb > hist_switch_prob){
-            prop_gibbs <- proposal_gibbs(proposal, infection_histories,
-                                         likelihoods,
-                                         indivSubSample, 
-                                         alpha, beta,
-                                         nInfs_vec,swapPropn,moveSize,
-                                         temp)
-            new_likelihoods <- prop_gibbs$old_probs
-            newInfectionHistories <- prop_gibbs$new_infection_history
-                                        #} else {
-                                        #    newInfectionHistories <- inf_hist_swap(infection_histories, age_mask, strain_mask,
-                                        #                                           year_swap_propn, moveSize)
-                                        #    new_likelihoods <- posterior_simp(proposal, newInfectionHistories)/temp
-                                        #}
+            if(inf_swap_prob > hist_switch_prob){
+                prop_gibbs <- proposal_gibbs(proposal, infection_histories,
+                                             likelihoods,
+                                             indivSubSample, 
+                                             alpha, beta,
+                                             n_infs_vec,swap_propn,move_size,
+                                             temp)
+                new_likelihoods <- prop_gibbs$old_probs
+                newInfectionHistories <- prop_gibbs$new_infection_history
+            } else {
+                newInfectionHistories <- inf_hist_swap(infection_histories, age_mask, strain_mask,
+                                                       year_swap_propn, move_size)
+                new_likelihoods <- posterior_simp(proposal, newInfectionHistories)/temp
+            }
             
             ## Calculate new likelihood with these infection histories
-            #new_likelihoods <- posterior_simp(proposal, newInfectionHistories)
             new_total_likelihood <- sum(new_likelihoods)
             new_prior_prob <- extra_probabilities(proposal, newInfectionHistories)
             new_posterior <- new_total_likelihood + new_prior_prob
             log_prob <- new_posterior - posterior
-#            if(histSwitchProb > hist_switch_prob){
-            if(!is.na(log_prob) & !is.nan(log_prob) & is.finite(log_prob)){
-                infection_histories <- newInfectionHistories
-                likelihoods <- new_likelihoods
-                total_likelihood <- new_total_likelihood
-                prior_prob <- new_prior_prob
-                posterior <- new_posterior
-            }
-                                        #   } else {
-                                        # if(!identical(newInfectionHistories, infection_histories)){
-                                        #     log_prob <- new_posterior - posterior
-                                        #      if(!is.na(log_prob) & !is.nan(log_prob) & is.finite(log_prob)){
-                                        #        log_prob <- min(log_prob, 0)
-                                        #        if(log(runif(1)) < log_prob){
-                                        #infection_historySwapAccept <- infection_historySwapAccept + 1
-                                        #            infection_histories <- newInfectionHistories
-                                        #            current_pars <- proposal
-                                        #            likelihoods <- new_likelihoods
-                                        #            total_likelihood <- new_total_likelihood
-                                        #            prior_prob <- new_prior_prob
-                                        #             posterior <- new_posterior                        
-                                        #        }
-                                        #}
-                                        #}
-                                        #}
+            
+            if(inf_swap_prob > hist_switch_prob){
+                if(!is.na(log_prob) & !is.nan(log_prob) & is.finite(log_prob)){
+                    infection_histories <- newInfectionHistories
+                    likelihoods <- new_likelihoods
+                    total_likelihood <- new_total_likelihood
+                    prior_prob <- new_prior_prob
+                    posterior <- new_posterior
+                }
+            } else {
+                if(!identical(newInfectionHistories, infection_histories)){
+                    log_prob <- new_posterior - posterior
+                    if(!is.na(log_prob) & !is.nan(log_prob) & is.finite(log_prob)){
+                        log_prob <- min(log_prob, 0)
+                        if(log(runif(1)) < log_prob){
+                            infection_histories <- newInfectionHistories
+                            current_pars <- proposal
+                            likelihoods <- new_likelihoods
+                            total_likelihood <- new_total_likelihood
+                            prior_prob <- new_prior_prob
+                            posterior <- new_posterior                        
+                        }
+                    }
+                }
+            }            
+            list("i"=i, "par_i" = par_i,
+                 "current_pars" = current_pars,"infection_histories"=infection_histories,
+                 "likelihoods"=likelihoods,"total_likelihood" = total_likelihood,
+                 "prior_prob"=prior_prob,"posterior"=posterior,
+                 "tempaccepted" = tempaccepted,"tempiter" = tempiter,
+                 "steps"=steps,"temp"=temp)
         }
-        list("i"=i, "par_i" = par_i,
-             "current_pars" = current_pars,"infection_histories"=infection_histories,
-             "likelihoods"=likelihoods,"total_likelihood" = total_likelihood,
-             "prior_prob"=prior_prob,"posterior"=posterior,
-             "tempaccepted" = tempaccepted,"tempiter" = tempiter,
-             "steps"=steps,"temp"=temp)
+        f
     }
-    f
-}
 
 
-#' performs parallel tempering
+#' performs parallel tempering - Ada Yan
 #' 
 #' @param mcmc_list a list of lists: values, log likelihood etc. of parallel MCMC chains
 #' @param temperatures numeric vector: temperatures of chains
@@ -178,7 +176,7 @@ parallel_tempering <- function(mcmc_list, temperatures, offset){
     list("swaps" = recorded_swaps, "mcmc_list" = mcmc_list)
 }
 
-#' calibrate temperatures for parallel chains
+#' calibrate temperatures for parallel chains - Ada Yan
 #'
 #' @param temperatures vector of length n: current temperatures of chains
 #' @param swap_ratio vector of length n - 1: (proportion of accepted swaps

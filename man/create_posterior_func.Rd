@@ -4,23 +4,23 @@
 \alias{create_posterior_func}
 \title{Posterior function pointer}
 \usage{
-create_posterior_func(parTab, titreDat, antigenicMap, version = 1,
-  solve_likelihood = TRUE, ageMask = NULL,
+create_posterior_func(par_tab, titre_dat, antigenic_map, version = 1,
+  solve_likelihood = TRUE, age_mask = NULL,
   measurement_indices_by_time = NULL, mu_indices = NULL,
   n_alive = NULL, function_type = 1, ...)
 }
 \arguments{
-\item{parTab}{the parameter table controlling information such as bounds, initial values etc}
+\item{par_tab}{the parameter table controlling information such as bounds, initial values etc}
 
-\item{titreDat}{the data frame of data to be fitted. Must have columns: group (index of group); individual (integer ID of individual); samples (numeric time of sample taken); virus (numeric time of when the virus was circulating); titre (integer of titre value against the given virus at that sampling time)}
+\item{titre_dat}{the data frame of data to be fitted. Must have columns: group (index of group); individual (integer ID of individual); samples (numeric time of sample taken); virus (numeric time of when the virus was circulating); titre (integer of titre value against the given virus at that sampling time)}
 
-\item{antigenicMap}{a data frame of antigenic x and y coordinates. Must have column names: x_coord; y_coord; inf_years}
+\item{antigenic_map}{a data frame of antigenic x and y coordinates. Must have column names: x_coord; y_coord; inf_years}
 
 \item{version}{which version of the posterior function to solve (corresponds mainly to the infection history prior). Mostly just left to 1, but there is one special case where this should be set to 4 for the gibbs sampler. This is only really used by \code{\link{run_MCMC}} to place the infection history prior on the total number of infections across all years and individuals when version = 4}
 
 \item{solve_likelihood}{usually set to TRUE. If FALSE< does not solve the likelihood and instead just samples/solves based on the model prior}
 
-\item{ageMask}{see \code{\link{create_age_mask}} - a vector with one entry for each individual specifying the first epoch of circulation in which an individual could have been exposed}
+\item{age_mask}{see \code{\link{create_age_mask}} - a vector with one entry for each individual specifying the first epoch of circulation in which an individual could have been exposed}
 
 \item{measurement_indices_by_time}{if not NULL, then use these indices to specify which measurement bias parameter index corresponds to which time}
 
@@ -33,7 +33,7 @@ create_posterior_func(parTab, titreDat, antigenicMap, version = 1,
 \item{...}{other arguments to pass to the posterior solving function}
 }
 \value{
-a single function pointer that takes only pars and infectionHistories as unnamed arguments. This function goes on to return a vector of posterior values for each individual
+a single function pointer that takes only pars and infection_histories as unnamed arguments. This function goes on to return a vector of posterior values for each individual
 }
 \description{
 Essential for the MCMC algorithm. Takes all of the input data/parameters and returns a function pointer. This function finds the posterior for a given set of input parameters (theta) and infection histories without needing to pass the data set back and forth.

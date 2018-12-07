@@ -4,7 +4,7 @@
 \alias{calc_lambda_probs_indiv_brute}
 \title{FOR DEBUGGING}
 \usage{
-calc_lambda_probs_indiv_brute(lambdas, infHist, ageMask)
+calc_lambda_probs_indiv_brute(lambdas, infection_history, age_mask)
 }
 \description{
 Brute force implementation of calculating the explicit FOI
