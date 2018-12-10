@@ -5,7 +5,7 @@
 \title{Brute force infection history proposal}
 \usage{
 infection_history_symmetric(new_inf_hist, sampled_indivs, age_mask,
-  strain_mask, moveSizes, n_infs, rand_ns)
+  strain_mask, move_sizes, n_infs, rand_ns)
 }
 \arguments{
 \item{new_inf_hist}{a matrix of infection histories - rows for individuals, columns for infection epochs. Contents should be 1s and 0s}
@@ -16,7 +16,7 @@ infection_history_symmetric(new_inf_hist, sampled_indivs, age_mask,
 
 \item{strain_mask}{a vector (one value for each individual) giving the last infection epoch that an individual could have been exposed in.}
 
-\item{moveSizes}{when performing a move step, how far should two epochs be swapped?}
+\item{move_sizes}{when performing a move step, how far should two epochs be swapped?}
 
 \item{n_infs}{number of infection epochs to flip}
 

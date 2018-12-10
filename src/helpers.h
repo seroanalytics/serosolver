@@ -25,3 +25,12 @@ NumericVector sum_likelihoods(NumericVector liks, IntegerVector indices, int n_i
 #define SUM_BUCKETS_H
 NumericVector sum_buckets(NumericVector a, NumericVector buckets);
 #endif
+
+#ifndef ADD_MEASUREMENT_SHIFTS
+#define ADD_MEASUREMENT_SHIFTS
+void add_measurement_shifts(NumericVector &predicted_titres, 
+			    const NumericVector &to_add,
+			    const int &start_index_in_data,
+			    const int &end_index_in_data
+			    );
+#endif

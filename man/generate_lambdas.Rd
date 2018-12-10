@@ -4,8 +4,24 @@
 \alias{generate_lambdas}
 \title{Generate FOI lambdas}
 \usage{
-generate_lambdas(foi, knots, theta, nYears, buckets, degree = 2)
+generate_lambdas(foi, knots, theta, n_years, buckets, degree = 2)
+}
+\arguments{
+\item{foi}{vector of force of infections per year}
+
+\item{knots}{vector of knots for the spline}
+
+\item{theta}{vector of theta parameters for spline}
+
+\item{n_years}{number of years to calculate}
+
+\item{buckets}{number of buckets per year (12 for monthly, 1 for annual)}
+
+\item{degree}{degree of the spline}
+}
+\value{
+a vector of FOIs for each time point
 }
 \description{
-Generate FOI lambdas
+Calculates the seasonal spline for \code{\link{calc_lambda_probs_monthly}}
 }

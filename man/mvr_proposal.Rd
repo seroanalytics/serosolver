@@ -4,18 +4,18 @@
 \alias{mvr_proposal}
 \title{Multivariate proposal function}
 \usage{
-mvr_proposal(values, fixed, covMat, covMat0 = NULL, use_log = FALSE,
+mvr_proposal(values, fixed, cov_mat, cov_mat0 = NULL, use_log = FALSE,
   beta = 0.05)
 }
 \arguments{
 \item{values}{the vector of current parameter values}
 
 \item{fixed}{set of flags corresponding to the parameter vector indicating which parameters are fixed
-Takes into account parameter covariance and ensures containment condition with beta, if covMat0 (the identity matrix) is specified.}
+Takes into account parameter covariance and ensures containment condition with beta, if cov_mat0 (the identity matrix) is specified.}
 
-\item{covMat}{the 2D covariance matrix for all of the parameters}
+\item{cov_mat}{the 2D covariance matrix for all of the parameters}
 
-\item{covMat0}{optional, usually the identity matrix for theta}
+\item{cov_mat0}{optional, usually the identity matrix for theta}
 
 \item{use_log}{flag. If TRUE, propose on log scale}
 
@@ -25,5 +25,5 @@ Takes into account parameter covariance and ensures containment condition with b
 a parameter vector of a proposed move. Note that these may fall outside the allowable ranges.
 }
 \description{
-Given the current parameters and a covariance matrix, returns a vector for a proposed jump from a multivariate normal distribution. Takes into account parameter covariance and ensures containment condition with beta, if covMat0 (the identity matrix) is specified.
+Given the current parameters and a covariance matrix, returns a vector for a proposed jump from a multivariate normal distribution. Takes into account parameter covariance and ensures containment condition with beta, if cov_mat0 (the identity matrix) is specified.
 }

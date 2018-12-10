@@ -12,8 +12,6 @@ plot_attack_rates_monthly(infection_histories, titre_dat, years,
 
 \item{titre_dat}{the data frame of titre data}
 
-\item{years}{vector of the epochs of potential circulation}
-
 \item{n_alive}{vector with the number of people alive in each year of circulation. Can be left as NULL, and ages will be used to infer this}
 
 \item{ymax}{Numeric. the maximum y value to put on the axis}

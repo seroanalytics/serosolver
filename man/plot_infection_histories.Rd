@@ -23,9 +23,9 @@ plot_infection_histories(chain, infection_histories, titre_dat,
 
 \item{nsamp}{number of samples to take from posterior}
 
-\item{mu_indices}{if random effects on boosting parameter, mu, this specifies which entry in the parameter table corresponds to which year. See \code{\link{run_MCMC}}}
+\item{mu_indices}{vector of integers. for random effects on boosting parameter, mu. If random mus are included in the parameter table, this vector specifies which mu to use for each circulation year. For example, if years 1970-1976 have unique boosting, then mu_indices should be c(1,2,3,4,5,6). If every 3 year block shares has a unique boosting parameter, then this should be c(1,1,1,2,2,2)}
 
-\item{measurement_indices_by_time}{default NULL, optional vector giving the index of `measurement_bias` that each strain uses the measurement shift from from. eg. if there's 6 circulation years and 3 strain clus}
+\item{measurement_indices_by_time}{default NULL, optional vector giving the index of `measurement_bias` that each strain uses the measurement shift from from. eg. if there's 6 circulation years and 3 strain clusters}
 }
 \value{
 a ggplot2 object

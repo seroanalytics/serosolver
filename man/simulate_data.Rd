@@ -6,9 +6,9 @@
 \usage{
 simulate_data(par_tab, group = 1, n_indiv, buckets = 12,
   strain_isolation_times, sampling_times, nsamps = 2, antigenic_map,
-  sampleSensoring = 0, titre_sensoring = 0, age_min = 5,
-  age_max = 80, attack_rates, repeats = 1, mu_indices = NULL,
-  measurement_indices = NULL, add_noise = TRUE)
+  titre_sensoring = 0, age_min = 5, age_max = 80, attack_rates,
+  repeats = 1, mu_indices = NULL, measurement_indices = NULL,
+  add_noise = TRUE)
 }
 \arguments{
 \item{par_tab}{the full parameter table controlling parameter ranges and values}

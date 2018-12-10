@@ -65,6 +65,7 @@ List infection_history_proposal_gibbs_fast(const NumericVector &theta, // Model 
 					   const NumericVector &data,
 					   const NumericVector &repeat_data,
 					   const IntegerVector &repeat_indices,
+					   const NumericVector &titre_shifts,
 					   const double temp=1,
 					   bool solve_likelihood=true
 					   ){
@@ -158,6 +159,11 @@ List infection_history_proposal_gibbs_fast(const NumericVector &theta, // Model 
   const double den = sd*M_SQRT2;
   const double max_titre = theta["MAX_TITRE"];
   const double log_const = log(0.5);
+
+
+  // Titre dependent boosting
+  bool use_titre_shifts = false;
+  if(titre_shifts.size() == n_titres) use_titre_shifts = true;
   // ########################################################################
   
   // ########################################################################
@@ -180,6 +186,7 @@ List infection_history_proposal_gibbs_fast(const NumericVector &theta, // Model 
     if(R::runif(0,1) < swap_propn){
       // Indexing for data upkeep
       start_index_in_data = cum_nrows_per_individual_in_data[indiv];
+      end_index_in_data = cum_nrows_per_individual_in_data[indiv+1];
       start_index_in_repeat_data = cum_nrows_per_individual_in_repeat_data[indiv];
 
       new_infection_history = new_infection_history_mat(indiv,_);
@@ -246,6 +253,11 @@ List infection_history_proposal_gibbs_fast(const NumericVector &theta, // Model 
                                       antigenic_map_short,
                                       antigenic_map_long);	  
 
+	  if(use_titre_shifts){
+	    add_measurement_shifts(predicted_titres, titre_shifts, 
+				   start_index_in_data, end_index_in_data);
+	  }
+
 	  // Now have all predicted titres for this individual calculated
 	  // Need to calculate likelihood of these titres... 
 	  new_prob = 0;
@@ -258,7 +270,7 @@ List infection_history_proposal_gibbs_fast(const NumericVector &theta, // Model 
 				   cum_nrows_per_individual_in_data, cum_nrows_per_individual_in_repeat_data,
 				   log_const, den, max_titre);
 	} else {
-	  old_prob = new_prob = 0;
+	  old_prob = new_prob = old_probs[indiv];
 	}
 
 	log_prob = std::min<double>(0.0, (new_prob+prior_new) - (old_prob+prior_old));
@@ -280,7 +292,6 @@ List infection_history_proposal_gibbs_fast(const NumericVector &theta, // Model 
       // Take n_samp_max random samples 
       samps = seq(0, n_samp_length);    // Create vector from 0:length of alive years
       locs = RcppArmadillo::sample(samps, n_samp_max, FALSE, NumericVector::create());
-
 
       for(int j = 0; j < n_samp_max; ++j){
 	start_index_in_data = cum_nrows_per_individual_in_data[indiv];
@@ -331,6 +342,10 @@ List infection_history_proposal_gibbs_fast(const NumericVector &theta, // Model 
 					      antigenic_map_short,
 					      antigenic_map_long);
 	    }
+	    if(use_titre_shifts){
+	      add_measurement_shifts(predicted_titres, titre_shifts, 
+				     start_index_in_data, end_index_in_data);
+	    }
 	    // Now have all predicted titres for this individual calculated
 	    // Need to calculate likelihood of these titres... 
 	    new_prob = 0;
@@ -344,7 +359,7 @@ List infection_history_proposal_gibbs_fast(const NumericVector &theta, // Model 
 				     log_const, den, max_titre);
 	    // =====================
 	  } else {
-	    old_prob = new_prob = 0;
+	    old_prob = new_prob = old_probs[indiv];
 	  }
 	  // Don't need to take into account prior prob, as sampling from this
 	  log_prob = std::min<double>(0.0, new_prob - old_prob);

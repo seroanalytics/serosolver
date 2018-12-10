@@ -25,8 +25,10 @@ generate_antigenic_map_flexible(antigenic_distances, buckets = 1,
 }
 \value{
 a fitted antigenic map
-#' @seealso \code{\link{generate_antigenic_map}}
 }
 \description{
 Firts a smoothing spline through a set of antigenic coordinates, and uses this to predict antigenic coordinates for all potential infection time points. This version is more flexible than \code{\link{generate_antigenic_map}}, and allows the user to specify "clusters" to assume that strains circulating in a given period are all identical, rather than on a continuous path through space as a function of time.
+}
+\seealso{
+\code{\link{generate_antigenic_map}}
 }

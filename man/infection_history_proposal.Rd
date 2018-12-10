@@ -4,11 +4,11 @@
 \alias{infection_history_proposal}
 \title{Infection history proposal - original version}
 \usage{
-infection_history_proposal(newInfectionHistories, sampled_indivs,
+infection_history_proposal(new_infection_histories, sampled_indivs,
   strain_isolation_times, age_mask, strain_mask, n_infs)
 }
 \arguments{
-\item{newInfectionHistories}{an n*m matrix of 1s & 0s indicating infection histories, where n is individuals and m i strains}
+\item{new_infection_histories}{an n*m matrix of 1s & 0s indicating infection histories, where n is individuals and m i strains}
 
 \item{sampled_indivs}{the indices of sampled individuals to receive proposals}
 
@@ -17,7 +17,7 @@ infection_history_proposal(newInfectionHistories, sampled_indivs,
 \item{age_mask}{the vector of indices for each individual specifiying which index of strain_isolation_times is the first strain each individual could have seen}
 }
 \value{
-a new matrix matching newInfectionHistories in dimensions with proposed moves
+a new matrix matching new_infection_histories in dimensions with proposed moves
 }
 \description{
 Proposes new infection histories for a vector of infection histories, where rows represent individuals and columns represent years. Proposals are either removal, addition or switching of infections.

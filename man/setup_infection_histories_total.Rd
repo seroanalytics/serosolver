@@ -8,9 +8,9 @@ setup_infection_histories_total(titre_dat, strain_isolation_times,
   alpha = 1, beta = 1)
 }
 \arguments{
-\item{titre_dat}{the data frame of titre data}
+\item{titre_dat}{the matrix of titres data with columns for individual, sample, and titre}
 
-\item{strain_isolation_times}{the vector of times to sample infections for}
+\item{strain_isolation_times}{vector of real times for all strains}
 
 \item{alpha}{alpha parameter for beta distribution to sample from}
 

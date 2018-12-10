@@ -13,7 +13,7 @@ expand_summary_inf_chain(inf_chain)
 the MCMC saved infection history expanded with infection times as columns
 }
 \description{
-The MCMC function saves sparse matrix summaries of the infection history chain to 
+The MCMC function saves sparse matrix summaries of the infection history chain to
 save space and run time. This function returns the expanded infection history chain,
 as in the original version of the code. Returned value is a data table with leftmost columns
 giving sample number and individual, with columns expanded to the right for each infection

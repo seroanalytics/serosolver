@@ -4,8 +4,8 @@
 \alias{simulate_individual}
 \title{Simulate individual data}
 \usage{
-simulate_individual(theta, infection_history, sampling_times, dataIndices,
-  strain_isolation_times, virusIndices, antigenic_map_long,
+simulate_individual(theta, infection_history, sampling_times, data_indices,
+  strain_isolation_times, virus_indices, antigenic_map_long,
   antigenic_map_short, strains, repeats = 1, mus = NULL,
   mu_indices = NULL, measurement_bias = NULL,
   measurement_indices = NULL, add_noise = TRUE)
@@ -15,17 +15,15 @@ simulate_individual(theta, infection_history, sampling_times, dataIndices,
 
 \item{infection_history}{the vector of 1s and 0s giving presence/absence of infections}
 
-\item{dataIndices}{see \code{\link{create_posterior_func}}}
+\item{data_indices}{see \code{\link{create_posterior_func}}}
 
-\item{strain_isolation_times}{see \code{\link{create_posterior_func}}}
+\item{strain_isolation_times}{the vector of strain circulation times (ie. possible infection times)}
 
-\item{virusIndices}{see \code{\link{create_posterior_func}}}
+\item{virus_indices}{see \code{\link{create_posterior_func}}}
 
 \item{antigenic_map_long}{the collapsed antigenic map for long term cross reactivity, after multiplying by sigma1}
 
 \item{antigenic_map_short}{the collapsed antigenic map for short term cross reactivity, after multiplying by sigma2}
-
-\item{strains}{vector of all possible circulating strains}
 
 \item{repeats}{number of repeated samples for each year}
 
@@ -35,13 +33,9 @@ simulate_individual(theta, infection_history, sampling_times, dataIndices,
 
 \item{measurement_bias}{default NULL, optional vector of measurement bias shift parameters for each strain}
 
-\item{measurement_indices}{default NULL, optional vector giving the index of `measurement_bias` that each strain uses the measurement shift from from. eg. if there's 6 circulation years and 3 strain clus}
+\item{measurement_indices}{default NULL, optional vector giving the index of `measurement_bias` that each strain uses the measurement shift from from. eg. if there's 6 circulation years and 3 strain clusters, then this might be c(1,1,2,2,3,3)}
 
 \item{add_noise}{defaults TRUE, adds observation error to simulated titres}
-
-\item{sample_times}{the vector of times at which samples are taken}
-
-\item{strain_isolation_times}{the vector of strain circulation times (ie. possible infection times)}
 }
 \value{
 a data frame with columns samples, virus and titre of simulated data

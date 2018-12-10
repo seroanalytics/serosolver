@@ -38,6 +38,19 @@ sum_buckets <- function(a, buckets) {
     .Call('_serosolver_sum_buckets', PACKAGE = 'serosolver', a, buckets)
 }
 
+#' Add measurement shifts to predictions
+#'
+#' Adds observation error shifts to predicted antibody titres.
+#' @param predicted_titre NumericVector, the predicted titres. Note that this vector will be changed!
+#' @param to_add NumericVector the vector of all measurement shifts to apply
+#' @param start_index_in_data int the first index of to_add and predicted_titres to combine
+#' @param end_index_in_data int the end index of to_add and predicted_titres to combine
+#' @return nothing
+#' @export
+add_measurement_shifts <- function(predicted_titres, to_add, start_index_in_data, end_index_in_data) {
+    invisible(.Call('_serosolver_add_measurement_shifts', PACKAGE = 'serosolver', predicted_titres, to_add, start_index_in_data, end_index_in_data))
+}
+
 #' Overall model function, fast implementation
 #'
 #' See documentation for \code{\link{titre_data_group}}, as the interface is almost identical
@@ -224,8 +237,8 @@ likelihood_titre_basic <- function(expected, data, theta, titre_shifts) {
 #' @return an R list, one entry with the matrix of 1s and 0s corresponding to the infection histories for all individuals and the other with the new corresponding likelihoods per individual
 #' @export
 #' @family infection_history_proposal
-infection_history_proposal_gibbs_fast <- function(theta, infection_history_mat, old_probs_1, sampled_indivs, n_years_samp_vec, age_mask, strain_mask, n_alive, swap_propn, swap_distance, alpha, beta, circulation_times, circulation_times_indices, sample_times, rows_per_indiv_in_samples, cum_nrows_per_individual_in_data, cum_nrows_per_individual_in_repeat_data, nrows_per_blood_sample, measurement_strain_indices, antigenic_map_long, antigenic_map_short, data, repeat_data, repeat_indices, temp = 1, solve_likelihood = TRUE) {
-    .Call('_serosolver_infection_history_proposal_gibbs_fast', PACKAGE = 'serosolver', theta, infection_history_mat, old_probs_1, sampled_indivs, n_years_samp_vec, age_mask, strain_mask, n_alive, swap_propn, swap_distance, alpha, beta, circulation_times, circulation_times_indices, sample_times, rows_per_indiv_in_samples, cum_nrows_per_individual_in_data, cum_nrows_per_individual_in_repeat_data, nrows_per_blood_sample, measurement_strain_indices, antigenic_map_long, antigenic_map_short, data, repeat_data, repeat_indices, temp, solve_likelihood)
+infection_history_proposal_gibbs_fast <- function(theta, infection_history_mat, old_probs_1, sampled_indivs, n_years_samp_vec, age_mask, strain_mask, n_alive, swap_propn, swap_distance, alpha, beta, circulation_times, circulation_times_indices, sample_times, rows_per_indiv_in_samples, cum_nrows_per_individual_in_data, cum_nrows_per_individual_in_repeat_data, nrows_per_blood_sample, measurement_strain_indices, antigenic_map_long, antigenic_map_short, data, repeat_data, repeat_indices, titre_shifts, temp = 1, solve_likelihood = TRUE) {
+    .Call('_serosolver_infection_history_proposal_gibbs_fast', PACKAGE = 'serosolver', theta, infection_history_mat, old_probs_1, sampled_indivs, n_years_samp_vec, age_mask, strain_mask, n_alive, swap_propn, swap_distance, alpha, beta, circulation_times, circulation_times_indices, sample_times, rows_per_indiv_in_samples, cum_nrows_per_individual_in_data, cum_nrows_per_individual_in_repeat_data, nrows_per_blood_sample, measurement_strain_indices, antigenic_map_long, antigenic_map_short, data, repeat_data, repeat_indices, titre_shifts, temp, solve_likelihood)
 }
 
 #' Gibbs sampling of infection histories

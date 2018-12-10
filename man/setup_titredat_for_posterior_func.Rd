@@ -10,13 +10,11 @@ setup_titredat_for_posterior_func(titre_dat, antigenic_map,
 \arguments{
 \item{titre_dat}{the data frame of data to be fitted. Must have columns: group (index of group); individual (integer ID of individual); samples (numeric time of sample taken); virus (numeric time of when the virus was circulating); titre (integer of titre value against the given virus at that sampling time)}
 
-\item{antigenic_map}{a data frame of antigenic x and y coordinates. Must have column names: x_coord; y_coord; inf_yearhs}
+\item{antigenic_map}{a data frame of antigenic x and y coordinates. Must have column names: x_coord; y_coord; inf_years}
 
-\item{age_mask}{@param age_mask see \code{\link{create_age_mask}} - a vector with one entry for each individual specifying the first epoch of circulation in which an individual could have been exposed. Only calculates if set to NULL.}
+\item{age_mask}{see \code{\link{create_age_mask}} - a vector with one entry for each individual specifying the first epoch of circulation in which an individual could have been exposed}
 
 \item{n_alive}{if not NULL, uses this as the number alive in a given year rather than calculating from the ages. This is needed if the number of alive individuals is known, but individual birth dates are not}
-
-\item{par_tab}{the parameter table controlling information such as bounds, initial values etc}
 }
 \value{
 a very long list. See source code directly.

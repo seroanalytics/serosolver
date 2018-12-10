@@ -4,8 +4,8 @@
 \alias{inf_hist_prob_lambda}
 \title{DEPRECATED - propose inf hist from lambda}
 \usage{
-inf_hist_prob_lambda(newInf, sampled_indivs, age_mask, strain_mask, n_infs,
-  lambdas)
+inf_hist_prob_lambda(new_inf, sampled_indivs, age_mask, strain_mask,
+  n_infs, lambdas)
 }
 \description{
 DEPRECATED - propose inf hist from lambda

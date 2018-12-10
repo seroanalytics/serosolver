@@ -9,74 +9,77 @@
 #' @return the parameter vector after step
 #' @export
 #' @useDynLib serosolver
-univ_proposal <- function(values, lower_bounds, upper_bounds,steps, index){
-    rtn <- values
-    
-    ## Commented out using guassian proposals, which does work but risks being
-    ## inefficient due to stepping outside of bounds
-    ##rtn[index] <- rnorm(1,values[index],steps[index])
-    ##return(rtn)
-    
-    mn <- lower_bounds[index]
-    mx <- upper_bounds[index]
+univ_proposal <- function(values, lower_bounds, upper_bounds, steps, index) {
+  rtn <- values
 
-    rtn <- values
-    
-    x <- toUnitScale(values[index],mn,mx)
+  ## Commented out using guassian proposals, which does work but risks being
+  ## inefficient due to stepping outside of bounds
+  ## rtn[index] <- rnorm(1,values[index],steps[index])
+  ## return(rtn)
 
-    stp <- steps[index]
+  mn <- lower_bounds[index]
+  mx <- upper_bounds[index]
 
-    rv <- runif(1)
-    rv <- (rv-0.5)*stp
-    x <- x + rv
-    
-    ## Bouncing boundary condition
-    if (x < 0) x <- -x
-    if (x > 1) x <- 2-x
+  rtn <- values
 
-    ## Cyclical boundary conditions
-    #if (x < 0) x <- 1 + x	
-    #if (x > 1) x <- x - 1
-    
-    if(x < 0 | x > 1){
-        print("Stepped outside of unit scale. Something went wrong...")
-    }
+  x <- toUnitScale(values[index], mn, mx)
 
-    rtn[index] <- fromUnitScale(x,mn,mx)
-    rtn
+  stp <- steps[index]
+
+  rv <- runif(1)
+  rv <- (rv - 0.5) * stp
+  x <- x + rv
+
+  ## Bouncing boundary condition
+  if (x < 0) x <- -x
+  if (x > 1) x <- 2 - x
+
+  ## Cyclical boundary conditions
+  # if (x < 0) x <- 1 + x
+  # if (x > 1) x <- x - 1
+
+  if (x < 0 | x > 1) {
+    print("Stepped outside of unit scale. Something went wrong...")
+  }
+
+  rtn[index] <- fromUnitScale(x, mn, mx)
+  rtn
 }
 
 
 #' Multivariate proposal function
 #'
-#' Given the current parameters and a covariance matrix, returns a vector for a proposed jump from a multivariate normal distribution. Takes into account parameter covariance and ensures containment condition with beta, if covMat0 (the identity matrix) is specified.
+#' Given the current parameters and a covariance matrix, returns a vector for a proposed jump from a multivariate normal distribution. Takes into account parameter covariance and ensures containment condition with beta, if cov_mat0 (the identity matrix) is specified.
 #' @param values the vector of current parameter values
 #' @param fixed set of flags corresponding to the parameter vector indicating which parameters are fixed
-#' Takes into account parameter covariance and ensures containment condition with beta, if covMat0 (the identity matrix) is specified.
-#' @param covMat the 2D covariance matrix for all of the parameters
-#' @param covMat0 optional, usually the identity matrix for theta
+#' Takes into account parameter covariance and ensures containment condition with beta, if cov_mat0 (the identity matrix) is specified.
+#' @param cov_mat the 2D covariance matrix for all of the parameters
+#' @param cov_mat0 optional, usually the identity matrix for theta
 #' @param use_log flag. If TRUE, propose on log scale
 #' @param beta Beta as in Rosenthal and Roberts 2009
 #' @return a parameter vector of a proposed move. Note that these may fall outside the allowable ranges.
 #' @export
 #' @useDynLib serosolver
-mvr_proposal <- function(values, fixed, covMat, covMat0 = NULL, use_log=FALSE, beta=0.05){
-    proposed <- values
-    ## Sample either from a single covariance matrix or weighted average of the identity matrix and
-    ## given cov matrix, if specified. On either a log or linear scale.
-    if(is.null(covMat0)){
-        if(!use_log) proposed[fixed] <- MASS::mvrnorm(n=1,mu=proposed[fixed],Sigma=(5.6644/length(fixed))*covMat)
-        else proposed[fixed] <- exp(MASS::mvrnorm(n=1,mu=log(proposed[fixed]),Sigma=(5.6644/length(fixed))*covMat))
+mvr_proposal <- function(values, fixed, cov_mat, cov_mat0 = NULL, use_log = FALSE, beta = 0.05) {
+  proposed <- values
+  ## Sample either from a single covariance matrix or weighted average of the identity matrix and
+  ## given cov matrix, if specified. On either a log or linear scale.
+  if (is.null(cov_mat0)) {
+    if (!use_log) {
+      proposed[fixed] <- MASS::mvrnorm(n = 1, mu = proposed[fixed], Sigma = (5.6644 / length(fixed)) * cov_mat)
     } else {
-        if(!use_log){
-            proposed[fixed] <-
-                (1-beta)*MASS::mvrnorm(n=1,mu=proposed[fixed],Sigma=(5.6644/length(fixed))*covMat) +
-                beta*MASS::mvrnorm(n=1,mu=proposed[fixed],Sigma=(0.01/length(fixed))*covMat0)
-        } else {
-            proposed[fixed] <-
-                (1-beta)*exp(MASS::mvrnorm(n=1,mu=log(proposed[fixed]),Sigma=(5.6644/length(fixed))*covMat)) +
-                beta*exp(MASS::mvrnorm(n=1,mu=log(proposed[fixed]),Sigma=(0.01/length(fixed))*covMat0))
-        }
+      proposed[fixed] <- exp(MASS::mvrnorm(n = 1, mu = log(proposed[fixed]), Sigma = (5.6644 / length(fixed)) * cov_mat))
     }
-    return(proposed)
+  } else {
+    if (!use_log) {
+      proposed[fixed] <-
+        (1 - beta) * MASS::mvrnorm(n = 1, mu = proposed[fixed], Sigma = (5.6644 / length(fixed)) * cov_mat) +
+        beta * MASS::mvrnorm(n = 1, mu = proposed[fixed], Sigma = (0.01 / length(fixed)) * cov_mat0)
+    } else {
+      proposed[fixed] <-
+        (1 - beta) * exp(MASS::mvrnorm(n = 1, mu = log(proposed[fixed]), Sigma = (5.6644 / length(fixed)) * cov_mat)) +
+        beta * exp(MASS::mvrnorm(n = 1, mu = log(proposed[fixed]), Sigma = (0.01 / length(fixed)) * cov_mat0))
+    }
+  }
+  return(proposed)
 }

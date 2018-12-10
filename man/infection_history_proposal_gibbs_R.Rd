@@ -4,10 +4,11 @@
 \alias{infection_history_proposal_gibbs_R}
 \title{R implementation of the infection history gibbs proposal, now in C++ code}
 \usage{
-infection_history_proposal_gibbs_R(pars, infection_history, indivSampPropn,
-  n_years_samp, age_mask, n_alive, alpha, beta, strains, strainIndices,
-  sampleTimes, indicesData, indicesDataOverall, indicesSamples,
-  virusIndices, antigenic_map_long, antigenic_map_short, titres)
+infection_history_proposal_gibbs_R(pars, infection_history,
+  indiv_samp_propn, n_years_samp, age_mask, n_alive, alpha, beta, strains,
+  strain_indices, sample_times, indices_data, indices_data_overall,
+  indices_samples, virus_indices, antigenic_map_long, antigenic_map_short,
+  titres)
 }
 \description{
 R implementation of the infection history gibbs proposal, now in C++ code

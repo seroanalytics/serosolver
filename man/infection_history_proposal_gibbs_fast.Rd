@@ -12,7 +12,8 @@ infection_history_proposal_gibbs_fast(theta, infection_history_mat,
   cum_nrows_per_individual_in_data,
   cum_nrows_per_individual_in_repeat_data, nrows_per_blood_sample,
   measurement_strain_indices, antigenic_map_long, antigenic_map_short,
-  data, repeat_data, repeat_indices, temp = 1, solve_likelihood = TRUE)
+  data, repeat_data, repeat_indices, titre_shifts, temp = 1,
+  solve_likelihood = TRUE)
 }
 \arguments{
 \item{theta}{NumericVector, the model parameters used to solve the model}

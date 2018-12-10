@@ -4,17 +4,17 @@
 \alias{generate_quantiles}
 \title{Formatted quantiles}
 \usage{
-generate_quantiles(x, sigF = 3, qs = c(0.025, 0.5, 0.975),
-  asText = TRUE)
+generate_quantiles(x, sig_f = 3, qs = c(0.025, 0.5, 0.975),
+  as_text = TRUE)
 }
 \arguments{
 \item{x}{the vector to summarise}
 
-\item{sigF}{how many significant figures to print}
+\item{sig_f}{how many significant figures to print}
 
 \item{qs}{the vector of quantiles}
 
-\item{asText}{if TRUE, formats nicely as text rather than a vector of numbers}
+\item{as_text}{if TRUE, formats nicely as text rather than a vector of numbers}
 }
 \value{
 the formatted quantiles
