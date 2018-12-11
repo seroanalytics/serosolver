@@ -259,6 +259,48 @@ plot_posteriors <- function(chain,
   return(list(results = all_results, corPlot = corP, densP = densP, traceP = traceP))
 }
 
+#' Get posterior information infection histories
+#'
+#' Finds the median, mean and 95% credible intervals for the attack rates and total number of infections per individual
+#' @inheritParams plot_infection_history_chains_time
+#' @param years vector of years giving the labels to matching j in the infection_histories data frame
+#' @return a list of data frames with summary statistics
+#' @export
+calculate_infection_history_statistics <- function(inf_chain, burnin=0, years=NULL, n_alive=NULL){
+    inf_chain <- inf_chain[inf_chain$sampno > burnin, ]
+    inf_chain <- pad_inf_chain(inf_chain)
+
+      
+    data.table::setkey(inf_chain, "j", "sampno")
+    n_inf_chain <- inf_chain[, list(V1 = sum(x)), by = key(inf_chain)]
+
+    if (!is.null(n_alive)) {
+        n_inf_chain$V1 <- n_inf_chain$V1 / n_alive[n_inf_chain$j]
+    }
+     if (!is.null(years)) {
+         n_inf_chain$j <- years[n_inf_chain$j]
+     }
+
+    data.table::setkey(n_inf_chain, "j")
+    n_inf_chain_summaries <- n_inf_chain[,list(mean=mean(V1),median=median(V1),
+                                               lower_quantile=quantile(V1,c(0.025)),
+                                               upper_quantile=quantile(V1,c(0.975))),
+                                         by=key(n_inf_chain)]
+
+    
+
+    data.table::setkey(inf_chain, "i", "sampno")
+    n_inf_chain_i <- inf_chain[, list(V1 = sum(x)), by = key(inf_chain)]
+
+    data.table::setkey(n_inf_chain_i, "i")
+    n_inf_chain_i_summaries <- n_inf_chain_i[,list(mean=mean(V1),median=median(V1),
+                                               lower_quantile=quantile(V1,c(0.025)),
+                                               upper_quantile=quantile(V1,c(0.975))),
+                                         by=key(n_inf_chain_i)]
+
+    return(list("by_year"=n_inf_chain_summaries,"by_indiv"=n_inf_chain_i_summaries))    
+}
+
 #' Plot historical attack rates monthly
 #'
 #' Plots inferred historical attack rates from the MCMC output on infection histories for monthly. The main difference compared to the normal attack rate plot is that pointrange plots don't make as much sense at a very fine time resolution.

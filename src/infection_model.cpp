@@ -42,6 +42,7 @@ NumericVector titre_data_fast(const NumericVector &theta,
   int inf_map_index;
   int index;
 
+
   // Parameters for solving model (waning and seniority)
   double sampling_time;
   double time;
@@ -59,20 +60,38 @@ NumericVector titre_data_fast(const NumericVector &theta,
   double mu_short = theta["mu_short"];
   double wane = theta["wane"];
   double tau = theta["tau"];
-  double wane_amount;
-  double seniority;
+  
+  int wane_type = theta["wane_type"]; 
+  bool alternative_wane_func = wane_type == 1;
+  bool titre_dependent_boosting = theta["titre_dependent"] == 1;
+  bool base_function = !(alternative_wane_func || titre_dependent_boosting);
+  double kappa;
+  double t_change;
+  double gradient;
+  double boost_limit;
+  
+  
+  if (alternative_wane_func){
+    kappa = theta["kappa"];
+    t_change = theta["t_change"];
+  }  
+
+  if (titre_dependent_boosting) {
+    gradient = theta["gradient"];
+    boost_limit = theta["boost_limit"];
+  }
   
   // To store calculated titres
   NumericVector predicted_titres(total_titres);
   
   // For each individual
-  for(int i = 1; i <= n; ++i){
+  for (int i = 1; i <= n; ++i) {
     infection_history = infection_history_mat(i-1,_);
     indices = infection_history > 0;
     infection_times = circulation_times[indices];
     
     // Only solve is this individual has had infections
-    if(infection_times.size() > 0){
+    if (infection_times.size() > 0) {
       infection_strain_indices_tmp = circulation_times_indices[indices];
     
       index_in_samples = rows_per_indiv_in_samples[i-1];
@@ -82,19 +101,51 @@ NumericVector titre_data_fast(const NumericVector &theta,
       
       // Go to sub function - this is where we'd have options for different models
       // Note, this is in "boosting_functions.cpp"
-      titre_data_fast_individual_base(predicted_titres, mu, mu_short,
-                                      wane, tau,
-                                      infection_times,
-                                      infection_strain_indices_tmp,
-                                      measurement_strain_indices,
-                                      sample_times,
-                                      index_in_samples,
-                                      end_index_in_samples,
-                                      start_index_in_data,
-                                      nrows_per_blood_sample,
-                                      number_strains,
-                                      antigenic_map_short,
-                                      antigenic_map_long);
+      if (base_function) {
+	titre_data_fast_individual_base(predicted_titres, mu, mu_short,
+					wane, tau,
+					infection_times,
+					infection_strain_indices_tmp,
+					measurement_strain_indices,
+					sample_times,
+					index_in_samples,
+					end_index_in_samples,
+					start_index_in_data,
+					nrows_per_blood_sample,
+					number_strains,
+					antigenic_map_short,
+					antigenic_map_long);
+      } else if (titre_dependent_boosting) {
+	titre_data_fast_individual_titredep(predicted_titres, mu, mu_short,
+					    wane, tau,
+					    gradient, boost_limit,
+					    infection_times,
+					    infection_strain_indices_tmp,
+					    measurement_strain_indices,
+					    sample_times,
+					    index_in_samples,
+					    end_index_in_samples,
+					    start_index_in_data,
+					    nrows_per_blood_sample,
+					    number_strains,
+					    antigenic_map_short,
+					    antigenic_map_long);	
+      } else {
+	titre_data_fast_individual_wane2(predicted_titres, mu, mu_short,
+					 wane, tau,
+					 kappa, t_change,
+					 infection_times,
+					 infection_strain_indices_tmp,
+					 measurement_strain_indices,
+					 sample_times,
+					 index_in_samples,
+					 end_index_in_samples,
+					 start_index_in_data,
+					 nrows_per_blood_sample,
+					 number_strains,
+					 antigenic_map_short,
+					 antigenic_map_long);
+      }
      
     }
   }

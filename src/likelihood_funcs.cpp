@@ -117,7 +117,7 @@ void proposal_likelihood_func(double &new_prob,
       new_prob += log_const + log((erf((data[x] + 1.0 - predicted_titres[x]) / den) -
 				   erf((data[x]     - predicted_titres[x]) / den)));    
     } else if(data[x] >= max_titre) {
-      new_prob += log_const + log_const + log(erfc((max_titre - predicted_titres[x])/den));
+      new_prob += log_const + log(erfc((max_titre - predicted_titres[x])/den));
     } else {
       new_prob += log_const + log(1.0 + erf((1.0 - predicted_titres[x])/den));
     }

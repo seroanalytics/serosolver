@@ -587,7 +587,7 @@ create_posterior_func_fast <- function(par_tab,
 
     ## Find which options are being used in advance for speed
     use_measurement_bias <- (length(measurement_indices_par_tab) > 0) & !is.null(measurement_indices_by_time)
-    titre_shifts <- NULL
+    titre_shifts <- c(0)
     expected_indices <- NULL
     measurement_bias <- NULL
     use_strain_dependent <- (length(mu_indices) > 0) & !is.null(mu_indices)
@@ -657,7 +657,6 @@ create_posterior_func_fast <- function(par_tab,
             measurement_bias <- pars[measurement_indices_par_tab]
             titre_shifts <- measurement_bias[expected_indices]
         }
-
         ## Work out short and long term boosting cross reactivity - C++ function
         antigenic_map_long <- create_cross_reactivity_vector(antigenic_map_melted, theta["sigma1"])
         antigenic_map_short <- create_cross_reactivity_vector(antigenic_map_melted, theta["sigma2"])
@@ -709,7 +708,7 @@ create_posterior_func_fast <- function(par_tab,
           antigenic_map_long <- create_cross_reactivity_vector(antigenic_map_melted, theta["sigma1"])
           antigenic_map_short <- create_cross_reactivity_vector(antigenic_map_melted, theta["sigma2"])
           y_new <- titre_data_fast(
-              pars, infection_history_mat, strain_isolation_times, infection_strain_indices,
+              theta, infection_history_mat, strain_isolation_times, infection_strain_indices,
               sample_times, rows_per_indiv_in_samples, cum_nrows_per_individual_in_data,
               nrows_per_blood_sample, measured_strain_indices, antigenic_map_long,
               antigenic_map_short, NULL

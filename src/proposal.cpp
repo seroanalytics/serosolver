@@ -113,9 +113,18 @@ List infection_history_proposal_gibbs_fast(const NumericVector &theta, // Model 
   double mu_short = theta["mu_short"];
   double wane = theta["wane"];
   double tau = theta["tau"];
-  double wane_amount;
   double seniority;
   double n_inf;
+
+  int wane_type = theta["wane_type"]; 
+  bool normal_wane_func = wane_type == 0;
+  double kappa;
+  double t_change;
+
+  if (!normal_wane_func){
+    kappa = theta["kappa"];
+    t_change = theta["t_change"];
+  }  
   // ########################################################################
 
   // ########################################################################
@@ -163,7 +172,7 @@ List infection_history_proposal_gibbs_fast(const NumericVector &theta, // Model 
 
   // Titre dependent boosting
   bool use_titre_shifts = false;
-  if(titre_shifts.size() == n_titres) use_titre_shifts = true;
+  if(titre_shifts.size() == n_titres_total) use_titre_shifts = true;
   // ########################################################################
   
   // ########################################################################
@@ -172,7 +181,6 @@ List infection_history_proposal_gibbs_fast(const NumericVector &theta, // Model 
     // Get index of individual under consideration and their current likelihood
     indiv = sampled_indivs[i]-1;
     old_prob = old_probs_1[indiv];  
-
     // Indexing for data upkeep
     index_in_samples = rows_per_indiv_in_samples[indiv];
     end_index_in_samples = rows_per_indiv_in_samples[indiv+1] - 1;
@@ -182,13 +190,13 @@ List infection_history_proposal_gibbs_fast(const NumericVector &theta, // Model 
     n_samp_length  = strain_mask[indiv] - age_mask[indiv]; // How many years maximum can we sample from?
     n_samp_max = std::min(n_years_samp, n_samp_length); // Use the smaller of these two numbers
 
+    // Indexing for data upkeep
+    start_index_in_data = cum_nrows_per_individual_in_data[indiv];
+    end_index_in_data = cum_nrows_per_individual_in_data[indiv+1];
+    start_index_in_repeat_data = cum_nrows_per_individual_in_repeat_data[indiv];
+
     // Swap contents of a year for an individual
     if(R::runif(0,1) < swap_propn){
-      // Indexing for data upkeep
-      start_index_in_data = cum_nrows_per_individual_in_data[indiv];
-      end_index_in_data = cum_nrows_per_individual_in_data[indiv+1];
-      start_index_in_repeat_data = cum_nrows_per_individual_in_repeat_data[indiv];
-
       new_infection_history = new_infection_history_mat(indiv,_);
 
       loc1 = floor(R::runif(0,n_samp_length)); // Choose a location from age_mask to strain_mask
@@ -239,25 +247,42 @@ List infection_history_proposal_gibbs_fast(const NumericVector &theta, // Model 
 	  infection_times = circulation_times[indices];
 	  infection_strain_indices_tmp = circulation_times_indices[indices];
 	  
-	  titre_data_fast_individual_base(predicted_titres, mu, mu_short,
-                                      wane, tau,
-                                      infection_times,
-                                      infection_strain_indices_tmp,
-                                      measurement_strain_indices,
-                                      sample_times,
-                                      index_in_samples,
-                                      end_index_in_samples,
-                                      start_index_in_data,
-                                      nrows_per_blood_sample,
-                                      number_strains,
-                                      antigenic_map_short,
-                                      antigenic_map_long);	  
+	  if (normal_wane_func) {
+	    titre_data_fast_individual_base(predicted_titres, mu, mu_short,
+					    wane, tau,
+					    infection_times,
+					    infection_strain_indices_tmp,
+					    measurement_strain_indices,
+					    sample_times,
+					    index_in_samples,
+					    end_index_in_samples,
+					    start_index_in_data,
+					    nrows_per_blood_sample,
+					    number_strains,
+					    antigenic_map_short,
+					    antigenic_map_long);	  
+	  } else {
+	    titre_data_fast_individual_wane2(predicted_titres, mu, mu_short,
+					     wane, tau,
+					     kappa, t_change,
+					     infection_times,
+					     infection_strain_indices_tmp,
+					     measurement_strain_indices,
+					     sample_times,
+					     index_in_samples,
+					     end_index_in_samples,
+					     start_index_in_data,
+					     nrows_per_blood_sample,
+					     number_strains,
+					     antigenic_map_short,
+					     antigenic_map_long);
+	  }
 
 	  if(use_titre_shifts){
 	    add_measurement_shifts(predicted_titres, titre_shifts, 
 				   start_index_in_data, end_index_in_data);
 	  }
-
+	  
 	  // Now have all predicted titres for this individual calculated
 	  // Need to calculate likelihood of these titres... 
 	  new_prob = 0;
@@ -294,9 +319,6 @@ List infection_history_proposal_gibbs_fast(const NumericVector &theta, // Model 
       locs = RcppArmadillo::sample(samps, n_samp_max, FALSE, NumericVector::create());
 
       for(int j = 0; j < n_samp_max; ++j){
-	start_index_in_data = cum_nrows_per_individual_in_data[indiv];
-	start_index_in_repeat_data = cum_nrows_per_individual_in_repeat_data[indiv];
-
 	new_infection_history = new_infection_history_mat(indiv,_);
 	year = locs[j] + age_mask[indiv] - 1;
 	old_entry = new_infection_history(year);
@@ -328,24 +350,44 @@ List infection_history_proposal_gibbs_fast(const NumericVector &theta, // Model 
 	    infection_times = circulation_times[indices];
 	    if(infection_times.size() > 0){
 	      infection_strain_indices_tmp = circulation_times_indices[indices];
-	      titre_data_fast_individual_base(predicted_titres, mu, mu_short,
-					      wane, tau,
-					      infection_times,
-					      infection_strain_indices_tmp,
-					      measurement_strain_indices,
-					      sample_times,
-					      index_in_samples,
-					      end_index_in_samples,
-					      start_index_in_data,
-					      nrows_per_blood_sample,
-					      number_strains,
-					      antigenic_map_short,
-					      antigenic_map_long);
+
+	      if (normal_wane_func) {
+		titre_data_fast_individual_base(predicted_titres, mu, mu_short,
+						wane, tau,
+						infection_times,
+						infection_strain_indices_tmp,
+						measurement_strain_indices,
+						sample_times,
+						index_in_samples,
+						end_index_in_samples,
+						start_index_in_data,
+						nrows_per_blood_sample,
+						number_strains,
+						antigenic_map_short,
+						antigenic_map_long);	  
+	      } else {
+		titre_data_fast_individual_wane2(predicted_titres, mu, mu_short,
+						 wane, tau,
+						 kappa, t_change,
+						 infection_times,
+						 infection_strain_indices_tmp,
+						 measurement_strain_indices,
+						 sample_times,
+						 index_in_samples,
+						 end_index_in_samples,
+						 start_index_in_data,
+						 nrows_per_blood_sample,
+						 number_strains,
+						 antigenic_map_short,
+						 antigenic_map_long);
+	      }
 	    }
+	    
 	    if(use_titre_shifts){
 	      add_measurement_shifts(predicted_titres, titre_shifts, 
 				     start_index_in_data, end_index_in_data);
 	    }
+	    
 	    // Now have all predicted titres for this individual calculated
 	    // Need to calculate likelihood of these titres... 
 	    new_prob = 0;

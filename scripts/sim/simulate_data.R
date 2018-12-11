@@ -23,7 +23,7 @@ buckets <- 1
 fit_dat <- read.csv("data/antigenic_maps/created_maps/fonville_annual_continuous.csv")
 
 ## How many individuals to simulate?
-n_indiv <- 1000
+n_indiv <- 100
 
 
 ## Read in parameter table to simulate from and change waning rate if necessary
@@ -39,13 +39,9 @@ if(use_measurement_bias){
   n_clusters <- length(unique(clusters$cluster1))
   measurement_indices <- clusters$cluster1
   measurement_indices <- rep(measurement_indices, each=buckets)
-  par_tab <- rbind(par_tab, data.frame(names="rho_mean",values=0,fixed=1,steps=0.1,
-                                     lower_bound=-10,upper_bound=10,lower_start=-2,upper_start=2, type=1))
-  par_tab <- rbind(par_tab, data.frame(names="rho_sd",values=1,fixed=0,steps=0.1,
-                                     lower_bound=0,upper_bound=10,lower_start=1,upper_start=2, type=1))
-  
+
   for(i in 1:length(measurement_bias)){
-    tmp <- data.frame(names="rho",values=1,fixed=0,steps=0.1,lower_bound=-10,upper_bound=10,lower_start=-2,upper_start=2, type=4)
+    tmp <- data.frame(names="rho",values=1,fixed=0,steps=0.1,lower_bound=-10,upper_bound=10,lower_start=-2,upper_start=2, type=3)
     par_tab <- rbind(par_tab, tmp)
   }
   par_tab[par_tab$names == "rho","values"] <- measurement_bias
@@ -84,11 +80,14 @@ strain_isolation_times <- unique(fit_dat$inf_years)
 
 ## Simulate some fake data
 ## CHANGE PINF TO NULL IF WE WANT TO GENERATE NEW ATTACK RATES
-sim_inf_pars=c("mean"=0.15/buckets,"sd"=0.5,"bigMean"=0.5,"logSD"=1)
-attack_rates <- simulate_attack_rates(strain_isolation_times, sim_inf_pars["mean"],sim_inf_pars["sd"],TRUE,sim_inf_pars["bigMean"])
+sim_inf_pars=c("mean"=0.15/buckets,"sd"=0.5,"big_mean"=0.5,"log_sd"=1)
+attack_rates <- simulate_attack_rates(strain_isolation_times, sim_inf_pars["mean"],sim_inf_pars["sd"],TRUE,sim_inf_pars["big_mean"])
 dat <- simulate_data(par_tab, 1, n_indiv, buckets, strain_isolation_times,
-                     sampling_times, nsamps, antigenic_map=fit_dat, 0, 10*buckets,75*buckets,
-                     attack_rates=attack_rates,repeats=repeats, measurement_indices = measurement_indices)
+                     sampling_times, nsamps, antigenic_map=fit_dat, titre_sensoring=0, 
+                     age_min=10*buckets,age_max=75*buckets,
+                     attack_rates=attack_rates,repeats=repeats, 
+                     mu_indices=NULL,
+                     measurement_indices = measurement_indices)
 
 ## If we want to use a subset of isolated strains, uncomment the line below
 viruses <- c(1968, 1969, 1972, 1975, 1977, 1979, 1982, 1985, 1987, 

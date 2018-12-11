@@ -18,11 +18,19 @@
 #' @return a data frame with columns individual, samples, virus and titre of simulated data
 #' @export
 #' @seealso \code{\link{simulate_individual}}
-simulate_group <- function(n_indiv, theta, infection_histories,
-                           strain_isolation_times, sample_times,
-                           nsamps, antigenic_map_long, antigenic_map_short,
-                           repeats = 1, mus = NULL, mu_indices = NULL,
-                           measurement_bias = NULL, measurement_indices = NULL,
+simulate_group <- function(n_indiv,
+                           theta,
+                           infection_histories,
+                           strain_isolation_times,
+                           sample_times,
+                           nsamps,
+                           antigenic_map_long,
+                           antigenic_map_short,
+                           repeats = 1,
+                           mus = NULL,
+                           mu_indices = NULL,
+                           measurement_bias = NULL,
+                           measurement_indices = NULL,
                            add_noise = TRUE) {
   dat <- NULL
   ## For each individual
@@ -84,38 +92,33 @@ simulate_individual <- function(theta,
                                 measurement_bias = NULL,
                                 measurement_indices = NULL,
                                 add_noise = TRUE) {
-  numberStrains <- length(strains)
-  dat <- matrix(ncol = 3, nrow = length(strain_isolation_times) * repeats)
+    numberStrains <- length(strains)
+    dat <- matrix(ncol = 3, nrow = length(strain_isolation_times) * repeats)
 
-  if (is.null(mu_indices)) {
+    additional_arguments <- NULL
+    if (!is.null(mus)) additional_args <- list("mus"=mus,"boosting_vec_indices"=mu_indices-1)
+
     titres <- titre_data_individual(
-      theta, infection_history, strains, seq_along(strains) - 1, sampling_times,
-      data_indices, match(strain_isolation_times, strains) - 1,
-      antigenic_map_long, antigenic_map_short, numberStrains
+        theta, infection_history, strains, seq_along(strains) - 1, sampling_times,
+        data_indices, match(strain_isolation_times, strains) - 1,
+        antigenic_map_long, antigenic_map_short, numberStrains, 0,
+        additional_arguments
     )
-  } else {
-    titres <- titre_data_individual_mus(
-      theta, mus, infection_history, strains, seq_along(strains) - 1,
-      mu_indices, sampling_times,
-      data_indices, match(strain_isolation_times, strains) - 1,
-      antigenic_map_long, antigenic_map_short, numberStrains
-    )
-  }
-  titres <- rep(titres, each = repeats)
-  sampling_times <- rep(sampling_times, data_indices)
-  sampling_times <- rep(sampling_times, each = repeats)
-  dat[, 1] <- sampling_times
-  dat[, 2] <- rep(strain_isolation_times, each = repeats)
-  if (add_noise) {
-    if (!is.null(measurement_indices)) {
-      dat[, 3] <- add_noise(titres, theta, measurement_bias, measurement_indices[match(dat[, 2], strains)])
+    titres <- rep(titres, each = repeats)
+    sampling_times <- rep(sampling_times, data_indices)
+    sampling_times <- rep(sampling_times, each = repeats)
+    dat[, 1] <- sampling_times
+    dat[, 2] <- rep(strain_isolation_times, each = repeats)
+    if (add_noise) {
+        if (!is.null(measurement_indices)) {
+            dat[, 3] <- add_noise(titres, theta, measurement_bias, measurement_indices[match(dat[, 2], strains)])
+        } else {
+            dat[, 3] <- add_noise(titres, theta, NULL, NULL)
+        }
     } else {
-      dat[, 3] <- add_noise(titres, theta, NULL, NULL)
+        dat[, 3] <- titres
     }
-  } else {
-    dat[, 3] <- titres
-  }
-  return(dat)
+    return(dat)
 }
 
 #' Add noise
@@ -289,22 +292,30 @@ simulate_data <- function(par_tab, group = 1, n_indiv, buckets = 12,
                           add_noise = TRUE) {
 
   ## Check attack_rates entry
-  check_attack_rates(attack_rates, strain_isolation_times)
+    check_attack_rates(attack_rates, strain_isolation_times)
 
-  ## Extract parameters
-  pars <- par_tab$values
-  names(pars) <- par_tab$names
-  if (!is.null(mu_indices)) {
-    mus <- par_tab[par_tab$identity == 3, "values"]
-    pars <- par_tab[par_tab$identity == 1, "values"]
-    names(pars) <- par_tab[par_tab$identity == 1, "names"]
-  }
-
-  if (!is.null(measurement_indices)) {
-    measurement_bias <- par_tab[par_tab$identity == 4, "values"]
-    pars <- par_tab[par_tab$identity == 1, "values"]
-    names(pars) <- par_tab[par_tab$identity == 1, "names"]
-  }
+    ## Extract parameter type indices from par_tab, to split up
+    ## similar parameters in model solving functions
+    option_indices <- which(par_tab$type == 0)
+    theta_indices <- which(par_tab$type %in% c(0, 1))
+    measurement_indices_par_tab <- which(par_tab$type == 3)
+    mu_indices_par_tab <- which(par_tab$type == 6)
+    
+    ## Extract parameters
+    par_names_theta <- par_tab[theta_indices, "names"]
+    pars <- par_tab$values
+    theta <- pars[theta_indices]
+    names(theta) <- par_names_theta
+    
+    mus <- NULL
+    if (!is.null(mu_indices)) {
+        mus <- pars[mu_indices_par_tab]
+    }
+    
+    measurement_bias <- NULL
+    if (!is.null(measurement_indices)) {
+        measurement_bias <- pars[measurement_indices_par_tab]
+    }
 
   ## Check the inputs of par_tab
   check_par_tab(par_tab)
@@ -312,8 +323,8 @@ simulate_data <- function(par_tab, group = 1, n_indiv, buckets = 12,
   ## Create antigenic map for short and long term boosting
   antigenic_map1 <- melt_antigenic_coords(antigenic_map[, c("x_coord", "y_coord")])
 
-  antigenic_map_long <- 1 - pars["sigma1"] * c(antigenic_map1)
-  antigenic_map_short <- 1 - pars["sigma2"] * c(antigenic_map1)
+  antigenic_map_long <- 1 - theta["sigma1"] * c(antigenic_map1)
+  antigenic_map_short <- 1 - theta["sigma2"] * c(antigenic_map1)
 
   antigenic_map_long[antigenic_map_long < 0] <- 0
   antigenic_map_short[antigenic_map_short < 0] <- 0
@@ -332,7 +343,7 @@ simulate_data <- function(par_tab, group = 1, n_indiv, buckets = 12,
 
   ## Simulate titre data
   y <- simulate_group(
-    n_indiv, pars, infection_history, strain_isolation_times, sampling_times,
+    n_indiv, theta, infection_history, strain_isolation_times, sampling_times,
     nsamps, antigenic_map_long, antigenic_map_short, repeats,
     mus, mu_indices, measurement_bias, measurement_indices, add_noise
   )
