@@ -76,3 +76,16 @@ check_attackRates <- function(attackRates,strainIsolationTimes){
   
 }
 
+#' Checks if the multivarite proposal is being used with the FOI proposal
+#' @param version Which version of the posterior function to use? See \code{\link{create_post_func}}
+#' @param mvrPars Leave NULL to use univariate proposals. Otherwise, a list of parameters if using a multivariate proposal. Must contain an initial covariance matrix, weighting for adapting cov matrix, and an initial scaling parameter (0-1)
+#' @return nothing at the moment
+#' @export
+check_proposals <- function(version, mvrPars){
+  
+  if(all(version==1,mvrPars!=NULL) warning('The multivariate proposal can be inefficient for version 1.')
+
+  
+}
+
+

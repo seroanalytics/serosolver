@@ -33,7 +33,7 @@
 #'  * inf_propn (proportion of infection times to resample for each individual at each iteration)
 #'  * moveSizes (number of infection years/months to move when performing infection history swap step)
 #'  * histProposal (which infection history proposal version to use, see \code{\link{describe_proposals}}
-#'  * histOpt (if 1, performs adaptive infection history proposals. If 0, retains the starting infection history proposal parameters
+#'  * histOpt (if 1, performs adaptive infection history proposals. If 0, retains the starting infarection history proposal parameters
 #'  * swapPropn (if using gibbs sampling of infection histories, what proportion of proposals should be swap steps)
 #'  * hist_switch_prob (proportion of infection history proposal steps to swap year_swap_propn of two time periods' contents)
 #'  * year_swap_propn (when swapping contents of two time points, what proportion of individuals should have their contents swapped)
@@ -70,6 +70,8 @@ run_MCMC <- function(parTab,
     ## Error checks --------------------------------------
     check_parTab(parTab, TRUE,version)
     
+    check_proposals(version, mvrPars)
+  
     ## Sort out MCMC parameters --------------------------------------
     ###################################################################
     mcmcPars_used <- c("iterations"=50000,"popt"=0.44,"popt_hist"=0.44,"opt_freq"=2000,"thin"=1,
