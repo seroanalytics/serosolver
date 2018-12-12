@@ -33,7 +33,9 @@
 //' @param data NumericVector, data for all individuals for the first instance of each calculated titre
 //' @param repeat_data NumericVector, the repeat titre data for all individuals (ie. do not solve the same titres twice)
 //' @param repeat_indices IntegerVector, which index in the main data vector does each entry in repeat_data correspond to ie. which calculated titre in predicted_titres should be used for each observation?
-//' @param to_add Nullable<NumericVector>, optional vector of measurement shifts to apply to all titres
+//' @param titre_shifts NumericVector, if length matches the length of \code{data}, adds these as measurement shifts to the predicted titres. If lengths do not match, is not used.
+//' @param mus NumericVector, if length is greater than one, assumes that strain-specific boosting is used rather than a single boosting parameter
+//' @param boosting_vec_indices IntegerVector, same length as circulation_times, giving the index in the vector \code{mus} that each entry should use as its boosting parameter.
 //' @param solve_likelihood bool, if FALSE does not solve likelihood when calculating acceptance probability
 //' @param temp double, temperature for parallel tempering MCMC
 //' @return an R list, one entry with the matrix of 1s and 0s corresponding to the infection histories for all individuals and the other with the new corresponding likelihoods per individual
@@ -66,6 +68,8 @@ List infection_history_proposal_gibbs_fast(const NumericVector &theta, // Model 
 					   const NumericVector &repeat_data,
 					   const IntegerVector &repeat_indices,
 					   const NumericVector &titre_shifts,
+					   const NumericVector &mus,
+					   const IntegerVector &boosting_vec_indices,
 					   const double temp=1,
 					   bool solve_likelihood=true
 					   ){
@@ -117,14 +121,32 @@ List infection_history_proposal_gibbs_fast(const NumericVector &theta, // Model 
   double n_inf;
 
   int wane_type = theta["wane_type"]; 
-  bool normal_wane_func = wane_type == 0;
+  bool alternative_wane_func = wane_type == 1;
   double kappa;
   double t_change;
 
-  if (!normal_wane_func){
+
+  bool titre_dependent_boosting = theta["titre_dependent"] == 1;
+  double gradient;
+  double boost_limit;
+  
+  bool strain_dep_boost = false;
+
+  if (alternative_wane_func){
     kappa = theta["kappa"];
     t_change = theta["t_change"];
   }  
+
+  if (titre_dependent_boosting) {
+    gradient = theta["gradient"];
+    boost_limit = theta["boost_limit"];
+  }
+  
+  if (mus.size() > 1) {
+    strain_dep_boost = true;    
+  }
+
+  bool base_function = !(alternative_wane_func || titre_dependent_boosting || strain_dep_boost);
   // ########################################################################
 
   // ########################################################################
@@ -247,7 +269,7 @@ List infection_history_proposal_gibbs_fast(const NumericVector &theta, // Model 
 	  infection_times = circulation_times[indices];
 	  infection_strain_indices_tmp = circulation_times_indices[indices];
 	  
-	  if (normal_wane_func) {
+	  if (base_function) {
 	    titre_data_fast_individual_base(predicted_titres, mu, mu_short,
 					    wane, tau,
 					    infection_times,
@@ -261,6 +283,37 @@ List infection_history_proposal_gibbs_fast(const NumericVector &theta, // Model 
 					    number_strains,
 					    antigenic_map_short,
 					    antigenic_map_long);	  
+	  } else if (titre_dependent_boosting) {
+	    titre_data_fast_individual_titredep(predicted_titres, mu, mu_short,
+						wane, tau,
+						gradient, boost_limit,
+						infection_times,
+						infection_strain_indices_tmp,
+						measurement_strain_indices,
+						sample_times,
+						index_in_samples,
+						end_index_in_samples,
+						start_index_in_data,
+						nrows_per_blood_sample,
+						number_strains,
+						antigenic_map_short,
+						antigenic_map_long);	
+	  } else if (strain_dep_boost) {
+	    titre_data_fast_individual_strain_dependent(predicted_titres, 
+							mus, boosting_vec_indices, 
+							mu_short,
+							wane, tau,
+							infection_times,
+							infection_strain_indices_tmp,
+							measurement_strain_indices,
+							sample_times,
+							index_in_samples,
+							end_index_in_samples,
+							start_index_in_data,
+							nrows_per_blood_sample,
+							number_strains,
+							antigenic_map_short,
+							antigenic_map_long);
 	  } else {
 	    titre_data_fast_individual_wane2(predicted_titres, mu, mu_short,
 					     wane, tau,
@@ -350,8 +403,7 @@ List infection_history_proposal_gibbs_fast(const NumericVector &theta, // Model 
 	    infection_times = circulation_times[indices];
 	    if(infection_times.size() > 0){
 	      infection_strain_indices_tmp = circulation_times_indices[indices];
-
-	      if (normal_wane_func) {
+	      if (base_function) {
 		titre_data_fast_individual_base(predicted_titres, mu, mu_short,
 						wane, tau,
 						infection_times,
@@ -365,6 +417,37 @@ List infection_history_proposal_gibbs_fast(const NumericVector &theta, // Model 
 						number_strains,
 						antigenic_map_short,
 						antigenic_map_long);	  
+	      } else if (titre_dependent_boosting) {
+		titre_data_fast_individual_titredep(predicted_titres, mu, mu_short,
+						    wane, tau,
+						    gradient, boost_limit,
+						    infection_times,
+						    infection_strain_indices_tmp,
+						    measurement_strain_indices,
+						    sample_times,
+						    index_in_samples,
+						    end_index_in_samples,
+						    start_index_in_data,
+						    nrows_per_blood_sample,
+						    number_strains,
+						    antigenic_map_short,
+						    antigenic_map_long);
+	      } else if (strain_dep_boost) {
+		titre_data_fast_individual_strain_dependent(predicted_titres, 
+							    mus, boosting_vec_indices, 
+							    mu_short,
+							    wane, tau,
+							    infection_times,
+							    infection_strain_indices_tmp,
+							    measurement_strain_indices,
+							    sample_times,
+							    index_in_samples,
+							    end_index_in_samples,
+							    start_index_in_data,
+							    nrows_per_blood_sample,
+							    number_strains,
+							    antigenic_map_short,
+							    antigenic_map_long);	
 	      } else {
 		titre_data_fast_individual_wane2(predicted_titres, mu, mu_short,
 						 wane, tau,
@@ -381,6 +464,7 @@ List infection_history_proposal_gibbs_fast(const NumericVector &theta, // Model 
 						 antigenic_map_short,
 						 antigenic_map_long);
 	      }
+
 	    }
 	    
 	    if(use_titre_shifts){

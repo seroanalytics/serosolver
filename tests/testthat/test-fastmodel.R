@@ -165,3 +165,93 @@ test_that("Fast solver returns the same titres as the original version, alternat
   expect_equal(y_slow, y_fast)
 })
 
+test_that("Fast solver returns the same titres as the original version, titre dependent", {
+  set.seed(1)
+  titre_dat <- read.csv("../testdata/fluscape_sim_annual_dat.csv")
+  antigenic_map <- read.csv("../testdata/fonville_annual_continuous.csv")
+  strain_isolation_times <- antigenic_map$inf_years
+  infection_history_mat <- setup_infection_histories_new(titre_dat, strain_isolation_times, 5, 2)
+
+  par_tab <- read.csv("../testdata/par_tab_base.csv", stringsAsFactors = FALSE)
+  par_tab <- par_tab[par_tab$names != "lambda", ]
+  par_tab[par_tab$names == "titre_dependent","values"] <- 1
+  par_tab[par_tab$names == "gradient","values"] <- 0.1
+  par_tab[par_tab$names == "boost_limit","values"] <- 4
+  
+  f_slow <- create_posterior_func(par_tab, titre_dat, antigenic_map, 1,
+                                  function_type = 3)
+  f_fast <- create_posterior_func_fast(par_tab, titre_dat, antigenic_map, 1,
+                                       function_type = 3)
+  par_tab1 <- par_tab
+  par_tab1[par_tab1$names == "titre_dependent","values"] <- 0
+  
+  f_without <- create_posterior_func_fast(par_tab1, titre_dat, antigenic_map, 1,
+                                       function_type = 3)
+
+  par_names <- par_tab$names
+  pars <- par_tab$values
+  names(pars) <- par_names
+  
+  par_names1 <- par_tab1$names
+  pars1 <- par_tab1$values
+  names(pars1) <- par_names1
+
+  y_slow <- f_slow(pars, infection_history_mat)
+  y_fast <- f_fast(pars, infection_history_mat)
+  y_without <- f_without(pars1, infection_history_mat)
+
+  expect_false(isTRUE(all.equal(y_fast, y_without)))
+  expect_equal(y_slow, y_fast)
+})
+
+
+
+test_that("Fast solver returns the same titres as the original version, strain dependent boosting", {
+  set.seed(1)
+  titre_dat <- read.csv("../testdata/fluscape_sim_annual_dat.csv")
+  antigenic_map <- read.csv("../testdata/fonville_annual_continuous.csv")
+  strain_isolation_times <- antigenic_map$inf_years
+  infection_history_mat <- setup_infection_histories_new(titre_dat, strain_isolation_times, 5, 2)
+
+  par_tab <- read.csv("../testdata/par_tab_base.csv", stringsAsFactors = FALSE)
+  par_tab <- par_tab[par_tab$names != "lambda", ]
+
+  clusters <- read.csv("~/Documents/Fluscape/serosolver/data/antigenic_maps/fonville_clusters.csv")
+  n_clusters <- length(unique(clusters$cluster1))
+  boosting_vec_indices <- clusters$cluster1
+  boosting_vec_indices <- rep(boosting_vec_indices, each=1)
+
+  mu_mean <- par_tab[par_tab$names == "mu_mean","values"]
+  mu_sd <- par_tab[par_tab$names == "mu_sd","values"]
+
+  mus <- rnorm(n_clusters, mean=mu_mean, sd=mu_sd)
+  mu_tab <- data.frame(names="mu_strain",values=mus,fixed=0,steps=0.1,
+                       lower_bound=0,upper_bound=8,lower_start=0.5,
+                       upper_start=5,type=6)
+  par_tab1 <- par_tab
+  par_tab <- rbind(par_tab,mu_tab)
+
+  
+  f_slow <- create_posterior_func(par_tab, titre_dat, antigenic_map, 1,
+                                  mu_indices = boosting_vec_indices, function_type = 3)
+  f_fast <- create_posterior_func_fast(par_tab, titre_dat, antigenic_map, 1,
+                                       mu_indices = boosting_vec_indices, function_type = 3)
+  f_without <- create_posterior_func_fast(par_tab1, titre_dat, antigenic_map, 1,
+                                       mu_indices= NULL, function_type = 3)
+
+  par_names <- par_tab$names
+  pars <- par_tab$values
+  names(pars) <- par_names
+
+  par_names1 <- par_tab1$names
+  pars1 <- par_tab1$values
+  names(pars1) <- par_names1
+
+  
+  y_slow <- f_slow(pars, infection_history_mat)
+  y_fast <- f_fast(pars, infection_history_mat)
+  y_without <- f_without(pars1, infection_history_mat)
+  
+  expect_false(isTRUE(all.equal(y_fast, y_without)))
+  expect_equal(y_slow, y_fast)
+})

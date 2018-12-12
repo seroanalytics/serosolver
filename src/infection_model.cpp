@@ -8,6 +8,9 @@
 //' Overall model function, fast implementation
 //'
 //' See documentation for \code{\link{titre_data_group}}, as the interface is almost identical
+//' @inheritParams titre_data_group
+//' @param mus NumericVector, if length is greater than one, assumes that strain-specific boosting is used rather than a single boosting parameter
+//' @param boosting_vec_indices IntegerVector, same length as circulation_times, giving the index in the vector \code{mus} that each entry should use as its boosting parameter.
 //' @return NumericVector of predicted titres for each entry in measurement_strain_indices
 //' @export
 //' @family titre_model
@@ -23,7 +26,8 @@ NumericVector titre_data_fast(const NumericVector &theta,
 			      const IntegerVector &measurement_strain_indices, // For each titre measurement, corresponding entry in antigenic map
 			      const NumericVector &antigenic_map_long,
 			      const NumericVector &antigenic_map_short,
-			      Nullable<List> additional_arguments
+			      const NumericVector &mus,
+			      const IntegerVector &boosting_vec_indices
 			      ){
   // Dimensions of structures
   int n = infection_history_mat.nrow();
@@ -63,14 +67,15 @@ NumericVector titre_data_fast(const NumericVector &theta,
   
   int wane_type = theta["wane_type"]; 
   bool alternative_wane_func = wane_type == 1;
-  bool titre_dependent_boosting = theta["titre_dependent"] == 1;
-  bool base_function = !(alternative_wane_func || titre_dependent_boosting);
   double kappa;
   double t_change;
+
+  bool titre_dependent_boosting = theta["titre_dependent"] == 1;
   double gradient;
   double boost_limit;
   
-  
+  bool strain_dep_boost = false;
+
   if (alternative_wane_func){
     kappa = theta["kappa"];
     t_change = theta["t_change"];
@@ -81,6 +86,12 @@ NumericVector titre_data_fast(const NumericVector &theta,
     boost_limit = theta["boost_limit"];
   }
   
+  if (mus.size() > 1) {
+    strain_dep_boost = true;    
+  }
+
+  bool base_function = !(alternative_wane_func || titre_dependent_boosting || strain_dep_boost);
+
   // To store calculated titres
   NumericVector predicted_titres(total_titres);
   
@@ -130,6 +141,22 @@ NumericVector titre_data_fast(const NumericVector &theta,
 					    number_strains,
 					    antigenic_map_short,
 					    antigenic_map_long);	
+      } else if (strain_dep_boost) {
+	titre_data_fast_individual_strain_dependent(predicted_titres, 
+						    mus, boosting_vec_indices, 
+						    mu_short,
+						    wane, tau,
+						    infection_times,
+						    infection_strain_indices_tmp,
+						    measurement_strain_indices,
+						    sample_times,
+						    index_in_samples,
+						    end_index_in_samples,
+						    start_index_in_data,
+						    nrows_per_blood_sample,
+						    number_strains,
+						    antigenic_map_short,
+						    antigenic_map_long);
       } else {
 	titre_data_fast_individual_wane2(predicted_titres, mu, mu_short,
 					 wane, tau,

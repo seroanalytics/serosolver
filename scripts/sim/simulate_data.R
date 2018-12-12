@@ -8,9 +8,12 @@ library(data.table)
 setwd("~/Documents/Fluscape/serosolver")
 devtools::load_all()
 saveWD <- "~/Documents/Fluscape/serosolver_own/testing_redoc/"
-filename <- "fluscape_sim_annual_measurement"
+filename <- "fluscape_sim_annual_straindep"
 
-use_measurement_bias <- TRUE
+use_measurement_bias <- FALSE
+strain_dependent_boosting <- TRUE
+titre_dep_boosting <- FALSE
+
 ## Buckets indicates the time resolution of the analysis. Setting
 ## this to 1 uses annual epochs, whereas setting this to 12 gives
 ## monthly epochs
@@ -23,7 +26,7 @@ buckets <- 1
 fit_dat <- read.csv("data/antigenic_maps/created_maps/fonville_annual_continuous.csv")
 
 ## How many individuals to simulate?
-n_indiv <- 100
+n_indiv <- 1000
 
 
 ## Read in parameter table to simulate from and change waning rate if necessary
@@ -31,15 +34,18 @@ par_tab <- read.csv("~/Documents/Fluscape/serosolver/inputs/parTab_base.csv",str
 par_tab[par_tab$names == "wane","values"] <- 0.8
 par_tab[par_tab$names == "wane","values"] <- par_tab[par_tab$names == "wane","values"]/buckets
 
-measurement_bias <- NULL
+if(titre_dep_boosting) par_tab[par_tab$names == "titre_dependent","values"] <- 1
+
+measurement_indices <- NULL
 if(use_measurement_bias){
-  measurement_bias <- rnorm(15,0,1)
-  #measurement_bias[15] <- 0
   clusters <- read.csv("~/Documents/Fluscape/serosolver/data/antigenic_maps/fonville_clusters.csv")
   n_clusters <- length(unique(clusters$cluster1))
   measurement_indices <- clusters$cluster1
   measurement_indices <- rep(measurement_indices, each=buckets)
-
+  
+  measurement_bias <- rnorm(n_clusters,0,1)
+  measurement_bias[n_clusters] <- 0
+  
   for(i in 1:length(measurement_bias)){
     tmp <- data.frame(names="rho",values=1,fixed=0,steps=0.1,lower_bound=-10,upper_bound=10,lower_start=-2,upper_start=2, type=3)
     par_tab <- rbind(par_tab, tmp)
@@ -47,11 +53,30 @@ if(use_measurement_bias){
   par_tab[par_tab$names == "rho","values"] <- measurement_bias
 }
 
+boosting_vec_indices <- NULL
+if (strain_dependent_boosting) {
+  clusters <- read.csv("~/Documents/Fluscape/serosolver/data/antigenic_maps/fonville_clusters.csv")
+  n_clusters <- length(unique(clusters$cluster1))
+  boosting_vec_indices <- clusters$cluster1
+  boosting_vec_indices <- rep(boosting_vec_indices, each=buckets)
+  
+  mu_mean <- par_tab[par_tab$names == "mu_mean","values"]
+  mu_sd <- par_tab[par_tab$names == "mu_sd","values"]
+  
+  mus <- rnorm(n_clusters, mean=mu_mean, sd=mu_sd)
+  mus[mus < 0] <- 0
+  
+  mu_tab <- data.frame(names="mu_strain",values=mus,fixed=0,steps=0.1,
+                       lower_bound=0,upper_bound=8,lower_start=0.5,
+                       upper_start=5,type=6)
+  par_tab <- rbind(par_tab,mu_tab)
+}
+
 ## Possible sampling times
 sampling_times <- seq(2010*buckets, 2015*buckets, by=1)
 #sampling_times <- 2007:2012
 nsamps <- 2
-repeats <- 1
+repeats <- 2
 
 ############################
 ## SIMULATE ATTACK RATES
@@ -86,7 +111,7 @@ dat <- simulate_data(par_tab, 1, n_indiv, buckets, strain_isolation_times,
                      sampling_times, nsamps, antigenic_map=fit_dat, titre_sensoring=0, 
                      age_min=10*buckets,age_max=75*buckets,
                      attack_rates=attack_rates,repeats=repeats, 
-                     mu_indices=NULL,
+                     mu_indices=boosting_vec_indices,
                      measurement_indices = measurement_indices)
 
 ## If we want to use a subset of isolated strains, uncomment the line below

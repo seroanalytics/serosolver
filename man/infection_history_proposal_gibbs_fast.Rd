@@ -12,8 +12,8 @@ infection_history_proposal_gibbs_fast(theta, infection_history_mat,
   cum_nrows_per_individual_in_data,
   cum_nrows_per_individual_in_repeat_data, nrows_per_blood_sample,
   measurement_strain_indices, antigenic_map_long, antigenic_map_short,
-  data, repeat_data, repeat_indices, titre_shifts, temp = 1,
-  solve_likelihood = TRUE)
+  data, repeat_data, repeat_indices, titre_shifts, mus,
+  boosting_vec_indices, temp = 1, solve_likelihood = TRUE)
 }
 \arguments{
 \item{theta}{NumericVector, the model parameters used to solve the model}
@@ -64,13 +64,17 @@ infection_history_proposal_gibbs_fast(theta, infection_history_mat,
 
 \item{repeat_indices}{IntegerVector, which index in the main data vector does each entry in repeat_data correspond to ie. which calculated titre in predicted_titres should be used for each observation?}
 
+\item{titre_shifts}{NumericVector, if length matches the length of \code{data}, adds these as measurement shifts to the predicted titres. If lengths do not match, is not used.}
+
+\item{mus}{NumericVector, if length is greater than one, assumes that strain-specific boosting is used rather than a single boosting parameter}
+
+\item{boosting_vec_indices}{IntegerVector, same length as circulation_times, giving the index in the vector \code{mus} that each entry should use as its boosting parameter.}
+
 \item{temp}{double, temperature for parallel tempering MCMC}
 
 \item{solve_likelihood}{bool, if FALSE does not solve likelihood when calculating acceptance probability}
 
 \item{n_years_samp}{int, for each individual, how many time periods to resample infections for?}
-
-\item{to_add}{Nullable<NumericVector>, optional vector of measurement shifts to apply to all titres}
 }
 \value{
 an R list, one entry with the matrix of 1s and 0s corresponding to the infection histories for all individuals and the other with the new corresponding likelihoods per individual

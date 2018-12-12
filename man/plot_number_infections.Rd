@@ -4,10 +4,12 @@
 \alias{plot_number_infections}
 \title{Plot point range number infections per individual}
 \usage{
-plot_number_infections(inf_chain)
+plot_number_infections(inf_chain, pad_chain = TRUE)
 }
 \arguments{
 \item{inf_chain}{the data table with infection history samples from \code{\link{run_MCMC}}}
+
+\item{pad_chain}{if TRUE, pads the infection history MCMC chain to have entries for non-infection events}
 }
 \value{
 a ggplot object

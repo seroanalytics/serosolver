@@ -5,7 +5,7 @@
 \title{Plot MCMC trace for infections per individual}
 \usage{
 plot_infection_history_chains_indiv(inf_chain, burnin = 0,
-  indivs = NULL)
+  indivs = NULL, pad_chain = TRUE)
 }
 \arguments{
 \item{inf_chain}{the data table with infection history samples from \code{\link{run_MCMC}}}
@@ -13,6 +13,8 @@ plot_infection_history_chains_indiv(inf_chain, burnin = 0,
 \item{burnin}{optionally remove all sampno < burnin from the chain}
 
 \item{indivs}{vector of integers, if not NULL, only plots a subset of individuals (where 1 is the first individual)}
+
+\item{pad_chain}{if TRUE, pads the infection history MCMC chain to have entries for non-infection events}
 }
 \value{
 a list of two ggplot objects - the MCMC trace and MCMC densities

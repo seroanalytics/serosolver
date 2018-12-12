@@ -5,7 +5,7 @@
 \title{Plot MCMC trace for infections per year}
 \usage{
 plot_infection_history_chains_time(inf_chain, burnin = 0, years = NULL,
-  n_alive = NULL)
+  n_alive = NULL, pad_chain = TRUE)
 }
 \arguments{
 \item{inf_chain}{the data table with infection history samples from \code{\link{run_MCMC}}}
@@ -15,6 +15,8 @@ plot_infection_history_chains_time(inf_chain, burnin = 0, years = NULL,
 \item{years}{vector of integers, if not NULL, only plots a subset of years (where 1 is the first year eg. 1968)}
 
 \item{n_alive}{if not NULL, then divides number of infections per year by number alive to give attack rates rather than total infections}
+
+\item{pad_chain}{if TRUE, pads the infection history MCMC chain to have entries for non-infection events}
 }
 \value{
 a list of two ggplot objects - the MCMC trace and MCMC densities

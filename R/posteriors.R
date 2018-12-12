@@ -601,7 +601,7 @@ create_posterior_func_fast <- function(par_tab,
 
     if (use_strain_dependent) {
         boosting_vec_indices <- mu_indices - 1
-        mus_use <- rep(2, length(strain_isolation_times))
+        mus <- rep(2, length(strain_isolation_times))
     } else {
         boosting_vec_indices <- mus <- c(-1)
     }
@@ -610,14 +610,20 @@ create_posterior_func_fast <- function(par_tab,
       f <- function(pars, infection_history_mat) {
           theta <- pars[theta_indices]
           names(theta) <- par_names_theta
+
+          if (use_strain_dependent) {
+              mus <- pars[mu_indices_par_tab]
+          }
           
           antigenic_map_long <- create_cross_reactivity_vector(antigenic_map_melted, theta["sigma1"])
           antigenic_map_short <- create_cross_reactivity_vector(antigenic_map_melted, theta["sigma2"])
+
+
           y_new <- titre_data_fast(
               theta, infection_history_mat, strain_isolation_times, infection_strain_indices,
               sample_times, rows_per_indiv_in_samples, cum_nrows_per_individual_in_data,
               nrows_per_blood_sample, measured_strain_indices, antigenic_map_long,
-              antigenic_map_short, NULL
+              antigenic_map_short, mus, boosting_vec_indices
           )
 
           if (use_measurement_bias) {
@@ -645,12 +651,11 @@ create_posterior_func_fast <- function(par_tab,
                   n_infs, swap_propn, swap_dist,
                   temp) {
         theta <- pars[theta_indices]
-        mus <- pars[mu_indices_par_tab]
         names(theta) <- par_names_theta
 
         ## Pass strain-dependent boosting down
         if (use_strain_dependent) {
-            mus_use <- mus
+            mus <- pars[mu_indices_par_tab]
         }
 
         if (use_measurement_bias) {
@@ -689,6 +694,8 @@ create_posterior_func_fast <- function(par_tab,
             titres_repeats,
             repeat_indices_cpp,
             titre_shifts,
+            mus,
+            boosting_vec_indices,
             temp,
             solve_likelihood
         )
@@ -697,21 +704,21 @@ create_posterior_func_fast <- function(par_tab,
   } else {
       f <- function(pars, infection_history_mat) {
           theta <- pars[theta_indices]
-          mus <- pars[mu_indices_par_tab]
           names(theta) <- par_names_theta
           
           ## Pass strain-dependent boosting down
           if (use_strain_dependent) {
-              mus_use <- mus
+              mus <- pars[mu_indices_par_tab]
           }
 
           antigenic_map_long <- create_cross_reactivity_vector(antigenic_map_melted, theta["sigma1"])
           antigenic_map_short <- create_cross_reactivity_vector(antigenic_map_melted, theta["sigma2"])
+          
           y_new <- titre_data_fast(
               theta, infection_history_mat, strain_isolation_times, infection_strain_indices,
               sample_times, rows_per_indiv_in_samples, cum_nrows_per_individual_in_data,
               nrows_per_blood_sample, measured_strain_indices, antigenic_map_long,
-              antigenic_map_short, NULL
+              antigenic_map_short, mus, boosting_vec_indices
           )
           if (use_measurement_bias) {
               measurement_bias <- pars[measurement_indices_par_tab]
