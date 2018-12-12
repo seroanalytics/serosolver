@@ -133,7 +133,7 @@ create_posterior_func <- function(par_tab,
 
         ## If including explicit prior on FOI, add to individuals here
         if (explicit_lambda) {
-          liks <- liks + calc_lambda_probs_indiv(lambdas, infection_history_mat, age_mask, strain_mask)
+            liks <- liks + calc_lambda_probs_indiv(lambdas, infection_history_mat, age_mask, strain_mask)
         }
         
         ## If using spline term for FOI, add here
@@ -586,6 +586,8 @@ create_posterior_func_fast <- function(par_tab,
     par_names_theta <- par_tab[theta_indices, "names"]
 
     ## Find which options are being used in advance for speed
+    explicit_lambda <- (length(lambda_indices) > 0)
+    spline_lambda <- (length(knot_indices) > 0)
     use_measurement_bias <- (length(measurement_indices_par_tab) > 0) & !is.null(measurement_indices_by_time)
     titre_shifts <- c(0)
     expected_indices <- NULL
@@ -640,14 +642,31 @@ create_posterior_func_fast <- function(par_tab,
               ## Sum these for each individual
               liks <- sum_buckets(liks, nrows_per_individual_in_data) +
                   sum_buckets(liks_repeats, nrows_per_individual_in_data_repeats)
+              ## If including explicit prior on FOI, add to individuals here
+              
+              if (explicit_lambda) {
+                  lambdas <- pars[lambda_indices]
+                  liks <- liks + calc_lambda_probs_indiv(lambdas, infection_history_mat, age_mask, strain_mask)
+              }
+              
+              ## If using spline term for FOI, add here
+              if (spline_lambda) {
+                  weights <- pars[weights_indices]
+                  knots <- pars[knot_indices]
+                  liks <- liks + calc_lambda_probs_monthly(
+                                     lambdas, knots, weights,
+                                     infection_history_mat, age_mask
+                                 )
+              }
+              liks
           } else {
               liks <- rep(-100000, n_indiv)
           }
       }
   } else if (function_type == 2) {
-    f <- function(pars, infection_history_mat,
-                  probs, sampled_indivs,
-                  alpha, beta,
+      f <- function(pars, infection_history_mat,
+                    probs, sampled_indivs,
+                    alpha, beta,
                   n_infs, swap_propn, swap_dist,
                   temp) {
         theta <- pars[theta_indices]
