@@ -293,9 +293,9 @@ r_likelihood <- function(expected, data, theta, expected_indices=NULL, measureme
     }
     
     liks <- numeric(length(expected))
-    largeI <- data > theta["MAX_TITRE"]
-    smallI <- data <= 0
-    restI <- data > 0 & data <= theta["MAX_TITRE"]
+    largeI <- data >= theta["MAX_TITRE"]
+    smallI <- data < 1
+    restI <- data >= 1 & data < theta["MAX_TITRE"]
     
     liks[largeI] <- pnorm(theta["MAX_TITRE"], expected[largeI],theta["error"],lower.tail=FALSE,log.p=TRUE)
     liks[smallI] <- pnorm(1, expected[smallI],theta["error"],lower.tail=TRUE,log.p=TRUE)
