@@ -402,7 +402,7 @@ plot_attack_rates <- function(infectionHistories, dat, ages, yearRange,n_alive=N
     ##tmp <- ddply(infectionHistories, c("sampno","j"), function(x) sum(x$x))
     quantiles <- ddply(tmp, ~j, function(x) quantile(x$V1, c(0.025,0.5,0.975)))
     colnames(quantiles) <- c("j","lower","median","upper")
-    quantiles[c("lower","median","upper")] <- quantiles[c("lower","median","upper")]/n_alive
+    quantiles[c("lower","median","upper")] <- quantiles[c("lower","median","upper")]/n_alive[quantiles$j]
     quantiles$year <- yearRange[quantiles$j]
     quantiles$taken <- quantiles$year %in% unique(dat$samples)
 
