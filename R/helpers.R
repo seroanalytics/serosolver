@@ -93,7 +93,7 @@ get_best_pars <- function(chain) {
 #' @export
 get_index_pars <- function(chain, index) {
   tmp_names <- colnames(chain)[2:(ncol(chain) - 1)]
-  pars <- as.numeric(chain[index, 2:(ncol(chain) - 1)])
+  pars <- as.numeric(chain[chain$sampno == index, 2:(ncol(chain) - 1)])
   names(pars) <- tmp_names
   return(pars)
 }

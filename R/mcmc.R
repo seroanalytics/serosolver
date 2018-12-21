@@ -267,26 +267,29 @@ run_MCMC <- function(par_tab,
 
   ## Initial likelihood
   likelihoods <- posterior_simp(current_pars, infection_histories) / temp
-  ## Initial total likelihood
-  total_likelihood <- sum(likelihoods)
-  n_alive_tot <- sum(n_alive)
-  ## Create closure to add extra prior probabilities, to avoid re-typing later
-  extra_probabilities <- function(prior_pars, prior_infection_history) {
-    prior_probab <- 0
-    if (hist_proposal == 2) {
-      if (prior_on_total) {
-        prior_probab <- prior_probab + inf_mat_prior_total_cpp(prior_infection_history, n_alive_tot, alpha, beta)
-      } else {
-        prior_probab <- prior_probab + inf_mat_prior_cpp(prior_infection_history, n_alive, alpha, beta)
-      }
+    ## Initial total likelihood
+    total_likelihood <- sum(likelihoods)
+    n_alive_tot <- sum(n_alive)
+    ## Create closure to add extra prior probabilities, to avoid re-typing later
+    extra_probabilities <- function(prior_pars, prior_infection_history) {
+        names(prior_pars) <- par_names
+        beta <- prior_pars["beta"]
+        alpha <- prior_pars["alpha"]
+        prior_probab <- 0
+        if (hist_proposal == 2) {
+            if (prior_on_total) {
+                prior_probab <- prior_probab + inf_mat_prior_total_cpp(prior_infection_history, n_alive_tot, alpha, beta)
+            } else {
+                prior_probab <- prior_probab + inf_mat_prior_cpp(prior_infection_history, n_alive, alpha, beta)
+            }
+        }
+        if (!is.null(CREATE_PRIOR_FUNC)) prior_probab <- prior_probab + prior_func(prior_pars)
+        if (!is.null(mu_indices)) prior_probab <- prior_probab + prior_mu(prior_pars)
+        if (measurement_random_effects) prior_probab <- prior_probab + prior_shifts(prior_pars)
+        prior_probab
     }
-    if (!is.null(CREATE_PRIOR_FUNC)) prior_probab <- prior_probab + prior_func(prior_pars)
-    if (!is.null(mu_indices)) prior_probab <- prior_probab + prior_mu(prior_pars)
-    if (measurement_random_effects) prior_probab <- prior_probab + prior_shifts(prior_pars)
-    prior_probab
-  }
-  ## Initial total prior prob
-  prior_prob <- extra_probabilities(current_pars, infection_histories)
+    ## Initial total prior prob
+    prior_prob <- extra_probabilities(current_pars, infection_histories)
 
   ## Initial posterior prob
   posterior <- total_likelihood + prior_prob
@@ -346,56 +349,60 @@ run_MCMC <- function(par_tab,
         proposal <- current_pars ## Set proposal to be current parameters
         tempiter <- tempiter + 1
       } else { ## Else propose parameters
-        ## If using univariate proposals
-        if (is.null(mvr_pars)) {
-          ## For each parameter (Gibbs)
-          j <- unfixed_pars[par_i]
-          par_i <- par_i + 1
-          if (par_i > unfixed_par_length) par_i <- 1
-          proposal <- univ_proposal(current_pars, lower_bounds, upper_bounds, steps, j)
-          tempiter[j] <- tempiter[j] + 1
-          ## If using multivariate proposals
-        } else {
-          proposal <- mvr_proposal(current_pars, unfixed_pars, steps * cov_mat, steps * cov_mat0, FALSE, beta = 0.05)
-          tempiter <- tempiter + 1
-        }
+          ## If using univariate proposals
+          if (is.null(mvr_pars)) {
+              ## For each parameter (Gibbs)
+              j <- unfixed_pars[par_i]
+              par_i <- par_i + 1
+              if (par_i > unfixed_par_length) par_i <- 1
+              proposal <- univ_proposal(current_pars, lower_bounds, upper_bounds, steps, j)
+              tempiter[j] <- tempiter[j] + 1
+              ## If using multivariate proposals
+          } else {
+              proposal <- mvr_proposal(current_pars, unfixed_pars, steps * cov_mat, steps * cov_mat0, FALSE, beta = 0.05)
+              tempiter <- tempiter + 1
+          }
       }
-      ## Calculate new likelihood for these parameters
-      new_likelihoods <- posterior_simp(proposal, infection_histories) / temp # For each individual
-      new_total_likelihood <- sum(new_likelihoods) # Total
-      new_prior_prob <- extra_probabilities(proposal, infection_histories) # Prior
-      new_posterior <- new_total_likelihood + new_prior_prob # Posterior
-      ## Otherwise, resample infection history
+        
+        ## Calculate new likelihood for these parameters
+        new_likelihoods <- posterior_simp(proposal, infection_histories) / temp # For each individual
+        new_total_likelihood <- sum(new_likelihoods) # Total
+        new_prior_prob <- extra_probabilities(proposal, infection_histories) # Prior
+        new_posterior <- new_total_likelihood + new_prior_prob # Posterior
+        ## Otherwise, resample infection history
     } else {
-      ## Choose a random subset of individuals to update
-      indiv_sub_sample <- sample(1:n_indiv, ceiling(hist_sample_prob * n_indiv))
-      rand_ns <- runif(length(indiv_sub_sample))
-      ## Need to temporarily store current parameters as new pars, as
-      ## might change with lambda swap step
-      proposal <- current_pars
-      new_likelihoods_calculated <- FALSE ## Flag if we calculate the new likelihoods earlier than anticipated
-      ## Which infection history proposal to use?
-      ## Explicit lambdas on infection histories
-      if (hist_proposal == 1) {
-        ## Either swap entire contents or propose new infection history matrix
-        if (inf_swap_prob > hist_switch_prob) {
-          new_infection_histories <- infection_history_symmetric(
-            infection_histories, indiv_sub_sample,
-            age_mask, strain_mask, move_sizes,
-            n_infs_vec, rand_ns
-          )
-        } else {
-          tmp_hist_switch <- inf_hist_swap_lambda(
-            infection_histories, proposal[lambda_indices],
-            age_mask, strain_mask, year_swap_propn,
-            move_size, n_alive
-          )
-          new_infection_histories <- tmp_hist_switch[[1]]
-          proposal[lambda_indices] <- tmp_hist_switch[[2]]
-          infection_history_swap_n <- infection_history_swap_n + 1
-        }
-        ## Gibbs sampler version, integrate out lambda
-      } else if (hist_proposal == 2) {
+        ## Choose a random subset of individuals to update
+        indiv_sub_sample <- sample(1:n_indiv, ceiling(hist_sample_prob * n_indiv))
+        rand_ns <- runif(length(indiv_sub_sample))
+        ## Need to temporarily store current parameters as new pars, as
+        ## might change with lambda swap step
+        proposal <- current_pars
+        names(proposal) <- par_names
+        alpha <- proposal["alpha"]
+        beta <- proposal["beta"]
+        new_likelihoods_calculated <- FALSE ## Flag if we calculate the new likelihoods earlier than anticipated
+        ## Which infection history proposal to use?
+        ## Explicit lambdas on infection histories
+        if (hist_proposal == 1) {
+            ## Either swap entire contents or propose new infection history matrix
+            if (inf_swap_prob > hist_switch_prob) {
+                new_infection_histories <- infection_history_symmetric(
+                    infection_histories, indiv_sub_sample,
+                    age_mask, strain_mask, move_sizes,
+                    n_infs_vec, rand_ns
+                )
+            } else {
+                tmp_hist_switch <- inf_hist_swap_lambda(
+                    infection_histories, proposal[lambda_indices],
+                    age_mask, strain_mask, year_swap_propn,
+                    move_size, n_alive
+                )
+                new_infection_histories <- tmp_hist_switch[[1]]
+                proposal[lambda_indices] <- tmp_hist_switch[[2]]
+                infection_history_swap_n <- infection_history_swap_n + 1
+            }
+            ## Gibbs sampler version, integrate out lambda
+        } else if (hist_proposal == 2) {
         ## Swap entire contents or propose new
         if (inf_swap_prob > hist_switch_prob) {
           ## If using the fast version, not that we need to pass the current likelihoods as well,
@@ -606,7 +613,7 @@ run_MCMC <- function(par_tab,
             cov_mat <- cov(opt_chain[1:chain_index, ])
             cov_mat <- w * cov_mat + (1 - w) * old_cov_mat
           }
-          ## Scale tuning for last 20% of the adaptive period
+          ## Scale tuning for last 80% of the adaptive period
           if (chain_index > (0.2) * adaptive_period) {
             steps <- scaletuning(steps, popt, pcur)
           }

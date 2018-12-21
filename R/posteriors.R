@@ -301,6 +301,9 @@ r_likelihood <- function(expected, data, theta, expected_indices = NULL, measure
   large_i <- data >= theta["MAX_TITRE"]
   small_i <- data < 1
   rest_i <- data >= 1 & data < theta["MAX_TITRE"]
+  #large_i <- data > theta["MAX_TITRE"]
+  #small_i <- data <= 0
+  #rest_i <- data > 0 & data <= theta["MAX_TITRE"]
 
   liks[large_i] <- pnorm(theta["MAX_TITRE"], expected[large_i], theta["error"], lower.tail = FALSE, log.p = TRUE)
   liks[small_i] <- pnorm(1, expected[small_i], theta["error"], lower.tail = TRUE, log.p = TRUE)
@@ -533,24 +536,28 @@ create_posterior_func_fast <- function(par_tab,
                                        ...) {
 
 
-  ## Seperate out initial readings and repeat readings - we only
-  ## want to solve the model once for each unique indiv/sample/virus year tested
-  titre_dat_unique <- titre_dat[titre_dat$run == 1, ]
-  titre_dat_repeats <- titre_dat[titre_dat$run != 1, ]
-  tmp <- row.match(titre_dat_repeats[, c("individual", "samples", "virus")], titre_dat_unique[, c("individual", "samples", "virus")])
-  titre_dat_repeats$index <- tmp
+    ## Seperate out initial readings and repeat readings - we only
+    ## want to solve the model once for each unique indiv/sample/virus year tested
+    titre_dat_unique <- titre_dat[titre_dat$run == 1, ]
+    titre_dat_repeats <- titre_dat[titre_dat$run != 1, ]
+    tmp <- row.match(titre_dat_repeats[, c("individual", "samples", "virus")],
+                     titre_dat_unique[, c("individual", "samples", "virus")])
+    titre_dat_repeats$index <- tmp
 
-  ## Setup data vectors and extract
-  setup_dat <- setup_titredat_for_posterior_func(titre_dat_unique, antigenic_map, age_mask, n_alive)
+    overall_indices <- row.match(titre_dat[,c("individual", "samples", "virus")],
+                                 titre_dat_unique[, c("individual", "samples", "virus")])
+    
+    ## Setup data vectors and extract
+    setup_dat <- setup_titredat_for_posterior_func(titre_dat_unique, antigenic_map, age_mask, n_alive)
 
-  individuals <- setup_dat$individuals
-  antigenic_map_melted <- setup_dat$antigenic_map_melted
-  strain_isolation_times <- setup_dat$strain_isolation_times
-  infection_strain_indices <- setup_dat$infection_strain_indices
-  sample_times <- setup_dat$sample_times
-  rows_per_indiv_in_samples <- setup_dat$rows_per_indiv_in_samples
-  nrows_per_individual_in_data <- setup_dat$nrows_per_individual_in_data
-  cum_nrows_per_individual_in_data <- setup_dat$cum_nrows_per_individual_in_data
+    individuals <- setup_dat$individuals
+    antigenic_map_melted <- setup_dat$antigenic_map_melted
+    strain_isolation_times <- setup_dat$strain_isolation_times
+    infection_strain_indices <- setup_dat$infection_strain_indices
+    sample_times <- setup_dat$sample_times
+    rows_per_indiv_in_samples <- setup_dat$rows_per_indiv_in_samples
+    nrows_per_individual_in_data <- setup_dat$nrows_per_individual_in_data
+    cum_nrows_per_individual_in_data <- setup_dat$cum_nrows_per_individual_in_data
     nrows_per_blood_sample <- setup_dat$nrows_per_blood_sample
     measured_strain_indices <- setup_dat$measured_strain_indices
     n_alive <- setup_dat$n_alive
@@ -620,7 +627,6 @@ create_posterior_func_fast <- function(par_tab,
           antigenic_map_long <- create_cross_reactivity_vector(antigenic_map_melted, theta["sigma1"])
           antigenic_map_short <- create_cross_reactivity_vector(antigenic_map_melted, theta["sigma2"])
 
-
           y_new <- titre_data_fast(
               theta, infection_history_mat, strain_isolation_times, infection_strain_indices,
               sample_times, rows_per_indiv_in_samples, cum_nrows_per_individual_in_data,
@@ -633,7 +639,7 @@ create_posterior_func_fast <- function(par_tab,
               titre_shifts <- measurement_bias[expected_indices]
               y_new <- y_new + titre_shifts
           }
-
+          #return(list(theta, titres_unique, y_new, titres_repeats, repeat_indices, nrows_per_individual_in_data, nrows_per_individual_in_data_repeats))
           if(solve_likelihood){
               ## Calculate likelihood for unique titres and repeat data
               liks <- likelihood_func_fast(theta, titres_unique, y_new)
@@ -643,7 +649,7 @@ create_posterior_func_fast <- function(par_tab,
               liks <- sum_buckets(liks, nrows_per_individual_in_data) +
                   sum_buckets(liks_repeats, nrows_per_individual_in_data_repeats)
               ## If including explicit prior on FOI, add to individuals here
-              
+
               if (explicit_lambda) {
                   lambdas <- pars[lambda_indices]
                   liks <- liks + calc_lambda_probs_indiv(lambdas, infection_history_mat, age_mask, strain_mask)
@@ -658,10 +664,10 @@ create_posterior_func_fast <- function(par_tab,
                                      infection_history_mat, age_mask
                                  )
               }
-              liks
           } else {
               liks <- rep(-100000, n_indiv)
           }
+          liks
       }
   } else if (function_type == 2) {
       f <- function(pars, infection_history_mat,
@@ -744,7 +750,7 @@ create_posterior_func_fast <- function(par_tab,
               titre_shifts <- measurement_bias[expected_indices]
               y_new <- y_new + titre_shifts
           }
-          y_new
+          y_new[overall_indices]
       }
   }
     f

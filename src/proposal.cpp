@@ -211,23 +211,28 @@ List infection_history_proposal_gibbs_fast(const NumericVector &theta, // Model 
     n_years_samp = n_years_samp_vec[indiv]; // How many years are we intending to resample from for this individual?
     n_samp_length  = strain_mask[indiv] - age_mask[indiv]; // How many years maximum can we sample from?
     n_samp_max = std::min(n_years_samp, n_samp_length); // Use the smaller of these two numbers
-
     // Indexing for data upkeep
     start_index_in_data = cum_nrows_per_individual_in_data[indiv];
-    end_index_in_data = cum_nrows_per_individual_in_data[indiv+1];
+    end_index_in_data = cum_nrows_per_individual_in_data[indiv+1]-1;
     start_index_in_repeat_data = cum_nrows_per_individual_in_repeat_data[indiv];
 
     // Swap contents of a year for an individual
     if(R::runif(0,1) < swap_propn){
       new_infection_history = new_infection_history_mat(indiv,_);
 
-      loc1 = floor(R::runif(0,n_samp_length)); // Choose a location from age_mask to strain_mask
+      loc1 = floor(R::runif(0,n_samp_length+1)); // Choose a location from age_mask to strain_mask
       loc2 = loc1 + floor(R::runif(-swap_distance,swap_distance)); // Perturb +/- swap_distance
-
+ 
       // If we have gone too far left or right, reflect at the boundaries
+      // Reflect at boundary
+      /*if(loc2 < 0 || loc2 >= n_samp_length){
+	loc2 = n_samp_length - (loc2 - floor(loc2/n_samp_length)*n_samp_length) - 1;
+	}*/
+      
+      
       while(loc2 < 0) loc2 += n_samp_length;
       if(loc2 >= n_samp_length) loc2 -= floor(loc2/n_samp_length)*n_samp_length;
-
+      
       // Get onto right scale (starting at age mask)
       loc1 += age_mask[indiv] - 1;
       loc2 += age_mask[indiv] - 1;
@@ -374,6 +379,7 @@ List infection_history_proposal_gibbs_fast(const NumericVector &theta, // Model 
       for(int j = 0; j < n_samp_max; ++j){
 	new_infection_history = new_infection_history_mat(indiv,_);
 	year = locs[j] + age_mask[indiv] - 1;
+
 	old_entry = new_infection_history(year);
 
 	// Get number of individuals that were alive and/or infected in that year,

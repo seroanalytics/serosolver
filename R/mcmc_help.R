@@ -132,7 +132,7 @@ setup_infection_histories_total <- function(titre_dat, strain_isolation_times, a
 #' @inheritParams setup_infection_histories_new_2 
 #' @return an nxm matrix of infection histories containing 1s and 0s, where n is the number of individuals and m is the number of potential infecting strains
 #' @export
-setup_infection_histories_new <- function(titre_dat, strain_isolation_times, space = 5, titre_cutoff = 2) {
+setup_infection_histories_new <- function(titre_dat, strain_isolation_times, space = 5, titre_cutoff = 2, sample_prob=0.9) {
   start_inf <- NULL
   individuals <- unique(titre_dat$individual)
   ages <- unique(titre_dat[, c("individual", "DOB")])
@@ -172,7 +172,7 @@ setup_infection_histories_new <- function(titre_dat, strain_isolation_times, spa
             dist <- 0
           }
         }
-        inf_years <- c(inf_years, new_inf)
+        if(runif(1) > sample_prob) inf_years <- c(inf_years, new_inf)
         dist <- 0
       }
     }
@@ -193,10 +193,11 @@ setup_infection_histories_new <- function(titre_dat, strain_isolation_times, spa
 #' @param strain_isolation_times vector of real times for all strains
 #' @param space how many epochs must separate proposed infections
 #' @param titre_cutoff specifies how high the titre must be to imply an infection
+#' @param sample_prob if titre suggests an infection, then add an infection with this probability
 #' @return an nxm matrix of infection histories containing 1s and 0s, where n is the number of individuals and m is the number of potential infecting strains
 #' @family setup_infection_histories
 #' @export
-setup_infection_histories_new_2 <- function(titre_dat, strain_isolation_times, space = 5, titre_cutoff = 2) {
+setup_infection_histories_new_2 <- function(titre_dat, strain_isolation_times, space = 5, titre_cutoff = 2, sample_prob=0.9) {
   start_inf <- NULL
   individuals <- unique(titre_dat$individual)
   ages <- unique(titre_dat[, c("individual", "DOB")])
@@ -239,7 +240,7 @@ setup_infection_histories_new_2 <- function(titre_dat, strain_isolation_times, s
             dist <- 0
           }
         }
-        inf_years <- c(inf_years, new_inf)
+        if(runif(1) > sample_prob) inf_years <- c(inf_years, new_inf)
         dist <- 0
       }
     }

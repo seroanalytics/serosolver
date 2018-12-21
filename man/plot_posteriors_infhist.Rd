@@ -5,7 +5,8 @@
 \title{Plot inferred posteriors infection histories}
 \usage{
 plot_posteriors_infhist(inf_chain, years, n_alive, known_ar = NULL,
-  known_infection_history = NULL, burnin = 0, samples = 1000)
+  known_infection_history = NULL, burnin = 0, samples = 1000,
+  pad_chain = FALSE)
 }
 \arguments{
 \item{inf_chain}{the data table with infection history samples from \code{\link{run_MCMC}}}
@@ -21,6 +22,8 @@ plot_posteriors_infhist(inf_chain, years, n_alive, known_ar = NULL,
 \item{burnin}{if not already discarded, discard burn in from chain (takes rows where sampno > burnin)}
 
 \item{samples}{how many samples from the chain to take}
+
+\item{pad_chain}{if TRUE, pads the infection history MCMC chain with non-infection events}
 }
 \value{
 a list of ggplot objects and data frame of posterior estimates

@@ -5,7 +5,7 @@
 \title{Propose initial infection histories}
 \usage{
 setup_infection_histories_new(titre_dat, strain_isolation_times,
-  space = 5, titre_cutoff = 2)
+  space = 5, titre_cutoff = 2, sample_prob = 0.9)
 }
 \arguments{
 \item{titre_dat}{the matrix of titres data with columns for individual, sample, and titre}
@@ -15,6 +15,8 @@ setup_infection_histories_new(titre_dat, strain_isolation_times,
 \item{space}{how many epochs must separate proposed infections}
 
 \item{titre_cutoff}{specifies how high the titre must be to imply an infection}
+
+\item{sample_prob}{if titre suggests an infection, then add an infection with this probability}
 }
 \value{
 an nxm matrix of infection histories containing 1s and 0s, where n is the number of individuals and m is the number of potential infecting strains

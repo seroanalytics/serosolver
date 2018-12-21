@@ -7,23 +7,30 @@ library(data.table)
 ## Set working directory and load code
 setwd("~/Documents/Fluscape/serosolver")
 devtools::load_all()
-saveWD <- "~/Documents/Fluscape/serosolver_own/testing_redoc/"
-filename <- "fluscape_sim_annual_straindep"
+#saveWD <- "~/Documents/Fluscape/serosolver_own/testing_redoc/"
+saveWD <- "~/net/home/serosolver/data_Oct2018/fluscape_sim_quarterly/"
+filename <- "fluscape_sim_quarter_titredep"
 
 use_measurement_bias <- FALSE
-strain_dependent_boosting <- TRUE
+strain_dependent_boosting <- FALSE
 titre_dep_boosting <- FALSE
 
 ## Buckets indicates the time resolution of the analysis. Setting
 ## this to 1 uses annual epochs, whereas setting this to 12 gives
 ## monthly epochs
-buckets <- 1
+buckets <- 4
 
 ## Antigenic map for cross reactivity parameters
 #antigenic_map <- read.csv("~/Documents/Fluscape/fluscape/trunk/data/Fonville2014AxMapPositionsApprox.csv",stringsAsFactors=FALSE)
 #fit_dat <- generate_antigenic_map(antigenic_map, buckets)
 
-fit_dat <- read.csv("data/antigenic_maps/created_maps/fonville_annual_continuous.csv")
+if(buckets == 1){
+  fit_dat <- read.csv("data/antigenic_maps/created_maps/fonville_annual_continuous.csv")
+} else if(buckets == 4){
+  fit_dat <- read.csv("data/antigenic_maps/created_maps/fonville_quarterly.csv")
+} else {
+  fit_dat <- read.csv("data/antigenic_maps/created_maps/fonville_annual_continuous.csv")
+}
 
 ## How many individuals to simulate?
 n_indiv <- 1000
@@ -34,7 +41,12 @@ par_tab <- read.csv("~/Documents/Fluscape/serosolver/inputs/parTab_base.csv",str
 par_tab[par_tab$names == "wane","values"] <- 0.8
 par_tab[par_tab$names == "wane","values"] <- par_tab[par_tab$names == "wane","values"]/buckets
 
-if(titre_dep_boosting) par_tab[par_tab$names == "titre_dependent","values"] <- 1
+if(titre_dep_boosting) {
+  par_tab[par_tab$names == "titre_dependent","values"] <- 1
+  par_tab[par_tab$names == "boost_limit","values"] <- 3
+  par_tab[par_tab$names == "gradient","values"] <- 0.1
+}
+  
 
 measurement_indices <- NULL
 if(use_measurement_bias){

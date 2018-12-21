@@ -4,19 +4,24 @@
 \alias{plot_attack_rates_monthly}
 \title{Plot historical attack rates monthly}
 \usage{
-plot_attack_rates_monthly(infection_histories, titre_dat, years,
-  n_alive = NULL, ymax = 0.1, buckets = 1)
+plot_attack_rates_monthly(infection_histories, titre_dat,
+  strain_isolation_times, n_alive = NULL, ymax = 1, buckets = 1,
+  pad_chain = TRUE)
 }
 \arguments{
 \item{infection_histories}{the MCMC chain for infection histories}
 
 \item{titre_dat}{the data frame of titre data}
 
+\item{strain_isolation_times}{vector of the epochs of potential circulation}
+
 \item{n_alive}{vector with the number of people alive in each year of circulation. Can be left as NULL, and ages will be used to infer this}
 
-\item{ymax}{Numeric. the maximum y value to put on the axis}
+\item{ymax}{Numeric. the maximum y value to put on the axis. Default = 1.}
 
-\item{buckets}{Integer. How many buckets of time is each year split into? ie. 12 for monthly data, 4 for quarterly etc.}
+\item{buckets}{Integer. How many buckets of time is each year split into? ie. 12 for monthly data, 4 for quarterly etc. Default = 1.}
+
+\item{pad_chain}{if TRUE, fills the infection history data table with entries for non-infection events (ie. 0s). Can be switched to FALSE for speed to get a rough idea of what the attack rates look like.}
 }
 \value{
 a ggplot2 object with the inferred attack rates for each potential epoch of circulation

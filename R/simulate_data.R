@@ -32,39 +32,38 @@ simulate_group <- function(n_indiv,
                            measurement_bias = NULL,
                            measurement_indices = NULL,
                            add_noise = TRUE) {
-  dat <- NULL
-  ## For each individual
-  for (i in 1:n_indiv) {
-    ## Choose random sampling times
-    ## If there is one sampling time, then repeat the same sampling time
-    if (length(sample_times) == 1) {
-      samps <- rep(sample_times, nsamps)
-    } else {
-      samps <- sample(sample_times, nsamps)
-      samps <- samps[order(samps)]
+    dat <- NULL
+    ## For each individual
+    for (i in 1:n_indiv) {
+        ## Choose random sampling times
+        ## If there is one sampling time, then repeat the same sampling time
+        if (length(sample_times) == 1) {
+            samps <- rep(sample_times, nsamps)
+        } else {
+            samps <- sample(sample_times, nsamps)
+            samps <- samps[order(samps)]
+        }
+        virus_samples <- rep(strain_isolation_times, length(samps))
+        data_indices <- rep(length(strain_isolation_times), length(samps))
+        virus_indices <- match(virus_samples, strain_isolation_times) - 1
+        y <- as.data.frame(simulate_individual(
+            theta, infection_histories[i, ],
+            samps, data_indices, virus_samples,
+            virus_indices,
+            antigenic_map_long,
+            antigenic_map_short,
+            strain_isolation_times,
+            repeats, mus, mu_indices,
+            measurement_bias, measurement_indices,
+            add_noise
+        ))
+        ## Record individual ID
+        y$indiv <- i
+        colnames(y) <- c("samples", "virus", "titre", "individual")
+        ## Combine data
+        dat <- rbind(dat, y[, c("individual", "samples", "virus", "titre")])
     }
-
-    virus_samples <- rep(strain_isolation_times, length(samps))
-    data_indices <- rep(length(strain_isolation_times), length(samps))
-    virus_indices <- match(virus_samples, strain_isolation_times) - 1
-    y <- as.data.frame(simulate_individual(
-      theta, infection_histories[i, ],
-      samps, data_indices, virus_samples,
-      virus_indices,
-      antigenic_map_long,
-      antigenic_map_short,
-      strain_isolation_times,
-      repeats, mus, mu_indices,
-      measurement_bias, measurement_indices,
-      add_noise
-    ))
-    ## Record individual ID
-    y$indiv <- i
-    colnames(y) <- c("samples", "virus", "titre", "individual")
-    ## Combine data
-    dat <- rbind(dat, y[, c("individual", "samples", "virus", "titre")])
-  }
-  return(dat)
+    return(dat)
 }
 
 #' Simulate individual data
@@ -169,43 +168,46 @@ simulate_attack_rates <- function(infection_years, mean_par = 0.15, sd_par = 0.5
 #' @return a list with a matrix of infection histories for each individual in ages and the true attack rate for each epoch
 #' @export
 simulate_infection_histories <- function(p_inf, strain_isolation_times, sampling_times, ages) {
-  n_strains <- length(p_inf) # How many strains
-  n_indiv <- length(ages) # How many individuals
-  indivs <- 1:n_indiv
-  ## Empty matrix
-  infection_histories <- matrix(0, ncol = n_strains, nrow = n_indiv)
+    n_strains <- length(p_inf) # How many strains
+    n_indiv <- length(ages) # How many individuals
+    indivs <- 1:n_indiv
+    ## Empty matrix
+    infection_histories <- matrix(0, ncol = n_strains, nrow = n_indiv)
 
-  ## Simulate attack rates
-  attack_rates <- p_inf
+    ## Simulate attack rates
+    attack_rates <- p_inf
 
-  ## Should this be necessary?
-  attack_rates[attack_rates > 1] <- 1
-  ARs <- numeric(n_strains)
-  ## For each strain (ie. each infection year)
-  for (i in 1:n_strains) {
-    # If there are strains circulating beyond the max sampling times, then alive==0
-    if (max(sampling_times) >= strain_isolation_times[i]) {
-      ## Find who was alive (all we need sampling_times for is its max value)
-      alive <- (max(sampling_times) - ages) <= strain_isolation_times[i]
-    } else {
-      alive <- rep(0, n_indiv)
+    ## Should this be necessary?
+    attack_rates[attack_rates > 1] <- 1
+    ARs <- numeric(n_strains)
+
+    age_mask <- create_age_mask(ages, strain_isolation_times)
+    
+    ## For each strain (ie. each infection year)
+    for (i in 1:n_strains) {
+        ## If there are strains circulating beyond the max sampling times, then alive==0
+        if (max(sampling_times) >= strain_isolation_times[i]) {
+            ## Find who was alive (all we need sampling_times for is its max value)
+            alive <- which(age_mask <= i)
+            
+            ## Sample a number of infections for the alive individuals, and set these entries to 1
+            y <- round(length(indivs[alive]) * attack_rates[i])
+                                        # y <- rbinom(1, length(indivs[alive]),attack_rates[i])
+            ARs[i] <- y / length(indivs[alive])
+            x <- sample(indivs[alive], y)
+            infection_histories[x, i] <- 1
+        } else {
+            ARs[i] <- 0
+        }
     }
-
-    ## Sample a number of infections for the alive individuals, and set these entries to 1
-    y <- round(length(indivs[alive]) * attack_rates[i])
-    # y <- rbinom(1, length(indivs[alive]),attack_rates[i])
-    ARs[i] <- y / length(indivs[alive])
-    x <- sample(indivs[alive], y)
-    infection_histories[x, i] <- 1
-  }
-  return(list(infection_histories, ARs))
+    return(list(infection_histories, ARs))
 }
 
 #' Generates attack rates from an SIR model with fixed beta/gamma, specified final attack rate and the number of time "buckets" to solve over ie. buckets=12 returns attack rates for 12 time periods
 #' @export
 generate_ar_annual <- function(AR, buckets) {
-  SIR_odes <- function(t, x, params) {
-    S <- x[1]
+    SIR_odes <- function(t, x, params) {
+        S <- x[1]
     I <- x[2]
     R <- x[3]
     inc <- x[4]
@@ -317,45 +319,43 @@ simulate_data <- function(par_tab, group = 1, n_indiv, buckets = 12,
         measurement_bias <- pars[measurement_indices_par_tab]
     }
 
-  ## Check the inputs of par_tab
-  check_par_tab(par_tab)
+    ## Check the inputs of par_tab
+    check_par_tab(par_tab)
 
-  ## Create antigenic map for short and long term boosting
-  antigenic_map1 <- melt_antigenic_coords(antigenic_map[, c("x_coord", "y_coord")])
+    ## Create antigenic map for short and long term boosting
+    antigenic_map1 <- melt_antigenic_coords(antigenic_map[, c("x_coord", "y_coord")])
 
-  antigenic_map_long <- 1 - theta["sigma1"] * c(antigenic_map1)
-  antigenic_map_short <- 1 - theta["sigma2"] * c(antigenic_map1)
+    antigenic_map_long <- 1 - theta["sigma1"] * c(antigenic_map1)
+    antigenic_map_short <- 1 - theta["sigma2"] * c(antigenic_map1)
 
-  antigenic_map_long[antigenic_map_long < 0] <- 0
-  antigenic_map_short[antigenic_map_short < 0] <- 0
+    antigenic_map_long[antigenic_map_long < 0] <- 0
+    antigenic_map_short[antigenic_map_short < 0] <- 0
 
-  ## Simulate ages
-  ages <- floor(runif(n_indiv, age_min, age_max))
+    ## Simulate ages
+    DOBs <- max(sampling_times) - floor(runif(n_indiv, age_min, age_max))
+    ## Simulate infection histories
+    tmp <- simulate_infection_histories(
+        attack_rates, strain_isolation_times,
+        sampling_times, DOBs
+    )
 
-  ## Simulate infection histories
-  tmp <- simulate_infection_histories(
-    attack_rates, strain_isolation_times,
-    sampling_times, ages
-  )
+    infection_history <- tmp[[1]]
+    ARs <- tmp[[2]]
 
-  infection_history <- tmp[[1]]
-  ARs <- tmp[[2]]
+    ## Simulate titre data
+    y <- simulate_group(
+        n_indiv, theta, infection_history, strain_isolation_times, sampling_times,
+        nsamps, antigenic_map_long, antigenic_map_short, repeats,
+        mus, mu_indices, measurement_bias, measurement_indices, add_noise
+    )
 
-  ## Simulate titre data
-  y <- simulate_group(
-    n_indiv, theta, infection_history, strain_isolation_times, sampling_times,
-    nsamps, antigenic_map_long, antigenic_map_short, repeats,
-    mus, mu_indices, measurement_bias, measurement_indices, add_noise
-  )
+    ## Randomly censor titre values
+    y$titre <- y$titre * sample(c(NA, 1), nrow(y), prob = c(titre_sensoring, 1 - titre_sensoring), replace = TRUE)
+    y$run <- 1
+    y$group <- 1
 
-  ## Randomly censor titre values
-  y$titre <- y$titre * sample(c(NA, 1), nrow(y), prob = c(titre_sensoring, 1 - titre_sensoring), replace = TRUE)
-  y$run <- 1
-  y$group <- 1
-
-  DOB <- max(sampling_times) - ages
-  ages <- data.frame("individual" = 1:n_indiv, "DOB" = DOB)
-  attack_rates <- data.frame("year" = strain_isolation_times, "AR" = ARs)
+    ages <- data.frame("individual" = 1:n_indiv, "DOB" = DOBs)
+    attack_rates <- data.frame("year" = strain_isolation_times, "AR" = ARs)
   return(list(data = y, infection_histories = infection_history, ages = ages, attack_rates = attack_rates, lambdas = attack_rates))
 }
 
