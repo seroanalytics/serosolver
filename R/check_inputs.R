@@ -30,7 +30,7 @@ check_parTab <- function(parTab,mcmc=FALSE,version=NULL){
         
         if(version==1){
           ## Check that the correct number of lambdas are present
-            #if( no_lambda!=length(strainIsolationTimes)) stop(paste('Incorrect number of lambdas in parTab,', no_lambda,'passed but was expecting',length(strainIsolationTimes))) #Should we add the correct number?
+            if( no_lambda!=length(strainIsolationTimes)) stop(paste('Incorrect number of lambdas in parTab,', no_lambda,'passed but was expecting',length(strainIsolationTimes))) #Should we add the correct number?
         }
         
         if( version %in% c(2,3)){
@@ -83,7 +83,7 @@ check_attackRates <- function(attackRates,strainIsolationTimes){
 #' @export
 check_proposals <- function(version, mvrPars){
   
-  if(all(version==1,mvrPars!=NULL)) warning('The multivariate proposal can be inefficient for version 1.')
+  if(all(version==1,!is.null(mvrPars))) warning('The multivariate proposal can be inefficient for version 1.')
 
   
 }
