@@ -1,0 +1,116 @@
+---
+title: "Serosolver: Quick Start Guide"
+author: "Kylie Ainslie"
+date: "`r Sys.Date()`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Serosolver Vignette}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+bibliography: vignette_references.bib
+  
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+## Introduction
+
+`serosolver` uses a dynamic model of antibody dynamics (@kucharski2018, @hay2018) to infer infection histories and attack rates from longitudinal serological data.
+
+Short blurb about serosolver...
+### Model Description
+
+
+### Vignette Outline
+Organization of the vignette is going step by step through an analysis of two different datasets:
+
+1. Homogeneous (HK dataset)
+2. Heterogeneous (Fluscape)
+
+## Data Format
+
+Serosolver should be used with a data frame of data to be fitted. The data frame must be in in long format and have the following columns: 
+
+1. group (index of group)
+2. individual (integer ID of individual)
+3. samples (numeric time of sample taken)
+  + include special instructions on time
+4. virus (numeric time of when the virus was circulating)
+5. titre (integer of titre value against the given virus at that sampling time, needs to be on log scale)
+6. run (integer giving the repeated number of this titre)
+7. DOB (integer giving date of birth matching time units used in model)
+
+```{r,echo=FALSE,results='asis'}
+# setwd("C:/Users/kainslie/Box/Fluscape/serosolver_testing") # PC path
+  setwd("/Users/kylie/Box Sync/Fluscape/serosolver_testing") #  path
+  titreDat <- read.csv('ExampleTitreDat.csv')
+  titreDat<-titreDat[-1]
+  knitr::kable(head(titreDat))
+```
+
+
+## Antigenic Map
+```{r antigenicMap, echo=FALSE, fig.cap="Assumed antigenic locations of historical strains in model between 1968 and 2012 (from @kucharski2018).", out.width = '75%'}
+knitr::include_graphics("antigenic_map.tiff")
+```
+
+```{r, eval=FALSE}
+# Read in and generate the antigenic map to read strain relationships from
+  antigenicMap <- read.csv("Fonville2014AxMapPositionsApprox.csv",stringsAsFactors=FALSE)
+  fit_dat <- generate_antigenic_map(antigenicMap, 12)
+  strainIsolationTimes <- unique(fit_dat$inf_years)
+
+```
+## Infection Histories
+
+```{r, eval=FALSE}
+  startInf <- setup_infection_histories_new(titreDat, strainIsolationTimes, space=10, titre_cutoff=2)
+  ageMask <- create_age_mask(titreDat[!duplicated(titreDat$individual),], strainIsolationTimes)
+```
+
+
+## Run MCMC
+
+Using the default options, the MCMC can be run using the following.
+```{r, eval=FALSE}
+
+  res <- run_MCMC(parTab = startTab, titreDat = titreDat, antigenicMap = fit_dat, 
+                  startInfHist = startInf, CREATE_POSTERIOR_FUNC = create_posterior_func,
+                  version = 2)
+
+```
+If you want to change any default options, such as increasing or decreasing the number of iterations and the adaptive period you can pass a vector of function argument values to `run_MCMC()` 
+
+```{r, eval=FALSE}
+  mcmcPars <- c("iterations"=100000,"adaptive_period"=2000)
+   
+  res <- run_MCMC(parTab = startTab, titreDat = titreDat, antigenicMap = fit_dat, 
+                  mcmcPars = mcmcPars, startInfHist = startInf,
+                  CREATE_POSTERIOR_FUNC = create_posterior_func, version = 2)
+
+```
+Explain the different versions!
+
+## Processing Outputs
+```{r}
+# Density/trace plots
+  chain1 <- read.csv(res$chain_file)
+  chain1 <- chain1[chain1$sampno >= (mcmcPars["adaptive_period"]+mcmcPars["burnin"]),]
+  plot(coda::as.mcmc(chain1))
+```
+Plot inferred attack rates
+```{r}
+# Plot inferred attack rates
+  infChain <- data.table::fread(res$history_file,data.table=FALSE)
+  infChain <- infChain[infChain$sampno >= (mcmcPars["adaptive_period"]+mcmcPars["burnin"]),]
+  infChain1 <- setDT(infChain)
+  xs <- min(strainIsolationTimes):max(strainIsolationTimes)
+  arP <- plot_attack_rates(infectionHistories = infChain1, dat = titreDat, ages = titreDat[,c('individual', 'DOB')], yearRange = xs)
+``` 
+
+## References
