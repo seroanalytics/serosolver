@@ -466,7 +466,9 @@ run_MCMC <- function(par_tab,
       if (!new_likelihoods_calculated) {
         new_likelihoods <- posterior_simp(proposal, new_infection_histories) / temp
       }
-      new_total_likelihood <- sum(new_likelihoods)
+        new_total_likelihood <- sum(new_likelihoods)
+       # print(proposal)
+       # print(new_infection_histories)
       new_prior_prob <- extra_probabilities(proposal, new_infection_histories)
       new_posterior <- new_total_likelihood + new_prior_prob
     }
