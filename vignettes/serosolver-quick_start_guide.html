@@ -12,14 +12,14 @@
 
 <meta name="author" content="Kylie Ainslie and James Hay" />
 
-<meta name="date" content="2019-02-01" />
+<meta name="date" content="2019-02-22" />
 
 <title>Serosolver: Quick Start Guide</title>
 
 
 
 <style type="text/css">code{white-space: pre;}</style>
-<style type="text/css" data-origin="pandoc">
+<style type="text/css">
 div.sourceCode { overflow-x: auto; }
 table.sourceCode, tr.sourceCode, td.lineNumbers, td.sourceCode {
   margin: 0; padding: 0; vertical-align: baseline; border: none; }
@@ -55,29 +55,7 @@ code > span.do { color: #ba2121; font-style: italic; } /* Documentation */
 code > span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
 code > span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
 code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
-
 </style>
-<script>
-// apply pandoc div.sourceCode style to pre.sourceCode instead
-(function() {
-  var sheets = document.styleSheets;
-  for (var i = 0; i < sheets.length; i++) {
-    if (sheets[i].ownerNode.dataset["origin"] !== "pandoc") continue;
-    try { var rules = sheets[i].cssRules; } catch (e) { continue; }
-    for (var j = 0; j < rules.length; j++) {
-      var rule = rules[j];
-      // check if there is a div.sourceCode rule
-      if (rule.type !== rule.STYLE_RULE || rule.selectorText !== "div.sourceCode") continue;
-      var style = rule.style.cssText;
-      // check if color or background-color is set
-      if (rule.style.color === '' || rule.style.backgroundColor === '') continue;
-      // replace div.sourceCode by a pre.sourceCode rule
-      sheets[i].deleteRule(j);
-      sheets[i].insertRule('pre.sourceCode{' + style + '}', j);
-    }
-  }
-})();
-</script>
 
 
 
@@ -92,7 +70,7 @@ code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Inf
 
 <h1 class="title toc-ignore">Serosolver: Quick Start Guide</h1>
 <h4 class="author"><em>Kylie Ainslie and James Hay</em></h4>
-<h4 class="date"><em>2019-02-01</em></h4>
+<h4 class="date"><em>2019-02-22</em></h4>
 
 
 
@@ -121,6 +99,13 @@ code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Inf
 </ol>
 </div>
 </div>
+<div id="install-serosolver" class="section level2">
+<h2>Install serosolver</h2>
+<p>The easiest way to install the development version of <code>serosolver</code> is to use the <code>devtools</code> package:</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">library</span>(devtools)
+<span class="kw">install_github</span>(<span class="st">&quot;adamkucharski/serosolver&quot;</span>)
+<span class="kw">library</span>(serosolver)</code></pre></div>
+</div>
 <div id="data-format" class="section level2">
 <h2>1. Data Format</h2>
 <p><code>serosolver</code> expects a data frame as input in long format with the following columns:</p>
@@ -138,68 +123,14 @@ code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Inf
 <li>run: integer value of the repeat number of each sample (if there are no repeat samples, then run should be 1 for every sample)</li>
 <li>DOB: integer value of date of birth (should be in the same format as samples)</li>
 </ol>
-<table>
-<thead>
-<tr class="header">
-<th align="right">individual</th>
-<th align="right">samples</th>
-<th align="right">virus</th>
-<th align="right">titre</th>
-<th align="right">run</th>
-<th align="right">DOB</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td align="right">1</td>
-<td align="right">8039</td>
-<td align="right">8036</td>
-<td align="right">0</td>
-<td align="right">1</td>
-<td align="right">8036</td>
-</tr>
-<tr class="even">
-<td align="right">1</td>
-<td align="right">8040</td>
-<td align="right">8036</td>
-<td align="right">0</td>
-<td align="right">1</td>
-<td align="right">8036</td>
-</tr>
-<tr class="odd">
-<td align="right">1</td>
-<td align="right">8044</td>
-<td align="right">8036</td>
-<td align="right">7</td>
-<td align="right">1</td>
-<td align="right">8036</td>
-</tr>
-<tr class="even">
-<td align="right">1</td>
-<td align="right">8047</td>
-<td align="right">8036</td>
-<td align="right">7</td>
-<td align="right">1</td>
-<td align="right">8036</td>
-</tr>
-<tr class="odd">
-<td align="right">2</td>
-<td align="right">8039</td>
-<td align="right">8036</td>
-<td align="right">0</td>
-<td align="right">1</td>
-<td align="right">8036</td>
-</tr>
-<tr class="even">
-<td align="right">2</td>
-<td align="right">8041</td>
-<td align="right">8036</td>
-<td align="right">5</td>
-<td align="right">1</td>
-<td align="right">8036</td>
-</tr>
-</tbody>
-</table>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">  titreDat &lt;-<span class="st"> </span><span class="kw">data.frame</span>(<span class="dt">individual=</span><span class="kw">c</span>(<span class="kw">rep</span>(<span class="dv">1</span>,<span class="dv">4</span>),<span class="kw">rep</span>(<span class="dv">2</span>,<span class="dv">4</span>)),
+                <span class="dt">samples=</span><span class="kw">c</span>(<span class="dv">8039</span>,<span class="dv">8040</span>,<span class="dv">8044</span>,<span class="dv">8047</span>,<span class="dv">8039</span>,<span class="dv">8041</span>,<span class="dv">8045</span>,<span class="dv">8048</span>),
+                <span class="dt">virus=</span><span class="kw">c</span>(<span class="kw">rep</span>(<span class="dv">8036</span>,<span class="dv">8</span>)),
+                <span class="dt">titre=</span><span class="kw">c</span>(<span class="dv">0</span>,<span class="dv">0</span>,<span class="dv">7</span>,<span class="dv">7</span>,<span class="dv">0</span>,<span class="dv">5</span>,<span class="dv">6</span>,<span class="dv">5</span>),
+                <span class="dt">run=</span><span class="kw">c</span>(<span class="kw">rep</span>(<span class="dv">1</span>,<span class="dv">8</span>)),
+                <span class="dt">DOB=</span><span class="kw">c</span>(<span class="kw">rep</span>(<span class="dv">8036</span>,<span class="dv">8</span>))
+                )
+  knitr::<span class="kw">kable</span>(<span class="kw">head</span>(titreDat))</code></pre></div>
 <p>For the remainder of this quick start guide we refer to the input data set as <code>titreDat</code>.</p>
 </div>
 <div id="specifying-inputs" class="section level2">
@@ -324,8 +255,8 @@ code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Inf
 <p>In the parameter file, the column ‘fixed’ indicates if each parameter value is fixed or should be estimated. For values that are not fixed, starting values need to be generated. The below code generates a random starting value for unfixed parameter values.</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="co"># generate starting parameter values</span>
   startTab &lt;-<span class="st"> </span>parTab
-    <span class="cf">for</span>(i <span class="cf">in</span> <span class="dv">1</span><span class="op">:</span><span class="kw">nrow</span>(startTab)){
-      <span class="cf">if</span>(startTab[i,<span class="st">&quot;fixed&quot;</span>] <span class="op">==</span><span class="st"> </span><span class="dv">0</span>){
+    for(i in <span class="dv">1</span>:<span class="kw">nrow</span>(startTab)){
+      if(startTab[i,<span class="st">&quot;fixed&quot;</span>] ==<span class="st"> </span><span class="dv">0</span>){
         startTab[i,<span class="st">&quot;values&quot;</span>] &lt;-<span class="st"> </span><span class="kw">runif</span>(<span class="dv">1</span>,startTab[i,<span class="st">&quot;lower_start&quot;</span>], 
                                   startTab[i,<span class="st">&quot;upper_start&quot;</span>])
       }
@@ -344,13 +275,13 @@ Assumed antigenic locations of historical strains in model between 1968 and 2012
   antigenicMap &lt;-<span class="st"> </span><span class="kw">read.csv</span>(<span class="st">&quot;data/fonville_map_approx.csv&quot;</span>,<span class="dt">stringsAsFactors=</span><span class="ot">FALSE</span>)
   fit_dat &lt;-<span class="st"> </span><span class="kw">generate_antigenic_map</span>(antigenicMap, <span class="dt">buckets =</span> <span class="dv">4</span>)
 <span class="co"># unique strain circulation times</span>
-  strainIsolationTimes &lt;-<span class="st"> </span><span class="kw">unique</span>(fit_dat<span class="op">$</span>inf_years)</code></pre></div>
+  strainIsolationTimes &lt;-<span class="st"> </span><span class="kw">unique</span>(fit_dat$inf_years)</code></pre></div>
 </div>
 <div id="age-mask" class="section level3">
 <h3>Age Mask</h3>
 <p>An age mask is required to indicate when each individual could have had their first infection. For example an individual born in 1997 could not have been infected with a strain that circulated in 1990. The fuctino <code>create_age_mask()</code> outputs a vector of indices of the first <code>strainIsolationTimes</code> that an individual could have been infected with.</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">  unique_indiv &lt;-<span class="st"> </span>titreDat[<span class="op">!</span><span class="kw">duplicated</span>(titreDat<span class="op">$</span>individual),]
-  ageMask &lt;-<span class="st"> </span><span class="kw">create_age_mask</span>(unique_indiv<span class="op">$</span>DOB, strainIsolationTimes)</code></pre></div>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">  unique_indiv &lt;-<span class="st"> </span>titreDat[!<span class="kw">duplicated</span>(titreDat$individual),]
+  ageMask &lt;-<span class="st"> </span><span class="kw">create_age_mask</span>(unique_indiv$DOB, strainIsolationTimes)</code></pre></div>
 <p>The final input required by <code>serosolver</code> are starting infection histories for each individual. The function <code>setup_infection_histories_new_2()</code> creates a matrix of infection histories given a matrix of titre data by looking at an individual’s titre against each strain. Where titres are raised, it suggests an infection. In this way, it can propose plausible initial infection histories from which to begin MCMC sampling.</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">  startInf &lt;-<span class="st"> </span><span class="kw">setup_infection_histories_new_2</span>(titreDat, strainIsolationTimes)</code></pre></div>
 </div>
@@ -380,41 +311,41 @@ Assumed antigenic locations of historical strains in model between 1968 and 2012
 <h3>Diagnostic plots</h3>
 <p>To evaluate model performace, trace and density plots can be produced by plotting the MCMC chains. In the below example the adaptive period and burn-in from the MCMC are excluded in the diagnostic plots.</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="co"># Density/trace plots</span>
-  chain1 &lt;-<span class="st"> </span><span class="kw">read.csv</span>(res<span class="op">$</span>chain_file)
-  chain1 &lt;-<span class="st"> </span>chain1[chain1<span class="op">$</span>sampno <span class="op">&gt;=</span><span class="st"> </span>(mcmcPars[<span class="st">&quot;adaptive_period&quot;</span>]<span class="op">+</span>mcmcPars[<span class="st">&quot;burnin&quot;</span>]),]
-  <span class="kw">plot</span>(coda<span class="op">::</span><span class="kw">as.mcmc</span>(chain1))</code></pre></div>
+  chain1 &lt;-<span class="st"> </span><span class="kw">read.csv</span>(res$chain_file)
+  chain1 &lt;-<span class="st"> </span>chain1[chain1$sampno &gt;=<span class="st"> </span>(mcmcPars[<span class="st">&quot;adaptive_period&quot;</span>]+mcmcPars[<span class="st">&quot;burnin&quot;</span>]),]
+  <span class="kw">plot</span>(coda::<span class="kw">as.mcmc</span>(chain1))</code></pre></div>
 </div>
 <div id="results-plots" class="section level3">
 <h3>Results plots</h3>
 <p>Plot inferred attack rates.</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="co"># Read in infection history file from MCMC output</span>
-  infChain &lt;-<span class="st"> </span>data.table<span class="op">::</span><span class="kw">fread</span>(res<span class="op">$</span>history_file,<span class="dt">data.table=</span><span class="ot">FALSE</span>)
+  infChain &lt;-<span class="st"> </span>data.table::<span class="kw">fread</span>(res$history_file,<span class="dt">data.table=</span><span class="ot">FALSE</span>)
 <span class="co"># Remove adaptive period and burn-in</span>
-  infChain &lt;-<span class="st"> </span>infChain[infChain<span class="op">$</span>sampno <span class="op">&gt;=</span><span class="st"> </span>(mcmcPars[<span class="st">&quot;adaptive_period&quot;</span>]<span class="op">+</span>mcmcPars[<span class="st">&quot;burnin&quot;</span>]),]
+  infChain &lt;-<span class="st"> </span>infChain[infChain$sampno &gt;=<span class="st"> </span>(mcmcPars[<span class="st">&quot;adaptive_period&quot;</span>]+mcmcPars[<span class="st">&quot;burnin&quot;</span>]),]
   infChain1 &lt;-<span class="st"> </span><span class="kw">setDT</span>(infChain)
 <span class="co"># Define year range</span>
-  xs &lt;-<span class="st"> </span><span class="kw">min</span>(strainIsolationTimes)<span class="op">:</span><span class="kw">max</span>(strainIsolationTimes)
+  xs &lt;-<span class="st"> </span><span class="kw">min</span>(strainIsolationTimes):<span class="kw">max</span>(strainIsolationTimes)
 <span class="co"># Plot inferred attack rates</span>
   arP &lt;-<span class="st"> </span><span class="kw">plot_attack_rates</span>(<span class="dt">infectionHistories =</span> infChain1, <span class="dt">dat =</span> titreDat, <span class="dt">ages =</span> titreDat[,<span class="kw">c</span>(<span class="st">'individual'</span>, <span class="st">'DOB'</span>)], <span class="dt">yearRange =</span> xs)</code></pre></div>
 <p>Plot inferred infection histories.</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="co"># Plot infection histories</span>
   IH_plot &lt;-<span class="st"> </span><span class="kw">plot_infection_histories</span>(<span class="dt">chain =</span> chain1, <span class="dt">infectionHistories =</span> infChain, 
-                                      <span class="dt">titreDat =</span> titreDat, <span class="dt">individuals =</span> <span class="kw">c</span>(<span class="dv">1</span><span class="op">:</span><span class="dv">5</span>),
+                                      <span class="dt">titreDat =</span> titreDat, <span class="dt">individuals =</span> <span class="kw">c</span>(<span class="dv">1</span>:<span class="dv">5</span>),
                                       <span class="dt">antigenicMap =</span> fit_dat, <span class="dt">parTab =</span> startTab1)</code></pre></div>
 <p>Plot inferred antibody titres.</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="co"># Plot inferred antibody titres</span>
   titre_preds &lt;-<span class="st"> </span><span class="kw">get_titre_predictions</span>(<span class="dt">chain =</span> chain1, <span class="dt">infection_histories =</span> infChain, 
-                                       <span class="dt">titre_dat =</span> titreDat, <span class="dt">individuals =</span> <span class="kw">c</span>(<span class="dv">1</span><span class="op">:</span><span class="dv">311</span>),
+                                       <span class="dt">titre_dat =</span> titreDat, <span class="dt">individuals =</span> <span class="kw">c</span>(<span class="dv">1</span>:<span class="dv">311</span>),
                                        <span class="dt">antigenic_map =</span> fit_dat, <span class="dt">par_tab =</span> startTab1)
-  to_use &lt;-<span class="st"> </span>titre_preds<span class="op">$</span>predictions
+  to_use &lt;-<span class="st"> </span>titre_preds$predictions
   
-  titre_pred_p &lt;-<span class="st"> </span><span class="kw">ggplot</span>(to_use[to_use<span class="op">$</span>individual <span class="op">%in%</span><span class="st"> </span><span class="dv">151</span><span class="op">:</span><span class="dv">200</span>,])<span class="op">+</span>
-<span class="st">                  </span><span class="kw">geom_line</span>(<span class="kw">aes</span>(<span class="dt">x=</span>samples, <span class="dt">y=</span>median))<span class="op">+</span>
-<span class="st">                  </span><span class="kw">geom_point</span>(<span class="kw">aes</span>(<span class="dt">x=</span>samples, <span class="dt">y=</span>titre))<span class="op">+</span>
-<span class="st">                  </span><span class="kw">geom_ribbon</span>(<span class="kw">aes</span>(<span class="dt">x=</span>samples,<span class="dt">ymin=</span>lower, <span class="dt">ymax=</span>upper),<span class="dt">alpha=</span><span class="fl">0.2</span>,<span class="dt">col=</span><span class="st">'red'</span>)<span class="op">+</span>
-<span class="st">                  </span><span class="kw">facet_wrap</span>(<span class="op">~</span>individual)</code></pre></div>
+  titre_pred_p &lt;-<span class="st"> </span><span class="kw">ggplot</span>(to_use[to_use$individual %in%<span class="st"> </span><span class="dv">151</span>:<span class="dv">200</span>,])+
+<span class="st">                  </span><span class="kw">geom_line</span>(<span class="kw">aes</span>(<span class="dt">x=</span>samples, <span class="dt">y=</span>median))+
+<span class="st">                  </span><span class="kw">geom_point</span>(<span class="kw">aes</span>(<span class="dt">x=</span>samples, <span class="dt">y=</span>titre))+
+<span class="st">                  </span><span class="kw">geom_ribbon</span>(<span class="kw">aes</span>(<span class="dt">x=</span>samples,<span class="dt">ymin=</span>lower, <span class="dt">ymax=</span>upper),<span class="dt">alpha=</span><span class="fl">0.2</span>,<span class="dt">col=</span><span class="st">'red'</span>)+
+<span class="st">                  </span><span class="kw">facet_wrap</span>(~individual)</code></pre></div>
 <p>Generate cummulative incidence plots.</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">  y &lt;-<span class="st"> </span><span class="kw">generate_cumulative_inf_plots</span>(infChain,<span class="dt">burnin =</span> <span class="dv">0</span>,<span class="dv">51</span><span class="op">:</span><span class="dv">75</span>,<span class="dt">nsamp=</span><span class="dv">100</span>,
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">  y &lt;-<span class="st"> </span><span class="kw">generate_cumulative_inf_plots</span>(infChain,<span class="dt">burnin =</span> <span class="dv">0</span>,<span class="dv">51</span>:<span class="dv">75</span>,<span class="dt">nsamp=</span><span class="dv">100</span>,
                                      <span class="dt">strain_isolation_times =</span> strainIsolationTimes,
                                      <span class="dt">pad_chain=</span><span class="ot">FALSE</span>,<span class="dt">number_col =</span> <span class="dv">2</span>,<span class="dt">subset_years =</span> <span class="ot">NULL</span>)</code></pre></div>
 </div>
@@ -422,13 +353,13 @@ Assumed antigenic locations of historical strains in model between 1968 and 2012
 <h3>Parameter estimates</h3>
 <p>The following code produces a table of the parameter estimates.</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="co"># Table of antibody kinetics parameters</span>
-  myresults &lt;-<span class="st"> </span><span class="kw">matrix</span>(<span class="kw">c</span>(<span class="kw">rep</span>(<span class="dv">0</span>,<span class="dv">3</span><span class="op">*</span><span class="dv">7</span>)),<span class="dt">nrow=</span><span class="dv">3</span>)
+  myresults &lt;-<span class="st"> </span><span class="kw">matrix</span>(<span class="kw">c</span>(<span class="kw">rep</span>(<span class="dv">0</span>,<span class="dv">3</span>*<span class="dv">7</span>)),<span class="dt">nrow=</span><span class="dv">3</span>)
   <span class="kw">rownames</span>(myresults) &lt;-<span class="st"> </span><span class="kw">c</span>(<span class="st">&quot;mu_short&quot;</span>,<span class="st">&quot;wane&quot;</span>,<span class="st">&quot;error&quot;</span>)
   <span class="kw">colnames</span>(myresults) &lt;-<span class="st"> </span><span class="kw">c</span>(<span class="st">&quot;mean&quot;</span>,<span class="st">&quot;sd&quot;</span>,<span class="st">&quot;2.5%&quot;</span>,<span class="st">&quot;25%&quot;</span>,<span class="st">&quot;50%&quot;</span>,<span class="st">&quot;75%&quot;</span>,<span class="st">&quot;97.5%&quot;</span>)
   
   myresults[,<span class="st">&quot;mean&quot;</span>] &lt;-<span class="st"> </span><span class="kw">round</span>(<span class="kw">apply</span>(chain1[,<span class="kw">c</span>(<span class="st">&quot;mu_short&quot;</span>,<span class="st">&quot;wane&quot;</span>,<span class="st">&quot;error&quot;</span>)],<span class="dv">2</span>,mean),<span class="dv">3</span>)
   myresults[,<span class="st">&quot;sd&quot;</span>] &lt;-<span class="st"> </span><span class="kw">round</span>(<span class="kw">apply</span>(chain1[,<span class="kw">c</span>(<span class="st">&quot;mu_short&quot;</span>,<span class="st">&quot;wane&quot;</span>,<span class="st">&quot;error&quot;</span>)],<span class="dv">2</span>,sd),<span class="dv">3</span>)  
-  myresults[,<span class="dv">3</span><span class="op">:</span><span class="dv">7</span>] &lt;-<span class="st"> </span><span class="kw">t</span>(<span class="kw">round</span>(<span class="kw">apply</span>(chain1[,<span class="kw">c</span>(<span class="st">&quot;mu_short&quot;</span>,<span class="st">&quot;wane&quot;</span>,<span class="st">&quot;error&quot;</span>)],<span class="dv">2</span>,
+  myresults[,<span class="dv">3</span>:<span class="dv">7</span>] &lt;-<span class="st"> </span><span class="kw">t</span>(<span class="kw">round</span>(<span class="kw">apply</span>(chain1[,<span class="kw">c</span>(<span class="st">&quot;mu_short&quot;</span>,<span class="st">&quot;wane&quot;</span>,<span class="st">&quot;error&quot;</span>)],<span class="dv">2</span>,
                                    quantile,<span class="dt">probs=</span><span class="kw">c</span>(<span class="fl">0.025</span>,<span class="fl">0.25</span>,<span class="fl">0.5</span>,<span class="fl">0.75</span>,<span class="fl">0.975</span>)),<span class="dv">3</span>))  </code></pre></div>
 </div>
 </div>

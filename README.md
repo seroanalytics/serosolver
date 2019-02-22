@@ -2,15 +2,25 @@
 Inference framework for serological data
 
 
-### Summary
+## Summary
 
-This repository contains code for serological analysis of influenza. Currently set-up to run simulation study with [new model](http://www.biorxiv.org/content/early/2017/08/31/183111).
+`serosolver` uses a dynamic model to infer antibody dynamics and infection histories from cross-sectional or longitudinal serological data. The model infers individual-level infection histories, historical attack rates, and patterns of antibody dynamics by accounting for cross-reactive antibody responses and measurement error.
 
-### Guide to files
+## Installation
 
-`scripts/main_model.R` Simulates some artificial data and attempts to re-estimate the simulation parameters, or attempts to estimate posterior distributions for model parameters given some real data
-`scripts/extracting_data.R` extracts the fluscape data into a useable format
-`scripts/extract_fluscape_antigenicmap.R` extracts the fluscape antigenic map
+1. Install [R][r]
 
-### Helpful pointers
-All of the functions in `plots.R` are useful for looking at output. They currently only work with a single MCMC chain - priority is to change this to take an MCMC list
+1. Install development version:
+
+    ```r
+	#library(devtools)
+	install_github("adamkucharski/serosolver")
+	library(serosolver)
+    ```
+	
+## Quick start
+
+Read the [quick start vignette][vignette-doc] to set up and run a simple implementation of the model.
+
+
+[vignette-doc]: https://github.com/adamkucharski/serosolver/blob/master/vignettes/serosolver-quick_start_guide.html

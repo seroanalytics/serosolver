@@ -24,7 +24,7 @@ In disease systems where a single infection is expected in a given period of tim
 Progress has been made in understanding the immunological mechanisms which link observed immune responses with disease incidence through experimental systems and human population studies [@li2013; @linderman2014; @gostic2016; @cobey2017; @monto2017]. Taking into account phenomena such as original antigenic sin (OAS), antigenic seniority, back-boosting and age-specific antibody responses have been used to significantly improve our interpretation of serological data [@kim2009; @lessler2012; @fonville2014; @monsterinhopping2016]. The full repertoire of humoral responses by one individual to all previous and future strains can be described by an antibody landscape, which quantifies the expected antibody titre against viruses on an antigenic map @fonville2014. Quantifying these mechanisms, along with antibody boosting and cross reactivity, can therefore be used to better predict antibody landscapes for humans @kucharski2015.
 
 ### Model Description
-`serosolver` uses a dynamic model of antibody dynamics, previously described by Kucharski *et al.* @kucharski2018 to infer infection histories and attack rates from longitudinal serological data. The model infers individual infection histories, historical attack rates, and patterns of antibody dynamics by accounting for short-term, broadly reactive antibody boosting following exposure; long-term, narrowly-reactive antibody boosting; boosting suppression through antigenic seniority; and measurement error.
+`serosolver` uses a dynamic model of antibody dynamics, previously described by Kucharski *et al.* @kucharski2018 to infer infection histories and attack rates from cross-sectional or longitudinal serological data. The model infers individual infection histories, historical attack rates, and patterns of antibody dynamics by accounting for short-term, broadly reactive antibody boosting following exposure; long-term, narrowly-reactive antibody boosting; boosting suppression through antigenic seniority; and measurement error.
 
 ### Vignette Outline
 This quick start guide is designed to provide the basic instructions to use `serosolver` on serological data. For more in depth instructions about the different capabilities of `serosolver` see the case study vignettes.The following steps are covered in this guide:
@@ -37,6 +37,16 @@ This quick start guide is designed to provide the basic instructions to use `ser
     + Starting infection histories
 3. Running MCMC
 4. Processing outputs and generating plots
+
+## Install serosolver
+
+The easiest way to install the development version of `serosolver` is to use the `devtools` package:
+
+```{r,eval=FALSE}
+library(devtools)
+install_github("adamkucharski/serosolver")
+library(serosolver)
+```
 
 ## 1. Data Format
 
@@ -52,7 +62,7 @@ This quick start guide is designed to provide the basic instructions to use `ser
 5. run: integer value of the repeat number of each sample (if there are no repeat samples, then run should be 1 for every sample)
 6. DOB: integer value of date of birth (should be in the same format as samples)
 
-```{r,echo=FALSE,results='asis'}
+```{r,eval=FALSE}
   titreDat <- data.frame(individual=c(rep(1,4),rep(2,4)),
                 samples=c(8039,8040,8044,8047,8039,8041,8045,8048),
                 virus=c(rep(8036,8)),
