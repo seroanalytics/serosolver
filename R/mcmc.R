@@ -405,7 +405,7 @@ run_MCMC <- function(par_tab,
         } else if (hist_proposal == 2) {
         ## Swap entire contents or propose new
         if (inf_swap_prob > hist_switch_prob) {
-          ## If using the fast version, not that we need to pass the current likelihoods as well,
+          ## If using the fast version, note that we need to pass the current likelihoods as well,
           ## and also extract the new likelihoods for the proposed infection history matrix
           if (fast_version) {
             prop_gibbs <- proposal_gibbs(

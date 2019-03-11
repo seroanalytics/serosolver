@@ -7,7 +7,7 @@ test_that("Fast solver returns the same titres as the original version, base cas
   titre_dat <- read.csv("../testdata/fluscape_sim_annual_dat.csv")
   antigenic_map <- read.csv("../testdata/fonville_annual_continuous.csv")
   strain_isolation_times <- antigenic_map$inf_years
-  infection_history_mat <- setup_infection_histories_new(titre_dat, strain_isolation_times, 5, 2)
+  infection_history_mat <- setup_infection_histories_new_2(titre_dat, strain_isolation_times, 5, 2, sample_prob=0.1)
 
   par_tab <- read.csv("../testdata/par_tab_base.csv", stringsAsFactors = FALSE)
   par_tab <- par_tab[par_tab$names != "lambda", ]
@@ -170,23 +170,23 @@ test_that("Fast solver returns the same titres as the original version, titre de
   titre_dat <- read.csv("../testdata/fluscape_sim_annual_dat.csv")
   antigenic_map <- read.csv("../testdata/fonville_annual_continuous.csv")
   strain_isolation_times <- antigenic_map$inf_years
-  infection_history_mat <- setup_infection_histories_new(titre_dat, strain_isolation_times, 5, 2)
-
+  infection_history_mat <- setup_infection_histories_new_2(titre_dat, strain_isolation_times,
+                                                           space=5, titre_cutoff=2,sample_prob=0.1)
   par_tab <- read.csv("../testdata/par_tab_base.csv", stringsAsFactors = FALSE)
   par_tab <- par_tab[par_tab$names != "lambda", ]
   par_tab[par_tab$names == "titre_dependent","values"] <- 1
   par_tab[par_tab$names == "gradient","values"] <- 0.1
   par_tab[par_tab$names == "boost_limit","values"] <- 4
-  
+
+
   f_slow <- create_posterior_func(par_tab, titre_dat, antigenic_map, 1,
                                   function_type = 3)
   f_fast <- create_posterior_func_fast(par_tab, titre_dat, antigenic_map, 1,
                                        function_type = 3)
   par_tab1 <- par_tab
   par_tab1[par_tab1$names == "titre_dependent","values"] <- 0
-  
   f_without <- create_posterior_func_fast(par_tab1, titre_dat, antigenic_map, 1,
-                                       function_type = 3)
+                                          function_type = 3)
 
   par_names <- par_tab$names
   pars <- par_tab$values
@@ -199,7 +199,6 @@ test_that("Fast solver returns the same titres as the original version, titre de
   y_slow <- f_slow(pars, infection_history_mat)
   y_fast <- f_fast(pars, infection_history_mat)
   y_without <- f_without(pars1, infection_history_mat)
-
   expect_false(isTRUE(all.equal(y_fast, y_without)))
   expect_equal(y_slow, y_fast)
 })

@@ -94,7 +94,6 @@ NumericVector titre_data_fast(const NumericVector &theta,
 
   // To store calculated titres
   NumericVector predicted_titres(total_titres);
-  
   // For each individual
   for (int i = 1; i <= n; ++i) {
     infection_history = infection_history_mat(i-1,_);

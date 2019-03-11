@@ -442,7 +442,7 @@ void titre_data_fast_individual_titredep(NumericVector &predicted_titres,
   double long_boost=0;
   double monitored_titre=0;
   double short_boost=0;
-  double titre_suppression = 1.0 - gradient*boost_limit;
+  double titre_suppression = MAX(0,1.0 - gradient*boost_limit);
 
   int n_titres;
   int max_infections = infection_times.size();
@@ -482,16 +482,15 @@ void titre_data_fast_individual_titredep(NumericVector &predicted_titres,
 	  inf_map_index_tmp = inf_map_index * number_strains + infection_strain_indices_tmp[ii];
 	  seniority = MAX(0, 1.0 - tau * ii);
 	  wane_amount = MAX(0, 1.0 - wane * (infection_time - infection_times[ii]));
-	  
+
 	  long_boost = seniority * mu * antigenic_map_long[inf_map_index_tmp];
 	  short_boost = seniority * mu_short * antigenic_map_short[inf_map_index_tmp];
-
 	  if(monitored_titres[ii] >= boost_limit){
 	    long_boost *= titre_suppression;
 	    short_boost *= titre_suppression;
 	  } else {
-	    long_boost *= (1.0 - gradient*monitored_titres[ii]);
-	    short_boost *= (1.0 - gradient*monitored_titres[ii]);	    
+	    long_boost *= MAX(0,1.0 - gradient*monitored_titres[ii]);
+	    short_boost *= MAX(0,1.0 - gradient*monitored_titres[ii]);	    
 	  }
 	  long_boost = MAX(0, long_boost);
 	  short_boost = MAX(0, short_boost);

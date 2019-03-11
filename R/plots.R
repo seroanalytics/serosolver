@@ -73,6 +73,7 @@ get_titre_predictions <- function(chain, infection_histories, titre_dat,
     for (i in 1:nsamp) {
         index <- tmp_samp[i]
         pars <- get_index_pars(chain,index)
+        pars <- pars[names(pars) %in% par_tab$names]
         tmp_inf_hist <- infection_histories[infection_histories$sampno == index, ]
         tmp_inf_hist <- as.matrix(Matrix::sparseMatrix(i = tmp_inf_hist$i, j = tmp_inf_hist$j, x = tmp_inf_hist$x, dims = c(n_indiv, nstrain)))
         predicted_titres[, i] <- f(pars, tmp_inf_hist)
@@ -89,12 +90,13 @@ get_titre_predictions <- function(chain, infection_histories, titre_dat,
     residuals <- cbind(titre_dat, residuals)
 
     ## Get 95% credible interval and means
-    dat2 <- t(apply(predicted_titres, 1, function(x) quantile(x, c(0.025, 0.5, 0.975))))
+    dat2 <- t(apply(predicted_titres, 1, function(x) quantile(x, c(0.025, 0.25, 0.5, 0.75, 0.975))))
     residuals <- t(apply(residuals, 1, function(x) quantile(x, c(0.025, 0.5, 0.975))))
     residuals <- cbind(titre_dat, residuals)
 
     ## Find multivariate posterior mode estimate from the chain
     best_pars <- get_best_pars(chain)
+    best_pars <- best_pars[names(best_pars) %in% par_tab$names]
     best_I <- chain$sampno[which.max(chain$lnlike)]
     best_inf <- infection_histories[infection_histories$sampno == best_I, ]
     best_inf <- as.matrix(Matrix::sparseMatrix(i = best_inf$i, j = best_inf$j, x = best_inf$x, dims = c(n_indiv, nstrain)))
@@ -104,7 +106,7 @@ get_titre_predictions <- function(chain, infection_histories, titre_dat,
     best_residuals <- titre_dat$titre - floor(best_traj)
     best_residuals <- cbind(titre_dat, best_residuals, "sampno" = best_I)
     dat2 <- as.data.frame(dat2)
-    colnames(dat2) <- c("lower", "median", "upper")
+    colnames(dat2) <- c("lower", "lower_50","median", "upper_50","upper")
     dat2$max <- best_traj
     dat2[dat2 < 0] <- 0
     dat2 <- cbind(titre_dat, dat2)
