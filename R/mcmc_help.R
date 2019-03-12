@@ -45,7 +45,7 @@ mvr_proposal <- function(values, fixed, covMat, covMat0 = NULL, useLog=FALSE, be
     proposed <- values
     #proposed[fixed] <- as.numeric(exp(mvrnorm(1,mu=log(proposed[fixed]),Sigma=covMat0)))
     #return(proposed)
-                               
+    
     ## Sample either from a single covariance matrix or weighted average of the identity matrix and
     ## given cov matrix, if specified. On either a log or linear scale.
     if(is.null(covMat0)){
@@ -690,8 +690,9 @@ lambda_proposal <- function(current_pars, infHist, years, js, alpha, beta, n_ali
 #' @param infChain a data table with the MCMC saved infection history chain
 #' @return the MCMC saved infection history expanded with infection times as columns
 #' @export
-expand_summary_infChain <- function(infChain){
-  full_inf_chain <- data.table::CJ(i=1:max(infChain$i), j=1:max(infChain$j), sampno=min(infChain$sampno):max(infChain$sampno))
+expand_summary_infChain <- function(infChain,j_vec=NULL){
+  if(is.null(j_vec)) j_vec<-1:max(infChain$j)
+  full_inf_chain <- data.table::CJ(i=min(infChain$i):max(infChain$i), j=j_vec, sampno=sort(unique(infChain$sampno)))
   infChain <- data.table::data.table(apply(infChain, 2, as.numeric))
   summary_with_non_infections <- merge(infChain,full_inf_chain,by=c("sampno","j","i"),all=TRUE)
   summary_with_non_infections[is.na(summary_with_non_infections$x),"x"] <- 0

@@ -320,9 +320,10 @@ plot_posteriors <- function(chain, parTab,
 #' @param n_alive vector with the number of people alive in each year of circulation. Can be left as NULL, and ages will be used to infer this
 #' @param ymax Numeric. the maximum y value to put on the axis
 #' @param buckets Integer. How many buckets of time is each year split into? ie. 12 for monthly data, 4 for quarterly etc.
+#' @param knownar the data frame of known attack rates, with columns for time and attack_rate
 #' @return a ggplot2 object with the inferred attack rates for each potential epoch of circulation
 #' @export
-plot_attack_rates_monthly<- function(infectionHistories, dat, ages, yearRange,n_alive=NULL,ymax=0.1, buckets=1){
+plot_attack_rates_monthly<- function(infectionHistories, dat, ages, yearRange,n_alive=NULL,ymax=0.1, buckets=1, knownar=NULL){
     ## Find inferred total number of infections from the MCMC output
     ##tmp <- plyr::ddply(infectionHistories,~sampno,function(x) colSums(x[,1:(ncol(infectionHistories)-2)]))
     ## Scale by number of individuals that were alive in each epoch
@@ -365,6 +366,9 @@ plot_attack_rates_monthly<- function(infectionHistories, dat, ages, yearRange,n_
         #theme(text=element_text(family="Arial")) +
         ylab("Estimated monthly per capita incidence") +
         xlab("Date")
+    if (!is.null(knownar)){
+      p <- p + geom_line(data = knownar,aes(x=time,y=attack_rate),col="blue")
+    }
     return(p)   
     
 }
@@ -379,9 +383,10 @@ plot_attack_rates_monthly<- function(infectionHistories, dat, ages, yearRange,n_
 #' @param n_alive vector with the number of people alive in each year of circulation. Can be left as NULL, and ages will be used to infer this
 #' @param pointsize Numeric - how big should each point be?
 #' @param fatten Numeric - fatten parameter for ggplot pointrange
+#' @param knownar the data frame of known attack rates, with columns for time and attack_rate
 #' @return a ggplot2 object with the inferred attack rates for each potential epoch of circulation
 #' @export
-plot_attack_rates <- function(infectionHistories, dat, ages, yearRange,n_alive=NULL,pointsize=1, fatten=1){
+plot_attack_rates <- function(infectionHistories, dat, ages, yearRange,n_alive=NULL,pointsize=1, fatten=1, knownar=NULL){
     ## Find inferred total number of infections from the MCMC output
     ##tmp <- plyr::ddply(infectionHistories,~sampno,function(x) colSums(x[,1:(ncol(infectionHistories)-2)]))
     ## Scale by number of individuals that were alive in each epoch
@@ -397,19 +402,23 @@ plot_attack_rates <- function(infectionHistories, dat, ages, yearRange,n_alive=N
     ##tmp <- ddply(infectionHistories, c("sampno","j"), function(x) sum(x$x))
     quantiles <- ddply(tmp, ~j, function(x) quantile(x$V1, c(0.025,0.5,0.975)))
     colnames(quantiles) <- c("j","lower","median","upper")
-    quantiles[c("lower","median","upper")] <- quantiles[c("lower","median","upper")]/n_alive
+    quantiles[c("lower","median","upper")] <- quantiles[c("lower","median","upper")]/n_alive[quantiles$j]
     quantiles$year <- yearRange[quantiles$j]
     quantiles$taken <- quantiles$year %in% unique(dat$samples)
 
     ## Colour depending on whether or not titres were taken in each year
     quantiles$taken <- ifelse(quantiles$taken,"Yes","No")
-
+    
     p <- ggplot(quantiles) + 
         geom_pointrange(aes(x=year,y=median,ymin=lower,ymax=upper,col=taken),size=pointsize, fatten=fatten) +
-        scale_y_continuous(limits=c(-0.1,1),expand=c(0,0)) +  
+        scale_y_continuous(limits=c(-0.1,1),expand=c(0,0)) +
         theme_bw() +
         ylab("Estimated attack rate") +
         xlab("Year")
+    
+    if (!is.null(knownar)){
+      p <- p + geom_line(data = knownar,aes(x=time,y=attack_rate),col="blue")
+    }
     return(p)   
     
 }

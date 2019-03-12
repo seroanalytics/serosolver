@@ -30,12 +30,15 @@ check_parTab <- function(parTab,mcmc=FALSE,version=NULL){
         
         if(version==1){
           ## Check that the correct number of lambdas are present
-            #if( no_lambda!=length(strainIsolationTimes)) stop(paste('Incorrect number of lambdas in parTab,', no_lambda,'passed but was expecting',length(strainIsolationTimes))) #Should we add the correct number?
+            if( no_lambda!=length(strainIsolationTimes)) stop(paste('Incorrect number of lambdas in parTab,', no_lambda,'passed but was expecting',length(strainIsolationTimes))) #Should we add the correct number?
         }
         
         if( version %in% c(2,3)){
           if(explicit_lambda) stop(paste('lambdas are not required for version 3 but parTab contains',no_lambda, 'lambda(s)')) ##Should we remove them?
         }
+        
+        ## Check bounds are equal to starting bounds
+        if(any(parTab$upper_start>parTab$upper_bound)|any(parTab$lower_start<parTab$lower_bound)) warning('Lower and upper bounds are not equal to the starting upper and lower bounds. If parTab was used to create starting values, starting values may be out of bounds. ')
     }
 
     ## Check that alpha and beta there for beta distribution
@@ -72,4 +75,17 @@ check_attackRates <- function(attackRates,strainIsolationTimes){
   if(any(attackRates<0)||any(attackRates>1)) stop('attackRates must be between 0 and 1')
   
 }
+
+#' Checks if the multivarite proposal is being used with the FOI proposal
+#' @param version Which version of the posterior function to use? See \code{\link{create_post_func}}
+#' @param mvrPars Leave NULL to use univariate proposals. Otherwise, a list of parameters if using a multivariate proposal. Must contain an initial covariance matrix, weighting for adapting cov matrix, and an initial scaling parameter (0-1)
+#' @return nothing at the moment
+#' @export
+check_proposals <- function(version, mvrPars){
+  
+  if(all(version==1,!is.null(mvrPars))) warning('The multivariate proposal can be inefficient for version 1.')
+
+  
+}
+
 
