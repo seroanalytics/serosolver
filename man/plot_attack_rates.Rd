@@ -4,23 +4,23 @@
 \alias{plot_attack_rates}
 \title{Plot historical attack rates}
 \usage{
-plot_attack_rates(infectionHistories, dat, ages, yearRange,
-  n_alive = NULL, pointsize = 1, fatten = 1)
+plot_attack_rates(infection_histories, titre_dat, strain_isolation_times,
+  n_alive = NULL, pointsize = 1, fatten = 1, pad_chain = TRUE)
 }
 \arguments{
-\item{infectionHistories}{the MCMC chain for infection histories}
+\item{infection_histories}{the MCMC chain for infection histories}
 
-\item{dat}{the data frame of titre data}
+\item{titre_dat}{the data frame of titre data}
 
-\item{ages}{the data frame of ages for each individual, with columns for individual and DOB (date of birth)}
-
-\item{yearRange}{vector of the first and last epoch of potential circulation}
+\item{strain_isolation_times}{vector of the epochs of potential circulation}
 
 \item{n_alive}{vector with the number of people alive in each year of circulation. Can be left as NULL, and ages will be used to infer this}
 
 \item{pointsize}{Numeric - how big should each point be?}
 
 \item{fatten}{Numeric - fatten parameter for ggplot pointrange}
+
+\item{pad_chain}{if TRUE, fills the infection history data table with entries for non-infection events (ie. 0s). Can be switched to FALSE for speed to get a rough idea of what the attack rates look like.}
 }
 \value{
 a ggplot2 object with the inferred attack rates for each potential epoch of circulation

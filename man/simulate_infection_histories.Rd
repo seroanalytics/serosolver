@@ -4,17 +4,15 @@
 \alias{simulate_infection_histories}
 \title{Simulate infection histories}
 \usage{
-simulate_infection_histories(pInf, infSD, strainIsolationTimes,
-  samplingTimes, ages)
+simulate_infection_histories(p_inf, strain_isolation_times, sampling_times,
+  ages)
 }
 \arguments{
-\item{pInf}{a vector of attack rates (infection probabilities) for each year}
+\item{p_inf}{a vector of attack rates (infection probabilities) for each year}
 
-\item{infSD}{the standard deviation of attack rate draws}
+\item{strain_isolation_times}{the vector of possible infection times}
 
-\item{strainIsolationTimes}{the vector of possible infection times}
-
-\item{samplingTimes}{vector of potential sampling times}
+\item{sampling_times}{vector of potential sampling times}
 
 \item{ages}{a vector of ages for each individual}
 }

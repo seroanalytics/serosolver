@@ -6,6 +6,13 @@
 \usage{
 hist_rbb(n, mean, var)
 }
+\arguments{
+\item{n}{the number of trials}
+
+\item{mean}{desired mean}
+
+\item{var}{desired variance}
+}
 \description{
 Plots a histogram of the beta binomial function with given mean and variance
 }

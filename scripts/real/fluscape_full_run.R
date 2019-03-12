@@ -153,11 +153,6 @@ n_inf_chain <- infChain[,list(V1=sum(x)),by=key(infChain)]
 inf_chain_p <- ggplot(n_inf_chain[n_inf_chain$j %in% 151:200,]) + geom_line(aes(x=sampno,y=V1)) + facet_wrap(~j)
 inf_chain_p
 
-
-wow <- data.frame(n_inf_chain)
-wow1 <- dcast(wow, sampno~j)
-wow1[is.na(wow1)] <- 0
-
 ## Generate cumulative infection history plots for a random subset of individuals
 ## based on data and posterior
 infChain1 <- infChain

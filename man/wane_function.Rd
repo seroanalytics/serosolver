@@ -10,7 +10,7 @@ wane_function(theta, time_infected, wane)
 \arguments{
 \item{theta}{NumericVector, the named vector of model parameters}
 
-\item{time_infected}{double the time infected (samplingTime - circulation_time)}
+\item{time_infected}{double the time infected (sampling_time - circulation_time)}
 }
 \value{
 value of waning parameter based on time since infected

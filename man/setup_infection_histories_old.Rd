@@ -4,13 +4,13 @@
 \alias{setup_infection_histories_old}
 \title{Propose initial infection histories - OLD VERSION}
 \usage{
-setup_infection_histories_old(dat, strainIsolationTimes, sample_prob,
-  titre_cutoff = 3)
+setup_infection_histories_old(titre_dat, strain_isolation_times,
+  sample_prob, titre_cutoff = 3)
 }
 \arguments{
-\item{dat}{the matrix of titres data with columns for individual, sample, and titre}
+\item{titre_dat}{the matrix of titres data with columns for individual, sample, and titre}
 
-\item{strainIsolationTimes}{vector of real times for all strains}
+\item{strain_isolation_times}{vector of real times for all strains}
 
 \item{sample_prob}{given an infection seems likely based on titre, suggest infection with some probability}
 
@@ -23,3 +23,8 @@ an nxm matrix of infection histories containing 1s and 0s, where n is the number
 Given a matrix of titre data, proposes plausible initial infection histories from which to begin MCMC sampling.
 NOTE - MIGHT NEED TO UPDATE THIS FOR GROUPS
 }
+\seealso{
+Other setup_infection_histories: \code{\link{setup_infection_histories_new_2}},
+  \code{\link{setup_infection_histories_total}}
+}
+\concept{setup_infection_histories}

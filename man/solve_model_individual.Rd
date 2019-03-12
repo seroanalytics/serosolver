@@ -2,11 +2,30 @@
 % Please edit documentation in R/model_wrappers.R
 \name{solve_model_individual}
 \alias{solve_model_individual}
-\title{Solves the re-implementation of the model for a single individual}
+\title{Solves the antibody kinetics model for a single individual}
 \usage{
-solve_model_individual(parTab, infectionHistory, sampleTime, antigenicMap,
-  mu_indices = NULL)
+solve_model_individual(par_tab, infection_history, sample_time,
+  antigenic_map, measurement_indices_by_time = NULL, mu_indices = NULL,
+  DOB = 0)
+}
+\arguments{
+\item{par_tab}{the parameter table controlling information such as bounds, initial values etc}
+
+\item{infection_history}{vector of 1s and 0s giving the infection history}
+
+\item{sample_time}{the time at which a blood sample is taken}
+
+\item{antigenic_map}{a data frame of antigenic x and y coordinates. Must have column names: x_coord; y_coord; inf_years}
+
+\item{measurement_indices_by_time}{if not NULL, then use these indices to specify which measurement bias parameter index corresponds to which time}
+
+\item{mu_indices}{if not NULL, then use these indices to specify which boosting parameter index corresponds to which time}
+
+\item{DOB}{the date of birth of this individual, matching the time resolution of the model}
+}
+\value{
+a vector of predicted titres
 }
 \description{
-Solves the re-implementation of the model for a single individual
+Solves the antibody kinetics model for a single individual
 }

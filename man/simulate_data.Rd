@@ -4,36 +4,34 @@
 \alias{simulate_data}
 \title{Simulate full data set}
 \usage{
-simulate_data(parTab, group = 1, n_indiv, buckets = 12,
-  strainIsolationTimes, samplingTimes, nsamps = 2, antigenicMap,
-  sampleSensoring = 0, titreSensoring = 0, ageMin = 5, ageMax = 80,
-  attackRates, repeats = 1, mu_indices = NULL,
-  measurement_indices = NULL, addNoise = TRUE)
+simulate_data(par_tab, group = 1, n_indiv, buckets = 12,
+  strain_isolation_times, sampling_times, nsamps = 2, antigenic_map,
+  titre_sensoring = 0, age_min = 5, age_max = 80, attack_rates,
+  repeats = 1, mu_indices = NULL, measurement_indices = NULL,
+  add_noise = TRUE)
 }
 \arguments{
-\item{parTab}{the full parameter table controlling parameter ranges and values}
+\item{par_tab}{the full parameter table controlling parameter ranges and values}
 
 \item{group}{which group index to give this simulated data}
 
 \item{n_indiv}{number of individuals to simulate}
 
-\item{strainIsolationTimes}{vector of strain ciruclation times}
+\item{strain_isolation_times}{vector of strain ciruclation times}
 
-\item{samplingTimes}{possible sampling times for the individuals}
+\item{sampling_times}{possible sampling times for the individuals}
 
 \item{nsamps}{the number of samples each individual has}
 
-\item{antigenicMap}{the raw antigenic map with colnames x_coord, y_coord and inf_years}
+\item{antigenic_map}{the raw antigenic map with colnames x_coord, y_coord and inf_years}
 
-\item{sampleSensoring}{DEPRECATED - what proportion of samples are randomly missing?}
+\item{titre_sensoring}{what proportion of titres are randomly missing?}
 
-\item{titreSensoring}{what proportion of titres are randomly missing?}
+\item{age_min}{minimum age to simulate}
 
-\item{ageMin}{minimum age to simulate}
+\item{age_max}{maximum age to simulate}
 
-\item{ageMax}{maximum age to simulate}
-
-\item{attackRates}{a vector of attackRates to be used in the simulation}
+\item{attack_rates}{a vector of attack_rates to be used in the simulation}
 
 \item{repeats}{number of repeats for each year}
 

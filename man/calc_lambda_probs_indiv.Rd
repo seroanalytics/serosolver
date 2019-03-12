@@ -4,14 +4,14 @@
 \alias{calc_lambda_probs_indiv}
 \title{Calculate FOI log probability vector}
 \usage{
-calc_lambda_probs_indiv(lambdas, infHist, ageMask, strainMask)
+calc_lambda_probs_indiv(lambdas, infection_history, age_mask, strain_mask)
 }
 \arguments{
 \item{lambdas}{a vector of FOIs}
 
-\item{infHist}{the matrix of infection histories}
+\item{infection_history}{the matrix of infection histories}
 
-\item{ageMask}{the age mask vector as returned by \code{\link{create_age_mask}}}
+\item{age_mask}{the age mask vector as returned by \code{\link{create_age_mask}}}
 }
 \value{
 a vector of log probabilities for each individual

@@ -4,19 +4,19 @@
 \alias{simulate_attack_rates}
 \title{Simulate attack rates}
 \usage{
-simulate_attack_rates(infectionYears, meanPar = 0.15, sdPar = 0.5,
-  largeFirstYear = FALSE, bigYearMean = 0.5)
+simulate_attack_rates(infection_years, mean_par = 0.15, sd_par = 0.5,
+  large_first_year = FALSE, big_year_mean = 0.5)
 }
 \arguments{
-\item{infectionYears}{the number of infection years}
+\item{infection_years}{the number of infection years}
 
-\item{meanPar}{the mean of the log normal}
+\item{mean_par}{the mean of the log normal}
 
-\item{sdPar}{the sd of the log normal}
+\item{sd_par}{the sd of the log normal}
 
-\item{largeFirstYear}{simulate an extra large attach rate in the first year?}
+\item{large_first_year}{simulate an extra large attach rate in the first year?}
 
-\item{bigYearMean}{if large first year, what mean to use?}
+\item{big_year_mean}{if large first year, what mean to use?}
 }
 \value{
 a vector of attack rates

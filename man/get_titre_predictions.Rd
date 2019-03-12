@@ -4,35 +4,33 @@
 \alias{get_titre_predictions}
 \title{Generate titre credible intervals}
 \usage{
-get_titre_predictions(chain, infectionHistories, titreDat, individuals,
-  antigenicMap, parTab, nsamp = 100, addResiduals = FALSE,
-  mu_indices = NULL, measurement_indices = NULL,
+get_titre_predictions(chain, infection_histories, titre_dat, individuals,
+  antigenic_map, par_tab, nsamp = 100, add_residuals = FALSE,
+  mu_indices = NULL, measurement_indices_by_time = NULL,
   for_res_plot = FALSE)
 }
 \arguments{
 \item{chain}{the full MCMC chain to generate titre trajectories from}
 
-\item{infectionHistories}{the MCMC chain for infection histories}
+\item{infection_histories}{the MCMC chain for infection histories}
+
+\item{titre_dat}{the data frame of titre data}
 
 \item{individuals}{the subset of individuals to generate credible intervals for}
 
-\item{antigenicMap}{the unmelted antigenic map}
+\item{antigenic_map}{the unmelted antigenic map}
 
-\item{parTab}{the table controlling the parameters in the MCMC chain}
+\item{par_tab}{the table controlling the parameters in the MCMC chain}
 
 \item{nsamp}{number of samples to take from posterior}
 
-\item{addResiduals}{if true, returns an extra output summarising residuals between the model prediction and data}
+\item{add_residuals}{if true, returns an extra output summarising residuals between the model prediction and data}
 
 \item{mu_indices}{vector of integers. for random effects on boosting parameter, mu. If random mus are included in the parameter table, this vector specifies which mu to use for each circulation year. For example, if years 1970-1976 have unique boosting, then mu_indices should be c(1,2,3,4,5,6). If every 3 year block shares has a unique boosting parameter, then this should be c(1,1,1,2,2,2)}
 
-\item{measurement_indices}{default NULL}
+\item{measurement_indices_by_time}{default NULL, optional vector giving the index of `measurement_bias` that each strain uses the measurement shift from from. eg. if there's 6 circulation years and 3 strain clusters}
 
 \item{for_res_plot}{TRUE/FALSE value. If using the output of this for plotting of residuals, returns the actual data points rather than summary statistics}
-
-\item{dat}{the data frame of titre data}
-
-\item{ages}{the data frame of ages for each individual, with columns for individual and DOB (date of birth)}
 }
 \value{
 a list with the titre predictions (95% credible intervals, median and multivariate posterior mode) and the probabilities of infection for each individual in each epoch

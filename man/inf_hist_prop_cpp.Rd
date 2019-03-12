@@ -4,29 +4,34 @@
 \alias{inf_hist_prop_cpp}
 \title{Fast infection history proposal function}
 \usage{
-inf_hist_prop_cpp(infHist, sampledIndivs, ageMask, strainMask, moveSizes,
-  nInfs, alpha, beta, randNs)
+inf_hist_prop_cpp(infection_history_mat, sampled_indivs, age_mask,
+  strain_mask, move_sizes, n_infs, alpha, beta, rand_ns)
 }
 \arguments{
-\item{infHist}{and RcppArmadillo matrix of infection histories, where rows represent individuals and columns represent potential infection times. The contents should be a set of 1s (presence of infection) and 0s (absence of infection)}
+\item{infection_history_mat}{and RcppArmadillo matrix of infection histories, where rows represent individuals and columns represent potential infection times. The contents should be a set of 1s (presence of infection) and 0s (absence of infection)}
 
-\item{sampledIndivs}{IntegerVector, indices of which individuals to resample. Note that this is indexed from 1 (ie. as if passing straight from R)}
+\item{sampled_indivs}{IntegerVector, indices of which individuals to resample. Note that this is indexed from 1 (ie. as if passing straight from R)}
 
-\item{ageMask}{IntegerVector, for each individual gives the first column in the infection history matrix that an individual could have been exposed to indexed from 1. ie. if alive for the whole period, entry would be 1. If alive for the 11th epoch, entry would be 11.}
+\item{age_mask}{IntegerVector, for each individual gives the first column in the infection history matrix that an individual could have been exposed to indexed from 1. ie. if alive for the whole period, entry would be 1. If alive for the 11th epoch, entry would be 11.}
 
-\item{moveSizes}{IntegerVector, how far can a swap step sample from specified for each individual}
+\item{move_sizes}{IntegerVector, how far can a swap step sample from specified for each individual}
 
-\item{nInfs}{IntegetVector, how many infections to add/remove/swap with each proposal step for each individual}
+\item{n_infs}{IntegerVector, how many infections to add/remove/swap with each proposal step for each individual}
 
 \item{alpha}{double, alpha parameter of the beta binomial}
 
 \item{beta}{double, beta parameter of the beta binomial}
 
-\item{randNs}{NumericVector, a vector of random numbers for each sampled individual. The idea is to pre-specify whether an individual experiences an add/remove step or a swap step to avoid random number sampling in C++}
+\item{rand_ns}{NumericVector, a vector of random numbers for each sampled individual. The idea is to pre-specify whether an individual experiences an add/remove step or a swap step to avoid random number sampling in C++}
 }
 \value{
 a matrix of 1s and 0s corresponding to the infection histories for all individuals
 }
 \description{
-Proposes a new matrix of infection histories using a beta binomial proposal distribution. This particular implementation allows for nInfs epoch times to be changed with each function call. Furthermore, the size of the swap step is specified for each individual by moveSizes.
+Proposes a new matrix of infection histories using a beta binomial proposal distribution. This particular implementation allows for n_infs epoch times to be changed with each function call. Furthermore, the size of the swap step is specified for each individual by move_sizes.
 }
+\seealso{
+Other infection_history_proposal: \code{\link{infection_history_proposal_gibbs_fast}},
+  \code{\link{infection_history_proposal_gibbs}}
+}
+\concept{infection_history_proposal}

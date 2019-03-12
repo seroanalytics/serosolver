@@ -4,31 +4,33 @@
 \alias{run_MCMC}
 \title{Adaptive Metropolis-within-Gibbs/Metropolis Hastings Random Walk Algorithm.}
 \usage{
-run_MCMC(parTab, titreDat, antigenicMap, mcmcPars = c(),
-  mvrPars = NULL, startInfHist = NULL, filename = "test",
+run_MCMC(par_tab, titre_dat, antigenic_map, mcmc_pars = c(),
+  mvr_pars = NULL, start_inf_hist = NULL, filename = "test",
   CREATE_POSTERIOR_FUNC = create_posterior_func,
   CREATE_PRIOR_FUNC = NULL, version = 1, mu_indices = NULL,
   measurement_indices = NULL, measurement_random_effects = FALSE,
   OPT_TUNING = 0.1, temp = 1, solve_likelihood = TRUE,
-  n_alive = NULL, message_slack = FALSE, message_slack_pars = NULL,
-  ...)
+  fast_version = FALSE, n_alive = NULL, message_slack = FALSE,
+  message_slack_pars = NULL, ...)
 }
 \arguments{
-\item{parTab}{The parameter table controlling information such as bounds, initial values etc}
+\item{par_tab}{The parameter table controlling information such as bounds, initial values etc}
 
-\item{antigenicMap}{A data frame of antigenic x and y coordinates. Must have column names: x_coord; y_coord; inf_years}
+\item{titre_dat}{The data frame of titre data to be fitted. Must have columns: group (index of group); individual (integer ID of individual); samples (numeric time of sample taken); virus (numeric time of when the virus was circulating); titre (integer of titre value against the given virus at that sampling time); run (integer giving the repeated number of this titre); DOB (integer giving date of birth matching time units used in model)}
 
-\item{mcmcPars}{Named vector named vector with parameters for the MCMC procedure. See details}
+\item{antigenic_map}{A data frame of antigenic x and y coordinates. Must have column names: x_coord; y_coord; inf_years}
 
-\item{mvrPars}{Leave NULL to use univariate proposals. Otherwise, a list of parameters if using a multivariate proposal. Must contain an initial covariance matrix, weighting for adapting cov matrix, and an initial scaling parameter (0-1)}
+\item{mcmc_pars}{Named vector named vector with parameters for the MCMC procedure. See details}
 
-\item{startInfHist}{Infection history matrix to start MCMC at. Can be left NULL}
+\item{mvr_pars}{Leave NULL to use univariate proposals. Otherwise, a list of parameters if using a multivariate proposal. Must contain an initial covariance matrix, weighting for adapting cov matrix, and an initial scaling parameter (0-1)}
+
+\item{start_inf_hist}{Infection history matrix to start MCMC at. Can be left NULL}
 
 \item{filename}{The full filepath at which the MCMC chain should be saved. "_chain.csv" will be appended to the end of this, so filename should have no file extensions}
 
-\item{CREATE_POSTERIOR_FUNC}{Pointer to posterior function used to calculate a likelihood. This will probably be \code{\link{create_posterior_func}}, but if using random effects on mu will use \code{\link{create_post_func_mu}}}
+\item{CREATE_POSTERIOR_FUNC}{Pointer to posterior function used to calculate a likelihood. This will probably be \code{\link{create_posterior_func}}, but if might also be \code{\link{create_posterior_func_fast}}}
 
-\item{version}{Which version of the posterior function to use? See \code{\link{create_post_func}}}
+\item{version}{which infection history assumption version to use? See \code{\link{describe_proposals}} for options}
 
 \item{mu_indices}{For random effects on boosting parameter, mu. Vector of indices of length equal to number of circulation times. If random mus are included in the parameter table, this vector specifies which mu to use for each circulation year. For example, if years 1970-1976 have unique boosting, then mu_indices should be c(1,2,3,4,5,6). If every 3 year block shares has a unique boosting parameter, then this should be c(1,1,1,2,2,2)}
 
@@ -42,9 +44,15 @@ run_MCMC(parTab, titreDat, antigenicMap, mcmcPars = c(),
 
 \item{solve_likelihood}{if FALSE, returns only the prior and does not solve the likelihood}
 
-\item{...}{Other arguments to pass to CREATE_POSTERIOR_FUNC}
+\item{fast_version}{if TRUE, attempts to use the fast version of the posterior function}
 
-\item{data}{The data frame of data to be fitted. Must have columns: group (index of group); individual (integer ID of individual); samples (numeric time of sample taken); virus (numeric time of when the virus was circulating); titre (integer of titre value against the given virus at that sampling time); run (integer giving the repeated number of this titre); DOB (integer giving date of birth matching time units used in model)}
+\item{n_alive}{if not NULL, uses this as the number alive for the infection history prior, rather than calculating the number alive based on titre_dat}
+
+\item{message_slack}{if TRUE, attempts to send updates to slack rather than just locally}
+
+\item{message_slack_pars}{if not NULL, the list of parameters to communicate with slack}
+
+\item{...}{Other arguments to pass to CREATE_POSTERIOR_FUNC}
 
 \item{PRIOR_FUNC}{User function of prior for model parameters. Should take parameter values only}
 }
@@ -55,10 +63,11 @@ A list with: 1) full file path at which the MCMC chain is saved as a .csv file; 
 The Adaptive Metropolis-within-Gibbs algorithm. Given a starting point and the necessary MCMC parameters as set out below, performs a random-walk of the posterior space to produce an MCMC chain that can be used to generate MCMC density and iteration plots. The algorithm undergoes an adaptive period, where it changes the step size of the random walk for each parameter to approach the desired acceptance rate, popt. The algorithm then uses \code{\link{univ_proposal}} or \code{\link{mvr_proposal}} to explore parameter space, recording the value and posterior value at each step. The MCMC chain is saved in blocks as a .csv file at the location given by filename. This version of the algorithm is also designed to explore posterior densities for infection histories
 }
 \details{
-The \code{mcmcPars} argument has the following options:
+The \code{mcmc_pars} argument has the following options:
 \itemize{
 \item iterations (number of post adaptive period iterations to run)
 \item adaptive_period (for this many iterations, change proposal step size adaptively every \code{opt_freq} iterations)
+\item burnin (sample for this many iterations before beginning adaptation)
 \item opt_freq (adapt proposal step size every opt_freq iterations)
 \item thin (save every n iterations)
 \item thin_hist (infection history thinning)
@@ -67,10 +76,9 @@ The \code{mcmcPars} argument has the following options:
 \item popt_hist (desired acceptance rate for infection histories)
 \item switch_sample (resample inf histories every n iterations)
 \item inf_propn (proportion of infection times to resample for each individual at each iteration)
-\item moveSizes (number of infection years/months to move when performing infection history swap step)
-\item histProposal (which infection history proposal version to use, see \code{\link{describe_proposals}}
-\item histOpt (if 1, performs adaptive infection history proposals. If 0, retains the starting infection history proposal parameters
-\item swapPropn (if using gibbs sampling of infection histories, what proportion of proposals should be swap steps)
+\item move_size (number of infection years/months to move when performing infection history swap step)
+\item hist_opt (if 1, performs adaptive infection history proposals. If 0, retains the starting infection history proposal parameters
+\item swap_propn (if using gibbs sampling of infection histories, what proportion of proposals should be swap steps)
 \item hist_switch_prob (proportion of infection history proposal steps to swap year_swap_propn of two time periods' contents)
 \item year_swap_propn (when swapping contents of two time points, what proportion of individuals should have their contents swapped)
 }
