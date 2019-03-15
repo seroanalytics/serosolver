@@ -6,7 +6,7 @@
 \usage{
 plot_attack_rates_monthly(infection_histories, titre_dat,
   strain_isolation_times, n_alive = NULL, ymax = 1, buckets = 1,
-  pad_chain = TRUE)
+  pad_chain = TRUE, cumulative = FALSE)
 }
 \arguments{
 \item{infection_histories}{the MCMC chain for infection histories}
@@ -22,6 +22,8 @@ plot_attack_rates_monthly(infection_histories, titre_dat,
 \item{buckets}{Integer. How many buckets of time is each year split into? ie. 12 for monthly data, 4 for quarterly etc. Default = 1.}
 
 \item{pad_chain}{if TRUE, fills the infection history data table with entries for non-infection events (ie. 0s). Can be switched to FALSE for speed to get a rough idea of what the attack rates look like.}
+
+\item{cumulative}{if TRUE, plots the cumulative attack rate}
 }
 \value{
 a ggplot2 object with the inferred attack rates for each potential epoch of circulation

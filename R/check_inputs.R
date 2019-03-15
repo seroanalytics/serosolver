@@ -38,14 +38,15 @@ check_par_tab <- function(par_tab, mcmc = FALSE, version = NULL) {
         if (explicit_lambda) stop(paste("lambdas are not required for version 3 but par_tab contains", no_lambda, "lambda(s)")) ## Should we remove them?
     }
     ## Check bounds are equal to starting bounds
-    if(any(par_tab$upper_start>par_tab$upper_bound)|any(par_tab$lower_start<par_tab$lower_bound)) warning('Lower and upper bounds are not equal to the starting upper and lower bounds. If par_tab was used to create starting values, starti
+    if(any(par_tab$upper_start>par_tab$upper_bound)|any(par_tab$lower_start<par_tab$lower_bound))
+        warning('Lower and upper bounds are not equal to the starting upper and lower bounds. If par_tab was used to create starting values, starting values may be out of bounds. ')
   }
 
-  ## Check that alpha and beta there for beta distribution
-  ## If there, Pull out alpha and beta for beta binomial proposals
-  if (!("alpha" %in% par_tab$names) | !("beta" %in% par_tab$names)) {
-    stop("par_tab must have entries for `alpha` and `beta` for infection history prior")
-  }
+    ## Check that alpha and beta there for beta distribution
+    ## If there, Pull out alpha and beta for beta binomial proposals
+    if (!("alpha" %in% par_tab$names) | !("beta" %in% par_tab$names)) {
+        stop("par_tab must have entries for `alpha` and `beta` for infection history prior")
+    }
 }
 
 #' Checks the entries of data used in run_MCMC

@@ -4,12 +4,13 @@
 \alias{generate_cumulative_inf_plots}
 \title{Plot cumulative and per time posterior infection probability densities}
 \usage{
-generate_cumulative_inf_plots(inf_chain_file, burnin = 0, indivs,
+generate_cumulative_inf_plots(inf_chain, burnin = 0, indivs,
   real_inf_hist = NULL, start_inf = NULL, strain_isolation_times,
-  nsamp = 100, ages = NULL, number_col = 1)
+  nsamp = 100, ages = NULL, number_col = 1, pad_chain = TRUE,
+  subset_years = NULL)
 }
 \arguments{
-\item{inf_chain_file}{the relative file path to the infection history chain}
+\item{inf_chain}{the infection history chain}
 
 \item{burnin}{only plot samples where sampno > burnin}
 
@@ -26,6 +27,10 @@ generate_cumulative_inf_plots(inf_chain_file, burnin = 0, indivs,
 \item{ages}{if not NULL, adds lines to show when an individual was born}
 
 \item{number_col}{how many columns to use for the cumulative infection history plot}
+
+\item{pad_chain}{if TRUE, pads the infection history MCMC chain to have entries for non-infection events}
+
+\item{subset_years}{if not NULL, pass a vector of indices to only take a subset of indices from strain_isolation_times}
 }
 \value{
 two ggplot objects

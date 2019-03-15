@@ -512,10 +512,12 @@ plot_attack_rates_monthly <- function(infection_histories, titre_dat, strain_iso
 #' @param pointsize Numeric - how big should each point be?
 #' @param fatten Numeric - fatten parameter for ggplot pointrange
 #' @param pad_chain if TRUE, fills the infection history data table with entries for non-infection events (ie. 0s). Can be switched to FALSE for speed to get a rough idea of what the attack rates look like.
+#' @param plot_den if TRUE, produces a violin plot of attack rates rather than pointrange.
+#' @param prior_den if not NULL, a list of parameters for the attack rate prior, giving the assumed prior_version along with alpha and beta
 #' @return a ggplot2 object with the inferred attack rates for each potential epoch of circulation
 #' @export
 plot_attack_rates <- function(infection_histories, titre_dat, strain_isolation_times, n_alive = NULL,
-                              pointsize = 1, fatten = 1, pad_chain=TRUE) {
+                              pointsize = 1, fatten = 1, pad_chain=TRUE, plot_den=FALSE, prior_pars=NULL) {
     ## Some year/sample combinations might have no infections there.
     ## Need to make sure that these get considered
     if(is.null(infection_histories$chain_no)) {
@@ -528,24 +530,88 @@ plot_attack_rates <- function(infection_histories, titre_dat, strain_isolation_t
     if (is.null(n_alive)) {
         n_alive <- get_n_alive(titre_dat, strain_isolation_times)
     }
-    years <- strain_isolation_times
+    
+    years <- c(strain_isolation_times,max(strain_isolation_times)+3)
     data.table::setkey(infection_histories, "sampno", "j","chain_no")
     tmp <- infection_histories[, list(V1 = sum(x)), by = key(infection_histories)]
-    quantiles <- ddply(tmp, ~j, function(x) quantile(x$V1, c(0.025, 0.5, 0.975)))
-    colnames(quantiles) <- c("j", "lower", "median", "upper")
-    quantiles[c("lower", "median", "upper")] <- quantiles[c("lower", "median", "upper")] / n_alive[quantiles$j]
-    quantiles$year <- years[quantiles$j]
-    quantiles$taken <- quantiles$year %in% unique(titre_dat$samples)
+    tmp$taken <- years[tmp$j] %in% unique(titre_dat$samples)
+    tmp$taken <- ifelse(tmp$taken, "Yes", "No")
+    prior_dens <- NULL
+    n_alive1 <- n_alive
+    if(!is.null(prior_pars)){
+        n_alive1 <- c(n_alive, 1)
+        prior_ver <- prior_pars[["prior_version"]]
+        alpha1 <- prior_pars[["alpha"]]
+        beta1 <- prior_pars[["beta"]]
+        if(prior_ver == 3){
+            prior_dens <- rbinom(100000,size=max(n_alive),p=alpha1/(alpha1+beta1))/max(n_alive)
+        } else {
+            prior_dens <- rbeta(100000,alpha1, beta1)
+        }
+        prior_dens <- data.frame(sampno=1:length(prior_dens),j=max(tmp$j)+1,
+                                 chain_no=1, V1=prior_dens, taken="Prior")
+        tmp <- rbind(tmp, prior_dens)
+        
+    }
+    
+    if(!plot_den){      
+        quantiles <- ddply(tmp, ~j, function(x) quantile(x$V1, c(0.025, 0.5, 0.975)))
+        colnames(quantiles) <- c("j", "lower", "median", "upper")
+        quantiles[c("lower", "median", "upper")] <- quantiles[c("lower", "median", "upper")] / n_alive1[quantiles$j]
+        quantiles$j <- years[quantiles$j]
+        quantiles$taken <- quantiles$j %in% unique(titre_dat$samples)
+        quantiles$taken <- ifelse(quantiles$taken, "Yes", "No")
 
-  ## Colour depending on whether or not titres were taken in each year
-  quantiles$taken <- ifelse(quantiles$taken, "Yes", "No")
+        
+        min_year <- min(strain_isolation_times)
+        max_year <- max(strain_isolation_times)
+        year_breaks <- c(min_year,seq(5*round(min_year/5),max_year,by=5))
+        year_labels <- c(min_year,seq(5*round(min_year/5),max_year,by=5))
+        
+        if(!is.null(prior_dens)){
+            year_breaks <- c(year_breaks, max_year+3)
+            year_labels <- c(year_labels, "Prior")
+            quantiles[quantiles$j == max(years),"taken"] <- "Prior"
+        }
+        colnames(quantiles)[5] <- "Sample taken"
 
-  p <- ggplot(quantiles) +
-    geom_pointrange(aes(x = year, y = median, ymin = lower, ymax = upper, col = taken), size = pointsize, fatten = fatten) +
-    scale_y_continuous(limits = c(-0.1, 1), expand = c(0, 0)) +
-    theme_bw() +
-    ylab("Estimated attack rate") +
-    xlab("Year")
+        ## Colour depending on whether or not titres were taken in each year       
+        
+        p <- ggplot(quantiles) +
+            geom_pointrange(aes(x = j, y = median, ymin = lower, ymax = upper,
+                                col = `Sample taken`), size = pointsize, fatten = fatten) +
+            scale_y_continuous(limits = c(0, 1), expand = c(0, 0)) +
+            scale_x_continuous(breaks=year_breaks,labels=year_labels)+
+            theme_classic() +
+            ylab("Estimated attack rate") +
+            xlab("Year")
+    } else {
+        tmp$V1 <- tmp$V1/n_alive1[tmp$j]
+        tmp$j <- years[tmp$j]
+        tmp$taken <- tmp$j %in% unique(titre_dat$samples)
+        tmp$taken <- ifelse(tmp$taken, "Yes", "No")
+        min_year <- min(strain_isolation_times)
+        max_year <- max(strain_isolation_times)
+        year_breaks <- c(min_year,seq(5*round(min_year/5),max_year,by=5))
+        year_labels <- c(min_year,seq(5*round(min_year/5),max_year,by=5))
+        if(!is.null(prior_dens)){
+            tmp[tmp$j == max(years),"taken"] <- "Prior"
+            year_breaks <- c(year_breaks, max_year+3)
+            year_labels <- c(year_labels, "Prior")
+        }
+        
+        p <- ggplot(tmp) +
+            geom_violin(aes(x = j, y = V1, fill=taken,group=j),
+                        draw_quantiles=c(0.5),scale="width") +
+            scale_x_continuous(breaks=year_breaks,labels=year_labels)+
+            scale_y_continuous(limits = c(0, 1), expand = c(0, 0)) +
+            theme_classic() +
+            theme(legend.position="none")+
+            ylab("Estimated attack rate") +
+            xlab("Year")
+        }
+     
+        
   return(p)
 }
 
