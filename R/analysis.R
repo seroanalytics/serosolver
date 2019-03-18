@@ -15,6 +15,44 @@ load_start_tab <- function(location=getwd()){
     return(start_tab)
 }
 
+#' Read in titre_dat
+#'
+#' Searches the working directory for a file with "titre_dat" in the name and reads this in
+#' @return one of the starting parameter tables in the current working directory
+#' @export
+load_titre_dat<- function(location=getwd()){
+    files <- Sys.glob(file.path(location,"*_titre_dat.csv"))
+    files_old <- Sys.glob(file.path(location,"*_titreDat.csv"))
+    files <- c(files, files_old)
+     if(length(files) < 1){
+        message("Error - no files found")
+        return(NULL)
+    }
+    titre_dat<- read.csv(files[1],stringsAsFactors=FALSE)
+    return(titre_dat)
+}
+
+
+#' Read in antigenic_map
+#'
+#' Searches the working directory for a file with "antigenic_map" in the name and reads this in
+#' @return one of the starting parameter tables in the current working directory
+#' @export
+load_antigenic_map_file <- function(location=getwd()){
+    files <- Sys.glob(file.path(location,"*_antigenic_map.csv"))
+    files_old <- Sys.glob(file.path(location,"*_antigenicMap.csv"))
+    files <- c(files, files_old)
+     if(length(files) < 1){
+        message("Error - no files found")
+        return(NULL)
+    }
+    antigenic_map <- read.csv(files[1],stringsAsFactors=FALSE)
+    return(antigenic_map)
+}
+
+
+
+
 #' Combine theta and infection history chains
 #'
 #' Reads in both the MCMC chains for theta and infection histories, adding in the total number of infections

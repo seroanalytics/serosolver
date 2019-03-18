@@ -34,8 +34,8 @@ check_par_tab <- function(par_tab, mcmc = FALSE, version = NULL) {
       # if( no_lambda!=length(strain_isolation_times)) stop(paste('Incorrect number of lambdas in par_tab,', no_lambda,'passed but was expecting',length(strain_isolation_times))) #Should we add the correct number?
     }
 
-    if (version %in% c(2, 3)) {
-        if (explicit_lambda) stop(paste("lambdas are not required for version 3 but par_tab contains", no_lambda, "lambda(s)")) ## Should we remove them?
+    if (version %in% c(2, 3, 4)) {
+        if (explicit_lambda) stop(paste("lambdas are not required for versions 2, 3 or 4 but par_tab contains", no_lambda, "lambda(s)")) ## Should we remove them?
     }
     ## Check bounds are equal to starting bounds
     if(any(par_tab$upper_start>par_tab$upper_bound)|any(par_tab$lower_start<par_tab$lower_bound))

@@ -14,6 +14,23 @@ get_n_alive <- function(titre_dat, times) {
     nrow(masks[masks$age_mask <= x & masks$strain_mask >= x, ]))
 }
 
+#' Get number alive bylocation
+#'
+#' Given the titre_dat data frame with entries for location, calculates the number that are alive (alive to be infected, that is) for each time in times by location
+#' @param titre_dat the data frame of titre data
+#' @param times the vector of times to calculate number alive for
+#' @return a matrix giving the number alive in each time point in each location
+#' @export
+get_n_alive_location <- function(titre_dat, times) {
+  DOBs <- unique(titre_dat[, c("individual", "location", "DOB")])
+  age_mask <- create_age_mask(DOBs[,"DOB"], times)
+  strain_mask <- create_strain_mask(titre_dat, times)
+  masks <- data.frame(cbind(age_mask, strain_mask))
+  DOBs <- cbind(DOBs, masks)
+  n_alive <- ddply(DOBs, ~location, function(y) sapply(seq(1, length(times)), function(x)
+    nrow(y[y$age_mask <= x & y$strain_mask >= x, ])))
+}
+
 #' Create age mask
 #'
 #' Converts a data frame of individual ages to give the index of the first infection that individual could have had
@@ -173,10 +190,10 @@ fromUnitScale <- function(x, min, max) {
 #' @export
 describe_proposals <- function() {
   print("Which version to use in run_MCMC? The following text describes the proposal step for updating infection histories.")
-  print("Version 1: Explicit FOI on each epoch using lambda term. Proposal performs N `flip` proposals at random locations in an individual's infectoin history, switching 1->0 or 0->1. Otherwise, swaps the contents of two random locations")
-  print("Version 2: gibbs sampling of infection histories as in Indian Buffet Process papers")
-  print("Version 3: samples from a beta binomial with alpha and beta specified by the par_tab input. Proposes nInfs moves at a time for add/remove, or when swapping, swaps locations up to moveSize time steps away")
-  print("Version 4: gibbs sampling of infection histories using total number of infections across all times and all individuals as the prior")
+  print("Version 1: Beta prior on per time attack rates. Explicit FOI on each epoch using probability of infection term. Proposal performs N `flip` proposals at random locations in an individual's infection history, switching 1->0 or 0->1. Otherwise, swaps the contents of two random locations")
+  print("Version 2: Beta prior on per time attack rates. Gibbs sampling of infection histories as in Indian Buffet Process papers, integrating out each probability of infection term.")
+  print("Version 3: Beta prior on probability of infection for an individual, assuming independence between individuals. Samples from a beta binomial with alpha and beta specified by the par_tab input. Proposes nInfs moves at a time for add/remove, or when swapping, swaps locations up to moveSize time steps away")
+  print("Version 4: Beta prior on probability of any infection. Gibbs sampling of infection histories using total number of infections across all times and all individuals as the prior")
 }
 
 #' @export

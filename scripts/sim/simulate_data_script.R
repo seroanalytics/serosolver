@@ -64,6 +64,8 @@ dat <- simulate_data(par_tab = parTab,
                      mu_indices = NULL,
                      measurement_indices = NULL,
                      add_noise = TRUE)
+
+
   
 titreDat <- merge(dat$data,dat$ages,by='individual') # add DOB column
 

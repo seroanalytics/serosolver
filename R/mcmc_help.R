@@ -41,7 +41,7 @@ rm_scale <- function(step_scale, mc, popt, log_prob, N_adapt) {
 #' NOTE - MIGHT NEED TO UPDATE THIS FOR GROUPS
 #' @param titre_dat the matrix of titres data with columns for individual, sample, and titre
 #' @param strain_isolation_times vector of real times for all strains
-#' @param sample_prob given an infection seems likely based on titre, suggest infection with some probability
+#' @param sample_prob given an infection seems likely based on titre, suggest infection with 1 minus this probability
 #' @param titre_cutoff specifies how high the titre must be to imply an infection
 #' @return an nxm matrix of infection histories containing 1s and 0s, where n is the number of individuals and m is the number of potential infecting strains
 #' @family setup_infection_histories
@@ -193,7 +193,7 @@ setup_infection_histories_new <- function(titre_dat, strain_isolation_times, spa
 #' @param strain_isolation_times vector of real times for all strains
 #' @param space how many epochs must separate proposed infections
 #' @param titre_cutoff specifies how high the titre must be to imply an infection
-#' @param sample_prob if titre suggests an infection, then add an infection with this probability
+#' @param sample_prob if titre suggests an infection, then add an infection with 1 minus this probability
 #' @return an nxm matrix of infection histories containing 1s and 0s, where n is the number of individuals and m is the number of potential infecting strains
 #' @family setup_infection_histories
 #' @export
