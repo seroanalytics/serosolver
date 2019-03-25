@@ -18,7 +18,7 @@ titre_dep_boosting <- FALSE
 ## Buckets indicates the time resolution of the analysis. Setting
 ## this to 1 uses annual epochs, whereas setting this to 12 gives
 ## monthly epochs
-buckets <- 4
+buckets <- 1
 
 ## Antigenic map for cross reactivity parameters
 #antigenic_map <- read.csv("~/Documents/Fluscape/fluscape/trunk/data/Fonville2014AxMapPositionsApprox.csv",stringsAsFactors=FALSE)
@@ -33,7 +33,7 @@ if(buckets == 1){
 }
 
 ## How many individuals to simulate?
-n_indiv <- 1000
+n_indiv <- 100
 
 
 ## Read in parameter table to simulate from and change waning rate if necessary
@@ -137,7 +137,8 @@ viruses <- c(1968, 1969, 1972, 1975, 1977, 1979, 1982, 1985, 1987,
 
 ## If using HaNam data, need to filter the simulated data such that it matches the distribution of HaNam data
 titre_dat <- dat[[1]]
-
+ages <- dat[["ages"]]
+titre_dat <- merge(titre_dat, ages)
 ## Create identifier for repeats
 titre_dat$run <- NULL
 titre_dat <- plyr::ddply(titre_dat,.(individual,virus,samples),function(x) cbind(x,"run"=1:nrow(x)))

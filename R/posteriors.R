@@ -28,258 +28,263 @@ create_posterior_func <- function(par_tab,
   ## Sort data in same way
   titre_dat <- titre_dat[order(titre_dat$individual, titre_dat$run, titre_dat$samples, titre_dat$virus), ]
 
-  ## Isolate data table as vectors for speed
-  titres <- titre_dat$titre
+    ## Isolate data table as vectors for speed
+    titres <- titre_dat$titre
 
-  ## Setup data vectors and extract
-  setup_dat <- setup_titredat_for_posterior_func(titre_dat, antigenic_map, age_mask, n_alive)
+    ## Setup data vectors and extract
+    setup_dat <- setup_titredat_for_posterior_func(titre_dat, antigenic_map, age_mask, n_alive)
 
-  individuals <- setup_dat$individuals
-  antigenic_map_melted <- setup_dat$antigenic_map_melted
-  strain_isolation_times <- setup_dat$strain_isolation_times
-  infection_strain_indices <- setup_dat$infection_strain_indices
-  sample_times <- setup_dat$sample_times
-  rows_per_indiv_in_samples <- setup_dat$rows_per_indiv_in_samples
-  nrows_per_individual_in_data <- setup_dat$nrows_per_individual_in_data
-  cum_nrows_per_individual_in_data <- setup_dat$cum_nrows_per_individual_in_data
-  nrows_per_blood_sample <- setup_dat$nrows_per_blood_sample
-  measured_strain_indices <- setup_dat$measured_strain_indices
-  n_alive <- setup_dat$n_alive
-  age_mask <- setup_dat$age_mask
-  strain_mask <- setup_dat$strain_mask
-  n_indiv <- setup_dat$n_indiv
-  DOBs <- setup_dat$DOBs
+    individuals <- setup_dat$individuals
+    antigenic_map_melted <- setup_dat$antigenic_map_melted
+    strain_isolation_times <- setup_dat$strain_isolation_times
+    infection_strain_indices <- setup_dat$infection_strain_indices
+    sample_times <- setup_dat$sample_times
 
-  #########################################################
-  ## Extract parameter type indices from par_tab, to split up
-  ## similar parameters in model solving functions
-  option_indices <- which(par_tab$type == 0)
-  theta_indices <- which(par_tab$type %in% c(0, 1))
-  lambda_indices <- which(par_tab$type == 2)
-  measurement_indices_par_tab <- which(par_tab$type == 3)
-  weights_indices <- which(par_tab$type == 4) ## For functional form version
-  knot_indices <- which(par_tab$type == 5)
-  mu_indices_par_tab <- which(par_tab$type == 6)
-  #########################################################
+    ## Indices to iterate over titre dat and inf hist quickly
+    rows_per_indiv_in_samples <- setup_dat$rows_per_indiv_in_samples
+    nrows_per_individual_in_data <- setup_dat$nrows_per_individual_in_data
+    cum_nrows_per_individual_in_data <- setup_dat$cum_nrows_per_individual_in_data
+    nrows_per_blood_sample <- setup_dat$nrows_per_blood_sample
+    cum_nrows_per_group_in_data <- setup_dat$cum_nrows_per_group_infhist
+    nrows_per_group_in_data <- setup_dat$nrows_per_group_infhist
+    
+    measured_strain_indices <- setup_dat$measured_strain_indices
+    n_alive <- setup_dat$n_alive
+    age_mask <- setup_dat$age_mask
+    strain_mask <- setup_dat$strain_mask
+    n_indiv <- setup_dat$n_indiv
+    DOBs <- setup_dat$DOBs
 
-  par_names_theta <- par_tab[theta_indices, "names"]
+#########################################################
+    ## Extract parameter type indices from par_tab, to split up
+    ## similar parameters in model solving functions
+    option_indices <- which(par_tab$type == 0)
+    theta_indices <- which(par_tab$type %in% c(0, 1))
+    lambda_indices <- which(par_tab$type == 2)
+    measurement_indices_par_tab <- which(par_tab$type == 3)
+    weights_indices <- which(par_tab$type == 4) ## For functional form version
+    knot_indices <- which(par_tab$type == 5)
+    mu_indices_par_tab <- which(par_tab$type == 6)
+#########################################################
 
-  ## Find which options are being used in advance for speed
-  explicit_lambda <- (length(lambda_indices) > 0)
-  spline_lambda <- (length(knot_indices) > 0)
-  use_measurement_bias <- (length(measurement_indices_par_tab) > 0) & !is.null(measurement_indices_by_time)
-  titre_shifts <- NULL
-  expected_indices <- NULL
-  measurement_bias <- NULL
-  use_strain_dependent <- (length(mu_indices) > 0) & !is.null(mu_indices)
-  additional_arguments <- NULL
+    par_names_theta <- par_tab[theta_indices, "names"]
 
-  if (use_measurement_bias) {
-      expected_indices <- measurement_indices_by_time[match(titre_dat$virus, strain_isolation_times)]
-  }
+    ## Find which options are being used in advance for speed
+    explicit_lambda <- (length(lambda_indices) > 0)
+    spline_lambda <- (length(knot_indices) > 0)
+    use_measurement_bias <- (length(measurement_indices_par_tab) > 0) & !is.null(measurement_indices_by_time)
+    titre_shifts <- NULL
+    expected_indices <- NULL
+    measurement_bias <- NULL
+    use_strain_dependent <- (length(mu_indices) > 0) & !is.null(mu_indices)
+    additional_arguments <- NULL
 
-  if (use_strain_dependent) {
-    additional_arguments <- list(
-      "boosting_vec_indices" = mu_indices - 1,
-      "mus" = rep(2, length(strain_isolation_times))
-    )
-  }
+    if (use_measurement_bias) {
+        expected_indices <- measurement_indices_by_time[match(titre_dat$virus, strain_isolation_times)]
+    }
 
-  ## Posterior calculating version
-  if (function_type == 1) {
-    ## If solving likelihood, calculate full likelihood/priors
-    if (solve_likelihood) {
-      ########################
-      ## Function to return
-      ########################
-      f <- function(pars, infection_history_mat) {
-        lambdas <- pars[lambda_indices]
-        theta <- pars[theta_indices]
-        weights <- pars[weights_indices]
-        knots <- pars[knot_indices]
-        mus <- pars[mu_indices_par_tab]
-
-        ## Add measurement shifts to titres
-        if (use_measurement_bias) {
-          measurement_bias <- pars[measurement_indices_par_tab]
-          to_add <- measurement_bias[expected_indices]
-        }
-
-        ## Pass strain-dependent boosting down
-        if (use_strain_dependent) {
-          additional_arguments[["mus"]] <- mus
-        }
-        names(theta) <- par_names_theta
-        
-        ## Work out short and long term boosting cross reactivity - C++ function
-        antigenic_map_long <- create_cross_reactivity_vector(antigenic_map_melted, theta["sigma1"])
-        antigenic_map_short <- create_cross_reactivity_vector(antigenic_map_melted, theta["sigma2"])
-
-        ## Now pass to the C++ function
-        y <- titre_data_group(
-          theta, infection_history_mat, strain_isolation_times,
-          infection_strain_indices, sample_times,
-          rows_per_indiv_in_samples,
-          cum_nrows_per_individual_in_data,
-          nrows_per_blood_sample,
-          measured_strain_indices,
-          antigenic_map_long, antigenic_map_short,
-          DOBs, additional_arguments
+    if (use_strain_dependent) {
+        additional_arguments <- list(
+            "boosting_vec_indices" = mu_indices - 1,
+            "mus" = rep(2, length(strain_isolation_times))
         )
-        
-        ## Calculate likelihoods and group per individual
-        liks <- r_likelihood(y, titres, theta, expected_indices, measurement_bias)
-        liks <- sum_buckets(liks, nrows_per_individual_in_data)
-
-        ## If including explicit prior on FOI, add to individuals here
-        if (explicit_lambda) {
-            liks <- liks + calc_lambda_probs_indiv(lambdas, infection_history_mat, age_mask, strain_mask)
-        }
-        
-        ## If using spline term for FOI, add here
-        if (spline_lambda) {
-          liks <- liks + calc_lambda_probs_monthly(
-            lambdas, knots, weights,
-            infection_history_mat, age_mask
-          )
-        }
-        return(liks)
-      }
-      ## If not solving likelihood, just need priors
-    } else {
-      ## Function to return
-      f <- function(pars, infection_history_mat) {
-        lambdas <- pars[lambda_indices]
-        theta <- pars[theta_indices]
-        weights <- pars[weights_indices]
-        knots <- pars[knot_indices]
-        mus <- pars[mu_indices_par_tab]
-
-        liks <- rep(-100000, n_indiv)
-
-        if (explicit_lambda) {
-          liks <- liks + calc_lambda_probs_indiv(lambdas, infection_history_mat, age_mask, strain_mask)
-        }
-        if (spline_lambda) {
-          liks <- liks + calc_lambda_probs_monthly(lambdas, knots, weights, infection_history_mat, age_mask)
-        }
-
-        return(liks)
-      }
-    }
-    ## Gibbs proposal function
-  } else if (function_type == 2) {
-    ## Version 4 puts the prior on the total number of infections
-    if (version == 4) {
-      n_alive_total <- sum(n_alive)
-    } else {
-      n_alive_total <- -1
     }
 
-    ## FUNCTION TO RETURN
-    ## Gibbs proposal on infection histories
-    f <- function(pars, infection_history_mat,
+    ## Posterior calculating version
+    if (function_type == 1) {
+        ## If solving likelihood, calculate full likelihood/priors
+        if (solve_likelihood) {
+########################
+            ## Function to return
+########################
+            f <- function(pars, infection_history_mat) {
+                lambdas <- pars[lambda_indices]
+                theta <- pars[theta_indices]
+                weights <- pars[weights_indices]
+                knots <- pars[knot_indices]
+                mus <- pars[mu_indices_par_tab]
+
+                ## Add measurement shifts to titres
+                if (use_measurement_bias) {
+                    measurement_bias <- pars[measurement_indices_par_tab]
+                    to_add <- measurement_bias[expected_indices]
+                }
+
+                ## Pass strain-dependent boosting down
+                if (use_strain_dependent) {
+                    additional_arguments[["mus"]] <- mus
+                }
+                names(theta) <- par_names_theta
+                
+                ## Work out short and long term boosting cross reactivity - C++ function
+                antigenic_map_long <- create_cross_reactivity_vector(antigenic_map_melted, theta["sigma1"])
+                antigenic_map_short <- create_cross_reactivity_vector(antigenic_map_melted, theta["sigma2"])
+
+                ## Now pass to the C++ function
+                y <- titre_data_group(
+                    theta, infection_history_mat, strain_isolation_times,
+                    infection_strain_indices, sample_times,
+                    rows_per_indiv_in_samples,
+                    cum_nrows_per_individual_in_data,
+                    nrows_per_blood_sample,
+                    measured_strain_indices,
+                    antigenic_map_long, antigenic_map_short,
+                    DOBs, additional_arguments
+                )
+                
+                ## Calculate likelihoods and group per individual
+                liks <- r_likelihood(y, titres, theta, expected_indices, measurement_bias)
+                liks <- sum_buckets(liks, nrows_per_individual_in_data)
+
+                ## If including explicit prior on FOI, add to individuals here
+                if (explicit_lambda) {
+                    liks <- liks + calc_lambda_probs_indiv(lambdas, infection_history_mat, age_mask, strain_mask)
+                }
+                
+                ## If using spline term for FOI, add here
+                if (spline_lambda) {
+                    liks <- liks + calc_lambda_probs_monthly(
+                                       lambdas, knots, weights,
+                                       infection_history_mat, age_mask
+                                   )
+                }
+                return(liks)
+            }
+            ## If not solving likelihood, just need priors
+        } else {
+            ## Function to return
+            f <- function(pars, infection_history_mat) {
+                lambdas <- pars[lambda_indices]
+                theta <- pars[theta_indices]
+                weights <- pars[weights_indices]
+                knots <- pars[knot_indices]
+                mus <- pars[mu_indices_par_tab]
+
+                liks <- rep(-100000, n_indiv)
+
+                if (explicit_lambda) {
+                    liks <- liks + calc_lambda_probs_indiv(lambdas, infection_history_mat, age_mask, strain_mask)
+                }
+                if (spline_lambda) {
+                    liks <- liks + calc_lambda_probs_monthly(lambdas, knots, weights, infection_history_mat, age_mask)
+                }
+
+                return(liks)
+            }
+        }
+        ## Gibbs proposal function
+    } else if (function_type == 2) {
+        ## Version 4 puts the prior on the total number of infections
+        if (version == 4) {
+            n_alive_total <- sum(n_alive)
+        } else {
+            n_alive_total <- -1
+        }
+
+        ## FUNCTION TO RETURN
+        ## Gibbs proposal on infection histories
+        f <- function(pars, infection_history_mat,
                       alpha, beta,
                       indiv_propn, n_years,
                       swap_propn = 0.5, swap_distance = 1, temp = 1) {
-      
-      lambdas <- pars[lambda_indices]
-      theta <- pars[theta_indices]
-      weights <- pars[weights_indices]
-      knots <- pars[knot_indices]
-      mus <- pars[mu_indices_par_tab]
-      names(theta) <- par_names_theta
-      
-      ## Measurement shifts
-      if (use_measurement_bias) {
-        measurement_bias <- pars[measurement_indices_par_tab]
-        titre_shifts <- measurement_bias[expected_indices]
-      }
+            
+            lambdas <- pars[lambda_indices]
+            theta <- pars[theta_indices]
+            weights <- pars[weights_indices]
+            knots <- pars[knot_indices]
+            mus <- pars[mu_indices_par_tab]
+            names(theta) <- par_names_theta
+            
+            ## Measurement shifts
+            if (use_measurement_bias) {
+                measurement_bias <- pars[measurement_indices_par_tab]
+                titre_shifts <- measurement_bias[expected_indices]
+            }
 
-      ## Strain dependent boosting, pass down
-      if (use_strain_dependent) {
-        additional_arguments[["mus"]] <- mus
-      }
-      names(theta) <- par_names_theta
-      
-      ## Work out short and long term boosting cross reactivity - C++ function
-      antigenic_map_long <- create_cross_reactivity_vector(antigenic_map_melted, theta["sigma1"])
-      antigenic_map_short <- create_cross_reactivity_vector(antigenic_map_melted, theta["sigma2"])
-      ## Now pass to the C++ function
-      new_infection_history_mat <- infection_history_proposal_gibbs(
-        theta,
-        infection_history_mat,
-        indiv_propn,
-        n_years,
-        age_mask,
-        strain_mask,
-        n_alive,
-        swap_propn,
-        swap_distance,
-        alpha,
-        beta,
-        strain_isolation_times,
-        infection_strain_indices,
-        sample_times,
-        rows_per_indiv_in_samples,
-        cum_nrows_per_individual_in_data,
-        nrows_per_blood_sample,
-        measured_strain_indices,
-        antigenic_map_long,
-        antigenic_map_short,
-        titres,
-        titre_shifts,
-        additional_arguments,
-        DOBs,
-        solve_likelihood,
-        n_alive_total,
-        temp
-      )
-      return(new_infection_history_mat)
+            ## Strain dependent boosting, pass down
+            if (use_strain_dependent) {
+                additional_arguments[["mus"]] <- mus
+            }
+            names(theta) <- par_names_theta
+            
+            ## Work out short and long term boosting cross reactivity - C++ function
+            antigenic_map_long <- create_cross_reactivity_vector(antigenic_map_melted, theta["sigma1"])
+            antigenic_map_short <- create_cross_reactivity_vector(antigenic_map_melted, theta["sigma2"])
+            ## Now pass to the C++ function
+            new_infection_history_mat <- infection_history_proposal_gibbs(
+                theta,
+                infection_history_mat,
+                indiv_propn,
+                n_years,
+                age_mask,
+                strain_mask,
+                n_alive,
+                swap_propn,
+                swap_distance,
+                alpha,
+                beta,
+                strain_isolation_times,
+                infection_strain_indices,
+                sample_times,
+                rows_per_indiv_in_samples,
+                cum_nrows_per_individual_in_data,
+                nrows_per_blood_sample,
+                measured_strain_indices,
+                antigenic_map_long,
+                antigenic_map_short,
+                titres,
+                titre_shifts,
+                additional_arguments,
+                DOBs,
+                solve_likelihood,
+                n_alive_total,
+                temp
+            )
+            return(new_infection_history_mat)
+        }
+        ## Or model solving function
+    } else {
+        ## FUNCTION TO RETURN
+        f <- function(pars, infection_history_mat) {
+            lambdas <- pars[lambda_indices]
+            theta <- pars[theta_indices]
+            weights <- pars[weights_indices]
+            knots <- pars[knot_indices]
+            mus <- pars[mu_indices_par_tab]
+
+            if (use_strain_dependent) {
+                additional_arguments[["mus"]] <- mus
+            }
+
+            names(theta) <- par_names_theta
+
+            ## Work out short and long term boosting cross reactivity - C++ function
+            antigenic_map_long <- create_cross_reactivity_vector(antigenic_map_melted, theta["sigma1"])
+            antigenic_map_short <- create_cross_reactivity_vector(antigenic_map_melted, theta["sigma2"])
+
+            ## Now pass to the C++ function
+            y <- titre_data_group(
+                theta, infection_history_mat, strain_isolation_times,
+                infection_strain_indices, sample_times,
+                rows_per_indiv_in_samples,
+                cum_nrows_per_individual_in_data,
+                nrows_per_blood_sample,
+                measured_strain_indices,
+                antigenic_map_long, antigenic_map_short,
+                DOBs, additional_arguments
+            )
+
+            ## Add measurement shifts
+            if (use_measurement_bias) {
+                measurement_bias <- pars[measurement_indices_par_tab]
+                titre_shifts <- measurement_bias[expected_indices]
+                y <- y + titre_shifts
+            }
+
+            return(y)
+        }
     }
-    ## Or model solving function
-  } else {
-    ## FUNCTION TO RETURN
-    f <- function(pars, infection_history_mat) {
-      lambdas <- pars[lambda_indices]
-      theta <- pars[theta_indices]
-      weights <- pars[weights_indices]
-      knots <- pars[knot_indices]
-      mus <- pars[mu_indices_par_tab]
-
-      if (use_strain_dependent) {
-        additional_arguments[["mus"]] <- mus
-      }
-
-      names(theta) <- par_names_theta
-
-      ## Work out short and long term boosting cross reactivity - C++ function
-      antigenic_map_long <- create_cross_reactivity_vector(antigenic_map_melted, theta["sigma1"])
-      antigenic_map_short <- create_cross_reactivity_vector(antigenic_map_melted, theta["sigma2"])
-
-      ## Now pass to the C++ function
-      y <- titre_data_group(
-        theta, infection_history_mat, strain_isolation_times,
-        infection_strain_indices, sample_times,
-        rows_per_indiv_in_samples,
-        cum_nrows_per_individual_in_data,
-        nrows_per_blood_sample,
-        measured_strain_indices,
-        antigenic_map_long, antigenic_map_short,
-        DOBs, additional_arguments
-      )
-
-      ## Add measurement shifts
-      if (use_measurement_bias) {
-        measurement_bias <- pars[measurement_indices_par_tab]
-        titre_shifts <- measurement_bias[expected_indices]
-        y <- y + titre_shifts
-      }
-
-      return(y)
-    }
-  }
-  f
+    f
 }
 
 #' Likelihood function given data
@@ -308,8 +313,8 @@ r_likelihood <- function(expected, data, theta, expected_indices = NULL, measure
     liks[large_i] <- pnorm(theta["MAX_TITRE"], expected[large_i], theta["error"], lower.tail = FALSE, log.p = TRUE)
     liks[small_i] <- pnorm(1, expected[small_i], theta["error"], lower.tail = TRUE, log.p = TRUE)
     liks[rest_i] <- log(pnorm(data[rest_i] + 1, expected[rest_i], theta["error"], lower.tail = TRUE, log.p = FALSE) -
-    pnorm(data[rest_i], expected[rest_i], theta["error"], lower.tail = TRUE, log.p = FALSE))
-  return(liks)
+                        pnorm(data[rest_i], expected[rest_i], theta["error"], lower.tail = TRUE, log.p = FALSE))
+    return(liks)
 }
 
 
@@ -322,13 +327,13 @@ r_likelihood <- function(expected, data, theta, expected_indices = NULL, measure
 #' @return a single log probability
 #' @export
 calc_lambda_probs <- function(lambdas, infection_history, age_mask, strain_mask) {
-  lik <- 0
-  for (i in 1:ncol(infection_history)) {
-    use_indivs <- intersect(which(age_mask <= i), which(strain_mask >= i))
-    lik <- lik + sum(log((lambdas[i]^infection_history[use_indivs, i] *
-      (1 - lambdas[i])^(1 - infection_history[use_indivs, i]))))
-  }
-  lik
+    lik <- 0
+    for (i in 1:ncol(infection_history)) {
+        use_indivs <- intersect(which(age_mask <= i), which(strain_mask >= i))
+        lik <- lik + sum(log((lambdas[i]^infection_history[use_indivs, i] *
+                              (1 - lambdas[i])^(1 - infection_history[use_indivs, i]))))
+    }
+    lik
 }
 
 #' Calculate FOI log probability vector
@@ -338,11 +343,11 @@ calc_lambda_probs <- function(lambdas, infection_history, age_mask, strain_mask)
 #' @return a vector of log probabilities for each individual
 #' @export
 calc_lambda_probs_indiv <- function(lambdas, infection_history, age_mask, strain_mask) {
-  lik <- numeric(nrow(infection_history))
-  for (i in 1:ncol(infection_history)) {
-    lik <- lik + log(((lambdas[i]^infection_history[, i]) * (1 - lambdas[i])^(1 - infection_history[, i]))) * as.numeric(age_mask <= i) * as.numeric(strain_mask >= i)
-  }
-  lik
+    lik <- numeric(nrow(infection_history))
+    for (i in 1:ncol(infection_history)) {
+        lik <- lik + log(((lambdas[i]^infection_history[, i]) * (1 - lambdas[i])^(1 - infection_history[, i]))) * as.numeric(age_mask <= i) * as.numeric(strain_mask >= i)
+    }
+    lik
 }
 
 #' Calculate FOI from spline
@@ -355,12 +360,12 @@ calc_lambda_probs_indiv <- function(lambdas, infection_history, age_mask, strain
 #' @return a vector of log probabilities for each individual
 #' @export
 calc_lambda_probs_monthly <- function(foi, knots, theta, infection_history, age_mask) {
-  lambdas <- generate_lambdas(foi, knots, theta, length(foi), 12)
-  lik <- numeric(nrow(infection_history))
-  for (i in 1:ncol(infection_history)) {
-    lik <- lik + infection_history[, i] * log(lambdas[i]) + (1 - infection_history[, i]) * log(lambdas[i]) + log(as.numeric(age_mask <= i)) + log(as.numeric(strain_mask >= i))
-  }
-  lik
+    lambdas <- generate_lambdas(foi, knots, theta, length(foi), 12)
+    lik <- numeric(nrow(infection_history))
+    for (i in 1:ncol(infection_history)) {
+        lik <- lik + infection_history[, i] * log(lambdas[i]) + (1 - infection_history[, i]) * log(lambdas[i]) + log(as.numeric(age_mask <= i)) + log(as.numeric(strain_mask >= i))
+    }
+    lik
 }
 
 
@@ -369,17 +374,17 @@ calc_lambda_probs_monthly <- function(foi, knots, theta, infection_history, age_
 #' Brute force implementation of calculating the explicit FOI
 #' @export
 calc_lambda_probs_indiv_brute <- function(lambdas, infection_history, age_mask) {
-  lik <- numeric(nrow(infection_history))
-  for (j in 1:nrow(infection_history)) {
-    lik[j] <- 0
-    age <- age_mask[j]
-    for (i in 1:ncol(infection_history)) {
-      if (i >= age) {
-        lik[j] <- lik[j] + log(lambdas[i]^infection_history[j, i] * (1 - lambdas[i])^(1 - infection_history[j, i]))
-      }
+    lik <- numeric(nrow(infection_history))
+    for (j in 1:nrow(infection_history)) {
+        lik[j] <- 0
+        age <- age_mask[j]
+        for (i in 1:ncol(infection_history)) {
+            if (i >= age) {
+                lik[j] <- lik[j] + log(lambdas[i]^infection_history[j, i] * (1 - lambdas[i])^(1 - infection_history[j, i]))
+            }
+        }
     }
-  }
-  lik
+    lik
 }
 
 
@@ -393,30 +398,30 @@ calc_lambda_probs_indiv_brute <- function(lambdas, infection_history, age_mask) 
 #' @return a vector of FOIs for each time point
 #' @export
 generate_lambdas <- function(foi, knots, theta, n_years, buckets, degree = 2) {
-  x <- seq(0, buckets - 1, by = 1) / buckets
-  n_knots <- length(knots) + degree + 1
-  all_dat <- NULL
-  index <- 1
-  tmp <- gen_spline_y(x, knots, degree, theta)
-  tmp <- tmp / sum(tmp)
-  all_dat <- numeric(length(tmp) * length(foi))
-  for (i in 1:n_years) {
-    all_dat[index:(index + length(tmp) - 1)] <- tmp * foi[i]
-    index <- index + length(tmp)
-  }
-  all_dat
+    x <- seq(0, buckets - 1, by = 1) / buckets
+    n_knots <- length(knots) + degree + 1
+    all_dat <- NULL
+    index <- 1
+    tmp <- gen_spline_y(x, knots, degree, theta)
+    tmp <- tmp / sum(tmp)
+    all_dat <- numeric(length(tmp) * length(foi))
+    for (i in 1:n_years) {
+        all_dat[index:(index + length(tmp) - 1)] <- tmp * foi[i]
+        index <- index + length(tmp)
+    }
+    all_dat
 }
 
 #' Generates a spline for \code{\link{generate_lambdas}}
 #' @export
 gen_spline_y <- function(x, knots, degree, theta, intercept = TRUE) {
-  basis <- bs(
-    x = x, knots = knots, degree = degree,
-    Boundary.knots = c(0, 1), intercept = intercept
-  )
+    basis <- bs(
+        x = x, knots = knots, degree = degree,
+        Boundary.knots = c(0, 1), intercept = intercept
+    )
 
-  y.spline <- basis %*% theta
-  return(as.vector(y.spline))
+    y.spline <- basis %*% theta
+    return(as.vector(y.spline))
 }
 
 
@@ -428,11 +433,11 @@ gen_spline_y <- function(x, knots, degree, theta, intercept = TRUE) {
 #' @return a single prior probability
 #' @export
 prob_shifts <- function(rhos, pars) {
-  rho_mean <- pars["rho_mean"]
-  rho_sd <- pars["rho_sd"]
-  ## l_mean <- log(mu_mean) - (mu_sd^2)/2
-  return(sum(dnorm(rhos, rho_mean, rho_sd, log = TRUE)))
-  # return(sum(dlnorm(mus, l_mean, mu_sd, log=TRUE)))
+    rho_mean <- pars["rho_mean"]
+    rho_sd <- pars["rho_sd"]
+    ## l_mean <- log(mu_mean) - (mu_sd^2)/2
+    return(sum(dnorm(rhos, rho_mean, rho_sd, log = TRUE)))
+                                        # return(sum(dlnorm(mus, l_mean, mu_sd, log=TRUE)))
 }
 
 #' Measurement shift creation
@@ -442,17 +447,17 @@ prob_shifts <- function(rhos, pars) {
 #' @return a function pointer to solve the measurement shifts prior
 #' @export
 create_prob_shifts <- function(par_tab) {
-  par_names <- par_tab$names
-  rho_indices <- which(par_tab$type == 3)
+    par_names <- par_tab$names
+    rho_indices <- which(par_tab$type == 3)
 
-  f <- function(pars) {
-    names(pars) <- par_names
-    rhos <- pars[rho_indices]
-    rho_mean <- pars["rho_mean"]
-    rho_sd <- pars["rho_sd"]
-    return(sum(dnorm(rhos, rho_mean, rho_sd, log = TRUE)))
-  }
-  f
+    f <- function(pars) {
+        names(pars) <- par_names
+        rhos <- pars[rho_indices]
+        rho_mean <- pars["rho_mean"]
+        rho_sd <- pars["rho_sd"]
+        return(sum(dnorm(rhos, rho_mean, rho_sd, log = TRUE)))
+    }
+    f
 }
 
 #' Create strain specific bias prior
@@ -462,25 +467,25 @@ create_prob_shifts <- function(par_tab) {
 #' @return a function pointer
 #' @export
 create_prior_mu <- function(par_tab) {
-  ## Extract parameter type indices from par_tab, to split up
-  ## similar parameters in model solving functions
-  option_indices <- which(par_tab$type == 0)
-  theta_indices <- which(par_tab$type %in% c(0, 1))
-  lambda_indices <- which(par_tab$type == 2)
-  measurement_indices_par_tab <- which(par_tab$type == 3)
-  weights_indices <- which(par_tab$type == 4) ## For functional form version
-  knot_indices <- which(par_tab$type == 5)
-  mu_indices_par_tab <- which(par_tab$type == 6)
+    ## Extract parameter type indices from par_tab, to split up
+    ## similar parameters in model solving functions
+    option_indices <- which(par_tab$type == 0)
+    theta_indices <- which(par_tab$type %in% c(0, 1))
+    lambda_indices <- which(par_tab$type == 2)
+    measurement_indices_par_tab <- which(par_tab$type == 3)
+    weights_indices <- which(par_tab$type == 4) ## For functional form version
+    knot_indices <- which(par_tab$type == 5)
+    mu_indices_par_tab <- which(par_tab$type == 6)
 
-  par_names_theta <- par_tab[theta_indices, "names"]
+    par_names_theta <- par_tab[theta_indices, "names"]
 
-  ## Expect to only take the vector of parameters
-  f <- function(pars) {
-    mus <- pars[mu_indices_par_tab]
-    pars <- pars[theta_indices]
-    names(pars) <- par_names_theta
-    return(prob_mus(mus, pars))
-  }
+    ## Expect to only take the vector of parameters
+    f <- function(pars) {
+        mus <- pars[mu_indices_par_tab]
+        pars <- pars[theta_indices]
+        names(pars) <- par_names_theta
+        return(prob_mus(mus, pars))
+    }
 }
 
 #' Prior probability of strain specific boosting
@@ -491,29 +496,29 @@ create_prior_mu <- function(par_tab) {
 #' @return a single log prior probability
 #' @export
 prob_mus <- function(mus, pars) {
-  mu_mean <- pars["mu_mean"]
-  mu_sd <- pars["mu_sd"]
-  return(sum(dnorm(mus, mu_mean, mu_sd, log = TRUE)))
-  # location <- log(mu_mean^2 / sqrt(mu_sd^2 + mu_mean^2))
-  # shape <- sqrt(log(1 + (mu_sd^2/mu_mean^2)))
-  # l_mean <- log(mu_mean) - (mu_sd^2)/2
-  # p <- sum(dnorm(log(mus),mu_mean,mu_sd,log=TRUE))
-  # p_mean <- 0.6
-  # p_sd <- 0.5
-  # p_mu <- log(p_mean/sqrt(1 + (p_sd/p_mean)^2))
-  # p_sigma <- sqrt(log(1 + (p_sd/p_mean)^2))
+    mu_mean <- pars["mu_mean"]
+    mu_sd <- pars["mu_sd"]
+    return(sum(dnorm(mus, mu_mean, mu_sd, log = TRUE)))
+                                        # location <- log(mu_mean^2 / sqrt(mu_sd^2 + mu_mean^2))
+                                        # shape <- sqrt(log(1 + (mu_sd^2/mu_mean^2)))
+                                        # l_mean <- log(mu_mean) - (mu_sd^2)/2
+                                        # p <- sum(dnorm(log(mus),mu_mean,mu_sd,log=TRUE))
+                                        # p_mean <- 0.6
+                                        # p_sd <- 0.5
+                                        # p_mu <- log(p_mean/sqrt(1 + (p_sd/p_mean)^2))
+                                        # p_sigma <- sqrt(log(1 + (p_sd/p_mean)^2))
 
-  # p_lik <- log(p_sigma*2.506628) - 0.5*((mu_mean - p_mu)/p_sigma)^2
+                                        # p_lik <- log(p_sigma*2.506628) - 0.5*((mu_mean - p_mu)/p_sigma)^2
 
-  # return(p+p_lik)
-  # return(sum(log(dtruncnorm(mus, a=0,mean=mu_mean, sd=mu_sd))))
-  # return(sum(dlnorm(mus, location, shape, log=TRUE)))
-  # mean_log_y <- mean(log(mus))
-  # sd_log_y <- sd(log(mus))
-  # sigmaOfLogY <- dunif(mu_sd, 0.001*sd_log_y,1000*sd_log_y)
-  # muOfLogY <- dnorm(mu_mean, mean_log_y, 1/(10*sd_log_y)^2)
-  # return(sum(dlnorm(mus, mu_mean, 1/mu_sd^2, log=TRUE)) + sigmaOfLogY + muOfLogY)
-  return(sum(dlnorm(mus, mu_mean, mu_sd, log = TRUE)))
+                                        # return(p+p_lik)
+                                        # return(sum(log(dtruncnorm(mus, a=0,mean=mu_mean, sd=mu_sd))))
+                                        # return(sum(dlnorm(mus, location, shape, log=TRUE)))
+                                        # mean_log_y <- mean(log(mus))
+                                        # sd_log_y <- sd(log(mus))
+                                        # sigmaOfLogY <- dunif(mu_sd, 0.001*sd_log_y,1000*sd_log_y)
+                                        # muOfLogY <- dnorm(mu_mean, mean_log_y, 1/(10*sd_log_y)^2)
+                                        # return(sum(dlnorm(mus, mu_mean, 1/mu_sd^2, log=TRUE)) + sigmaOfLogY + muOfLogY)
+    return(sum(dlnorm(mus, mu_mean, mu_sd, log = TRUE)))
 }
 
 
@@ -615,143 +620,143 @@ create_posterior_func_fast <- function(par_tab,
         boosting_vec_indices <- mus <- c(-1)
     }
 
-  if (function_type == 1) {
-      f <- function(pars, infection_history_mat) {
-          theta <- pars[theta_indices]
-          names(theta) <- par_names_theta
+    if (function_type == 1) {
+        f <- function(pars, infection_history_mat) {
+            theta <- pars[theta_indices]
+            names(theta) <- par_names_theta
 
-          if (use_strain_dependent) {
-              mus <- pars[mu_indices_par_tab]
-          }
-          
-          antigenic_map_long <- create_cross_reactivity_vector(antigenic_map_melted, theta["sigma1"])
-          antigenic_map_short <- create_cross_reactivity_vector(antigenic_map_melted, theta["sigma2"])
+            if (use_strain_dependent) {
+                mus <- pars[mu_indices_par_tab]
+            }
+            
+            antigenic_map_long <- create_cross_reactivity_vector(antigenic_map_melted, theta["sigma1"])
+            antigenic_map_short <- create_cross_reactivity_vector(antigenic_map_melted, theta["sigma2"])
 
-          y_new <- titre_data_fast(
-              theta, infection_history_mat, strain_isolation_times, infection_strain_indices,
-              sample_times, rows_per_indiv_in_samples, cum_nrows_per_individual_in_data,
-              nrows_per_blood_sample, measured_strain_indices, antigenic_map_long,
-              antigenic_map_short, mus, boosting_vec_indices
-          )
+            y_new <- titre_data_fast(
+                theta, infection_history_mat, strain_isolation_times, infection_strain_indices,
+                sample_times, rows_per_indiv_in_samples, cum_nrows_per_individual_in_data,
+                nrows_per_blood_sample, measured_strain_indices, antigenic_map_long,
+                antigenic_map_short, mus, boosting_vec_indices
+            )
 
-          if (use_measurement_bias) {
-              measurement_bias <- pars[measurement_indices_par_tab]
-              titre_shifts <- measurement_bias[expected_indices]
-              y_new <- y_new + titre_shifts
-          }
-          #return(list(theta, titres_unique, y_new, titres_repeats, repeat_indices, nrows_per_individual_in_data, nrows_per_individual_in_data_repeats))
-          if(solve_likelihood){
-              ## Calculate likelihood for unique titres and repeat data
-              liks <- likelihood_func_fast(theta, titres_unique, y_new)
-              liks_repeats <- likelihood_func_fast(theta, titres_repeats, y_new[repeat_indices])
-              
-              ## Sum these for each individual
-              liks <- sum_buckets(liks, nrows_per_individual_in_data) +
-                  sum_buckets(liks_repeats, nrows_per_individual_in_data_repeats)
-              ## If including explicit prior on FOI, add to individuals here
+            if (use_measurement_bias) {
+                measurement_bias <- pars[measurement_indices_par_tab]
+                titre_shifts <- measurement_bias[expected_indices]
+                y_new <- y_new + titre_shifts
+            }
+                                        #return(list(theta, titres_unique, y_new, titres_repeats, repeat_indices, nrows_per_individual_in_data, nrows_per_individual_in_data_repeats))
+            if(solve_likelihood){
+                ## Calculate likelihood for unique titres and repeat data
+                liks <- likelihood_func_fast(theta, titres_unique, y_new)
+                liks_repeats <- likelihood_func_fast(theta, titres_repeats, y_new[repeat_indices])
+                
+                ## Sum these for each individual
+                liks <- sum_buckets(liks, nrows_per_individual_in_data) +
+                    sum_buckets(liks_repeats, nrows_per_individual_in_data_repeats)
+                ## If including explicit prior on FOI, add to individuals here
 
-              if (explicit_lambda) {
-                  lambdas <- pars[lambda_indices]
-                  liks <- liks + calc_lambda_probs_indiv(lambdas, infection_history_mat, age_mask, strain_mask)
-              }
-              
-              ## If using spline term for FOI, add here
-              if (spline_lambda) {
-                  weights <- pars[weights_indices]
-                  knots <- pars[knot_indices]
-                  liks <- liks + calc_lambda_probs_monthly(
-                                     lambdas, knots, weights,
-                                     infection_history_mat, age_mask
-                                 )
-              }
-          } else {
-              liks <- rep(-100000, n_indiv)
-          }
-          liks
-      }
-  } else if (function_type == 2) {
-      f <- function(pars, infection_history_mat,
-                    probs, sampled_indivs,
-                    alpha, beta,
-                  n_infs, swap_propn, swap_dist,
-                  temp) {
-        theta <- pars[theta_indices]
-        names(theta) <- par_names_theta
-
-        ## Pass strain-dependent boosting down
-        if (use_strain_dependent) {
-            mus <- pars[mu_indices_par_tab]
+                if (explicit_lambda) {
+                    lambdas <- pars[lambda_indices]
+                    liks <- liks + calc_lambda_probs_indiv(lambdas, infection_history_mat, age_mask, strain_mask)
+                }
+                
+                ## If using spline term for FOI, add here
+                if (spline_lambda) {
+                    weights <- pars[weights_indices]
+                    knots <- pars[knot_indices]
+                    liks <- liks + calc_lambda_probs_monthly(
+                                       lambdas, knots, weights,
+                                       infection_history_mat, age_mask
+                                   )
+                }
+            } else {
+                liks <- rep(-100000, n_indiv)
+            }
+            liks
         }
+    } else if (function_type == 2) {
+        f <- function(pars, infection_history_mat,
+                      probs, sampled_indivs,
+                      alpha, beta,
+                      n_infs, swap_propn, swap_dist,
+                      temp) {
+            theta <- pars[theta_indices]
+            names(theta) <- par_names_theta
 
-        if (use_measurement_bias) {
-            measurement_bias <- pars[measurement_indices_par_tab]
-            titre_shifts <- measurement_bias[expected_indices]
+            ## Pass strain-dependent boosting down
+            if (use_strain_dependent) {
+                mus <- pars[mu_indices_par_tab]
+            }
+
+            if (use_measurement_bias) {
+                measurement_bias <- pars[measurement_indices_par_tab]
+                titre_shifts <- measurement_bias[expected_indices]
+            }
+            ## Work out short and long term boosting cross reactivity - C++ function
+            antigenic_map_long <- create_cross_reactivity_vector(antigenic_map_melted, theta["sigma1"])
+            antigenic_map_short <- create_cross_reactivity_vector(antigenic_map_melted, theta["sigma2"])
+            
+            ## Now pass to the C++ function
+            res <- infection_history_proposal_gibbs_fast(
+                theta,
+                infection_history_mat,
+                probs,
+                sampled_indivs,
+                n_infs,
+                age_mask,
+                strain_mask,
+                n_alive,
+                swap_propn,
+                swap_dist,
+                alpha,
+                beta,
+                strain_isolation_times,
+                infection_strain_indices,
+                sample_times,
+                rows_per_indiv_in_samples,
+                cum_nrows_per_individual_in_data,
+                cum_nrows_per_individual_in_data_repeats,
+                nrows_per_blood_sample,
+                measured_strain_indices,
+                antigenic_map_long,
+                antigenic_map_short,
+                titres_unique,
+                titres_repeats,
+                repeat_indices_cpp,
+                titre_shifts,
+                mus,
+                boosting_vec_indices,
+                temp,
+                solve_likelihood
+            )
+            return(res)
         }
-        ## Work out short and long term boosting cross reactivity - C++ function
-        antigenic_map_long <- create_cross_reactivity_vector(antigenic_map_melted, theta["sigma1"])
-        antigenic_map_short <- create_cross_reactivity_vector(antigenic_map_melted, theta["sigma2"])
-        
-        ## Now pass to the C++ function
-        res <- infection_history_proposal_gibbs_fast(
-            theta,
-            infection_history_mat,
-            probs,
-            sampled_indivs,
-            n_infs,
-            age_mask,
-            strain_mask,
-            n_alive,
-            swap_propn,
-            swap_dist,
-            alpha,
-            beta,
-            strain_isolation_times,
-            infection_strain_indices,
-            sample_times,
-            rows_per_indiv_in_samples,
-            cum_nrows_per_individual_in_data,
-            cum_nrows_per_individual_in_data_repeats,
-            nrows_per_blood_sample,
-            measured_strain_indices,
-            antigenic_map_long,
-            antigenic_map_short,
-            titres_unique,
-            titres_repeats,
-            repeat_indices_cpp,
-            titre_shifts,
-            mus,
-            boosting_vec_indices,
-            temp,
-            solve_likelihood
-        )
-        return(res)
+    } else {
+        f <- function(pars, infection_history_mat) {
+            theta <- pars[theta_indices]
+            names(theta) <- par_names_theta
+            
+            ## Pass strain-dependent boosting down
+            if (use_strain_dependent) {
+                mus <- pars[mu_indices_par_tab]
+            }
+
+            antigenic_map_long <- create_cross_reactivity_vector(antigenic_map_melted, theta["sigma1"])
+            antigenic_map_short <- create_cross_reactivity_vector(antigenic_map_melted, theta["sigma2"])
+            
+            y_new <- titre_data_fast(
+                theta, infection_history_mat, strain_isolation_times, infection_strain_indices,
+                sample_times, rows_per_indiv_in_samples, cum_nrows_per_individual_in_data,
+                nrows_per_blood_sample, measured_strain_indices, antigenic_map_long,
+                antigenic_map_short, mus, boosting_vec_indices
+            )
+            if (use_measurement_bias) {
+                measurement_bias <- pars[measurement_indices_par_tab]
+                titre_shifts <- measurement_bias[expected_indices]
+                y_new <- y_new + titre_shifts
+            }
+            y_new[overall_indices]
+        }
     }
-  } else {
-      f <- function(pars, infection_history_mat) {
-          theta <- pars[theta_indices]
-          names(theta) <- par_names_theta
-          
-          ## Pass strain-dependent boosting down
-          if (use_strain_dependent) {
-              mus <- pars[mu_indices_par_tab]
-          }
-
-          antigenic_map_long <- create_cross_reactivity_vector(antigenic_map_melted, theta["sigma1"])
-          antigenic_map_short <- create_cross_reactivity_vector(antigenic_map_melted, theta["sigma2"])
-          
-          y_new <- titre_data_fast(
-              theta, infection_history_mat, strain_isolation_times, infection_strain_indices,
-              sample_times, rows_per_indiv_in_samples, cum_nrows_per_individual_in_data,
-              nrows_per_blood_sample, measured_strain_indices, antigenic_map_long,
-              antigenic_map_short, mus, boosting_vec_indices
-          )
-          if (use_measurement_bias) {
-              measurement_bias <- pars[measurement_indices_par_tab]
-              titre_shifts <- measurement_bias[expected_indices]
-              y_new <- y_new + titre_shifts
-          }
-          y_new[overall_indices]
-      }
-  }
     f
 }

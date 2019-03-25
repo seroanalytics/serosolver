@@ -21,14 +21,15 @@ get_n_alive <- function(titre_dat, times) {
 #' @param times the vector of times to calculate number alive for
 #' @return a matrix giving the number alive in each time point in each location
 #' @export
-get_n_alive_location <- function(titre_dat, times) {
-  DOBs <- unique(titre_dat[, c("individual", "location", "DOB")])
+get_n_alive_group <- function(titre_dat, times) {
+  DOBs <- unique(titre_dat[, c("individual", "group", "DOB")])
   age_mask <- create_age_mask(DOBs[,"DOB"], times)
   strain_mask <- create_strain_mask(titre_dat, times)
   masks <- data.frame(cbind(age_mask, strain_mask))
   DOBs <- cbind(DOBs, masks)
-  n_alive <- ddply(DOBs, ~location, function(y) sapply(seq(1, length(times)), function(x)
-    nrow(y[y$age_mask <= x & y$strain_mask >= x, ])))
+  n_alive <- ddply(DOBs, ~group, function(y) sapply(seq(1, length(times)), function(x)
+      nrow(y[y$age_mask <= x & y$strain_mask >= x, ])))
+  as.matrix(n_alive[,2:ncol(n_alive)])
 }
 
 #' Create age mask
@@ -256,7 +257,10 @@ setup_titredat_for_posterior_func <- function(titre_dat, antigenic_map, age_mask
   sample_times <- samples$samples ## What were the times that these samples were taken?
   individuals <- samples$individual ## Who are the individuals that these samples correspond to?
   n_indiv <- length(unique(individuals))
-
+  
+  groups <- unique(titre_dat$group)
+  group_table <- unique(titre_dat[,c("individual","group")])
+  
   ## Firstly, how many rows in the titre data correspond to each unique individual, sample and titre repeat?
   ## ie. each element of this vector corresponds to one set of titres that need to be predicted
   nrows_per_blood_sample <- NULL
@@ -283,6 +287,13 @@ setup_titredat_for_posterior_func <- function(titre_dat, antigenic_map, age_mask
   }
   cum_nrows_per_individual_in_data <- cumsum(c(0, nrows_per_individual_in_data))
 
+  ## How many rows in what will be the infection history matrix correspond to which group?
+  nrows_per_group_infhist <- c(0)
+  for(group in groups){
+      nrows_per_group_infhist <- c(nrows_per_group_infhist, nrow(group_table[group_table$group == group,]))
+  }
+  cum_nrows_per_group_infhist <- cumsum(nrows_per_group_infhist)
+  
   if (!is.null(titre_dat$DOB)) {
     DOBs <- unique(titre_dat[, c("individual", "DOB")])[, 2]
   } else {
@@ -297,10 +308,9 @@ setup_titredat_for_posterior_func <- function(titre_dat, antigenic_map, age_mask
   }
   strain_mask <- create_strain_mask(titre_dat, strain_isolation_times)
   masks <- data.frame(cbind(age_mask, strain_mask))
-  if (is.null(n_alive)) {
-    n_alive <- sapply(seq(1, length(strain_isolation_times)), function(x)
-      nrow(masks[masks$age_mask <= x & masks$strain_mask >= x, ]))
-  }
+
+  n_alive <- get_n_alive_groups(titre_dat, strain_isolation_times)
+
   return(list(
     "individuals" = individuals,
     "antigenic_map_melted" = antigenic_map_melted,
@@ -310,6 +320,8 @@ setup_titredat_for_posterior_func <- function(titre_dat, antigenic_map, age_mask
     "rows_per_indiv_in_samples" = rows_per_indiv_in_samples,
     "nrows_per_individual_in_data" = nrows_per_individual_in_data,
     "cum_nrows_per_individual_in_data" = cum_nrows_per_individual_in_data,
+    "nrows_per_group_infhist" = nrows_per_group_infhist,
+    "cum_nrows_per_group_infhist" = nrows_per_group_infhist,
     "nrows_per_blood_sample" = nrows_per_blood_sample,
     "measured_strain_indices" = measured_strain_indices,
     "n_indiv" = n_indiv,
