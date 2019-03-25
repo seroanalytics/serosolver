@@ -75,7 +75,7 @@ create_posterior_func <- function(par_tab,
   additional_arguments <- NULL
 
   if (use_measurement_bias) {
-    expected_indices <- measurement_indices_by_time[match(titre_dat$virus, strain_isolation_times)]
+      expected_indices <- measurement_indices_by_time[match(titre_dat$virus, strain_isolation_times)]
   }
 
   if (use_strain_dependent) {
