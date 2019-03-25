@@ -25,39 +25,39 @@ create_posterior_func <- function(par_tab,
                                   n_alive = NULL,
                                   function_type = 1,
                                   ...) {
-  ## Sort data in same way
-  titre_dat <- titre_dat[order(titre_dat$individual, titre_dat$run, titre_dat$samples, titre_dat$virus), ]
+    ## Sort data in same way
+    titre_dat <- titre_dat[order(titre_dat$individual, titre_dat$run, titre_dat$samples, titre_dat$virus), ]
 
-  ## Isolate data table as vectors for speed
-  titres <- titre_dat$titre
+    ## Isolate data table as vectors for speed
+    titres <- titre_dat$titre
 
-  ## Setup data vectors and extract
-  setup_dat <- setup_titredat_for_posterior_func(titre_dat, antigenic_map, age_mask, n_alive)
+    ## Setup data vectors and extract
+    setup_dat <- setup_titredat_for_posterior_func(titre_dat, antigenic_map, age_mask, n_alive)
 
-  individuals <- setup_dat$individuals
-  antigenic_map_melted <- setup_dat$antigenic_map_melted
-  strain_isolation_times <- setup_dat$strain_isolation_times
-  infection_strain_indices <- setup_dat$infection_strain_indices
-  sample_times <- setup_dat$sample_times
-  rows_per_indiv_in_samples <- setup_dat$rows_per_indiv_in_samples
-  nrows_per_individual_in_data <- setup_dat$nrows_per_individual_in_data
-  cum_nrows_per_individual_in_data <- setup_dat$cum_nrows_per_individual_in_data
-  nrows_per_blood_sample <- setup_dat$nrows_per_blood_sample
-  measured_strain_indices <- setup_dat$measured_strain_indices
-  n_alive <- setup_dat$n_alive
-  age_mask <- setup_dat$age_mask
-  strain_mask <- setup_dat$strain_mask
-  n_indiv <- setup_dat$n_indiv
-  DOBs <- setup_dat$DOBs
+    individuals <- setup_dat$individuals
+    antigenic_map_melted <- setup_dat$antigenic_map_melted
+    strain_isolation_times <- setup_dat$strain_isolation_times
+    infection_strain_indices <- setup_dat$infection_strain_indices
+    sample_times <- setup_dat$sample_times
+    rows_per_indiv_in_samples <- setup_dat$rows_per_indiv_in_samples
+    nrows_per_individual_in_data <- setup_dat$nrows_per_individual_in_data
+    cum_nrows_per_individual_in_data <- setup_dat$cum_nrows_per_individual_in_data
+    nrows_per_blood_sample <- setup_dat$nrows_per_blood_sample
+    measured_strain_indices <- setup_dat$measured_strain_indices
+    n_alive <- setup_dat$n_alive
+    age_mask <- setup_dat$age_mask
+    strain_mask <- setup_dat$strain_mask
+    n_indiv <- setup_dat$n_indiv
+    DOBs <- setup_dat$DOBs
 
-  #########################################################
-  ## Extract parameter type indices from par_tab, to split up
-  ## similar parameters in model solving functions
-  option_indices <- which(par_tab$type == 0)
-  theta_indices <- which(par_tab$type %in% c(0, 1))
-  phi_indices <- which(par_tab$type == 2)
-  measurement_indices_par_tab <- which(par_tab$type == 3)
-  weights_indices <- which(par_tab$type == 4) ## For functional form version
+#########################################################
+    ## Extract parameter type indices from par_tab, to split up
+    ## similar parameters in model solving functions
+    option_indices <- which(par_tab$type == 0)
+    theta_indices <- which(par_tab$type %in% c(0, 1))
+    phi_indices <- which(par_tab$type == 2)
+    measurement_indices_par_tab <- which(par_tab$type == 3)
+    weights_indices <- which(par_tab$type == 4) ## For functional form version
   knot_indices <- which(par_tab$type == 5)
   mu_indices_par_tab <- which(par_tab$type == 6)
   #########################################################
