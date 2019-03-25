@@ -115,7 +115,7 @@ run_MCMC <- function(par_tab,
   ## Sort out which version to run --------------------------------------
   prior_on_total <- FALSE
   if (version == 1) { ## Lambda version
-    prop_print <- "Using lambda prior on infection history, with symmetric proposal probabilities"
+    prop_print <- "Using phi prior on infection history, with symmetric proposal probabilities"
     hist_proposal <- 1
   } else if (version == 2) { ## Gibbs version
     prop_print <- "Using integrated FOI prior on infection history, with gibbs sampling of infections"
@@ -128,8 +128,8 @@ run_MCMC <- function(par_tab,
     prop_print <- "Using beta prior on total number of infections across all years and all individuals, with gibbs sampling of infections"
     hist_proposal <- 2
     prior_on_total <- TRUE
-  } else { ## By default, use lambda version
-    stop("Invalid version specified - must be 1 (lambda), 2 (gibbs) or 3 (beta binomial)")
+  } else { ## By default, use phi version
+    stop("Invalid version specified - must be 1 (phi), 2 (gibbs) or 3 (beta binomial)")
   }
   message(prop_print)
 
@@ -146,10 +146,10 @@ run_MCMC <- function(par_tab,
   upper_bounds <- par_tab$upper_bound # Parameters cannot step above this
   steps <- par_tab$steps # How far to step on unit scale to begin with?
 
-  ## If using lambda terms, pull their indices out of the parameter table
-  lambda_indices <- NULL
-  if ("lambda" %in% par_names) {
-    lambda_indices <- which(par_tab$names == "lambda")
+  ## If using phi terms, pull their indices out of the parameter table
+  phi_indices <- NULL
+  if ("phi" %in% par_names) {
+    phi_indices <- which(par_tab$names == "phi")
   }
   alpha <- par_tab[par_tab$names == "alpha", "values"]
   beta <- par_tab[par_tab$names == "beta", "values"]
@@ -375,14 +375,14 @@ run_MCMC <- function(par_tab,
         indiv_sub_sample <- sample(1:n_indiv, ceiling(hist_sample_prob * n_indiv))
         rand_ns <- runif(length(indiv_sub_sample))
         ## Need to temporarily store current parameters as new pars, as
-        ## might change with lambda swap step
+        ## might change with phi swap step
         proposal <- current_pars
         names(proposal) <- par_names
         alpha <- proposal["alpha"]
         beta <- proposal["beta"]
         new_likelihoods_calculated <- FALSE ## Flag if we calculate the new likelihoods earlier than anticipated
         ## Which infection history proposal to use?
-        ## Explicit lambdas on infection histories
+        ## Explicit phis on infection histories
         if (hist_proposal == 1) {
             ## Either swap entire contents or propose new infection history matrix
             if (inf_swap_prob > hist_switch_prob) {
@@ -392,16 +392,16 @@ run_MCMC <- function(par_tab,
                     n_infs_vec, rand_ns
                 )
             } else {
-                tmp_hist_switch <- inf_hist_swap_lambda(
-                    infection_histories, proposal[lambda_indices],
+                tmp_hist_switch <- inf_hist_swap_phi(
+                    infection_histories, proposal[phi_indices],
                     age_mask, strain_mask, year_swap_propn,
                     move_size, n_alive
                 )
                 new_infection_histories <- tmp_hist_switch[[1]]
-                proposal[lambda_indices] <- tmp_hist_switch[[2]]
+                proposal[phi_indices] <- tmp_hist_switch[[2]]
                 infection_history_swap_n <- infection_history_swap_n + 1
             }
-            ## Gibbs sampler version, integrate out lambda
+            ## Gibbs sampler version, integrate out phi
         } else if (hist_proposal == 2) {
         ## Swap entire contents or propose new
         if (inf_swap_prob > hist_switch_prob) {

@@ -24,7 +24,7 @@ filename <- "chains/fluscape_100_gibbs"
 ## Read in parameter table to simulate from and change waning rate and alpha/beta if necessary
 parTab <- read.csv("~/Documents/Fluscape/serosolver/inputs/parTab_base.csv",stringsAsFactors=FALSE)
 parTab[parTab$names %in% c("alpha","beta"),"values"] <- c(1,1)
-parTab <- parTab[parTab$names != "lambda",]
+parTab <- parTab[parTab$names != "phi",]
 ## Read in and generate the antigenic map to read strain relationships from
 antigenicMap <- read.csv("~/Documents/Fluscape/fluscape/trunk/data/Fonville2014AxMapPositionsApprox.csv",stringsAsFactors=FALSE)
 fit_dat <- generate_antigenic_map(antigenicMap, 1)

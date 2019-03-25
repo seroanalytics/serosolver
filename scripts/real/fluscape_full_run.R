@@ -24,7 +24,7 @@ filename <- "chains/vietnam"
 ## Read in parameter table to simulate from and change waning rate and alpha/beta if necessary
 parTab <- read.csv("~/Documents/Fluscape/serosolver/inputs/parTab_base.csv",stringsAsFactors=FALSE)
 parTab[parTab$names %in% c("alpha","beta"),"values"] <- c(1,1)
-parTab <- parTab[parTab$names != "lambda",]
+parTab <- parTab[parTab$names != "phi",]
 
 
 ## Read in and generate the antigenic map to read strain relationships from
@@ -33,9 +33,9 @@ fit_dat <- generate_antigenic_map(antigenicMap, buckets)
 strainIsolationTimes <- unique(fit_dat$inf_years)
 
 
-if("lambda" %in% parTab$names){
-  ## Add rows for each lambda value to be inferred
-  tmp <- parTab[parTab$names == "lambda",]
+if("phi" %in% parTab$names){
+  ## Add rows for each phi value to be inferred
+  tmp <- parTab[parTab$names == "phi",]
   for(i in 1:(length(strainIsolationTimes)-1)){
     parTab <- rbind(parTab, tmp)
   }

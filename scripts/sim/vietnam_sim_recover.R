@@ -110,11 +110,11 @@ filename <- "chains/vietnam_correct_sim"
 mcmcPars <- c("iterations"=100000,"popt"=0.44,"popt_hist"=0.44,"opt_freq"=2000,"thin"=1,"adaptive_period"=50000,
               "save_block"=1000,"thin2"=100,"histSampleProb"=1,"switch_sample"=2, "burnin"=0, 
               "nInfs"=1, "moveSize"=2, "histProposal"=histProposal, "histOpt"=0,"n_par"=10)
-## Add rows for each lambda value to be inferred
-parTab <- read.csv("~/Documents/Fluscape/serosolver/inputs/parTab_lambda.csv",stringsAsFactors=FALSE)
+## Add rows for each phi value to be inferred
+parTab <- read.csv("~/Documents/Fluscape/serosolver/inputs/parTab_phi.csv",stringsAsFactors=FALSE)
 parTab[parTab$names == "wane","values"] <- 1
 
-tmp <- parTab[parTab$names == "lambda",]
+tmp <- parTab[parTab$names == "phi",]
 for(i in 1:(length(strainIsolationTimes)-1)){
   parTab <- rbind(parTab, tmp)}
 

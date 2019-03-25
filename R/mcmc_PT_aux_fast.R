@@ -53,7 +53,7 @@ create_run_MCMC_single_iter_fn_fast <- function(unfixed_pars, unfixed_par_length
       }
     } else {
       ## Need to temporarily store current parameters as new pars, as
-      ## might change with lambda swap step
+      ## might change with phi swap step
       n_indiv <- nrow(infection_histories)
       indiv_sub_sample <- sample(1:n_indiv, ceiling(hist_sample_prob * n_indiv))
       proposal <- current_pars

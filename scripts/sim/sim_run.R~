@@ -38,10 +38,10 @@ parTab[parTab$names %in% c("alpha","beta"),"values"] <- c(1,1)
 parTab[parTab$names == "wane","values"] <- 0.5
 
 
-titreDat <- read.csv("data/sim_200_lambda_titres.csv",stringsAsFactors=FALSE)
-ages <- read.csv("data/sim_200_lambda_ages.csv",stringsAsFactors=FALSE)
-infectionHistories <- infHist <- read.csv("data/sim_200_lambda_infHist.csv",stringsAsFactors=FALSE)
-AR <- read.csv("data/sim_200_lambda_AR.csv",stringsAsFactors=FALSE)
+titreDat <- read.csv("data/sim_200_phi_titres.csv",stringsAsFactors=FALSE)
+ages <- read.csv("data/sim_200_phi_ages.csv",stringsAsFactors=FALSE)
+infectionHistories <- infHist <- read.csv("data/sim_200_phi_infHist.csv",stringsAsFactors=FALSE)
+AR <- read.csv("data/sim_200_phi_AR.csv",stringsAsFactors=FALSE)
 
 
 #dat <- simulate_data(parTab, 1, n_indiv, buckets,strainIsolationTimes,
@@ -61,10 +61,10 @@ viruses <- c(1968L, 1969L, 1972L, 1975L, 1977L, 1979L, 1982L, 1985L, 1987L,
 #ages <- dat[[3]]
 #AR <- dat[[4]]
 
-#write.table(titreDat,"~/net/home/serosolver/data/sim_250_lambda_dat.csv",row.names=FALSE,sep=",")
-#write.table(infHist,"~/net/home/serosolver/data/sim_250_lambda_infHist.csv",row.names=FALSE,sep=",")
-#write.table(ages,"~/net/home/serosolver/data/sim_250_lambda_ages.csv",row.names=FALSE,sep=",")
-#write.table(AR,"~/net/home/serosolver/data/sim_250_lambda_AR.csv",row.names=FALSE,sep=",")
+#write.table(titreDat,"~/net/home/serosolver/data/sim_250_phi_dat.csv",row.names=FALSE,sep=",")
+#write.table(infHist,"~/net/home/serosolver/data/sim_250_phi_infHist.csv",row.names=FALSE,sep=",")
+#write.table(ages,"~/net/home/serosolver/data/sim_250_phi_ages.csv",row.names=FALSE,sep=",")
+#write.table(AR,"~/net/home/serosolver/data/sim_250_phi_AR.csv",row.names=FALSE,sep=",")
 
 
 #indivs <- sample(titreDat$individual,n_indiv)

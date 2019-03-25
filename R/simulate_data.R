@@ -258,7 +258,7 @@ simulate_ars_spline <- function(infection_years, buckets, mean_par = 0.15, sd_pa
   n <- length(infection_years)
   attack_year <- rlnorm(n, meanlog = log(mean_par) - sd_par^2 / 2, sdlog = sd_par)
   if (large_first_year) attack_year[1] <- rlnorm(1, meanlog = log(big_year_mean) - (sd_par / 2)^2 / 2, sdlog = sd_par / 2)
-  ars <- generate_lambdas(attack_year, knots, theta, n, buckets)
+  ars <- generate_phis(attack_year, knots, theta, n, buckets)
   return(ars)
 }
 
@@ -356,7 +356,7 @@ simulate_data <- function(par_tab, group = 1, n_indiv, buckets = 12,
 
     ages <- data.frame("individual" = 1:n_indiv, "DOB" = DOBs)
     attack_rates <- data.frame("year" = strain_isolation_times, "AR" = ARs)
-  return(list(data = y, infection_histories = infection_history, ages = ages, attack_rates = attack_rates, lambdas = attack_rates))
+  return(list(data = y, infection_histories = infection_history, ages = ages, attack_rates = attack_rates, phis = attack_rates))
 }
 
 #' Create useable antigenic map

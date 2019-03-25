@@ -21,21 +21,21 @@ check_par_tab <- function(par_tab, mcmc = FALSE, version = NULL) {
 
   ## Additional checks that should happen in run_MCMC
   if (mcmc == TRUE) {
-    lambda_indices <- which(par_tab$type == 2)
-    no_lambda <- length(lambda_indices)
-    explicit_lambda <- (no_lambda > 0)
+    phi_indices <- which(par_tab$type == 2)
+    no_phi <- length(phi_indices)
+    explicit_phi <- (no_phi > 0)
 
     ## Check that all optional parameters are fixed, if not, fix them
     op_pars <- par_tab[which(par_tab$type == 0), ]
     if (all(op_pars$fixed == 1) == FALSE) stop("All optional parameters must be fixed")
 
     if (version == 1) {
-      ## Check that the correct number of lambdas are present
-      # if( no_lambda!=length(strain_isolation_times)) stop(paste('Incorrect number of lambdas in par_tab,', no_lambda,'passed but was expecting',length(strain_isolation_times))) #Should we add the correct number?
+      ## Check that the correct number of phis are present
+      # if( no_phi!=length(strain_isolation_times)) stop(paste('Incorrect number of phis in par_tab,', no_phi,'passed but was expecting',length(strain_isolation_times))) #Should we add the correct number?
     }
 
     if (version %in% c(2, 3, 4)) {
-        if (explicit_lambda) stop(paste("lambdas are not required for versions 2, 3 or 4 but par_tab contains", no_lambda, "lambda(s)")) ## Should we remove them?
+        if (explicit_phi) stop(paste("phis are not required for versions 2, 3 or 4 but par_tab contains", no_phi, "phi(s)")) ## Should we remove them?
     }
     ## Check bounds are equal to starting bounds
     if(any(par_tab$upper_start>par_tab$upper_bound)|any(par_tab$lower_start<par_tab$lower_bound))

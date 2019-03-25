@@ -25,7 +25,7 @@ parTab <- read.csv("~/Documents/Fluscape/serosolver/inputs/parTab_base.csv",stri
 parTab[parTab$names %in% c("alpha","beta"),"values"] <- c(1,1)
 parTab[parTab$names == "wane","values"] <- 1
 parTab[parTab$names == "wane","values"] <- parTab[parTab$names == "wane","values"]/buckets
-parTab <- parTab[parTab$names != "lambda",]
+parTab <- parTab[parTab$names != "phi",]
 
 
 samplingTimes <- seq(2010*buckets, 2015*buckets, by=1)

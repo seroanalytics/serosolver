@@ -2,10 +2,10 @@
 % Please edit documentation in R/posteriors.R
 \name{gen_spline_y}
 \alias{gen_spline_y}
-\title{Generates a spline for \code{\link{generate_lambdas}}}
+\title{Generates a spline for \code{\link{generate_phis}}}
 \usage{
 gen_spline_y(x, knots, degree, theta, intercept = TRUE)
 }
 \description{
-Generates a spline for \code{\link{generate_lambdas}}
+Generates a spline for \code{\link{generate_phis}}
 }
