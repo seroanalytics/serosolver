@@ -502,22 +502,102 @@ plot_attack_rates_monthly <- function(infection_histories, titre_dat, strain_iso
     return(p)
 }
 
-#' Plot historical attack rates
+#' Plot attack rate residuals
 #'
-#' Plots inferred historical attack rates from the MCMC output on infection histories
+#' Plots inferred historical attack rates from the MCMC output on infection histories compared against known attack rates.
 #' @param infection_histories the MCMC chain for infection histories
 #' @param titre_dat the data frame of titre data
 #' @param strain_isolation_times vector of the epochs of potential circulation
+#' @param true_ar data frame of true attack rates, with first column `year` equal to `strain_isolation_times`, and second column `AR` giving the attack rate
 #' @param n_alive vector with the number of people alive in each year of circulation. Can be left as NULL, and ages will be used to infer this
 #' @param pointsize Numeric - how big should each point be?
 #' @param fatten Numeric - fatten parameter for ggplot pointrange
 #' @param pad_chain if TRUE, fills the infection history data table with entries for non-infection events (ie. 0s). Can be switched to FALSE for speed to get a rough idea of what the attack rates look like.
+#' @param prior_pars if not NULL, a list of parameters for the attack rate prior, giving the assumed prior_version along with alpha and beta
+#' @return a ggplot2 object with the inferred attack rates for each potential epoch of circulation
+#' @export
+plot_attack_rate_residuals<- function(infection_histories, titre_dat, strain_isolation_times, true_ar,
+                                      n_alive = NULL, pointsize = 1, fatten = 1, pad_chain=TRUE, prior_pars=NULL) {
+
+     ## Some year/sample combinations might have no infections there.
+    ## Need to make sure that these get considered
+    if(is.null(infection_histories$chain_no)) {
+        infection_histories$chain_no <- 1
+    }
+    if(pad_chain) infection_histories <- pad_inf_chain(infection_histories)
+    
+    ## Find inferred total number of infections from the MCMC output
+    ## Scale by number of individuals that were alive in each epoch
+    ## and generate quantiles
+    if (is.null(n_alive)) {
+        n_alive <- get_n_alive(titre_dat, strain_isolation_times)
+    }
+    
+    years <- c(strain_isolation_times,max(strain_isolation_times)+3)
+    data.table::setkey(infection_histories, "sampno", "j","chain_no")
+    tmp <- infection_histories[, list(V1 = sum(x)), by = key(infection_histories)]
+    tmp$taken <- years[tmp$j] %in% unique(titre_dat$samples)
+    tmp$taken <- ifelse(tmp$taken, "Yes", "No")
+    prior_dens <- NULL
+    n_alive1 <- n_alive
+    if(!is.null(prior_pars)){
+        n_alive1 <- c(n_alive, 1)
+        prior_ver <- prior_pars[["prior_version"]]
+        alpha1 <- prior_pars[["alpha"]]
+        beta1 <- prior_pars[["beta"]]
+        if(prior_ver == 3){
+            prior_dens <- rbinom(100000,size=max(n_alive),p=alpha1/(alpha1+beta1))/max(n_alive)
+        } else {
+            prior_dens <- rbeta(100000,alpha1, beta1)
+        }
+        prior_dens <- data.frame(sampno=1:length(prior_dens),j=max(tmp$j)+1,
+                                 chain_no=1, V1=prior_dens, taken="Prior")
+        tmp <- rbind(tmp, prior_dens)
+        
+    }
+    tmp$V1 <- tmp$V1/n_alive1[tmp$j]
+    tmp$j <- years[tmp$j]
+    tmp$taken <- tmp$j %in% unique(titre_dat$samples)
+    tmp$taken <- ifelse(tmp$taken, "Yes", "No")
+    min_year <- min(strain_isolation_times)
+    max_year <- max(strain_isolation_times)
+    year_breaks <- c(min_year,seq(5*round(min_year/5),max_year,by=5))
+    year_labels <- c(min_year,seq(5*round(min_year/5),max_year,by=5))
+    if(!is.null(prior_dens)){
+        tmp[tmp$j == max(years),"taken"] <- "Prior"
+        year_breaks <- c(year_breaks, max_year+3)
+        year_labels <- c(year_labels, "Prior")
+    }
+
+    colnames(tmp)[2] <- "year"
+    true_ar1 <- true_ar
+    true_ar <- rbind(true_ar,data.frame(year=max(strain_isolation_times)+3,AR=median(prior_dens$V1)))
+    true_ar[true_ar$year ==max(strain_isolation_times)+3,"AR"] <- mean(true_ar1$AR)
+    tmp <- merge(tmp, true_ar,id.vars="year")
+
+    p <- ggplot(tmp) +
+        geom_violin(aes(x = year, y = V1 - AR, fill=taken,group=year),
+                    draw_quantiles=c(0.5),scale="width") +
+        scale_x_continuous(breaks=year_breaks,labels=year_labels)+
+        geom_hline(yintercept=0,linetype="dashed") +
+        theme_classic() +
+        theme(legend.position="none")+
+        ylab("Estimated attack rate - true attack rate") +
+        xlab("Time")
+    p
+}
+
+
+#' Plot historical attack rates
+#'
+#' Plots inferred historical attack rates from the MCMC output on infection histories
+#' @inheritParams plot_attack_rate_residuals
 #' @param plot_den if TRUE, produces a violin plot of attack rates rather than pointrange.
-#' @param prior_den if not NULL, a list of parameters for the attack rate prior, giving the assumed prior_version along with alpha and beta
 #' @return a ggplot2 object with the inferred attack rates for each potential epoch of circulation
 #' @export
 plot_attack_rates <- function(infection_histories, titre_dat, strain_isolation_times, n_alive = NULL,
-                              pointsize = 1, fatten = 1, pad_chain=TRUE, plot_den=FALSE, prior_pars=NULL) {
+                              pointsize = 1, fatten = 1, pad_chain=TRUE, prior_pars=NULL,plot_den=FALSE) {
+    
     ## Some year/sample combinations might have no infections there.
     ## Need to make sure that these get considered
     if(is.null(infection_histories$chain_no)) {
@@ -609,10 +689,10 @@ plot_attack_rates <- function(infection_histories, titre_dat, strain_isolation_t
             theme(legend.position="none")+
             ylab("Estimated attack rate") +
             xlab("Year")
-        }
-     
-        
-  return(p)
+    } 
+    
+    
+    return(p)
 }
 
 #' Pad infection history chain

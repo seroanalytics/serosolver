@@ -12,7 +12,7 @@ setup_infection_histories_old(titre_dat, strain_isolation_times,
 
 \item{strain_isolation_times}{vector of real times for all strains}
 
-\item{sample_prob}{given an infection seems likely based on titre, suggest infection with some probability}
+\item{sample_prob}{given an infection seems likely based on titre, suggest infection with 1 minus this probability}
 
 \item{titre_cutoff}{specifies how high the titre must be to imply an infection}
 }

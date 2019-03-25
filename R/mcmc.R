@@ -638,7 +638,7 @@ run_MCMC <- function(par_tab,
           ## being changed to modify acceptance rate. If not accepting enough,
           ## reduce number. If accepting too many, increase number
           n_infs_vec[which(pcur_hist_add < popt_hist * (1 - OPT_TUNING))] <- n_infs_vec[which(pcur_hist_add < popt_hist * (1 - OPT_TUNING))] - 1
-          n_infs_vec[which(pcur_hist >= popt_hist * (1 + OPT_TUNING))] <- n_infs_vec[which(pcur_hist >= popt_hist * (1 + OPT_TUNING))] + 1
+          n_infs_vec[which(pcur_hist_add >= popt_hist * (1 + OPT_TUNING))] <- n_infs_vec[which(pcur_hist_add >= popt_hist * (1 + OPT_TUNING))] + 1
           n_infs_vec[n_infs_vec < 1] <- 1
 
           for (ii in seq_along(n_infs_vec)) {

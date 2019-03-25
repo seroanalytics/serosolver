@@ -9,7 +9,7 @@ generate_alpha_beta_prior_mode(mode1, k)
 \arguments{
 \item{mode1}{the desired mode}
 
-\item{the}{desired certainty in the prior, must be at least 2. The higher this number, the "stronger" the prior}
+\item{k}{the desired certainty in the prior, must be at least 2. The higher this number, the "stronger" the prior}
 }
 \value{
 a list with alpha and beta parameters for the Beta distribution

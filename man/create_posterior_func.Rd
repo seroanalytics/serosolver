@@ -28,7 +28,7 @@ create_posterior_func(par_tab, titre_dat, antigenic_map, version = 1,
 
 \item{n_alive}{if not NULL, uses this as the number alive in a given year rather than calculating from the ages. This is needed if the number of alive individuals is known, but individual birth dates are not}
 
-\item{function_type}{integer specifying which version of this function to use. Specify 1 to give a posterior solving function; 2 to give the gibbs sampler for infection history proposals; otherwise just solves the titre model and returns predicted titres}
+\item{function_type}{integer specifying which version of this function to use. Specify 1 to give a posterior solving function; 2 to give the gibbs sampler for infection history proposals; otherwise just solves the titre model and returns predicted titres. NOTE that this is not the same as the attack rate prior argument!}
 
 \item{...}{other arguments to pass to the posterior solving function}
 }
