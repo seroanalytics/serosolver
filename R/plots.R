@@ -1040,7 +1040,7 @@ generate_cumulative_inf_plots <- function(inf_chain, burnin = 0, indivs, real_in
         xlab("Circulation time")
     return_list <- NULL
     if(return_data){
-        return_lits <- list("cumu_infections"=p1, "density_plot"=density_plot,
+        return_list <- list("cumu_infections"=p1, "density_plot"=density_plot,
              "density_data"=densities,"real_hist"=real_hist_profiles,
              "cumu_data"=quant_hist)
     } else {
