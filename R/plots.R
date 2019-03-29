@@ -1038,8 +1038,9 @@ generate_cumulative_inf_plots <- function(inf_chain, burnin = 0, indivs, real_in
         theme(legend.position = "bottom")+
         ylab("Cumulative infections") +
         xlab("Circulation time")
+    return_list <- NULL
     if(return_data){
-        list("cumu_infections"=p1, "density_plot"=density_plot,
+        return_lits <- list("cumu_infections"=p1, "density_plot"=density_plot,
              "density_data"=densities,"real_hist"=real_hist_profiles,
              "cumu_data"=quant_hist)
     } else {
