@@ -38,6 +38,13 @@ sum_buckets <- function(a, buckets) {
     .Call('_serosolver_sum_buckets', PACKAGE = 'serosolver', a, buckets)
 }
 
+#' Count infections by group and time
+#'
+#' @export
+sum_infections_by_group <- function(inf_hist, group_ids_vec, n_groups) {
+    .Call('_serosolver_sum_infections_by_group', PACKAGE = 'serosolver', inf_hist, group_ids_vec, n_groups)
+}
+
 #' Add measurement shifts to predictions
 #'
 #' Adds observation error shifts to predicted antibody titres.
@@ -49,19 +56,6 @@ sum_buckets <- function(a, buckets) {
 #' @export
 add_measurement_shifts <- function(predicted_titres, to_add, start_index_in_data, end_index_in_data) {
     invisible(.Call('_serosolver_add_measurement_shifts', PACKAGE = 'serosolver', predicted_titres, to_add, start_index_in_data, end_index_in_data))
-}
-
-#' Overall model function, fast implementation
-#'
-#' See documentation for \code{\link{titre_data_group}}, as the interface is almost identical
-#' @inheritParams titre_data_group
-#' @param mus NumericVector, if length is greater than one, assumes that strain-specific boosting is used rather than a single boosting parameter
-#' @param boosting_vec_indices IntegerVector, same length as circulation_times, giving the index in the vector \code{mus} that each entry should use as its boosting parameter.
-#' @return NumericVector of predicted titres for each entry in measurement_strain_indices
-#' @export
-#' @family titre_model
-titre_data_fast <- function(theta, infection_history_mat, circulation_times, circulation_times_indices, sample_times, rows_per_indiv_in_samples, cum_nrows_per_individual_in_data, nrows_per_blood_sample, measurement_strain_indices, antigenic_map_long, antigenic_map_short, mus, boosting_vec_indices) {
-    .Call('_serosolver_titre_data_fast', PACKAGE = 'serosolver', theta, infection_history_mat, circulation_times, circulation_times_indices, sample_times, rows_per_indiv_in_samples, cum_nrows_per_individual_in_data, nrows_per_blood_sample, measurement_strain_indices, antigenic_map_long, antigenic_map_short, mus, boosting_vec_indices)
 }
 
 #' Model function sample
@@ -142,6 +136,19 @@ likelihood_data_individual <- function(theta, infection_history, circulation_tim
     .Call('_serosolver_likelihood_data_individual', PACKAGE = 'serosolver', theta, infection_history, circulation_times, circulation_times_indices, sample_times, data_indices, measurement_strain_indices, antigenic_map_long, antigenic_map_short, number_strains, data, titre_shifts, DOB, additional_arguments)
 }
 
+#' Overall model function, fast implementation
+#'
+#' See documentation for \code{\link{titre_data_group}}, as the interface is almost identical
+#' @inheritParams titre_data_group
+#' @param mus NumericVector, if length is greater than one, assumes that strain-specific boosting is used rather than a single boosting parameter
+#' @param boosting_vec_indices IntegerVector, same length as circulation_times, giving the index in the vector \code{mus} that each entry should use as its boosting parameter.
+#' @return NumericVector of predicted titres for each entry in measurement_strain_indices
+#' @export
+#' @family titre_model
+titre_data_fast <- function(theta, infection_history_mat, circulation_times, circulation_times_indices, sample_times, rows_per_indiv_in_samples, cum_nrows_per_individual_in_data, nrows_per_blood_sample, measurement_strain_indices, antigenic_map_long, antigenic_map_short, mus, boosting_vec_indices) {
+    .Call('_serosolver_titre_data_fast', PACKAGE = 'serosolver', theta, infection_history_mat, circulation_times, circulation_times_indices, sample_times, rows_per_indiv_in_samples, cum_nrows_per_individual_in_data, nrows_per_blood_sample, measurement_strain_indices, antigenic_map_long, antigenic_map_short, mus, boosting_vec_indices)
+}
+
 #' Marginal prior probability (p(Z)) of a particular infection history matrix single prior
 #'  Prior is independent contribution from each year
 #' @param infection_history IntegerMatrix, the infection history matrix
@@ -168,10 +175,36 @@ inf_mat_prior_cpp_vector <- function(infection_history, n_alive, alphas, betas) 
     .Call('_serosolver_inf_mat_prior_cpp_vector', PACKAGE = 'serosolver', infection_history, n_alive, alphas, betas)
 }
 
+#' Marginal prior probability (p(Z)) of infection history matrix with groups
+#'  Prior is independent contribution from each year and group
+#' @param n_infections IntegerMatrix, the total number of infections in each time point/group
+#' @param n_alive IntegerMatrix, matrix giving the number of individuals alive in each time unit in each group
+#' @param alpha double, alpha parameter for beta distribution prior
+#' @param beta double, beta parameter for beta distribution prior
+#' @return a single prior probability
+#' @export
+#' @family inf_mat_prior
+inf_mat_prior_group_cpp <- function(n_infections, n_alive, alpha, beta) {
+    .Call('_serosolver_inf_mat_prior_group_cpp', PACKAGE = 'serosolver', n_infections, n_alive, alpha, beta)
+}
+
+#' Marginal prior probability (p(Z)) of a particular infection history matrix vector prior by group
+#'  Prior is independent contribution from each time, but each time has its own alpha and beta
+#' @param n_infections IntegerMatrix, the total number of infections in each time point/group
+#' @param n_alive IntegerMatrix, matrix giving the number of individuals alive in each time unit in each group
+#' @param alphas NumericVector, alpha parameters for beta distribution prior, one for each time unit
+#' @param betas NumericVector, beta parameters for beta distribution prior, one for each time unit
+#' @return a single prior probability
+#' @export
+#' @family inf_mat_prior
+inf_mat_prior_group_cpp_vector <- function(n_infections, n_alive, alphas, betas) {
+    .Call('_serosolver_inf_mat_prior_group_cpp_vector', PACKAGE = 'serosolver', n_infections, n_alive, alphas, betas)
+}
+
 #' Marginal prior probability (p(Z)) of a particular infection history matrix total prior
-#'  Prior here is on the total number of infections across all individuals and years
+#'  Prior here is on the total number of infections across all individuals and times
 #' @param infection_history IntegerMatrix, the infection history matrix
-#' @param n_alive IntegerVector, vector giving the number of individuals alive in each year
+#' @param n_alive IntegerVector, vector giving the number of individuals alive in each time
 #' @param alpha double, alpha parameter for beta distribution prior
 #' @param beta double, beta parameter for beta distribution prior
 #' @return a single prior probability
@@ -205,45 +238,6 @@ likelihood_func_fast <- function(theta, obs, predicted_titres) {
 #' @export
 likelihood_titre_basic <- function(expected, data, theta, titre_shifts) {
     .Call('_serosolver_likelihood_titre_basic', PACKAGE = 'serosolver', expected, data, theta, titre_shifts)
-}
-
-#' Infection history gibbs proposal, fast
-#'  Generates a new infection history matrix and corresponding individual likelihoods, using a gibbs sampler from the infection history prior. See \code{\link{infection_history_proposal_gibbs}}, as inputs are very similar.
-#' @param theta NumericVector, the model parameters used to solve the model
-#' @param infection_history_mat IntegerMatrix the matrix of 1s and 0s corresponding to individual infection histories
-#' @param old_probs_1 NumericVector, the current likelihoods for each individual
-#' @param sampled_indivs IntegerVector, indices of sampled individuals
-#' @param n_years_samp int, for each individual, how many time periods to resample infections for?
-#' @param age_mask IntegerVector, length of the number of individuals, with indices specifying first time period that an individual can be infected (indexed from 1, such that a value of 1 allows an individual to be infected in any time period)
-#' @param strain_mask IntegerVector, length of the number of individuals, with indices specifying last time period that an individual can be infected (ie. last time a sample was taken)
-#' @param n_alive IntegerVector, length of the number of time periods that an individual could be infected, giving the number of individual alive in each time period
-#' @param swap_propn double, what proportion of proposals should be swap steps (ie. swap contents of two cells in infection_history rather than adding/removing infections)
-#' @param swap_distance int, in a swap step, how many time steps either side of the chosen time period to swap with
-#' @param alpha double, alpha parameter for beta prior on infection probability
-#' @param beta double, beta parameter for beta prior on infection probability
-#' @param circulation_times NumericVector, the times that each strain circulated
-#' @param circulation_times_indices IntegerVector, indexing vector from 0:(number of strains-1)
-#' @param sample_times NumericVector, the vector of real times that samples were taken
-#' @param rows_per_indiv_in_samples IntegerVector, How many rows in titre data correspond to each individual, sample and repeat?
-#' @param cum_nrows_per_individual_in_data IntegerVector, How many rows in the titre data correspond to each individual?
-#' @param cum_nrows_per_individual_in_repeat_data IntegerVector, For the repeat data (ie. already calculated these titres), how many rows in the titre data correspond to each individual?
-#' @param nrows_per_blood_sample IntegerVector, Split the sample times and runs for each individual
-#' @param measurement_strain_indices IntegerVector, For each titre measurement, corresponding entry in antigenic map
-#' @param antigenic_map_long NumericVector, the collapsed cross reactivity map for long term boosting, after multiplying by sigma1, see \code{\link{create_cross_reactivity_vector}}
-#' @param antigenic_map_short NumericVector, the collapsed cross reactivity map for short term boosting, after multiplying by sigma2, see \code{\link{create_cross_reactivity_vector}}
-#' @param data NumericVector, data for all individuals for the first instance of each calculated titre
-#' @param repeat_data NumericVector, the repeat titre data for all individuals (ie. do not solve the same titres twice)
-#' @param repeat_indices IntegerVector, which index in the main data vector does each entry in repeat_data correspond to ie. which calculated titre in predicted_titres should be used for each observation?
-#' @param titre_shifts NumericVector, if length matches the length of \code{data}, adds these as measurement shifts to the predicted titres. If lengths do not match, is not used.
-#' @param mus NumericVector, if length is greater than one, assumes that strain-specific boosting is used rather than a single boosting parameter
-#' @param boosting_vec_indices IntegerVector, same length as circulation_times, giving the index in the vector \code{mus} that each entry should use as its boosting parameter.
-#' @param solve_likelihood bool, if FALSE does not solve likelihood when calculating acceptance probability
-#' @param temp double, temperature for parallel tempering MCMC
-#' @return an R list, one entry with the matrix of 1s and 0s corresponding to the infection histories for all individuals and the other with the new corresponding likelihoods per individual
-#' @export
-#' @family infection_history_proposal
-infection_history_proposal_gibbs_fast <- function(theta, infection_history_mat, old_probs_1, sampled_indivs, n_years_samp_vec, age_mask, strain_mask, n_alive, swap_propn, swap_distance, alpha, beta, circulation_times, circulation_times_indices, sample_times, rows_per_indiv_in_samples, cum_nrows_per_individual_in_data, cum_nrows_per_individual_in_repeat_data, nrows_per_blood_sample, measurement_strain_indices, antigenic_map_long, antigenic_map_short, data, repeat_data, repeat_indices, titre_shifts, mus, boosting_vec_indices, temp = 1, solve_likelihood = TRUE) {
-    .Call('_serosolver_infection_history_proposal_gibbs_fast', PACKAGE = 'serosolver', theta, infection_history_mat, old_probs_1, sampled_indivs, n_years_samp_vec, age_mask, strain_mask, n_alive, swap_propn, swap_distance, alpha, beta, circulation_times, circulation_times_indices, sample_times, rows_per_indiv_in_samples, cum_nrows_per_individual_in_data, cum_nrows_per_individual_in_repeat_data, nrows_per_blood_sample, measurement_strain_indices, antigenic_map_long, antigenic_map_short, data, repeat_data, repeat_indices, titre_shifts, mus, boosting_vec_indices, temp, solve_likelihood)
 }
 
 #' Gibbs sampling of infection histories
@@ -298,6 +292,46 @@ infection_history_proposal_gibbs <- function(pars, infection_history_mat, indiv_
 #' @family infection_history_proposal
 inf_hist_prop_cpp <- function(infection_history_mat, sampled_indivs, age_mask, strain_mask, move_sizes, n_infs, alpha, beta, rand_ns) {
     .Call('_serosolver_inf_hist_prop_cpp', PACKAGE = 'serosolver', infection_history_mat, sampled_indivs, age_mask, strain_mask, move_sizes, n_infs, alpha, beta, rand_ns)
+}
+
+#' Infection history gibbs proposal, fast
+#'  Generates a new infection history matrix and corresponding individual likelihoods, using a gibbs sampler from the infection history prior. See \code{\link{infection_history_proposal_gibbs}}, as inputs are very similar.
+#' @param theta NumericVector, the model parameters used to solve the model
+#' @param infection_history_mat IntegerMatrix the matrix of 1s and 0s corresponding to individual infection histories
+#' @param old_probs_1 NumericVector, the current likelihoods for each individual
+#' @param sampled_indivs IntegerVector, indices of sampled individuals
+#' @param n_years_samp int, for each individual, how many time periods to resample infections for?
+#' @param age_mask IntegerVector, length of the number of individuals, with indices specifying first time period that an individual can be infected (indexed from 1, such that a value of 1 allows an individual to be infected in any time period)
+#' @param strain_mask IntegerVector, length of the number of individuals, with indices specifying last time period that an individual can be infected (ie. last time a sample was taken)
+#' @param n_alive IntegerMatrix, number of columns is the number of time periods that an individual could be infected, giving the number of individual alive in each time period. Number of rows is the number of distinct groups.
+#' @param swap_propn double, what proportion of proposals should be swap steps (ie. swap contents of two cells in infection_history rather than adding/removing infections)
+#' @param swap_distance int, in a swap step, how many time steps either side of the chosen time period to swap with
+#' @param alpha double, alpha parameter for beta prior on infection probability
+#' @param beta double, beta parameter for beta prior on infection probability
+#' @param circulation_times NumericVector, the times that each strain circulated
+#' @param circulation_times_indices IntegerVector, indexing vector from 0:(number of strains-1)
+#' @param sample_times NumericVector, the vector of real times that samples were taken
+#' @param rows_per_indiv_in_samples IntegerVector, How many rows in titre data correspond to each individual, sample and repeat?
+#' @param cum_nrows_per_individual_in_data IntegerVector, How many rows in the titre data correspond to each individual?
+#' @param cum_nrows_per_individual_in_repeat_data IntegerVector, For the repeat data (ie. already calculated these titres), how many rows in the titre data correspond to each individual?
+#' @param nrows_per_blood_sample IntegerVector, Split the sample times and runs for each individual
+#' @param group_id_vec IntegerVector, vector with 1 entry per individual, giving the group ID of that individual
+#' @param measurement_strain_indices IntegerVector, For each titre measurement, corresponding entry in antigenic map
+#' @param antigenic_map_long NumericVector, the collapsed cross reactivity map for long term boosting, after multiplying by sigma1, see \code{\link{create_cross_reactivity_vector}}
+#' @param antigenic_map_short NumericVector, the collapsed cross reactivity map for short term boosting, after multiplying by sigma2, see \code{\link{create_cross_reactivity_vector}}
+#' @param data NumericVector, data for all individuals for the first instance of each calculated titre
+#' @param repeat_data NumericVector, the repeat titre data for all individuals (ie. do not solve the same titres twice)
+#' @param repeat_indices IntegerVector, which index in the main data vector does each entry in repeat_data correspond to ie. which calculated titre in predicted_titres should be used for each observation?
+#' @param titre_shifts NumericVector, if length matches the length of \code{data}, adds these as measurement shifts to the predicted titres. If lengths do not match, is not used.
+#' @param mus NumericVector, if length is greater than one, assumes that strain-specific boosting is used rather than a single boosting parameter
+#' @param boosting_vec_indices IntegerVector, same length as circulation_times, giving the index in the vector \code{mus} that each entry should use as its boosting parameter.
+#' @param solve_likelihood bool, if FALSE does not solve likelihood when calculating acceptance probability
+#' @param temp double, temperature for parallel tempering MCMC
+#' @return an R list, one entry with the matrix of 1s and 0s corresponding to the infection histories for all individuals and the other with the new corresponding likelihoods per individual
+#' @export
+#' @family infection_history_proposal
+infection_history_proposal_gibbs_fast <- function(theta, infection_history_mat, old_probs_1, sampled_indivs, n_years_samp_vec, age_mask, strain_mask, n_alive, n_infections, swap_propn, swap_distance, alpha, beta, circulation_times, circulation_times_indices, sample_times, rows_per_indiv_in_samples, cum_nrows_per_individual_in_data, cum_nrows_per_individual_in_repeat_data, nrows_per_blood_sample, group_id_vec, measurement_strain_indices, antigenic_map_long, antigenic_map_short, data, repeat_data, repeat_indices, titre_shifts, mus, boosting_vec_indices, temp = 1, solve_likelihood = TRUE, total_alive = -1L) {
+    .Call('_serosolver_infection_history_proposal_gibbs_fast', PACKAGE = 'serosolver', theta, infection_history_mat, old_probs_1, sampled_indivs, n_years_samp_vec, age_mask, strain_mask, n_alive, n_infections, swap_propn, swap_distance, alpha, beta, circulation_times, circulation_times_indices, sample_times, rows_per_indiv_in_samples, cum_nrows_per_individual_in_data, cum_nrows_per_individual_in_repeat_data, nrows_per_blood_sample, group_id_vec, measurement_strain_indices, antigenic_map_long, antigenic_map_short, data, repeat_data, repeat_indices, titre_shifts, mus, boosting_vec_indices, temp, solve_likelihood, total_alive)
 }
 
 #' Function to calculate non-linear waning

@@ -1,519 +1,10 @@
 #include <RcppArmadilloExtensions/sample.h>
 #include "boosting_functions.h"
+#include "boosting_functions_fast.h"
 #include "infection_model.h"
 #include "likelihood_funcs.h"
 #include "helpers.h"
 // [[Rcpp::depends(RcppArmadillo)]]
-
-
-//' Infection history gibbs proposal, fast
-//'  Generates a new infection history matrix and corresponding individual likelihoods, using a gibbs sampler from the infection history prior. See \code{\link{infection_history_proposal_gibbs}}, as inputs are very similar.
-//' @param theta NumericVector, the model parameters used to solve the model
-//' @param infection_history_mat IntegerMatrix the matrix of 1s and 0s corresponding to individual infection histories
-//' @param old_probs_1 NumericVector, the current likelihoods for each individual
-//' @param sampled_indivs IntegerVector, indices of sampled individuals
-//' @param n_years_samp int, for each individual, how many time periods to resample infections for?
-//' @param age_mask IntegerVector, length of the number of individuals, with indices specifying first time period that an individual can be infected (indexed from 1, such that a value of 1 allows an individual to be infected in any time period)
-//' @param strain_mask IntegerVector, length of the number of individuals, with indices specifying last time period that an individual can be infected (ie. last time a sample was taken)
-//' @param n_alive IntegerVector, length of the number of time periods that an individual could be infected, giving the number of individual alive in each time period
-//' @param swap_propn double, what proportion of proposals should be swap steps (ie. swap contents of two cells in infection_history rather than adding/removing infections)
-//' @param swap_distance int, in a swap step, how many time steps either side of the chosen time period to swap with
-//' @param alpha double, alpha parameter for beta prior on infection probability
-//' @param beta double, beta parameter for beta prior on infection probability
-//' @param circulation_times NumericVector, the times that each strain circulated
-//' @param circulation_times_indices IntegerVector, indexing vector from 0:(number of strains-1)
-//' @param sample_times NumericVector, the vector of real times that samples were taken
-//' @param rows_per_indiv_in_samples IntegerVector, How many rows in titre data correspond to each individual, sample and repeat?
-//' @param cum_nrows_per_individual_in_data IntegerVector, How many rows in the titre data correspond to each individual?
-//' @param cum_nrows_per_individual_in_repeat_data IntegerVector, For the repeat data (ie. already calculated these titres), how many rows in the titre data correspond to each individual?
-//' @param nrows_per_blood_sample IntegerVector, Split the sample times and runs for each individual
-//' @param measurement_strain_indices IntegerVector, For each titre measurement, corresponding entry in antigenic map
-//' @param antigenic_map_long NumericVector, the collapsed cross reactivity map for long term boosting, after multiplying by sigma1, see \code{\link{create_cross_reactivity_vector}}
-//' @param antigenic_map_short NumericVector, the collapsed cross reactivity map for short term boosting, after multiplying by sigma2, see \code{\link{create_cross_reactivity_vector}}
-//' @param data NumericVector, data for all individuals for the first instance of each calculated titre
-//' @param repeat_data NumericVector, the repeat titre data for all individuals (ie. do not solve the same titres twice)
-//' @param repeat_indices IntegerVector, which index in the main data vector does each entry in repeat_data correspond to ie. which calculated titre in predicted_titres should be used for each observation?
-//' @param titre_shifts NumericVector, if length matches the length of \code{data}, adds these as measurement shifts to the predicted titres. If lengths do not match, is not used.
-//' @param mus NumericVector, if length is greater than one, assumes that strain-specific boosting is used rather than a single boosting parameter
-//' @param boosting_vec_indices IntegerVector, same length as circulation_times, giving the index in the vector \code{mus} that each entry should use as its boosting parameter.
-//' @param solve_likelihood bool, if FALSE does not solve likelihood when calculating acceptance probability
-//' @param temp double, temperature for parallel tempering MCMC
-//' @return an R list, one entry with the matrix of 1s and 0s corresponding to the infection histories for all individuals and the other with the new corresponding likelihoods per individual
-//' @export
-//' @family infection_history_proposal
-// [[Rcpp::export]]
-List infection_history_proposal_gibbs_fast(const NumericVector &theta, // Model parameters
-					   const IntegerMatrix &infection_history_mat,  // Current infection history
-					   const NumericVector &old_probs_1,
-					   const IntegerVector &sampled_indivs,
-					   const IntegerVector &n_years_samp_vec,
-					   const IntegerVector &age_mask, // Age mask
-					   const IntegerVector &strain_mask, // Age mask
-					   const IntegerVector &n_alive, // Number of individuals alive in each year
-					   const double &swap_propn,
-					   const int &swap_distance,
-					   const double &alpha, // Alpha for prior
-					   const double &beta, // Beta for prior
-					   const NumericVector &circulation_times,
-					   const IntegerVector &circulation_times_indices,
-					   const NumericVector &sample_times,
-					   const IntegerVector &rows_per_indiv_in_samples, // How many rows in unique sample times table correspond to each individual?
-					   const IntegerVector &cum_nrows_per_individual_in_data, // How many rows in the titre data correspond to each individual?
-					   const IntegerVector &cum_nrows_per_individual_in_repeat_data, // How many rows in the repeat titre data correspond to each individual?
-					   const IntegerVector &nrows_per_blood_sample, // How many rows in the titre data table correspond to each unique individual + sample time + repeat?
-					   const IntegerVector &measurement_strain_indices, // For each titre measurement, corresponding entry in antigenic map
-					   const NumericVector &antigenic_map_long, 
-					   const NumericVector &antigenic_map_short,
-					   const NumericVector &data,
-					   const NumericVector &repeat_data,
-					   const IntegerVector &repeat_indices,
-					   const NumericVector &titre_shifts,
-					   const NumericVector &mus,
-					   const IntegerVector &boosting_vec_indices,
-					   const double temp=1,
-					   bool solve_likelihood=true
-					   ){
-  // ########################################################################
-  // Parameters to control indexing of data
-  IntegerMatrix new_infection_history_mat(infection_history_mat); // Can this be avoided? Create a copy of the inf hist matrix
-  int n_titres_total = data.size(); // How many titres are there in total?
-  NumericVector predicted_titres(n_titres_total); // Vector to store predicted titres
-  NumericVector old_probs = clone(old_probs_1); // Create a copy of the current old probs
-
-  // These can be pre-computed
-  int n_indivs = infection_history_mat.nrow();  // How many individuals are there in total?
-  int number_strains = infection_history_mat.ncol(); // How many possible years are we interested in?
-  int n_sampled = sampled_indivs.size(); // How many individuals are we actually investigating?
-
-  // These indices allow us to step through the titre data vector
-  // as if it were a matrix ie. number of rows for each individual
-  // at a time
-  int index_in_samples; // Index in sample times vector to point to
-  int end_index_in_samples; // Index in sample times vector to end at
-  int start_index_in_data; // Index in titre data to start at
-  int end_index_in_data; // Index in titre data to end at
-
-  int start_index_in_repeat_data; // Index in repeat titre data to start at
-  int end_index_in_repeat_data; // Index in repeat titre data to end at
-
-  int tmp_titre_index; // Index in titre data that we are currently at
-  int inf_map_index; // Index in antigenic map of the infecting strain
-  int index; // 
-  int number_samples; // Tmp store number of blood samples for this individual
-  int n_titres; // Tmp store of number of titres to predict for this sample
- 
-  double sampling_time; // Tmp store time that blood sample taken
-  double time; // Tmp store time between sample and exposure
-
-  IntegerVector new_infection_history(number_strains); // New proposed infection history
-  IntegerVector infection_history(number_strains); // Old infection history
-  LogicalVector indices;
-
-  NumericVector infection_times; // Tmp store infection times for this infection history, combined with indices
-  IntegerVector infection_strain_indices_tmp; // Tmp store which index in antigenic map these infection times relate to
-
-  // Extract parameters first to avoid allocation costs
-  double mu = theta["mu"];
-  double mu_short = theta["mu_short"];
-  double wane = theta["wane"];
-  double tau = theta["tau"];
-  double seniority;
-  double n_inf;
-
-  int wane_type = theta["wane_type"]; 
-  bool alternative_wane_func = wane_type == 1;
-  double kappa;
-  double t_change;
-
-
-  bool titre_dependent_boosting = theta["titre_dependent"] == 1;
-  double gradient;
-  double boost_limit;
-  
-  bool strain_dep_boost = false;
-
-  if (alternative_wane_func){
-    kappa = theta["kappa"];
-    t_change = theta["t_change"];
-  }  
-
-  if (titre_dependent_boosting) {
-    gradient = theta["gradient"];
-    boost_limit = theta["boost_limit"];
-  }
-  
-  if (mus.size() > 1) {
-    strain_dep_boost = true;    
-  }
-
-  bool base_function = !(alternative_wane_func || titre_dependent_boosting || strain_dep_boost);
-  // ########################################################################
-
-  // ########################################################################
-  IntegerVector samps; // Variable vector to sample from
-  IntegerVector locs; // Vector of locations that were sampled
-  // ########################################################################
-
-  // ########################################################################
-  int indiv; // Index of the individual under consideration
-  int year; // Index of year being updated
-
-  int n_samp_max; // Maximum number of years to sample for individual
-  int n_samp_length; // Number of years that COULD be sampled for this individual
-  int new_entry;
-  int old_entry;
-  int loc1, loc2, tmp; // Which indices are we looking at?
-  int n_years_samp; // How many years to sample for this individual?
-  int loc1_val_old, loc2_val_old;
-
-  // ########################################################################
-
-  // ########################################################################
-  double m; // number of infections in a given year
-  double n; // number alive in a particular year
-
-  double m_1_new, m_1_old,m_2_new,m_2_old;
-  double n_1, n_2;
-  double prior_1_old, prior_2_old, prior_1_new,prior_2_new,prior_new,prior_old;
-
-  double rand1; // Store a random number
-  double ratio; // Store the gibbs ratio for 0 or 1 proposal
-
-  double old_prob; // Likelihood of old number
-  double new_prob; // Likelihood of new number
-  double log_prob; // Likelihood ratio
-
-  double lbeta_const = R::lbeta(alpha, beta);
-
-  // For likelihood
-  const double sd = theta["error"];
-  const double den = sd*M_SQRT2;
-  const double max_titre = theta["MAX_TITRE"];
-  const double log_const = log(0.5);
-
-
-  // Titre dependent boosting
-  bool use_titre_shifts = false;
-  if(titre_shifts.size() == n_titres_total) use_titre_shifts = true;
-  // ########################################################################
-  
-  // ########################################################################
-  // For each individual
-  for(int i = 0; i < n_sampled; ++i){
-    // Get index of individual under consideration and their current likelihood
-    indiv = sampled_indivs[i]-1;
-    old_prob = old_probs_1[indiv];  
-    // Indexing for data upkeep
-    index_in_samples = rows_per_indiv_in_samples[indiv];
-    end_index_in_samples = rows_per_indiv_in_samples[indiv+1] - 1;
-    number_samples = end_index_in_samples - index_in_samples;      
-
-    n_years_samp = n_years_samp_vec[indiv]; // How many years are we intending to resample from for this individual?
-    n_samp_length  = strain_mask[indiv] - age_mask[indiv]; // How many years maximum can we sample from?
-    n_samp_max = std::min(n_years_samp, n_samp_length); // Use the smaller of these two numbers
-    // Indexing for data upkeep
-    start_index_in_data = cum_nrows_per_individual_in_data[indiv];
-    end_index_in_data = cum_nrows_per_individual_in_data[indiv+1]-1;
-    start_index_in_repeat_data = cum_nrows_per_individual_in_repeat_data[indiv];
-
-    // Swap contents of a year for an individual
-    if(R::runif(0,1) < swap_propn){
-      new_infection_history = new_infection_history_mat(indiv,_);
-
-      loc1 = floor(R::runif(0,n_samp_length+1)); // Choose a location from age_mask to strain_mask
-      loc2 = loc1 + floor(R::runif(-swap_distance,swap_distance)); // Perturb +/- swap_distance
- 
-      // If we have gone too far left or right, reflect at the boundaries
-      // Reflect at boundary
-      /*if(loc2 < 0 || loc2 >= n_samp_length){
-	loc2 = n_samp_length - (loc2 - floor(loc2/n_samp_length)*n_samp_length) - 1;
-	}*/
-      
-      
-      while(loc2 < 0) loc2 += n_samp_length;
-      if(loc2 >= n_samp_length) loc2 -= floor(loc2/n_samp_length)*n_samp_length;
-      
-      // Get onto right scale (starting at age mask)
-      loc1 += age_mask[indiv] - 1;
-      loc2 += age_mask[indiv] - 1;
-
-      loc1_val_old = new_infection_history(loc1);
-      loc2_val_old = new_infection_history(loc2);
-
-      // Only proceed if we've actually made a change
-      if(loc1_val_old != loc2_val_old){
-	// Swap contents
-	new_infection_history(loc1) = new_infection_history(loc2);
-	new_infection_history(loc2) = loc1_val_old;
-
-	// Prior for previous state
-	m_1_old = sum(new_infection_history_mat(_,loc1));      
-	m_2_old = sum(new_infection_history_mat(_,loc2));
-	    
-	// Number alive is number alive overall
-	n_1 = n_alive(loc1);
-	n_2 = n_alive(loc2);
-
-	// Pre-compute these? 
-	prior_1_old = R::lbeta(m_1_old + alpha, n_1 - m_1_old + beta)-lbeta_const;
-	prior_2_old = R::lbeta(m_2_old + alpha, n_2 - m_2_old + beta)-lbeta_const;
-	prior_old = prior_1_old + prior_2_old;
-
-	// Prior for new state
-	m_1_new = m_1_old - loc1_val_old + loc2_val_old;
-	m_2_new = m_2_old - loc2_val_old + loc1_val_old;
-
-	prior_1_new = R::lbeta(m_1_new + alpha, n_1 - m_1_new + beta)-lbeta_const;
-	prior_2_new = R::lbeta(m_2_new + alpha, n_2 - m_2_new + beta)-lbeta_const;
-	prior_new = prior_1_new + prior_2_new;	 
-
-	////////////////////////
-	if(solve_likelihood){
-	  // Calculate likelihood!
-	  indices = new_infection_history > 0;
-	  infection_times = circulation_times[indices];
-	  infection_strain_indices_tmp = circulation_times_indices[indices];
-	  
-	  if (base_function) {
-	    titre_data_fast_individual_base(predicted_titres, mu, mu_short,
-					    wane, tau,
-					    infection_times,
-					    infection_strain_indices_tmp,
-					    measurement_strain_indices,
-					    sample_times,
-					    index_in_samples,
-					    end_index_in_samples,
-					    start_index_in_data,
-					    nrows_per_blood_sample,
-					    number_strains,
-					    antigenic_map_short,
-					    antigenic_map_long);	  
-	  } else if (titre_dependent_boosting) {
-	    titre_data_fast_individual_titredep(predicted_titres, mu, mu_short,
-						wane, tau,
-						gradient, boost_limit,
-						infection_times,
-						infection_strain_indices_tmp,
-						measurement_strain_indices,
-						sample_times,
-						index_in_samples,
-						end_index_in_samples,
-						start_index_in_data,
-						nrows_per_blood_sample,
-						number_strains,
-						antigenic_map_short,
-						antigenic_map_long);	
-	  } else if (strain_dep_boost) {
-	    titre_data_fast_individual_strain_dependent(predicted_titres, 
-							mus, boosting_vec_indices, 
-							mu_short,
-							wane, tau,
-							infection_times,
-							infection_strain_indices_tmp,
-							measurement_strain_indices,
-							sample_times,
-							index_in_samples,
-							end_index_in_samples,
-							start_index_in_data,
-							nrows_per_blood_sample,
-							number_strains,
-							antigenic_map_short,
-							antigenic_map_long);
-	  } else {
-	    titre_data_fast_individual_wane2(predicted_titres, mu, mu_short,
-					     wane, tau,
-					     kappa, t_change,
-					     infection_times,
-					     infection_strain_indices_tmp,
-					     measurement_strain_indices,
-					     sample_times,
-					     index_in_samples,
-					     end_index_in_samples,
-					     start_index_in_data,
-					     nrows_per_blood_sample,
-					     number_strains,
-					     antigenic_map_short,
-					     antigenic_map_long);
-	  }
-
-	  if(use_titre_shifts){
-	    add_measurement_shifts(predicted_titres, titre_shifts, 
-				   start_index_in_data, end_index_in_data);
-	  }
-	  
-	  // Now have all predicted titres for this individual calculated
-	  // Need to calculate likelihood of these titres... 
-	  new_prob = 0;
-
-	  // NEED SOMETHING TO DEAL WITH REPEATS
-	  // Go from first row in the data for this individual to up to the next one, accumlating
-	  // likelihood for this individual
-	  // For unique data
-	  proposal_likelihood_func(new_prob, predicted_titres, indiv, data, repeat_data, repeat_indices,
-				   cum_nrows_per_individual_in_data, cum_nrows_per_individual_in_repeat_data,
-				   log_const, den, max_titre);
-	} else {
-	  old_prob = new_prob = old_probs[indiv];
-	}
-
-	log_prob = std::min<double>(0.0, (new_prob+prior_new) - (old_prob+prior_old));
-	rand1 = R::runif(0,1);
-	if(log(rand1) < log_prob/temp){
-	  // Update the entry in the new matrix Z
-	  old_prob = new_prob;
-	  old_probs[indiv] = new_prob;
-	  // Carry out the swap
-	  tmp = new_infection_history_mat(indiv,loc1);
-	  new_infection_history_mat(indiv,loc1) = new_infection_history_mat(indiv,loc2);
-	  new_infection_history_mat(indiv,loc2) = tmp;
-	}
-      }
-    } else {
-      // Sample n_samp_real years from 0:length. Ths will be used to pull years from
-      // sample_years
-      // Note sampling indices in the individual's infection history, not the matrix Z
-      // Take n_samp_max random samples 
-      samps = seq(0, n_samp_length);    // Create vector from 0:length of alive years
-      locs = RcppArmadillo::sample(samps, n_samp_max, FALSE, NumericVector::create());
-
-      for(int j = 0; j < n_samp_max; ++j){
-	new_infection_history = new_infection_history_mat(indiv,_);
-	year = locs[j] + age_mask[indiv] - 1;
-
-	old_entry = new_infection_history(year);
-
-	// Get number of individuals that were alive and/or infected in that year,
-	// less the current individual
-	// Number of infections in this year, less infection status of this individual in this year
-	m = sum(new_infection_history_mat(_,year)) - old_entry;
-	n = n_alive(year) - 1;
-	       
-	// Work out proposal ratio - prior from alpha, beta and number of other infections
-	ratio = (m + alpha)/(n + alpha + beta);
-
-	// Propose 1 or 0 based on this ratio
-	rand1 = R::runif(0,1);
-
-	if(rand1 < ratio){
-	  new_entry = 1;
-	  new_infection_history(year) = 1;
-	} else {
-	  new_entry = 0;
-	  new_infection_history(year) = 0;
-	}
-	// If proposing a change, need to check likelihood ratio
-	if(new_entry != old_entry){
-	  if(solve_likelihood){
-	    // Calculate likelihood!
-	    indices = new_infection_history > 0;
-	    infection_times = circulation_times[indices];
-	    if(infection_times.size() > 0){
-	      infection_strain_indices_tmp = circulation_times_indices[indices];
-	      if (base_function) {
-		titre_data_fast_individual_base(predicted_titres, mu, mu_short,
-						wane, tau,
-						infection_times,
-						infection_strain_indices_tmp,
-						measurement_strain_indices,
-						sample_times,
-						index_in_samples,
-						end_index_in_samples,
-						start_index_in_data,
-						nrows_per_blood_sample,
-						number_strains,
-						antigenic_map_short,
-						antigenic_map_long);	  
-	      } else if (titre_dependent_boosting) {
-		titre_data_fast_individual_titredep(predicted_titres, mu, mu_short,
-						    wane, tau,
-						    gradient, boost_limit,
-						    infection_times,
-						    infection_strain_indices_tmp,
-						    measurement_strain_indices,
-						    sample_times,
-						    index_in_samples,
-						    end_index_in_samples,
-						    start_index_in_data,
-						    nrows_per_blood_sample,
-						    number_strains,
-						    antigenic_map_short,
-						    antigenic_map_long);
-	      } else if (strain_dep_boost) {
-		titre_data_fast_individual_strain_dependent(predicted_titres, 
-							    mus, boosting_vec_indices, 
-							    mu_short,
-							    wane, tau,
-							    infection_times,
-							    infection_strain_indices_tmp,
-							    measurement_strain_indices,
-							    sample_times,
-							    index_in_samples,
-							    end_index_in_samples,
-							    start_index_in_data,
-							    nrows_per_blood_sample,
-							    number_strains,
-							    antigenic_map_short,
-							    antigenic_map_long);	
-	      } else {
-		titre_data_fast_individual_wane2(predicted_titres, mu, mu_short,
-						 wane, tau,
-						 kappa, t_change,
-						 infection_times,
-						 infection_strain_indices_tmp,
-						 measurement_strain_indices,
-						 sample_times,
-						 index_in_samples,
-						 end_index_in_samples,
-						 start_index_in_data,
-						 nrows_per_blood_sample,
-						 number_strains,
-						 antigenic_map_short,
-						 antigenic_map_long);
-	      }
-
-	    }
-	    
-	    if(use_titre_shifts){
-	      add_measurement_shifts(predicted_titres, titre_shifts, 
-				     start_index_in_data, end_index_in_data);
-	    }
-	    
-	    // Now have all predicted titres for this individual calculated
-	    // Need to calculate likelihood of these titres... 
-	    new_prob = 0;
-
-	    // NEED SOMETHING TO DEAL WITH REPEATS
-	    // Go from first row in the data for this individual to up to the next one, accumlating
-	    // likelihood for this individual
-	    // For unique data
-	    proposal_likelihood_func(new_prob, predicted_titres, indiv, data, repeat_data, repeat_indices,
-				     cum_nrows_per_individual_in_data, cum_nrows_per_individual_in_repeat_data,
-				     log_const, den, max_titre);
-	    // =====================
-	  } else {
-	    old_prob = new_prob = old_probs[indiv];
-	  }
-	  // Don't need to take into account prior prob, as sampling from this
-	  log_prob = std::min<double>(0.0, new_prob - old_prob);
-	  rand1 = R::runif(0,1);
-	  if(log(rand1) < log_prob/temp){
-	    // Update the entry in the new matrix Z
-	    old_prob = new_prob;
-	    old_probs[indiv] = new_prob;
-	    new_infection_history_mat(indiv, year) = new_entry;
-	  }
-	}
-      }
-    }
-  }
-  List ret;
-  ret["old_probs"] = old_probs;
-  ret["new_infection_history"] = new_infection_history_mat;
-  return(ret);
-}
-
-
-
 
 //' Gibbs sampling of infection histories
 //'
@@ -861,6 +352,8 @@ IntegerMatrix infection_history_proposal_gibbs(const NumericVector& pars,
   return(new_infection_history_mat);
 }
 
+// [[Rcpp::depends(RcppArmadillo)]]
+
 //' Fast infection history proposal function
 //' 
 //' Proposes a new matrix of infection histories using a beta binomial proposal distribution. This particular implementation allows for n_infs epoch times to be changed with each function call. Furthermore, the size of the swap step is specified for each individual by move_sizes.
@@ -963,3 +456,578 @@ arma::mat inf_hist_prop_cpp(arma::mat infection_history_mat,
   return(new_infection_history_mat);
 }
 
+
+
+
+//' Infection history gibbs proposal, fast
+//'  Generates a new infection history matrix and corresponding individual likelihoods, using a gibbs sampler from the infection history prior. See \code{\link{infection_history_proposal_gibbs}}, as inputs are very similar.
+//' @param theta NumericVector, the model parameters used to solve the model
+//' @param infection_history_mat IntegerMatrix the matrix of 1s and 0s corresponding to individual infection histories
+//' @param old_probs_1 NumericVector, the current likelihoods for each individual
+//' @param sampled_indivs IntegerVector, indices of sampled individuals
+//' @param n_years_samp int, for each individual, how many time periods to resample infections for?
+//' @param age_mask IntegerVector, length of the number of individuals, with indices specifying first time period that an individual can be infected (indexed from 1, such that a value of 1 allows an individual to be infected in any time period)
+//' @param strain_mask IntegerVector, length of the number of individuals, with indices specifying last time period that an individual can be infected (ie. last time a sample was taken)
+//' @param n_alive IntegerMatrix, number of columns is the number of time periods that an individual could be infected, giving the number of individual alive in each time period. Number of rows is the number of distinct groups.
+//' @param swap_propn double, what proportion of proposals should be swap steps (ie. swap contents of two cells in infection_history rather than adding/removing infections)
+//' @param swap_distance int, in a swap step, how many time steps either side of the chosen time period to swap with
+//' @param alpha double, alpha parameter for beta prior on infection probability
+//' @param beta double, beta parameter for beta prior on infection probability
+//' @param circulation_times NumericVector, the times that each strain circulated
+//' @param circulation_times_indices IntegerVector, indexing vector from 0:(number of strains-1)
+//' @param sample_times NumericVector, the vector of real times that samples were taken
+//' @param rows_per_indiv_in_samples IntegerVector, How many rows in titre data correspond to each individual, sample and repeat?
+//' @param cum_nrows_per_individual_in_data IntegerVector, How many rows in the titre data correspond to each individual?
+//' @param cum_nrows_per_individual_in_repeat_data IntegerVector, For the repeat data (ie. already calculated these titres), how many rows in the titre data correspond to each individual?
+//' @param nrows_per_blood_sample IntegerVector, Split the sample times and runs for each individual
+//' @param group_id_vec IntegerVector, vector with 1 entry per individual, giving the group ID of that individual
+//' @param measurement_strain_indices IntegerVector, For each titre measurement, corresponding entry in antigenic map
+//' @param antigenic_map_long NumericVector, the collapsed cross reactivity map for long term boosting, after multiplying by sigma1, see \code{\link{create_cross_reactivity_vector}}
+//' @param antigenic_map_short NumericVector, the collapsed cross reactivity map for short term boosting, after multiplying by sigma2, see \code{\link{create_cross_reactivity_vector}}
+//' @param data NumericVector, data for all individuals for the first instance of each calculated titre
+//' @param repeat_data NumericVector, the repeat titre data for all individuals (ie. do not solve the same titres twice)
+//' @param repeat_indices IntegerVector, which index in the main data vector does each entry in repeat_data correspond to ie. which calculated titre in predicted_titres should be used for each observation?
+//' @param titre_shifts NumericVector, if length matches the length of \code{data}, adds these as measurement shifts to the predicted titres. If lengths do not match, is not used.
+//' @param mus NumericVector, if length is greater than one, assumes that strain-specific boosting is used rather than a single boosting parameter
+//' @param boosting_vec_indices IntegerVector, same length as circulation_times, giving the index in the vector \code{mus} that each entry should use as its boosting parameter.
+//' @param solve_likelihood bool, if FALSE does not solve likelihood when calculating acceptance probability
+//' @param temp double, temperature for parallel tempering MCMC
+//' @return an R list, one entry with the matrix of 1s and 0s corresponding to the infection histories for all individuals and the other with the new corresponding likelihoods per individual
+//' @export
+//' @family infection_history_proposal
+// [[Rcpp::export]]
+List infection_history_proposal_gibbs_fast(const NumericVector &theta, // Model parameters
+					   const IntegerMatrix &infection_history_mat,  // Current infection history
+					   const NumericVector &old_probs_1,
+					   const IntegerVector &sampled_indivs,
+					   const IntegerVector &n_years_samp_vec,
+					   const IntegerVector &age_mask, // Age mask
+					   const IntegerVector &strain_mask, // Age mask
+					   const IntegerMatrix &n_alive, // No. of individuals alive each year/group
+					   IntegerMatrix &n_infections, // No. of infections in each year/group
+					   const double &swap_propn,
+					   const int &swap_distance,
+					   const double &alpha, // Alpha for prior
+					   const double &beta, // Beta for prior
+					   const NumericVector &circulation_times,
+					   const IntegerVector &circulation_times_indices,
+					   const NumericVector &sample_times,
+					   const IntegerVector &rows_per_indiv_in_samples, // How many rows in unique sample times table correspond to each individual?
+					   const IntegerVector &cum_nrows_per_individual_in_data, // How many rows in the titre data correspond to each individual?
+					   const IntegerVector &cum_nrows_per_individual_in_repeat_data, // How many rows in the repeat titre data correspond to each individual?
+					   const IntegerVector &nrows_per_blood_sample, // How many rows in the titre data table correspond to each unique individual + sample time + repeat?
+					   const IntegerVector &group_id_vec, // Which group does each individual belong to?
+					   const IntegerVector &measurement_strain_indices, // For each titre measurement, corresponding entry in antigenic map
+					   const NumericVector &antigenic_map_long, 
+					   const NumericVector &antigenic_map_short,
+					   const NumericVector &data,
+					   const NumericVector &repeat_data,
+					   const IntegerVector &repeat_indices,
+					   const NumericVector &titre_shifts,
+					   const NumericVector &mus,
+					   const IntegerVector &boosting_vec_indices,
+					   const double temp=1,
+					   bool solve_likelihood=true,
+					   int total_alive=-1
+					   ){
+  // ########################################################################
+  // Parameters to control indexing of data
+  IntegerMatrix new_infection_history_mat(infection_history_mat); // Can this be avoided? Create a copy of the inf hist matrix
+  int n_titres_total = data.size(); // How many titres are there in total?
+  NumericVector predicted_titres(n_titres_total); // Vector to store predicted titres
+  NumericVector old_probs = clone(old_probs_1); // Create a copy of the current old probs
+
+  // These can be pre-computed
+  int n_indivs = infection_history_mat.nrow();  // How many individuals are there in total?
+  int number_strains = infection_history_mat.ncol(); // How many possible years are we interested in?
+  int n_sampled = sampled_indivs.size(); // How many individuals are we actually investigating?
+  int n_infected = 0; // How many individuals were infected?
+  
+  // These indices allow us to step through the titre data vector
+  // as if it were a matrix ie. number of rows for each individual
+  // at a time
+  int index_in_samples; // Index in sample times vector to point to
+  int end_index_in_samples; // Index in sample times vector to end at
+  int start_index_in_data; // Index in titre data to start at
+  int end_index_in_data; // Index in titre data to end at
+
+  int start_index_in_repeat_data; // Index in repeat titre data to start at
+  int end_index_in_repeat_data; // Index in repeat titre data to end at
+
+  int tmp_titre_index; // Index in titre data that we are currently at
+  int inf_map_index; // Index in antigenic map of the infecting strain
+  int index; // 
+  int number_samples; // Tmp store number of blood samples for this individual
+  int n_titres; // Tmp store of number of titres to predict for this sample
+
+  int group_id; // Vector of group IDs for each individual
+  
+  double sampling_time; // Tmp store time that blood sample taken
+  double time; // Tmp store time between sample and exposure
+
+  IntegerVector new_infection_history(number_strains); // New proposed infection history
+  IntegerVector infection_history(number_strains); // Old infection history
+  LogicalVector indices;
+
+  NumericVector infection_times; // Tmp store infection times for this infection history, combined with indices
+  IntegerVector infection_strain_indices_tmp; // Tmp store which index in antigenic map these infection times relate to
+  
+  // ====================================================== //
+  // =============== SETUP MODEL PARAMETERS =============== //
+  // ====================================================== //
+  // 1. Extract general parameters that apply to all models
+  // Pull out model parameters so only need to allocate once
+  double mu = theta["mu"];
+  double mu_short = theta["mu_short"];
+  double wane = theta["wane"];
+  double tau = theta["tau"];
+  double seniority;
+  double n_inf;
+
+  // 2. Extract model parameters that are for specific mechanisms
+  //    set a boolean flag to choose between model versions
+  
+  // Alternative waning function
+  int wane_type = theta["wane_type"]; 
+  bool alternative_wane_func = wane_type == 1;
+  double kappa;
+  double t_change;
+
+  if (alternative_wane_func){
+    kappa = theta["kappa"];
+    t_change = theta["t_change"];
+  }  
+
+  // Titre dependent boosting
+  bool titre_dependent_boosting = theta["titre_dependent"] == 1;
+  double gradient;
+  double boost_limit;
+  
+  if (titre_dependent_boosting) {
+    gradient = theta["gradient"];
+    boost_limit = theta["boost_limit"];
+  }
+  
+   // Strain-specific boosting
+  bool strain_dep_boost = false;
+
+  if (mus.size() > 1) {
+    strain_dep_boost = true;    
+  }
+  
+ // 3. If not using one of the specific mechanism functions, set the base_function flag to TRUE
+  bool base_function = !(alternative_wane_func || titre_dependent_boosting || strain_dep_boost);
+  // ########################################################################
+
+  // Using prior version 2 or 4?
+  bool prior_on_total = total_alive > 0;
+  if(prior_on_total){
+    n_infected = sum(infection_history_mat);
+  }
+   
+  // ########################################################################
+  IntegerVector samps; // Variable vector to sample from
+  IntegerVector locs; // Vector of locations that were sampled
+  // ########################################################################
+
+  // ########################################################################
+  int indiv; // Index of the individual under consideration
+  int year; // Index of year being updated
+
+  int n_samp_max; // Maximum number of years to sample for individual
+  int n_samp_length; // Number of years that COULD be sampled for this individual
+  int new_entry;
+  int old_entry;
+  int loc1, loc2, tmp; // Which indices are we looking at?
+  int n_years_samp; // How many years to sample for this individual?
+  int loc1_val_old, loc2_val_old;
+
+  // ########################################################################
+
+  // ########################################################################
+  double m; // number of infections in a given year
+  double n; // number alive in a particular year
+
+  double m_1_new, m_1_old,m_2_new,m_2_old;
+  double n_1, n_2;
+  double prior_1_old, prior_2_old, prior_1_new,prior_2_new,prior_new,prior_old;
+
+  double rand1; // Store a random number
+  double ratio; // Store the gibbs ratio for 0 or 1 proposal
+
+  double old_prob; // Likelihood of old number
+  double new_prob; // Likelihood of new number
+  double log_prob; // Likelihood ratio
+
+  double lbeta_const = R::lbeta(alpha, beta);
+
+  // For likelihood
+  const double sd = theta["error"];
+  const double den = sd*M_SQRT2;
+  const double max_titre = theta["MAX_TITRE"];
+  const double log_const = log(0.5);
+
+
+  // Titre dependent boosting
+  bool use_titre_shifts = false;
+  if(titre_shifts.size() == n_titres_total) use_titre_shifts = true;
+  // ########################################################################
+  
+  // ########################################################################
+  // For each individual
+  for(int i = 0; i < n_sampled; ++i){
+    // Get index of individual under consideration and their current likelihood
+    indiv = sampled_indivs[i]-1;
+    old_prob = old_probs_1[indiv];  
+    // Indexing for data upkeep
+    index_in_samples = rows_per_indiv_in_samples[indiv];
+    end_index_in_samples = rows_per_indiv_in_samples[indiv+1] - 1;
+    number_samples = end_index_in_samples - index_in_samples;      
+
+    // Group ID
+    group_id = group_id_vec[indiv];
+    
+    n_years_samp = n_years_samp_vec[indiv]; // How many years are we intending to resample from for this individual?
+    n_samp_length  = strain_mask[indiv] - age_mask[indiv]; // How many years maximum can we sample from?
+    n_samp_max = std::min(n_years_samp, n_samp_length); // Use the smaller of these two numbers
+    // Indexing for data upkeep
+    start_index_in_data = cum_nrows_per_individual_in_data[indiv];
+    end_index_in_data = cum_nrows_per_individual_in_data[indiv+1]-1;
+    start_index_in_repeat_data = cum_nrows_per_individual_in_repeat_data[indiv];
+
+    // Swap contents of a year for an individual
+    if(R::runif(0,1) < swap_propn){
+      new_infection_history = new_infection_history_mat(indiv,_);
+
+      loc1 = floor(R::runif(0,n_samp_length+1)); // Choose a location from age_mask to strain_mask
+      loc2 = loc1 + floor(R::runif(-swap_distance,swap_distance)); // Perturb +/- swap_distance
+      
+      // If we have gone too far left or right, reflect at the boundaries
+      while(loc2 < 0) loc2 += n_samp_length;
+      if(loc2 >= n_samp_length) loc2 -= floor(loc2/n_samp_length)*n_samp_length;
+      
+      // Get onto right scale (starting at age mask)
+      loc1 += age_mask[indiv] - 1;
+      loc2 += age_mask[indiv] - 1;
+
+      loc1_val_old = new_infection_history(loc1);
+      loc2_val_old = new_infection_history(loc2);
+
+      // Only proceed if we've actually made a change
+      if(loc1_val_old != loc2_val_old){
+	// Swap contents
+	new_infection_history(loc1) = new_infection_history(loc2);
+	new_infection_history(loc2) = loc1_val_old;
+
+	// Prior for previous state
+	/*
+	  m_1_old = sum(new_infection_history_mat(_,loc1));      
+	  m_2_old = sum(new_infection_history_mat(_,loc2));
+	*/
+	// Number of infections in that group in that time
+	m_1_old = n_infections(group_id,loc1);      
+	m_2_old = n_infections(group_id,loc2);
+    
+	// Number alive is number alive overall in that time and group
+	n_1 = n_alive(group_id, loc1);
+	n_2 = n_alive(group_id, loc2);
+
+	// Pre-compute these? 
+	prior_1_old = R::lbeta(m_1_old + alpha, n_1 - m_1_old + beta)-lbeta_const;
+	prior_2_old = R::lbeta(m_2_old + alpha, n_2 - m_2_old + beta)-lbeta_const;
+	prior_old = prior_1_old + prior_2_old;
+
+	// Prior for new state
+	m_1_new = m_1_old - loc1_val_old + loc2_val_old;
+	m_2_new = m_2_old - loc2_val_old + loc1_val_old;
+
+	prior_1_new = R::lbeta(m_1_new + alpha, n_1 - m_1_new + beta)-lbeta_const;
+	prior_2_new = R::lbeta(m_2_new + alpha, n_2 - m_2_new + beta)-lbeta_const;
+	prior_new = prior_1_new + prior_2_new;	 
+
+	////////////////////////
+	if(solve_likelihood){
+	  // Calculate likelihood!
+	  indices = new_infection_history > 0;
+	  infection_times = circulation_times[indices];
+	  infection_strain_indices_tmp = circulation_times_indices[indices];
+
+	  // ====================================================== //
+	  // =============== CHOOSE MODEL TO SOLVE =============== //
+	  // ====================================================== //
+	  if (base_function) {
+	    titre_data_fast_individual_base(predicted_titres, mu, mu_short,
+					    wane, tau,
+					    infection_times,
+					    infection_strain_indices_tmp,
+					    measurement_strain_indices,
+					    sample_times,
+					    index_in_samples,
+					    end_index_in_samples,
+					    start_index_in_data,
+					    nrows_per_blood_sample,
+					    number_strains,
+					    antigenic_map_short,
+					    antigenic_map_long);	  
+	  } else if (titre_dependent_boosting) {
+	    titre_data_fast_individual_titredep(predicted_titres, mu, mu_short,
+						wane, tau,
+						gradient, boost_limit,
+						infection_times,
+						infection_strain_indices_tmp,
+						measurement_strain_indices,
+						sample_times,
+						index_in_samples,
+						end_index_in_samples,
+						start_index_in_data,
+						nrows_per_blood_sample,
+						number_strains,
+						antigenic_map_short,
+						antigenic_map_long);	
+	  } else if (strain_dep_boost) {
+	    titre_data_fast_individual_strain_dependent(predicted_titres, 
+							mus, boosting_vec_indices, 
+							mu_short,
+							wane, tau,
+							infection_times,
+							infection_strain_indices_tmp,
+							measurement_strain_indices,
+							sample_times,
+							index_in_samples,
+							end_index_in_samples,
+							start_index_in_data,
+							nrows_per_blood_sample,
+							number_strains,
+							antigenic_map_short,
+							antigenic_map_long);
+	  } else if(alternative_wane_func){
+	    titre_data_fast_individual_wane2(predicted_titres, mu, mu_short,
+					     wane, tau,
+					     kappa, t_change,
+					     infection_times,
+					     infection_strain_indices_tmp,
+					     measurement_strain_indices,
+					     sample_times,
+					     index_in_samples,
+					     end_index_in_samples,
+					     start_index_in_data,
+					     nrows_per_blood_sample,
+					     number_strains,
+					     antigenic_map_short,
+					     antigenic_map_long);
+	  } else {
+	    titre_data_fast_individual_base(predicted_titres, mu, mu_short,
+					    wane, tau,
+					    infection_times,
+					    infection_strain_indices_tmp,
+					    measurement_strain_indices,
+					    sample_times,
+					    index_in_samples,
+					    end_index_in_samples,
+					    start_index_in_data,
+					    nrows_per_blood_sample,
+					    number_strains,
+					    antigenic_map_short,
+					    antigenic_map_long);
+	  }
+
+	  if(use_titre_shifts){
+	    add_measurement_shifts(predicted_titres, titre_shifts, 
+				   start_index_in_data, end_index_in_data);
+	  }
+	  
+	  // Now have all predicted titres for this individual calculated
+	  // Need to calculate likelihood of these titres... 
+	  new_prob = 0;
+
+	  // NEED SOMETHING TO DEAL WITH REPEATS
+	  // Go from first row in the data for this individual to up to the next one, accumlating
+	  // likelihood for this individual
+	  // For unique data
+	  proposal_likelihood_func(new_prob, predicted_titres, indiv, data, repeat_data, repeat_indices,
+				   cum_nrows_per_individual_in_data, cum_nrows_per_individual_in_repeat_data,
+				   log_const, den, max_titre);
+	} else {
+	  old_prob = new_prob = old_probs[indiv];
+	}
+
+	log_prob = std::min<double>(0.0, (new_prob+prior_new) - (old_prob+prior_old));
+	rand1 = R::runif(0,1);
+	if(log(rand1) < log_prob/temp){
+	  // Update the entry in the new matrix Z
+	  old_prob = new_prob;
+	  old_probs[indiv] = new_prob;
+	  // Carry out the swap
+	  tmp = new_infection_history_mat(indiv,loc1);
+	  new_infection_history_mat(indiv,loc1) = new_infection_history_mat(indiv,loc2);
+	  new_infection_history_mat(indiv,loc2) = tmp;
+
+	  // Update number of infections in the two swapped times
+	  n_infections(group_id, loc1) = m_1_new;
+	  n_infections(group_id, loc2) = m_2_new;
+	}
+      }
+    } else {
+      // Sample n_samp_real years from 0:length. Ths will be used to pull years from
+      // sample_years
+      // Note sampling indices in the individual's infection history, not the matrix Z
+      // Take n_samp_max random samples 
+      samps = seq(0, n_samp_length);    // Create vector from 0:length of alive years
+      locs = RcppArmadillo::sample(samps, n_samp_max, FALSE, NumericVector::create());
+
+      for(int j = 0; j < n_samp_max; ++j){
+	new_infection_history = new_infection_history_mat(indiv,_);
+	year = locs[j] + age_mask[indiv] - 1;
+
+	old_entry = new_infection_history(year);
+
+	// Get number of individuals that were alive and/or infected in that year,
+	// less the current individual
+	// Number of infections in this year, less infection status of this individual in this year
+	m = n_infections(group_id, year) - old_entry;
+	//m = sum(new_infection_history_mat(_,year)) - old_entry;
+	n = n_alive(group_id, year) - 1;
+	       
+	// Work out proposal ratio - prior from alpha, beta and number of other infections
+	ratio = (m + alpha)/(n + alpha + beta);
+
+	// Propose 1 or 0 based on this ratio
+	rand1 = R::runif(0,1);
+
+	if(rand1 < ratio){
+	  new_entry = 1;
+	  new_infection_history(year) = 1;
+	} else {
+	  new_entry = 0;
+	  new_infection_history(year) = 0;
+	}
+	// If proposing a change, need to check likelihood ratio
+	if(new_entry != old_entry){
+	  if(solve_likelihood){
+	    // Calculate likelihood!
+	    indices = new_infection_history > 0;
+	    infection_times = circulation_times[indices];
+	    if(infection_times.size() > 0){
+	      infection_strain_indices_tmp = circulation_times_indices[indices];
+
+	      // ====================================================== //
+	      // =============== CHOOSE MODEL TO SOLVE =============== //
+	      // ====================================================== //
+	      if (base_function) {
+		titre_data_fast_individual_base(predicted_titres, mu, mu_short,
+						wane, tau,
+						infection_times,
+						infection_strain_indices_tmp,
+						measurement_strain_indices,
+						sample_times,
+						index_in_samples,
+						end_index_in_samples,
+						start_index_in_data,
+						nrows_per_blood_sample,
+						number_strains,
+						antigenic_map_short,
+						antigenic_map_long);	  
+	      } else if (titre_dependent_boosting) {
+		titre_data_fast_individual_titredep(predicted_titres, mu, mu_short,
+						    wane, tau,
+						    gradient, boost_limit,
+						    infection_times,
+						    infection_strain_indices_tmp,
+						    measurement_strain_indices,
+						    sample_times,
+						    index_in_samples,
+						    end_index_in_samples,
+						    start_index_in_data,
+						    nrows_per_blood_sample,
+						    number_strains,
+						    antigenic_map_short,
+						    antigenic_map_long);
+	      } else if (strain_dep_boost) {
+		titre_data_fast_individual_strain_dependent(predicted_titres, 
+							    mus, boosting_vec_indices, 
+							    mu_short,
+							    wane, tau,
+							    infection_times,
+							    infection_strain_indices_tmp,
+							    measurement_strain_indices,
+							    sample_times,
+							    index_in_samples,
+							    end_index_in_samples,
+							    start_index_in_data,
+							    nrows_per_blood_sample,
+							    number_strains,
+							    antigenic_map_short,
+							    antigenic_map_long);	
+	      } else if(alternative_wane_func) {
+		titre_data_fast_individual_wane2(predicted_titres, mu, mu_short,
+						 wane, tau,
+						 kappa, t_change,
+						 infection_times,
+						 infection_strain_indices_tmp,
+						 measurement_strain_indices,
+						 sample_times,
+						 index_in_samples,
+						 end_index_in_samples,
+						 start_index_in_data,
+						 nrows_per_blood_sample,
+						 number_strains,
+						 antigenic_map_short,
+						 antigenic_map_long);
+	      } else {
+		titre_data_fast_individual_base(predicted_titres, mu, mu_short,
+						wane, tau,
+						infection_times,
+						infection_strain_indices_tmp,
+						measurement_strain_indices,
+						sample_times,
+						index_in_samples,
+						end_index_in_samples,
+						start_index_in_data,
+						nrows_per_blood_sample,
+						number_strains,
+						antigenic_map_short,
+						antigenic_map_long);	  
+
+	      }
+	    }
+	    
+	    if(use_titre_shifts){
+	      add_measurement_shifts(predicted_titres, titre_shifts, 
+				     start_index_in_data, end_index_in_data);
+	    }
+	    
+	    // Now have all predicted titres for this individual calculated
+	    // Need to calculate likelihood of these titres... 
+	    new_prob = 0;
+
+	    // NEED SOMETHING TO DEAL WITH REPEATS
+	    // Go from first row in the data for this individual to up to the next one, accumlating
+	    // likelihood for this individual
+	    // For unique data
+	    proposal_likelihood_func(new_prob, predicted_titres, indiv, data, repeat_data, repeat_indices,
+				     cum_nrows_per_individual_in_data, cum_nrows_per_individual_in_repeat_data,
+				     log_const, den, max_titre);
+	    // =====================
+	  } else {
+	    old_prob = new_prob = old_probs[indiv];
+	  }
+	  // Don't need to take into account prior prob, as sampling from this
+	  log_prob = std::min<double>(0.0, new_prob - old_prob);
+	  rand1 = R::runif(0,1);
+	  if(log(rand1) < log_prob/temp){
+	    // Update the entry in the new matrix Z
+	    old_prob = new_prob;
+	    old_probs[indiv] = new_prob;
+	    new_infection_history_mat(indiv, year) = new_entry;
+	    n_infections(group_id, year) -= old_entry;
+	    n_infections(group_id, year) += new_entry;    
+	  }
+	}
+      }
+    }
+  }
+  List ret;
+  ret["old_probs"] = old_probs;
+  ret["new_infection_history"] = new_infection_history_mat;
+  return(ret);
+}

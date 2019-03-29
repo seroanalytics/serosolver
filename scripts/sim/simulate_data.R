@@ -33,7 +33,7 @@ if(buckets == 1){
 }
 
 ## How many individuals to simulate?
-n_indiv <- 100
+n_indiv <- 1000
 
 
 ## Read in parameter table to simulate from and change waning rate if necessary

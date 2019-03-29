@@ -3,14 +3,14 @@
 \name{inf_mat_prior_total_cpp}
 \alias{inf_mat_prior_total_cpp}
 \title{Marginal prior probability (p(Z)) of a particular infection history matrix total prior
- Prior here is on the total number of infections across all individuals and years}
+ Prior here is on the total number of infections across all individuals and times}
 \usage{
 inf_mat_prior_total_cpp(infection_history, n_alive, alpha, beta)
 }
 \arguments{
 \item{infection_history}{IntegerMatrix, the infection history matrix}
 
-\item{n_alive}{IntegerVector, vector giving the number of individuals alive in each year}
+\item{n_alive}{IntegerVector, vector giving the number of individuals alive in each time}
 
 \item{alpha}{double, alpha parameter for beta distribution prior}
 
@@ -21,10 +21,12 @@ a single prior probability
 }
 \description{
 Marginal prior probability (p(Z)) of a particular infection history matrix total prior
- Prior here is on the total number of infections across all individuals and years
+ Prior here is on the total number of infections across all individuals and times
 }
 \seealso{
 Other inf_mat_prior: \code{\link{inf_mat_prior_cpp_vector}},
-  \code{\link{inf_mat_prior_cpp}}
+  \code{\link{inf_mat_prior_cpp}},
+  \code{\link{inf_mat_prior_group_cpp_vector}},
+  \code{\link{inf_mat_prior_group_cpp}}
 }
 \concept{inf_mat_prior}

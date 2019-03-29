@@ -15,7 +15,7 @@ setwd("~/Documents/Fluscape/serosolver")
 devtools::load_all()
 set.seed(1)
 filename <- "chains/sim_temp_test"
-use_lambda <- TRUE
+use_phi <- TRUE
 
 ## How many individuals to simulate?
 n_indiv <- 200
@@ -26,13 +26,13 @@ parTab <- read.csv("~/Documents/Fluscape/serosolver/inputs/parTab_base.csv",stri
 parTab[parTab$names %in% c("alpha","beta"),"values"] <- c(1,1)
 parTab[parTab$names == "boost_limit","values"] <- 3
 parTab[parTab$names == "gradient","values"] <- 0.1
-if(!use_lambda){
+if(!use_phi){
   version <- 2
-  parTab <- parTab[parTab$names != "lambda",]
+  parTab <- parTab[parTab$names != "phi",]
 } else {
   version <- 1
-  ## Add rows for each lambda value to be inferred
-  tmp <- parTab[parTab$names == "lambda",]
+  ## Add rows for each phi value to be inferred
+  tmp <- parTab[parTab$names == "phi",]
   for(i in 1:(length(strainIsolationTimes)-1)){
     parTab <- rbind(parTab, tmp)
   }

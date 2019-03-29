@@ -65,6 +65,22 @@ NumericVector sum_buckets(NumericVector a, NumericVector buckets){
   return(results);
 }
 
+//' Count infections by group and time
+//'
+//' @export
+//[[Rcpp::export]]
+IntegerMatrix sum_infections_by_group(IntegerMatrix inf_hist, IntegerVector group_ids_vec, int n_groups){
+  int n_times = inf_hist.ncol();
+  IntegerMatrix n_infections(n_groups, n_times);
+
+  for(int i = 0; i < n_times; ++i){
+    for(int j = 0; j < group_ids_vec.size(); ++j){
+      n_infections(group_ids_vec[j], i) += inf_hist(j, i);
+    }   
+  }
+  return(n_infections);
+}
+
 //' Add measurement shifts to predictions
 //'
 //' Adds observation error shifts to predicted antibody titres.

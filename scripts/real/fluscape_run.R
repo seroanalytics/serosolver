@@ -30,9 +30,9 @@ buckets <- 1
 filename <- "testing/fluscape"
 
 ## Read in parameter table to simulate from and change waning rate if necessary
-## Use "parTab.csv" if not using explicit lambda term, "parTab_lambdas.csv" otherwise
+## Use "parTab.csv" if not using explicit phi term, "parTab_phis.csv" otherwise
 if(LAMBDA){
-    parTab <- read.csv("~/Documents/Fluscape/serosolver/inputs/parTab_lambda.csv",stringsAsFactors=FALSE)
+    parTab <- read.csv("~/Documents/Fluscape/serosolver/inputs/parTab_phi.csv",stringsAsFactors=FALSE)
 } else {
     parTab <- read.csv("~/Documents/Fluscape/serosolver/inputs/parTab.csv",stringsAsFactors=FALSE)
 }
@@ -94,16 +94,16 @@ if(LAMBDA){
     
     version <- 4
     n_alive <- sapply(strainIsolationTimes, function(x) length(ages[ages$DOB <= x,])/69)
-    tmp <- parTab[parTab$names == "lambda",]
+    tmp <- parTab[parTab$names == "phi",]
     for(i in 1:(length(strainIsolationTimes)-1)){
         parTab <- rbind(parTab, tmp)
     }
-    parTab[parTab$names == "lambda","upper_bound"] <- n_alive
-    parTab[parTab$names == "lambda","upper_start"] <- n_alive
+    parTab[parTab$names == "phi","upper_bound"] <- n_alive
+    parTab[parTab$names == "phi","upper_start"] <- n_alive
 } else {
     version <- 1
 }
-parTab <- parTab[parTab$names != "lambda",]
+parTab <- parTab[parTab$names != "phi",]
 ## Generate starting parameters for the MCMC chain
 startTab <- parTab
 for(i in 1:nrow(startTab)){

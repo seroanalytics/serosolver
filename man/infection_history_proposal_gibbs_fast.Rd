@@ -7,13 +7,14 @@
 \usage{
 infection_history_proposal_gibbs_fast(theta, infection_history_mat,
   old_probs_1, sampled_indivs, n_years_samp_vec, age_mask, strain_mask,
-  n_alive, swap_propn, swap_distance, alpha, beta, circulation_times,
-  circulation_times_indices, sample_times, rows_per_indiv_in_samples,
-  cum_nrows_per_individual_in_data,
+  n_alive, n_infections, swap_propn, swap_distance, alpha, beta,
+  circulation_times, circulation_times_indices, sample_times,
+  rows_per_indiv_in_samples, cum_nrows_per_individual_in_data,
   cum_nrows_per_individual_in_repeat_data, nrows_per_blood_sample,
-  measurement_strain_indices, antigenic_map_long, antigenic_map_short,
-  data, repeat_data, repeat_indices, titre_shifts, mus,
-  boosting_vec_indices, temp = 1, solve_likelihood = TRUE)
+  group_id_vec, measurement_strain_indices, antigenic_map_long,
+  antigenic_map_short, data, repeat_data, repeat_indices, titre_shifts,
+  mus, boosting_vec_indices, temp = 1, solve_likelihood = TRUE,
+  total_alive = -1L)
 }
 \arguments{
 \item{theta}{NumericVector, the model parameters used to solve the model}
@@ -28,7 +29,7 @@ infection_history_proposal_gibbs_fast(theta, infection_history_mat,
 
 \item{strain_mask}{IntegerVector, length of the number of individuals, with indices specifying last time period that an individual can be infected (ie. last time a sample was taken)}
 
-\item{n_alive}{IntegerVector, length of the number of time periods that an individual could be infected, giving the number of individual alive in each time period}
+\item{n_alive}{IntegerMatrix, number of columns is the number of time periods that an individual could be infected, giving the number of individual alive in each time period. Number of rows is the number of distinct groups.}
 
 \item{swap_propn}{double, what proportion of proposals should be swap steps (ie. swap contents of two cells in infection_history rather than adding/removing infections)}
 
@@ -51,6 +52,8 @@ infection_history_proposal_gibbs_fast(theta, infection_history_mat,
 \item{cum_nrows_per_individual_in_repeat_data}{IntegerVector, For the repeat data (ie. already calculated these titres), how many rows in the titre data correspond to each individual?}
 
 \item{nrows_per_blood_sample}{IntegerVector, Split the sample times and runs for each individual}
+
+\item{group_id_vec}{IntegerVector, vector with 1 entry per individual, giving the group ID of that individual}
 
 \item{measurement_strain_indices}{IntegerVector, For each titre measurement, corresponding entry in antigenic map}
 

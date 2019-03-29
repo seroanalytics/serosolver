@@ -904,11 +904,12 @@ plot_data <- function(titre_dat, infection_histories, strain_isolation_times, n_
 #' @param number_col how many columns to use for the cumulative infection history plot
 #' @param pad_chain if TRUE, pads the infection history MCMC chain to have entries for non-infection events
 #' @param subset_years if not NULL, pass a vector of indices to only take a subset of indices from strain_isolation_times
+#' @param return_data if TRUE, returns the infection history posterior densities used to generate the plots
 #' @return two ggplot objects
 #' @export
 generate_cumulative_inf_plots <- function(inf_chain, burnin = 0, indivs, real_inf_hist = NULL, start_inf = NULL,
                                           strain_isolation_times, nsamp = 100, ages = NULL, number_col = 1,
-                                          pad_chain=TRUE, subset_years=NULL) {
+                                          pad_chain=TRUE, subset_years=NULL,return_data=FALSE) {
     inf_chain <- inf_chain[inf_chain$sampno > burnin, ]
     if(is.null(inf_chain$chain_no)){
         inf_chain$chain_no <- 1
@@ -994,14 +995,15 @@ generate_cumulative_inf_plots <- function(inf_chain, burnin = 0, indivs, real_in
     quant_hist <- merge(quant_hist, hist_profiles_median, by = c("individual", "chain_no","variable"))
 
     ## If available, process the real infection history matrix for plotting
+    real_hist_profiles <- NULL
     if (!is.null(real_inf_hist)) {
         real_hist_profiles <- as.data.frame(t(apply(real_inf_hist, 1, cumsum)))
         colnames(real_hist_profiles) <- strain_isolation_times
 
-    real_hist_profiles <- real_hist_profiles[indivs, ]
-    real_hist_profiles$individual <- indivs
-    real_hist_profiles <- reshape2::melt(real_hist_profiles, id.vars = "individual")
-  }
+        real_hist_profiles <- real_hist_profiles[indivs, ]
+        real_hist_profiles$individual <- indivs
+        real_hist_profiles <- reshape2::melt(real_hist_profiles, id.vars = "individual")
+    }
 
   ## Process starting point from MCMC chain
   if (!is.null(start_inf)) {
@@ -1035,8 +1037,15 @@ generate_cumulative_inf_plots <- function(inf_chain, burnin = 0, indivs, real_in
     theme_bw() +
     theme(legend.position = "bottom")+
     ylab("Cumulative infections") +
-    xlab("Circulation time")
-  return(list(p1, density_plot))
+      xlab("Circulation time")
+    if(return_data){
+        list("cumu_infections"=p1, "density_plot"=density_plot,
+             "density_data"=densities,"real_hist"=real_hist_profiles,
+             "cumu_data"=quant_hist)
+    } else {
+        return_list <- list("cumu_infections"=p1, "density_plot"=density_plot)
+    }
+  return(return_list)
 }
 
 #' Titre dependent boosting relationship

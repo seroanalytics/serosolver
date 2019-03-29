@@ -46,6 +46,12 @@ simulate_group <- function(n_indiv,
         virus_samples <- rep(strain_isolation_times, length(samps))
         data_indices <- rep(length(strain_isolation_times), length(samps))
         virus_indices <- match(virus_samples, strain_isolation_times) - 1
+        
+        ## Individuals can't be infected after their latest sampling time
+        strain_mask <- max(which(max(samps) >= strain_isolation_times))
+        if(strain_mask < ncol(infection_histories)){
+            infection_histories[i,strain_mask:ncol(infection_histories)] <- 0
+        }
         y <- as.data.frame(simulate_individual(
             theta, infection_histories[i, ],
             samps, data_indices, virus_samples,
@@ -63,7 +69,7 @@ simulate_group <- function(n_indiv,
         ## Combine data
         dat <- rbind(dat, y[, c("individual", "samples", "virus", "titre")])
     }
-    return(dat)
+    return(list(titre_dat=dat,infection_history=infection_histories))
 }
 
 #' Simulate individual data
@@ -258,7 +264,7 @@ simulate_ars_spline <- function(infection_years, buckets, mean_par = 0.15, sd_pa
   n <- length(infection_years)
   attack_year <- rlnorm(n, meanlog = log(mean_par) - sd_par^2 / 2, sdlog = sd_par)
   if (large_first_year) attack_year[1] <- rlnorm(1, meanlog = log(big_year_mean) - (sd_par / 2)^2 / 2, sdlog = sd_par / 2)
-  ars <- generate_lambdas(attack_year, knots, theta, n, buckets)
+  ars <- generate_phis(attack_year, knots, theta, n, buckets)
   return(ars)
 }
 
@@ -343,12 +349,13 @@ simulate_data <- function(par_tab, group = 1, n_indiv, buckets = 12,
     ARs <- tmp[[2]]
 
     ## Simulate titre data
-    y <- simulate_group(
+    sim_dat <- simulate_group(
         n_indiv, theta, infection_history, strain_isolation_times, sampling_times,
         nsamps, antigenic_map_long, antigenic_map_short, repeats,
         mus, mu_indices, measurement_bias, measurement_indices, add_noise
     )
-
+    y <- sim_dat$titre_dat
+    infection_history <- sim_dat$infection_history
     ## Randomly censor titre values
     y$titre <- y$titre * sample(c(NA, 1), nrow(y), prob = c(titre_sensoring, 1 - titre_sensoring), replace = TRUE)
     y$run <- 1
@@ -356,7 +363,7 @@ simulate_data <- function(par_tab, group = 1, n_indiv, buckets = 12,
 
     ages <- data.frame("individual" = 1:n_indiv, "DOB" = DOBs)
     attack_rates <- data.frame("year" = strain_isolation_times, "AR" = ARs)
-  return(list(data = y, infection_histories = infection_history, ages = ages, attack_rates = attack_rates, lambdas = attack_rates))
+  return(list(data = y, infection_histories = infection_history, ages = ages, attack_rates = attack_rates, phis = attack_rates))
 }
 
 #' Create useable antigenic map

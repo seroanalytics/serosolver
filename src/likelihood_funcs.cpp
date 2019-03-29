@@ -45,12 +45,59 @@ double inf_mat_prior_cpp_vector(const IntegerMatrix& infection_history, const In
   return(lik);
 }
 
+//' Marginal prior probability (p(Z)) of infection history matrix with groups
+//'  Prior is independent contribution from each year and group
+//' @param n_infections IntegerMatrix, the total number of infections in each time point/group
+//' @param n_alive IntegerMatrix, matrix giving the number of individuals alive in each time unit in each group
+//' @param alpha double, alpha parameter for beta distribution prior
+//' @param beta double, beta parameter for beta distribution prior
+//' @return a single prior probability
+//' @export
+//' @family inf_mat_prior
+// [[Rcpp::export]]
+double inf_mat_prior_group_cpp(const IntegerMatrix& n_infections, const IntegerMatrix& n_alive, double alpha, double beta){
+  // Prior on each time
+  double m, n;
+  double lik=0;
+  double lbeta_const = R::lbeta(alpha, beta); // Contribution of prior
+  for(int j = 0; j < n_alive.nrow(); ++j){
+    for(int i = 0; i < n_alive.ncol(); ++i){
+      m = n_infections(j,i);
+      n = n_alive(j,i); // Number of individuals alive in that time
+      lik += R::lbeta(m+alpha,n-m+beta)-lbeta_const; // Contribution of augmented data and prior for that time
+    }
+  }
+  return(lik);
+}
 
+//' Marginal prior probability (p(Z)) of a particular infection history matrix vector prior by group
+//'  Prior is independent contribution from each time, but each time has its own alpha and beta
+//' @param n_infections IntegerMatrix, the total number of infections in each time point/group
+//' @param n_alive IntegerMatrix, matrix giving the number of individuals alive in each time unit in each group
+//' @param alphas NumericVector, alpha parameters for beta distribution prior, one for each time unit
+//' @param betas NumericVector, beta parameters for beta distribution prior, one for each time unit
+//' @return a single prior probability
+//' @export
+//' @family inf_mat_prior
+// [[Rcpp::export]]
+double inf_mat_prior_group_cpp_vector(const IntegerMatrix& n_infections, const IntegerMatrix& n_alive, const NumericVector& alphas, const NumericVector& betas){
+  // Prior on each time
+  double m, n;
+  double lik=0;
+  for(int j = 0; j < n_alive.nrow(); ++j){
+    for(int i = 0; i < n_alive.ncol(); ++i){ 
+      m = n_infections(j,i); // Number of infections in that time
+      n = n_alive(j,i); // Number of individuals alive in that time
+      lik += R::lbeta(m+alphas[i],n-m+betas[i]) - R::lbeta(alphas[i], betas[i]); // Contribution of augmented data and prior for that time
+    }
+  }
+  return(lik);
+}
 
 //' Marginal prior probability (p(Z)) of a particular infection history matrix total prior
-//'  Prior here is on the total number of infections across all individuals and years
+//'  Prior here is on the total number of infections across all individuals and times
 //' @param infection_history IntegerMatrix, the infection history matrix
-//' @param n_alive IntegerVector, vector giving the number of individuals alive in each year
+//' @param n_alive IntegerVector, vector giving the number of individuals alive in each time
 //' @param alpha double, alpha parameter for beta distribution prior
 //' @param beta double, beta parameter for beta distribution prior
 //' @return a single prior probability

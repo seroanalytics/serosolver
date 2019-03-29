@@ -22,7 +22,7 @@ parTab[parTab$names %in% c("alpha","beta"),"values"] <- c(1,1)
 parTab[parTab$names == "wane","values"] <- 1
 parTab[parTab$names == "wane","values"] <- parTab[parTab$names == "wane","values"]/buckets
 
-parTab <- parTab[parTab$names != "lambda",] # remove lambda row of parameter table
+parTab <- parTab[parTab$names != "phi",] # remove phi row of parameter table
 
 yearMin <- yearMin*buckets
 yearMax <- yearMax*buckets
