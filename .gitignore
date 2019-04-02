@@ -20,3 +20,5 @@ binaries
 *~
 *.o
 *.so
+
+*chain.csv
