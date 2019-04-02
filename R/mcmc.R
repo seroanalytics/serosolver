@@ -186,15 +186,19 @@ run_MCMC <- function(par_tab,
 
   ###################
   ## Housekeeping for infection history chain
-  ###################
-  histiter <- histaccepted <- histiter_add <- histaccepted_add <- 
-    histiter_move <- histaccepted_move <- histreset <- integer(n_indiv)
+###################
+    histiter <- integer(n_indiv)
+    histaccepted <- integer(n_indiv)
+    histiter_add <- integer(n_indiv)
+    histaccepted_add <- integer(n_indiv) 
+    histiter_move <- integer(n_indiv)
+    histaccepted_move <- integer(n_indiv)
 
-  n_infs_vec <- rep(n_infs, n_indiv) # How many infection history moves to make with each proposal
-  move_sizes <- rep(move_size, n_indiv) # How many years to move in smart proposal step
-  ###############
-  ## Create age mask
-  ## -----------------------
+    n_infs_vec <- rep(n_infs, n_indiv) # How many infection history moves to make with each proposal
+    move_sizes <- rep(move_size, n_indiv) # How many years to move in smart proposal step
+###############
+    ## Create age mask
+    ## -----------------------
   ## Note that DOBs for all groups must be from same reference point
   ## -----------------------
   ###############
@@ -421,7 +425,8 @@ run_MCMC <- function(par_tab,
               indiv_sub_sample,
               alpha, beta,
               n_infs_vec, swap_propn, move_size,
-              temp
+              temp, histiter_move, histiter_add,
+              histaccepted_move, histaccepted_add
             )
             new_likelihoods <- prop_gibbs$old_probs
             new_infection_histories <- prop_gibbs$new_infection_history
@@ -602,72 +607,87 @@ run_MCMC <- function(par_tab,
       ## Have a look at the acceptance rates for infection histories
       pcur_hist <- histaccepted / histiter ## Overall
       pcur_hist_add <- histaccepted_add / histiter_add ## For adding
-      histiter <- histaccepted <- histaccepted_add <- histaccepted_move <-
-        histiter_add <- histiter_move <- histreset
+      message(cat("Pcur hist: ", signif(pcur_hist_add, 3), sep = "\t"))
+      
+    histiter <- integer(n_indiv)
+    histaccepted <- integer(n_indiv)
+    histiter_add <- integer(n_indiv)
+    histaccepted_add <- integer(n_indiv) 
+    histiter_move <- integer(n_indiv)
+    histaccepted_move <- integer(n_indiv)
+    
     }
-    if (i > burnin & i <= (adaptive_period + burnin)) {
-      ## Current acceptance rate
-      pcur <- tempaccepted / tempiter
-      ## Save each step
-      opt_chain[chain_index, ] <- current_pars[unfixed_pars]
-      ## If in an adaptive step
-      if (chain_index %% opt_freq == 0) {
-        ## If using univariate proposals
-        if (is.null(mvr_pars)) {
-          ## For each non fixed parameter, scale the step size
-          for (x in unfixed_pars) steps[x] <- scaletuning(steps[x], popt, pcur[x])
-        } else {
-          if (chain_index > OPT_TUNING * adaptive_period & chain_index < adaptive_period) {
-            old_cov_mat <- cov_mat
-            ## Creates a new covariance matrix, but weights it with the old one
-            cov_mat <- cov(opt_chain[1:chain_index, ])
-            cov_mat <- w * cov_mat + (1 - w) * old_cov_mat
-          }
-          ## Scale tuning for last 80% of the adaptive period
-          if (chain_index > (0.2) * adaptive_period) {
-            steps <- scaletuning(steps, popt, pcur)
-          }
-        }
-        pcur_hist <- histaccepted / histiter
-        pcur_hist_add <- histaccepted_add / histiter_add
-        
-        ## NOTE THAT THIS IS ONLY RELEVANT TO INFECTION HISTORY PROPOSAL 1 & 3
-        if (hist_proposal != 2) {
-          message(cat("Mean hist acceptance: ", signif(mean(pcur_hist), 3), cat = "\t"))
-          histiter <- histaccepted <- histaccepted_add <- histaccepted_move <- histiter_add <- histiter_move <- histreset
-        }
+      if (i > burnin & i <= (adaptive_period + burnin)) {
+          ## Current acceptance rate
+          pcur <- tempaccepted / tempiter
+          ## Save each step
+          opt_chain[chain_index, ] <- current_pars[unfixed_pars]
+          ## If in an adaptive step
+          if (chain_index %% opt_freq == 0) {
+              ## If using univariate proposals
+              if (is.null(mvr_pars)) {
+                  ## For each non fixed parameter, scale the step size
+                  for (x in unfixed_pars) steps[x] <- scaletuning(steps[x], popt, pcur[x])
+              } else {
+                  if (chain_index > OPT_TUNING * adaptive_period & chain_index < adaptive_period) {
+                      old_cov_mat <- cov_mat
+                      ## Creates a new covariance matrix, but weights it with the old one
+                      cov_mat <- cov(opt_chain[1:chain_index, ])
+                      cov_mat <- w * cov_mat + (1 - w) * old_cov_mat
+                  }
+                  ## Scale tuning for last 80% of the adaptive period
+                  if (chain_index > (0.2) * adaptive_period) {
+                      steps <- scaletuning(steps, popt, pcur)
+                  }
+              }
+              pcur_hist <- histaccepted / histiter
+              pcur_hist_add <- histaccepted_add / histiter_add
+              pcur_hist_move <- histaccepted_move / histiter_move
+              
+              ## NOTE THAT THIS IS ONLY RELEVANT TO INFECTION HISTORY PROPOSAL 1 & 3
+              ##if (hist_proposal != 2) {
+              message(cat("Mean hist acceptance: ", signif(mean(pcur_hist), 3), cat = "\t"))
+              
+    histiter <- integer(n_indiv)
+    histaccepted <- integer(n_indiv)
+    histiter_add <- integer(n_indiv)
+    histaccepted_add <- integer(n_indiv) 
+    histiter_move <- integer(n_indiv)
+    histaccepted_move <- integer(n_indiv)
+              ##}
+              message(cat("histiter_add: ", histiter_add, sep="\t"))
+              ## If adaptive infection history proposal
+              if (hist_opt == 1) {
+                  ## Increase or decrease the number of infection history locations
+                  ## being changed to modify acceptance rate. If not accepting enough,
+                  ## reduce number. If accepting too many, increase number
+                  n_infs_vec[which(pcur_hist_add < popt_hist * (1 - OPT_TUNING))] <- n_infs_vec[which(pcur_hist_add < popt_hist * (1 - OPT_TUNING))] - 1
+                  n_infs_vec[which(pcur_hist_add >= popt_hist * (1 + OPT_TUNING))] <- n_infs_vec[which(pcur_hist_add >= popt_hist * (1 + OPT_TUNING))] + 1
+                  n_infs_vec[n_infs_vec < 1] <- 1
 
-        ## If adaptive infection history proposal
-        if (hist_opt == 1) {
-          ## Increase or decrease the number of infection history locations
-          ## being changed to modify acceptance rate. If not accepting enough,
-          ## reduce number. If accepting too many, increase number
-          n_infs_vec[which(pcur_hist_add < popt_hist * (1 - OPT_TUNING))] <- n_infs_vec[which(pcur_hist_add < popt_hist * (1 - OPT_TUNING))] - 1
-          n_infs_vec[which(pcur_hist_add >= popt_hist * (1 + OPT_TUNING))] <- n_infs_vec[which(pcur_hist_add >= popt_hist * (1 + OPT_TUNING))] + 1
-          n_infs_vec[n_infs_vec < 1] <- 1
-
-          for (ii in seq_along(n_infs_vec)) {
-            move_sizes[ii] <- min(move_sizes[ii], length(age_mask[ii]:strain_mask[ii]))
-            n_infs_vec[ii] <- min(n_infs_vec[ii], length(age_mask[ii]:strain_mask[ii]))
-          }
-        }
-        ## Look at infection history proposal sizes
-        message(cat("n_infs: ", head(n_infs_vec), sep = "\t"))
-        message(cat("Move sizes: ", head(move_sizes), sep = "\t"))
-        message(cat("Inf hist swap pcur: ", signif(infection_history_swap_accept / infection_history_swap_n, 3), sep = "\t"))
-        message(cat("Pcur: ", signif(pcur, 3), sep = "\t"))
-        message(cat("Step sizes: ", signif(steps, 3), sep = "\t"))
-
-        ## If not accepting, send a warning
-        if (all(pcur == 0)) {
-          message("Warning: acceptance rates are 0. Might be an error with the theta proposal?")
-          if (message_slack) {
-            text_slackr(paste0("Warning in ", message_slack_pars$username, ": acceptance rates are 0. Might be an error with the theta proposal?"),
-              channel = message_slack_pars$channel,
-              username = message_slack_pars$username
-            )
-          }
-        }
+                  for (ii in seq_along(n_infs_vec)) {
+                      move_sizes[ii] <- min(move_sizes[ii], length(age_mask[ii]:strain_mask[ii]))
+                      n_infs_vec[ii] <- min(n_infs_vec[ii], length(age_mask[ii]:strain_mask[ii]))
+                  }
+              }
+              ## Look at infection history proposal sizes
+              message(cat("n_infs: ", head(n_infs_vec), sep = "\t"))
+              message(cat("Move sizes: ", head(move_sizes), sep = "\t"))
+              message(cat("Inf hist swap pcur: ", signif(infection_history_swap_accept / infection_history_swap_n, 3), sep = "\t"))
+              message(cat("Pcur: ", signif(pcur, 3), sep = "\t"))
+              message(cat("Step sizes: ", signif(steps, 3), sep = "\t"))
+              message(cat("Pcur hist add: ", signif(pcur_hist_add, 3), sep = "\t"))
+              message(cat("Pcur hist move: ", signif(pcur_hist_move, 3), sep = "\t"))
+              ## If not accepting, send a warning
+              if (all(pcur == 0)) {
+                  message("Warning: acceptance rates are 0. Might be an error with the theta proposal?")
+                  if (message_slack) {
+                      text_slackr(paste0("Warning in ", message_slack_pars$username, ": acceptance rates are 0. Might be an error with the theta proposal?"),
+                                  channel = message_slack_pars$channel,
+                                  username = message_slack_pars$username
+                                  )
+                  }
+              }
 
         tempaccepted <- tempiter <- reset
       }

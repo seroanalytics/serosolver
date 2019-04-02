@@ -240,42 +240,6 @@ likelihood_titre_basic <- function(expected, data, theta, titre_shifts) {
     .Call('_serosolver_likelihood_titre_basic', PACKAGE = 'serosolver', expected, data, theta, titre_shifts)
 }
 
-#' Gibbs sampling of infection histories
-#'
-#' Proposes a new matrix of infection histories by sampling from the prior on an individual's infection presence/absence in a particular time period, conditional on all other individuals in that time period. This allows us to integrate out the infection probability term for each time period. Should look at \code{\link{create_posterior_func}} for more details about the input parameters.
-#' @param pars NumericVector, the model parameters used to solve the model, extract likelihood function parameters and alpha/beta
-#' @param infection_history_mat IntegerMatrix the matrix of 1s and 0s corresponding to individual infection histories
-#' @param indiv_samp_propn double, what proportion of individuals to resample in this proposal step
-#' @param n_years_samp int, for each individual, how many time periods to resample infections for?
-#' @param age_mask IntegerVector, length of the number of individuals, with indices specifying first time period that an individual can be infected (indexed from 1, such that a value of 1 allows an individual to be infected in any time period)
-#' @param strain_mask IntegerVector, length of the number of individuals, with indices specifying last time period that an individual can be infected (ie. last time a sample was taken)
-#' @param n_alive IntegerVector, length of the number of time periods that an individual could be infected, giving the number of individual alive in each time period
-#' @param swap_propn double, what proportion of proposals should be swap steps (ie. swap contents of two cells in infection_history rather than adding/removing infections)
-#' @param swap_distance int, in a swap step, how many time steps either side of the chosen time period to swap with
-#' @param alpha double, alpha parameter for beta prior on infection probability
-#' @param beta double, beta parameter for beta prior on infection probability
-#' @param circulation_times NumericVector, the times that each strain circulated
-#' @param circulation_times_indices IntegerVector, indexing vector from 0:(number of strains-1)
-#' @param sample_times NumericVector, the vector of real times that samples were taken
-#' @param rows_per_indiv_in_samples IntegerVector, How many rows in titre data correspond to each individual, sample and repeat?
-#' @param cum_nrows_per_individual_in_data IntegerVector, How many rows in the titre data correspond to each individual?
-#' @param nrows_per_blood_sample IntegerVector, Split the sample times and runs for each individual
-#' @param measurement_strain_indices IntegerVector, For each titre measurement, corresponding entry in antigenic map
-#' @param antigenic_map_long NumericVector, the collapsed cross reactivity map for long term boosting, after multiplying by sigma1
-#' @param antigenic_map_short NumericVector, the collapsed cross reactivity map for short term boosting, after multiplying by sigma2
-#' @param data NumericVector, the titre data for all individuals
-#' @param to_add Nullable<NumericVector>, optional vector of measurement shifts to apply to all titres
-#' @param additional_arguments Nullable<List>, optional list to pass down to titre solving function
-#' @param DOBs NumericVector, vector of ages for each individual
-#' @param solve_likelihood bool, if FALSE does not solve likelihood when calculating acceptance probability
-#' @param total_alive int, if a positive number, uses this rather than the vector of alive individuals for the infection history prior
-#' @param temp double, temperature for parallel tempering MCMC
-#' @return a matrix of 1s and 0s corresponding to the infection histories for all individuals
-#' @family infection_history_proposal
-infection_history_proposal_gibbs <- function(pars, infection_history_mat, indiv_samp_propn, n_years_samp_vec, age_mask, strain_mask, n_alive, swap_propn, swap_distance, alpha, beta, circulation_times, circulation_times_indices, sample_times, rows_per_indiv_in_samples, cum_nrows_per_individual_in_data, nrows_per_blood_sample, measurement_strain_indices, antigenic_map_long, antigenic_map_short, data, to_add, additional_arguments, DOBs, solve_likelihood = TRUE, total_alive = -1L, temp = 1) {
-    .Call('_serosolver_infection_history_proposal_gibbs', PACKAGE = 'serosolver', pars, infection_history_mat, indiv_samp_propn, n_years_samp_vec, age_mask, strain_mask, n_alive, swap_propn, swap_distance, alpha, beta, circulation_times, circulation_times_indices, sample_times, rows_per_indiv_in_samples, cum_nrows_per_individual_in_data, nrows_per_blood_sample, measurement_strain_indices, antigenic_map_long, antigenic_map_short, data, to_add, additional_arguments, DOBs, solve_likelihood, total_alive, temp)
-}
-
 #' Fast infection history proposal function
 #' 
 #' Proposes a new matrix of infection histories using a beta binomial proposal distribution. This particular implementation allows for n_infs epoch times to be changed with each function call. Furthermore, the size of the swap step is specified for each individual by move_sizes.
@@ -330,8 +294,8 @@ inf_hist_prop_cpp <- function(infection_history_mat, sampled_indivs, age_mask, s
 #' @return an R list, one entry with the matrix of 1s and 0s corresponding to the infection histories for all individuals and the other with the new corresponding likelihoods per individual
 #' @export
 #' @family infection_history_proposal
-infection_history_proposal_gibbs_fast <- function(theta, infection_history_mat, old_probs_1, sampled_indivs, n_years_samp_vec, age_mask, strain_mask, n_alive, n_infections, swap_propn, swap_distance, alpha, beta, circulation_times, circulation_times_indices, sample_times, rows_per_indiv_in_samples, cum_nrows_per_individual_in_data, cum_nrows_per_individual_in_repeat_data, nrows_per_blood_sample, group_id_vec, measurement_strain_indices, antigenic_map_long, antigenic_map_short, data, repeat_data, repeat_indices, titre_shifts, mus, boosting_vec_indices, temp = 1, solve_likelihood = TRUE, total_alive = -1L) {
-    .Call('_serosolver_infection_history_proposal_gibbs_fast', PACKAGE = 'serosolver', theta, infection_history_mat, old_probs_1, sampled_indivs, n_years_samp_vec, age_mask, strain_mask, n_alive, n_infections, swap_propn, swap_distance, alpha, beta, circulation_times, circulation_times_indices, sample_times, rows_per_indiv_in_samples, cum_nrows_per_individual_in_data, cum_nrows_per_individual_in_repeat_data, nrows_per_blood_sample, group_id_vec, measurement_strain_indices, antigenic_map_long, antigenic_map_short, data, repeat_data, repeat_indices, titre_shifts, mus, boosting_vec_indices, temp, solve_likelihood, total_alive)
+infection_history_proposal_gibbs_fast <- function(theta, infection_history_mat, old_probs_1, sampled_indivs, n_years_samp_vec, age_mask, strain_mask, n_alive, n_infections, swap_propn, swap_distance, alpha, beta, circulation_times, circulation_times_indices, sample_times, rows_per_indiv_in_samples, cum_nrows_per_individual_in_data, cum_nrows_per_individual_in_repeat_data, nrows_per_blood_sample, group_id_vec, measurement_strain_indices, antigenic_map_long, antigenic_map_short, data, repeat_data, repeat_indices, titre_shifts, mus, boosting_vec_indices, swap_proposals, add_proposals, swap_accepted, add_accepted, temp = 1, solve_likelihood = TRUE, total_alive = -1L) {
+    .Call('_serosolver_infection_history_proposal_gibbs_fast', PACKAGE = 'serosolver', theta, infection_history_mat, old_probs_1, sampled_indivs, n_years_samp_vec, age_mask, strain_mask, n_alive, n_infections, swap_propn, swap_distance, alpha, beta, circulation_times, circulation_times_indices, sample_times, rows_per_indiv_in_samples, cum_nrows_per_individual_in_data, cum_nrows_per_individual_in_repeat_data, nrows_per_blood_sample, group_id_vec, measurement_strain_indices, antigenic_map_long, antigenic_map_short, data, repeat_data, repeat_indices, titre_shifts, mus, boosting_vec_indices, swap_proposals, add_proposals, swap_accepted, add_accepted, temp, solve_likelihood, total_alive)
 }
 
 #' Function to calculate non-linear waning

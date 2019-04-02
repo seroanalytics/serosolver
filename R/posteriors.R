@@ -685,7 +685,9 @@ create_posterior_func_fast <- function(par_tab,
                       probs, sampled_indivs,
                       alpha, beta,
                       n_infs, swap_propn, swap_dist,
-                      temp) {
+                      temp,
+                      swap_proposals, add_proposals,
+                      swap_accepted, add_accepted) {
             theta <- pars[theta_indices]
             names(theta) <- par_names_theta
 
@@ -735,9 +737,14 @@ create_posterior_func_fast <- function(par_tab,
                 titre_shifts,
                 mus,
                 boosting_vec_indices,
+                swap_proposals,
+                add_proposals,
+                swap_accepted,
+                add_accepted,
                 temp,
                 solve_likelihood,
                 n_alive_total
+                
             )
             return(res)
         }
