@@ -171,9 +171,9 @@ create_posterior_func <- function(par_tab,
     } else if (function_type == 2) {
         ## Version 4 puts the prior on the total number of infections
         if (version == 4) {
-            n_alive_total <- sum(n_alive)
+            n_alive_total <- colSums(n_alive)
         } else {
-            n_alive_total <- -1
+            n_alive_total <- c(-1)
         }
 
         ## FUNCTION TO RETURN
@@ -677,9 +677,9 @@ create_posterior_func_fast <- function(par_tab,
         }
     } else if (function_type == 2) {
         if (version == 4) {
-            n_alive_total <- sum(n_alive)
+            n_alive_total <- rowSums(n_alive)
         } else {
-            n_alive_total <- -1
+            n_alive_total <- c(-1,-1)
         }
         f <- function(pars, infection_history_mat,
                       probs, sampled_indivs,
@@ -705,6 +705,7 @@ create_posterior_func_fast <- function(par_tab,
             antigenic_map_short <- create_cross_reactivity_vector(antigenic_map_melted, theta["sigma2"])
 
             n_infections <- sum_infections_by_group(infection_history_mat, group_id_vec, n_groups)
+            n_infected_group <- rowSums(n_infections)
             ## Now pass to the C++ function
             res <- infection_history_proposal_gibbs_fast(
                 theta,
@@ -741,10 +742,10 @@ create_posterior_func_fast <- function(par_tab,
                 add_proposals,
                 swap_accepted,
                 add_accepted,
+                n_alive_total,
+                n_infected_group,
                 temp,
-                solve_likelihood,
-                n_alive_total
-                
+                solve_likelihood                
             )
             return(res)
         }

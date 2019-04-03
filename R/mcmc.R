@@ -450,7 +450,7 @@ run_MCMC <- function(par_tab,
         }
         ## Beta binomial on per individual total infections
       } else if (hist_proposal == 3) {
-        new_infection_histories <- inf_hist_prop_cpp(
+        new_infection_histories <- infection_history_proposal_prior_v1(
           infection_histories, indiv_sub_sample,
           age_mask, strain_mask,
           move_sizes, n_infs_vec,
@@ -607,7 +607,7 @@ run_MCMC <- function(par_tab,
       ## Have a look at the acceptance rates for infection histories
       pcur_hist <- histaccepted / histiter ## Overall
       pcur_hist_add <- histaccepted_add / histiter_add ## For adding
-      message(cat("Pcur hist: ", signif(pcur_hist_add, 3), sep = "\t"))
+      message(cat("Pcur hist add: ", head(signif(pcur_hist_add, 3)), sep = "\t"))
       
     histiter <- integer(n_indiv)
     histaccepted <- integer(n_indiv)
@@ -648,14 +648,14 @@ run_MCMC <- function(par_tab,
               ##if (hist_proposal != 2) {
               message(cat("Mean hist acceptance: ", signif(mean(pcur_hist), 3), cat = "\t"))
               
-    histiter <- integer(n_indiv)
-    histaccepted <- integer(n_indiv)
-    histiter_add <- integer(n_indiv)
-    histaccepted_add <- integer(n_indiv) 
-    histiter_move <- integer(n_indiv)
-    histaccepted_move <- integer(n_indiv)
+              histiter <- integer(n_indiv)
+              histaccepted <- integer(n_indiv)
+              histiter_add <- integer(n_indiv)
+              histaccepted_add <- integer(n_indiv) 
+              histiter_move <- integer(n_indiv)
+              histaccepted_move <- integer(n_indiv)
               ##}
-              message(cat("histiter_add: ", histiter_add, sep="\t"))
+
               ## If adaptive infection history proposal
               if (hist_opt == 1) {
                   ## Increase or decrease the number of infection history locations
@@ -664,6 +664,12 @@ run_MCMC <- function(par_tab,
                   n_infs_vec[which(pcur_hist_add < popt_hist * (1 - OPT_TUNING))] <- n_infs_vec[which(pcur_hist_add < popt_hist * (1 - OPT_TUNING))] - 1
                   n_infs_vec[which(pcur_hist_add >= popt_hist * (1 + OPT_TUNING))] <- n_infs_vec[which(pcur_hist_add >= popt_hist * (1 + OPT_TUNING))] + 1
                   n_infs_vec[n_infs_vec < 1] <- 1
+                  
+                  #move_sizes[which(pcur_hist_move < popt_hist * (1 - OPT_TUNING))] <- move_sizes[which(pcur_hist_move < popt_hist * (1 - OPT_TUNING))] - 1
+                  #move_sizes[which(pcur_hist_move >= popt_hist * (1 + OPT_TUNING))] <- move_sizes[which(pcur_hist_move >= popt_hist * (1 + OPT_TUNING))] + 1
+                  #move_sizes[move_sizes< 1] <- 1
+
+                  
 
                   for (ii in seq_along(n_infs_vec)) {
                       move_sizes[ii] <- min(move_sizes[ii], length(age_mask[ii]:strain_mask[ii]))
@@ -676,8 +682,8 @@ run_MCMC <- function(par_tab,
               message(cat("Inf hist swap pcur: ", signif(infection_history_swap_accept / infection_history_swap_n, 3), sep = "\t"))
               message(cat("Pcur: ", signif(pcur, 3), sep = "\t"))
               message(cat("Step sizes: ", signif(steps, 3), sep = "\t"))
-              message(cat("Pcur hist add: ", signif(pcur_hist_add, 3), sep = "\t"))
-              message(cat("Pcur hist move: ", signif(pcur_hist_move, 3), sep = "\t"))
+              message(cat("Pcur hist add: ", head(signif(pcur_hist_add, 3)), sep = "\t"))
+              message(cat("Pcur hist move: ", head(signif(pcur_hist_move, 3)), sep = "\t"))
               ## If not accepting, send a warning
               if (all(pcur == 0)) {
                   message("Warning: acceptance rates are 0. Might be an error with the theta proposal?")

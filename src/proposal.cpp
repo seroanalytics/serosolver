@@ -6,8 +6,6 @@
 #include "helpers.h"
 // [[Rcpp::depends(RcppArmadillo)]]
 
-// [[Rcpp::depends(RcppArmadillo)]]
-
 //' Fast infection history proposal function
 //' 
 //' Proposes a new matrix of infection histories using a beta binomial proposal distribution. This particular implementation allows for n_infs epoch times to be changed with each function call. Furthermore, the size of the swap step is specified for each individual by move_sizes.
@@ -23,7 +21,7 @@
 //' @export
 //' @family infection_history_proposal
 // [[Rcpp::export]]
-arma::mat inf_hist_prop_cpp(arma::mat infection_history_mat, 
+arma::mat inf_hist_prop_prior_v3(arma::mat infection_history_mat, 
 			    const IntegerVector& sampled_indivs, 
 			    const IntegerVector& age_mask,
 			    const IntegerVector& strain_mask,
@@ -150,45 +148,45 @@ arma::mat inf_hist_prop_cpp(arma::mat infection_history_mat,
 //' @export
 //' @family infection_history_proposal
 // [[Rcpp::export]]
-List infection_history_proposal_gibbs_fast(const NumericVector &theta, // Model parameters
-					   const IntegerMatrix &infection_history_mat,  // Current infection history
-					   const NumericVector &old_probs_1,
-					   const IntegerVector &sampled_indivs,
-					   const IntegerVector &n_years_samp_vec,
-					   const IntegerVector &age_mask, // Age mask
-					   const IntegerVector &strain_mask, // Age mask
-					   const IntegerMatrix &n_alive, // No. of individuals alive each year/group
-					   IntegerMatrix &n_infections, // No. of infections in each year/group
-					   const double &swap_propn,
-					   const int &swap_distance,
-					   const double &alpha, // Alpha for prior
-					   const double &beta, // Beta for prior
-					   const NumericVector &circulation_times,
-					   const IntegerVector &circulation_times_indices,
-					   const NumericVector &sample_times,
-					   const IntegerVector &rows_per_indiv_in_samples, // How many rows in unique sample times table correspond to each individual?
-					   const IntegerVector &cum_nrows_per_individual_in_data, // How many rows in the titre data correspond to each individual?
-					   const IntegerVector &cum_nrows_per_individual_in_repeat_data, // How many rows in the repeat titre data correspond to each individual?
-					   const IntegerVector &nrows_per_blood_sample, // How many rows in the titre data table correspond to each unique individual + sample time + repeat?
-					   const IntegerVector &group_id_vec, // Which group does each individual belong to?
-					   const IntegerVector &measurement_strain_indices, // For each titre measurement, corresponding entry in antigenic map
-					   const NumericVector &antigenic_map_long, 
-					   const NumericVector &antigenic_map_short,
-					   const NumericVector &data,
-					   const NumericVector &repeat_data,
-					   const IntegerVector &repeat_indices,
-					   const NumericVector &titre_shifts,
-					   const NumericVector &mus,
-					   const IntegerVector &boosting_vec_indices,
-					   IntegerVector &swap_proposals,
-					   IntegerVector &add_proposals,
-					   IntegerVector &swap_accepted,
-					   IntegerVector &add_accepted,
-					   const double temp=1,
-					   bool solve_likelihood=true,
-					   int total_alive=-1
-					  
-					   ){
+List inf_hist_prop_prior_v2_and_v4(const NumericVector &theta, // Model parameters
+				   const IntegerMatrix &infection_history_mat,  // Current infection history
+				   const NumericVector &old_probs_1,
+				   const IntegerVector &sampled_indivs,
+				   const IntegerVector &n_years_samp_vec,
+				   const IntegerVector &age_mask, // Age mask
+				   const IntegerVector &strain_mask, // Age mask
+				   const IntegerMatrix &n_alive, // No. of individuals alive each year/group
+				   IntegerMatrix &n_infections, // No. of infections in each year/group
+				   const double &swap_propn,
+				   const int &swap_distance,
+				   const double &alpha, // Alpha for prior
+				   const double &beta, // Beta for prior
+				   const NumericVector &circulation_times,
+				   const IntegerVector &circulation_times_indices,
+				   const NumericVector &sample_times,
+				   const IntegerVector &rows_per_indiv_in_samples, // How many rows in unique sample times table correspond to each individual?
+				   const IntegerVector &cum_nrows_per_individual_in_data, // How many rows in the titre data correspond to each individual?
+				   const IntegerVector &cum_nrows_per_individual_in_repeat_data, // How many rows in the repeat titre data correspond to each individual?
+				   const IntegerVector &nrows_per_blood_sample, // How many rows in the titre data table correspond to each unique individual + sample time + repeat?
+				   const IntegerVector &group_id_vec, // Which group does each individual belong to?
+				   const IntegerVector &measurement_strain_indices, // For each titre measurement, corresponding entry in antigenic map
+				   const NumericVector &antigenic_map_long, 
+				   const NumericVector &antigenic_map_short,
+				   const NumericVector &data,
+				   const NumericVector &repeat_data,
+				   const IntegerVector &repeat_indices,
+				   const NumericVector &titre_shifts,
+				   const NumericVector &mus,
+				   const IntegerVector &boosting_vec_indices,
+				   IntegerVector &swap_proposals,
+				   IntegerVector &add_proposals,
+				   IntegerVector &swap_accepted,
+				   IntegerVector &add_accepted,
+				   const IntegerVector &total_alive,
+				   IntegerVector &n_infected_group,
+				   const double temp=1,
+				   bool solve_likelihood=true				   
+				   ){
 
   bool PRINT_TMP = false;
   
@@ -210,10 +208,7 @@ List infection_history_proposal_gibbs_fast(const NumericVector &theta, // Model 
   int n_infected = 0; // How many individuals were infected?
   
   // Using prior version 2 or 4?
-  bool prior_on_total = total_alive > 0;
-  if(prior_on_total){
-    n_infected = sum(infection_history_mat);
-  }
+  bool prior_on_total = total_alive(0) > 0;
     
   // These indices allow us to step through the titre data vector
   // as if it were a matrix ie. number of rows for each individual
@@ -394,6 +389,7 @@ List infection_history_proposal_gibbs_fast(const NumericVector &theta, // Model 
       // Only proceed if we've actually made a change
       // If prior version 4, then prior doesn't change by swapping
       if(loc1_val_old != loc2_val_old){
+
 	if(PRINT_TMP){
 	  Rcpp::Rcout << "Swap contents changed" << std::endl;
 	}
@@ -402,20 +398,20 @@ List infection_history_proposal_gibbs_fast(const NumericVector &theta, // Model 
 	// Swap contents
 	new_infection_history(loc1) = new_infection_history(loc2);
 	new_infection_history(loc2) = loc1_val_old;
-	  
-	// Number of infections in that group in that time
-	m_1_old = n_infections(group_id,loc1);      
-	m_2_old = n_infections(group_id,loc2);
-    
-	// Number alive is number alive overall in that time and group
-	n_1 = n_alive(group_id, loc1);
-	n_2 = n_alive(group_id, loc2);
 
-	// Prior for new state
-	m_1_new = m_1_old - loc1_val_old + loc2_val_old;
-	m_2_new = m_2_old - loc2_val_old + loc1_val_old;
+	if(!prior_on_total){	  
+	  // Number of infections in that group in that time
+	  m_1_old = n_infections(group_id,loc1);      
+	  m_2_old = n_infections(group_id,loc2);
 	  
-	if(!prior_on_total){
+	  // Number alive is number alive overall in that time and group
+	  n_1 = n_alive(group_id, loc1);
+	  n_2 = n_alive(group_id, loc2);
+	  
+	  // Prior for new state
+	  m_1_new = m_1_old - loc1_val_old + loc2_val_old;
+	  m_2_new = m_2_old - loc2_val_old + loc1_val_old;
+	  
 	  // Pre-compute these? 
 	  prior_1_old = R::lbeta(m_1_old + alpha, n_1 - m_1_old + beta)-lbeta_const;
 	  prior_2_old = R::lbeta(m_2_old + alpha, n_2 - m_2_old + beta)-lbeta_const;
@@ -495,8 +491,8 @@ List infection_history_proposal_gibbs_fast(const NumericVector &theta, // Model 
 	  lik_changed = lik_changed | (new_entry != old_entry);
 	}
       } else {
-	m = n_infected;
-	n = total_alive;
+	m = n_infected_group(group_id);
+	n = total_alive(group_id);
 
 	if(PRINT_TMP){
 	  Rcpp::Rcout << "Prior version 4" << std::endl;
@@ -517,8 +513,11 @@ List infection_history_proposal_gibbs_fast(const NumericVector &theta, // Model 
 	// from prior
 	for(int j = 0; j < n_samp_max; ++j){
 	  year = locs[j] + age_mask[indiv] - 1;
+	  old_entry = new_infection_history(year);
+	  old_entries += old_entry;
 	  if(PRINT_TMP){
 	    Rcpp::Rcout << "Location: " << year << std::endl;
+	    Rcpp::Rcout << "Old entry: " << old_entry << std::endl;
 	  }
 	  ratio = (alpha + m)/(alpha + beta + n);
 	  rand1 = R::runif(0,1);
@@ -533,9 +532,12 @@ List infection_history_proposal_gibbs_fast(const NumericVector &theta, // Model 
 	  } else {
 	    if(PRINT_TMP){
 	      Rcpp::Rcout << "Remove" << std::endl;
-
 	    }
+	    new_entry = 0;
 	    new_infection_history(year) = 0;
+	  }
+	  if(PRINT_TMP){
+	    Rcpp::Rcout << "New entry: " << new_entry << std::endl;
 	  }
 	  n++;
 	  lik_changed = lik_changed | (new_entry != old_entry);
@@ -692,7 +694,7 @@ List infection_history_proposal_gibbs_fast(const NumericVector &theta, // Model 
 	  n_infections(group_id, year) -= old_entries;
 	  n_infections(group_id, year) += new_entries;
 	} else {
-	  n_infected = n_infected - old_entries + new_entries;
+	  n_infected_group(group_id) = n_infected_group(group_id) - old_entries + new_entries;
 	}
       }
     }
