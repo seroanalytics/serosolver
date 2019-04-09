@@ -679,7 +679,6 @@ plot_attack_rates <- function(infection_histories, titre_dat, strain_isolation_t
             year_breaks <- c(year_breaks, max_year+3)
             year_labels <- c(year_labels, "Prior")
         }
-        
         p <- ggplot(tmp) +
             geom_violin(aes(x = j, y = V1, fill=taken,group=j),
                         draw_quantiles=c(0.5),scale="width") +

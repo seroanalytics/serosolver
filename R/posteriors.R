@@ -1,287 +1,3 @@
-#' Posterior function pointer
-#'
-#' Essential for the MCMC algorithm. Takes all of the input data/parameters and returns a function pointer. This function finds the posterior for a given set of input parameters (theta) and infection histories without needing to pass the data set back and forth.
-#' @param par_tab the parameter table controlling information such as bounds, initial values etc
-#' @param titre_dat the data frame of data to be fitted. Must have columns: group (index of group); individual (integer ID of individual); samples (numeric time of sample taken); virus (numeric time of when the virus was circulating); titre (integer of titre value against the given virus at that sampling time)
-#' @param antigenic_map a data frame of antigenic x and y coordinates. Must have column names: x_coord; y_coord; inf_years
-#' @param version which version of the posterior function to solve (corresponds mainly to the infection history prior). Mostly just left to 1, but there is one special case where this should be set to 4 for the gibbs sampler. This is only really used by \code{\link{run_MCMC}} to place the infection history prior on the total number of infections across all years and individuals when version = 4
-#' @param solve_likelihood usually set to TRUE. If FALSE< does not solve the likelihood and instead just samples/solves based on the model prior
-#' @param age_mask see \code{\link{create_age_mask}} - a vector with one entry for each individual specifying the first epoch of circulation in which an individual could have been exposed
-#' @param measurement_indices_by_time if not NULL, then use these indices to specify which measurement bias parameter index corresponds to which time
-#' @param mu_indices if not NULL, then use these indices to specify which boosting parameter index corresponds to which time
-#' @param n_alive if not NULL, uses this as the number alive in a given year rather than calculating from the ages. This is needed if the number of alive individuals is known, but individual birth dates are not
-#' @param function_type integer specifying which version of this function to use. Specify 1 to give a posterior solving function; 2 to give the gibbs sampler for infection history proposals; otherwise just solves the titre model and returns predicted titres. NOTE that this is not the same as the attack rate prior argument!
-#' @param ... other arguments to pass to the posterior solving function
-#' @return a single function pointer that takes only pars and infection_histories as unnamed arguments. This function goes on to return a vector of posterior values for each individual
-#' @export
-create_posterior_func <- function(par_tab,
-                                  titre_dat,
-                                  antigenic_map,
-                                  version = 1,
-                                  solve_likelihood = TRUE,
-                                  age_mask = NULL,
-                                  measurement_indices_by_time = NULL,
-                                  mu_indices = NULL,
-                                  n_alive = NULL,
-                                  function_type = 1,
-                                  ...) {
-    ## Sort data in same way
-    titre_dat <- titre_dat[order(titre_dat$individual, titre_dat$run, titre_dat$samples, titre_dat$virus), ]
-
-    ## Isolate data table as vectors for speed
-    titres <- titre_dat$titre
-
-    ## Setup data vectors and extract
-    setup_dat <- setup_titredat_for_posterior_func(titre_dat, antigenic_map, age_mask, n_alive)
-
-    individuals <- setup_dat$individuals
-    antigenic_map_melted <- setup_dat$antigenic_map_melted
-    strain_isolation_times <- setup_dat$strain_isolation_times
-    infection_strain_indices <- setup_dat$infection_strain_indices
-    sample_times <- setup_dat$sample_times
-    rows_per_indiv_in_samples <- setup_dat$rows_per_indiv_in_samples
-    nrows_per_individual_in_data <- setup_dat$nrows_per_individual_in_data
-    cum_nrows_per_individual_in_data <- setup_dat$cum_nrows_per_individual_in_data
-    
-    nrows_per_blood_sample <- setup_dat$nrows_per_blood_sample
-    measured_strain_indices <- setup_dat$measured_strain_indices
-    n_alive <- setup_dat$n_alive
-    age_mask <- setup_dat$age_mask
-    strain_mask <- setup_dat$strain_mask
-    n_indiv <- setup_dat$n_indiv
-    DOBs <- setup_dat$DOBs
-
-#########################################################
-    ## Extract parameter type indices from par_tab, to split up
-    ## similar parameters in model solving functions
-    option_indices <- which(par_tab$type == 0)
-    theta_indices <- which(par_tab$type %in% c(0, 1))
-    phi_indices <- which(par_tab$type == 2)
-    measurement_indices_par_tab <- which(par_tab$type == 3)
-    weights_indices <- which(par_tab$type == 4) ## For functional form version
-    knot_indices <- which(par_tab$type == 5)
-    mu_indices_par_tab <- which(par_tab$type == 6)
-#########################################################
-
-    par_names_theta <- par_tab[theta_indices, "names"]
-
-    ## Find which options are being used in advance for speed
-    explicit_phi <- (length(phi_indices) > 0)
-    spline_phi <- (length(knot_indices) > 0)
-    use_measurement_bias <- (length(measurement_indices_par_tab) > 0) & !is.null(measurement_indices_by_time)
-    titre_shifts <- NULL
-    expected_indices <- NULL
-    measurement_bias <- NULL
-    use_strain_dependent <- (length(mu_indices) > 0) & !is.null(mu_indices)
-    additional_arguments <- NULL
-
-    if (use_measurement_bias) {
-        expected_indices <- measurement_indices_by_time[match(titre_dat$virus, strain_isolation_times)]
-    }
-
-    if (use_strain_dependent) {
-        additional_arguments <- list(
-            "boosting_vec_indices" = mu_indices - 1,
-            "mus" = rep(2, length(strain_isolation_times))
-        )
-    }
-
-    ## Posterior calculating version
-    if (function_type == 1) {
-        ## If solving likelihood, calculate full likelihood/priors
-        if (solve_likelihood) {
-########################
-            ## Function to return
-########################
-            f <- function(pars, infection_history_mat) {
-                phis <- pars[phi_indices]
-                theta <- pars[theta_indices]
-                weights <- pars[weights_indices]
-                knots <- pars[knot_indices]
-                mus <- pars[mu_indices_par_tab]
-
-                ## Add measurement shifts to titres
-                if (use_measurement_bias) {
-                    measurement_bias <- pars[measurement_indices_par_tab]
-                    to_add <- measurement_bias[expected_indices]
-                }
-                
-                ## Pass strain-dependent boosting down
-                if (use_strain_dependent) {
-                    additional_arguments[["mus"]] <- mus
-                }
-                names(theta) <- par_names_theta
-                
-                ## Work out short and long term boosting cross reactivity - C++ function
-                antigenic_map_long <- create_cross_reactivity_vector(antigenic_map_melted, theta["sigma1"])
-                antigenic_map_short <- create_cross_reactivity_vector(antigenic_map_melted, theta["sigma2"])
-
-                ## Now pass to the C++ function
-                y <- titre_data_group(
-                    theta, infection_history_mat, strain_isolation_times,
-                    infection_strain_indices, sample_times,
-                    rows_per_indiv_in_samples,
-                    cum_nrows_per_individual_in_data,
-                    nrows_per_blood_sample,
-                    measured_strain_indices,
-                    antigenic_map_long, antigenic_map_short,
-                    DOBs, additional_arguments
-                )
-                
-                ## Calculate likelihoods and group per individual
-                liks <- r_likelihood(y, titres, theta, expected_indices, measurement_bias)
-                liks <- sum_buckets(liks, nrows_per_individual_in_data)
-
-                ## If including explicit prior on FOI, add to individuals here
-                if (explicit_phi) {
-                    liks <- liks + calc_phi_probs_indiv(phis, infection_history_mat, age_mask, strain_mask)
-                }
-                
-                ## If using spline term for FOI, add here
-                if (spline_phi) {
-                    liks <- liks + calc_phi_probs_spline(
-                                       phis, knots, weights,
-                                       infection_history_mat, age_mask
-                                   )
-                }
-                return(liks)
-            }
-            ## If not solving likelihood, just need priors
-        } else {
-            ## Function to return
-            f <- function(pars, infection_history_mat) {
-                phis <- pars[phi_indices]
-                theta <- pars[theta_indices]
-                weights <- pars[weights_indices]
-                knots <- pars[knot_indices]
-                mus <- pars[mu_indices_par_tab]
-                liks <- rep(-100000, n_indiv)
-
-                if (explicit_phi) {
-                    liks <- liks + calc_phi_probs_indiv(phis, infection_history_mat, age_mask, strain_mask)
-                }
-                if (spline_phi) {
-                    liks <- liks + calc_phi_probs_spline(phis, knots, weights, infection_history_mat, age_mask)
-                }
-
-                return(liks)
-            }
-        }
-        ## Gibbs proposal function
-    } else if (function_type == 2) {
-        ## Version 4 puts the prior on the total number of infections
-        if (version == 4) {
-            n_alive_total <- colSums(n_alive)
-        } else {
-            n_alive_total <- c(-1)
-        }
-
-        ## FUNCTION TO RETURN
-        ## Gibbs proposal on infection histories
-        f <- function(pars, infection_history_mat,
-                      alpha, beta,
-                      indiv_propn, n_years,
-                      swap_propn = 0.5, swap_distance = 1, temp = 1) {
-            
-            phis <- pars[phi_indices]
-            theta <- pars[theta_indices]
-            weights <- pars[weights_indices]
-            knots <- pars[knot_indices]
-            mus <- pars[mu_indices_par_tab]
-            names(theta) <- par_names_theta
-            
-            ## Measurement shifts
-            if (use_measurement_bias) {
-                measurement_bias <- pars[measurement_indices_par_tab]
-                titre_shifts <- measurement_bias[expected_indices]
-            }
-
-            ## Strain dependent boosting, pass down
-            if (use_strain_dependent) {
-                additional_arguments[["mus"]] <- mus
-            }
-            names(theta) <- par_names_theta
-            
-            ## Work out short and long term boosting cross reactivity - C++ function
-            antigenic_map_long <- create_cross_reactivity_vector(antigenic_map_melted, theta["sigma1"])
-            antigenic_map_short <- create_cross_reactivity_vector(antigenic_map_melted, theta["sigma2"])
-            ## Now pass to the C++ function
-            new_infection_history_mat <- infection_history_proposal_gibbs(
-                theta,
-                infection_history_mat,
-                indiv_propn,
-                n_years,
-                age_mask,
-                strain_mask,
-                n_alive,
-                swap_propn,
-                swap_distance,
-                alpha,
-                beta,
-                strain_isolation_times,
-                infection_strain_indices,
-                sample_times,
-                rows_per_indiv_in_samples,
-                cum_nrows_per_individual_in_data,
-                nrows_per_blood_sample,
-                measured_strain_indices,
-                antigenic_map_long,
-                antigenic_map_short,
-                titres,
-                titre_shifts,
-                additional_arguments,
-                DOBs,
-                solve_likelihood,
-                n_alive_total,
-                temp
-            )
-            return(new_infection_history_mat)
-        }
-        ## Or model solving function
-    } else {
-        ## FUNCTION TO RETURN
-        f <- function(pars, infection_history_mat) {
-            phis <- pars[phi_indices]
-            theta <- pars[theta_indices]
-            weights <- pars[weights_indices]
-            knots <- pars[knot_indices]
-            mus <- pars[mu_indices_par_tab]
-
-            if (use_strain_dependent) {
-                additional_arguments[["mus"]] <- mus
-            }
-
-            names(theta) <- par_names_theta
-
-            ## Work out short and long term boosting cross reactivity - C++ function
-            antigenic_map_long <- create_cross_reactivity_vector(antigenic_map_melted, theta["sigma1"])
-            antigenic_map_short <- create_cross_reactivity_vector(antigenic_map_melted, theta["sigma2"])
-
-            ## Now pass to the C++ function
-            y <- titre_data_group(
-                theta, infection_history_mat, strain_isolation_times,
-                infection_strain_indices, sample_times,
-                rows_per_indiv_in_samples,
-                cum_nrows_per_individual_in_data,
-                nrows_per_blood_sample,
-                measured_strain_indices,
-                antigenic_map_long, antigenic_map_short,
-                DOBs, additional_arguments
-            )
-
-            ## Add measurement shifts
-            if (use_measurement_bias) {
-                measurement_bias <- pars[measurement_indices_par_tab]
-                titre_shifts <- measurement_bias[expected_indices]
-                y <- y + titre_shifts
-            }
-
-            return(y)
-        }
-        f
-    }
-}
-
 #' Likelihood function given data
 #' 
 #' Calculates the likelihood of observing a set of discrete HI titres given a corresponding set of predicted titres
@@ -522,11 +238,11 @@ prob_mus <- function(mus, pars) {
 
 #' Posterior function pointer - FAST VERSION
 #'
-#' Fast implementation of \code{\link{create_posterior_func}}. The old version is kept in for compatability, and for use where speed is not bottlenecked. Takes all of the input data/parameters and returns a function pointer. This function finds the posterior for a given set of input parameters (theta) and infection histories without needing to pass the data set back and forth.
+#' Takes all of the input data/parameters and returns a function pointer. This function finds the posterior for a given set of input parameters (theta) and infection histories without needing to pass the data set back and forth.
 #' @inheritParams create_posterior_func
 #' @return a single function pointer that takes only pars and infection_histories as unnamed arguments. This function goes on to return a vector of posterior values for each individual
 #' @export
-create_posterior_func_fast <- function(par_tab,
+create_posterior_func <- function(par_tab,
                                        titre_dat,
                                        antigenic_map,
                                        version = 1,
@@ -681,6 +397,7 @@ create_posterior_func_fast <- function(par_tab,
         } else {
             n_alive_total <- c(-1,-1)
         }
+        n_infected_group = c(0,0)
         f <- function(pars, infection_history_mat,
                       probs, sampled_indivs,
                       alpha, beta,
@@ -705,9 +422,9 @@ create_posterior_func_fast <- function(par_tab,
             antigenic_map_short <- create_cross_reactivity_vector(antigenic_map_melted, theta["sigma2"])
 
             n_infections <- sum_infections_by_group(infection_history_mat, group_id_vec, n_groups)
-            n_infected_group <- rowSums(n_infections)
+            if(version == 4) n_infected_group <- rowSums(n_infections)
             ## Now pass to the C++ function
-            res <- infection_history_proposal_gibbs_fast(
+            res <- inf_hist_prop_prior_v2_and_v4(
                 theta,
                 infection_history_mat,
                 probs,
@@ -717,6 +434,7 @@ create_posterior_func_fast <- function(par_tab,
                 strain_mask,
                 n_alive,
                 n_infections,
+                n_infected_group,
                 swap_propn,
                 swap_dist,
                 alpha,
@@ -738,12 +456,7 @@ create_posterior_func_fast <- function(par_tab,
                 titre_shifts,
                 mus,
                 boosting_vec_indices,
-                swap_proposals,
-                add_proposals,
-                swap_accepted,
-                add_accepted,
                 n_alive_total,
-                n_infected_group,
                 temp,
                 solve_likelihood                
             )

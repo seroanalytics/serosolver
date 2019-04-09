@@ -11,26 +11,6 @@ titre_data_fast(theta, infection_history_mat, circulation_times,
   boosting_vec_indices)
 }
 \arguments{
-\item{theta}{NumericVector, the named vector of model parameters}
-
-\item{infection_history_mat}{IntegerMatrix, the matrix of 1s and 0s showing presence/absence of infection for each possible time for each individual.}
-
-\item{circulation_times}{NumericVector, the actual times of circulation that the infection history vector corresponds to}
-
-\item{circulation_times_indices}{IntegerVector, which entry in the melted antigenic map that these infection times correspond to}
-
-\item{sample_times}{NumericVector, the times that each blood sample was taken}
-
-\item{rows_per_indiv_in_samples}{IntegerVector, Split the sample times and runs for each individual}
-
-\item{cum_nrows_per_individual_in_data}{IntegerVector, How many rows in the titre data correspond to each individual?}
-
-\item{measurement_strain_indices}{IntegerVector, the indices of all measured strains in the melted antigenic map}
-
-\item{antigenic_map_long}{NumericVector, the collapsed cross reactivity map for long term boosting, after multiplying by sigma1 see \code{\link{create_cross_reactivity_vector}}}
-
-\item{antigenic_map_short}{NumericVector, the collapsed cross reactivity map for short term boosting, after multiplying by sigma2, see \code{\link{create_cross_reactivity_vector}}}
-
 \item{mus}{NumericVector, if length is greater than one, assumes that strain-specific boosting is used rather than a single boosting parameter}
 
 \item{boosting_vec_indices}{IntegerVector, same length as circulation_times, giving the index in the vector \code{mus} that each entry should use as its boosting parameter.}
@@ -40,10 +20,5 @@ NumericVector of predicted titres for each entry in measurement_strain_indices
 }
 \description{
 See documentation for \code{\link{titre_data_group}}, as the interface is almost identical
-}
-\seealso{
-Other titre_model: \code{\link{infection_model_indiv}},
-  \code{\link{titre_data_group}},
-  \code{\link{titre_data_individual}}
 }
 \concept{titre_model}

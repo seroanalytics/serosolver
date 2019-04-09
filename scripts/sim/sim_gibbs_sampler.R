@@ -47,18 +47,18 @@ simInfPars=c("mean"=0.15/buckets,"sd"=0.5,"bigMean"=0.5/buckets/2,"logSD"=1)
 #attackRates  <- simulate_ars_spline(strain_isolation_times, buckets, simInfPars["mean"],simInfPars["sd"],TRUE,simInfPars["bigMean"], knots,theta)
 attackRates <- simulate_attack_rates(strain_isolation_times, simInfPars["mean"],simInfPars["sd"],TRUE,simInfPars["bigMean"])
 
-## Simulate data
-dat <- simulate_data(par_tab, 1, n_indiv, buckets,strain_isolation_times,
-                     sampling_times, 3, antigenic_map=fit_dat, 0, age_min*buckets,age_max*buckets,
-                    attack_rates=attackRates)
-
 ## If we want to use a subset of isolated strains, uncomment the line below
 viruses <- c(1968, 1969, 1972, 1975, 1977, 1979, 1982, 1985, 1987, 
              1989, 1992, 1995, 1998, 2000, 2002, 2004, 2007, 2009, 
              2010, 2012, 2014)*buckets
 
+## Simulate data
+dat <- simulate_data(par_tab, 1, n_indiv, buckets,strain_isolation_times,measured_strains=viruses,
+                     sampling_times, 3, antigenic_map=fit_dat, 0, age_min*buckets,age_max*buckets,
+                     attack_rates=attackRates)
+
+
 titre_dat <- dat[[1]]
-#titre_dat <- titre_dat[titre_dat$virus %in% viruses,]
 inf_hist <- dat[[2]]
 ages <- dat[[3]]
 AR <- dat[[4]]
@@ -87,23 +87,31 @@ for(i in 1:nrow(start_tab)){
 ## Specify paramters controlling the MCMC procedure
 
 devtools::load_all()
-f <- create_posterior_func_fast(par_tab,titre_dat, fit_dat, 1, TRUE)
+f <- create_posterior_func(par_tab,titre_dat, fit_dat, 1, TRUE)
 probs <- f(par_tab$values, inf_hist)
 sampled_indivs <- 1:100
 n_infs <- rep(1, length(sampled_indivs))
 alpha <- 1
 beta <- 1
-swap_propn <- 0.5
+swap_propn <- 0
 swap_dist <- 3
 temp <- 1
-proposal <- create_posterior_func_fast(par_tab,titre_dat, fit_dat, function_type=2, TRUE)
-proposal(par_tab$values, inf_hist, probs, sampled_indivs, alpha, beta, n_infs, swap_propn, swap_dist, temp)
+proposal <- create_posterior_func(par_tab,titre_dat, fit_dat, function_type=2, TRUE)
+omg <- proposal(par_tab$values, inf_hist, probs, sampled_indivs, alpha, beta, n_infs, swap_propn, swap_dist, temp)
 
-y <- f(par_tab$values, start_inf)
+y <- f(start_tab$values, start_inf)
 index <- 1
 while(!is.finite(sum(y)) & index < 100){
+  ## Generate starting locations for MCMC
+  start_tab <- par_tab
+  for(i in 1:nrow(start_tab)){
+    if(start_tab[i,"fixed"] == 0){
+      start_tab[i,"values"] <- runif(1,start_tab[i,"lower_start"], 
+                                     start_tab[i,"upper_start"])
+    }
+  }
   start_inf <- setup_infection_histories_new_2(titre_dat,strain_isolation_times,5,2)
-  y <- f(par_tab$values, start_inf)
+  y <- f(start_tab$values, start_inf)
   index <- index + 1
 }
 ## Run the MCMC using the inputs generated above
@@ -111,12 +119,6 @@ while(!is.finite(sum(y)) & index < 100){
 #startInf <- infHist
 
 devtools::load_all()
-mcmc_pars <- c("iterations" = 50000, "popt" = 0.44, "popt_hist" = 0.44, "opt_freq" = 2000, "thin" = 1,
-               "adaptive_period" = 10000,
-               "save_block" = 100, "thin_hist" = 10, "hist_sample_prob" = 0.5, "switch_sample" = 2, "burnin" = 0,
-               "inf_propn" = 0.5, "move_size" = 5, "hist_opt" = 1, "swap_propn" = 0.5,
-               "hist_switch_prob" = 0, "year_swap_propn" = 1
-)
 
 
 group_ids_vec <- unique(titre_dat[,c("individual","group")])[,"group"]-1
@@ -126,7 +128,7 @@ n_alive <- get_n_alive_group(titre_dat, strain_isolation_times)
 print(inf_mat_prior_group_cpp(n_infections, n_alive, 1,1))
 print(inf_mat_prior_cpp(inf_hist,n_alive[1,],1,1))
 
-n_groups <- 3
+n_groups <- 5
 indiv_groups <- NULL
 for(i in 1:length(unique(titre_dat$individual))){
   indiv_groups[i] <- sample(1:n_groups, 1)
@@ -144,12 +146,19 @@ n_alive_overall <- get_n_alive(titre_dat,strain_isolation_times)
 print(inf_mat_prior_group_cpp(n_infections, n_alive, 1,1))
 print(inf_mat_prior_cpp(inf_hist,n_alive_overall,1,1))
 
-res <- run_MCMC(par_tab, titre_dat=titre_dat, 
+mcmc_pars <- c("iterations" = 50000, "popt" = 0.44, "popt_hist" = 0.44, "opt_freq" = 2000, "thin" = 1,
+               "adaptive_period" = 10000,
+               "save_block" = 1000, "thin_hist" = 10, "hist_sample_prob" = 1, "switch_sample" = 1, "burnin" = 0,
+               "inf_propn" = 0.5, "move_size" = 5, "hist_opt" = 1, "swap_propn" = 0.5,
+               "hist_switch_prob" = 0, "year_swap_propn" = 1
+)
+
+res <- run_MCMC(start_tab, titre_dat=titre_dat, 
                 antigenic_map=fit_dat,mcmc_pars=mcmc_pars,
                 mvrPars=NULL, filename="chains/sim_temp_test1",
-               CREATE_POSTERIOR_FUNC=create_posterior_func_fast, PRIOR_FUNC=NULL,
+               CREATE_POSTERIOR_FUNC=create_posterior_func, PRIOR_FUNC=NULL,
                 version=2,  n_alive=NULL,
-                start_inf_hist=start_inf,fast_version = TRUE,
+                start_inf_hist=start_inf,
                 temp=1)
 beepr::beep(4)
 
@@ -166,9 +175,9 @@ titre_dat1$group <- 1
 res <- run_MCMC(par_tab, titre_dat=titre_dat1, 
                 antigenic_map=fit_dat,mcmc_pars=mcmc_pars,
                 mvrPars=NULL, filename="chains/sim_temp_test2",
-                CREATE_POSTERIOR_FUNC=create_posterior_func_fast, PRIOR_FUNC=NULL,
+                CREATE_POSTERIOR_FUNC=create_posterior_func, PRIOR_FUNC=NULL,
                 version=2,  n_alive=NULL,
-                start_inf_hist=start_inf,fast_version = TRUE,
+                start_inf_hist=start_inf,
                 temp=1)
 beepr::beep(4)
 
@@ -185,11 +194,14 @@ infChain <- data.table::fread(res$history_file)
 infChain <- infChain[infChain$sampno >= (mcmc_pars["adaptive_period"]+mcmc_pars["burnin"]),]
 n_alive <- sapply(1:length(strain_isolation_times), function(x) length(age_mask[age_mask<=x]))
 n_alive <- get_n_alive(titre_dat, strain_isolation_times)
+
+
 inf_prop <- colSums(inf_hist)/n_alive
 inf_prop <- data.frame(AR=inf_prop,year=strain_isolation_times)
 AR_p <- plot_attack_rates(infChain, titre_dat, strain_isolation_times, n_alive)
-AR_p <- AR_p +  geom_point(data=AR,aes(x=year,y=AR)) + 
-  geom_point(data=inf_prop,aes(x=year,y=AR),col="purple") + scale_y_continuous(expand=c(0,0),limits=c(0,1))
+AR_p <- AR_p +  #geom_point(data=AR,aes(x=year,y=AR)) + 
+  geom_point(data=inf_hist_g,aes(x=year,y=AR),col="purple") + scale_y_continuous(expand=c(0,0),limits=c(0,1))
+  #geom_point(data=inf_prop,aes(x=year,y=AR),col="purple") + scale_y_continuous(expand=c(0,0),limits=c(0,1))
 
 ## Density/trace plots on total number of infections
 indivs <- sample(n_indiv, 10)

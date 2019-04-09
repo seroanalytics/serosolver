@@ -1,7 +1,5 @@
 #include <RcppArmadilloExtensions/sample.h>
-#include "boosting_functions.h"
 #include "boosting_functions_fast.h"
-#include "infection_model.h"
 #include "likelihood_funcs.h"
 #include "helpers.h"
 // [[Rcpp::depends(RcppArmadillo)]]
@@ -22,14 +20,14 @@
 //' @family infection_history_proposal
 // [[Rcpp::export]]
 arma::mat inf_hist_prop_prior_v3(arma::mat infection_history_mat, 
-			    const IntegerVector& sampled_indivs, 
-			    const IntegerVector& age_mask,
-			    const IntegerVector& strain_mask,
-			    const IntegerVector& move_sizes, 
-			    const IntegerVector& n_infs,
-			    double alpha, 
-			    double beta, 
-			    const NumericVector& rand_ns) {
+				 const IntegerVector& sampled_indivs, 
+				 const IntegerVector& age_mask,
+				 const IntegerVector& strain_mask,
+				 const IntegerVector& move_sizes, 
+				 const IntegerVector& n_infs,
+				 double alpha, 
+				 double beta, 
+				 const NumericVector& rand_ns) {
   // Copy input matrix
   arma::mat new_infection_history_mat = infection_history_mat;
   IntegerVector locs; // Locations to be updated
@@ -157,6 +155,7 @@ List inf_hist_prop_prior_v2_and_v4(const NumericVector &theta, // Model paramete
 				   const IntegerVector &strain_mask, // Age mask
 				   const IntegerMatrix &n_alive, // No. of individuals alive each year/group
 				   IntegerMatrix &n_infections, // No. of infections in each year/group
+				   IntegerVector &n_infected_group,
 				   const double &swap_propn,
 				   const int &swap_distance,
 				   const double &alpha, // Alpha for prior
@@ -178,18 +177,10 @@ List inf_hist_prop_prior_v2_and_v4(const NumericVector &theta, // Model paramete
 				   const NumericVector &titre_shifts,
 				   const NumericVector &mus,
 				   const IntegerVector &boosting_vec_indices,
-				   IntegerVector &swap_proposals,
-				   IntegerVector &add_proposals,
-				   IntegerVector &swap_accepted,
-				   IntegerVector &add_accepted,
-				   const IntegerVector &total_alive,
-				   IntegerVector &n_infected_group,
+				   const IntegerVector &total_alive,				   
 				   const double temp=1,
 				   bool solve_likelihood=true				   
 				   ){
-
-  bool PRINT_TMP = false;
-  
   // ########################################################################
   // Parameters to control indexing of data
   IntegerMatrix new_infection_history_mat(infection_history_mat); // Can this be avoided? Create a copy of the inf hist matrix
@@ -333,19 +324,12 @@ List inf_hist_prop_prior_v2_and_v4(const NumericVector &theta, // Model paramete
   for(int i = 0; i < n_sampled; ++i){
     // Which proposal step to take and do we need to calculate the likelihood    
     swap_step_option = R::runif(0,1) < swap_propn;
-    // Assume that proposal hasn't changed likelihood until shown otherwise
-    lik_changed = false; 
     
     // Get index, group and current likelihood of individual under consideration
     indiv = sampled_indivs[i]-1;
     group_id = group_id_vec[indiv];
     old_prob = old_probs_1[indiv];
 
-    if(PRINT_TMP){
-      Rcpp::Rcout << "Indiv: " << indiv << std::endl;
-      Rcpp::Rcout << "Group: " << group_id << std::endl;
-      Rcpp::Rcout << "Old prob: " << old_prob << std::endl;
-    }
     // Indexing for data upkeep
     index_in_samples = rows_per_indiv_in_samples[indiv];
     end_index_in_samples = rows_per_indiv_in_samples[indiv+1] - 1;
@@ -358,348 +342,268 @@ List inf_hist_prop_prior_v2_and_v4(const NumericVector &theta, // Model paramete
     // Time sampling control
     n_years_samp = n_years_samp_vec[indiv]; // How many times are we intending to resample for this individual?
     n_samp_length  = strain_mask[indiv] - age_mask[indiv]; // How many times maximum can we sample from?
-    n_samp_max = std::min(n_years_samp, n_samp_length); // Use the smaller of these two numbers
 
-    ///////////////////////////////////////////////////////
-    // OPTION 1: Swap contents of a year for an individual
-    ///////////////////////////////////////////////////////
+    // If swap step, only doing one proposal for this individual
     if(swap_step_option){
-      swap_proposals[indiv] += 1;
-      if(PRINT_TMP){
-	Rcpp::Rcout << "Swap option" << std::endl;
-      }
-      new_infection_history = new_infection_history_mat(indiv,_);
-
-      loc1 = floor(R::runif(0,n_samp_length+1)); // Choose a location from age_mask to strain_mask
-      loc2 = loc1 + floor(R::runif(-swap_distance,swap_distance)); // Perturb +/- swap_distance
-      
-      // If we have gone too far left or right, reflect at the boundaries
-      while(loc2 < 0) loc2 += n_samp_length;
-      if(loc2 >= n_samp_length) loc2 -= floor(loc2/n_samp_length)*n_samp_length;
-      
-      // Get onto right scale (starting at age mask)
-      loc1 += age_mask[indiv] - 1;
-      loc2 += age_mask[indiv] - 1;
-      if(PRINT_TMP){
-	Rcpp::Rcout << "Swapping " << loc1 << " with " << loc2 << std::endl;
-      }
-      loc1_val_old = new_infection_history(loc1);
-      loc2_val_old = new_infection_history(loc2);
-
-      // Only proceed if we've actually made a change
-      // If prior version 4, then prior doesn't change by swapping
-      if(loc1_val_old != loc2_val_old){
-
-	if(PRINT_TMP){
-	  Rcpp::Rcout << "Swap contents changed" << std::endl;
-	}
-	lik_changed = true;
-	
-	// Swap contents
-	new_infection_history(loc1) = new_infection_history(loc2);
-	new_infection_history(loc2) = loc1_val_old;
-
-	if(!prior_on_total){	  
-	  // Number of infections in that group in that time
-	  m_1_old = n_infections(group_id,loc1);      
-	  m_2_old = n_infections(group_id,loc2);
-	  
-	  // Number alive is number alive overall in that time and group
-	  n_1 = n_alive(group_id, loc1);
-	  n_2 = n_alive(group_id, loc2);
-	  
-	  // Prior for new state
-	  m_1_new = m_1_old - loc1_val_old + loc2_val_old;
-	  m_2_new = m_2_old - loc2_val_old + loc1_val_old;
-	  
-	  // Pre-compute these? 
-	  prior_1_old = R::lbeta(m_1_old + alpha, n_1 - m_1_old + beta)-lbeta_const;
-	  prior_2_old = R::lbeta(m_2_old + alpha, n_2 - m_2_old + beta)-lbeta_const;
-	  prior_old = prior_1_old + prior_2_old;
-	    
-	  prior_1_new = R::lbeta(m_1_new + alpha, n_1 - m_1_new + beta)-lbeta_const;
-	  prior_2_new = R::lbeta(m_2_new + alpha, n_2 - m_2_new + beta)-lbeta_const;
-	  prior_new = prior_1_new + prior_2_new;
-	} else {
-	  // Prior version 4
-	  prior_old = prior_new = 0;
-	}
-      }
+      n_samp_max = 1;
     } else {
-      add_proposals[indiv] += 1;
-      if(PRINT_TMP){
-	Rcpp::Rcout << "Add/remove infection" << std::endl;
-      }
-      // Sample n_samp_real years from 0:length. Ths will be used to pull years from
-      // sample_years
-      // Note sampling indices in the individual's infection history, not the matrix Z
-      // Take n_samp_max random samples 
-      samps = seq(0, n_samp_length);    // Create vector from 0:length of alive years
-      locs = RcppArmadillo::sample(samps, n_samp_max, FALSE, NumericVector::create());
-
-      new_entries = 0;
-      old_entries = 0;
-      old_entry = 0;      
-
+      n_samp_max = std::min(n_years_samp, n_samp_length); // Use the smaller of these two numbers
+    }
+    // Sample n_samp_real years from 0:length. Ths will be used to pull years from
+    // sample_years
+    // Note sampling indices in the individual's infection history, not the matrix Z
+    // Take n_samp_max random samples 
+    samps = seq(0, n_samp_length);    // Create vector from 0:length of alive years
+    locs = RcppArmadillo::sample(samps, n_samp_max, FALSE, NumericVector::create());
+    
+    // For each selected infection history entry
+    for(int j = 0; j < n_samp_max; ++j){
+      // Assume that proposal hasn't changed likelihood until shown otherwise
+      lik_changed = false;
+      // Infection history to update
       new_infection_history = new_infection_history_mat(indiv,_);
-      if(PRINT_TMP){
-	Rcpp::Rcout << "Old infection history: " << new_infection_history << std::endl;
-      }
-      if(!prior_on_total){
-	if(PRINT_TMP){
-	  Rcpp::Rcout << "Prior version 2" << std::endl;
-	}
-	for(int j = 0; j < n_samp_max; ++j){
-	  year = locs[j] + age_mask[indiv] - 1;
-	  if(PRINT_TMP){
-	    Rcpp::Rcout << "Location: " << year << std::endl;
-	  }
-	  old_entry = new_infection_history(year);
-	  old_entries += old_entry;
+
+      ///////////////////////////////////////////////////////
+      // OPTION 1: Swap contents of a year for an individual
+      ///////////////////////////////////////////////////////
+      // If swap step      
+      if(swap_step_option){
+	//swap_proposals[indiv] += 1;
+	loc1 = locs[j]; // Choose a location from age_mask to strain_mask
+	loc2 = loc1 + floor(R::runif(-swap_distance,swap_distance)); // Perturb +/- swap_distance
+      
+	// If we have gone too far left or right, reflect at the boundaries
+	while(loc2 < 0) loc2 += n_samp_length;
+	if(loc2 >= n_samp_length) loc2 -= floor(loc2/n_samp_length)*n_samp_length;
+
+	// Get onto right scale (starting at age mask)
+	loc1 += age_mask[indiv] - 1;
+	loc2 += age_mask[indiv] - 1;
 	
+	loc1_val_old = new_infection_history(loc1);
+	loc2_val_old = new_infection_history(loc2);
+	
+	// Only proceed if we've actually made a change
+	// If prior version 4, then prior doesn't change by swapping
+	if(loc1_val_old != loc2_val_old){
+	  lik_changed = true;
+	  
+	  if(!prior_on_total){
+	    // Number of infections in that group in that time
+	    m_1_old = n_infections(group_id,loc1);      
+	    m_2_old = n_infections(group_id,loc2);
+	  
+	    // Swap contents
+	    new_infection_history(loc1) = new_infection_history(loc2);
+	    new_infection_history(loc2) = loc1_val_old;
+	  
+	    // Number alive is number alive overall in that time and group
+	    n_1 = n_alive(group_id, loc1);
+	    n_2 = n_alive(group_id, loc2);
+	    
+	    // Prior for new state
+	    m_1_new = m_1_old - loc1_val_old + loc2_val_old;
+	    m_2_new = m_2_old - loc2_val_old + loc1_val_old;
+
+	    // Pre-compute these? 
+	    prior_1_old = R::lbeta(m_1_old + alpha, n_1 - m_1_old + beta)-lbeta_const;
+	    prior_2_old = R::lbeta(m_2_old + alpha, n_2 - m_2_old + beta)-lbeta_const;
+	    prior_old = prior_1_old + prior_2_old;
+	    
+	    prior_1_new = R::lbeta(m_1_new + alpha, n_1 - m_1_new + beta)-lbeta_const;
+	    prior_2_new = R::lbeta(m_2_new + alpha, n_2 - m_2_new + beta)-lbeta_const;
+	    prior_new = prior_1_new + prior_2_new;
+	  } else {
+	    // Prior version 4
+	    prior_old = prior_new = 0;
+	  }
+	}
+	///////////////////////////////////////////////////////
+	// OPTION 2: Add/remove infection
+	///////////////////////////////////////////////////////
+      } else {
+	//add_proposals[indiv] += 1;
+	year = locs[j] + age_mask[indiv] - 1;
+	old_entry = new_infection_history(year);
+	//Rcpp::Rcout << "Old entry: " << old_entry << std::endl;
+	if(!prior_on_total){	
 	  // Get number of individuals that were alive and/or infected in that year,
 	  // less the current individual
 	  // Number of infections in this year, less infection status of this individual in this year
-
 	  m = n_infections(group_id, year) - old_entry;
 	  n = n_alive(group_id, year) - 1;
-
-	  if(PRINT_TMP){
-	    Rcpp::Rcout << "m: " << m << std::endl;
-	    Rcpp::Rcout << "n: " << n << std::endl;
-	  }
-	  
-	  // Work out proposal ratio - prior from alpha, beta and number of other infections
-	  ratio = (m + alpha)/(n + alpha + beta);
-	
-	  // Propose 1 or 0 based on this ratio
-	  rand1 = R::runif(0,1);	
-	  if(rand1 < ratio){
-	    if(PRINT_TMP){
-	      Rcpp::Rcout << "Add" << std::endl;
-	    }
-	    new_entry = 1;
-	    new_entries += 1;
-	    new_infection_history(year) = 1;
-	  } else {
-	    if(PRINT_TMP){
-	      Rcpp::Rcout << "Remove" << std::endl;
-	    }
-	    new_entry = 0;
-	    new_infection_history(year) = 0;
-	  }
-	  lik_changed = lik_changed | (new_entry != old_entry);
-	}
-      } else {
-	m = n_infected_group(group_id);
-	n = total_alive(group_id);
-
-	if(PRINT_TMP){
-	  Rcpp::Rcout << "Prior version 4" << std::endl;
-	  Rcpp::Rcout << "m before: " << m << std::endl;
-	  Rcpp::Rcout << "n before: " << n << std::endl;
-	}
-	// Remove entries from chosen locations
-	for(int j = 0; j < n_samp_max; ++j){
-	  year = locs[j] + age_mask[indiv] - 1;
-	  m -= new_infection_history(year);
-	  n -= 1;	    
-	}
-	if(PRINT_TMP){
-	  Rcpp::Rcout << "m: " << m << std::endl;
-	  Rcpp::Rcout << "n: " << n << std::endl;
-	}
-	// Iterate through proposed locations and add entries back in
-	// from prior
-	for(int j = 0; j < n_samp_max; ++j){
-	  year = locs[j] + age_mask[indiv] - 1;
-	  old_entry = new_infection_history(year);
-	  old_entries += old_entry;
-	  if(PRINT_TMP){
-	    Rcpp::Rcout << "Location: " << year << std::endl;
-	    Rcpp::Rcout << "Old entry: " << old_entry << std::endl;
-	  }
-	  ratio = (alpha + m)/(alpha + beta + n);
-	  rand1 = R::runif(0,1);
-	  if(rand1 < ratio){
-	    if(PRINT_TMP){
-	      Rcpp::Rcout << "Add" << std::endl;
-	    }
-	    new_entry = 1;
-	    new_entries += 1;
-	    new_infection_history(year) = 1;
-	    m++;
-	  } else {
-	    if(PRINT_TMP){
-	      Rcpp::Rcout << "Remove" << std::endl;
-	    }
-	    new_entry = 0;
-	    new_infection_history(year) = 0;
-	  }
-	  if(PRINT_TMP){
-	    Rcpp::Rcout << "New entry: " << new_entry << std::endl;
-	  }
-	  n++;
-	  lik_changed = lik_changed | (new_entry != old_entry);
-	}
-      }
-    }
-    if(PRINT_TMP){
-      Rcpp::Rcout << "New infection history: " << new_infection_history << std::endl;
-    }
-    ////////////////////////
-    // If a change was made to the infection history,
-    // calculate likelihood of new Z
-    ////////////////////////
-    if(solve_likelihood & lik_changed){
-      if(PRINT_TMP){
-	Rcpp::Rcout << "Lik changed" << std::endl;
-      }
-      // Calculate likelihood!
-      indices = new_infection_history > 0;
-      infection_times = circulation_times[indices];
-      if(infection_times.size() > 0){
-	infection_strain_indices_tmp = circulation_times_indices[indices];
-	  
-	// ====================================================== //
-	// =============== CHOOSE MODEL TO SOLVE =============== //
-	// ====================================================== //
-	if (base_function) {
-	  titre_data_fast_individual_base(predicted_titres, mu, mu_short,
-					  wane, tau,
-					  infection_times,
-					  infection_strain_indices_tmp,
-					  measurement_strain_indices,
-					  sample_times,
-					  index_in_samples,
-					  end_index_in_samples,
-					  start_index_in_data,
-					  nrows_per_blood_sample,
-					  number_strains,
-					  antigenic_map_short,
-					  antigenic_map_long);	  
-	} else if (titre_dependent_boosting) {
-	  titre_data_fast_individual_titredep(predicted_titres, mu, mu_short,
-					      wane, tau,
-					      gradient, boost_limit,
-					      infection_times,
-					      infection_strain_indices_tmp,
-					      measurement_strain_indices,
-					      sample_times,
-					      index_in_samples,
-					      end_index_in_samples,
-					      start_index_in_data,
-					      nrows_per_blood_sample,
-					      number_strains,
-					      antigenic_map_short,
-					      antigenic_map_long);	
-	} else if (strain_dep_boost) {
-	  titre_data_fast_individual_strain_dependent(predicted_titres, 
-						      mus, boosting_vec_indices, 
-						      mu_short,
-						      wane, tau,
-						      infection_times,
-						      infection_strain_indices_tmp,
-						      measurement_strain_indices,
-						      sample_times,
-						      index_in_samples,
-						      end_index_in_samples,
-						      start_index_in_data,
-						      nrows_per_blood_sample,
-						      number_strains,
-						      antigenic_map_short,
-						      antigenic_map_long);
-	} else if(alternative_wane_func){
-	  titre_data_fast_individual_wane2(predicted_titres, mu, mu_short,
-					   wane, tau,
-					   kappa, t_change,
-					   infection_times,
-					   infection_strain_indices_tmp,
-					   measurement_strain_indices,
-					   sample_times,
-					   index_in_samples,
-					   end_index_in_samples,
-					   start_index_in_data,
-					   nrows_per_blood_sample,
-					   number_strains,
-					   antigenic_map_short,
-					   antigenic_map_long);
 	} else {
-	  titre_data_fast_individual_base(predicted_titres, mu, mu_short,
-					  wane, tau,
-					  infection_times,
-					  infection_strain_indices_tmp,
-					  measurement_strain_indices,
-					  sample_times,
-					  index_in_samples,
-					  end_index_in_samples,
-					  start_index_in_data,
-					  nrows_per_blood_sample,
-					  number_strains,
-					  antigenic_map_short,
-					  antigenic_map_long);
+	  m = n_infected_group(group_id) - old_entry;
+	  n = total_alive(group_id) - 1;
+	}
+	// Work out proposal ratio - prior from alpha, beta and number of other infections
+	ratio = (m + alpha)/(n + alpha + beta);
+	
+	// Propose 1 or 0 based on this ratio
+	rand1 = R::runif(0,1);	
+	if(rand1 < ratio){
+	  new_entry = 1;
+	  new_infection_history(year) = 1;
+	} else {
+	  new_entry = 0;
+	  new_infection_history(year) = 0;
+	}
+	if(new_entry != old_entry){
+	  lik_changed = true;
 	}
       }
-      if(use_titre_shifts){
-	add_measurement_shifts(predicted_titres, titre_shifts, 
-			       start_index_in_data, end_index_in_data);
-      }
+      ////////////////////////
+      // If a change was made to the infection history,
+      // calculate likelihood of new Z
+      ////////////////////////
+      if(solve_likelihood && lik_changed){
+	// Calculate likelihood!
+	indices = new_infection_history > 0;
+	infection_times = circulation_times[indices];
+	//if(infection_times.size() > 0){
+	  infection_strain_indices_tmp = circulation_times_indices[indices];	  
+	  // ====================================================== //
+	  // =============== CHOOSE MODEL TO SOLVE =============== //
+	  // ====================================================== //
+	  if (base_function) {
+	    titre_data_fast_individual_base(predicted_titres, mu, mu_short,
+					    wane, tau,
+					    infection_times,
+					    infection_strain_indices_tmp,
+					    measurement_strain_indices,
+					    sample_times,
+					    index_in_samples,
+					    end_index_in_samples,
+					    start_index_in_data,
+					    nrows_per_blood_sample,
+					    number_strains,
+					    antigenic_map_short,
+					    antigenic_map_long);	  
+	  } else if (titre_dependent_boosting) {
+	    titre_data_fast_individual_titredep(predicted_titres, mu, mu_short,
+						wane, tau,
+						gradient, boost_limit,
+						infection_times,
+						infection_strain_indices_tmp,
+						measurement_strain_indices,
+						sample_times,
+						index_in_samples,
+						end_index_in_samples,
+						start_index_in_data,
+						nrows_per_blood_sample,
+						number_strains,
+						antigenic_map_short,
+						antigenic_map_long);	
+	  } else if (strain_dep_boost) {
+	    titre_data_fast_individual_strain_dependent(predicted_titres, 
+							mus, boosting_vec_indices, 
+							mu_short,
+							wane, tau,
+							infection_times,
+							infection_strain_indices_tmp,
+							measurement_strain_indices,
+							sample_times,
+							index_in_samples,
+							end_index_in_samples,
+							start_index_in_data,
+							nrows_per_blood_sample,
+							number_strains,
+							antigenic_map_short,
+							antigenic_map_long);
+	  } else if(alternative_wane_func){
+	    titre_data_fast_individual_wane2(predicted_titres, mu, mu_short,
+					     wane, tau,
+					     kappa, t_change,
+					     infection_times,
+					     infection_strain_indices_tmp,
+					     measurement_strain_indices,
+					     sample_times,
+					     index_in_samples,
+					     end_index_in_samples,
+					     start_index_in_data,
+					     nrows_per_blood_sample,
+					     number_strains,
+					     antigenic_map_short,
+					     antigenic_map_long);
+	  } else {
+	    titre_data_fast_individual_base(predicted_titres, mu, mu_short,
+					    wane, tau,
+					    infection_times,
+					    infection_strain_indices_tmp,
+					    measurement_strain_indices,
+					    sample_times,
+					    index_in_samples,
+					    end_index_in_samples,
+					    start_index_in_data,
+					    nrows_per_blood_sample,
+					    number_strains,
+					    antigenic_map_short,
+					    antigenic_map_long);
+	  }
+	  //}
+	if(use_titre_shifts){
+	  add_measurement_shifts(predicted_titres, titre_shifts, 
+				 start_index_in_data, end_index_in_data);
+	}
 	  
-      // Now have all predicted titres for this individual calculated
-      // Need to calculate likelihood of these titres... 
-      new_prob = 0;
+	// Now have all predicted titres for this individual calculated
+	// Need to calculate likelihood of these titres... 
+	new_prob = 0;
 	
-      // Go from first row in the data for this individual to up to the next one, accumlating
-      // likelihood for this individual
-      // For unique data
-      proposal_likelihood_func(new_prob, predicted_titres, indiv, data, repeat_data, repeat_indices,
-			       cum_nrows_per_individual_in_data, cum_nrows_per_individual_in_repeat_data,
-			       log_const, den, max_titre);
-    } else {
-      old_prob = new_prob = old_probs[indiv];
-    }
+	// Go from first row in the data for this individual to up to the next one, accumlating
+	// likelihood for this individual
+	// For unique data
 
-  
-    //////////////////////////////
-    // METROPOLIS-HASTINGS STEP
-    //////////////////////////////
-    if(PRINT_TMP){
-      Rcpp::Rcout << "New prob: " << new_prob << std::endl;
-    }
-    if(swap_step_option){ 
-      log_prob = std::min<double>(0.0, (new_prob+prior_new) - (old_prob+prior_old));
-    } else {
-      log_prob = std::min<double>(0.0, new_prob - old_prob);
-    }
-    rand1 = R::runif(0,1);
-    if(log(rand1) < log_prob/temp){
-      // Update the entry in the new matrix Z
-      old_prob = new_prob;
-      old_probs[indiv] = new_prob;
+	proposal_likelihood_func(new_prob, predicted_titres, indiv, data, repeat_data, repeat_indices,
+				 cum_nrows_per_individual_in_data, cum_nrows_per_individual_in_repeat_data,
+				 log_const, den, max_titre);
 
-      // Carry out the swap
-      if(swap_step_option){
-	swap_accepted[indiv] += 1;
-	tmp = new_infection_history_mat(indiv,loc1);
-	new_infection_history_mat(indiv,loc1) = new_infection_history_mat(indiv,loc2);
-	new_infection_history_mat(indiv,loc2) = tmp;
-	  
-	// Update number of infections in the two swapped times
-	n_infections(group_id, loc1) = m_1_new;
-	n_infections(group_id, loc2) = m_2_new;
       } else {
-	add_accepted[indiv] += 1;
-	new_infection_history_mat(indiv,_) = new_infection_history;
-	if(!prior_on_total){
-	  n_infections(group_id, year) -= old_entries;
-	  n_infections(group_id, year) += new_entries;
+	old_prob = new_prob = old_probs[indiv];
+      }
+     
+      //////////////////////////////
+      // METROPOLIS-HASTINGS STEP
+      //////////////////////////////
+      if(swap_step_option){ 
+	log_prob = std::min<double>(0.0, (new_prob+prior_new) - (old_prob+prior_old));
+      } else {
+	log_prob = std::min<double>(0.0, new_prob - old_prob);
+      }
+      rand1 = R::runif(0,1);
+      if(lik_changed && log(rand1) < log_prob/temp){
+	// Update the entry in the new matrix Z
+	old_prob = new_prob;
+	old_probs[indiv] = new_prob;
+
+	// Carry out the swap
+	if(swap_step_option){
+	  tmp = new_infection_history_mat(indiv,loc1);
+	  new_infection_history_mat(indiv,loc1) = new_infection_history_mat(indiv,loc2);
+	  new_infection_history_mat(indiv,loc2) = tmp;
+	  
+	  // Update number of infections in the two swapped times
+	  if(!prior_on_total){
+	    n_infections(group_id, loc1) = m_1_new;
+	    n_infections(group_id, loc2) = m_2_new;
+	  }
+	  // Don't need to update group infections if prior_on_total, as infections
+	  // only move within an individual (so number in group stays same)
 	} else {
-	  n_infected_group(group_id) = n_infected_group(group_id) - old_entries + new_entries;
+	  new_infection_history_mat(indiv,year) = new_entry;	
+	  // Update total number of infections in group/time
+	  if(!prior_on_total){
+	    n_infections(group_id, year) -= old_entry;
+	    n_infections(group_id, year) += new_entry;
+	  } else {
+	    n_infected_group(group_id) = n_infected_group(group_id) - old_entry + new_entry;
+	  }
 	}
       }
     }
   }
   List ret;
+  //Rcpp::Rcout << "Old probs at end: " << old_probs << std::endl;
   ret["old_probs"] = old_probs;
   ret["new_infection_history"] = new_infection_history_mat;
   return(ret);

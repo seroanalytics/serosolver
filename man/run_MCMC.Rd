@@ -10,8 +10,8 @@ run_MCMC(par_tab, titre_dat, antigenic_map, mcmc_pars = c(),
   CREATE_PRIOR_FUNC = NULL, version = 1, mu_indices = NULL,
   measurement_indices = NULL, measurement_random_effects = FALSE,
   OPT_TUNING = 0.1, temp = 1, solve_likelihood = TRUE,
-  fast_version = FALSE, n_alive = NULL, message_slack = FALSE,
-  message_slack_pars = NULL, ...)
+  n_alive = NULL, message_slack = FALSE, message_slack_pars = NULL,
+  ...)
 }
 \arguments{
 \item{par_tab}{The parameter table controlling information such as bounds, initial values etc}
@@ -28,7 +28,7 @@ run_MCMC(par_tab, titre_dat, antigenic_map, mcmc_pars = c(),
 
 \item{filename}{The full filepath at which the MCMC chain should be saved. "_chain.csv" will be appended to the end of this, so filename should have no file extensions}
 
-\item{CREATE_POSTERIOR_FUNC}{Pointer to posterior function used to calculate a likelihood. This will probably be \code{\link{create_posterior_func}}, but if might also be \code{\link{create_posterior_func_fast}}}
+\item{CREATE_POSTERIOR_FUNC}{Pointer to posterior function used to calculate a likelihood. This will probably be \code{\link{create_posterior_func}}}
 
 \item{version}{which infection history assumption version to use? See \code{\link{describe_proposals}} for options}
 
@@ -43,8 +43,6 @@ run_MCMC(par_tab, titre_dat, antigenic_map, mcmc_pars = c(),
 \item{temp}{Temperature term for parallel tempering, raises likelihood to this value. Just used for testing at this point}
 
 \item{solve_likelihood}{if FALSE, returns only the prior and does not solve the likelihood}
-
-\item{fast_version}{if TRUE, attempts to use the fast version of the posterior function}
 
 \item{n_alive}{if not NULL, uses this as the number alive for the infection history prior, rather than calculating the number alive based on titre_dat}
 
@@ -74,7 +72,7 @@ The \code{mcmc_pars} argument has the following options:
 \item save_block (after this many iterations (post thinning), save to disk)
 \item popt (desired acceptance rate for parameters)
 \item popt_hist (desired acceptance rate for infection histories)
-\item switch_sample (resample inf histories every n iterations)
+\item switch_sample (ratio of infection history samples to theta samples ie. switch_sample = 2 means sample inf hist twice for every theta sample, switch_sample = 0.5 means sample theta twice for every inf hist sample)
 \item inf_propn (proportion of infection times to resample for each individual at each iteration)
 \item move_size (number of infection years/months to move when performing infection history swap step)
 \item hist_opt (if 1, performs adaptive infection history proposals. If 0, retains the starting infection history proposal parameters

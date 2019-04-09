@@ -4,11 +4,11 @@
 \alias{simulate_data}
 \title{Simulate full data set}
 \usage{
-simulate_data(par_tab, group = 1, n_indiv, buckets = 12,
-  strain_isolation_times, sampling_times, nsamps = 2, antigenic_map,
-  titre_sensoring = 0, age_min = 5, age_max = 80, attack_rates,
-  repeats = 1, mu_indices = NULL, measurement_indices = NULL,
-  add_noise = TRUE)
+simulate_data(par_tab, group = 1, n_indiv = 100, buckets = 12,
+  strain_isolation_times, measured_strains = NULL, sampling_times,
+  nsamps = 2, antigenic_map, titre_sensoring = 0, age_min = 5,
+  age_max = 80, attack_rates, repeats = 1, mu_indices = NULL,
+  measurement_indices = NULL, add_noise = TRUE)
 }
 \arguments{
 \item{par_tab}{the full parameter table controlling parameter ranges and values}
@@ -17,7 +17,9 @@ simulate_data(par_tab, group = 1, n_indiv, buckets = 12,
 
 \item{n_indiv}{number of individuals to simulate}
 
-\item{strain_isolation_times}{vector of strain ciruclation times}
+\item{strain_isolation_times}{vector of strain circulation times}
+
+\item{measured_strains}{vector of strains that have titres measured}
 
 \item{sampling_times}{possible sampling times for the individuals}
 
@@ -36,6 +38,10 @@ simulate_data(par_tab, group = 1, n_indiv, buckets = 12,
 \item{repeats}{number of repeats for each year}
 
 \item{mu_indices}{default NULL, optional vector giving the index of `mus` that each strain uses the boosting parameter from. eg. if there's 6 circulation years and 3 strain clusters, then this might be c(1,1,2,2,3,3)}
+
+\item{measurement_indices}{default NULL, optional vector giving the index of `measurement_bias` that each strain uses the measurement shift from from. eg. if there's 6 circulation years and 3 strain clusters, then this might be c(1,1,2,2,3,3)}
+
+\item{add_noise}{if TRUE, adds observation noise to the simulated titres}
 }
 \value{
 a list with: 1) the data frame of titre data as returned by \code{\link{simulate_group}}; 2) a matrix of infection histories as returned by \code{\link{simulate_infection_histories}}; 3) a vector of ages

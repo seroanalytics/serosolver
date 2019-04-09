@@ -27,6 +27,6 @@ Marginal prior probability (p(Z)) of a particular infection history matrix singl
 Other inf_mat_prior: \code{\link{inf_mat_prior_cpp_vector}},
   \code{\link{inf_mat_prior_group_cpp_vector}},
   \code{\link{inf_mat_prior_group_cpp}},
-  \code{\link{inf_mat_prior_total_cpp}}
+  \code{\link{inf_mat_prior_total_group_cpp}}
 }
 \concept{inf_mat_prior}

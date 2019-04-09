@@ -96,19 +96,23 @@ double inf_mat_prior_group_cpp_vector(const IntegerMatrix& n_infections, const I
 
 //' Marginal prior probability (p(Z)) of a particular infection history matrix total prior
 //'  Prior here is on the total number of infections across all individuals and times
-//' @param infection_history IntegerMatrix, the infection history matrix
-//' @param n_alive IntegerVector, vector giving the number of individuals alive in each time
+//' @param n_infections_group IntegerVector, the total number of infections in each group
+//' @param n_alive_group IntegerVector, vector giving total number of potential infection events per group
 //' @param alpha double, alpha parameter for beta distribution prior
 //' @param beta double, beta parameter for beta distribution prior
 //' @return a single prior probability
 //' @export
 //' @family inf_mat_prior
 // [[Rcpp::export]]
-double inf_mat_prior_total_cpp(const IntegerMatrix& infection_history, const int& n_alive, double alpha, double beta){
+double inf_mat_prior_total_group_cpp(const IntegerVector& n_infections_group, const IntegerVector& n_alive_group, double alpha, double beta){
   double m, n;
   double lik=0;
-  int n_infections = sum(infection_history);
-  lik = R::lbeta(n_infections + alpha, n_alive - n_infections + beta) - R::lbeta(alpha, beta);
+  double beta_const = R::lbeta(alpha, beta);
+  int n_infections =0;
+  for(int i = 0; i < n_alive_group.size(); ++i){
+    n_infections = n_infections_group(i);
+    lik += R::lbeta(n_infections + alpha, n_alive_group(i) - n_infections + beta) - beta_const;
+  }
   return(lik);
 }
 

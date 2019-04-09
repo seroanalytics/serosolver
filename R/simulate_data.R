@@ -1,20 +1,10 @@
 #' Simulate group data
 #'
 #' Simulates a full set of titre data for n_indiv individuals with known theta and infection_histories. Each individual gets nsamps random samples from sampleTimes, and infections can occur at any of strain_isolation_times
-#' @param n_indiv the number of individuals to simulate
+#' @inheritParams simulate_data
 #' @param theta the named parameter vector
 #' @param infection_histories the matrix of 1s and 0s giving presence/absence of infections for each individual
-#' @param strain_isolation_times the vector of strain circulation times (ie. possible infection times)
-#' @param sample_times the vector of times at which samples could be taken
-#' @param nsamps the number of samples per individual
-#' @param antigenic_map_long the collapsed antigenic map for long term cross reactivity, after multiplying by sigma1
-#' @param antigenic_map_short the collapsed antigenic map for short term cross reactivity, after multiplying by sigma2
-#' @param repeats number of repeated samples for each year
 #' @param mus default NULL, optional vector of boosting parameters for each strain
-#' @param mu_indices default NULL, optional vector giving the index of `mus` that each strain uses the boosting parameter from. eg. if there's 6 circulation years and 3 strain clusters, then this might be c(1,1,2,2,3,3)
-#' @param measurement_bias default NULL, optional vector of measurement bias shift parameters for each strain
-#' @param measurement_indices default NULL, optional vector giving the index of `measurement_bias` that each strain uses the measurement shift from from. eg. if there's 6 circulation years and 3 strain clusters, then this might be c(1,1,2,2,3,3)
-#' @param add_noise defaults TRUE, adds observation error to simulated titres
 #' @return a data frame with columns individual, samples, virus and titre of simulated data
 #' @export
 #' @seealso \code{\link{simulate_individual}}
@@ -22,10 +12,10 @@ simulate_group <- function(n_indiv,
                            theta,
                            infection_histories,
                            strain_isolation_times,
+                           measured_strains,
                            sample_times,
                            nsamps,
-                           antigenic_map_long,
-                           antigenic_map_short,
+                           antigenic_map,
                            repeats = 1,
                            mus = NULL,
                            mu_indices = NULL,
@@ -43,9 +33,6 @@ simulate_group <- function(n_indiv,
             samps <- sample(sample_times, nsamps)
             samps <- samps[order(samps)]
         }
-        virus_samples <- rep(strain_isolation_times, length(samps))
-        data_indices <- rep(length(strain_isolation_times), length(samps))
-        virus_indices <- match(virus_samples, strain_isolation_times) - 1
         
         ## Individuals can't be infected after their latest sampling time
         strain_mask <- max(which(max(samps) >= strain_isolation_times))
@@ -53,15 +40,15 @@ simulate_group <- function(n_indiv,
             infection_histories[i,strain_mask:ncol(infection_histories)] <- 0
         }
         y <- as.data.frame(simulate_individual(
-            theta, infection_histories[i, ],
-            samps, data_indices, virus_samples,
-            virus_indices,
-            antigenic_map_long,
-            antigenic_map_short,
+            theta,
+            infection_histories[i, ],
+            antigenic_map,
+            samps, 
             strain_isolation_times,
-            repeats, mus, mu_indices,
+            measured_strains, 
+            mus, mu_indices,
             measurement_bias, measurement_indices,
-            add_noise
+            add_noise, repeats
         ))
         ## Record individual ID
         y$indiv <- i
@@ -71,49 +58,56 @@ simulate_group <- function(n_indiv,
     }
     return(list(titre_dat=dat,infection_history=infection_histories))
 }
-
 #' Simulate individual data
 #'
 #' Simulates a full set of titre data for an individual with known theta and infection_history.
 #' @inheritParams simulate_group
 #' @param infection_history the vector of 1s and 0s giving presence/absence of infections
-#' @param data_indices see \code{\link{create_posterior_func}}
-#' @param virus_indices see \code{\link{create_posterior_func}}
+#' @param sampling_times vector of times at which blood samples were taken
+#' @param measured_strains vector of which strains had titres measured in `strain_isolation_times`
 #' @return a data frame with columns samples, virus and titre of simulated data
 #' @export
-#' @seealso \code{\link{infection_model_indiv}}
 simulate_individual <- function(theta,
                                 infection_history,
+                                antigenic_map,
                                 sampling_times,
-                                data_indices,
                                 strain_isolation_times,
-                                virus_indices,
-                                antigenic_map_long,
-                                antigenic_map_short,
-                                strains,
-                                repeats = 1,
-                                mus = NULL,
-                                mu_indices = NULL,
-                                measurement_bias = NULL,
-                                measurement_indices = NULL,
-                                add_noise = TRUE) {
-    numberStrains <- length(strains)
-    dat <- matrix(ncol = 3, nrow = length(strain_isolation_times) * repeats)
+                                measured_strains,
+                                mus=NULL,mu_indices=NULL,
+                                measurement_bias = NULL, measurement_indices = NULL,
+                                add_noise=TRUE,repeats=1,
+                                age=NULL){
+    if(is.null(mus)){
+        mus <- c(-1)
+        mu_indices <- c(-1)
+    }
+    
+    ## Create antigenic map for short and long term boosting
+    antigenic_map_melted <- melt_antigenic_coords(antigenic_map[, c("x_coord", "y_coord")])
+    antigenic_map_long <- create_cross_reactivity_vector(antigenic_map_melted, theta["sigma1"])
+    antigenic_map_short <- create_cross_reactivity_vector(antigenic_map_melted, theta["sigma2"])
+   
+    inf_hist <- matrix(nrow=1,ncol=length(infection_history))
+    inf_hist[1,] <- infection_history
 
-    additional_arguments <- NULL
-    if (!is.null(mus)) additional_args <- list("mus"=mus,"boosting_vec_indices"=mu_indices-1)
-
-    titres <- titre_data_individual(
-        theta, infection_history, strains, seq_along(strains) - 1, sampling_times,
-        data_indices, match(strain_isolation_times, strains) - 1,
-        antigenic_map_long, antigenic_map_short, numberStrains, 0,
-        additional_arguments
-    )
+    n_samps <- length(sampling_times)
+    
+    rows_per_blood <- rep(length(measured_strains), n_samps)
+    cumu_rows <- c(0, sum(rows_per_blood))
+    rows_per_indiv <- c(0, n_samps)
+    strain_indices <- match(strain_isolation_times, strain_isolation_times)-1
+    measured_strain_indices <- match(rep(measured_strains,n_samps), strain_isolation_times)-1
+    dat <- matrix(nrow=length(measured_strain_indices),ncol=3)
+    titres <- titre_data_fast(theta, inf_hist, strain_isolation_times, strain_indices,
+                              sampling_times, rows_per_indiv, cumu_rows,
+                              rows_per_blood, measured_strain_indices,
+                              antigenic_map_long, antigenic_map_short, mus, mu_indices)
     titres <- rep(titres, each = repeats)
-    sampling_times <- rep(sampling_times, data_indices)
+    
+    sampling_times <- rep(sampling_times, rows_per_blood)
     sampling_times <- rep(sampling_times, each = repeats)
     dat[, 1] <- sampling_times
-    dat[, 2] <- rep(strain_isolation_times, each = repeats)
+    dat[, 2] <- rep(measured_strains, each = repeats)
     if (add_noise) {
         if (!is.null(measurement_indices)) {
             dat[, 3] <- add_noise(titres, theta, measurement_bias, measurement_indices[match(dat[, 2], strains)])
@@ -124,6 +118,7 @@ simulate_individual <- function(theta,
         dat[, 3] <- titres
     }
     return(dat)
+    
 }
 
 #' Add noise
@@ -276,7 +271,8 @@ simulate_ars_spline <- function(infection_years, buckets, mean_par = 0.15, sd_pa
 #' @param par_tab the full parameter table controlling parameter ranges and values
 #' @param group which group index to give this simulated data
 #' @param n_indiv number of individuals to simulate
-#' @param strain_isolation_times vector of strain ciruclation times
+#' @param strain_isolation_times vector of strain circulation times
+#' @param measured_strains vector of strains that have titres measured
 #' @param sampling_times possible sampling times for the individuals
 #' @param nsamps the number of samples each individual has
 #' @param antigenic_map the raw antigenic map with colnames x_coord, y_coord and inf_years
@@ -286,10 +282,18 @@ simulate_ars_spline <- function(infection_years, buckets, mean_par = 0.15, sd_pa
 #' @param attack_rates a vector of attack_rates to be used in the simulation
 #' @param repeats number of repeats for each year
 #' @param mu_indices default NULL, optional vector giving the index of `mus` that each strain uses the boosting parameter from. eg. if there's 6 circulation years and 3 strain clusters, then this might be c(1,1,2,2,3,3)
+#' @param measurement_indices default NULL, optional vector giving the index of `measurement_bias` that each strain uses the measurement shift from from. eg. if there's 6 circulation years and 3 strain clusters, then this might be c(1,1,2,2,3,3)
+#' @param add_noise if TRUE, adds observation noise to the simulated titres
 #' @return a list with: 1) the data frame of titre data as returned by \code{\link{simulate_group}}; 2) a matrix of infection histories as returned by \code{\link{simulate_infection_histories}}; 3) a vector of ages
 #' @export
-simulate_data <- function(par_tab, group = 1, n_indiv, buckets = 12,
-                          strain_isolation_times, sampling_times, nsamps = 2,
+simulate_data <- function(par_tab,
+                          group = 1,
+                          n_indiv=100,
+                          buckets = 12,
+                          strain_isolation_times,
+                          measured_strains=NULL,
+                          sampling_times,
+                          nsamps = 2,
                           antigenic_map,
                           titre_sensoring = 0,
                           age_min = 5, age_max = 80,
@@ -299,7 +303,7 @@ simulate_data <- function(par_tab, group = 1, n_indiv, buckets = 12,
                           measurement_indices = NULL,
                           add_noise = TRUE) {
 
-  ## Check attack_rates entry
+    ## Check attack_rates entry
     check_attack_rates(attack_rates, strain_isolation_times)
 
     ## Extract parameter type indices from par_tab, to split up
@@ -325,17 +329,11 @@ simulate_data <- function(par_tab, group = 1, n_indiv, buckets = 12,
         measurement_bias <- pars[measurement_indices_par_tab]
     }
 
+    if(is.null(measured_strains)){
+        measured_strains <- strain_isolation_times
+    }
     ## Check the inputs of par_tab
     check_par_tab(par_tab)
-
-    ## Create antigenic map for short and long term boosting
-    antigenic_map1 <- melt_antigenic_coords(antigenic_map[, c("x_coord", "y_coord")])
-
-    antigenic_map_long <- 1 - theta["sigma1"] * c(antigenic_map1)
-    antigenic_map_short <- 1 - theta["sigma2"] * c(antigenic_map1)
-
-    antigenic_map_long[antigenic_map_long < 0] <- 0
-    antigenic_map_short[antigenic_map_short < 0] <- 0
 
     ## Simulate ages
     DOBs <- max(sampling_times) - floor(runif(n_indiv, age_min, age_max))
@@ -350,12 +348,15 @@ simulate_data <- function(par_tab, group = 1, n_indiv, buckets = 12,
 
     ## Simulate titre data
     sim_dat <- simulate_group(
-        n_indiv, theta, infection_history, strain_isolation_times, sampling_times,
-        nsamps, antigenic_map_long, antigenic_map_short, repeats,
+        n_indiv, theta, infection_history,
+        strain_isolation_times,measured_strains,
+        sampling_times,
+        nsamps, antigenic_map, repeats,
         mus, mu_indices, measurement_bias, measurement_indices, add_noise
     )
     y <- sim_dat$titre_dat
     infection_history <- sim_dat$infection_history
+    
     ## Randomly censor titre values
     y$titre <- y$titre * sample(c(NA, 1), nrow(y), prob = c(titre_sensoring, 1 - titre_sensoring), replace = TRUE)
     y$run <- 1

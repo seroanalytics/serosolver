@@ -47,7 +47,6 @@ void titre_data_fast_individual_base(NumericVector &predicted_titres,
 
     // Find number of titres in the predicted_titres vector that correspond to this sample
     n_titres = nrows_per_blood_sample[j];
-
     // Only iterate through indices for this sample
     end_index_in_data = start_index_in_data + n_titres;
     tmp_titre_index = start_index_in_data;
