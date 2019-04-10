@@ -25,39 +25,39 @@ create_posterior_func <- function(par_tab,
                                   n_alive = NULL,
                                   function_type = 1,
                                   ...) {
-  ## Sort data in same way
-  titre_dat <- titre_dat[order(titre_dat$individual, titre_dat$run, titre_dat$samples, titre_dat$virus), ]
+    ## Sort data in same way
+    titre_dat <- titre_dat[order(titre_dat$individual, titre_dat$run, titre_dat$samples, titre_dat$virus), ]
 
-  ## Isolate data table as vectors for speed
-  titres <- titre_dat$titre
+    ## Isolate data table as vectors for speed
+    titres <- titre_dat$titre
 
-  ## Setup data vectors and extract
-  setup_dat <- setup_titredat_for_posterior_func(titre_dat, antigenic_map, age_mask, n_alive)
+    ## Setup data vectors and extract
+    setup_dat <- setup_titredat_for_posterior_func(titre_dat, antigenic_map, age_mask, n_alive)
 
-  individuals <- setup_dat$individuals
-  antigenic_map_melted <- setup_dat$antigenic_map_melted
-  strain_isolation_times <- setup_dat$strain_isolation_times
-  infection_strain_indices <- setup_dat$infection_strain_indices
-  sample_times <- setup_dat$sample_times
-  rows_per_indiv_in_samples <- setup_dat$rows_per_indiv_in_samples
-  nrows_per_individual_in_data <- setup_dat$nrows_per_individual_in_data
-  cum_nrows_per_individual_in_data <- setup_dat$cum_nrows_per_individual_in_data
-  nrows_per_blood_sample <- setup_dat$nrows_per_blood_sample
-  measured_strain_indices <- setup_dat$measured_strain_indices
-  n_alive <- setup_dat$n_alive
-  age_mask <- setup_dat$age_mask
-  strain_mask <- setup_dat$strain_mask
-  n_indiv <- setup_dat$n_indiv
-  DOBs <- setup_dat$DOBs
+    individuals <- setup_dat$individuals
+    antigenic_map_melted <- setup_dat$antigenic_map_melted
+    strain_isolation_times <- setup_dat$strain_isolation_times
+    infection_strain_indices <- setup_dat$infection_strain_indices
+    sample_times <- setup_dat$sample_times
+    rows_per_indiv_in_samples <- setup_dat$rows_per_indiv_in_samples
+    nrows_per_individual_in_data <- setup_dat$nrows_per_individual_in_data
+    cum_nrows_per_individual_in_data <- setup_dat$cum_nrows_per_individual_in_data
+    nrows_per_blood_sample <- setup_dat$nrows_per_blood_sample
+    measured_strain_indices <- setup_dat$measured_strain_indices
+    n_alive <- setup_dat$n_alive
+    age_mask <- setup_dat$age_mask
+    strain_mask <- setup_dat$strain_mask
+    n_indiv <- setup_dat$n_indiv
+    DOBs <- setup_dat$DOBs
 
-  #########################################################
-  ## Extract parameter type indices from par_tab, to split up
-  ## similar parameters in model solving functions
-  option_indices <- which(par_tab$type == 0)
-  theta_indices <- which(par_tab$type %in% c(0, 1))
-  lambda_indices <- which(par_tab$type == 2)
-  measurement_indices_par_tab <- which(par_tab$type == 3)
-  weights_indices <- which(par_tab$type == 4) ## For functional form version
+#########################################################
+    ## Extract parameter type indices from par_tab, to split up
+    ## similar parameters in model solving functions
+    option_indices <- which(par_tab$type == 0)
+    theta_indices <- which(par_tab$type %in% c(0, 1))
+    phi_indices <- which(par_tab$type == 2)
+    measurement_indices_par_tab <- which(par_tab$type == 3)
+    weights_indices <- which(par_tab$type == 4) ## For functional form version
   knot_indices <- which(par_tab$type == 5)
   mu_indices_par_tab <- which(par_tab$type == 6)
   #########################################################
@@ -65,8 +65,8 @@ create_posterior_func <- function(par_tab,
   par_names_theta <- par_tab[theta_indices, "names"]
 
   ## Find which options are being used in advance for speed
-  explicit_lambda <- (length(lambda_indices) > 0)
-  spline_lambda <- (length(knot_indices) > 0)
+  explicit_phi <- (length(phi_indices) > 0)
+  spline_phi <- (length(knot_indices) > 0)
   use_measurement_bias <- (length(measurement_indices_par_tab) > 0) & !is.null(measurement_indices_by_time)
   titre_shifts <- NULL
   expected_indices <- NULL
@@ -75,7 +75,7 @@ create_posterior_func <- function(par_tab,
   additional_arguments <- NULL
 
   if (use_measurement_bias) {
-    expected_indices <- measurement_indices_by_time[match(titre_dat$virus, strain_isolation_times)]
+      expected_indices <- measurement_indices_by_time[match(titre_dat$virus, strain_isolation_times)]
   }
 
   if (use_strain_dependent) {
@@ -93,7 +93,7 @@ create_posterior_func <- function(par_tab,
       ## Function to return
       ########################
       f <- function(pars, infection_history_mat) {
-        lambdas <- pars[lambda_indices]
+        phis <- pars[phi_indices]
         theta <- pars[theta_indices]
         weights <- pars[weights_indices]
         knots <- pars[knot_indices]
@@ -132,14 +132,14 @@ create_posterior_func <- function(par_tab,
         liks <- sum_buckets(liks, nrows_per_individual_in_data)
 
         ## If including explicit prior on FOI, add to individuals here
-        if (explicit_lambda) {
-            liks <- liks + calc_lambda_probs_indiv(lambdas, infection_history_mat, age_mask, strain_mask)
+        if (explicit_phi) {
+            liks <- liks + calc_phi_probs_indiv(phis, infection_history_mat, age_mask, strain_mask)
         }
         
         ## If using spline term for FOI, add here
-        if (spline_lambda) {
-          liks <- liks + calc_lambda_probs_monthly(
-            lambdas, knots, weights,
+        if (spline_phi) {
+          liks <- liks + calc_phi_probs_monthly(
+            phis, knots, weights,
             infection_history_mat, age_mask
           )
         }
@@ -149,7 +149,7 @@ create_posterior_func <- function(par_tab,
     } else {
       ## Function to return
       f <- function(pars, infection_history_mat) {
-        lambdas <- pars[lambda_indices]
+        phis <- pars[phi_indices]
         theta <- pars[theta_indices]
         weights <- pars[weights_indices]
         knots <- pars[knot_indices]
@@ -157,11 +157,11 @@ create_posterior_func <- function(par_tab,
 
         liks <- rep(-100000, n_indiv)
 
-        if (explicit_lambda) {
-          liks <- liks + calc_lambda_probs_indiv(lambdas, infection_history_mat, age_mask, strain_mask)
+        if (explicit_phi) {
+          liks <- liks + calc_phi_probs_indiv(phis, infection_history_mat, age_mask, strain_mask)
         }
-        if (spline_lambda) {
-          liks <- liks + calc_lambda_probs_monthly(lambdas, knots, weights, infection_history_mat, age_mask)
+        if (spline_phi) {
+          liks <- liks + calc_phi_probs_monthly(phis, knots, weights, infection_history_mat, age_mask)
         }
 
         return(liks)
@@ -183,7 +183,7 @@ create_posterior_func <- function(par_tab,
                       indiv_propn, n_years,
                       swap_propn = 0.5, swap_distance = 1, temp = 1) {
       
-      lambdas <- pars[lambda_indices]
+      phis <- pars[phi_indices]
       theta <- pars[theta_indices]
       weights <- pars[weights_indices]
       knots <- pars[knot_indices]
@@ -241,7 +241,7 @@ create_posterior_func <- function(par_tab,
   } else {
     ## FUNCTION TO RETURN
     f <- function(pars, infection_history_mat) {
-      lambdas <- pars[lambda_indices]
+      phis <- pars[phi_indices]
       theta <- pars[theta_indices]
       weights <- pars[weights_indices]
       knots <- pars[knot_indices]
@@ -316,17 +316,17 @@ r_likelihood <- function(expected, data, theta, expected_indices = NULL, measure
 #' Calculate FOI log probability
 #'
 #' Given a vector of FOIs for all circulating years, a matrix of infection histories and the vector specifying if individuals were alive or not, returns the log probability of the FOIs given the infection histories.
-#' @param lambdas a vector of FOIs
+#' @param phis a vector of FOIs
 #' @param infection_history the matrix of infection histories
 #' @param age_mask the age mask vector as returned by \code{\link{create_age_mask}}
 #' @return a single log probability
 #' @export
-calc_lambda_probs <- function(lambdas, infection_history, age_mask, strain_mask) {
+calc_phi_probs <- function(phis, infection_history, age_mask, strain_mask) {
   lik <- 0
   for (i in 1:ncol(infection_history)) {
     use_indivs <- intersect(which(age_mask <= i), which(strain_mask >= i))
-    lik <- lik + sum(log((lambdas[i]^infection_history[use_indivs, i] *
-      (1 - lambdas[i])^(1 - infection_history[use_indivs, i]))))
+    lik <- lik + sum(log((phis[i]^infection_history[use_indivs, i] *
+      (1 - phis[i])^(1 - infection_history[use_indivs, i]))))
   }
   lik
 }
@@ -334,13 +334,13 @@ calc_lambda_probs <- function(lambdas, infection_history, age_mask, strain_mask)
 #' Calculate FOI log probability vector
 #'
 #' Given a vector of FOIs for all circulating years, a matrix of infection histories and the vector specifying if individuals were alive or not, returns the log probability of the FOIs given the infection histories.
-#' @inheritParams calc_lambda_probs
+#' @inheritParams calc_phi_probs
 #' @return a vector of log probabilities for each individual
 #' @export
-calc_lambda_probs_indiv <- function(lambdas, infection_history, age_mask, strain_mask) {
+calc_phi_probs_indiv <- function(phis, infection_history, age_mask, strain_mask) {
   lik <- numeric(nrow(infection_history))
   for (i in 1:ncol(infection_history)) {
-    lik <- lik + log(((lambdas[i]^infection_history[, i]) * (1 - lambdas[i])^(1 - infection_history[, i]))) * as.numeric(age_mask <= i) * as.numeric(strain_mask >= i)
+    lik <- lik + log(((phis[i]^infection_history[, i]) * (1 - phis[i])^(1 - infection_history[, i]))) * as.numeric(age_mask <= i) * as.numeric(strain_mask >= i)
   }
   lik
 }
@@ -348,17 +348,17 @@ calc_lambda_probs_indiv <- function(lambdas, infection_history, age_mask, strain
 #' Calculate FOI from spline
 #' 
 #' Version of FOI prior that calculates a seasonal spline such that the FOI in a given time point (month) comes from this spline term
-#' @inheritParams calc_lambda_probs
+#' @inheritParams calc_phi_probs
 #' @param foi vector of force of infections per year
 #' @param knots vector of knots for the spline
 #' @param theta vector of theta parameters for spline
 #' @return a vector of log probabilities for each individual
 #' @export
-calc_lambda_probs_monthly <- function(foi, knots, theta, infection_history, age_mask) {
-  lambdas <- generate_lambdas(foi, knots, theta, length(foi), 12)
+calc_phi_probs_monthly <- function(foi, knots, theta, infection_history, age_mask) {
+  phis <- generate_phis(foi, knots, theta, length(foi), 12)
   lik <- numeric(nrow(infection_history))
   for (i in 1:ncol(infection_history)) {
-    lik <- lik + infection_history[, i] * log(lambdas[i]) + (1 - infection_history[, i]) * log(lambdas[i]) + log(as.numeric(age_mask <= i)) + log(as.numeric(strain_mask >= i))
+    lik <- lik + infection_history[, i] * log(phis[i]) + (1 - infection_history[, i]) * log(phis[i]) + log(as.numeric(age_mask <= i)) + log(as.numeric(strain_mask >= i))
   }
   lik
 }
@@ -368,14 +368,14 @@ calc_lambda_probs_monthly <- function(foi, knots, theta, infection_history, age_
 #'
 #' Brute force implementation of calculating the explicit FOI
 #' @export
-calc_lambda_probs_indiv_brute <- function(lambdas, infection_history, age_mask) {
+calc_phi_probs_indiv_brute <- function(phis, infection_history, age_mask) {
   lik <- numeric(nrow(infection_history))
   for (j in 1:nrow(infection_history)) {
     lik[j] <- 0
     age <- age_mask[j]
     for (i in 1:ncol(infection_history)) {
       if (i >= age) {
-        lik[j] <- lik[j] + log(lambdas[i]^infection_history[j, i] * (1 - lambdas[i])^(1 - infection_history[j, i]))
+        lik[j] <- lik[j] + log(phis[i]^infection_history[j, i] * (1 - phis[i])^(1 - infection_history[j, i]))
       }
     }
   }
@@ -383,16 +383,16 @@ calc_lambda_probs_indiv_brute <- function(lambdas, infection_history, age_mask) 
 }
 
 
-#' Generate FOI lambdas
+#' Generate FOI phis
 #'
-#' Calculates the seasonal spline for \code{\link{calc_lambda_probs_monthly}}
-#' @inheritParams calc_lambda_probs_monthly
+#' Calculates the seasonal spline for \code{\link{calc_phi_probs_monthly}}
+#' @inheritParams calc_phi_probs_monthly
 #' @param n_years number of years to calculate
 #' @param buckets number of buckets per year (12 for monthly, 1 for annual)
 #' @param degree degree of the spline
 #' @return a vector of FOIs for each time point
 #' @export
-generate_lambdas <- function(foi, knots, theta, n_years, buckets, degree = 2) {
+generate_phis <- function(foi, knots, theta, n_years, buckets, degree = 2) {
   x <- seq(0, buckets - 1, by = 1) / buckets
   n_knots <- length(knots) + degree + 1
   all_dat <- NULL
@@ -407,7 +407,7 @@ generate_lambdas <- function(foi, knots, theta, n_years, buckets, degree = 2) {
   all_dat
 }
 
-#' Generates a spline for \code{\link{generate_lambdas}}
+#' Generates a spline for \code{\link{generate_phis}}
 #' @export
 gen_spline_y <- function(x, knots, degree, theta, intercept = TRUE) {
   basis <- bs(
@@ -466,7 +466,7 @@ create_prior_mu <- function(par_tab) {
   ## similar parameters in model solving functions
   option_indices <- which(par_tab$type == 0)
   theta_indices <- which(par_tab$type %in% c(0, 1))
-  lambda_indices <- which(par_tab$type == 2)
+  phi_indices <- which(par_tab$type == 2)
   measurement_indices_par_tab <- which(par_tab$type == 3)
   weights_indices <- which(par_tab$type == 4) ## For functional form version
   knot_indices <- which(par_tab$type == 5)
@@ -571,7 +571,7 @@ create_posterior_func_fast <- function(par_tab,
     ## similar parameters in model solving functions
     option_indices <- which(par_tab$type == 0)
     theta_indices <- which(par_tab$type %in% c(0, 1))
-    lambda_indices <- which(par_tab$type == 2)
+    phi_indices <- which(par_tab$type == 2)
     measurement_indices_par_tab <- which(par_tab$type == 3)
     weights_indices <- which(par_tab$type == 4) ## For functional form version
     knot_indices <- which(par_tab$type == 5)
@@ -593,8 +593,8 @@ create_posterior_func_fast <- function(par_tab,
     par_names_theta <- par_tab[theta_indices, "names"]
 
     ## Find which options are being used in advance for speed
-    explicit_lambda <- (length(lambda_indices) > 0)
-    spline_lambda <- (length(knot_indices) > 0)
+    explicit_phi <- (length(phi_indices) > 0)
+    spline_phi <- (length(knot_indices) > 0)
     use_measurement_bias <- (length(measurement_indices_par_tab) > 0) & !is.null(measurement_indices_by_time)
     titre_shifts <- c(0)
     expected_indices <- NULL
@@ -650,17 +650,17 @@ create_posterior_func_fast <- function(par_tab,
                   sum_buckets(liks_repeats, nrows_per_individual_in_data_repeats)
               ## If including explicit prior on FOI, add to individuals here
 
-              if (explicit_lambda) {
-                  lambdas <- pars[lambda_indices]
-                  liks <- liks + calc_lambda_probs_indiv(lambdas, infection_history_mat, age_mask, strain_mask)
+              if (explicit_phi) {
+                  phis <- pars[phi_indices]
+                  liks <- liks + calc_phi_probs_indiv(phis, infection_history_mat, age_mask, strain_mask)
               }
               
               ## If using spline term for FOI, add here
-              if (spline_lambda) {
+              if (spline_phi) {
                   weights <- pars[weights_indices]
                   knots <- pars[knot_indices]
-                  liks <- liks + calc_lambda_probs_monthly(
-                                     lambdas, knots, weights,
+                  liks <- liks + calc_phi_probs_monthly(
+                                     phis, knots, weights,
                                      infection_history_mat, age_mask
                                  )
               }

@@ -38,7 +38,7 @@ get_titre_predictions <- function(chain, infection_histories, titre_dat,
                                   nsamp = 100, add_residuals = FALSE,
                                   mu_indices = NULL,
                                   measurement_indices_by_time = NULL,
-                                  for_res_plot = FALSE) {
+                                  for_res_plot = FALSE, expand_titredat = FALSE) {
     ## Need to align the iterations of the two MCMC chains
     ## and choose some random samples
     samps <- intersect(unique(infection_histories$sampno), unique(chain$sampno))
@@ -62,10 +62,21 @@ get_titre_predictions <- function(chain, infection_histories, titre_dat,
     tmp_samp <- sample(samps, nsamp)
     
     ## See the function in posteriors.R
-    f <- create_posterior_func(par_tab, titre_dat, antigenic_map, 100, mu_indices = mu_indices,
+    titre_dat1 <- titre_dat
+    if(expand_titredat){
+        titre_dat1 <- expand.grid(individual=unique(titre_dat$individual),
+                                  samples=unique(antigenic_map$inf_years),
+                                  titre=0,run=1)
+        titre_dat2 <- unique(titre_dat[,c("individual","virus","group","DOB")])
+        titre_dat1 <- merge(titre_dat1, titre_dat2)
+        titre_dat1 <- titre_dat1[order(titre_dat1$group, titre_dat1$individual, titre_dat1$samples,titre_dat1$virus),
+                                 c("individual","samples","virus","titre","run","group","DOB")]
+    }
+    
+    f <- create_posterior_func(par_tab, titre_dat1, antigenic_map, 100, mu_indices = mu_indices,
                                measurement_indices_by_time = measurement_indices_by_time, function_type = 3)
 
-    predicted_titres <- residuals <- matrix(nrow = nrow(titre_dat), ncol = nsamp)
+    predicted_titres <- residuals <- matrix(nrow = nrow(titre_dat1), ncol = nsamp)
     samp_record <- numeric(nsamp)
 
 
@@ -79,7 +90,7 @@ get_titre_predictions <- function(chain, infection_histories, titre_dat,
         predicted_titres[, i] <- f(pars, tmp_inf_hist)
 
         ## Get residuals between observations and predictions
-        residuals[, i] <- titre_dat$titre - floor(predicted_titres[, i])
+        residuals[, i] <- titre_dat1$titre - floor(predicted_titres[, i])
         samp_record[i] <- index
     }
     colnames(predicted_titres) <- tmp_samp
@@ -87,12 +98,12 @@ get_titre_predictions <- function(chain, infection_histories, titre_dat,
     ## If generating for residual plot, can return now
     if (for_res_plot) return(list(residuals, samp_record, titre_dat, predicted_titres))
 
-    residuals <- cbind(titre_dat, residuals)
+    residuals <- cbind(titre_dat1, residuals)
 
     ## Get 95% credible interval and means
     dat2 <- t(apply(predicted_titres, 1, function(x) quantile(x, c(0.025, 0.25, 0.5, 0.75, 0.975))))
     residuals <- t(apply(residuals, 1, function(x) quantile(x, c(0.025, 0.5, 0.975))))
-    residuals <- cbind(titre_dat, residuals)
+    residuals <- cbind(titre_dat1, residuals)
 
     ## Find multivariate posterior mode estimate from the chain
     best_pars <- get_best_pars(chain)
@@ -103,13 +114,13 @@ get_titre_predictions <- function(chain, infection_histories, titre_dat,
 
     ## Generate trajectory for best parameters
     best_traj <- f(best_pars, best_inf)
-    best_residuals <- titre_dat$titre - floor(best_traj)
-    best_residuals <- cbind(titre_dat, best_residuals, "sampno" = best_I)
+    best_residuals <- titre_dat1$titre - floor(best_traj)
+    best_residuals <- cbind(titre_dat1, best_residuals, "sampno" = best_I)
     dat2 <- as.data.frame(dat2)
     colnames(dat2) <- c("lower", "lower_50","median", "upper_50","upper")
     dat2$max <- best_traj
     dat2[dat2 < 0] <- 0
-    dat2 <- cbind(titre_dat, dat2)
+    dat2 <- cbind(titre_dat1, dat2)
     tmp_inf_chain <- data.table(subset(infection_histories, sampno %in% tmp_samp))
 
     ## Get infection history density for each individual and each epoch
@@ -123,7 +134,7 @@ get_titre_predictions <- function(chain, infection_histories, titre_dat,
   ## The point of the following loop is to mask the densities where infection epochs were either
   ## before an individual was born or after the time that a blood sample was taken
   for (indiv in unique(infection_history_dens$individual)) {
-    sample_times <- unique(titre_dat[titre_dat$individual == indiv, "samples"])
+    sample_times <- unique(titre_dat1[titre_dat1$individual == indiv, "samples"])
     tmp <- NULL
     for (samp in sample_times) {
       indiv_inf_hist <- infection_history_dens[infection_history_dens$individual == indiv, ]
@@ -502,22 +513,102 @@ plot_attack_rates_monthly <- function(infection_histories, titre_dat, strain_iso
     return(p)
 }
 
-#' Plot historical attack rates
+#' Plot attack rate residuals
 #'
-#' Plots inferred historical attack rates from the MCMC output on infection histories
+#' Plots inferred historical attack rates from the MCMC output on infection histories compared against known attack rates.
 #' @param infection_histories the MCMC chain for infection histories
 #' @param titre_dat the data frame of titre data
 #' @param strain_isolation_times vector of the epochs of potential circulation
+#' @param true_ar data frame of true attack rates, with first column `year` equal to `strain_isolation_times`, and second column `AR` giving the attack rate
 #' @param n_alive vector with the number of people alive in each year of circulation. Can be left as NULL, and ages will be used to infer this
 #' @param pointsize Numeric - how big should each point be?
 #' @param fatten Numeric - fatten parameter for ggplot pointrange
 #' @param pad_chain if TRUE, fills the infection history data table with entries for non-infection events (ie. 0s). Can be switched to FALSE for speed to get a rough idea of what the attack rates look like.
+#' @param prior_pars if not NULL, a list of parameters for the attack rate prior, giving the assumed prior_version along with alpha and beta
+#' @return a ggplot2 object with the inferred attack rates for each potential epoch of circulation
+#' @export
+plot_attack_rate_residuals<- function(infection_histories, titre_dat, strain_isolation_times, true_ar,
+                                      n_alive = NULL, pointsize = 1, fatten = 1, pad_chain=TRUE, prior_pars=NULL) {
+
+     ## Some year/sample combinations might have no infections there.
+    ## Need to make sure that these get considered
+    if(is.null(infection_histories$chain_no)) {
+        infection_histories$chain_no <- 1
+    }
+    if(pad_chain) infection_histories <- pad_inf_chain(infection_histories)
+    
+    ## Find inferred total number of infections from the MCMC output
+    ## Scale by number of individuals that were alive in each epoch
+    ## and generate quantiles
+    if (is.null(n_alive)) {
+        n_alive <- get_n_alive(titre_dat, strain_isolation_times)
+    }
+    
+    years <- c(strain_isolation_times,max(strain_isolation_times)+3)
+    data.table::setkey(infection_histories, "sampno", "j","chain_no")
+    tmp <- infection_histories[, list(V1 = sum(x)), by = key(infection_histories)]
+    tmp$taken <- years[tmp$j] %in% unique(titre_dat$samples)
+    tmp$taken <- ifelse(tmp$taken, "Yes", "No")
+    prior_dens <- NULL
+    n_alive1 <- n_alive
+    if(!is.null(prior_pars)){
+        n_alive1 <- c(n_alive, 1)
+        prior_ver <- prior_pars[["prior_version"]]
+        alpha1 <- prior_pars[["alpha"]]
+        beta1 <- prior_pars[["beta"]]
+        if(prior_ver == 3){
+            prior_dens <- rbinom(100000,size=max(n_alive),p=alpha1/(alpha1+beta1))/max(n_alive)
+        } else {
+            prior_dens <- rbeta(100000,alpha1, beta1)
+        }
+        prior_dens <- data.frame(sampno=1:length(prior_dens),j=max(tmp$j)+1,
+                                 chain_no=1, V1=prior_dens, taken="Prior")
+        tmp <- rbind(tmp, prior_dens)
+        
+    }
+    tmp$V1 <- tmp$V1/n_alive1[tmp$j]
+    tmp$j <- years[tmp$j]
+    tmp$taken <- tmp$j %in% unique(titre_dat$samples)
+    tmp$taken <- ifelse(tmp$taken, "Yes", "No")
+    min_year <- min(strain_isolation_times)
+    max_year <- max(strain_isolation_times)
+    year_breaks <- c(min_year,seq(5*round(min_year/5),max_year,by=5))
+    year_labels <- c(min_year,seq(5*round(min_year/5),max_year,by=5))
+    if(!is.null(prior_dens)){
+        tmp[tmp$j == max(years),"taken"] <- "Prior"
+        year_breaks <- c(year_breaks, max_year+3)
+        year_labels <- c(year_labels, "Prior")
+    }
+
+    colnames(tmp)[2] <- "year"
+    true_ar1 <- true_ar
+    true_ar <- rbind(true_ar,data.frame(year=max(strain_isolation_times)+3,AR=median(prior_dens$V1)))
+    true_ar[true_ar$year ==max(strain_isolation_times)+3,"AR"] <- mean(true_ar1$AR)
+    tmp <- merge(tmp, true_ar,id.vars="year")
+
+    p <- ggplot(tmp) +
+        geom_violin(aes(x = year, y = V1 - AR, fill=taken,group=year),
+                    draw_quantiles=c(0.5),scale="width") +
+        scale_x_continuous(breaks=year_breaks,labels=year_labels)+
+        geom_hline(yintercept=0,linetype="dashed") +
+        theme_classic() +
+        theme(legend.position="none")+
+        ylab("Estimated attack rate - true attack rate") +
+        xlab("Time")
+    p
+}
+
+
+#' Plot historical attack rates
+#'
+#' Plots inferred historical attack rates from the MCMC output on infection histories
+#' @inheritParams plot_attack_rate_residuals
 #' @param plot_den if TRUE, produces a violin plot of attack rates rather than pointrange.
-#' @param prior_den if not NULL, a list of parameters for the attack rate prior, giving the assumed prior_version along with alpha and beta
 #' @return a ggplot2 object with the inferred attack rates for each potential epoch of circulation
 #' @export
 plot_attack_rates <- function(infection_histories, titre_dat, strain_isolation_times, n_alive = NULL,
-                              pointsize = 1, fatten = 1, pad_chain=TRUE, plot_den=FALSE, prior_pars=NULL) {
+                              pointsize = 1, fatten = 1, pad_chain=TRUE, prior_pars=NULL,plot_den=FALSE) {
+    
     ## Some year/sample combinations might have no infections there.
     ## Need to make sure that these get considered
     if(is.null(infection_histories$chain_no)) {
@@ -609,10 +700,10 @@ plot_attack_rates <- function(infection_histories, titre_dat, strain_isolation_t
             theme(legend.position="none")+
             ylab("Estimated attack rate") +
             xlab("Year")
-        }
-     
-        
-  return(p)
+    } 
+    
+    
+    return(p)
 }
 
 #' Pad infection history chain
@@ -824,11 +915,12 @@ plot_data <- function(titre_dat, infection_histories, strain_isolation_times, n_
 #' @param number_col how many columns to use for the cumulative infection history plot
 #' @param pad_chain if TRUE, pads the infection history MCMC chain to have entries for non-infection events
 #' @param subset_years if not NULL, pass a vector of indices to only take a subset of indices from strain_isolation_times
+#' @param return_data if TRUE, returns the infection history posterior densities used to generate the plots
 #' @return two ggplot objects
 #' @export
 generate_cumulative_inf_plots <- function(inf_chain, burnin = 0, indivs, real_inf_hist = NULL, start_inf = NULL,
                                           strain_isolation_times, nsamp = 100, ages = NULL, number_col = 1,
-                                          pad_chain=TRUE, subset_years=NULL) {
+                                          pad_chain=TRUE, subset_years=NULL,return_data=FALSE) {
     inf_chain <- inf_chain[inf_chain$sampno > burnin, ]
     if(is.null(inf_chain$chain_no)){
         inf_chain$chain_no <- 1
@@ -862,6 +954,7 @@ generate_cumulative_inf_plots <- function(inf_chain, burnin = 0, indivs, real_in
     all_combos$V1 <- 0
     densities <- rbind(all_combos, densities)
 
+    infection_history1 <- NULL
     if (!is.null(real_inf_hist)) {
         infection_history1 <- as.data.frame(real_inf_hist)
         infection_history1 <- infection_history1[indivs, ]
@@ -914,6 +1007,7 @@ generate_cumulative_inf_plots <- function(inf_chain, burnin = 0, indivs, real_in
     quant_hist <- merge(quant_hist, hist_profiles_median, by = c("individual", "chain_no","variable"))
 
     ## If available, process the real infection history matrix for plotting
+    real_hist_profiles <- NULL
     if (!is.null(real_inf_hist)) {
         real_hist_profiles <- as.data.frame(t(apply(real_inf_hist, 1, cumsum)))
         colnames(real_hist_profiles) <- strain_isolation_times
@@ -951,12 +1045,20 @@ generate_cumulative_inf_plots <- function(inf_chain, burnin = 0, indivs, real_in
     age_dat <- data.frame(j = age_mask, individual = indivs[order(indivs)])
     p1 <- p1 + geom_vline(data = age_dat, aes(xintercept = strain_isolation_times[j]), col = "purple", linetype = "dashed")
   }
-  p1 <- p1 + facet_wrap(~individual, ncol = number_col) +
-    theme_bw() +
-    theme(legend.position = "bottom")+
-    ylab("Cumulative infections") +
-    xlab("Circulation time")
-  return(list(p1, density_plot))
+    p1 <- p1 + facet_wrap(~individual, ncol = number_col) +
+        theme_bw() +
+        theme(legend.position = "bottom")+
+        ylab("Cumulative infections") +
+        xlab("Circulation time")
+    return_list <- NULL
+    if(return_data){
+        return_list <- list("cumu_infections"=p1, "density_plot"=density_plot,
+             "density_data"=densities,"real_hist"=infection_history1,
+             "cumu_data"=quant_hist)
+    } else {
+        return_list <- list("cumu_infections"=p1, "density_plot"=density_plot)
+    }
+    return(return_list)
 }
 
 #' Titre dependent boosting relationship

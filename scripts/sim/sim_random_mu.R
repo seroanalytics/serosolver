@@ -60,8 +60,8 @@ strainIsolationTimes <- unique(fit_dat$inf_years)
 
 #n_clusters <- length(strainIsolationTimes)
 #mu_indices <- seq(1,length(strainIsolationTimes),by=1)
-## Add rows for each lambda value to be inferred
-#tmp <- parTab[parTab$names == "lambda",]
+## Add rows for each phi value to be inferred
+#tmp <- parTab[parTab$names == "phi",]
 #for(i in 1:(length(strainIsolationTimes)-1)){
 #  parTab <- rbind(parTab, tmp)
 #}
@@ -80,7 +80,7 @@ parTab <- rbind(mu_tab, parTab)
 
 ## Simulate some fake data
 #strainIsolationTimes <- 1968:2015
-#lambdas <- runif(length(strainIsolationTimes),0.1/buckets,0.5/buckets)
+#phis <- runif(length(strainIsolationTimes),0.1/buckets,0.5/buckets)
 dat <- simulate_data(parTab, 1, n_indiv, buckets,strainIsolationTimes,
                      samplingTimes, 5, antigenicMap=fit_dat, 0, 0, 6*buckets,75*buckets,
                      simInfPars=c("mean"=0.15,"sd"=0.5,"bigMean"=0.5,"logSD"=1),
@@ -183,17 +183,17 @@ dev.off()
 tmp <- summary(as.mcmc(chain1[,2:(ncol(chain1)-1)]))
 tmp <- as.data.frame(tmp[[2]])
 tmp$names <- rownames(tmp)
-lambda_names <- c("lambda",paste0("lambda.",1:(nrow(AR)-1)))
-tmp <- tmp[tmp$names %in% lambda_names,]
-tmpTab <- parTab[parTab$names == "lambda",]
+phi_names <- c("phi",paste0("phi.",1:(nrow(AR)-1)))
+tmp <- tmp[tmp$names %in% phi_names,]
+tmpTab <- parTab[parTab$names == "phi",]
 tmpTab$values <- AR[,2]
-tmpTab$names <- lambda_names
+tmpTab$names <- phi_names
 tmp$names <- strainIsolationTimes
 tmpTab$names <- strainIsolationTimes
 AR_recovery <- ggplot() +
   geom_pointrange(data=tmp,aes(x=names,y=`50%`,ymin=`2.5%`,ymax=`97.5%`)) +
   geom_point(data=tmpTab,aes(x=names,y=values),col="red") +
-  ylab("Attack rate, lambda") +
+  ylab("Attack rate, phi") +
   xlab("Year") +
   scale_y_continuous(limits=c(0,1)) +
  # scale_x_continuous(breaks=seq(1968,2015,by=1)) +

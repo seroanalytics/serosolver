@@ -88,8 +88,8 @@ parTab[parTab$names %in% c("alpha","beta"),"values"] <- c(0.75,4.5)
 mu_indices <- clusters$cluster1
 #n_clusters <- length(strainIsolationTimes)
 #mu_indices <- seq(1,length(strainIsolationTimes),by=1)
-## Add rows for each lambda value to be inferred
-tmp <- parTab[parTab$names == "lambda",]
+## Add rows for each phi value to be inferred
+tmp <- parTab[parTab$names == "phi",]
 for(i in 1:(length(strainIsolationTimes)-1)){
   parTab <- rbind(parTab, tmp)
 }

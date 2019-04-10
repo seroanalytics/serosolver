@@ -7,7 +7,7 @@
 generate_cumulative_inf_plots(inf_chain, burnin = 0, indivs,
   real_inf_hist = NULL, start_inf = NULL, strain_isolation_times,
   nsamp = 100, ages = NULL, number_col = 1, pad_chain = TRUE,
-  subset_years = NULL)
+  subset_years = NULL, return_data = FALSE)
 }
 \arguments{
 \item{inf_chain}{the infection history chain}
@@ -31,6 +31,8 @@ generate_cumulative_inf_plots(inf_chain, burnin = 0, indivs,
 \item{pad_chain}{if TRUE, pads the infection history MCMC chain to have entries for non-infection events}
 
 \item{subset_years}{if not NULL, pass a vector of indices to only take a subset of indices from strain_isolation_times}
+
+\item{return_data}{if TRUE, returns the infection history posterior densities used to generate the plots}
 }
 \value{
 two ggplot objects

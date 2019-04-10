@@ -84,10 +84,10 @@ run_MCMC_pt_fast <- function(par_tab,
   upper_bounds <- par_tab$upper_bound
 
   ## CURRENTLY NOT USED, AS USING GIBBS VERSION
-  ## If using lambda terms, pull their indices out of the parameter table
-  lambda_indices <- NULL
-  if ("lambda" %in% par_names) {
-    lambda_indices <- which(par_tab$names == "lambda")
+  ## If using phi terms, pull their indices out of the parameter table
+  phi_indices <- NULL
+  if ("phi" %in% par_names) {
+    phi_indices <- which(par_tab$names == "phi")
   }
   alpha <- par_tab[par_tab$names == "alpha", "values"]
   beta <- par_tab[par_tab$names == "beta", "values"]

@@ -37,16 +37,16 @@ inf_hist_swap <- function(infection_history, age_mask, strain_mask, swap_propn, 
   infection_history[samp_indivs, y2] <- tmp
   return(infection_history)
 }
-#' Swap infection history years with lambda term
+#' Swap infection history years with phi term
 #'
-#' Swaps the entire contents of two columns of the infection history matrix, adhering to age and strain limitations. Also swaps the values of lambda that correspond to these years
+#' Swaps the entire contents of two columns of the infection history matrix, adhering to age and strain limitations. Also swaps the values of phi that correspond to these years
 #' @inheritParams inf_hist_swap
-#' @param lambdas vector of force of infection parameters for each column
-#' @param n_alive number of individuals alive in each entry of lambdas
-#' @return a list: the same infection_history matrix, but with two columns swapped; also the swapped lambdas
+#' @param phis vector of force of infection parameters for each column
+#' @param n_alive number of individuals alive in each entry of phis
+#' @return a list: the same infection_history matrix, but with two columns swapped; also the swapped phis
 #' @seealso \code{\link{inf_hist_swap}}
 #' @export
-inf_hist_swap_lambda <- function(infection_history, lambdas, age_mask, strain_mask, swap_propn, move_size, n_alive) {
+inf_hist_swap_phi <- function(infection_history, phis, age_mask, strain_mask, swap_propn, move_size, n_alive) {
   ## This first bit of code is the same as inf_hist_swap
   y1 <- sample(1:ncol(infection_history), 1)
   move <- 0
@@ -85,7 +85,7 @@ inf_hist_swap_lambda <- function(infection_history, lambdas, age_mask, strain_ma
   if (new_total_infs_y1 > 0) {
     gained_foi_y1 <- no_infs_y2 / new_total_infs_y1
   }
-  lambdas[y1] <- lambdas[y1] - lambdas[y1] * lost_foi_y1 + lambdas[y1] * gained_foi_y1
+  phis[y1] <- phis[y1] - phis[y1] * lost_foi_y1 + phis[y1] * gained_foi_y1
 
   lost_foi_y2 <- gained_foi_y2 <- 0
   if (total_infs_y2 > 0) {
@@ -94,13 +94,13 @@ inf_hist_swap_lambda <- function(infection_history, lambdas, age_mask, strain_ma
   if (new_total_infs_y2 > 0) {
     gained_foi_y2 <- no_infs_y1 / new_total_infs_y2
   }
-  lambdas[y2] <- lambdas[y2] - lambdas[y2] * lost_foi_y2 + lambdas[y2] * gained_foi_y2
+  phis[y2] <- phis[y2] - phis[y2] * lost_foi_y2 + phis[y2] * gained_foi_y2
 
   ## And finish the swap
   infection_history[samp_indivs, y1] <- infection_history[samp_indivs, y2]
   infection_history[samp_indivs, y2] <- tmp
 
-  return(list(infection_history, lambdas))
+  return(list(infection_history, phis))
 }
 
 
@@ -348,14 +348,14 @@ infection_history_betabinom_group <- function(new_inf_hist, sampled_indivs, age_
 
 
 
-#' DEPRECATED - propose inf hist from lambda
+#' DEPRECATED - propose inf hist from phi
 #' @export
-inf_hist_prob_lambda <- function(new_inf, sampled_indivs, age_mask, strain_mask, n_infs, lambdas) {
+inf_hist_prob_phi <- function(new_inf, sampled_indivs, age_mask, strain_mask, n_infs, phis) {
   # ks <- rpois(length(sampled_indivs),n_infs)
   for (i in 1:length(sampled_indivs)) {
     indiv <- sampled_indivs[i]
     x <- new_inf[indiv, age_mask[indiv]:strain_mask[indiv]]
-    probs <- lambdas[age_mask[indiv]:length(lambdas)]
+    probs <- phis[age_mask[indiv]:length(phis)]
     max_i <- length(x)
     # k <- min(max_i, max(ks[i],1))
     # locs <- sample(length(x), k)
@@ -366,9 +366,9 @@ inf_hist_prob_lambda <- function(new_inf, sampled_indivs, age_mask, strain_mask,
   return(new_inf)
 }
 
-#' DEPRECATED - proposal for lambda based on number of infections
+#' DEPRECATED - proposal for phi based on number of infections
 #' @export
-lambda_proposal <- function(current_pars, infection_history, years, js, alpha, beta, n_alive) {
+phi_proposal <- function(current_pars, infection_history, years, js, alpha, beta, n_alive) {
   proposed <- current_pars
   if (length(years) > 1) {
     infs <- colSums(infection_history[, years])

@@ -171,19 +171,26 @@ find_beta_parameters <- function(mean, var, make_plot = FALSE) {
 #' @param the number of buckets to split each year into
 #' @return a list with alpha and beta
 #' @export
-generate_beta_prior_prior_mean <- function(desired_annual_mean, buckets) {
+generate_beta_prior_mean <- function(desired_annual_mean, buckets) {
   mean1 <- desired_annual_mean / buckets
   max_var <- mean1 * (1 - mean1) - 0.000001
+  print(max_var)
   pars <- find_beta_parameters(mean1, max_var)
   alpha <- pars$alpha
   beta <- pars$beta
+  return(pars)
   y <- dbeta(seq(0.01, 1 - 0.01, by = 0.01), alpha, beta, log = FALSE)
   while (!(all(y == cummin(y)))) {
-    max_var <- max_var - 0.001
+      print("next")
+      
+      max_var <- max_var - 0.001
+      print(max_var)
     pars <- find_beta_parameters(mean1, max_var)
     alpha <- pars$alpha
     beta <- pars$beta
-    y <- dbeta(seq(0.01, 1 - 0.01, by = 0.01), alpha, beta, log = FALSE)
+      y <- dbeta(seq(0.01, 1 - 0.01, by = 0.01), alpha, beta, log = FALSE)
+      print(y)
+      print(cummin(y))
   }
   return(pars)
 }
@@ -201,7 +208,7 @@ calc_b <- function(mode1, k){
 #'
 #' Calculates the necessary parameters for the beta distribution to give the desired mode and certainty, k
 #' @param mode1 the desired mode
-#' @param the desired certainty in the prior, must be at least 2. The higher this number, the "stronger" the prior
+#' @param k the desired certainty in the prior, must be at least 2. The higher this number, the "stronger" the prior
 #' @return a list with alpha and beta parameters for the Beta distribution
 #' @export
 generate_alpha_beta_prior_mode<- function(mode1, k){

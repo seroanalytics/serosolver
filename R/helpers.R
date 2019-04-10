@@ -243,79 +243,81 @@ row.match <- function(x, table, nomatch = NA) {
 #' @seealso \code{\link{create_posterior_func}}
 #' @export
 setup_titredat_for_posterior_func <- function(titre_dat, antigenic_map, age_mask = NULL, n_alive = NULL) {
-  strain_isolation_times <- antigenic_map$inf_years
-  antigenic_map_melted <- c(melt_antigenic_coords(antigenic_map[, c("x_coord", "y_coord")]))
+    essential_colnames <- c("individual","samples","titre","virus","run","group")
+    
+    strain_isolation_times <- antigenic_map$inf_years
+    antigenic_map_melted <- c(melt_antigenic_coords(antigenic_map[, c("x_coord", "y_coord")]))
+    
+    measured_strain_indices <- match(titre_dat$virus, antigenic_map$inf_years) - 1 ## For each virus tested, what is its index in the antigenic map?
+    infection_strain_indices <- match(strain_isolation_times, strain_isolation_times) - 1 ## For each virus that circulated, what is its index in the antigenic map?
+    
+    ## Get unique measurement sets for each individual at
+    ## each sampling time for each repeat
+    ## ie. each row of this is a unique blood sample taken
+    samples <- unique(titre_dat[, c("individual", "samples", "run")])
+    sample_times <- samples$samples ## What were the times that these samples were taken?
+    individuals <- samples$individual ## Who are the individuals that these samples correspond to?
+    n_indiv <- length(unique(individuals))
 
-  measured_strain_indices <- match(titre_dat$virus, antigenic_map$inf_years) - 1 ## For each virus tested, what is its index in the antigenic map?
-  infection_strain_indices <- match(strain_isolation_times, strain_isolation_times) - 1 ## For each virus that circulated, what is its index in the antigenic map?
-
-  ## Get unique measurement sets for each individual at
-  ## each sampling time for each repeat
-  ## ie. each row of this is a unique blood sample taken
-  samples <- unique(titre_dat[, c("individual", "samples", "run")])
-  sample_times <- samples$samples ## What were the times that these samples were taken?
-  individuals <- samples$individual ## Who are the individuals that these samples correspond to?
-  n_indiv <- length(unique(individuals))
-
-  ## Firstly, how many rows in the titre data correspond to each unique individual, sample and titre repeat?
-  ## ie. each element of this vector corresponds to one set of titres that need to be predicted
-  nrows_per_blood_sample <- NULL
-  for (i in 1:nrow(samples)) {
-    nrows_per_blood_sample <- c(nrows_per_blood_sample, nrow(samples[titre_dat$individual == samples[i, "individual"] &
-      titre_dat$samples == samples[i, "samples"] &
-      titre_dat$run == samples[i, "run"], ]))
-  }
-
-  ## Which indices in the sampling times vector correspond to each individual?
-  ## ie. each contiguous pair of entries in this vector corresponds to the
-  ## first and last entry in the samples matrix that correspond to each individual
-  rows_per_indiv_in_samples <- c(0)
-  for (individual in unique(individuals)) {
-    rows_per_indiv_in_samples <- c(rows_per_indiv_in_samples, length(individuals[individuals == individual]))
-  }
-  rows_per_indiv_in_samples <- cumsum(rows_per_indiv_in_samples)
-
-  ## Which indices in the titre data matrix correspond to each individual?
-  ## And, how many rows match each individual?
-  nrows_per_individual_in_data <- NULL
-  for (individual in unique(individuals)) {
-    nrows_per_individual_in_data <- c(nrows_per_individual_in_data, nrow(titre_dat[titre_dat$individual == individual, ]))
-  }
-  cum_nrows_per_individual_in_data <- cumsum(c(0, nrows_per_individual_in_data))
-
-  if (!is.null(titre_dat$DOB)) {
-    DOBs <- unique(titre_dat[, c("individual", "DOB")])[, 2]
-  } else {
-    DOBs <- rep(min(strain_isolation_times), n_indiv)
-  }
-  if (is.null(age_mask)) {
-    if (!is.null(titre_dat$DOB)) {
-      age_mask <- create_age_mask(DOBs, strain_isolation_times)
-    } else {
-      age_mask <- rep(1, n_indiv)
+    ## Firstly, how many rows in the titre data correspond to each unique individual, sample and titre repeat?
+    ## ie. each element of this vector corresponds to one set of titres that need to be predicted
+    nrows_per_blood_sample <- NULL
+    for (i in 1:nrow(samples)) {
+        nrows_per_blood_sample <- c(nrows_per_blood_sample, nrow(samples[titre_dat$individual == samples[i, "individual"] &
+                                                                         titre_dat$samples == samples[i, "samples"] &
+                                                                         titre_dat$run == samples[i, "run"], ]))
     }
-  }
-  strain_mask <- create_strain_mask(titre_dat, strain_isolation_times)
-  masks <- data.frame(cbind(age_mask, strain_mask))
-  if (is.null(n_alive)) {
-    n_alive <- sapply(seq(1, length(strain_isolation_times)), function(x)
-      nrow(masks[masks$age_mask <= x & masks$strain_mask >= x, ]))
-  }
-  return(list(
-    "individuals" = individuals,
-    "antigenic_map_melted" = antigenic_map_melted,
-    "strain_isolation_times" = strain_isolation_times,
-    "infection_strain_indices" = infection_strain_indices,
-    "sample_times" = sample_times,
-    "rows_per_indiv_in_samples" = rows_per_indiv_in_samples,
-    "nrows_per_individual_in_data" = nrows_per_individual_in_data,
-    "cum_nrows_per_individual_in_data" = cum_nrows_per_individual_in_data,
-    "nrows_per_blood_sample" = nrows_per_blood_sample,
-    "measured_strain_indices" = measured_strain_indices,
-    "n_indiv" = n_indiv,
-    "age_mask" = age_mask,
-    "strain_mask" = strain_mask,
-    "n_alive" = n_alive,
-    "DOBs" = DOBs
-  ))
+
+    ## Which indices in the sampling times vector correspond to each individual?
+    ## ie. each contiguous pair of entries in this vector corresponds to the
+    ## first and last entry in the samples matrix that correspond to each individual
+    rows_per_indiv_in_samples <- c(0)
+    for (individual in unique(individuals)) {
+        rows_per_indiv_in_samples <- c(rows_per_indiv_in_samples, length(individuals[individuals == individual]))
+    }
+    rows_per_indiv_in_samples <- cumsum(rows_per_indiv_in_samples)
+
+    ## Which indices in the titre data matrix correspond to each individual?
+    ## And, how many rows match each individual?
+    nrows_per_individual_in_data <- NULL
+    for (individual in unique(individuals)) {
+        nrows_per_individual_in_data <- c(nrows_per_individual_in_data, nrow(titre_dat[titre_dat$individual == individual, ]))
+    }
+    cum_nrows_per_individual_in_data <- cumsum(c(0, nrows_per_individual_in_data))
+
+    if (!is.null(titre_dat$DOB)) {
+        DOBs <- unique(titre_dat[, c("individual", "DOB")])[, 2]
+    } else {
+        DOBs <- rep(min(strain_isolation_times), n_indiv)
+    }
+    if (is.null(age_mask)) {
+        if (!is.null(titre_dat$DOB)) {
+            age_mask <- create_age_mask(DOBs, strain_isolation_times)
+        } else {
+            age_mask <- rep(1, n_indiv)
+        }
+    }
+    strain_mask <- create_strain_mask(titre_dat, strain_isolation_times)
+    masks <- data.frame(cbind(age_mask, strain_mask))
+    if (is.null(n_alive)) {
+        n_alive <- sapply(seq(1, length(strain_isolation_times)), function(x)
+            nrow(masks[masks$age_mask <= x & masks$strain_mask >= x, ]))
+    }
+    return(list(
+        "individuals" = individuals,
+        "antigenic_map_melted" = antigenic_map_melted,
+        "strain_isolation_times" = strain_isolation_times,
+        "infection_strain_indices" = infection_strain_indices,
+        "sample_times" = sample_times,
+        "rows_per_indiv_in_samples" = rows_per_indiv_in_samples,
+        "nrows_per_individual_in_data" = nrows_per_individual_in_data,
+        "cum_nrows_per_individual_in_data" = cum_nrows_per_individual_in_data,
+        "nrows_per_blood_sample" = nrows_per_blood_sample,
+        "measured_strain_indices" = measured_strain_indices,
+        "n_indiv" = n_indiv,
+        "age_mask" = age_mask,
+        "strain_mask" = strain_mask,
+        "n_alive" = n_alive,
+        "DOBs" = DOBs
+    ))
 }

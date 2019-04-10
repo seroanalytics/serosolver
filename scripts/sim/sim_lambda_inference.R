@@ -22,7 +22,7 @@ histProposal <- 1
 buckets <- 1
 
 ## The general output filename
-filename <- "chains/lambda_1000_test"
+filename <- "chains/phi_1000_test"
 
 ## Read in parameter table to simulate from and change waning rate if necessary
 parTab <- read.csv("~/Documents/Fluscape/serosolver/inputs/parTab_base.csv",stringsAsFactors=FALSE)
@@ -54,8 +54,8 @@ p1 <- ggplot(antigenicMap) +
 fit_dat <- fit_dat[fit_dat$inf_years >= yearMin*buckets & fit_dat$inf_years <= 2015*buckets,]
 strainIsolationTimes <- unique(fit_dat$inf_years)
 
-## Add rows for each lambda value to be inferred
-tmp <- parTab[parTab$names == "lambda",]
+## Add rows for each phi value to be inferred
+tmp <- parTab[parTab$names == "phi",]
 for(i in 1:(length(strainIsolationTimes)-1)){
   parTab <- rbind(parTab, tmp)
 }
@@ -104,10 +104,10 @@ p <- plot_data(titreDat, infHist, strainIsolationTimes, 5, NULL)
 startInf <- setup_infection_histories_new(titreDat, unique(fit_dat$inf_years), space=5,titre_cutoff=2)
 ageMask <- create_age_mask(ages$DOB, strainIsolationTimes)
 
-## Housekeeping for force of infection parameters, lambda
-parTab[parTab$names == "lambda","values"] <- AR[,2]
-parTab[parTab$names == "lambda","fixed"] <- 0
-parTab[which(parTab$names == "lambda" & parTab$values <= 0),"values"] <- 0.00001
+## Housekeeping for force of infection parameters, phi
+parTab[parTab$names == "phi","values"] <- AR[,2]
+parTab[parTab$names == "phi","fixed"] <- 0
+parTab[which(parTab$names == "phi" & parTab$values <= 0),"values"] <- 0.00001
 
 
 ## Generate starting locations
@@ -132,9 +132,9 @@ mvrPars <- list(covMat, scale, w)
 ageMask <- create_age_mask(ages$DOB, strainIsolationTimes)
 
 ## Run the MCMC using the inputs generated above
-lambdas_start<-vector('numeric',ncol(startInf))
-for(year in 1:ncol(startInf)){ lambdas_start[year] <- (sum(startInf[,year])/sum(ages$DOB <= strainIsolationTimes[year]))}
-startTab[startTab$names == "lambda","values"] <- lambdas_start
+phis_start<-vector('numeric',ncol(startInf))
+for(year in 1:ncol(startInf)){ phis_start[year] <- (sum(startInf[,year])/sum(ages$DOB <= strainIsolationTimes[year]))}
+startTab[startTab$names == "phi","values"] <- phis_start
 
 res <- run_MCMC(startTab, titreDat=titreDat, 
                 antigenicMap=fit_dat,mcmcPars=c(save_block=1000),
@@ -180,17 +180,17 @@ plot_attack_rates(infChain, titreDat, ages=NULL,yearMin:2015,n_alive) +
 tmp <- summary(as.mcmc(chain[,2:(ncol(chain)-1)]))
 tmp <- as.data.frame(tmp[[2]])
 tmp$names <- rownames(tmp)
-lambda_names <- c("lambda",paste0("lambda.",1:(nrow(AR)-1)))
-tmp <- tmp[tmp$names %in% lambda_names,]
-tmpTab <- parTab[parTab$names == "lambda",]
+phi_names <- c("phi",paste0("phi.",1:(nrow(AR)-1)))
+tmp <- tmp[tmp$names %in% phi_names,]
+tmpTab <- parTab[parTab$names == "phi",]
 tmpTab$values <- AR[,2]
-tmpTab$names <- lambda_names
+tmpTab$names <- phi_names
 tmp$names <- strainIsolationTimes
 tmpTab$names <- strainIsolationTimes
 AR_recovery <- ggplot() +
   geom_pointrange(data=tmp,aes(x=names,y=`50%`,ymin=`2.5%`,ymax=`97.5%`)) +
   geom_point(data=tmpTab,aes(x=names,y=values),col="red") +
-  ylab("Attack rate, lambda") +
+  ylab("Attack rate, phi") +
   xlab("Year") +
   scale_y_continuous(limits=c(0,1)) +
  # scale_x_continuous(breaks=seq(1968,2015,by=1)) +
