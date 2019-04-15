@@ -4,8 +4,8 @@ setwd("~/Documents/Fluscape/serosolver")
 fluscapeWD <- "~/Documents/Fluscape"
 devtools::load_all()
 setwd(fluscapeWD)
-resolution <- "quarter"
-buckets <- 4
+resolution <- "annual"
+buckets <- 1
 use_buckets <- 1/buckets
 firstYear <- 1968
 lastYear <- 2015

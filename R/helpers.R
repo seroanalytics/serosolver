@@ -19,9 +19,10 @@ get_n_alive <- function(titre_dat, times) {
 #' Given the titre_dat data frame with entries for location, calculates the number that are alive (alive to be infected, that is) for each time in times by location
 #' @param titre_dat the data frame of titre data
 #' @param times the vector of times to calculate number alive for
+#' @param melt_dat if TRUE, returns a melted data frame. Returns a wide matrix otherwise.
 #' @return a matrix giving the number alive in each time point in each location
 #' @export
-get_n_alive_group <- function(titre_dat, times) {
+get_n_alive_group <- function(titre_dat, times, melt_dat=FALSE) {
     DOBs <- unique(titre_dat[, c("individual", "group", "DOB")])
     age_mask <- create_age_mask(DOBs[,"DOB"], times)
     strain_mask <- create_strain_mask(titre_dat, times)
@@ -29,8 +30,21 @@ get_n_alive_group <- function(titre_dat, times) {
     DOBs <- cbind(DOBs, masks)
     n_alive <- ddply(DOBs, ~group, function(y) sapply(seq(1, length(times)), function(x)
         nrow(y[y$age_mask <= x & y$strain_mask >= x, ])))
-    as.matrix(n_alive[,2:ncol(n_alive)])
+    n_alive <- as.matrix(n_alive[,2:ncol(n_alive)])
+
+    if(melt_dat){
+        n_alive <- data.frame(n_alive) 
+        n_alive$group <- 1:nrow(n_alive)
+        n_alive <- melt(n_alive,id.vars=c("group"))
+        colnames(n_alive)[2] <- "j"
+        n_alive$j <- as.numeric(as.factor(n_alive$j))
+        colnames(n_alive)[3] <- "n_alive"
+    }
+    n_alive
+    
 }
+
+
 
 #' Create age mask
 #'

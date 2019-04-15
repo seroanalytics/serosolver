@@ -262,7 +262,7 @@ create_posterior_func <- function(par_tab,
     tmp <- row.match(titre_dat_repeats[, c("individual", "samples", "virus")],
                      titre_dat_unique[, c("individual", "samples", "virus")])
     titre_dat_repeats$index <- tmp
-
+    
     overall_indices <- row.match(titre_dat[,c("individual", "samples", "virus")],
                                  titre_dat_unique[, c("individual", "samples", "virus")])
     
@@ -366,7 +366,6 @@ create_posterior_func <- function(par_tab,
                 ## Calculate likelihood for unique titres and repeat data
                 liks <- likelihood_func_fast(theta, titres_unique, y_new)
                 liks_repeats <- likelihood_func_fast(theta, titres_repeats, y_new[repeat_indices])
-                
                 ## Sum these for each individual
                 liks <- sum_buckets(liks, nrows_per_individual_in_data) +
                     sum_buckets(liks_repeats, nrows_per_individual_in_data_repeats)

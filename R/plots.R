@@ -208,6 +208,9 @@ plot_posteriors_infhist <- function(inf_chain,
     if(is.null(inf_chain$chain_no)) {
         inf_chain$chain_no <- 1
     }
+     if(is.null(inf_chain$group)) {
+        inf_chain$group <- 1
+     }
 
     ## Pads the chain with 0 entries (ie. non-infection events)
     if(pad_chain) inf_chain <- pad_inf_chain(inf_chain)
@@ -366,6 +369,7 @@ plot_posteriors_theta <- function(chain,
 #' @export
 calculate_infection_history_statistics <- function(inf_chain, burnin=0, years=NULL,
                                                    n_alive=NULL, known_ar=NULL,
+                                                   group_ids=NULL,
                                                    known_infection_history=NULL,
                                                    pad_chain = TRUE
                                                    ){
@@ -373,31 +377,57 @@ calculate_infection_history_statistics <- function(inf_chain, burnin=0, years=NU
     if(is.null(inf_chain$chain_no)){
         inf_chain$chain_no <- 1
     }
-    
-    if(pad_chain) inf_chain <- pad_inf_chain(inf_chain)
-    
-    data.table::setkey(inf_chain, "j", "sampno","chain_no")
-    n_inf_chain <- inf_chain[, list(V1 = sum(x)), by = key(inf_chain)]
-
-    if (!is.null(n_alive)) {
-        n_inf_chain$V1 <- n_inf_chain$V1 / n_alive[n_inf_chain$j]
+    if(pad_chain){
+      message("Padding inf chain...")
+      inf_chain <- pad_inf_chain(inf_chain)
+      message("Done")
     }
+    
+    if(!is.null(group_ids)) {
+      inf_chain <- merge(inf_chain, data.table(group_ids))
+    }
+    
+    message("Calculating by time summaries...")
+    data.table::setkey(inf_chain, "group","j", "sampno","chain_no")
+    n_inf_chain <- inf_chain[, list(total_infs = sum(x)), by = key(inf_chain)]
+
+  
     if (!is.null(years)) {
         n_inf_chain$j <- years[n_inf_chain$j]
     }
+    
+    if (!is.null(n_alive)) {
+        n_inf_chain <- merge(n_inf_chain, n_alive, by=c("j","group"))
+        n_inf_chain$total_infs <- n_inf_chain$total_infs / n_inf_chain$n_alive
+        n_inf_chain[is.nan(n_inf_chain$total_infs),"total_infs"] <- 0
+    }
+    data.table::setkey(n_inf_chain, "group","sampno","chain_no")
+    n_inf_chain[, cumu_infs := cumsum(total_infs), by = key(n_inf_chain)]
 
-    data.table::setkey(n_inf_chain, "j")
-    n_inf_chain_summaries <- n_inf_chain[,list(mean=mean(as.double(V1)),median=median(as.double(V1)),
-                                               lower_quantile=quantile(as.double(V1),c(0.025)),
-                                               upper_quantile=quantile(as.double(V1),c(0.975)),
+    
+    data.table::setkey(n_inf_chain, "j","group")
+    n_inf_chain_summaries <- n_inf_chain[,list(mean=mean(as.double(total_infs)),median=median(as.double(total_infs)),
+                                               lower_quantile=quantile(as.double(total_infs),c(0.025)),
+                                               upper_quantile=quantile(as.double(total_infs),c(0.975)),
                                                effective_size=tryCatch({
-                                                   coda::effectiveSize(V1)
+                                                   coda::effectiveSize(total_infs)
                                                }, error = function(e) {
                                                    0
                                                }
                                                )),
                                          by=key(n_inf_chain)]
-
+    
+    n_inf_chain_summaries_cumu <- n_inf_chain[,list(mean=mean(as.double(cumu_infs)),median=median(as.double(cumu_infs)),
+                                               lower_quantile=quantile(as.double(cumu_infs),c(0.025)),
+                                               upper_quantile=quantile(as.double(cumu_infs),c(0.975)),
+                                               effective_size=tryCatch({
+                                                 coda::effectiveSize(cumu_infs)
+                                               }, error = function(e) {
+                                                 0
+                                               }
+                                               )),
+                                         by=key(n_inf_chain)]
+    message("Done") 
     if(!is.null(known_ar)){
         colnames(known_ar) <- c("j","true_ar")
         n_inf_chain_summaries <- merge(n_inf_chain_summaries, known_ar, by="j")
@@ -406,23 +436,38 @@ calculate_infection_history_statistics <- function(inf_chain, burnin=0, years=NU
                                                                                    n_inf_chain_summaries$upper_quantile)
     }
     
-
+    message("Calculating by individual summaries...")
     data.table::setkey(inf_chain, "i", "sampno","chain_no")
-    n_inf_chain_i <- inf_chain[, list(V1 = sum(x)), by = key(inf_chain)]
-
+    n_inf_chain_i <- inf_chain[, list(total_infs = sum(x)), by = key(inf_chain)]
+    
+    data.table::setkey(n_inf_chain_i, "sampno","chain_no")
+    n_inf_chain_i[, cumu_infs := cumsum(total_infs), by = key(n_inf_chain_i)]
+    
     data.table::setkey(n_inf_chain_i, "i")
-    n_inf_chain_i_summaries <- n_inf_chain_i[,list(mean=mean(V1),
-                                                   median=as.integer(median(V1)),
-                                                   lower_quantile=quantile(V1,0.025),
-                                                   upper_quantile=quantile(V1,0.975),
+    n_inf_chain_i_summaries <- n_inf_chain_i[,list(mean=mean(total_infs),
+                                                   median=as.integer(median(total_infs)),
+                                                   lower_quantile=quantile(total_infs,0.025),
+                                                   upper_quantile=quantile(total_infs,0.975),
                                                    effective_size=tryCatch({
-                                                       coda::effectiveSize(V1)
+                                                       coda::effectiveSize(total_infs)
                                                    }, error = function(e) {
                                                        0
                                                    }
                                                    )),
                                              by=key(n_inf_chain_i)]
-
+    
+    n_inf_chain_i_summaries_cumu <- n_inf_chain_i[,list(mean=mean(cumu_infs),
+                                                   median=as.integer(median(cumu_infs)),
+                                                   lower_quantile=quantile(cumu_infs,0.025),
+                                                   upper_quantile=quantile(cumu_infs,0.975),
+                                                   effective_size=tryCatch({
+                                                     coda::effectiveSize(cumu_infs)
+                                                   }, error = function(e) {
+                                                     0
+                                                   }
+                                                   )),
+                                             by=key(n_inf_chain_i)]
+    message("Done") 
     if(!is.null(known_infection_history)){
         true_n_infs <- rowSums(known_infection_history)
         true_n_infs <- data.frame(i=1:length(true_n_infs), true_infs=true_n_infs)
@@ -432,7 +477,8 @@ calculate_infection_history_statistics <- function(inf_chain, burnin=0, years=NU
             n_inf_chain_i_summaries$upper_quantile)
     }
     
-    return(list("by_year"=n_inf_chain_summaries,"by_indiv"=n_inf_chain_i_summaries))    
+    return(list("by_year"=n_inf_chain_summaries,"by_indiv"=n_inf_chain_i_summaries, 
+                "by_year_cumu"=n_inf_chain_summaries_cumu, "by_indiv_cumu"=n_inf_chain_i_summaries_cumu))    
 }
 
 #' Plot historical attack rates monthly
@@ -446,15 +492,21 @@ calculate_infection_history_statistics <- function(inf_chain, burnin=0, years=NU
 #' @export
 plot_attack_rates_monthly <- function(infection_histories, titre_dat, strain_isolation_times,
                                       n_alive = NULL, ymax = 1, buckets = 1,
-                                      pad_chain=TRUE,
+                                      pad_chain=TRUE,true_ar=NULL,by_group=FALSE,group_subset=NULL,
                                       cumulative=FALSE) {
     if(is.null(infection_histories$chain_no)){
         infection_histories$chain_no <- 1
     }
-    
+ 
     ## Some year/sample combinations might have no infections there.
     ## Need to make sure that these get considered
     if(pad_chain) infection_histories <- pad_inf_chain(infection_histories)
+        ## Subset of groups to plot
+    if(is.null(group_subset)){
+        group_subset <- unique(titre_dat$group)
+    }
+    if(!by_group) titre_dat$group <- 1
+    
     ## Find inferred total number of infections from the MCMC output
     ## Scale by number of individuals that were alive in each epoch
     ## and generate quantiles
@@ -466,35 +518,48 @@ plot_attack_rates_monthly <- function(infection_histories, titre_dat, strain_iso
     labels1 <- labels[1:length(strain_isolation_times)]
     labels1 <- labels1[seq(1, length(labels1), by = 1)]
     year_break <- strain_isolation_times[seq(1, length(strain_isolation_times), by = 1)]
-    if (is.null(n_alive)) {
-        n_alive <- get_n_alive(titre_dat, strain_isolation_times)
-    }
+    
+     if (is.null(n_alive)) {
+        n_alive <- as.data.frame(get_n_alive_group(titre_dat, strain_isolation_times))
+        n_alive$group <- 1:nrow(n_alive)
+     }
+    n_alive_tmp <- melt(n_alive, id.vars="group")
+    n_alive_tmp$variable <- as.numeric(n_alive_tmp$variable)
+    colnames(n_alive_tmp) <- c("group","j","n_alive")
+    
+    colnames(infection_histories)[1] <- "individual"
+    infection_histories <- merge(infection_histories,data.table(unique(titre_dat[,c("individual","group")])), by="individual")
     ## Sum infections per year for each MCMC sample
-    data.table::setkey(infection_histories, "sampno", "j","chain_no")
-    tmp <- infection_histories[, list(V1 = sum(x)), by = key(infection_histories)]
+    data.table::setkey(infection_histories, "sampno", "j","group","chain_no")
+    tmp <- infection_histories[, list(V1= sum(x)), by = key(infection_histories)]
 
     if(cumulative & !pad_chain) message("Error - cannot calculate cumulative incidence without pad_chain = TRUE")
+  
+    tmp <- merge(tmp, data.table(n_alive_tmp),by=c("group","j"))
+    tmp$time <- strain_isolation_times[tmp$j]
+    tmp$V1 <- tmp$V1/tmp$n_alive
+    tmp[is.nan(tmp$V1),"V1"] <- 0
     if(cumulative && pad_chain){
-        tmp <- ddply(tmp, .(sampno, chain_no), function(x) cumsum(x$V1))
-        tmp <- melt(tmp, id.vars=c("sampno","chain_no"))
-        colnames(tmp) <- c("sampno","chain_no","j","V1")
-        tmp$j <- as.numeric(tmp$j)
+      data.table::setkey(tmp, "sampno", "group","chain_no")
+      tmp[,V1:=cumsum(V1),by=key(tmp)]
     }
-    quantiles <- ddply(tmp, ~j, function(x) quantile(x$V1, c(0.025, 0.5, 0.975)))
-    colnames(quantiles) <- c("j", "lower", "median", "upper")
-    quantiles[c("lower", "median", "upper")] <- quantiles[c("lower", "median", "upper")] / n_alive[quantiles$j]
-    quantiles$year <- strain_isolation_times[quantiles$j]
-    quantiles$taken <- quantiles$year %in% unique(titre_dat$samples)
+    quantiles <- ddply(tmp, .(time,group), function(x) quantile(x$V1, c(0.025, 0.5, 0.975)))
+    colnames(quantiles) <- c("time","group", "lower", "median", "upper")
+    
 
-    ## Colour depending on whether or not titres were taken in each year
-    quantiles$taken <- ifelse(quantiles$taken, "Yes", "No")
-
-    p <- ggplot(quantiles) +
-        geom_ribbon(aes(x = year, ymin = lower, ymax = upper), fill = "red", alpha = 0.2) +
-        geom_line(aes(x = year, y = median), col = "red") +
-        geom_point(aes(x = year, y = median), col = "purple", size = 0.5) +
-        scale_y_continuous(limits = c(-0.005, ymax), expand = c(0, 0)) +
-        #scale_x_continuous(expand = c(0, 0), breaks = year_break, labels = labels1) +
+    p <- ggplot(quantiles[quantiles$group %in% group_subset,]) +
+        geom_ribbon(aes(x = time, ymin = lower, ymax = upper), fill = "red", alpha = 0.2) +
+        geom_line(aes(x = time, y = median), col = "red")
+    if(!is.null(true_ar)){
+        p <- p +
+            geom_line(data=true_ar[true_ar$group %in% group_subset,],aes(x=j,y=AR),
+                       col="purple",size=0.5)
+    }
+    p <- p +
+        ##geom_point(aes(x = year, y = median), col = "purple", size = 0.5) +
+        facet_wrap(~group, ncol=2)+
+        scale_y_continuous(expand = c(0, 0)) +
+                                        # #scale_x_continuous(expand = c(0, 0), breaks = year_break, labels = labels1) +
         theme_bw() +
         theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
         ylab("Estimated monthly per capita incidence") +
@@ -505,19 +570,12 @@ plot_attack_rates_monthly <- function(infection_histories, titre_dat, strain_iso
 #' Plot attack rate residuals
 #'
 #' Plots inferred historical attack rates from the MCMC output on infection histories compared against known attack rates.
-#' @param infection_histories the MCMC chain for infection histories
-#' @param titre_dat the data frame of titre data
-#' @param strain_isolation_times vector of the epochs of potential circulation
-#' @param true_ar data frame of true attack rates, with first column `year` equal to `strain_isolation_times`, and second column `AR` giving the attack rate
-#' @param n_alive vector with the number of people alive in each year of circulation. Can be left as NULL, and ages will be used to infer this
-#' @param pointsize Numeric - how big should each point be?
-#' @param fatten Numeric - fatten parameter for ggplot pointrange
-#' @param pad_chain if TRUE, fills the infection history data table with entries for non-infection events (ie. 0s). Can be switched to FALSE for speed to get a rough idea of what the attack rates look like.
-#' @param prior_pars if not NULL, a list of parameters for the attack rate prior, giving the assumed prior_version along with alpha and beta
+#' @inheritParams plot_attack_rates
 #' @return a ggplot2 object with the inferred attack rates for each potential epoch of circulation
 #' @export
 plot_attack_rate_residuals<- function(infection_histories, titre_dat, strain_isolation_times, true_ar,
-                                      n_alive = NULL, pointsize = 1, fatten = 1, pad_chain=TRUE, prior_pars=NULL) {
+                                      n_alive = NULL, pointsize = 1, fatten = 1, pad_chain=TRUE,
+                                      prior_pars=NULL) {
 
      ## Some year/sample combinations might have no infections there.
     ## Need to make sure that these get considered
@@ -569,14 +627,14 @@ plot_attack_rate_residuals<- function(infection_histories, titre_dat, strain_iso
         year_labels <- c(year_labels, "Prior")
     }
 
-    colnames(tmp)[2] <- "year"
+    colnames(tmp)[2] <- "time"
     true_ar1 <- true_ar
-    true_ar <- rbind(true_ar,data.frame(year=max(strain_isolation_times)+3,AR=median(prior_dens$V1)))
-    true_ar[true_ar$year ==max(strain_isolation_times)+3,"AR"] <- mean(true_ar1$AR)
-    tmp <- merge(tmp, true_ar,id.vars="year")
+    true_ar <- rbind(true_ar,data.frame(time=max(strain_isolation_times)+3,AR=median(prior_dens$V1)))
+    true_ar[true_ar$time ==max(strain_isolation_times)+3,"AR"] <- mean(true_ar1$AR)
+    tmp <- merge(tmp, true_ar,id.vars="time")
 
     p <- ggplot(tmp) +
-        geom_violin(aes(x = year, y = V1 - AR, fill=taken,group=year),
+        geom_violin(aes(x = time, y = V1 - AR, fill=taken,group=time),
                     draw_quantiles=c(0.5),scale="width") +
         scale_x_continuous(breaks=year_breaks,labels=year_labels)+
         geom_hline(yintercept=0,linetype="dashed") +
@@ -591,106 +649,155 @@ plot_attack_rate_residuals<- function(infection_histories, titre_dat, strain_iso
 #' Plot historical attack rates
 #'
 #' Plots inferred historical attack rates from the MCMC output on infection histories
-#' @inheritParams plot_attack_rate_residuals
-#' @param plot_den if TRUE, produces a violin plot of attack rates rather than pointrange.
+#' #' @param infection_histories the MCMC chain for infection histories
+#' @param titre_dat the data frame of titre data
+#' @param strain_isolation_times vector of the epochs of potential circulation
+#' @param true_ar data frame of true attack rates, with first column `year` equal to `strain_isolation_times`, and second column `AR` giving the attack rate
+#' @param n_alive vector with the number of people alive in each year of circulation. Can be left as NULL, and ages will be used to infer this
+#' @param pointsize Numeric - how big should each point be?
+#' @param fatten Numeric - fatten parameter for ggplot pointrange
+#' @param pad_chain if TRUE, fills the infection history data table with entries for non-infection events (ie. 0s). Can be switched to FALSE for speed to get a rough idea of what the attack rates look like.
+#' @param prior_pars if not NULL, a list of parameters for the attack rate prior, giving the assumed prior_version along with alpha and beta
+#' @param plot_den if TRUE, produces a violin plot of attack rates rather than pointrange
+#' @param true_ar if not NULL, data frame with the true attack rates by time and group. Column names: group, j, AR
+#' @param by_group if TRUE, facets the plot by group ID
+#' @param group_subset if not NULL, plots only this subset of groups eg. 1:5
+#' @param plot_residuals if TRUE, plots the residuals between inferred and true attack rate
 #' @return a ggplot2 object with the inferred attack rates for each potential epoch of circulation
 #' @export
 plot_attack_rates <- function(infection_histories, titre_dat, strain_isolation_times, n_alive = NULL,
-                              pointsize = 1, fatten = 1, pad_chain=TRUE, prior_pars=NULL,plot_den=FALSE) {
-    
+                              pointsize = 1, fatten = 1,
+                              pad_chain=TRUE, prior_pars=NULL,
+                              plot_den=FALSE,
+                              true_ar=NULL,by_group=FALSE, group_subset=NULL, plot_residuals=FALSE) {
     ## Some year/sample combinations might have no infections there.
     ## Need to make sure that these get considered
     if(is.null(infection_histories$chain_no)) {
         infection_histories$chain_no <- 1
     }
+
     if(pad_chain) infection_histories <- pad_inf_chain(infection_histories)
+    
+    ## Subset of groups to plot
+    if(is.null(group_subset)){
+        group_subset <- unique(titre_dat$group)
+    }
+    if(!by_group) titre_dat$group <- 1
+
     ## Find inferred total number of infections from the MCMC output
     ## Scale by number of individuals that were alive in each epoch
     ## and generate quantiles
     if (is.null(n_alive)) {
-        n_alive <- get_n_alive(titre_dat, strain_isolation_times)
+        n_alive <- as.data.frame(get_n_alive_group(titre_dat, strain_isolation_times))
+        n_alive$group <- 1:nrow(n_alive)
     }
-    
+    n_groups <- length(unique(titre_dat$group))
+    n_alive_tot <- get_n_alive(titre_dat, strain_isolation_times)
+    colnames(infection_histories)[1] <- "individual"
+    infection_histories <- merge(infection_histories,data.table(unique(titre_dat[,c("individual","group")])), by="individual")
     years <- c(strain_isolation_times,max(strain_isolation_times)+3)
-    data.table::setkey(infection_histories, "sampno", "j","chain_no")
+    data.table::setkey(infection_histories, "sampno", "j","chain_no","group")
     tmp <- infection_histories[, list(V1 = sum(x)), by = key(infection_histories)]
     tmp$taken <- years[tmp$j] %in% unique(titre_dat$samples)
     tmp$taken <- ifelse(tmp$taken, "Yes", "No")
     prior_dens <- NULL
-    n_alive1 <- n_alive
+
     if(!is.null(prior_pars)){
-        n_alive1 <- c(n_alive, 1)
+        n_alive$Prior <- 1
         prior_ver <- prior_pars[["prior_version"]]
         alpha1 <- prior_pars[["alpha"]]
         beta1 <- prior_pars[["beta"]]
         if(prior_ver == 3){
-            prior_dens <- rbinom(100000,size=max(n_alive),p=alpha1/(alpha1+beta1))/max(n_alive)
+            prior_dens <- rbinom(10000,size=max(n_alive_tot),p=alpha1/(alpha1+beta1))/max(n_alive_tot)
         } else {
-            prior_dens <- rbeta(100000,alpha1, beta1)
+            prior_dens <- rbeta(10000,alpha1, beta1)
         }
         prior_dens <- data.frame(sampno=1:length(prior_dens),j=max(tmp$j)+1,
-                                 chain_no=1, V1=prior_dens, taken="Prior")
-        tmp <- rbind(tmp, prior_dens)
-        
+                                 chain_no=1, V1=prior_dens, taken="Prior",group=1)
+        prior_dens_all <- NULL
+        for(i in 1:nrow(n_alive)){
+            prior_dens$group <- i
+            prior_dens_all <- rbind(prior_dens_all, prior_dens)
+        }
+        tmp <- rbind(tmp, prior_dens_all)        
     }
-    
+    n_alive_tmp <- melt(n_alive, id.vars="group")
+    n_alive_tmp$variable <- as.numeric(n_alive_tmp$variable)
+    colnames(n_alive_tmp) <- c("group","j","n_alive")
+    tmp <- merge(tmp, data.table(n_alive_tmp),by=c("group","j"))
+    tmp$V1 <- tmp$V1/tmp$n_alive
+
+    min_year <- min(strain_isolation_times)
+    max_year <- max(strain_isolation_times)
+    year_breaks <- c(min_year,seq(5*round(min_year/5),max_year,by=5))
+    year_labels <- c(min_year,seq(5*round(min_year/5),max_year,by=5))
+    if(!is.null(prior_dens)){
+        year_breaks <- c(year_breaks, max_year+3)
+        year_labels <- c(year_labels, "Prior")
+    }
     if(!plot_den){      
-        quantiles <- ddply(tmp, ~j, function(x) quantile(x$V1, c(0.025, 0.5, 0.975)))
-        colnames(quantiles) <- c("j", "lower", "median", "upper")
-        quantiles[c("lower", "median", "upper")] <- quantiles[c("lower", "median", "upper")] / n_alive1[quantiles$j]
+        quantiles <- ddply(tmp, .(j,group), function(x) quantile(x$V1, c(0.025, 0.5, 0.975)))
+        colnames(quantiles) <- c("j", "group","lower", "median", "upper")
+                                        #quantiles[c("lower", "median", "upper")] <- quantiles[c("lower", "median", "upper")]# / n_alive1[quantiles$j]
         quantiles$j <- years[quantiles$j]
         quantiles$taken <- quantiles$j %in% unique(titre_dat$samples)
-        quantiles$taken <- ifelse(quantiles$taken, "Yes", "No")
-
-        
-        min_year <- min(strain_isolation_times)
-        max_year <- max(strain_isolation_times)
-        year_breaks <- c(min_year,seq(5*round(min_year/5),max_year,by=5))
-        year_labels <- c(min_year,seq(5*round(min_year/5),max_year,by=5))
-        
+        quantiles$taken <- ifelse(quantiles$taken, "Yes", "No")            
         if(!is.null(prior_dens)){
-            year_breaks <- c(year_breaks, max_year+3)
-            year_labels <- c(year_labels, "Prior")
             quantiles[quantiles$j == max(years),"taken"] <- "Prior"
-        }
-        colnames(quantiles)[5] <- "Sample taken"
-
+        }       
+        colnames(quantiles)[6] <- "Sample taken"
+             
         ## Colour depending on whether or not titres were taken in each year       
-        
-        p <- ggplot(quantiles) +
+        p <- ggplot(quantiles[quantiles$group %in% group_subset,]) +
             geom_pointrange(aes(x = j, y = median, ymin = lower, ymax = upper,
-                                col = `Sample taken`), size = pointsize, fatten = fatten) +
-            scale_y_continuous(limits = c(0, 1), expand = c(0, 0)) +
-            scale_x_continuous(breaks=year_breaks,labels=year_labels)+
-            theme_classic() +
-            ylab("Estimated attack rate") +
-            xlab("Year")
+                                col = `Sample taken`), size = pointsize, fatten = fatten)
     } else {
-        tmp$V1 <- tmp$V1/n_alive1[tmp$j]
-        tmp$j <- years[tmp$j]
-        tmp$taken <- tmp$j %in% unique(titre_dat$samples)
-        tmp$taken <- ifelse(tmp$taken, "Yes", "No")
-        min_year <- min(strain_isolation_times)
-        max_year <- max(strain_isolation_times)
-        year_breaks <- c(min_year,seq(5*round(min_year/5),max_year,by=5))
-        year_labels <- c(min_year,seq(5*round(min_year/5),max_year,by=5))
-        if(!is.null(prior_dens)){
-            tmp[tmp$j == max(years),"taken"] <- "Prior"
-            year_breaks <- c(year_breaks, max_year+3)
-            year_labels <- c(year_labels, "Prior")
+        tmp$j <- years[tmp$j]  
+        
+        if(plot_residuals){
+            true_ar <- true_ar[,c("group","j","AR")]
+            if(!is.null(prior_pars)){
+                true_ar <- rbind(true_ar, data.frame(group=1:n_groups,
+                                                     j=max(strain_isolation_times),
+                                                     AR=median(prior_dens$V1)))
+            }
+            tmp <- merge(tmp, true_ar, by=c("group","j"))
+            tmp$V1 <- tmp$V1 - tmp$AR
         }
-        p <- ggplot(tmp) +
+        
+        p <- ggplot(tmp[tmp$group %in% group_subset,]) +
             geom_violin(aes(x = j, y = V1, fill=taken,group=j),
-                        draw_quantiles=c(0.5),scale="width") +
-            scale_x_continuous(breaks=year_breaks,labels=year_labels)+
-            scale_y_continuous(limits = c(0, 1), expand = c(0, 0)) +
-            theme_classic() +
-            theme(legend.position="none")+
-            ylab("Estimated attack rate") +
-            xlab("Year")
+                        draw_quantiles=c(0.5),scale="width")
+        
     } 
-    
-    
+    if(!is.null(true_ar) & !plot_residuals){
+        p <- p +
+            geom_point(data=true_ar[true_ar$group %in% group_subset,],aes(x=j,y=AR),
+                       col="purple",size=0.5)
+    }
+    if(!plot_residuals) {
+        p <- p +
+            scale_y_continuous(limits = c(0, 1), expand = c(0, 0))
+    }
+
+    p <- p + facet_wrap(~group,ncol=2) + 
+        scale_x_continuous(breaks=year_breaks,labels=year_labels)+
+        theme_classic() +
+        theme(legend.position="none")+
+        ylab("Estimated attack rate") +
+        xlab("Year")
+    if(plot_residuals){
+        p <- p + 
+            geom_hline(yintercept=0,linetype="dashed") + 
+            scale_y_continuous(limits=c(-1,1),expand=c(0,0))
+        p_res <- ggplot(tmp) + geom_density(aes(x=V1),fill="grey40") +
+            facet_wrap(~group) +
+            geom_vline(xintercept=0,linetype="dashed",colour="blue") +
+            scale_x_continuous(limits=c(-1,1)) +
+            theme_classic() + xlab("Estimated AR - true AR") + ylab("Density")
+        return(list(p, p_res))
+    }   
+
     return(p)
 }
 
@@ -706,6 +813,7 @@ pad_inf_chain <- function(inf_chain) {
     }
     is <- unique(inf_chain$i)
     js <- unique(inf_chain$j)
+    
     sampnos <- unique(inf_chain$sampno)
     chain_nos <- unique(inf_chain$chain_no)
     expanded_values <- data.table::CJ(

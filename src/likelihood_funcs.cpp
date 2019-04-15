@@ -40,7 +40,9 @@ double inf_mat_prior_cpp_vector(const IntegerMatrix& infection_history, const In
   for(int i = 0; i < n_alive.size(); ++i){ 
     m = sum(infection_history(_,i)); // Number of infections in that year
     n = n_alive(i); // Number of individuals alive in that year
-    lik += R::lbeta(m+alphas[i],n-m+betas[i]) - R::lbeta(alphas[i], betas[i]); // Contribution of augmented data and prior for that year
+    if(n > 0){
+      lik += R::lbeta(m+alphas[i],n-m+betas[i]) - R::lbeta(alphas[i], betas[i]); // Contribution of augmented data and prior for that year
+    }
   }
   return(lik);
 }
@@ -64,7 +66,10 @@ double inf_mat_prior_group_cpp(const IntegerMatrix& n_infections, const IntegerM
     for(int i = 0; i < n_alive.ncol(); ++i){
       m = n_infections(j,i);
       n = n_alive(j,i); // Number of individuals alive in that time
-      lik += R::lbeta(m+alpha,n-m+beta)-lbeta_const; // Contribution of augmented data and prior for that time
+      // Only solve if n > 0
+      if(n > 0){
+	lik += R::lbeta(m+alpha,n-m+beta)-lbeta_const; // Contribution of augmented data and prior for that time
+      }
     }
   }
   return(lik);

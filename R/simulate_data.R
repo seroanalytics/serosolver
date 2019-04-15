@@ -52,9 +52,9 @@ simulate_group <- function(n_indiv,
         ))
         ## Record individual ID
         y$indiv <- i
-        colnames(y) <- c("samples", "virus", "titre", "individual")
+        colnames(y) <- c("samples", "virus", "titre", "run","individual")
         ## Combine data
-        dat <- rbind(dat, y[, c("individual", "samples", "virus", "titre")])
+        dat <- rbind(dat, y[, c("individual", "samples", "virus", "titre","run")])
     }
     return(list(titre_dat=dat,infection_history=infection_histories))
 }
@@ -97,17 +97,18 @@ simulate_individual <- function(theta,
     rows_per_indiv <- c(0, n_samps)
     strain_indices <- match(strain_isolation_times, strain_isolation_times)-1
     measured_strain_indices <- match(rep(measured_strains,n_samps), strain_isolation_times)-1
-    dat <- matrix(nrow=length(measured_strain_indices),ncol=3)
+    dat <- matrix(nrow=length(measured_strain_indices)*repeats,ncol=4)
     titres <- titre_data_fast(theta, inf_hist, strain_isolation_times, strain_indices,
                               sampling_times, rows_per_indiv, cumu_rows,
                               rows_per_blood, measured_strain_indices,
                               antigenic_map_long, antigenic_map_short, mus, mu_indices)
-    titres <- rep(titres, each = repeats)
+    titres <- rep(titres, repeats)
     
     sampling_times <- rep(sampling_times, rows_per_blood)
-    sampling_times <- rep(sampling_times, each = repeats)
+    enum_repeats <- rep(1:repeats, each=length(sampling_times))
+    sampling_times <- rep(sampling_times, repeats)
     dat[, 1] <- sampling_times
-    dat[, 2] <- rep(measured_strains, each = repeats)
+    dat[, 2] <- rep(rep(measured_strains, n_samps), repeats)
     if (add_noise) {
         if (!is.null(measurement_indices)) {
             dat[, 3] <- add_noise(titres, theta, measurement_bias, measurement_indices[match(dat[, 2], strains)])
@@ -117,6 +118,7 @@ simulate_individual <- function(theta,
     } else {
         dat[, 3] <- titres
     }
+    dat[,4] <- enum_repeats
     return(dat)
     
 }
@@ -359,7 +361,7 @@ simulate_data <- function(par_tab,
     
     ## Randomly censor titre values
     y$titre <- y$titre * sample(c(NA, 1), nrow(y), prob = c(titre_sensoring, 1 - titre_sensoring), replace = TRUE)
-    y$run <- 1
+    #y$run <- 1
     y$group <- 1
 
     ages <- data.frame("individual" = 1:n_indiv, "DOB" = DOBs)

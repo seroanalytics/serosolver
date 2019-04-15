@@ -6,11 +6,10 @@
 \usage{
 plot_attack_rates(infection_histories, titre_dat, strain_isolation_times,
   n_alive = NULL, pointsize = 1, fatten = 1, pad_chain = TRUE,
-  prior_pars = NULL, plot_den = FALSE)
+  prior_pars = NULL, plot_den = FALSE, true_ar = NULL,
+  by_group = FALSE, group_subset = NULL, plot_residuals = FALSE)
 }
 \arguments{
-\item{infection_histories}{the MCMC chain for infection histories}
-
 \item{titre_dat}{the data frame of titre data}
 
 \item{strain_isolation_times}{vector of the epochs of potential circulation}
@@ -25,11 +24,22 @@ plot_attack_rates(infection_histories, titre_dat, strain_isolation_times,
 
 \item{prior_pars}{if not NULL, a list of parameters for the attack rate prior, giving the assumed prior_version along with alpha and beta}
 
-\item{plot_den}{if TRUE, produces a violin plot of attack rates rather than pointrange.}
+\item{plot_den}{if TRUE, produces a violin plot of attack rates rather than pointrange}
+
+\item{true_ar}{data frame of true attack rates, with first column `year` equal to `strain_isolation_times`, and second column `AR` giving the attack rate}
+
+\item{by_group}{if TRUE, facets the plot by group ID}
+
+\item{group_subset}{if not NULL, plots only this subset of groups eg. 1:5}
+
+\item{plot_residuals}{if TRUE, plots the residuals between inferred and true attack rate}
+
+\item{true_ar}{if not NULL, data frame with the true attack rates by time and group. Column names: group, time, AR}
 }
 \value{
 a ggplot2 object with the inferred attack rates for each potential epoch of circulation
 }
 \description{
 Plots inferred historical attack rates from the MCMC output on infection histories
+#' @param infection_histories the MCMC chain for infection histories
 }

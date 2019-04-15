@@ -6,11 +6,10 @@
 \usage{
 plot_attack_rates_monthly(infection_histories, titre_dat,
   strain_isolation_times, n_alive = NULL, ymax = 1, buckets = 1,
-  pad_chain = TRUE, cumulative = FALSE)
+  pad_chain = TRUE, true_ar = NULL, by_group = FALSE,
+  group_subset = NULL, cumulative = FALSE)
 }
 \arguments{
-\item{infection_histories}{the MCMC chain for infection histories}
-
 \item{titre_dat}{the data frame of titre data}
 
 \item{strain_isolation_times}{vector of the epochs of potential circulation}
@@ -22,6 +21,12 @@ plot_attack_rates_monthly(infection_histories, titre_dat,
 \item{buckets}{Integer. How many buckets of time is each year split into? ie. 12 for monthly data, 4 for quarterly etc. Default = 1.}
 
 \item{pad_chain}{if TRUE, fills the infection history data table with entries for non-infection events (ie. 0s). Can be switched to FALSE for speed to get a rough idea of what the attack rates look like.}
+
+\item{true_ar}{data frame of true attack rates, with first column `year` equal to `strain_isolation_times`, and second column `AR` giving the attack rate}
+
+\item{by_group}{if TRUE, facets the plot by group ID}
+
+\item{group_subset}{if not NULL, plots only this subset of groups eg. 1:5}
 
 \item{cumulative}{if TRUE, plots the cumulative attack rate}
 }
