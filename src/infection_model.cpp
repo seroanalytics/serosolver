@@ -61,7 +61,8 @@ NumericVector titre_data_fast(const NumericVector &theta,
   
   // Pull out model parameters so only need to allocate once
   double mu = theta["mu"];
-  double mu_short = theta["mu_short"];
+  double a = theta["a"];
+  double mu_short = mu/a;
   double wane = theta["wane"];
   double tau = theta["tau"];
   

@@ -114,7 +114,8 @@ List infection_history_proposal_gibbs_fast(const NumericVector &theta, // Model 
 
   // Extract parameters first to avoid allocation costs
   double mu = theta["mu"];
-  double mu_short = theta["mu_short"];
+  double a = theta["a"];
+  double mu_short = mu/a;
   double wane = theta["wane"];
   double tau = theta["tau"];
   double seniority;

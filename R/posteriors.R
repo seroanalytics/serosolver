@@ -112,8 +112,11 @@ create_posterior_func <- function(par_tab,
         names(theta) <- par_names_theta
         
         ## Work out short and long term boosting cross reactivity - C++ function
-        antigenic_map_long <- create_cross_reactivity_vector(antigenic_map_melted, theta["sigma1"])
-        antigenic_map_short <- create_cross_reactivity_vector(antigenic_map_melted, theta["sigma2"])
+        sigma1 <- theta["sigma1"]
+        sigma2 <- sigma1*theta["b"]
+        
+        antigenic_map_long <- create_cross_reactivity_vector(antigenic_map_melted, sigma1)
+        antigenic_map_short <- create_cross_reactivity_vector(antigenic_map_melted, sigma2)
 
         ## Now pass to the C++ function
         y <- titre_data_group(
@@ -203,8 +206,12 @@ create_posterior_func <- function(par_tab,
       names(theta) <- par_names_theta
       
       ## Work out short and long term boosting cross reactivity - C++ function
-      antigenic_map_long <- create_cross_reactivity_vector(antigenic_map_melted, theta["sigma1"])
-      antigenic_map_short <- create_cross_reactivity_vector(antigenic_map_melted, theta["sigma2"])
+      sigma1 <- theta["sigma1"]
+      sigma2 <- sigma1*theta["b"]
+      
+      antigenic_map_long <- create_cross_reactivity_vector(antigenic_map_melted, sigma1)
+      antigenic_map_short <- create_cross_reactivity_vector(antigenic_map_melted, sigma2)
+      
       ## Now pass to the C++ function
       new_infection_history_mat <- infection_history_proposal_gibbs(
         theta,
@@ -254,8 +261,11 @@ create_posterior_func <- function(par_tab,
       names(theta) <- par_names_theta
 
       ## Work out short and long term boosting cross reactivity - C++ function
-      antigenic_map_long <- create_cross_reactivity_vector(antigenic_map_melted, theta["sigma1"])
-      antigenic_map_short <- create_cross_reactivity_vector(antigenic_map_melted, theta["sigma2"])
+      sigma1 <- theta["sigma1"]
+      sigma2 <- sigma1*theta["b"]
+      
+      antigenic_map_long <- create_cross_reactivity_vector(antigenic_map_melted, sigma1)
+      antigenic_map_short <- create_cross_reactivity_vector(antigenic_map_melted, sigma2)
 
       ## Now pass to the C++ function
       y <- titre_data_group(
@@ -624,8 +634,11 @@ create_posterior_func_fast <- function(par_tab,
               mus <- pars[mu_indices_par_tab]
           }
           
-          antigenic_map_long <- create_cross_reactivity_vector(antigenic_map_melted, theta["sigma1"])
-          antigenic_map_short <- create_cross_reactivity_vector(antigenic_map_melted, theta["sigma2"])
+          sigma1 <- theta["sigma1"]
+          sigma2 <- sigma1*theta["b"]
+          
+          antigenic_map_long <- create_cross_reactivity_vector(antigenic_map_melted, sigma1)
+          antigenic_map_short <- create_cross_reactivity_vector(antigenic_map_melted, sigma2)
 
           y_new <- titre_data_fast(
               theta, infection_history_mat, strain_isolation_times, infection_strain_indices,
@@ -688,8 +701,11 @@ create_posterior_func_fast <- function(par_tab,
             titre_shifts <- measurement_bias[expected_indices]
         }
         ## Work out short and long term boosting cross reactivity - C++ function
-        antigenic_map_long <- create_cross_reactivity_vector(antigenic_map_melted, theta["sigma1"])
-        antigenic_map_short <- create_cross_reactivity_vector(antigenic_map_melted, theta["sigma2"])
+        sigma1 <- theta["sigma1"]
+        sigma2 <- sigma1*theta["b"]
+        
+        antigenic_map_long <- create_cross_reactivity_vector(antigenic_map_melted, sigma1)
+        antigenic_map_short <- create_cross_reactivity_vector(antigenic_map_melted, sigma2)
         
         ## Now pass to the C++ function
         res <- infection_history_proposal_gibbs_fast(
@@ -736,8 +752,11 @@ create_posterior_func_fast <- function(par_tab,
               mus <- pars[mu_indices_par_tab]
           }
 
-          antigenic_map_long <- create_cross_reactivity_vector(antigenic_map_melted, theta["sigma1"])
-          antigenic_map_short <- create_cross_reactivity_vector(antigenic_map_melted, theta["sigma2"])
+          sigma1 <- theta["sigma1"]
+          sigma2 <- sigma1*theta["b"]
+          
+          antigenic_map_long <- create_cross_reactivity_vector(antigenic_map_melted, sigma1)
+          antigenic_map_short <- create_cross_reactivity_vector(antigenic_map_melted, sigma2)
           
           y_new <- titre_data_fast(
               theta, infection_history_mat, strain_isolation_times, infection_strain_indices,

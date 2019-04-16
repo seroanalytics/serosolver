@@ -293,7 +293,6 @@ run_MCMC <- function(par_tab,
 
   ## Initial posterior prob
   posterior <- total_likelihood + prior_prob
-
   message(cat("Starting theta posterior probability: ", posterior, sep = "\t"))
   ###############
 

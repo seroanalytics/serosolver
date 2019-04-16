@@ -60,8 +60,11 @@ solve_model_individual <- function(par_tab, infection_history, sample_time, anti
   names(theta) <- par_names_theta
 
   ## Work out short and long term boosting cross reactivity - C++ function
-  antigenic_map_long <- create_cross_reactivity_vector(antigenic_map_melted, theta["sigma1"])
-  antigenic_map_short <- create_cross_reactivity_vector(antigenic_map_melted, theta["sigma2"])
+  sigma1 <- theta["sigma1"]
+  sigma2 <- sigma1*theta["b"]
+  
+  antigenic_map_long <- create_cross_reactivity_vector(antigenic_map_melted, sigma1)
+  antigenic_map_short <- create_cross_reactivity_vector(antigenic_map_melted, sigma2)
 
   y <- infection_model_indiv(
     theta, infection_history, strain_isolation_times, strain_indices, sample_time,

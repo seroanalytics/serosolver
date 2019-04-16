@@ -22,8 +22,9 @@ void multiple_infection_strain_dependent(NumericVector &predicted_titres,
 					 List additional_arguments){
   int n_samples = measurement_map_indices.size();
   int max_infections = cumu_infection_history.size();
-  double mu;
-  double mu_short = theta["mu_short"];
+  double mu = theta["mu"];
+  double a = theta["a"];
+  double mu_short = mu/a;
   double tau = theta["tau"];
   double n_inf, inf_map_index, wane;
   NumericVector mus = additional_arguments["mus"];
@@ -65,7 +66,8 @@ void multiple_infection_base_boosting(NumericVector &predicted_titres,
 				      ){
   int index;
   double mu = theta["mu"];
-  double mu_short = theta["mu_short"];
+  double a = theta["a"];
+  double mu_short = mu/a;
   double senior, inf_map_index, wane;
 
   for(int i = 0; i < max_infections; ++i){
@@ -109,7 +111,8 @@ void multiple_infection_titre_dependent_boost(NumericVector &predicted_titres,
    double circulation_time;
 
    double mu = theta["mu"];
-   double mu_short = theta["mu_short"];
+   double a = theta["a"];
+   double mu_short = mu/a;
    double tau = theta["tau"];
    double gradient = theta["gradient"];
    double boost_limit = theta["boost_limit"];
