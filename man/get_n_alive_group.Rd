@@ -4,12 +4,14 @@
 \alias{get_n_alive_group}
 \title{Get number alive bylocation}
 \usage{
-get_n_alive_group(titre_dat, times)
+get_n_alive_group(titre_dat, times, melt_dat = FALSE)
 }
 \arguments{
 \item{titre_dat}{the data frame of titre data}
 
 \item{times}{the vector of times to calculate number alive for}
+
+\item{melt_dat}{if TRUE, returns a melted data frame. Returns a wide matrix otherwise.}
 }
 \value{
 a matrix giving the number alive in each time point in each location

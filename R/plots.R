@@ -385,6 +385,8 @@ calculate_infection_history_statistics <- function(inf_chain, burnin=0, years=NU
     
     if(!is.null(group_ids)) {
       inf_chain <- merge(inf_chain, data.table(group_ids))
+    } else {
+        inf_chain$group <- 1
     }
     
     message("Calculating by time summaries...")

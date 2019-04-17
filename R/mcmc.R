@@ -145,6 +145,11 @@ run_MCMC <- function(par_tab,
     if ("phi" %in% par_names) {
         phi_indices <- which(par_tab$names == "phi")
     }
+
+    if("psi" %in% par_names){
+        psi_indices <- which(par_tab$names == "psi")
+    }
+    
     alpha <- par_tab[par_tab$names == "alpha", "values"]
     beta <- par_tab[par_tab$names == "beta", "values"]
 
@@ -279,19 +284,21 @@ run_MCMC <- function(par_tab,
         prior_probab <- 0
 
         ## If prior version 2 or 4
-        if (hist_proposal == 2) {
-            ## Prior version 4
-            if (prior_on_total) {
-                n_infections <- sum_infections_by_group(prior_infection_history, group_ids_vec, n_groups)
-                n_infections_group <- rowSums(n_infections)
-                prior_probab <- prior_probab + inf_mat_prior_total_group_cpp(n_infections_group,
-                                                                             n_alive_tot, alpha, beta)
-            } else {
-                ## Prior version 2
-                n_infections <- sum_infections_by_group(prior_infection_history, group_ids_vec, n_groups)
-                if(any(n_infections > n_alive)) print("error")
+        if(FALSE){
+            if (hist_proposal == 2) {
+                ## Prior version 4
+                if (prior_on_total) {
+                    n_infections <- sum_infections_by_group(prior_infection_history, group_ids_vec, n_groups)
+                    n_infections_group <- rowSums(n_infections)
+                    prior_probab <- prior_probab + inf_mat_prior_total_group_cpp(n_infections_group,
+                                                                                 n_alive_tot, alpha, beta)
+                } else {
+                    ## Prior version 2
+                    n_infections <- sum_infections_by_group(prior_infection_history, group_ids_vec, n_groups)
+                    if(any(n_infections > n_alive)) print("error")
 
-                prior_probab <- prior_probab + inf_mat_prior_group_cpp(n_infections, n_alive, alpha, beta)
+                    prior_probab <- prior_probab + inf_mat_prior_group_cpp(n_infections, n_alive, alpha, beta)
+                }
             }
         }
         if (!is.null(CREATE_PRIOR_FUNC)) prior_probab <- prior_probab + prior_func(prior_pars)
@@ -608,7 +615,7 @@ run_MCMC <- function(par_tab,
         ## ADAPTIVE PERIOD
 ##############################
         ## If within adaptive period, need to do some adapting!
-        if (i > (adaptive_period + burnin) & i %% opt_freq == 0) {
+        if (i > (adaptive_period + burnin) & i %% opt_freq == 0) { 
             pcur <- tempaccepted / tempiter ## get current acceptance rate
             message(cat("Pcur: ", signif(pcur, 3), sep = "\t"))
             message(cat("Step sizes: ", signif(steps, 3), sep = "\t"))
@@ -620,7 +627,9 @@ run_MCMC <- function(par_tab,
             if(hist_proposal != 2){
                 pcur_hist <- histaccepted / histiter ## Overall
                 pcur_hist_add <- histaccepted_add / histiter_add ## For adding
+                pcur_hist_move <- histaccepted_move / histiter_move ## For adding
                 message(cat("Pcur hist add: ", head(signif(pcur_hist_add, 3)), sep = "\t"))
+                message(cat("Pcur hist move: ", head(signif(pcur_hist_move, 3)), sep = "\t"))
                 
                 histiter <- integer(n_indiv)
                 histaccepted <- integer(n_indiv)

@@ -34,7 +34,7 @@ plot_attack_rates(infection_histories, titre_dat, strain_isolation_times,
 
 \item{plot_residuals}{if TRUE, plots the residuals between inferred and true attack rate}
 
-\item{true_ar}{if not NULL, data frame with the true attack rates by time and group. Column names: group, time, AR}
+\item{true_ar}{if not NULL, data frame with the true attack rates by time and group. Column names: group, j, AR}
 }
 \value{
 a ggplot2 object with the inferred attack rates for each potential epoch of circulation

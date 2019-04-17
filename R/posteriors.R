@@ -53,7 +53,6 @@ calc_phi_probs <- function(phis, infection_history, age_mask, strain_mask) {
 #' @inheritParams calc_phi_probs
 #' @return a vector of log probabilities for each individual
 #' @export
-
 calc_phi_probs_indiv <- function(phis, infection_history, age_mask, strain_mask) {
     lik <- numeric(nrow(infection_history))
     for (i in 1:ncol(infection_history)) {
@@ -61,6 +60,21 @@ calc_phi_probs_indiv <- function(phis, infection_history, age_mask, strain_mask)
     }
     lik
 }
+
+#' @export
+calc_phi_loc_probs_indiv <- function(phis, group_probs, infection_history, age_mask, strain_mask, group_indices) {
+    lik <- numeric(nrow(infection_history))
+    max_group_p <- max(group_probs)
+    group_probs <- group_probs/max_group_p
+    for (i in 1:ncol(infection_history)) {
+        tmp <- (infection_history[,i]*log(phis[i]*group_probs[group_indices]) +
+                (1-infection_history[,i])*log(1-phis[i]*group_probs[group_indices]))*
+            as.numeric(age_mask <= i) * as.numeric(strain_mask >= i)
+        lik <- lik + tmp
+    }
+    lik
+}
+
 
 #' Calculate FOI from spline
 #' 
@@ -295,6 +309,7 @@ create_posterior_func <- function(par_tab,
     option_indices <- which(par_tab$type == 0)
     theta_indices <- which(par_tab$type %in% c(0, 1))
     phi_indices <- which(par_tab$type == 2)
+    psi_indices <- which(par_tab$type == 7)
     measurement_indices_par_tab <- which(par_tab$type == 3)
     weights_indices <- which(par_tab$type == 4) ## For functional form version
     knot_indices <- which(par_tab$type == 5)
@@ -317,6 +332,7 @@ create_posterior_func <- function(par_tab,
 
     ## Find which options are being used in advance for speed
     explicit_phi <- (length(phi_indices) > 0)
+    explicit_psi <- (length(psi_indices) > 0)
     spline_phi <- (length(knot_indices) > 0)
     use_measurement_bias <- (length(measurement_indices_par_tab) > 0) & !is.null(measurement_indices_by_time)
     titre_shifts <- c(0)
@@ -325,6 +341,10 @@ create_posterior_func <- function(par_tab,
     use_strain_dependent <- (length(mu_indices) > 0) & !is.null(mu_indices)
     additional_arguments <- NULL
 
+    if(!explicit_psi){
+        psis <- rep(1, n_groups)
+    }
+    
     if (use_measurement_bias) {
         expected_indices <- measurement_indices_by_time[match(titre_dat_unique$virus, strain_isolation_times)]
     } else {
@@ -373,7 +393,13 @@ create_posterior_func <- function(par_tab,
 
                 if (explicit_phi) {
                     phis <- pars[phi_indices]
-                    liks <- liks + calc_phi_probs_indiv(phis, infection_history_mat, age_mask, strain_mask)
+                    if(explicit_psi){
+                        psis <- pars[psi_indices]
+                        liks <- liks + calc_phi_loc_probs_indiv(phis, psis, infection_history_mat,
+                                                                age_mask, strain_mask, group_id_vec+1)
+                    } else {
+                        liks <- liks + calc_phi_probs_indiv(phis, infection_history_mat, age_mask, strain_mask)
+                    }
                 }
                 
                 ## If using spline term for FOI, add here
@@ -411,7 +437,12 @@ create_posterior_func <- function(par_tab,
             if (use_strain_dependent) {
                 mus <- pars[mu_indices_par_tab]
             }
-
+            if(explicit_psi){
+                psis <- pars[psi_indices]
+                max_group_p <- max(psis)
+                #print(psis)
+                psis <- psis/max_group_p
+            }
             if (use_measurement_bias) {
                 measurement_bias <- pars[measurement_indices_par_tab]
                 titre_shifts <- measurement_bias[expected_indices]

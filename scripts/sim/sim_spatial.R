@@ -198,7 +198,7 @@ chain <- read.csv(res$chain_file)
 chain <- chain[chain$sampno >= (mcmc_pars["adaptive_period"]+mcmc_pars["burnin"]),]
 #plot(coda::as.mcmc(chain))
 
-inf_chain <- data.table::fread(res$history_file)
+inf_chain <- data.table::fread(res1$history_file)
 inf_chain <- inf_chain[inf_chain$sampno >= (mcmc_pars["adaptive_period"]+mcmc_pars["burnin"]),]
 #n_alive <- sapply(1:length(strain_isolation_times), function(x) length(age_mask[age_mask<=x]))
 #n_alive <- get_n_alive(titre_dat, strain_isolation_times)

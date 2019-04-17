@@ -4,8 +4,8 @@ setwd("~/Documents/Fluscape/serosolver")
 fluscapeWD <- "~/Documents/Fluscape"
 devtools::load_all()
 setwd(fluscapeWD)
-resolution <- "annual"
-buckets <- 1
+resolution <- "quarterly"
+buckets <- 4
 use_buckets <- 1/buckets
 firstYear <- 1968
 lastYear <- 2015
@@ -155,7 +155,7 @@ finalDat$virus <- ceiling(finalDat$virus/use_buckets)
 ages$DOB <- ceiling(ages$DOB/use_buckets)
 ages[is.na(ages$DOB),"DOB"] <- 1933*use_buckets
 
-setwd("~/net/home/serosolver/data_Oct2018")
+setwd("~/Documents/Fluscape/serosolver/data/real")
 all_dat <- merge(finalDat, ages)
 all_dat <- all_dat[order(all_dat$group,all_dat$individual,all_dat$samples,all_dat$run),c("group","individual","samples","virus","titre","run","DOB","Participant_ID")]
 

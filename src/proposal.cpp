@@ -177,7 +177,7 @@ List inf_hist_prop_prior_v2_and_v4(const NumericVector &theta, // Model paramete
 				   const NumericVector &titre_shifts,
 				   const NumericVector &mus,
 				   const IntegerVector &boosting_vec_indices,
-				   const IntegerVector &total_alive,				   
+				   const IntegerVector &total_alive,
 				   const double temp=1,
 				   bool solve_likelihood=true				   
 				   ){
@@ -438,7 +438,6 @@ List inf_hist_prop_prior_v2_and_v4(const NumericVector &theta, // Model paramete
 	}
 	// Work out proposal ratio - prior from alpha, beta and number of other infections
 	ratio = (m + alpha)/(n + alpha + beta);
-	
 	// Propose 1 or 0 based on this ratio
 	rand1 = R::runif(0,1);	
 	if(rand1 < ratio){
