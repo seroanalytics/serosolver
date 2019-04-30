@@ -63,6 +63,25 @@ check_data <- function(data) {
     }
 }
 
+#' Checks the entries of inf_data used in run_MCMC
+#' @param inf_data infection data matrix
+#' @param par_tab the parameter table controlling information such as bounds, initial values etc
+#' @param strain_isolation_times the strain isolation times
+#' @param n_indiv the number of inidviduals
+#' @return nothing at the moment
+#' @export
+check_inf_dat <- function(inf_dat, par_tab, strain_isolation_times,n_indiv) {
+  # Check that there is a sensitivity parameter present
+  if(!any(par_tab$names=="delta")) stop("Expecting sensitivity parameter, delta in par_tab if inf_dat is not NULL.")
+  
+  # Check that inf_dat is the correct dimension (correct number of indiviuals and time points)
+  if(dim(inf_dat)[1]!=n_indiv) stop("inf dat should have the same number of rows as the number of individuals. Use NA for missing data points.")
+ 
+  if(dim(inf_dat)[2]!=length(strain_isolation_times)) stop("inf dat should have the same number of columns as the number of strain isolation times. Use NA for missing data points.")
+  
+}
+
+
 #' Checks the attack_rates supplied in simulate_data
 #' @param attack_rates a vector of attack_rates to be used in the simulation
 #' @param strain_isolation_times vector of strain ciruclation times

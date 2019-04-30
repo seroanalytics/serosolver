@@ -6,6 +6,7 @@
 #' @param antigenic_map A data frame of antigenic x and y coordinates. Must have column names: x_coord; y_coord; inf_years
 #' @param mcmc_pars Named vector named vector with parameters for the MCMC procedure. See details
 #' @param mvr_pars Leave NULL to use univariate proposals. Otherwise, a list of parameters if using a multivariate proposal. Must contain an initial covariance matrix, weighting for adapting cov matrix, and an initial scaling parameter (0-1)
+#' @param inf_dat Infection data, must be the same dimension as start_inf_hist if used. Leave NULL if no infection data is to be used.
 #' @param start_inf_hist Infection history matrix to start MCMC at. Can be left NULL
 #' @param filename The full filepath at which the MCMC chain should be saved. "_chain.csv" will be appended to the end of this, so filename should have no file extensions
 #' @param CREATE_POSTERIOR_FUNC Pointer to posterior function used to calculate a likelihood. This will probably be \code{\link{create_posterior_func}}, but if might also be \code{\link{create_posterior_func_fast}}
@@ -48,6 +49,7 @@ run_MCMC <- function(par_tab,
                      antigenic_map,
                      mcmc_pars = c(),
                      mvr_pars = NULL,
+                     inf_dat=NULL,
                      start_inf_hist = NULL,
                      filename = "test",
                      CREATE_POSTERIOR_FUNC = create_posterior_func,
@@ -184,6 +186,11 @@ run_MCMC <- function(par_tab,
   strain_isolation_times <- unique(antigenic_map$inf_years) # How many strains are we testing against and what time did they circulate
   n_indiv <- length(unique(titre_dat$individual)) # How many individuals in the titre_dat?
 
+  ## If inf_dat is passed, check the entry
+  if(!is.null(inf_dat)){
+    check_inf_dat(inf_dat, par_tab, strain_isolation_times,n_indiv)
+  }
+  
   ###################
   ## Housekeeping for infection history chain
   ###################
@@ -269,6 +276,11 @@ run_MCMC <- function(par_tab,
     likelihoods <- posterior_simp(current_pars, infection_histories) / temp
     ## Initial total likelihood
     total_likelihood <- sum(likelihoods)
+    ## If there is infection data, calculate the additional likelihood contribution 
+    if(!is.null(inf_dat)){
+      total_likelihood <- total_likelihood + inf_likelihood(inf_dat,infection_histories,current_pars,par_tab)
+    } 
+    
     n_alive_tot <- sum(n_alive)
     ## Create closure to add extra prior probabilities, to avoid re-typing later
     extra_probabilities <- function(prior_pars, prior_infection_history) {
@@ -367,6 +379,10 @@ run_MCMC <- function(par_tab,
         ## Calculate new likelihood for these parameters
         new_likelihoods <- posterior_simp(proposal, infection_histories) / temp # For each individual
         new_total_likelihood <- sum(new_likelihoods) # Total
+        ## If there is infection data, calculate the additional likelihood contribution 
+        if(!is.null(inf_dat)){
+          new_total_likelihood <- new_total_likelihood + inf_likelihood(inf_dat,new_infection_histories,proposal,par_tab)
+        } 
         new_prior_prob <- extra_probabilities(proposal, infection_histories) # Prior
         new_posterior <- new_total_likelihood + new_prior_prob # Posterior
         ## Otherwise, resample infection history
@@ -467,6 +483,12 @@ run_MCMC <- function(par_tab,
         new_likelihoods <- posterior_simp(proposal, new_infection_histories) / temp
       }
         new_total_likelihood <- sum(new_likelihoods)
+        
+      ## If there is infection data, calculate the additional likelihood contribution 
+      if(!is.null(inf_dat)){
+        new_total_likelihood <- new_total_likelihood + inf_likelihood(inf_dat,new_infection_histories,proposal,par_tab)
+      } 
+        
        # print(proposal)
        # print(new_infection_histories)
       new_prior_prob <- extra_probabilities(proposal, new_infection_histories)
