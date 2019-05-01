@@ -381,7 +381,7 @@ run_MCMC <- function(par_tab,
         new_total_likelihood <- sum(new_likelihoods) # Total
         ## If there is infection data, calculate the additional likelihood contribution 
         if(!is.null(inf_dat)){
-          new_total_likelihood <- new_total_likelihood + inf_likelihood(inf_dat,new_infection_histories,proposal,par_tab)
+          new_total_likelihood <- new_total_likelihood + inf_likelihood(inf_dat,infection_histories,proposal,par_tab)
         } 
         new_prior_prob <- extra_probabilities(proposal, infection_histories) # Prior
         new_posterior <- new_total_likelihood + new_prior_prob # Posterior

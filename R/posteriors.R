@@ -765,7 +765,6 @@ create_posterior_func_fast <- function(par_tab,
 #' @return log likelihood value
 #' @export
 inf_likelihood<-function(inf_dat,infection_histories,pars,par_tab){
-  
   theta_indices <- which(par_tab$type %in% c(0, 1))
   par_names_theta <- par_tab[theta_indices, "names"]
   theta <- pars[theta_indices]
@@ -777,8 +776,7 @@ inf_likelihood<-function(inf_dat,infection_histories,pars,par_tab){
   #of the infected in X
   inf_vec<-infection_histories[which(infection_histories==1)]
   #what's the match with Y
-  obs_vec<-inf_dat[which(inf_dat==1)]
-  
+  obs_vec<-inf_dat[which(infection_histories==1)]
   #calculate LOG likleihood
   lik<-sum(dbinom(x=obs_vec,size=inf_vec,prob=rho,log=T),na.rm=T)
   
