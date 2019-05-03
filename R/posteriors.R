@@ -773,12 +773,22 @@ inf_likelihood<-function(inf_dat,infection_histories,pars,par_tab){
   #extract sensitivity parameter from parTab 
   rho <- theta["delta"]
   
-  #of the infected in X
-  inf_vec<-infection_histories[which(infection_histories==1)]
-  #what's the match with Y
-  obs_vec<-inf_dat[which(infection_histories==1)]
+  infection_histories_NA<-infection_histories[which(!is.na(inf_dat))]
+  inf_dat_NA<-inf_dat[which(!is.na(inf_dat))]
+  
+  #of the infected and susceptible in infection histories
+  inf_vec<-length(which(infection_histories_NA==1))
+  sus_vec<-length(which(infection_histories_NA==0))
+  
+  #how do the results match with the observation 
+  obs_vec_inf<-inf_dat_NA[which(infection_histories_NA==1)]
+  sum_obs_vec_inf<-length(which(obs_vec_inf==1))
+  
+  obs_vec_sus<-inf_dat_NA[which(infection_histories_NA==0)]
+  sum_obs_vec_sus<-length(which(obs_vec_sus==0))
+  
   #calculate LOG likleihood
-  lik<-sum(dbinom(x=obs_vec,size=inf_vec,prob=rho,log=T),na.rm=T)
+  lik<-sum(dbinom(x=sum_obs_vec_inf,size=inf_vec,prob=rho,log=T),na.rm=T)+sum(dbinom(x=sum_obs_vec_sus,size=sus_vec,prob=0.99,log=T),na.rm=T)
   
   return(lik)
 }
