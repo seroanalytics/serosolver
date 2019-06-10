@@ -347,26 +347,6 @@ setup_titredat_for_posterior_func <- function(titre_dat, antigenic_map, age_mask
 
 
 
-#' Calculate FOI log probability vector
-#'
-#' Given a vector of FOIs for all circulating years, a matrix of infection histories and the vector specifying if individuals were alive or not, returns the log probability of the FOIs given the infection histories.
-#' @inheritParams calc_phi_probs
-#' @return a vector of log probabilities for each individual
-#' @export
-calc_phi_probs_indiv_titre <- function(phis, infection_history, age_mask, strain_mask) {
-    lik <- numeric(nrow(infection_history))
-    for(j in 1:nrow(infection_history)){
-        for (i in 1:ncol(infection_history)) {
-            p_inf <- p_infection(phis[i], titres[j,i], alpha1, beta1)
-            lik <- lik + log((p_inf^infection_history[j,i] *
-                              (1-p_inf)^(1-infection_history[j,i]))*
-                             as.numeric(age_mask <= i) *
-                             as.numeric(strain_mask >= i))
-        }
-    }
-  lik
-}
-
 
 #' Calculate titre protection
 #'

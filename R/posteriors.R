@@ -56,7 +56,12 @@ calc_phi_probs <- function(phis, infection_history, age_mask, strain_mask) {
 calc_phi_probs_indiv <- function(phis, infection_history, age_mask, strain_mask) {
     lik <- numeric(nrow(infection_history))
     for (i in 1:ncol(infection_history)) {
-        lik <- lik + log(((phis[i]^infection_history[, i]) * (1 - phis[i])^(1 - infection_history[, i]))) * as.numeric(age_mask <= i) * as.numeric(strain_mask >= i)
+        to_add <- log(((phis[i]^infection_history[, i]) *
+            (1 - phis[i])^(1 - infection_history[, i]))) *
+            as.numeric(age_mask <= i) *
+            as.numeric(strain_mask >= i)
+        lik <- lik + to_add
+        
     }
     lik
 }
@@ -74,6 +79,32 @@ calc_phi_loc_probs_indiv <- function(phis, group_probs, infection_history, age_m
     }
     lik
 }
+
+
+#' Calculate FOI log probability vector
+#'
+#' Given a vector of FOIs for all circulating years, a matrix of infection histories and the vector specifying if individuals were alive or not, returns the log probability of the FOIs given the infection histories.
+#' @inheritParams calc_phi_probs
+#' @return a vector of log probabilities for each individual
+#' @export
+calc_phi_probs_indiv_titre <- function(phis, titres, infection_history, age_mask, strain_mask, alpha1, beta1) {
+    lik <- numeric(nrow(infection_history))
+    for(j in 1:nrow(infection_history)){
+        #message(cat("Indiv: ", j,sep=" "))
+        for (i in 1:ncol(infection_history)) {
+            #message(cat("Year: ", i,sep=" "))
+            #message(cat("Titre: ", titres[j,i],sep=" "))
+            p_inf <- p_infection(phis[i], titres[j,i], alpha1, beta1)
+            #message(cat("P inf: ", p_inf,sep=" "))
+            lik <- lik + log((p_inf^infection_history[j,i] *
+                              (1-p_inf)^(1-infection_history[j,i]))*
+                             as.numeric(age_mask <= i) *
+                             as.numeric(strain_mask >= i))
+        }
+    }
+  lik
+}
+
 
 
 #' Calculate FOI from spline
@@ -253,7 +284,17 @@ prob_mus <- function(mus, pars) {
 #' Posterior function pointer - FAST VERSION
 #'
 #' Takes all of the input data/parameters and returns a function pointer. This function finds the posterior for a given set of input parameters (theta) and infection histories without needing to pass the data set back and forth.
-#' @inheritParams create_posterior_func
+#' @param par_tab the parameter table controlling information such as bounds, initial values etc
+#' @param titre_dat the data frame of data to be fitted. Must have columns: group (index of group); individual (integer ID of individual); samples (numeric time of sample taken); virus (numeric time of when the virus was circulating); titre (integer of titre value against the given virus at that sampling time)
+#' @param antigenic_map a data frame of antigenic x and y coordinates. Must have column names: x_coord; y_coord; inf_years
+#' @param version which version of the posterior function to solve (corresponds mainly to the infection history prior). Mostly just left to 1, but there is one special case where this should be set to 4 for the gibbs sampler. This is only really used by \code{\link{run_MCMC}} to place the infection history prior on the total number of infections across all years and individuals when version = 4
+#' @param solve_likelihood usually set to TRUE. If FALSE< does not solve the likelihood and instead just samples/solves based on the model prior
+#' @param age_mask see \code{\link{create_age_mask}} - a vector with one entry for each individual specifying the first epoch of circulation in which an individual could have been exposed
+#' @param measurement_indices_by_time if not NULL, then use these indices to specify which measurement bias parameter index corresponds to which time
+#' @param mu_indices if not NULL, then use these indices to specify which boosting parameter index corresponds to which time
+#' @param n_alive if not NULL, uses this as the number alive in a given year rather than calculating from the ages. This is needed if the number of alive individuals is known, but individual birth dates are not
+#' @param function_type integer specifying which version of this function to use. Specify 1 to give a posterior solving function; 2 to give the gibbs sampler for infection history proposals; otherwise just solves the titre model and returns predicted titres. NOTE that this is not the same as the attack rate prior argument!
+#' @param ... other arguments to pass to the posterior solving function
 #' @return a single function pointer that takes only pars and infection_histories as unnamed arguments. This function goes on to return a vector of posterior values for each individual
 #' @export
 create_posterior_func <- function(par_tab,
@@ -303,6 +344,21 @@ create_posterior_func <- function(par_tab,
     n_indiv <- setup_dat$n_indiv
     DOBs <- setup_dat$DOBs
 
+    ###################################################################
+    ## SOME TEMPORARY STUFF TO CALCULATE TITRE_DEP BOOSTING STUFF
+    indivs_false <- unique(titre_dat[,c("individual","group","DOB")])
+    titre_dat_false <- expand.grid(individual=indivs_false$individual,
+                                   samples=strain_isolation_times,
+                                   titre=0, run=1)
+    titre_dat_false <- merge(titre_dat_false, indivs_false)
+    titre_dat_false$virus <- titre_dat_false$samples
+    titre_dat_false <- titre_dat_false[order(titre_dat_false$individual, titre_dat_false$run,
+                                             titre_dat_false$samples, titre_dat_false$virus),]
+    setup_dat_false <- setup_titredat_for_posterior_func(titre_dat_false, antigenic_map,
+                                                         age_mask, n_alive)
+                                   
+
+    
 #########################################################
     ## Extract parameter type indices from par_tab, to split up
     ## similar parameters in model solving functions
@@ -377,10 +433,52 @@ create_posterior_func <- function(par_tab,
                 antigenic_map_short, mus, boosting_vec_indices
             )
 
+            y_at_inf <- titre_data_fast(
+                theta, infection_history_mat, strain_isolation_times,
+                setup_dat_false$infection_strain_indices,
+                setup_dat_false$sample_times,
+                setup_dat_false$rows_per_indiv_in_samples,
+                setup_dat_false$cum_nrows_per_individual_in_data,
+                setup_dat_false$nrows_per_blood_sample,
+                setup_dat_false$measured_strain_indices,
+                antigenic_map_long,
+                antigenic_map_short, mus, boosting_vec_indices
+            )
+            titre_dat_false$titre <- y_at_inf
             if (use_measurement_bias) {
                 measurement_bias <- pars[measurement_indices_par_tab]
                 titre_shifts <- measurement_bias[expected_indices]
                 y_new <- y_new + titre_shifts
+            }
+            transmission_prob <- 0
+            if (explicit_phi) {
+                phis <- pars[phi_indices]
+                if(explicit_psi){
+                    psis <- pars[psi_indices]
+                    transmission_prob <- calc_phi_loc_probs_indiv(phis, psis, infection_history_mat,
+                                                            age_mask, strain_mask, group_id_vec+1)
+                } else {
+                                        #transmission_prob <- calc_phi_probs_indiv(phis, infection_history_mat, age_mask, strain_mask)
+                    y_tmp <- reshape(titre_dat_false[,c("individual","virus","titre")],
+                                     idvar="individual",timevar="virus",direction="wide")
+                    y_tmp <- as.matrix(y_tmp[,2:ncol(y_tmp)])
+                    alpha1 <- 5
+                    beta1 <- 3
+                    transmission_prob <- calc_phi_probs_indiv_titre(phis, y_tmp,
+                                                                    infection_history_mat,
+                                                                    age_mask, strain_mask,
+                                                                    alpha1, beta1)
+                }
+            }
+            
+            ## If using spline term for FOI, add here
+            if (spline_phi) {
+                weights <- pars[weights_indices]
+                knots <- pars[knot_indices]
+                liks <- liks + calc_phi_probs_spline(
+                                   phis, knots, weights,
+                                   infection_history_mat, age_mask
+                               )
             }
             if(solve_likelihood){
                 ## Calculate likelihood for unique titres and repeat data
@@ -390,30 +488,11 @@ create_posterior_func <- function(par_tab,
                 liks <- sum_buckets(liks, nrows_per_individual_in_data) +
                     sum_buckets(liks_repeats, nrows_per_individual_in_data_repeats)
                 ## If including explicit prior on FOI, add to individuals here
-
-                if (explicit_phi) {
-                    phis <- pars[phi_indices]
-                    if(explicit_psi){
-                        psis <- pars[psi_indices]
-                        liks <- liks + calc_phi_loc_probs_indiv(phis, psis, infection_history_mat,
-                                                                age_mask, strain_mask, group_id_vec+1)
-                    } else {
-                        liks <- liks + calc_phi_probs_indiv(phis, infection_history_mat, age_mask, strain_mask)
-                    }
-                }
-                
-                ## If using spline term for FOI, add here
-                if (spline_phi) {
-                    weights <- pars[weights_indices]
-                    knots <- pars[knot_indices]
-                    liks <- liks + calc_phi_probs_spline(
-                                       phis, knots, weights,
-                                       infection_history_mat, age_mask
-                                   )
-                }
+               
             } else {
                 liks <- rep(-100000, n_indiv)
             }
+            liks <- liks + transmission_prob
             liks
         }
     } else if (function_type == 2) {

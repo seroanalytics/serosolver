@@ -69,6 +69,7 @@ The \code{mcmc_pars} argument has the following options:
 \item opt_freq (adapt proposal step size every opt_freq iterations)
 \item thin (save every n iterations)
 \item thin_hist (infection history thinning)
+\item hist_sample_prob (proportion of individuals resampled at each iteration)
 \item save_block (after this many iterations (post thinning), save to disk)
 \item popt (desired acceptance rate for parameters)
 \item popt_hist (desired acceptance rate for infection histories)

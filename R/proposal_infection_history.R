@@ -114,11 +114,13 @@ inf_hist_swap_phi <- function(infection_history, phis, age_mask, strain_mask, sw
 #' @param move_sizes when performing a move step, how far should two epochs be swapped?
 #' @param n_infs number of infection epochs to flip
 #' @param rand_ns pre-computed random numbers (0-1) for each individual, deciding whether to do a flip or swap
+#' @param swap_propn threshold for deciding if swap or add/remove step
 #' @return a matrix of infection histories matching the input new_inf_hist
 #' @export
-infection_history_symmetric <- function(new_inf_hist, sampled_indivs, age_mask, strain_mask, move_sizes, n_infs, rand_ns) {
+infection_history_symmetric <- function(new_inf_hist, sampled_indivs, age_mask, strain_mask, move_sizes, n_infs, rand_ns,swap_propn=0.5) {
   new_inf <- new_inf_hist
-  ks <- rpois(length(sampled_indivs), n_infs)
+  #ks <- rpois(length(sampled_indivs), n_infs)
+  #ks <- n_infs
   ## For each individual
   for (i in 1:length(sampled_indivs)) {
     indiv <- sampled_indivs[i]
@@ -127,29 +129,33 @@ infection_history_symmetric <- function(new_inf_hist, sampled_indivs, age_mask, 
     max_i <- length(x)
 
     ## Flip or swap with prob 50%
-    if (rand_ns[i] < 1 / 2) {
-      ## Choose a location and turn 0 -> 1 or 1 -> 0
-      ## Poisson number of changes?
-      k <- min(max_i, max(ks[i], 1))
-      locs <- sample(length(x), k)
-      x[locs] <- !x[locs]
+    if (rand_ns[i] < swap_propn) {
+        ## Choose a location and turn 0 -> 1 or 1 -> 0
+        ## Poisson number of changes?
+        k <- min(max_i, n_infs[i])#max(ks[i], 1))
+        locs <- sample(length(x), k)
+        x[locs] <- !x[locs]
     } else {
-      ## Choose a location
-      id1 <- sample(length(x), 1)
-      move_max <- move_sizes[indiv]
-
-      ## Choose another location up to move_max epochs away
-      move <- sample(-move_max:move_max, 1)
-      id2 <- id1 + move
-
-      ## Control boundaries
-      if (id2 < 1) id2 <- (move %% max_i) + id1
-      if (id2 > max_i) id2 <- (id2 - 1) %% max_i + 1
-
-      ## Swap the contents of these locations
-      tmp <- x[id1]
-      x[id1] <- x[id2]
-      x[id2] <- tmp
+        ## Choose a location
+        infs <- which(x==1)
+        if(length(infs > 0)){
+            id1 <- sample(infs, 1)
+            #id1 <- sample(length(x),1)
+            move_max <- move_sizes[indiv]
+        
+            ## Choose another location up to move_max epochs away
+            move <- sample(-move_max:move_max, 1)
+            id2 <- id1 + move
+            
+            ## Control boundaries
+            if (id2 < 1) id2 <- (move %% max_i) + id1
+            if (id2 > max_i) id2 <- (id2 - 1) %% max_i + 1
+            
+            ## Swap the contents of these locations
+            tmp <- x[id1]
+            x[id1] <- x[id2]
+            x[id2] <- tmp
+        }
     }
     new_inf[indiv, age_mask[indiv]:strain_mask[indiv]] <- x
   }
