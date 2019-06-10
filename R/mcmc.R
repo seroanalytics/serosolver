@@ -134,7 +134,9 @@ run_MCMC <- function(par_tab,
     stop("Invalid version specified - must be 1 (phi), 2 (gibbs) or 3 (beta binomial)")
   }
   message(prop_print)
-
+  
+  if(hist_proposal != 2) stop('This proposal has not been updated to use infection data')
+  
   ## Extract parameter settings
   par_names <- as.character(par_tab$names) # Parameter names
 
@@ -275,10 +277,13 @@ run_MCMC <- function(par_tab,
     ## Initial likelihood
     likelihoods <- posterior_simp(current_pars, infection_histories) / temp
     ## Initial total likelihood
-    total_likelihood <- sum(likelihoods)
+    total_likelihood <-  sum(likelihoods)
+    total_likelihood_titre <- sum(likelihoods)
     ## If there is infection data, calculate the additional likelihood contribution 
     if(!is.null(inf_dat)){
-      total_likelihood <- total_likelihood + inf_likelihood(inf_dat,infection_histories,current_pars,par_tab)
+      infection_likelihood <- inf_likelihood(inf_dat,infection_histories,current_pars,par_tab)
+      total_likelihood_infection <- infection_likelihood 
+      total_likelihood <-  total_likelihood + infection_likelihood 
     } 
     
     n_alive_tot <- sum(n_alive)
@@ -305,10 +310,14 @@ run_MCMC <- function(par_tab,
 
   ## Initial posterior prob
   posterior <- total_likelihood + prior_prob
+  
+  posterior_titre <- total_likelihood_titre + prior_prob
+  posterior_infection <- total_likelihood_infection + prior_prob
 
   message(cat("Starting theta posterior probability: ", posterior, sep = "\t"))
   ###############
-
+  write.table(matrix(c(sum(likelihoods),total_likelihood-sum(likelihoods)),ncol=2),'likelihoods.csv',append=TRUE,col.names = FALSE)
+  
   ####################
   ## PRE ALLOCATE MEMORY
   ####################
@@ -379,12 +388,22 @@ run_MCMC <- function(par_tab,
         ## Calculate new likelihood for these parameters
         new_likelihoods <- posterior_simp(proposal, infection_histories) / temp # For each individual
         new_total_likelihood <- sum(new_likelihoods) # Total
+        
+        new_total_likelihood_titre <- sum(new_likelihoods)
         ## If there is infection data, calculate the additional likelihood contribution 
+        
         if(!is.null(inf_dat)){
-          new_total_likelihood <- new_total_likelihood + inf_likelihood(inf_dat,infection_histories,proposal,par_tab)
+          new_infection_likelihood <- inf_likelihood(inf_dat,infection_histories,proposal,par_tab)
+          new_total_likelihood_infection <- new_infection_likelihood
+          new_total_likelihood <- new_total_likelihood +   new_infection_likelihood
         } 
+        
         new_prior_prob <- extra_probabilities(proposal, infection_histories) # Prior
         new_posterior <- new_total_likelihood + new_prior_prob # Posterior
+        
+        new_posterior_titre <- new_total_likelihood_titre + new_prior_prob
+        new_posterior_infection <- new_total_likelihood_infection + new_prior_prob
+        
         ## Otherwise, resample infection history
     } else {
         ## Choose a random subset of individuals to update
@@ -482,17 +501,25 @@ run_MCMC <- function(par_tab,
       if (!new_likelihoods_calculated) {
         new_likelihoods <- posterior_simp(proposal, new_infection_histories) / temp
       }
-        new_total_likelihood <- sum(new_likelihoods)
+      
+      new_total_likelihood <- sum(new_likelihoods)
+      new_total_likelihood_titre <- sum(new_likelihoods)
         
       ## If there is infection data, calculate the additional likelihood contribution 
       if(!is.null(inf_dat)){
-        new_total_likelihood <- new_total_likelihood + inf_likelihood(inf_dat,new_infection_histories,proposal,par_tab)
+        new_infection_likelihood <- inf_likelihood(inf_dat,new_infection_histories,proposal,par_tab)
+        new_total_likelihood_infection <- new_infection_likelihood
+        new_total_likelihood <- new_total_likelihood+ new_infection_likelihood
       } 
         
        # print(proposal)
        # print(new_infection_histories)
       new_prior_prob <- extra_probabilities(proposal, new_infection_histories)
+      
       new_posterior <- new_total_likelihood + new_prior_prob
+      
+      new_posterior_titre <- new_total_likelihood_titre + new_prior_prob
+      new_posterior_infection <- new_total_likelihood_infection + new_prior_prob
     }
 
     #############################
@@ -521,11 +548,21 @@ run_MCMC <- function(par_tab,
                 tempaccepted <- tempaccepted + 1
               }
             }
-
+            
             likelihoods <- new_likelihoods
             prior_prob <- new_prior_prob
             total_likelihood <- new_total_likelihood
             posterior <- new_posterior
+            
+            posterior_titre <- new_posterior_titre 
+            posterior_infection <- new_posterior_infection
+            
+            total_likelihood_titre <- new_total_likelihood_titre
+            total_likelihood_infection <- new_total_likelihood_infection
+  
+            write.table(matrix(c(sum(likelihoods),total_likelihood-sum(likelihoods)),ncol=2),'likelihoods.csv',append=TRUE,col.names = FALSE)
+            
+         
           }
 
         }
@@ -543,8 +580,6 @@ run_MCMC <- function(par_tab,
           total_likelihood <- sum(likelihoods)
           prior_prob <- extra_probabilities(current_pars, infection_histories)
           posterior <- total_likelihood + prior_prob
-
-
           ## Record acceptances for each add or move step
           add <- intersect(add, change_i)
           move <- intersect(move, change_i)
@@ -558,11 +593,23 @@ run_MCMC <- function(par_tab,
             total_likelihood <- new_total_likelihood
             prior_prob <- new_prior_prob
             posterior <- new_posterior
+            
+            posterior_titre <- new_posterior_titre 
+            posterior_infection <- new_posterior_infection
+            
+            total_likelihood_titre <- new_total_likelihood_titre
+            total_likelihood_infection <- new_total_likelihood_infection
           }
         }
       } else {
         if (!identical(new_infection_histories, infection_histories)) {
           log_prob <- new_posterior - posterior
+          #if(i %% (switch_sample-1)==0){
+          #  log_prob <- new_posterior_titre - posterior_titre
+          #}else{
+            log_prob <- new_posterior_infection - posterior_infection
+          #}
+         
           if (!is.na(log_prob) & !is.nan(log_prob) & is.finite(log_prob)) {
             log_prob <- min(log_prob, 0)
             if (log(runif(1)) < log_prob) {
@@ -575,6 +622,11 @@ run_MCMC <- function(par_tab,
                 total_likelihood <- new_total_likelihood
                 prior_prob <- new_prior_prob
                 posterior <- new_posterior
+                
+                posterior_titre <- new_posterior_titre 
+                posterior_infection <- new_posterior_infection
+                total_likelihood_titre <- new_total_likelihood_titre
+                total_likelihood_infection <- new_total_likelihood_infection
               }
             }
           }

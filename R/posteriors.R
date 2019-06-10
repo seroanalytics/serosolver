@@ -783,12 +783,24 @@ inf_likelihood<-function(inf_dat,infection_histories,pars,par_tab){
   #how do the results match with the observation 
   obs_vec_inf<-inf_dat_NA[which(infection_histories_NA==1)]
   sum_obs_vec_inf<-length(which(obs_vec_inf==1))
-  
+ 
   obs_vec_sus<-inf_dat_NA[which(infection_histories_NA==0)]
   sum_obs_vec_sus<-length(which(obs_vec_sus==0))
-  
   #calculate LOG likleihood
-  lik<-sum(dbinom(x=sum_obs_vec_inf,size=inf_vec,prob=rho,log=T),na.rm=T)+sum(dbinom(x=sum_obs_vec_sus,size=sus_vec,prob=0.99,log=T),na.rm=T)
+  #lik<-sum(dbinom(x=sum_obs_vec_inf,size=inf_vec,prob=rho),na.rm=T)+sum(dbinom(x=sum_obs_vec_sus,size=sus_vec,prob=0.99,log=T),na.rm=T)
+  
+  a<-length(which(inf_dat_NA==1)) #positive test results
+  b<-length(which(inf_dat_NA==0)) #negative test results
+   
+  Y_1<-length(which(obs_vec_inf==1)) #true positives in a 
+  Y_2<-length(which(obs_vec_inf==0)) #false negatives in a
+  
+  #lik1<-dbinom(x=sum_obs_vec_inf,size=inf_vec,prob=rho)+dbinom(x=sus_vec-sum_obs_vec_sus,size=sus_vec,prob=1-0.999) #positives
+  #lik2<-dbinom(x=sum_obs_vec_sus,size=sus_vec,prob=0.999)+dbinom(x=inf_vec-sum_obs_vec_inf,size=inf_vec,prob=1-rho)#negatives
+  #lik<-log(lik1)+log(lik2)
+  spec<-0.999
+  
+  lik<-Y_1*log(rho)+Y_2*log(1-rho)+(b-Y_2)*log(spec)+(a-Y_1)*log(1-spec)
   
   return(lik)
 }
