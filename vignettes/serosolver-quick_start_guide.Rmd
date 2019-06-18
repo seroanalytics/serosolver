@@ -68,7 +68,8 @@ library(serosolver)
                 virus=c(rep(8036,8)),
                 titre=c(0,0,7,7,0,5,6,5),
                 run=c(rep(1,8)),
-                DOB=c(rep(8036,8))
+                DOB=c(rep(8036,8)),
+                group=c(rep(1,8))
                 )
   knitr::kable(head(titreDat))
 ```
@@ -77,6 +78,7 @@ For the remainder of this quick start guide we refer to the input data set as `t
 
 ## 2. Specifying inputs
 Along with a data file, serosolver expects several additional inputs naemly, a parameter input file for starting values of antibody kinetics parameters, an antigenic map, an age mask, and starting infection histories. The following section will walk the users through creating each of these inputs. 
+
 ### Parameter values
 Several input files are stored within the `serosolver` package in the 'inputs' directory, however users can create their own. The default parameter file 'parTab.csv' is shown below:
 ```{r,echo=FALSE,results='asis'}
@@ -110,7 +112,7 @@ An antigenic map can be created using `generate_antigenic_map()` and input by th
 
 ```{r, eval=FALSE}
 # Read in and generate the antigenic map to read strain relationships from
-  antigenicMap <- read.csv("data/fonville_map_approx.csv",stringsAsFactors=FALSE)
+  antigenicMap <- read.csv("fonville_map_approx.csv",stringsAsFactors=FALSE)
   fit_dat <- generate_antigenic_map(antigenicMap, buckets = 4)
 # unique strain circulation times
   strainIsolationTimes <- unique(fit_dat$inf_years)
@@ -135,9 +137,9 @@ The final input required by `serosolver` are starting infection histories for ea
 Using the default options, the MCMC can be run using the following.
 ```{r, eval=FALSE}
 # run MCMC  
-  res <- run_MCMC(parTab = startTab, titreDat = titreDat, antigenicMap = fit_dat, 
-                  startInfHist = startInf, CREATE_POSTERIOR_FUNC = create_posterior_func,
-                  version = 2)
+  res <- run_MCMC(par_tab = startTab, titre_dat = titreDat, antigenic_map = fit_dat, 
+                  start_inf_hist = startInf, CREATE_POSTERIOR_FUNC = create_posterior_func,
+                  version = 1)
 ```
 If you want to change any default options, such as increasing or decreasing the number of iterations and the adaptive period you can pass a vector of function argument values to `run_MCMC()`.
 
