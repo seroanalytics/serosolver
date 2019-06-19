@@ -607,7 +607,8 @@ plot_attack_rate_residuals<- function(infection_histories, titre_dat, strain_iso
 #' @return a ggplot2 object with the inferred attack rates for each potential epoch of circulation
 #' @export
 plot_attack_rates <- function(infection_histories, titre_dat, strain_isolation_times, n_alive = NULL,
-                              pointsize = 1, fatten = 1, pad_chain=TRUE, prior_pars=NULL,plot_den=FALSE) {
+                              pointsize = 1, fatten = 1, pad_chain=TRUE, prior_pars=NULL,plot_den=FALSE, 
+                              colour_by_taken = TRUE, by_val = 5) {
     
     ## Some year/sample combinations might have no infections there.
     ## Need to make sure that these get considered
@@ -653,11 +654,13 @@ plot_attack_rates <- function(infection_histories, titre_dat, strain_isolation_t
         quantiles$taken <- quantiles$j %in% unique(titre_dat$samples)
         quantiles$taken <- ifelse(quantiles$taken, "Yes", "No")
 
+        quantiles$tested <- quantiles$j %in% unique(titre_dat$virus)
+        quantiles$tested <- ifelse(quantiles$tested, "Yes", "No")
         
         min_year <- min(strain_isolation_times)
         max_year <- max(strain_isolation_times)
-        year_breaks <- c(min_year,seq(5*round(min_year/5),max_year,by=5))
-        year_labels <- c(min_year,seq(5*round(min_year/5),max_year,by=5))
+        year_breaks <- c(min_year,seq(by_val*round(min_year/by_val),max_year,by = by_val))
+        year_labels <- c(min_year,seq(by_val*round(min_year/by_val),max_year,by = by_val))
         
         if(!is.null(prior_dens)){
             year_breaks <- c(year_breaks, max_year+3)
@@ -665,17 +668,26 @@ plot_attack_rates <- function(infection_histories, titre_dat, strain_isolation_t
             quantiles[quantiles$j == max(years),"taken"] <- "Prior"
         }
         colnames(quantiles)[5] <- "Sample taken"
+        colnames(quantiles)[6] <- "Virus tested"
 
-        ## Colour depending on whether or not titres were taken in each year       
-        
         p <- ggplot(quantiles) +
-            geom_pointrange(aes(x = j, y = median, ymin = lower, ymax = upper,
-                                col = `Sample taken`), size = pointsize, fatten = fatten) +
-            scale_y_continuous(limits = c(0, 1), expand = c(0, 0)) +
-            scale_x_continuous(breaks=year_breaks,labels=year_labels)+
-            theme_classic() +
-            ylab("Estimated attack rate") +
-            xlab("Year")
+          scale_y_continuous(limits = c(0, 1), expand = c(0, 0)) +
+          scale_x_continuous(breaks=year_breaks,labels=year_labels)+
+          theme_classic() +
+          ylab("Estimated attack rate") +
+          xlab("Year")
+        
+        ## Colour depending on whether or not titres were taken in each year       
+        if(colour_by_taken == TRUE){
+          p <- p + geom_pointrange(aes(x = j, y = median, ymin = lower, ymax = upper,
+                                              col = `Sample taken`, shape = `Sample taken`), size = pointsize, 
+                                              fatten = fatten) 
+        }else{
+          p <- p + geom_pointrange(aes(x = j, y = median, ymin = lower, ymax = upper,
+                                       col = `Virus tested`, shape = `Virus tested`), size = pointsize, 
+                                       fatten = fatten)
+        }
+
     } else {
         tmp$V1 <- tmp$V1/n_alive1[tmp$j]
         tmp$j <- years[tmp$j]
