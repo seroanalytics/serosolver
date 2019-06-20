@@ -282,17 +282,19 @@ setup_titredat_for_posterior_func <- function(titre_dat, antigenic_map, age_mask
     ## ie. each element of this vector corresponds to one set of titres that need to be predicted
     nrows_per_blood_sample <- NULL
     for (i in 1:nrow(samples)) {
-        nrows_per_blood_sample <- c(nrows_per_blood_sample, nrow(samples[titre_dat$individual == samples[i, "individual"] &
-                                                                         titre_dat$samples == samples[i, "samples"] &
-                                                                         titre_dat$run == samples[i, "run"], ]))
+        nrows_per_blood_sample <- c(nrows_per_blood_sample,
+                                    nrow(samples[titre_dat$individual == samples[i, "individual"] &
+                                                 titre_dat$samples == samples[i, "samples"] &
+                                                 titre_dat$run == samples[i, "run"], ]))
     }
     ## Firstly, how many rows in the titre data correspond to each unique individual, sample and titre repeat?
     ## ie. each element of this vector corresponds to one set of titres that need to be predicted
     nrows_per_blood_sample <- NULL
     for (i in 1:nrow(samples)) {
-        nrows_per_blood_sample <- c(nrows_per_blood_sample, nrow(samples[titre_dat$individual == samples[i, "individual"] &
-                                                                         titre_dat$samples == samples[i, "samples"] &
-                                                                         titre_dat$run == samples[i, "run"], ]))
+        nrows_per_blood_sample <- c(nrows_per_blood_sample,
+                                    nrow(samples[titre_dat$individual == samples[i, "individual"] &
+                                                 titre_dat$samples == samples[i, "samples"] &
+                                                 titre_dat$run == samples[i, "run"], ]))
     }
 
     ## Which indices in the sampling times vector correspond to each individual?
@@ -347,26 +349,6 @@ setup_titredat_for_posterior_func <- function(titre_dat, antigenic_map, age_mask
 
 
 
-#' Calculate FOI log probability vector
-#'
-#' Given a vector of FOIs for all circulating years, a matrix of infection histories and the vector specifying if individuals were alive or not, returns the log probability of the FOIs given the infection histories.
-#' @inheritParams calc_phi_probs
-#' @return a vector of log probabilities for each individual
-#' @export
-calc_phi_probs_indiv_titre <- function(phis, infection_history, age_mask, strain_mask) {
-    lik <- numeric(nrow(infection_history))
-    for(j in 1:nrow(infection_history)){
-        for (i in 1:ncol(infection_history)) {
-            p_inf <- p_infection(phis[i], titres[j,i], alpha1, beta1)
-            lik <- lik + log((p_inf^infection_history[j,i] *
-                              (1-p_inf)^(1-infection_history[j,i]))*
-                             as.numeric(age_mask <= i) *
-                             as.numeric(strain_mask >= i))
-        }
-    }
-  lik
-}
-
 
 #' Calculate titre protection
 #'
@@ -374,22 +356,22 @@ calc_phi_probs_indiv_titre <- function(phis, infection_history, age_mask, strain
 #' @inheritParams p_infection
 #' @return a single probability of infection
 #' @export
-titre_protection <- function(titre, alpha, beta1){
-  risk <- 1 - 1/(1 + exp(beta1*(titre) - alpha))
-  risk
+titre_protection <- function(titre, alpha1, beta1){
+    risk <- 1 - 1/(1 + exp(beta1*(titre - alpha1)))
+    risk
 }
 
 
 #' Calculate prob of infection
 #'
 #' Calculates the probability of infection given a baseline risk and the individual's titre
-#' @param psi the baseline risk of infection to an individual with no titre
+#' @param phi the baseline risk of infection to an individual with no titre
 #' @param titre the log HI titre of the individual (base 2)
 #' @param alpha parameter 1
 #' @param beta parameter 2
 #' @return a single probability of infection
 #' @export
-p_infection <- function(psi, titre, alpha1, beta1){
-    p <- psi*(1-titre_protection(titre, alpha1 , beta1))
+p_infection <- function(phi, titre, alpha1, beta1){
+    p <- phi*(1-titre_protection(titre, alpha1 , beta1))
     p
 }

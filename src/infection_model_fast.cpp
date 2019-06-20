@@ -19,6 +19,7 @@
 //' @param antigenic_map_short NumericVector, the collapsed cross reactivity map for short term boosting, after multiplying by sigma2, see \code{\link{create_cross_reactivity_vector}}
 //' @param mus NumericVector, if length is greater than one, assumes that strain-specific boosting is used rather than a single boosting parameter
 //' @param boosting_vec_indices IntegerVector, same length as circulation_times, giving the index in the vector \code{mus} that each entry should use as its boosting parameter.
+//' @param pre_infection bool to indicate if calculated titre for that time should be before the infection has occured, used to calculate titre-mediated immunity
 //' @return NumericVector of predicted titres for each entry in measurement_strain_indices
 //' @export
 //' @family titre_model

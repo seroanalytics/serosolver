@@ -58,6 +58,27 @@ add_measurement_shifts <- function(predicted_titres, to_add, start_index_in_data
     invisible(.Call('_serosolver_add_measurement_shifts', PACKAGE = 'serosolver', predicted_titres, to_add, start_index_in_data, end_index_in_data))
 }
 
+#' Titre protection
+#'
+#' @export
+titre_protection_cpp <- function(titre, alpha1, beta1) {
+    .Call('_serosolver_titre_protection_cpp', PACKAGE = 'serosolver', titre, alpha1, beta1)
+}
+
+#' Titre protection
+#'
+#' @export
+p_infection_cpp <- function(phi, titre, alpha1, beta1) {
+    .Call('_serosolver_p_infection_cpp', PACKAGE = 'serosolver', phi, titre, alpha1, beta1)
+}
+
+#' Calc titre probs
+#'
+#' @export
+calc_phi_probs_indiv_titre_cpp <- function(phis, titres, infection_history, age_mask, strain_mask, alpha1, beta1) {
+    .Call('_serosolver_calc_phi_probs_indiv_titre_cpp', PACKAGE = 'serosolver', phis, titres, infection_history, age_mask, strain_mask, alpha1, beta1)
+}
+
 #' Overall model function, fast implementation
 #'
 #' See documentation for \code{\link{titre_data_group}}, as the interface is almost identical
@@ -74,6 +95,7 @@ add_measurement_shifts <- function(predicted_titres, to_add, start_index_in_data
 #' @param antigenic_map_short NumericVector, the collapsed cross reactivity map for short term boosting, after multiplying by sigma2, see \code{\link{create_cross_reactivity_vector}}
 #' @param mus NumericVector, if length is greater than one, assumes that strain-specific boosting is used rather than a single boosting parameter
 #' @param boosting_vec_indices IntegerVector, same length as circulation_times, giving the index in the vector \code{mus} that each entry should use as its boosting parameter.
+#' @param pre_infection bool to indicate if calculated titre for that time should be before the infection has occured, used to calculate titre-mediated immunity
 #' @return NumericVector of predicted titres for each entry in measurement_strain_indices
 #' @export
 #' @family titre_model

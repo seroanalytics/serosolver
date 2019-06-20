@@ -82,6 +82,50 @@ BEGIN_RCPP
     return R_NilValue;
 END_RCPP
 }
+// titre_protection_cpp
+double titre_protection_cpp(double titre, double alpha1, double beta1);
+RcppExport SEXP _serosolver_titre_protection_cpp(SEXP titreSEXP, SEXP alpha1SEXP, SEXP beta1SEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< double >::type titre(titreSEXP);
+    Rcpp::traits::input_parameter< double >::type alpha1(alpha1SEXP);
+    Rcpp::traits::input_parameter< double >::type beta1(beta1SEXP);
+    rcpp_result_gen = Rcpp::wrap(titre_protection_cpp(titre, alpha1, beta1));
+    return rcpp_result_gen;
+END_RCPP
+}
+// p_infection_cpp
+double p_infection_cpp(double phi, double titre, double alpha1, double beta1);
+RcppExport SEXP _serosolver_p_infection_cpp(SEXP phiSEXP, SEXP titreSEXP, SEXP alpha1SEXP, SEXP beta1SEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< double >::type phi(phiSEXP);
+    Rcpp::traits::input_parameter< double >::type titre(titreSEXP);
+    Rcpp::traits::input_parameter< double >::type alpha1(alpha1SEXP);
+    Rcpp::traits::input_parameter< double >::type beta1(beta1SEXP);
+    rcpp_result_gen = Rcpp::wrap(p_infection_cpp(phi, titre, alpha1, beta1));
+    return rcpp_result_gen;
+END_RCPP
+}
+// calc_phi_probs_indiv_titre_cpp
+NumericVector calc_phi_probs_indiv_titre_cpp(NumericVector phis, NumericVector titres, IntegerMatrix infection_history, IntegerVector age_mask, IntegerVector strain_mask, double alpha1, double beta1);
+RcppExport SEXP _serosolver_calc_phi_probs_indiv_titre_cpp(SEXP phisSEXP, SEXP titresSEXP, SEXP infection_historySEXP, SEXP age_maskSEXP, SEXP strain_maskSEXP, SEXP alpha1SEXP, SEXP beta1SEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< NumericVector >::type phis(phisSEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type titres(titresSEXP);
+    Rcpp::traits::input_parameter< IntegerMatrix >::type infection_history(infection_historySEXP);
+    Rcpp::traits::input_parameter< IntegerVector >::type age_mask(age_maskSEXP);
+    Rcpp::traits::input_parameter< IntegerVector >::type strain_mask(strain_maskSEXP);
+    Rcpp::traits::input_parameter< double >::type alpha1(alpha1SEXP);
+    Rcpp::traits::input_parameter< double >::type beta1(beta1SEXP);
+    rcpp_result_gen = Rcpp::wrap(calc_phi_probs_indiv_titre_cpp(phis, titres, infection_history, age_mask, strain_mask, alpha1, beta1));
+    return rcpp_result_gen;
+END_RCPP
+}
 // titre_data_fast
 NumericVector titre_data_fast(const NumericVector& theta, const IntegerMatrix& infection_history_mat, const NumericVector& circulation_times, const IntegerVector& circulation_times_indices, const NumericVector& sample_times, const IntegerVector& rows_per_indiv_in_samples, const IntegerVector& cum_nrows_per_individual_in_data, const IntegerVector& nrows_per_blood_sample, const IntegerVector& measurement_strain_indices, const NumericVector& antigenic_map_long, const NumericVector& antigenic_map_short, const NumericVector& mus, const IntegerVector& boosting_vec_indices);
 RcppExport SEXP _serosolver_titre_data_fast(SEXP thetaSEXP, SEXP infection_history_matSEXP, SEXP circulation_timesSEXP, SEXP circulation_times_indicesSEXP, SEXP sample_timesSEXP, SEXP rows_per_indiv_in_samplesSEXP, SEXP cum_nrows_per_individual_in_dataSEXP, SEXP nrows_per_blood_sampleSEXP, SEXP measurement_strain_indicesSEXP, SEXP antigenic_map_longSEXP, SEXP antigenic_map_shortSEXP, SEXP musSEXP, SEXP boosting_vec_indicesSEXP) {
@@ -284,6 +328,9 @@ static const R_CallMethodDef CallEntries[] = {
     {"_serosolver_sum_buckets", (DL_FUNC) &_serosolver_sum_buckets, 2},
     {"_serosolver_sum_infections_by_group", (DL_FUNC) &_serosolver_sum_infections_by_group, 3},
     {"_serosolver_add_measurement_shifts", (DL_FUNC) &_serosolver_add_measurement_shifts, 4},
+    {"_serosolver_titre_protection_cpp", (DL_FUNC) &_serosolver_titre_protection_cpp, 3},
+    {"_serosolver_p_infection_cpp", (DL_FUNC) &_serosolver_p_infection_cpp, 4},
+    {"_serosolver_calc_phi_probs_indiv_titre_cpp", (DL_FUNC) &_serosolver_calc_phi_probs_indiv_titre_cpp, 7},
     {"_serosolver_titre_data_fast", (DL_FUNC) &_serosolver_titre_data_fast, 13},
     {"_serosolver_inf_mat_prior_cpp", (DL_FUNC) &_serosolver_inf_mat_prior_cpp, 4},
     {"_serosolver_inf_mat_prior_cpp_vector", (DL_FUNC) &_serosolver_inf_mat_prior_cpp_vector, 4},

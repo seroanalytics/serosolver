@@ -63,7 +63,7 @@ get_titre_predictions <- function(chain, infection_histories, titre_dat,
     
     ## See the function in posteriors.R
     f <- create_posterior_func(par_tab, titre_dat, antigenic_map, 100, mu_indices = mu_indices,
-                               measurement_indices_by_time = measurement_indices_by_time, function_type = 3)
+                               measurement_indices_by_time = measurement_indices_by_time, function_type = 4)
 
     predicted_titres <- residuals <- matrix(nrow = nrow(titre_dat), ncol = nsamp)
     samp_record <- numeric(nsamp)
@@ -982,7 +982,7 @@ plot_data <- function(titre_dat, infection_histories, strain_isolation_times, n_
   samps <- sample(unique(titre_dat$individual), n_samps)
 
   p1 <- ggplot(titre_dat[titre_dat$individual %in% samps, ]) +
-    geom_line(aes(x = as.integer(virus), y = titre)) +
+    geom_point(aes(x = as.integer(virus), y = titre)) +
     geom_vline(data = melted_inf_hist[melted_inf_hist$individual %in% samps, ], aes(xintercept = variable), col = "red", linetype = "dashed") +
     theme_bw()
 
@@ -1080,7 +1080,7 @@ generate_cumulative_inf_plots <- function(inf_chain, burnin = 0, indivs, real_in
     tmp_inf_chain <- inf_chain[inf_chain$i %in% indivs, ]
     hist_profiles <- ddply(tmp_inf_chain, .(i, sampno, chain_no), function(x) {
         empty <- numeric(length(strain_isolation_times))
-        empty[x$j] <- 1
+        empty[x[x$x==1,"j"]] <- 1
         cumsum(empty)
     })
     
@@ -1102,7 +1102,6 @@ generate_cumulative_inf_plots <- function(inf_chain, burnin = 0, indivs, real_in
     ## Merge these quantiles into a data frame for plotting
     quant_hist <- merge(hist_profiles_lower, hist_profiles_upper, by = c("individual","chain_no", "variable"))
     quant_hist <- merge(quant_hist, hist_profiles_median, by = c("individual", "chain_no","variable"))
-
     ## If available, process the real infection history matrix for plotting
     real_hist_profiles <- NULL
     if (!is.null(real_inf_hist)) {

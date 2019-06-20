@@ -17,9 +17,9 @@ r_likelihood <- function(expected, data, theta, expected_indices = NULL, measure
     large_i <- data >= theta["MAX_TITRE"]
     small_i <- data < 1
     rest_i <- data >= 1 & data < theta["MAX_TITRE"]
-                                        #large_i <- data > theta["MAX_TITRE"]
-                                        #small_i <- data <= 0
-                                        #rest_i <- data > 0 & data <= theta["MAX_TITRE"]
+    ##large_i <- data > theta["MAX_TITRE"]
+    ##small_i <- data <= 0
+    ##rest_i <- data > 0 & data <= theta["MAX_TITRE"]
 
     liks[large_i] <- pnorm(theta["MAX_TITRE"], expected[large_i], theta["error"], lower.tail = FALSE, log.p = TRUE)
     liks[small_i] <- pnorm(1, expected[small_i], theta["error"], lower.tail = TRUE, log.p = TRUE)
@@ -89,20 +89,18 @@ calc_phi_loc_probs_indiv <- function(phis, group_probs, infection_history, age_m
 #' @export
 calc_phi_probs_indiv_titre <- function(phis, titres, infection_history, age_mask, strain_mask, alpha1, beta1) {
     lik <- numeric(nrow(infection_history))
-    for(j in 1:nrow(infection_history)){
-        #message(cat("Indiv: ", j,sep=" "))
-        for (i in 1:ncol(infection_history)) {
-            #message(cat("Year: ", i,sep=" "))
-            #message(cat("Titre: ", titres[j,i],sep=" "))
-            p_inf <- p_infection(phis[i], titres[j,i], alpha1, beta1)
-            #message(cat("P inf: ", p_inf,sep=" "))
-            lik <- lik + log((p_inf^infection_history[j,i] *
-                              (1-p_inf)^(1-infection_history[j,i]))*
-                             as.numeric(age_mask <= i) *
-                             as.numeric(strain_mask >= i))
+    for(i in 1:nrow(infection_history)){
+        for (j in 1:ncol(infection_history)) {
+            index <- (i-1)*ncol(infection_history) + j
+            x <- infection_history[i,j]
+            titre_p <- titre_protection(titres[index], alpha1, beta1)
+            prob <- log(x*(1-titre_p)*phis[j] + (1-x)*(titre_p*phi + 1 - phi))                                    
+            prob <- prob * as.numeric(age_mask[i] <= j) *
+                as.numeric(strain_mask[i] >= j)
+            lik[i] <- lik[i] + prob
         }
     }
-  lik
+    lik
 }
 
 
@@ -130,7 +128,6 @@ calc_phi_probs_spline <- function(foi, knots, theta, infection_history, age_mask
 #'
 #' Brute force implementation of calculating the explicit FOI
 #' @export
-
 calc_phi_probs_indiv_brute <- function(phis, infection_history, age_mask) {
     lik <- numeric(nrow(infection_history))
     for (j in 1:nrow(infection_history)) {
@@ -258,25 +255,23 @@ prob_mus <- function(mus, pars) {
     mu_mean <- pars["mu_mean"]
     mu_sd <- pars["mu_sd"]
     return(sum(dnorm(mus, mu_mean, mu_sd, log = TRUE)))
-                                        # location <- log(mu_mean^2 / sqrt(mu_sd^2 + mu_mean^2))
-                                        # shape <- sqrt(log(1 + (mu_sd^2/mu_mean^2)))
-                                        # l_mean <- log(mu_mean) - (mu_sd^2)/2
-                                        # p <- sum(dnorm(log(mus),mu_mean,mu_sd,log=TRUE))
-                                        # p_mean <- 0.6
-                                        # p_sd <- 0.5
-                                        # p_mu <- log(p_mean/sqrt(1 + (p_sd/p_mean)^2))
-                                        # p_sigma <- sqrt(log(1 + (p_sd/p_mean)^2))
-
-                                        # p_lik <- log(p_sigma*2.506628) - 0.5*((mu_mean - p_mu)/p_sigma)^2
-
-                                        # return(p+p_lik)
-                                        # return(sum(log(dtruncnorm(mus, a=0,mean=mu_mean, sd=mu_sd))))
-                                        # return(sum(dlnorm(mus, location, shape, log=TRUE)))
-                                        # mean_log_y <- mean(log(mus))
-                                        # sd_log_y <- sd(log(mus))
-                                        # sigmaOfLogY <- dunif(mu_sd, 0.001*sd_log_y,1000*sd_log_y)
-                                        # muOfLogY <- dnorm(mu_mean, mean_log_y, 1/(10*sd_log_y)^2)
-                                        # return(sum(dlnorm(mus, mu_mean, 1/mu_sd^2, log=TRUE)) + sigmaOfLogY + muOfLogY)
+    ## location <- log(mu_mean^2 / sqrt(mu_sd^2 + mu_mean^2))
+    ## shape <- sqrt(log(1 + (mu_sd^2/mu_mean^2)))
+    ## l_mean <- log(mu_mean) - (mu_sd^2)/2
+    ## p <- sum(dnorm(log(mus),mu_mean,mu_sd,log=TRUE))
+    ## p_mean <- 0.6
+    ## p_sd <- 0.5
+    ## p_mu <- log(p_mean/sqrt(1 + (p_sd/p_mean)^2))
+    ## p_sigma <- sqrt(log(1 + (p_sd/p_mean)^2))
+    ## p_lik <- log(p_sigma*2.506628) - 0.5*((mu_mean - p_mu)/p_sigma)^2
+    ## return(p+p_lik)
+    ## return(sum(log(dtruncnorm(mus, a=0,mean=mu_mean, sd=mu_sd))))
+    ## return(sum(dlnorm(mus, location, shape, log=TRUE)))
+    ## mean_log_y <- mean(log(mus))
+    ## sd_log_y <- sd(log(mus))
+    ## sigmaOfLogY <- dunif(mu_sd, 0.001*sd_log_y,1000*sd_log_y)
+    ## muOfLogY <- dnorm(mu_mean, mean_log_y, 1/(10*sd_log_y)^2)
+    ## return(sum(dlnorm(mus, mu_mean, 1/mu_sd^2, log=TRUE)) + sigmaOfLogY + muOfLogY)
     return(sum(dlnorm(mus, mu_mean, mu_sd, log = TRUE)))
 }
 
@@ -347,6 +342,8 @@ create_posterior_func <- function(par_tab,
     ###################################################################
     ## SOME TEMPORARY STUFF TO CALCULATE TITRE_DEP BOOSTING STUFF
     indivs_false <- unique(titre_dat[,c("individual","group","DOB")])
+    ## This generates a structure like titre_dat, but with one entry for each individual
+    ## assuming that a titre is tested against the circulating strain at each potential time
     titre_dat_false <- expand.grid(individual=indivs_false$individual,
                                    samples=strain_isolation_times,
                                    titre=0, run=1)
@@ -354,10 +351,10 @@ create_posterior_func <- function(par_tab,
     titre_dat_false$virus <- titre_dat_false$samples
     titre_dat_false <- titre_dat_false[order(titre_dat_false$individual, titre_dat_false$run,
                                              titre_dat_false$samples, titre_dat_false$virus),]
+    ## Extract the indexing vectors as in the normal titre_dat
     setup_dat_false <- setup_titredat_for_posterior_func(titre_dat_false, antigenic_map,
                                                          age_mask, n_alive)
-                                   
-
+    
     
 #########################################################
     ## Extract parameter type indices from par_tab, to split up
@@ -390,6 +387,7 @@ create_posterior_func <- function(par_tab,
     explicit_phi <- (length(phi_indices) > 0)
     explicit_psi <- (length(psi_indices) > 0)
     spline_phi <- (length(knot_indices) > 0)
+    titre_immunity <- "alpha_titre" %in% par_names_theta
     use_measurement_bias <- (length(measurement_indices_par_tab) > 0) & !is.null(measurement_indices_by_time)
     titre_shifts <- c(0)
     expected_indices <- NULL
@@ -399,8 +397,7 @@ create_posterior_func <- function(par_tab,
 
     if(!explicit_psi){
         psis <- rep(1, n_groups)
-    }
-    
+    }    
     if (use_measurement_bias) {
         expected_indices <- measurement_indices_by_time[match(titre_dat_unique$virus, strain_isolation_times)]
     } else {
@@ -426,25 +423,35 @@ create_posterior_func <- function(par_tab,
             antigenic_map_long <- create_cross_reactivity_vector(antigenic_map_melted, theta["sigma1"])
             antigenic_map_short <- create_cross_reactivity_vector(antigenic_map_melted, theta["sigma2"])
 
+            ## Calculate titres for measured data
             y_new <- titre_data_fast(
                 theta, infection_history_mat, strain_isolation_times, infection_strain_indices,
                 sample_times, rows_per_indiv_in_samples, cum_nrows_per_individual_in_data,
                 nrows_per_blood_sample, measured_strain_indices, antigenic_map_long,
                 antigenic_map_short, mus, boosting_vec_indices
             )
-
-            y_at_inf <- titre_data_fast(
-                theta, infection_history_mat, strain_isolation_times,
-                setup_dat_false$infection_strain_indices,
-                setup_dat_false$sample_times,
-                setup_dat_false$rows_per_indiv_in_samples,
-                setup_dat_false$cum_nrows_per_individual_in_data,
-                setup_dat_false$nrows_per_blood_sample,
-                setup_dat_false$measured_strain_indices,
-                antigenic_map_long,
-                antigenic_map_short, mus, boosting_vec_indices
-            )
-            titre_dat_false$titre <- y_at_inf
+            if(titre_immunity){
+                ## Calculate titres against viruses at the times they circulated
+                y_at_inf <- titre_data_fast(
+                    theta, infection_history_mat, strain_isolation_times,
+                    setup_dat_false$infection_strain_indices,
+                    setup_dat_false$sample_times,
+                    setup_dat_false$rows_per_indiv_in_samples,
+                    setup_dat_false$cum_nrows_per_individual_in_data,
+                    setup_dat_false$nrows_per_blood_sample,
+                    setup_dat_false$measured_strain_indices,
+                    antigenic_map_long,
+                    antigenic_map_short,
+                    mus, boosting_vec_indices
+                )
+                cumu_infs1 <- apply(infection_history_mat, 1, cumsum)
+                cumu_infs <- c(cumu_infs1)
+                seniority <- (1-theta["tau"]*(cumu_infs-1))
+                seniority <- sapply(seniority, function(x) max(0, x))
+                reduction <- c(t(infection_history_mat))*(theta["mu"] + theta["mu_short"])*seniority
+                y_at_inf <- y_at_inf - reduction
+            }
+            
             if (use_measurement_bias) {
                 measurement_bias <- pars[measurement_indices_par_tab]
                 titre_shifts <- measurement_bias[expected_indices]
@@ -453,32 +460,27 @@ create_posterior_func <- function(par_tab,
             transmission_prob <- 0
             if (explicit_phi) {
                 phis <- pars[phi_indices]
-                if(explicit_psi){
+                if(titre_immunity){
+                    transmission_prob <- calc_phi_probs_indiv_titre_cpp(phis, y_at_inf,
+                                                                        infection_history_mat,
+                                                                        age_mask, strain_mask,
+                                                                        theta["alpha_titre"], theta["beta_titre"])
+                } else if(explicit_psi){
                     psis <- pars[psi_indices]
                     transmission_prob <- calc_phi_loc_probs_indiv(phis, psis, infection_history_mat,
-                                                            age_mask, strain_mask, group_id_vec+1)
+                                                                  age_mask, strain_mask, group_id_vec+1)
+                } else if(spline_phi){
+                    ## If using spline term for FOI, add here
+                    weights <- pars[weights_indices]
+                    knots <- pars[knot_indices]
+                    liks <- liks + calc_phi_probs_spline(
+                                       phis, knots, weights,
+                                       infection_history_mat, age_mask
+                                   )
                 } else {
-                                        #transmission_prob <- calc_phi_probs_indiv(phis, infection_history_mat, age_mask, strain_mask)
-                    y_tmp <- reshape(titre_dat_false[,c("individual","virus","titre")],
-                                     idvar="individual",timevar="virus",direction="wide")
-                    y_tmp <- as.matrix(y_tmp[,2:ncol(y_tmp)])
-                    alpha1 <- 5
-                    beta1 <- 3
-                    transmission_prob <- calc_phi_probs_indiv_titre(phis, y_tmp,
-                                                                    infection_history_mat,
-                                                                    age_mask, strain_mask,
-                                                                    alpha1, beta1)
-                }
-            }
-            
-            ## If using spline term for FOI, add here
-            if (spline_phi) {
-                weights <- pars[weights_indices]
-                knots <- pars[knot_indices]
-                liks <- liks + calc_phi_probs_spline(
-                                   phis, knots, weights,
-                                   infection_history_mat, age_mask
-                               )
+                    transmission_prob <- calc_phi_probs_indiv(phis, infection_history_mat,
+                                                              age_mask, strain_mask)
+                }                                            
             }
             if(solve_likelihood){
                 ## Calculate likelihood for unique titres and repeat data
@@ -487,13 +489,13 @@ create_posterior_func <- function(par_tab,
                 ## Sum these for each individual
                 liks <- sum_buckets(liks, nrows_per_individual_in_data) +
                     sum_buckets(liks_repeats, nrows_per_individual_in_data_repeats)
-                ## If including explicit prior on FOI, add to individuals here
-               
+                
             } else {
                 liks <- rep(-100000, n_indiv)
             }
-            liks <- liks + transmission_prob
-            liks
+            return(list(liks, transmission_prob))
+            #liks <- liks + transmission_prob
+            #liks
         }
     } else if (function_type == 2) {
         if (version == 4) {
@@ -519,7 +521,7 @@ create_posterior_func <- function(par_tab,
             if(explicit_psi){
                 psis <- pars[psi_indices]
                 max_group_p <- max(psis)
-                #print(psis)
+                                        #print(psis)
                 psis <- psis/max_group_p
             }
             if (use_measurement_bias) {
@@ -572,6 +574,40 @@ create_posterior_func <- function(par_tab,
             return(res)
         }
         
+    } else if(function_type == 3){
+        ## For titres at time of infection
+        f <- function(pars, infection_history_mat) {
+            theta <- pars[theta_indices]
+            names(theta) <- par_names_theta
+            
+            ## Pass strain-dependent boosting down
+            if (use_strain_dependent) {
+                mus <- pars[mu_indices_par_tab]
+            }
+
+            antigenic_map_long <- create_cross_reactivity_vector(antigenic_map_melted, theta["sigma1"])
+            antigenic_map_short <- create_cross_reactivity_vector(antigenic_map_melted, theta["sigma2"])
+            
+            y_at_inf<- titre_data_fast(
+                theta, infection_history_mat, strain_isolation_times,
+                setup_dat_false$infection_strain_indices,
+                setup_dat_false$sample_times,
+                setup_dat_false$rows_per_indiv_in_samples,
+                setup_dat_false$cum_nrows_per_individual_in_data,
+                setup_dat_false$nrows_per_blood_sample,
+                setup_dat_false$measured_strain_indices,
+                antigenic_map_long,
+                antigenic_map_short, mus, boosting_vec_indices
+            )
+            cumu_infs1 <- apply(infection_history_mat, 1, cumsum)
+            cumu_infs <- c(cumu_infs1)
+            seniority <- (1-theta["tau"]*(cumu_infs-1))
+            seniority <- sapply(seniority, function(x) max(0, x))
+            reduction <- c(t(infection_history_mat))*(theta["mu"] + theta["mu_short"])*seniority
+            other <- y_at_inf - reduction
+            titre_dat_false$titre <- other
+            return(titre_dat_false)
+        }
     } else {
         f <- function(pars, infection_history_mat) {
             theta <- pars[theta_indices]
