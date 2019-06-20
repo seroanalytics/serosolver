@@ -771,36 +771,29 @@ inf_likelihood<-function(inf_dat,infection_histories,pars,par_tab){
   names(theta) <- par_names_theta
   
   #extract sensitivity parameter from parTab 
-  rho <- theta["delta"]
+  delta <- theta["delta"]
   
-  infection_histories_NA<-infection_histories[which(!is.na(inf_dat))]
-  inf_dat_NA<-inf_dat[which(!is.na(inf_dat))]
+  infection_histories_NA <- infection_histories[which(!is.na(inf_dat))]
+  inf_dat_NA <- inf_dat[which(!is.na(inf_dat))]
   
   #of the infected and susceptible in infection histories
-  inf_vec<-length(which(infection_histories_NA==1))
-  sus_vec<-length(which(infection_histories_NA==0))
+  n_1 <- inf_vec <- length(which(infection_histories_NA == 1))
+  n_2 <- sus_vec <- length(which(infection_histories_NA == 0))
   
   #how do the results match with the observation 
-  obs_vec_inf<-inf_dat_NA[which(infection_histories_NA==1)]
-  sum_obs_vec_inf<-length(which(obs_vec_inf==1))
- 
-  obs_vec_sus<-inf_dat_NA[which(infection_histories_NA==0)]
-  sum_obs_vec_sus<-length(which(obs_vec_sus==0))
+  obs_vec_inf <- inf_dat_NA[which(infection_histories_NA == 1)]
+  x_1 <- length(which(obs_vec_inf == 1)) #true positives in a 
+
+  obs_vec_sus <- inf_dat_NA[which(infection_histories_NA == 0)]
+  x_2 <- length(which(obs_vec_sus == 0))
+  
   #calculate LOG likleihood
-  #lik<-sum(dbinom(x=sum_obs_vec_inf,size=inf_vec,prob=rho),na.rm=T)+sum(dbinom(x=sum_obs_vec_sus,size=sus_vec,prob=0.99,log=T),na.rm=T)
+  spec <- 0.999
   
-  a<-length(which(inf_dat_NA==1)) #positive test results
-  b<-length(which(inf_dat_NA==0)) #negative test results
-   
-  Y_1<-length(which(obs_vec_inf==1)) #true positives in a 
-  Y_2<-length(which(obs_vec_inf==0)) #false negatives in a
+  lik_1 <- dbinom(x = x_1, size = n_1, prob = delta, log = TRUE) 
+  lik_2 <- dbinom(x = x_2, size = n_2, prob =  spec, log = TRUE)
   
-  #lik1<-dbinom(x=sum_obs_vec_inf,size=inf_vec,prob=rho)+dbinom(x=sus_vec-sum_obs_vec_sus,size=sus_vec,prob=1-0.999) #positives
-  #lik2<-dbinom(x=sum_obs_vec_sus,size=sus_vec,prob=0.999)+dbinom(x=inf_vec-sum_obs_vec_inf,size=inf_vec,prob=1-rho)#negatives
-  #lik<-log(lik1)+log(lik2)
-  spec<-0.999
-  
-  lik<-Y_1*log(rho)+Y_2*log(1-rho)+(b-Y_2)*log(spec)+(a-Y_1)*log(1-spec)
+  lik <- lik_1 + lik_2
   
   return(lik)
 }
