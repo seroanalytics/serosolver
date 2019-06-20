@@ -316,8 +316,7 @@ run_MCMC <- function(par_tab,
 
   message(cat("Starting theta posterior probability: ", posterior, sep = "\t"))
   ###############
-  write.table(matrix(c(sum(likelihoods),total_likelihood-sum(likelihoods)),ncol=2),'likelihoods.csv',append=TRUE,col.names = FALSE)
-  
+
   ####################
   ## PRE ALLOCATE MEMORY
   ####################
@@ -360,6 +359,9 @@ run_MCMC <- function(par_tab,
         username = message_slack_pars$username
       )
     }
+    ## Update length of unfixed pars so it only loops through antibody pars
+    unfixed_par_length_antibody <- unfixed_par_length -1
+    unfixed_pars_vec <- unfixed_pars[-which(unfixed_pars == which(par_names == "delta"))]
     ######################
     ## PROPOSALS
     ######################
@@ -370,26 +372,33 @@ run_MCMC <- function(par_tab,
         proposal <- current_pars ## Set proposal to be current parameters
         tempiter <- tempiter + 1
       } else { ## Else propose parameters
+        if(i %% 2 == 0){ ## Propose antibody pars
           ## If using univariate proposals
           if (is.null(mvr_pars)) {
-              ## For each parameter (Gibbs)
-              j <- unfixed_pars[par_i]
-              par_i <- par_i + 1
-              if (par_i > unfixed_par_length) par_i <- 1
-              proposal <- univ_proposal(current_pars, lower_bounds, upper_bounds, steps, j)
-              tempiter[j] <- tempiter[j] + 1
-              ## If using multivariate proposals
+            ## For each parameter (Gibbs) except delta
+            j <- unfixed_pars_vec[par_i]
+            par_i <- par_i + 1
+            if (par_i > unfixed_par_length_antibody) par_i <- 1
+            proposal <- univ_proposal(current_pars, lower_bounds, upper_bounds, steps, j)
+            tempiter[j] <- tempiter[j] + 1
+            ## If using multivariate proposals
           } else {
-              proposal <- mvr_proposal(current_pars, unfixed_pars, steps * cov_mat, steps * cov_mat0, FALSE, beta = 0.05)
-              tempiter <- tempiter + 1
+            proposal <- mvr_proposal(current_pars, unfixed_pars, steps * cov_mat, steps * cov_mat0, FALSE, beta = 0.05)
+            tempiter <- tempiter + 1
           }
+        }else{ ## Propose sensitivity
+          j <- which(par_names == "delta")
+          proposal <- univ_proposal(current_pars, lower_bounds, upper_bounds, steps, j)
+          tempiter[j] <- tempiter[j] + 1
+        }
+
       }
         
         ## Calculate new likelihood for these parameters
         new_likelihoods <- posterior_simp(proposal, infection_histories) / temp # For each individual
-        new_total_likelihood <- sum(new_likelihoods) # Total
+        new_total_likelihood_titre <- sum(new_likelihoods) # Total
         
-        new_total_likelihood_titre <- sum(new_likelihoods)
+        new_total_likelihood <- new_total_likelihood_titre
         ## If there is infection data, calculate the additional likelihood contribution 
         
         if(!is.null(inf_dat)){
@@ -502,14 +511,14 @@ run_MCMC <- function(par_tab,
         new_likelihoods <- posterior_simp(proposal, new_infection_histories) / temp
       }
       
-      new_total_likelihood <- sum(new_likelihoods)
       new_total_likelihood_titre <- sum(new_likelihoods)
+      new_total_likelihood <- new_total_likelihood_titre
         
       ## If there is infection data, calculate the additional likelihood contribution 
       if(!is.null(inf_dat)){
         new_infection_likelihood <- inf_likelihood(inf_dat,new_infection_histories,proposal,par_tab)
         new_total_likelihood_infection <- new_infection_likelihood
-        new_total_likelihood <- new_total_likelihood+ new_infection_likelihood
+        new_total_likelihood <- new_total_likelihood + new_infection_likelihood
       } 
         
        # print(proposal)
@@ -518,7 +527,7 @@ run_MCMC <- function(par_tab,
       
       new_posterior <- new_total_likelihood + new_prior_prob
       
-      new_posterior_titre <- new_total_likelihood_titre + new_prior_prob
+      new_posterior_titre <- new_total_likelihood_titre 
       new_posterior_infection <- new_total_likelihood_infection + new_prior_prob
     }
 
@@ -559,9 +568,6 @@ run_MCMC <- function(par_tab,
             
             total_likelihood_titre <- new_total_likelihood_titre
             total_likelihood_infection <- new_total_likelihood_infection
-  
-            write.table(matrix(c(sum(likelihoods),total_likelihood-sum(likelihoods)),ncol=2),'likelihoods.csv',append=TRUE,col.names = FALSE)
-            
          
           }
 
@@ -604,12 +610,6 @@ run_MCMC <- function(par_tab,
       } else {
         if (!identical(new_infection_histories, infection_histories)) {
           log_prob <- new_posterior - posterior
-          #if(i %% (switch_sample-1)==0){
-          #  log_prob <- new_posterior_titre - posterior_titre
-          #}else{
-            log_prob <- new_posterior_infection - posterior_infection
-          #}
-         
           if (!is.na(log_prob) & !is.nan(log_prob) & is.finite(log_prob)) {
             log_prob <- min(log_prob, 0)
             if (log(runif(1)) < log_prob) {
