@@ -16,19 +16,19 @@ simulate_group(n_indiv, theta, infection_histories, strain_isolation_times,
 
 \item{infection_histories}{the matrix of 1s and 0s giving presence/absence of infections for each individual}
 
-\item{strain_isolation_times}{vector of strain circulation times}
+\item{strain_isolation_times}{vector of contiguous strain circulation times}
 
-\item{measured_strains}{vector of strains that have titres measured}
+\item{measured_strains}{vector of strains that have titres measured matching entries in strain_isolation_times}
 
-\item{nsamps}{the number of samples each individual has}
+\item{nsamps}{the number of samples each individual has (eg. nsamps=2 gives each individual 2 random sampling times from sampling_times)}
 
-\item{antigenic_map}{the raw antigenic map with colnames x_coord, y_coord and inf_years}
+\item{antigenic_map}{the raw antigenic map with colnames x_coord, y_coord and inf_years, as returned from \code{\link{generate_antigenic_map_flexible}} or \code{\link{generate_antigenic_map}}}
 
-\item{repeats}{number of repeats for each year}
+\item{repeats}{number of repeat observations for each year}
 
 \item{mus}{default NULL, optional vector of boosting parameters for each strain}
 
-\item{mu_indices}{default NULL, optional vector giving the index of `mus` that each strain uses the boosting parameter from. eg. if there's 6 circulation years and 3 strain clusters, then this might be c(1,1,2,2,3,3)}
+\item{mu_indices}{default NULL, optional vector giving the index of `mus` that each strain uses the boosting parameter from. eg. if there are 6 circulation years in strain_isolation_times and 3 strain clusters, then this might be c(1,1,2,2,3,3)}
 
 \item{measurement_indices}{default NULL, optional vector giving the index of `measurement_bias` that each strain uses the measurement shift from from. eg. if there's 6 circulation years and 3 strain clusters, then this might be c(1,1,2,2,3,3)}
 
@@ -41,5 +41,5 @@ a data frame with columns individual, samples, virus and titre of simulated data
 Simulates a full set of titre data for n_indiv individuals with known theta and infection_histories. Each individual gets nsamps random samples from sampleTimes, and infections can occur at any of strain_isolation_times
 }
 \seealso{
-\code{\link{simulate_individual}}
+\code{\link{simulate_individual}}, \code{\link{simulate_individual_faster}}
 }

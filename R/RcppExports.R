@@ -87,10 +87,10 @@ calc_phi_probs_indiv_titre_cpp <- function(phis, titres, infection_history, age_
 #' @param circulation_times NumericVector, the actual times of circulation that the infection history vector corresponds to
 #' @param circulation_times_indices IntegerVector, which entry in the melted antigenic map that these infection times correspond to
 #' @param sample_times NumericVector, the times that each blood sample was taken
-#' @param rows_per_indiv_in_samples IntegerVector, Split the sample times and runs for each individual
-#' @param cum_nrows_per_individual_in_data IntegerVector, How many rows in the titre data correspond to each individual?
-#' @param rows_per_indiv_in_samples IntegerVector, How many rows in titre data correspond to each individual, sample and repeat?
-#' @param measurement_strain_indices IntegerVector, the indices of all measured strains in the melted antigenic map
+#' @param rows_per_indiv_in_samples IntegerVector, one entry for each individual. Each entry dictates how many indices through sample_times to iterate per individual (ie. how many sample times does each individual have?)
+#' @param cum_nrows_per_individual_in_data IntegerVector, How many cumulative rows in the titre data correspond to each individual? 
+#' @param nrows_per_blood_sample IntegerVector, one entry per sample taken. Dicates how many entries to iterate through cum_nrows_per_individual_in_data for each sampling time considered
+#' @param measurement_strain_indices IntegerVector, the indices of all measured strains in the melted antigenic map, with one entry per measured titre
 #' @param antigenic_map_long NumericVector, the collapsed cross reactivity map for long term boosting, after multiplying by sigma1 see \code{\link{create_cross_reactivity_vector}}
 #' @param antigenic_map_short NumericVector, the collapsed cross reactivity map for short term boosting, after multiplying by sigma2, see \code{\link{create_cross_reactivity_vector}}
 #' @param mus NumericVector, if length is greater than one, assumes that strain-specific boosting is used rather than a single boosting parameter
@@ -99,8 +99,8 @@ calc_phi_probs_indiv_titre_cpp <- function(phis, titres, infection_history, age_
 #' @return NumericVector of predicted titres for each entry in measurement_strain_indices
 #' @export
 #' @family titre_model
-titre_data_fast <- function(theta, infection_history_mat, circulation_times, circulation_times_indices, sample_times, rows_per_indiv_in_samples, cum_nrows_per_individual_in_data, nrows_per_blood_sample, measurement_strain_indices, antigenic_map_long, antigenic_map_short, mus, boosting_vec_indices) {
-    .Call('_serosolver_titre_data_fast', PACKAGE = 'serosolver', theta, infection_history_mat, circulation_times, circulation_times_indices, sample_times, rows_per_indiv_in_samples, cum_nrows_per_individual_in_data, nrows_per_blood_sample, measurement_strain_indices, antigenic_map_long, antigenic_map_short, mus, boosting_vec_indices)
+titre_data_fast <- function(theta, infection_history_mat, circulation_times, circulation_times_indices, sample_times, rows_per_indiv_in_samples, cum_nrows_per_individual_in_data, nrows_per_blood_sample, measurement_strain_indices, antigenic_map_long, antigenic_map_short, mus, boosting_vec_indices, boost_before_infection = FALSE) {
+    .Call('_serosolver_titre_data_fast', PACKAGE = 'serosolver', theta, infection_history_mat, circulation_times, circulation_times_indices, sample_times, rows_per_indiv_in_samples, cum_nrows_per_individual_in_data, nrows_per_blood_sample, measurement_strain_indices, antigenic_map_long, antigenic_map_short, mus, boosting_vec_indices, boost_before_infection)
 }
 
 #' Marginal prior probability (p(Z)) of a particular infection history matrix single prior
@@ -250,6 +250,14 @@ inf_hist_prop_prior_v3 <- function(infection_history_mat, sampled_indivs, age_ma
 #' @family infection_history_proposal
 inf_hist_prop_prior_v2_and_v4 <- function(theta, infection_history_mat, old_probs_1, sampled_indivs, n_years_samp_vec, age_mask, strain_mask, n_alive, n_infections, n_infected_group, swap_propn, swap_distance, alpha, beta, circulation_times, circulation_times_indices, sample_times, rows_per_indiv_in_samples, cum_nrows_per_individual_in_data, cum_nrows_per_individual_in_repeat_data, nrows_per_blood_sample, group_id_vec, measurement_strain_indices, antigenic_map_long, antigenic_map_short, data, repeat_data, repeat_indices, titre_shifts, mus, boosting_vec_indices, total_alive, temp = 1, solve_likelihood = TRUE) {
     .Call('_serosolver_inf_hist_prop_prior_v2_and_v4', PACKAGE = 'serosolver', theta, infection_history_mat, old_probs_1, sampled_indivs, n_years_samp_vec, age_mask, strain_mask, n_alive, n_infections, n_infected_group, swap_propn, swap_distance, alpha, beta, circulation_times, circulation_times_indices, sample_times, rows_per_indiv_in_samples, cum_nrows_per_individual_in_data, cum_nrows_per_individual_in_repeat_data, nrows_per_blood_sample, group_id_vec, measurement_strain_indices, antigenic_map_long, antigenic_map_short, data, repeat_data, repeat_indices, titre_shifts, mus, boosting_vec_indices, total_alive, temp, solve_likelihood)
+}
+
+titre_data_fast_individual_base_indiv <- function(mu, mu_short, wane, tau, infection_times, infection_strain_indices_tmp, measurement_strain_index, sampling_time, number_strains, antigenic_map_short, antigenic_map_long, boost_before_infection = FALSE) {
+    .Call('_serosolver_titre_data_fast_individual_base_indiv', PACKAGE = 'serosolver', mu, mu_short, wane, tau, infection_times, infection_strain_indices_tmp, measurement_strain_index, sampling_time, number_strains, antigenic_map_short, antigenic_map_long, boost_before_infection)
+}
+
+inf_hist_prop_prior_immunity <- function(theta, exposure_history_mat, infection_history_mat, titre_prob_inf, old_probs_1, sampled_indivs, n_years_samp_vec, age_mask, strain_mask, n_alive, n_exposures, swap_propn, swap_distance, alpha, beta, circulation_times, circulation_times_indices, sample_times, rows_per_indiv_in_samples, cum_nrows_per_individual_in_data, cum_nrows_per_individual_in_repeat_data, nrows_per_blood_sample, group_id_vec, measurement_strain_indices, antigenic_map_long, antigenic_map_short, data, repeat_data, repeat_indices, titre_shifts, temp = 1, solve_likelihood = TRUE) {
+    .Call('_serosolver_inf_hist_prop_prior_immunity', PACKAGE = 'serosolver', theta, exposure_history_mat, infection_history_mat, titre_prob_inf, old_probs_1, sampled_indivs, n_years_samp_vec, age_mask, strain_mask, n_alive, n_exposures, swap_propn, swap_distance, alpha, beta, circulation_times, circulation_times_indices, sample_times, rows_per_indiv_in_samples, cum_nrows_per_individual_in_data, cum_nrows_per_individual_in_repeat_data, nrows_per_blood_sample, group_id_vec, measurement_strain_indices, antigenic_map_long, antigenic_map_short, data, repeat_data, repeat_indices, titre_shifts, temp, solve_likelihood)
 }
 
 #' Function to calculate non-linear waning

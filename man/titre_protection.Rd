@@ -4,12 +4,10 @@
 \alias{titre_protection}
 \title{Calculate titre protection}
 \usage{
-titre_protection(titre, alpha, beta1)
+titre_protection(titre, alpha1, beta1)
 }
 \arguments{
 \item{titre}{the log HI titre of the individual (base 2)}
-
-\item{alpha}{parameter 1}
 }
 \value{
 a single probability of infection

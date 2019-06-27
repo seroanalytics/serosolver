@@ -11,10 +11,10 @@
 //' @param circulation_times NumericVector, the actual times of circulation that the infection history vector corresponds to
 //' @param circulation_times_indices IntegerVector, which entry in the melted antigenic map that these infection times correspond to
 //' @param sample_times NumericVector, the times that each blood sample was taken
-//' @param rows_per_indiv_in_samples IntegerVector, Split the sample times and runs for each individual
-//' @param cum_nrows_per_individual_in_data IntegerVector, How many rows in the titre data correspond to each individual?
-//' @param rows_per_indiv_in_samples IntegerVector, How many rows in titre data correspond to each individual, sample and repeat?
-//' @param measurement_strain_indices IntegerVector, the indices of all measured strains in the melted antigenic map
+//' @param rows_per_indiv_in_samples IntegerVector, one entry for each individual. Each entry dictates how many indices through sample_times to iterate per individual (ie. how many sample times does each individual have?)
+//' @param cum_nrows_per_individual_in_data IntegerVector, How many cumulative rows in the titre data correspond to each individual? 
+//' @param nrows_per_blood_sample IntegerVector, one entry per sample taken. Dicates how many entries to iterate through cum_nrows_per_individual_in_data for each sampling time considered
+//' @param measurement_strain_indices IntegerVector, the indices of all measured strains in the melted antigenic map, with one entry per measured titre
 //' @param antigenic_map_long NumericVector, the collapsed cross reactivity map for long term boosting, after multiplying by sigma1 see \code{\link{create_cross_reactivity_vector}}
 //' @param antigenic_map_short NumericVector, the collapsed cross reactivity map for short term boosting, after multiplying by sigma2, see \code{\link{create_cross_reactivity_vector}}
 //' @param mus NumericVector, if length is greater than one, assumes that strain-specific boosting is used rather than a single boosting parameter
@@ -36,7 +36,8 @@ NumericVector titre_data_fast(const NumericVector &theta,
 			      const NumericVector &antigenic_map_long,
 			      const NumericVector &antigenic_map_short,
 			      const NumericVector &mus,
-			      const IntegerVector &boosting_vec_indices
+			      const IntegerVector &boosting_vec_indices,
+			      bool boost_before_infection = false
 			      ){
   // Dimensions of structures
   int n = infection_history_mat.nrow();
@@ -99,7 +100,6 @@ NumericVector titre_data_fast(const NumericVector &theta,
     boost_limit = theta["boost_limit"];
   }
 
-
   // Strain-specific boosting
   bool strain_dep_boost = false;
   if (mus.size() > 1) {
@@ -145,7 +145,8 @@ NumericVector titre_data_fast(const NumericVector &theta,
 					nrows_per_blood_sample,
 					number_strains,
 					antigenic_map_short,
-					antigenic_map_long);
+					antigenic_map_long,
+					boost_before_infection);
       } else if (titre_dependent_boosting) {
 	titre_data_fast_individual_titredep(predicted_titres, mu, mu_short,
 					    wane, tau,
@@ -160,7 +161,8 @@ NumericVector titre_data_fast(const NumericVector &theta,
 					    nrows_per_blood_sample,
 					    number_strains,
 					    antigenic_map_short,
-					    antigenic_map_long);	
+					    antigenic_map_long,
+					    boost_before_infection);	
       } else if (strain_dep_boost) {
 	titre_data_fast_individual_strain_dependent(predicted_titres, 
 						    mus, boosting_vec_indices, 
@@ -176,7 +178,8 @@ NumericVector titre_data_fast(const NumericVector &theta,
 						    nrows_per_blood_sample,
 						    number_strains,
 						    antigenic_map_short,
-						    antigenic_map_long);
+						    antigenic_map_long,
+						    boost_before_infection);
       } else if(alternative_wane_func) {
 	titre_data_fast_individual_wane2(predicted_titres, mu, mu_short,
 					 wane, tau,
@@ -191,7 +194,8 @@ NumericVector titre_data_fast(const NumericVector &theta,
 					 nrows_per_blood_sample,
 					 number_strains,
 					 antigenic_map_short,
-					 antigenic_map_long);
+					 antigenic_map_long,
+					 boost_before_infection);
       } else {
 	titre_data_fast_individual_base(predicted_titres, mu, mu_short,
 					wane, tau,
@@ -205,7 +209,8 @@ NumericVector titre_data_fast(const NumericVector &theta,
 					nrows_per_blood_sample,
 					number_strains,
 					antigenic_map_short,
-					antigenic_map_long);
+					antigenic_map_long,
+					boost_before_infection);
       }
      
     }

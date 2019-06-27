@@ -4,10 +4,10 @@
 \alias{p_infection}
 \title{Calculate prob of infection}
 \usage{
-p_infection(psi, titre, alpha1, beta1)
+p_infection(phi, titre, alpha1, beta1)
 }
 \arguments{
-\item{psi}{the baseline risk of infection to an individual with no titre}
+\item{phi}{the baseline risk of infection to an individual with no titre}
 
 \item{titre}{the log HI titre of the individual (base 2)}
 

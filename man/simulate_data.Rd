@@ -4,7 +4,7 @@
 \alias{simulate_data}
 \title{Simulate full data set}
 \usage{
-simulate_data(par_tab, group = 1, n_indiv = 100, buckets = 12,
+simulate_data(par_tab, group = 1, n_indiv = 100, buckets = 1,
   strain_isolation_times, measured_strains = NULL, sampling_times,
   nsamps = 2, antigenic_map, titre_sensoring = 0, age_min = 5,
   age_max = 80, attack_rates, repeats = 1, mu_indices = NULL,
@@ -17,27 +17,29 @@ simulate_data(par_tab, group = 1, n_indiv = 100, buckets = 12,
 
 \item{n_indiv}{number of individuals to simulate}
 
-\item{strain_isolation_times}{vector of strain circulation times}
+\item{buckets}{time resolution of the simulated data. buckets=1 indicates annual time resolution; buckets=4 indicates quarterly; buckets=12 monthly}
 
-\item{measured_strains}{vector of strains that have titres measured}
+\item{strain_isolation_times}{vector of contiguous strain circulation times}
 
-\item{sampling_times}{possible sampling times for the individuals}
+\item{measured_strains}{vector of strains that have titres measured matching entries in strain_isolation_times}
 
-\item{nsamps}{the number of samples each individual has}
+\item{sampling_times}{possible sampling times for the individuals, matching entries in strain_isoltion_times}
 
-\item{antigenic_map}{the raw antigenic map with colnames x_coord, y_coord and inf_years}
+\item{nsamps}{the number of samples each individual has (eg. nsamps=2 gives each individual 2 random sampling times from sampling_times)}
 
-\item{titre_sensoring}{what proportion of titres are randomly missing?}
+\item{antigenic_map}{the raw antigenic map with colnames x_coord, y_coord and inf_years, as returned from \code{\link{generate_antigenic_map_flexible}} or \code{\link{generate_antigenic_map}}}
 
-\item{age_min}{minimum age to simulate}
+\item{titre_sensoring}{numeric between 0 and 1, used to censor a proportion of titre observations at random (MAR)}
 
-\item{age_max}{maximum age to simulate}
+\item{age_min}{simulated age minimum}
 
-\item{attack_rates}{a vector of attack_rates to be used in the simulation}
+\item{age_max}{simulated age maximum}
 
-\item{repeats}{number of repeats for each year}
+\item{attack_rates}{a vector of attack_rates for each entry in strain_isolation_times to be used in the simulation (between 0 and 1)}
 
-\item{mu_indices}{default NULL, optional vector giving the index of `mus` that each strain uses the boosting parameter from. eg. if there's 6 circulation years and 3 strain clusters, then this might be c(1,1,2,2,3,3)}
+\item{repeats}{number of repeat observations for each year}
+
+\item{mu_indices}{default NULL, optional vector giving the index of `mus` that each strain uses the boosting parameter from. eg. if there are 6 circulation years in strain_isolation_times and 3 strain clusters, then this might be c(1,1,2,2,3,3)}
 
 \item{measurement_indices}{default NULL, optional vector giving the index of `measurement_bias` that each strain uses the measurement shift from from. eg. if there's 6 circulation years and 3 strain clusters, then this might be c(1,1,2,2,3,3)}
 

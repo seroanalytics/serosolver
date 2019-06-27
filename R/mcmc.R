@@ -278,6 +278,10 @@ run_MCMC <- function(par_tab,
     indiv_priors <- tmp_posterior[[2]]
     ## Initial total likelihoods
     indiv_posteriors <- indiv_likelihoods + indiv_priors
+
+    ## If needed for some proposal types per individual
+    proposal_ratio <- rep(0, n_indiv)
+
     
     n_alive_tot <- rowSums(n_alive)
     ## Create closure to add extra prior probabilities, to avoid re-typing later
@@ -431,12 +435,22 @@ run_MCMC <- function(par_tab,
             if (hist_proposal == 1) {
                 ## Either swap entire contents or propose new infection history matrix
                 if (inf_swap_prob > hist_switch_prob) {
-                    new_infection_histories <- infection_history_symmetric(
+                    proposed_inf_hist_data <-infection_history_proposal(
                         infection_histories,
                         indiv_sub_sample,
                         age_mask, strain_mask, move_sizes,
                         n_infs_vec, rand_ns, swap_propn
                     )
+                    
+                    new_infection_histories <- proposed_inf_hist_data[[1]]
+                    proposal_ratio <- proposed_inf_hist_data[[2]]
+
+                    #new_infection_histories <- infection_history_symmetric(
+                    #    infection_histories,
+                    #    indiv_sub_sample,
+                    #    age_mask, strain_mask, move_sizes,
+                    #    n_infs_vec, rand_ns, swap_propn
+                    #)
                 } else {
                     tmp_hist_switch <- inf_hist_swap_phi(
                         infection_histories, proposal[phi_indices],
@@ -553,7 +567,9 @@ run_MCMC <- function(par_tab,
             if (inf_swap_prob > hist_switch_prob) {
                 ## MH step for each individual
                 if (hist_proposal != 2) {
-                    log_probs <- (new_indiv_posteriors[indiv_sub_sample] - indiv_posteriors[indiv_sub_sample])
+                    log_probs <- (new_indiv_posteriors[indiv_sub_sample] -
+                                  indiv_posteriors[indiv_sub_sample]) +
+                    proposal_ratio[indiv_sub_sample]
                     log_probs[log_probs > 0] <- 0                    
                     x <- which(log(runif(length(indiv_sub_sample))) < log_probs)
                     change_i <- indiv_sub_sample[x]
@@ -576,6 +592,9 @@ run_MCMC <- function(par_tab,
                     histaccepted_add[add] <- histaccepted_add[add] + 1
                     histaccepted_move[move] <- histaccepted_move[move] + 1
                     histaccepted[change_i] <- histaccepted[change_i] + 1
+
+                    proposal_ratio <- rep(0, n_indiv)
+                    
                 } else {
                     if (!is.na(log_prob) & !is.nan(log_prob) & is.finite(log_prob)) {
                         infection_histories <- new_infection_histories

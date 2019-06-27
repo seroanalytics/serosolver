@@ -379,56 +379,101 @@ phi_proposal <- function(current_pars, infection_history, years, js, alpha, beta
 #' Proposes new infection histories for a vector of infection histories, where rows represent individuals and columns represent years. Proposals are either removal, addition or switching of infections.
 #' Also requires the indices of sampled individuals, the vector of strain isolation times, and a vector of age masks (ie. which index of the strain_isolation_times vector is the first year in which
 #' an individual *could* be infected).
-#' NOTE - MIGHT NEED TO UPDATE THIS FOR GROUPS
-#' @param new_infection_histories an n*m matrix of 1s & 0s indicating infection histories, where n is individuals and m i strains
-#' @param sampled_indivs the indices of sampled individuals to receive proposals
-#' @param strain_isolation_times the vector of strain isolation times in real time
-#' @param age_mask the vector of indices for each individual specifiying which index of strain_isolation_times is the first strain each individual could have seen
-#' @return a new matrix matching new_infection_histories in dimensions with proposed moves
+#' @param new_inf_hist a matrix of infection histories - rows for individuals, columns for infection epochs. Contents should be 1s and 0s
+#' @param sampled_indivs a vector of indices describing rows in the infection history matrix that should be updated
+#' @param age_mask a vector (one value for each individual) giving the first infection epoch that an individual could have been exposed in. That is, if an individual was born in the 7th epoch, their entry in age_mask would be 7.
+#' @param strain_mask a vector (one value for each individual) giving the last infection epoch that an individual could have been exposed in.
+#' @param move_sizes when performing a move step, how far should two epochs be swapped?
+#' @param n_infs number of infection epochs to flip
+#' @param rand_ns pre-computed random numbers (0-1) for each individual, deciding whether to do a flip or swap
+#' @param swap_propn threshold for deciding if swap or add/remove step
+#' @return a matrix of infection histories matching the input new_inf_hist
 #' @export
-infection_history_proposal <- function(new_infection_histories, sampled_indivs, strain_isolation_times, age_mask, strain_mask, n_infs) {
-  new_inf <- new_infection_histories
-  # ks <- rpois(length(sampled_indivs), n_infs)
-  for (indiv in sampled_indivs) { # Resample subset of individuals
-    rand1 <- runif(1)
-    # x=new_infection_histories[indiv,age_mask[indiv]:length(strain_isolation_times)] # Only resample years individual was alive
-    x <- new_infection_histories[indiv, age_mask[indiv]:strain_mask[indiv]] # Only resample years individual was alive
-
-    ## Remove infection
-    if (rand1 < 1 / 3) {
-      infect_id <- which(x > 0)
-      # Number of 1s in first place
-      n_1 <- length(infect_id)
-      #k_f <- min(n_1, max(n_infs[indiv], 1))
-      if (n_1 > 0) {
-        # x[sample(infect_id,k_f)]=0 # Why double? DEBUG
-        x[sample(c(infect_id), 1)] <- 0
-      }
-    }
-    ## Add infection
-    if (rand1 > 1 / 3 & rand1 < 2 / 3) {
-      n_infect_id <- which(x == 0)
-      n_0 <- length(n_infect_id)
-      #k_f <- min(n_0, max(n_infs[indiv], 1))
-      if (n_0 > 0) {
-        x[sample(c(n_infect_id), 1)] <- 1
-        # x[sample(n_infect_id,k_f)]=1
-      }
-    }
-    ## Move infection position
-    if (rand1 > 2 / 3) {
-      infect_id <- which(x > 0)
-      n_infect_id <- which(x == 0)
-      n_1 <- length(infect_id)
-      n_0 <- length(n_infect_id)
-      if (n_1 > 0 & n_0 > 0) {
-        x[sample(c(infect_id), 1)] <- 0
-        x[sample(c(n_infect_id), 1)] <- 1
-        # x[sample(infect_id,1)]=0
-        # x[sample(n_infect_id,1)]=1
-      }
-    }
-    new_inf[indiv, age_mask[indiv]:strain_mask[indiv]] <- x # Only =1 if individual was alive
-  } # end loop over individuals
-  return(new_inf)
+infection_history_proposal <- function(new_inf_hist, sampled_indivs, age_mask, strain_mask, move_sizes, n_infs, rand_ns,swap_propn=0.5){
+    new_inf <- new_inf_hist
+    ks <- rpois(length(sampled_indivs), n_infs)
+    proposal_prob_ratio <- numeric(length(age_mask))
+    for (i in 1:length(sampled_indivs)) {
+        indiv <- sampled_indivs[i]
+        #print(paste0("Indiv: " , indiv))
+        ## Isolate infection history
+        x <- new_inf_hist[indiv, age_mask[indiv]:strain_mask[indiv]]
+        max_i <- length(x)
+        p_forward <- p_back <- 1
+        ## Add/remove infection
+        if (rand_ns[i] > swap_propn) {
+            #print("Add/remove")
+            rand1 <- runif(1)
+            #print(x)
+            infect_id <- which(x > 0)
+            #print("Infection locations:")
+            #print(infect_id)
+            n_infect_id <- which(x == 0)
+            #print("Non-infection locations:")
+            #print(n_infect_id)
+            ## Number of 1s in first place
+            n_1 <- length(infect_id)
+            n_0 <- length(n_infect_id)
+            #print(n_1)
+            #print(n_0)
+            ## Remove infection
+            if (rand1 < 1 / 2) {
+                #print("Remove")
+                k <- min(n_1, max(ks[i],1))
+                #print(paste0("Locations: ", k))
+                if (n_1 > 0) {
+                    locs <- sample(infect_id, k)
+                    #print(locs)
+                    x[locs] <- 0
+                    # print("Proposed: ")
+                    p_forward <- k/n_1
+                    p_back <- k/(n_0 + k)
+                    # print(paste0("P forward: ", p_forward))
+                    #print(paste0("P back: ", p_back))
+                }
+                ## Add infection
+            } else {
+                #print("Add")
+                k <- min(n_0, max(ks[i],1))
+                #print(paste0("Locations: ", k))
+                if (n_0 > 0) {
+                    locs <- sample(n_infect_id, k)
+                    #print(locs)
+                    x[locs] <- 1
+                    #print("Proposed: ")
+                    #print(x)
+                    p_forward <- k/n_0
+                    p_back <- k/(n_1 + k)
+                    #print(paste0("P forward: ", p_forward))
+                    #print(paste0("P back: ", p_back))
+                    
+                }
+            }
+        } else {
+            ## Choose a location
+            infs <- which(x==1)
+            if(length(infs > 0)){
+                id1 <- sample(infs, 1)
+                                        #id1 <- sample(length(x),1)
+                move_max <- move_sizes[indiv]
+                
+                ## Choose another location up to move_max epochs away
+                move <- sample(-move_max:move_max, 1)
+                id2 <- id1 + move
+                
+                ## Control boundaries
+                if (id2 < 1) id2 <- (move %% max_i) + id1
+                if (id2 > max_i) id2 <- (id2 - 1) %% max_i + 1
+                
+                ## Swap the contents of these locations
+                tmp <- x[id1]
+                x[id1] <- x[id2]
+                x[id2] <- tmp
+            }
+        }
+        proposal_prob_ratio[indiv] <- log(p_back/p_forward)
+        #print(proposal_prob_ratio)
+        new_inf[indiv, age_mask[indiv]:strain_mask[indiv]] <- x
+    } # end loop over individuals
+    return(list(new_inf,proposal_prob_ratio))
 }

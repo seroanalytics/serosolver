@@ -4,24 +4,31 @@
 \alias{infection_history_proposal}
 \title{Infection history proposal - original version}
 \usage{
-infection_history_proposal(new_infection_histories, sampled_indivs,
-  strain_isolation_times, age_mask, strain_mask, n_infs)
+infection_history_proposal(new_inf_hist, sampled_indivs, age_mask,
+  strain_mask, move_sizes, n_infs, rand_ns, swap_propn = 0.5)
 }
 \arguments{
-\item{new_infection_histories}{an n*m matrix of 1s & 0s indicating infection histories, where n is individuals and m i strains}
+\item{new_inf_hist}{a matrix of infection histories - rows for individuals, columns for infection epochs. Contents should be 1s and 0s}
 
-\item{sampled_indivs}{the indices of sampled individuals to receive proposals}
+\item{sampled_indivs}{a vector of indices describing rows in the infection history matrix that should be updated}
 
-\item{strain_isolation_times}{the vector of strain isolation times in real time}
+\item{age_mask}{a vector (one value for each individual) giving the first infection epoch that an individual could have been exposed in. That is, if an individual was born in the 7th epoch, their entry in age_mask would be 7.}
 
-\item{age_mask}{the vector of indices for each individual specifiying which index of strain_isolation_times is the first strain each individual could have seen}
+\item{strain_mask}{a vector (one value for each individual) giving the last infection epoch that an individual could have been exposed in.}
+
+\item{move_sizes}{when performing a move step, how far should two epochs be swapped?}
+
+\item{n_infs}{number of infection epochs to flip}
+
+\item{rand_ns}{pre-computed random numbers (0-1) for each individual, deciding whether to do a flip or swap}
+
+\item{swap_propn}{threshold for deciding if swap or add/remove step}
 }
 \value{
-a new matrix matching new_infection_histories in dimensions with proposed moves
+a matrix of infection histories matching the input new_inf_hist
 }
 \description{
 Proposes new infection histories for a vector of infection histories, where rows represent individuals and columns represent years. Proposals are either removal, addition or switching of infections.
 Also requires the indices of sampled individuals, the vector of strain isolation times, and a vector of age masks (ie. which index of the strain_isolation_times vector is the first year in which
 an individual *could* be infected).
-NOTE - MIGHT NEED TO UPDATE THIS FOR GROUPS
 }

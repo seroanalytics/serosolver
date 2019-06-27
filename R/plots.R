@@ -45,6 +45,7 @@ get_titre_predictions <- function(chain, infection_histories, titre_dat,
     #chain <- chain[chain$sampno %in% samps, ]
     infection_histories <- infection_histories[infection_histories$sampno %in% samps, ]
 
+    
     ## Take subset of individuals
     titre_dat <- titre_dat[titre_dat$individual %in% individuals, ]
     infection_histories <- infection_histories[infection_histories$i %in% individuals, ]
@@ -87,7 +88,7 @@ get_titre_predictions <- function(chain, infection_histories, titre_dat,
     ## If generating for residual plot, can return now
     if (for_res_plot) return(list(residuals, samp_record, titre_dat, predicted_titres))
 
-    residuals <- cbind(titre_dat, residuals)
+    #residuals <- cbind(titre_dat, residuals)
 
     ## Get 95% credible interval and means
     dat2 <- t(apply(predicted_titres, 1, function(x) quantile(x, c(0.025, 0.25, 0.5, 0.75, 0.975))))
@@ -979,6 +980,9 @@ plot_data <- function(titre_dat, infection_histories, strain_isolation_times, n_
   melted_inf_hist <- reshape2::melt(infection_history, id.vars = "individual")
   melted_inf_hist$variable <- as.numeric(as.character(melted_inf_hist$variable))
   melted_inf_hist <- melted_inf_hist[melted_inf_hist$value > 0, ]
+  tmp <- unique(titre_dat[,c("individual","samples")])
+  melted_inf_hist <- merge(melted_inf_hist, tmp)
+  melted_inf_hist <- melted_inf_hist[melted_inf_hist$variable <= melted_inf_hist$samples,]
   samps <- sample(unique(titre_dat$individual), n_samps)
 
   p1 <- ggplot(titre_dat[titre_dat$individual %in% samps, ]) +

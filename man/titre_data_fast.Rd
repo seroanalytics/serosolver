@@ -8,7 +8,7 @@ titre_data_fast(theta, infection_history_mat, circulation_times,
   circulation_times_indices, sample_times, rows_per_indiv_in_samples,
   cum_nrows_per_individual_in_data, nrows_per_blood_sample,
   measurement_strain_indices, antigenic_map_long, antigenic_map_short, mus,
-  boosting_vec_indices)
+  boosting_vec_indices, boost_before_infection = FALSE)
 }
 \arguments{
 \item{theta}{NumericVector, the named vector of model parameters}
@@ -21,11 +21,13 @@ titre_data_fast(theta, infection_history_mat, circulation_times,
 
 \item{sample_times}{NumericVector, the times that each blood sample was taken}
 
-\item{rows_per_indiv_in_samples}{IntegerVector, Split the sample times and runs for each individual}
+\item{rows_per_indiv_in_samples}{IntegerVector, one entry for each individual. Each entry dictates how many indices through sample_times to iterate per individual (ie. how many sample times does each individual have?)}
 
-\item{cum_nrows_per_individual_in_data}{IntegerVector, How many rows in the titre data correspond to each individual?}
+\item{cum_nrows_per_individual_in_data}{IntegerVector, How many cumulative rows in the titre data correspond to each individual?}
 
-\item{measurement_strain_indices}{IntegerVector, the indices of all measured strains in the melted antigenic map}
+\item{nrows_per_blood_sample}{IntegerVector, one entry per sample taken. Dicates how many entries to iterate through cum_nrows_per_individual_in_data for each sampling time considered}
+
+\item{measurement_strain_indices}{IntegerVector, the indices of all measured strains in the melted antigenic map, with one entry per measured titre}
 
 \item{antigenic_map_long}{NumericVector, the collapsed cross reactivity map for long term boosting, after multiplying by sigma1 see \code{\link{create_cross_reactivity_vector}}}
 
@@ -35,7 +37,7 @@ titre_data_fast(theta, infection_history_mat, circulation_times,
 
 \item{boosting_vec_indices}{IntegerVector, same length as circulation_times, giving the index in the vector \code{mus} that each entry should use as its boosting parameter.}
 
-\item{rows_per_indiv_in_samples}{IntegerVector, How many rows in titre data correspond to each individual, sample and repeat?}
+\item{pre_infection}{bool to indicate if calculated titre for that time should be before the infection has occured, used to calculate titre-mediated immunity}
 }
 \value{
 NumericVector of predicted titres for each entry in measurement_strain_indices
