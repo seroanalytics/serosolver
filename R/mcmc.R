@@ -144,7 +144,7 @@ run_MCMC <- function(par_tab,
   unfixed_pars <- which(par_tab$fixed == 0) # Indices of free parameters
   unfixed_par_length <- nrow(par_tab[par_tab$fixed == 0, ]) # How many free parameters?
   current_pars <- par_tab$values # Starting parameters
-
+  
   ## Parameter constraints
   lower_bounds <- par_tab$lower_bound # Parameters cannot step below this
   upper_bounds <- par_tab$upper_bound # Parameters cannot step above this
@@ -158,6 +158,19 @@ run_MCMC <- function(par_tab,
   alpha <- par_tab[par_tab$names == "alpha", "values"]
   beta <- par_tab[par_tab$names == "beta", "values"]
 
+  ## If there is infection data, extract the sensitivity parameter indicies
+  delta_indicies <- which(par_tab$names == "delta")
+  ## Check whether delta is fixed
+  delta_fixed <- par_tab[par_tab$names == "delta", "fixed"] == 1
+  
+  ## Update length of unfixed pars so it only loops through antibody pars
+  if(delta_fixed){
+    unfixed_par_length_antibody <- unfixed_par_length
+  }else{
+    unfixed_par_length_antibody <- unfixed_par_length -1
+  }
+  unfixed_pars_vec <- which(par_tab$fixed == 0 & - delta_indicies)
+  
   ## To store acceptance rate of entire time period infection history swaps
   infection_history_swap_n <- infection_history_swap_accept <- 0
   ## Arrays to store acceptance rates
@@ -310,9 +323,6 @@ run_MCMC <- function(par_tab,
 
   ## Initial posterior prob
   posterior <- total_likelihood + prior_prob
-  
-  posterior_titre <- total_likelihood_titre + prior_prob
-  posterior_infection <- total_likelihood_infection + prior_prob
 
   message(cat("Starting theta posterior probability: ", posterior, sep = "\t"))
   ###############
@@ -359,9 +369,7 @@ run_MCMC <- function(par_tab,
         username = message_slack_pars$username
       )
     }
-    ## Update length of unfixed pars so it only loops through antibody pars
-    unfixed_par_length_antibody <- unfixed_par_length -1
-    unfixed_pars_vec <- unfixed_pars[-which(unfixed_pars == which(par_names == "delta"))]
+
     ######################
     ## PROPOSALS
     ######################
@@ -387,8 +395,12 @@ run_MCMC <- function(par_tab,
             tempiter <- tempiter + 1
           }
         }else{ ## Propose sensitivity
-          j <- which(par_names == "delta")
-          proposal <- univ_proposal(current_pars, lower_bounds, upper_bounds, steps, j)
+          j <- delta_indicies
+          if(delta_fixed){
+            proposal <- current_pars ## Set proposal to be current parameters
+          }else{
+            proposal <- univ_proposal(current_pars, lower_bounds, upper_bounds, steps, j)
+          }
           tempiter[j] <- tempiter[j] + 1
         }
 
@@ -409,9 +421,7 @@ run_MCMC <- function(par_tab,
         
         new_prior_prob <- extra_probabilities(proposal, infection_histories) # Prior
         new_posterior <- new_total_likelihood + new_prior_prob # Posterior
-        
-        new_posterior_titre <- new_total_likelihood_titre + new_prior_prob
-        new_posterior_infection <- new_total_likelihood_infection + new_prior_prob
+
         
         ## Otherwise, resample infection history
     } else {
@@ -505,11 +515,14 @@ run_MCMC <- function(par_tab,
         histiter_move[indiv_sub_sample[move]] <- histiter_move[indiv_sub_sample[move]] + 1
         histiter[indiv_sub_sample] <- histiter[indiv_sub_sample] + 1
       }
+        
+        
+      new_infection_histories[which(inf_dat == 1)] <- 1
       ## Calculate new likelihood with these infection histories
       ## If we didn't calculate the new likelihoods above, then need to do so here
-      if (!new_likelihoods_calculated) {
+      #if (!new_likelihoods_calculated) { ALWASY CALCULATE NEW
         new_likelihoods <- posterior_simp(proposal, new_infection_histories) / temp
-      }
+     # }
       
       new_total_likelihood_titre <- sum(new_likelihoods)
       new_total_likelihood <- new_total_likelihood_titre
@@ -526,9 +539,7 @@ run_MCMC <- function(par_tab,
       new_prior_prob <- extra_probabilities(proposal, new_infection_histories)
       
       new_posterior <- new_total_likelihood + new_prior_prob
-      
-      new_posterior_titre <- new_total_likelihood_titre 
-      new_posterior_infection <- new_total_likelihood_infection + new_prior_prob
+
     }
 
     #############################
@@ -562,12 +573,6 @@ run_MCMC <- function(par_tab,
             prior_prob <- new_prior_prob
             total_likelihood <- new_total_likelihood
             posterior <- new_posterior
-            
-            posterior_titre <- new_posterior_titre 
-            posterior_infection <- new_posterior_infection
-            
-            total_likelihood_titre <- new_total_likelihood_titre
-            total_likelihood_infection <- new_total_likelihood_infection
          
           }
 
@@ -599,12 +604,6 @@ run_MCMC <- function(par_tab,
             total_likelihood <- new_total_likelihood
             prior_prob <- new_prior_prob
             posterior <- new_posterior
-            
-            posterior_titre <- new_posterior_titre 
-            posterior_infection <- new_posterior_infection
-            
-            total_likelihood_titre <- new_total_likelihood_titre
-            total_likelihood_infection <- new_total_likelihood_infection
           }
         }
       } else {
@@ -622,11 +621,6 @@ run_MCMC <- function(par_tab,
                 total_likelihood <- new_total_likelihood
                 prior_prob <- new_prior_prob
                 posterior <- new_posterior
-                
-                posterior_titre <- new_posterior_titre 
-                posterior_infection <- new_posterior_infection
-                total_likelihood_titre <- new_total_likelihood_titre
-                total_likelihood_infection <- new_total_likelihood_infection
               }
             }
           }
@@ -684,7 +678,9 @@ run_MCMC <- function(par_tab,
         ## If using univariate proposals
         if (is.null(mvr_pars)) {
           ## For each non fixed parameter, scale the step size
-          for (x in unfixed_pars) steps[x] <- scaletuning(steps[x], popt, pcur[x])
+          for (x in unfixed_pars){
+            steps[x] <- scaletuning(steps[x], popt, pcur[x])
+          } 
         } else {
           if (chain_index > OPT_TUNING * adaptive_period & chain_index < adaptive_period) {
             old_cov_mat <- cov_mat
