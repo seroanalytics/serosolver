@@ -6,7 +6,8 @@
 \usage{
 simulate_infection_histories_titre(pars, p_inf, strain_isolation_times,
   ages, antigenic_map, mus = NULL, mu_indices = NULL,
-  measurement_bias = NULL, measurement_indices = NULL)
+  measurement_bias = NULL, measurement_indices = NULL,
+  separate_exosures = FALSE)
 }
 \arguments{
 \item{pars}{vector of model kinetics parameters}
@@ -24,6 +25,8 @@ simulate_infection_histories_titre(pars, p_inf, strain_isolation_times,
 \item{measurement_bias}{vector of strain-specific measurement shifts}
 
 \item{measurement_indices}{default NULL, optional vector giving the index of `measurement_bias` that each strain uses the measurement shift from from. eg. if there's 6 circulation years and 3 strain clusters, then this might be c(1,1,2,2,3,3)}
+
+\item{separate_exposures}{if TRUE, returns the exposure and infection histories as separate matrices}
 }
 \value{
 a list with a matrix of infection histories for each individual in ages and the true attack rate for each epoch

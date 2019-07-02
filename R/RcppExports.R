@@ -256,8 +256,24 @@ titre_data_fast_individual_base_indiv <- function(mu, mu_short, wane, tau, infec
     .Call('_serosolver_titre_data_fast_individual_base_indiv', PACKAGE = 'serosolver', mu, mu_short, wane, tau, infection_times, infection_strain_indices_tmp, measurement_strain_index, sampling_time, number_strains, antigenic_map_short, antigenic_map_long, boost_before_infection)
 }
 
-inf_hist_prop_prior_immunity <- function(theta, exposure_history_mat, infection_history_mat, titre_prob_inf, old_probs_1, sampled_indivs, n_years_samp_vec, age_mask, strain_mask, n_alive, n_exposures, swap_propn, swap_distance, alpha, beta, circulation_times, circulation_times_indices, sample_times, rows_per_indiv_in_samples, cum_nrows_per_individual_in_data, cum_nrows_per_individual_in_repeat_data, nrows_per_blood_sample, group_id_vec, measurement_strain_indices, antigenic_map_long, antigenic_map_short, data, repeat_data, repeat_indices, titre_shifts, temp = 1, solve_likelihood = TRUE) {
-    .Call('_serosolver_inf_hist_prop_prior_immunity', PACKAGE = 'serosolver', theta, exposure_history_mat, infection_history_mat, titre_prob_inf, old_probs_1, sampled_indivs, n_years_samp_vec, age_mask, strain_mask, n_alive, n_exposures, swap_propn, swap_distance, alpha, beta, circulation_times, circulation_times_indices, sample_times, rows_per_indiv_in_samples, cum_nrows_per_individual_in_data, cum_nrows_per_individual_in_repeat_data, nrows_per_blood_sample, group_id_vec, measurement_strain_indices, antigenic_map_long, antigenic_map_short, data, repeat_data, repeat_indices, titre_shifts, temp, solve_likelihood)
+prob_x_given_z_titre_protection <- function(titre_p, alpha1, beta1, x, z) {
+    .Call('_serosolver_prob_x_given_z_titre_protection', PACKAGE = 'serosolver', titre_p, alpha1, beta1, x, z)
+}
+
+prob_x_given_z_titre <- function(titre, alpha1, beta1, x, z) {
+    .Call('_serosolver_prob_x_given_z_titre', PACKAGE = 'serosolver', titre, alpha1, beta1, x, z)
+}
+
+calc_titre_inf_likelihoods <- function(titres, alpha1, beta1, Xs, Zs) {
+    .Call('_serosolver_calc_titre_inf_likelihoods', PACKAGE = 'serosolver', titres, alpha1, beta1, Xs, Zs)
+}
+
+calc_titre_inf_prob <- function(titres, alpha1, beta1, Xs, Zs) {
+    .Call('_serosolver_calc_titre_inf_prob', PACKAGE = 'serosolver', titres, alpha1, beta1, Xs, Zs)
+}
+
+inf_hist_prop_prior_immunity <- function(theta, exposure_history_mat, infection_history_mat, titre_prob_inf, old_probs_1, sampled_indivs, n_years_samp_vec, age_mask, strain_mask, n_alive, n_exposures, swap_propn, swap_distance, alpha_Z, beta_Z, circulation_times, circulation_times_indices, sample_times, rows_per_indiv_in_samples, cum_nrows_per_individual_in_data, cum_nrows_per_individual_in_repeat_data, nrows_per_blood_sample, group_id_vec, measurement_strain_indices, antigenic_map_long, antigenic_map_short, data, repeat_data, repeat_indices, titre_shifts, temp = 1, solve_likelihood = TRUE) {
+    .Call('_serosolver_inf_hist_prop_prior_immunity', PACKAGE = 'serosolver', theta, exposure_history_mat, infection_history_mat, titre_prob_inf, old_probs_1, sampled_indivs, n_years_samp_vec, age_mask, strain_mask, n_alive, n_exposures, swap_propn, swap_distance, alpha_Z, beta_Z, circulation_times, circulation_times_indices, sample_times, rows_per_indiv_in_samples, cum_nrows_per_individual_in_data, cum_nrows_per_individual_in_repeat_data, nrows_per_blood_sample, group_id_vec, measurement_strain_indices, antigenic_map_long, antigenic_map_short, data, repeat_data, repeat_indices, titre_shifts, temp, solve_likelihood)
 }
 
 #' Function to calculate non-linear waning

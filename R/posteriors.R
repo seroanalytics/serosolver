@@ -293,16 +293,16 @@ prob_mus <- function(mus, pars) {
 #' @return a single function pointer that takes only pars and infection_histories as unnamed arguments. This function goes on to return a vector of posterior values for each individual
 #' @export
 create_posterior_func <- function(par_tab,
-                                       titre_dat,
-                                       antigenic_map,
-                                       version = 1,
-                                       solve_likelihood = TRUE,
-                                       age_mask = NULL,
-                                       measurement_indices_by_time = NULL,
-                                       mu_indices = NULL,
-                                       n_alive = NULL,
-                                       function_type = 1,
-                                       ...) {
+                                  titre_dat,
+                                  antigenic_map,
+                                  version = 1,
+                                  solve_likelihood = TRUE,
+                                  age_mask = NULL,
+                                  measurement_indices_by_time = NULL,
+                                  mu_indices = NULL,
+                                  n_alive = NULL,
+                                  function_type = 1,
+                                  ...) {
 
 
     ## Seperate out initial readings and repeat readings - we only
@@ -342,21 +342,21 @@ create_posterior_func <- function(par_tab,
     n_indiv <- setup_dat$n_indiv
     DOBs <- setup_dat$DOBs
 
-    ###################################################################
+###################################################################
     ## CALCULATE TITRE-MEDIATED IMMUNITY ADMIN
     indivs_immunity <- unique(titre_dat[,c("individual","group","DOB")])
     ## This generates a structure like titre_dat, but with one entry for each individual
     ## assuming that a titre is tested against the circulating strain at the time it circulated
     titre_dat_immunity <- expand.grid(individual=indivs_immunity$individual,
-                                   samples=strain_isolation_times,
-                                   titre=0, run=1)
+                                      samples=strain_isolation_times,
+                                      titre=0, run=1)
     titre_dat_immunity <- merge(titre_dat_immunity, indivs_immunity)
     titre_dat_immunity$virus <- titre_dat_immunity$samples
     titre_dat_immunity <- titre_dat_immunity[order(titre_dat_immunity$individual, titre_dat_immunity$run,
-                                             titre_dat_immunity$samples, titre_dat_immunity$virus),]
+                                                   titre_dat_immunity$samples, titre_dat_immunity$virus),]
     ## Extract the indexing vectors as in the normal titre_dat
     setup_dat_immunity <- setup_titredat_for_posterior_func(titre_dat_immunity, antigenic_map,
-                                                         age_mask, n_alive)
+                                                            age_mask, n_alive)
     
     
 #########################################################
@@ -415,7 +415,7 @@ create_posterior_func <- function(par_tab,
     }
 
     if (function_type == 1) {
-        f <- function(pars, infection_history_mat) {
+        f <- function(pars, infection_history_mat, exposure_history_mat=NULL) {
             theta <- pars[theta_indices]
             names(theta) <- par_names_theta
 
@@ -448,22 +448,17 @@ create_posterior_func <- function(par_tab,
                     mus, boosting_vec_indices,
                     TRUE
                 )
-                #cumu_infs1 <- apply(infection_history_mat, 1, cumsum)
-                #cumu_infs <- c(cumu_infs1)
-                #seniority <- (1-theta["tau"]*(cumu_infs-1))
-                #seniority <- sapply(seniority, function(x) max(0, x))
-                #reduction <- c(t(infection_history_mat))*(theta["mu"] + theta["mu_short"])*seniority
-                #y_at_inf <- y_at_inf - reduction
-            }
-            
+            }            
             if (use_measurement_bias) {
                 measurement_bias <- pars[measurement_indices_par_tab]
                 titre_shifts <- measurement_bias[expected_indices]
                 y_new <- y_new + titre_shifts
             }
-            transmission_prob <- 0
+            ## Transmission prob is the part of the likelihood function corresponding to each individual
+            transmission_prob <- rep(0, n_indiv)
             if (explicit_phi) {
                 phis <- pars[phi_indices]
+                ## Titre mediated immunity
                 if(titre_immunity){
                     transmission_prob <- calc_phi_probs_indiv_titre_cpp(phis, y_at_inf,
                                                                         infection_history_mat,
@@ -471,6 +466,7 @@ create_posterior_func <- function(par_tab,
                                                                         theta["alpha_titre"],
                                                                         theta["beta_titre"])
                 } else if(explicit_psi){
+                    ## Location specific modifier
                     psis <- pars[psi_indices]
                     transmission_prob <- calc_phi_loc_probs_indiv(phis, psis, infection_history_mat,
                                                                   age_mask, strain_mask, group_id_vec+1)
@@ -483,9 +479,18 @@ create_posterior_func <- function(par_tab,
                                        infection_history_mat, age_mask
                                    )
                 } else {
+                    ## Or the baseline transmission likelihood contribution
                     transmission_prob <- calc_phi_probs_indiv(phis, infection_history_mat,
                                                               age_mask, strain_mask)
                 }                                            
+            } else {
+                ## Even if no explicit attack rate parameter, if using gibbs sampling
+                ## and titre immunity, need to calculate this part of the likelihood
+                if(titre_immunity){
+                    y_at_inf <- matrix(y_at_inf,nrow=n_indiv, byrow=TRUE)
+                    transmission_prob <- calc_titre_inf_likelihoods(y_at_inf, theta["alpha_titre"], theta["beta_titre"],
+                                                             infection_history_mat, exposure_history_mat)
+                }
             }
             if(solve_likelihood){
                 ## Calculate likelihood for unique titres and repeat data
@@ -498,9 +503,7 @@ create_posterior_func <- function(par_tab,
             } else {
                 liks <- rep(-100000, n_indiv)
             }
-            return(list(liks, transmission_prob))
-            #liks <- liks + transmission_prob
-            #liks
+            return(list(liks, transmission_prob,y_at_inf))
         }
     } else if (function_type == 2) {
         if (version == 4) {
@@ -509,78 +512,145 @@ create_posterior_func <- function(par_tab,
             n_alive_total <- c(-1,-1)
         }
         n_infected_group = c(0,0)
-        f <- function(pars, infection_history_mat,
-                      probs, sampled_indivs,
-                      alpha, beta,
-                      n_infs, swap_propn, swap_dist,
-                      temp,
-                      swap_proposals, add_proposals,
-                      swap_accepted, add_accepted) {
-            theta <- pars[theta_indices]
-            names(theta) <- par_names_theta
+        ## Use the original gibbs proposal function if no titre immunity
+        if(!titre_immunity){
+            message("Generating infection history proposal function, no titre-mediated immunity")
+            f <- function(pars, infection_history_mat,
+                          exposure_history_mat,
+                          titre_prob_inf,
+                          probs, sampled_indivs,
+                          alpha, beta,
+                          n_infs, swap_propn, swap_dist,
+                          temp) {
+                theta <- pars[theta_indices]
+                names(theta) <- par_names_theta
 
-            ## Pass strain-dependent boosting down
-            if (use_strain_dependent) {
-                mus <- pars[mu_indices_par_tab]
-            }
-            if(explicit_psi){
-                psis <- pars[psi_indices]
-                max_group_p <- max(psis)
-                                        #print(psis)
-                psis <- psis/max_group_p
-            }
-            if (use_measurement_bias) {
-                measurement_bias <- pars[measurement_indices_par_tab]
-                titre_shifts <- measurement_bias[expected_indices]
-            }
-            ## Work out short and long term boosting cross reactivity - C++ function
-            antigenic_map_long <- create_cross_reactivity_vector(antigenic_map_melted, theta["sigma1"])
-            antigenic_map_short <- create_cross_reactivity_vector(antigenic_map_melted, theta["sigma2"])
+                ## Pass strain-dependent boosting down
+                if (use_strain_dependent) {
+                    mus <- pars[mu_indices_par_tab]
+                }
+                if(explicit_psi){
+                    psis <- pars[psi_indices]
+                    max_group_p <- max(psis)
+                    psis <- psis/max_group_p
+                }
+                if (use_measurement_bias) {
+                    measurement_bias <- pars[measurement_indices_par_tab]
+                    titre_shifts <- measurement_bias[expected_indices]
+                }
+                ## Work out short and long term boosting cross reactivity - C++ function
+                antigenic_map_long <- create_cross_reactivity_vector(antigenic_map_melted, theta["sigma1"])
+                antigenic_map_short <- create_cross_reactivity_vector(antigenic_map_melted, theta["sigma2"])
 
-            n_infections <- sum_infections_by_group(infection_history_mat, group_id_vec, n_groups)
-            if(version == 4) n_infected_group <- rowSums(n_infections)
-            ## Now pass to the C++ function
-            res <- inf_hist_prop_prior_v2_and_v4(
-                theta,
-                infection_history_mat,
-                probs,
-                sampled_indivs,
-                n_infs,
-                age_mask,
-                strain_mask,
-                n_alive,
-                n_infections,
-                n_infected_group,
-                swap_propn,
-                swap_dist,
-                alpha,
-                beta,
-                strain_isolation_times,
-                infection_strain_indices,
-                sample_times,
-                rows_per_indiv_in_samples,
-                cum_nrows_per_individual_in_data,
-                cum_nrows_per_individual_in_data_repeats,
-                nrows_per_blood_sample,
-                group_id_vec,
-                measured_strain_indices,
-                antigenic_map_long,
-                antigenic_map_short,
-                titres_unique,
-                titres_repeats,
-                repeat_indices_cpp,
-                titre_shifts,
-                mus,
-                boosting_vec_indices,
-                n_alive_total,
-                temp,
-                solve_likelihood                
-            )
-            return(res)
-        }
-        
+                n_infections <- sum_infections_by_group(infection_history_mat, group_id_vec, n_groups)
+                if(version == 4) n_infected_group <- rowSums(n_infections)
+                ## Now pass to the C++ function
+                res <- inf_hist_prop_prior_v2_and_v4(
+                    theta,
+                    infection_history_mat,
+                    probs,
+                    sampled_indivs,
+                    n_infs,
+                    age_mask,
+                    strain_mask,
+                    n_alive,
+                    n_infections,
+                    n_infected_group,
+                    swap_propn,
+                    swap_dist,
+                    alpha,
+                    beta,
+                    strain_isolation_times,
+                    infection_strain_indices,
+                    sample_times,
+                    rows_per_indiv_in_samples,
+                    cum_nrows_per_individual_in_data,
+                    cum_nrows_per_individual_in_data_repeats,
+                    nrows_per_blood_sample,
+                    group_id_vec,
+                    measured_strain_indices,
+                    antigenic_map_long,
+                    antigenic_map_short,
+                    titres_unique,
+                    titres_repeats,
+                    repeat_indices_cpp,
+                    titre_shifts,
+                    mus,
+                    boosting_vec_indices,
+                    n_alive_total,
+                    temp,
+                    solve_likelihood                
+                )
+                return(res)
+            }
+        } else {
+            message("Generating infection history proposal function, with titre-mediated immunity")
+            ## Otherwise, we need to the titre immunity specific proposal function
+            f <- function(pars, infection_history_mat,
+                          exposure_history_mat,
+                          titre_prob_inf,
+                          probs, sampled_indivs,
+                          alpha, beta,
+                          n_infs, swap_propn, swap_dist,
+                          temp) {
+                theta <- pars[theta_indices]
+                names(theta) <- par_names_theta
+
+                ## Pass strain-dependent boosting down
+                                        #if (use_strain_dependent) {
+                                        #    mus <- pars[mu_indices_par_tab]
+                                        #}
+                
+                if (use_measurement_bias) {
+                    measurement_bias <- pars[measurement_indices_par_tab]
+                    titre_shifts <- measurement_bias[expected_indices]
+                }
+                ## Work out short and long term boosting cross reactivity - C++ function
+                antigenic_map_long <- create_cross_reactivity_vector(antigenic_map_melted, theta["sigma1"])
+                antigenic_map_short <- create_cross_reactivity_vector(antigenic_map_melted, theta["sigma2"])
+
+                n_exposures <- sum_infections_by_group(exposure_history_mat, group_id_vec, n_groups)
+                ## Now pass to the C++ function
+                res <- inf_hist_prop_prior_immunity(
+                    theta,
+                    exposure_history_mat,
+                    infection_history_mat,
+                    titre_prob_inf,
+                    probs,
+                    sampled_indivs,
+                    n_infs,
+                    age_mask,
+                    strain_mask,
+                    n_alive,
+                    n_exposures,
+                    swap_propn,
+                    swap_dist,
+                    alpha,
+                    beta,
+                    strain_isolation_times,
+                    infection_strain_indices,
+                    sample_times,
+                    rows_per_indiv_in_samples,
+                    cum_nrows_per_individual_in_data,
+                    cum_nrows_per_individual_in_data_repeats,
+                    nrows_per_blood_sample,
+                    group_id_vec,
+                    measured_strain_indices,
+                    antigenic_map_long,
+                    antigenic_map_short,
+                    titres_unique,
+                    titres_repeats,
+                    repeat_indices_cpp,
+                    titre_shifts,
+                    temp,
+                    solve_likelihood                
+                )
+                return(res)
+            }
+
+        }        
     } else if(function_type == 3){
-        ## For titres at time of infection
+        ## For titres at time of infection, calculated before an infection happens
         f <- function(pars, infection_history_mat) {
             theta <- pars[theta_indices]
             names(theta) <- par_names_theta
@@ -605,17 +675,11 @@ create_posterior_func <- function(par_tab,
                 antigenic_map_short, mus, boosting_vec_indices,
                 TRUE
             )
-            #cumu_infs1 <- apply(infection_history_mat, 1, cumsum)
-            #cumu_infs <- c(cumu_infs1)
-            #seniority <- (1-theta["tau"]*(cumu_infs-1))
-            #seniority <- sapply(seniority, function(x) max(0, x))
-            #reduction <- c(t(infection_history_mat))*(theta["mu"] + theta["mu_short"])*seniority
-            ##other <- y_at_inf - reduction
-            ##titre_dat_immunity$titre <- other
             titre_dat_immunity$titre <- y_at_inf
             return(titre_dat_immunity)
         }
     } else {
+        ## Final version is just the model solving function
         f <- function(pars, infection_history_mat) {
             theta <- pars[theta_indices]
             names(theta) <- par_names_theta
