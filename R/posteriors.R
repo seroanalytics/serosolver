@@ -402,6 +402,7 @@ create_posterior_func <- function(par_tab,
         psis <- rep(1, n_groups)
     }    
     if (use_measurement_bias) {
+        message(cat("Using measurement bias"))
         expected_indices <- measurement_indices_by_time[match(titre_dat_unique$virus, strain_isolation_times)]
     } else {
         expected_indices <- c(-1)
@@ -488,8 +489,9 @@ create_posterior_func <- function(par_tab,
                 ## and titre immunity, need to calculate this part of the likelihood
                 if(titre_immunity){
                     y_at_inf <- matrix(y_at_inf,nrow=n_indiv, byrow=TRUE)
-                    transmission_prob <- calc_titre_inf_likelihoods(y_at_inf, theta["alpha_titre"], theta["beta_titre"],
-                                                             infection_history_mat, exposure_history_mat)
+                    transmission_prob <- calc_titre_inf_likelihoods(y_at_inf, theta["alpha_titre"],
+                                                                    theta["beta_titre"],
+                                                                    infection_history_mat, exposure_history_mat)
                 }
             }
             if(solve_likelihood){
@@ -503,7 +505,7 @@ create_posterior_func <- function(par_tab,
             } else {
                 liks <- rep(-100000, n_indiv)
             }
-            return(list(liks, transmission_prob,y_at_inf))
+            return(list(liks, transmission_prob))#,y_at_inf))
         }
     } else if (function_type == 2) {
         if (version == 4) {

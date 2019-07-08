@@ -74,7 +74,8 @@ get_titre_predictions <- function(chain, infection_histories, titre_dat,
     for (i in 1:nsamp) {
         index <- tmp_samp[i]
         pars <- get_index_pars(chain,index)
-        pars <- pars[names(pars) %in% par_tab$names]
+        pars <- pars[!(names(pars) %in% c("lnlike","likelihood","prior_prob","sampno"))]
+        #pars <- pars[names(pars) %in% par_tab$names]
         tmp_inf_hist <- infection_histories[infection_histories$sampno == index, ]
         tmp_inf_hist <- as.matrix(Matrix::sparseMatrix(i = tmp_inf_hist$i, j = tmp_inf_hist$j, x = tmp_inf_hist$x, dims = c(n_indiv, nstrain)))
         predicted_titres[, i] <- f(pars, tmp_inf_hist)

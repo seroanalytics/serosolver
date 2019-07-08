@@ -57,11 +57,13 @@ simulate_data <- function(par_tab,
     
     mus <- NULL
     if (!is.null(mu_indices)) {
+      message(cat("Strain specific boosting"))
         mus <- pars[mu_indices_par_tab]
     }
     
     measurement_bias <- NULL
     if (!is.null(measurement_indices)) {
+      message(cat("Measurement bias"))
         measurement_bias <- pars[measurement_indices_par_tab]
     }
 
@@ -197,7 +199,8 @@ simulate_group <- function(n_indiv,
             strain_isolation_times,
             measured_strains, 
             mus, mu_indices,
-            measurement_bias, measurement_indices,
+            measurement_bias, 
+            measurement_indices,
             add_noise, repeats
         ))
         ## Record individual ID
@@ -274,7 +277,7 @@ simulate_individual_faster <- function(theta,
     ## Add observation noise, including measurement bias if selected
     if (add_noise) {
         if (!is.null(measurement_indices)) {
-            dat[, 3] <- add_noise(titres, theta, measurement_bias, measurement_indices[match(dat[, 2], strains)])
+            dat[, 3] <- add_noise(titres, theta, measurement_bias, measurement_indices[match(dat[, 2], strain_isolation_times)])
         } else {
             dat[, 3] <- add_noise(titres, theta, NULL, NULL)
         }
