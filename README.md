@@ -16,7 +16,7 @@
 	
 ## Quick start
 
-Read the [quick start vignette][vignette-doc] to set up and run a simple implementation of the model.
+Read the [quick start vignette][vignette-doc] to set up and run a simple implementation with a simulation model.
 
 [r-project]: http://cran.r-project.org
 [vignette-doc]: https://github.com/adamkucharski/serosolver/blob/master/vignettes/serosolver-quick_start_guide.md
