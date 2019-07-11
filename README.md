@@ -10,7 +10,7 @@
 
     ```r
 	#library(devtools)
-	install_github("adamkucharski/serosolver")
+	install_github("seroanalytics/serosolver")
 	library(serosolver)
     ```
 	
