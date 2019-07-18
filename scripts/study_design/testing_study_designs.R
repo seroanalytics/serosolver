@@ -35,9 +35,9 @@ registerDoParallel(cl)
 for(f in 1:3){
   foreach(i=1:3)%do%{
     for(type in c('L','CS')){
-      filename <- paste0(i,'study',f,sep="")
+      filename <- paste0(i,"study",f,"_", type, sep="")
       
-      titre_dat <- read.csv(paste("data/study_design/",filename, "_", type,"dat.csv",sep = ""))
+      titre_dat <- read.csv(paste("data/study_design/",filename,"dat.csv",sep = ""))
       ages <- read.csv(paste("data/study_design/",filename, "_", type,"ages.csv",sep = ""))
       
       res <- run_MCMC(par_tab = par_tab, titre_dat = merge(titre_dat,ages, by = "individual"), 
@@ -51,7 +51,4 @@ for(f in 1:3){
 }
 
 
-
-
 stopCluster(cl)
-
