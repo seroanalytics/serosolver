@@ -14,7 +14,7 @@ fit_dat <- generate_antigenic_map(antigenic_map, buckets=1)
 
 ## All possible circulation times
 fit_dat <- fit_dat[fit_dat$inf_years >= 1968,]
-strainIsolationTimes <- unique(fit_dat$inf_years)
+strain_isolation_times <- unique(fit_dat$inf_years)
 
 ## Read in parameter table
 par_tab <- read.csv(file.path(code.dir,"inputs/par_tab_study_design.csv"))
@@ -24,6 +24,24 @@ filename_vec <- c('all_ages_historic','seasonal_all_ages_historic')
 
 #Run the MCMC 
 for(filename in filename_vec){
+  ## Read in ages
+  ages <- read.csv(paste("data/study_design/",filename,"_8_ages.csv",sep=""), stringsAsFactors=FALSE)
+  for(h in 7:8){
+    titre_dat <- read.csv(paste('data/study_design/', filename,"_", h,"_dat.csv", sep=""), stringsAsFactors=FALSE)
+    
+    titre_dat <- merge(titre_dat, ages)
+    
+    res <- run_MCMC(par_tab = par_tab, titre_dat = titre_dat, 
+                    antigenic_map = fit_dat, mcmc_pars = mcmc_pars,
+                    mvr_pars = NULL, start_inf_hist = NULL, filename=paste('chains/',filename,"_",h,sep=""),
+                    CREATE_POSTERIOR_FUNC = create_posterior_func_fast, CREATE_PRIOR_FUNC = NULL,
+                    version = 2,  
+                    fast_version = TRUE)
+  }
+  
+}
+
+filename <- 'seasonal_all_ages_historic'
   ## Read in ages
   ages <- read.csv(paste("data/study_design/",filename,"_8_ages.csv",sep=""), stringsAsFactors=FALSE)
   for(h in 1:8){
@@ -39,11 +57,10 @@ for(filename in filename_vec){
                     fast_version = TRUE)
   }
   
-}
 
 
 
-
+  filename <- 'all_ages_historic'
 # Plot attack rates 
 for(filename in filename_vec){
   ages <- read.csv(paste("data/study_design/",filename,"_8_ages.csv",sep=""), stringsAsFactors=FALSE)
