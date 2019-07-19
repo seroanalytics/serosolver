@@ -3,7 +3,7 @@ setwd(code.dir)
 devtools::load_all()
 
 ## Specify paramters controlling the MCMC procedure
-mcmc_pars <- c("iterations"=1000000,"adaptive_period"=500000, "burnin"=50000,
+mcmc_pars <- c("iterations"=500000,"adaptive_period"=500000, "burnin"=50000,
                "hist_sample_prob"=0.5,"thin"=200,"thin_hist"=200,
                "swap_propn"=0.5,"hist_switch_prob"=0.2,"year_swap_propn"=0.5)
 
@@ -34,11 +34,11 @@ registerDoParallel(cl)
 ###mcmc chains
 for(f in 1:3){
   foreach(i=1:3)%do%{
-    for(type in c('L','CS')){
+    for(type in c("L","CS")){
       filename <- paste0(i,"study",f,"_", type, sep="")
       
       titre_dat <- read.csv(paste("data/study_design/",filename,"dat.csv",sep = ""))
-      ages <- read.csv(paste("data/study_design/",filename, "_", type,"ages.csv",sep = ""))
+      ages <- read.csv(paste("data/study_design/",filename,"ages.csv",sep = ""))
       
       res <- run_MCMC(par_tab = par_tab, titre_dat = merge(titre_dat,ages, by = "individual"), 
                       antigenic_map = fit_dat, mcmc_pars = mcmc_pars,
