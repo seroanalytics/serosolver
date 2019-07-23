@@ -4,7 +4,7 @@ author: "Kylie Ainslie and James Hay"
 date: "`r Sys.Date()`"
 output: rmarkdown::html_vignette # rmarkdown::md_document - need for GitHub
 vignette: >
-  %\VignetteIndexEntry{Serosolver Vignette}
+  %\VignetteIndexEntry{Serosolver Quick Start Guide}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 bibliography: vignette_references.bib
@@ -43,8 +43,7 @@ This quick start guide is designed to provide the basic instructions to use `ser
 The easiest way to install the development version of `serosolver` is to use the `devtools` package:
 
 ```{r,eval=FALSE}
-library(devtools)
-install_github("adamkucharski/serosolver")
+devtools::install_github("seroanalytics/serosolver", build_vignettes=TRUE)
 library(serosolver)
 ```
 
@@ -63,39 +62,40 @@ library(serosolver)
 6. DOB: integer value of date of birth (should be in the same format as samples)
 
 ```{r,eval=FALSE}
-  titreDat <- data.frame(individual=c(rep(1,4),rep(2,4)),
-                samples=c(8039,8040,8044,8047,8039,8041,8045,8048),
-                virus=c(rep(8036,8)),
-                titre=c(0,0,7,7,0,5,6,5),
-                run=c(rep(1,8)),
-                DOB=c(rep(8036,8)),
-                group=c(rep(1,8))
-                )
-  knitr::kable(head(titreDat))
+  titre_dat <- data.frame(individual=c(rep(1,4),rep(2,4)),
+                          samples=c(8039,8040,8044,8047,8039,8041,8045,8048),
+                          virus=c(rep(8036,8)),
+                          titre=c(0,0,7,7,0,5,6,5),
+                          run=c(rep(1,8)),
+                          DOB=c(rep(8036,8)),
+                          group=c(rep(1,8))
+                         )
+  knitr::kable(head(titre_dat))
 ```
 
-For the remainder of this quick start guide we refer to the input data set as `titreDat`.
+For the remainder of this quick start guide we refer to the input data set as `titre_dat`.
 
 ## 2. Specifying inputs
 Along with a data file, serosolver expects several additional inputs naemly, a parameter input file for starting values of antibody kinetics parameters, an antigenic map, an age mask, and starting infection histories. The following section will walk the users through creating each of these inputs. 
 
 ### Parameter values
-Several input files are stored within the `serosolver` package in the 'inputs' directory, however users can create their own. The default parameter file 'parTab.csv' is shown below:
+Several input files are stored within the `serosolver` package in the 'inputs' directory, however users can create their own. The default parameter file 'parTab_base.csv' is shown below:
 ```{r,echo=FALSE,results='asis'}
   options(scipen=999)
-  parTab <- read.csv("parTab.csv",stringsAsFactors=FALSE)
-  parTab[parTab$names %in% c("alpha","beta"),"values"] <- c(1,1)
-  knitr::kable(parTab)
+  par_tab_path <- system.file("extdata", "parTab_base.csv", package = "serosolver")
+  par_tab <- read.csv(par_tab_path, stringsAsFactors=FALSE)
+  par_tab[par_tab$names %in% c("alpha","beta"),"values"] <- c(1,1)
+  knitr::kable(par_tab)
 ```
 
 In the parameter file, the column 'fixed' indicates if each parameter value is fixed or should be estimated. For values that are not fixed, starting values need to be generated. The below code generates a random starting value for unfixed parameter values.
 ```{r,eval=FALSE}
 # generate starting parameter values
-  startTab <- parTab
-    for(i in 1:nrow(startTab)){
-      if(startTab[i,"fixed"] == 0){
-        startTab[i,"values"] <- runif(1,startTab[i,"lower_start"], 
-                                  startTab[i,"upper_start"])
+  start_tab <- par_tab
+    for(i in 1:nrow(start_tab)){
+      if(start_tab[i,"fixed"] == 0){
+        start_tab[i,"values"] <- runif(1,start_tab[i,"lower_start"], 
+                                  start_tab[i,"upper_start"])
       }
     }
 
@@ -104,31 +104,35 @@ In the parameter file, the column 'fixed' indicates if each parameter value is f
 ### Antigenic Map
 The antigenic map specifies the coordinates of different circulating viruses in antigenic space [@smith2004], informing the model about how antigenically similar these viruses are. Viruses that are further apart in this 2-dimensional space are expected to cross react less than viruses that are close together.
 
-```{r antigenicMap, echo=FALSE, fig.cap="Assumed antigenic locations of historical strains in model between 1968 and 2012 (from Kucharski *et al.* @kucharski2018).", out.width = '75%'}
+```{r antigenic_map, echo=FALSE, fig.cap="Assumed antigenic locations of historical strains in model between 1968 and 2012 (from Kucharski *et al.* @kucharski2018).", out.width = '75%'}
 knitr::include_graphics("antigenic_map.tiff")
 ```
 
 An antigenic map can be created using `generate_antigenic_map()` and input by the user depending on the source of their data. We use the antigenic map created by Fonville *et al.* [@fonville2014] in our analyses.
 
 ```{r, eval=FALSE}
-# Read in and generate the antigenic map to read strain relationships from
-  antigenicMap <- read.csv("fonville_map_approx.csv",stringsAsFactors=FALSE)
-  fit_dat <- generate_antigenic_map(antigenicMap, buckets = 4)
+## Read in raw coordinates
+antigenic_coords_path <- system.file("extdata", "fonville_map_approx.csv", package = "serosolver")
+antigenic_coords <- read.csv(antigenic_coords_path, stringsAsFactors=FALSE)
+
+## Convert to form expected by serosolver
+antigenic_map <- generate_antigenic_map(antigenic_coords, buckets = 4)
+
 # unique strain circulation times
-  strainIsolationTimes <- unique(fit_dat$inf_years)
+  strains_isolation_times <- unique(antigenic_map$inf_years)
 ```
 
 ### Age Mask
-An age mask is required to indicate when each individual could have had their first infection. For example an individual born in 1997 could not have been infected with a strain that circulated in 1990. The fuctino `create_age_mask()` outputs a vector of indices of the first `strainIsolationTimes` that an individual could have been infected with.
+An age mask is required to indicate when each individual could have had their first infection. For example an individual born in 1997 could not have been infected with a strain that circulated in 1990. The fuction `create_age_mask()` outputs a vector of indices of the first `strains_isolation_times` that an individual could have been infected with.
 
 ```{r, eval=FALSE}
-  unique_indiv <- titreDat[!duplicated(titreDat$individual),]
-  ageMask <- create_age_mask(unique_indiv$DOB, strainIsolationTimes)
+  unique_indiv <- titre_dat[!duplicated(titre_dat$individual),]
+  ageMask <- create_age_mask(unique_indiv$DOB, strains_isolation_times)
 ```
 
-The final input required by `serosolver` are starting infection histories for each individual. The function `setup_infection_histories_new_2()` creates a matrix of infection histories given a matrix of titre data by looking at an individual's titre against each strain. Where titres are raised, it suggests an infection. In this way, it can propose plausible initial infection histories from which to begin MCMC sampling.
+The final inputs required by `serosolver` are starting infection histories for each individual. The function `setup_infection_histories_new_2()` creates a matrix of infection histories given a matrix of titre data by looking at an individual's titre against each strain. Where titres are raised, it suggests an infection. In this way, it can propose plausible initial infection histories from which to begin MCMC sampling.
 ```{r, eval=FALSE}
-  startInf <- setup_infection_histories_new_2(titreDat, strainIsolationTimes)
+  start_inf <- setup_infection_histories_new_2(titre_dat, strains_isolation_times)
 ```
 
 ## 3. Run MCMC
@@ -137,9 +141,9 @@ The final input required by `serosolver` are starting infection histories for ea
 Using the default options, the MCMC can be run using the following.
 ```{r, eval=FALSE}
 # run MCMC  
-  res <- run_MCMC(par_tab = startTab, titre_dat = titreDat, antigenic_map = fit_dat, 
-                  start_inf_hist = startInf, CREATE_POSTERIOR_FUNC = create_posterior_func,
-                  version = 1)
+  res <- run_MCMC(par_tab = start_tab, titre_dat = titre_dat, antigenic_map = antigenic_map, 
+                  start_inf_hist = start_inf, CREATE_POSTERIOR_FUNC = create_posterior_func,
+                  version = 2)
 ```
 If you want to change any default options, such as increasing or decreasing the number of iterations and the adaptive period you can pass a vector of function argument values to `run_MCMC()`.
 
@@ -149,8 +153,8 @@ If you want to change any default options, such as increasing or decreasing the 
                  "switch_sample"=2, "burnin"=0, "inf_propn"=0.5, "moveSize"=5, "histOpt"=1,
                  "swapPropn"=0.5,"hist_switch_prob"=0.5,"year_swap_propn"=0.5)
 
-  res <- run_MCMC(parTab = startTab, titreDat = titreDat, antigenicMap = fit_dat, 
-                  mcmcPars = mcmcPars, startInfHist = startInf,
+  res <- run_MCMC(par_tab = start_tab, titre_dat = titre_dat, antigenic_map = antigenic_map, 
+                  mcmcPars = mcmcPars, start_inf_hist = start_inf,
                   CREATE_POSTERIOR_FUNC = create_posterior_func, version = 2)
 ```
 
@@ -170,30 +174,30 @@ To evaluate model performace, trace and density plots can be produced by plottin
 Plot inferred attack rates.
 ```{r,eval=FALSE}
 # Read in infection history file from MCMC output
-  infChain <- data.table::fread(res$history_file,data.table=FALSE)
+  inf_chain <- data.table::fread(res$history_file,data.table=FALSE)
 # Remove adaptive period and burn-in
-  infChain <- infChain[infChain$sampno >= (mcmcPars["adaptive_period"]+mcmcPars["burnin"]),]
-  infChain1 <- setDT(infChain)
+  inf_chain <- inf_chain[inf_chain$sampno >= (mcmcPars["adaptive_period"]+mcmcPars["burnin"]),]
+  inf_chain1 <- setDT(inf_chain)
 # Define year range
-  xs <- min(strainIsolationTimes):max(strainIsolationTimes)
+  xs <- min(strains_isolation_times):max(strains_isolation_times)
 # Plot inferred attack rates
-  arP <- plot_attack_rates(infectionHistories = infChain1, dat = titreDat, ages = titreDat[,c('individual', 'DOB')], yearRange = xs)
+  arP <- plot_attack_rates(infectionHistories = inf_chain1, dat = titre_dat, ages = titre_dat[,c('individual', 'DOB')], yearRange = xs)
 ``` 
 
 Plot inferred infection histories.
 ```{r, eval=FALSE}
 # Plot infection histories
-  IH_plot <- plot_infection_histories(chain = chain1, infectionHistories = infChain, 
-                                      titreDat = titreDat, individuals = c(1:5),
-                                      antigenicMap = fit_dat, parTab = startTab1)
+  IH_plot <- plot_infection_histories(chain = chain1, infection_histories = inf_chain, 
+                                      titre_dat = titre_dat, individuals = c(1:5),
+                                      antigenic_map = antigenic_map, par_tab = start_tab1)
 ```
 
 Plot inferred antibody titres.
 ```{r,eval=FALSE}
 # Plot inferred antibody titres
-  titre_preds <- get_titre_predictions(chain = chain1, infection_histories = infChain, 
-                                       titre_dat = titreDat, individuals = c(1:311),
-                                       antigenic_map = fit_dat, par_tab = startTab1)
+  titre_preds <- get_titre_predictions(chain = chain1, infection_histories = inf_chain, 
+                                       titre_dat = titre_dat, individuals = c(1:311),
+                                       antigenic_map = antigenic_map, par_tab = start_tab1)
   to_use <- titre_preds$predictions
   
   titre_pred_p <- ggplot(to_use[to_use$individual %in% 151:200,])+
@@ -204,8 +208,8 @@ Plot inferred antibody titres.
 ```
 Generate cummulative incidence plots.
 ```{r,eval=FALSE}
-  y <- generate_cumulative_inf_plots(infChain,burnin = 0,51:75,nsamp=100,
-                                     strain_isolation_times = strainIsolationTimes,
+  y <- generate_cumulative_inf_plots(inf_chain,burnin = 0,51:75,nsamp=100,
+                                     strain_isolation_times = strains_isolation_times,
                                      pad_chain=FALSE,number_col = 2,subset_years = NULL)
 ```
 

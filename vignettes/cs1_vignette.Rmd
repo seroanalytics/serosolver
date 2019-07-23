@@ -11,7 +11,9 @@ editor_options:
 subttitle: Inferring pandemic A/H1N1 attack rates using longitudinal serology
 bibliography: vignette_references.bib
 vignette: |
-  %\VignetteIndexEntry{Serosolver Vignette} %\VignetteEngine{knitr::rmarkdown} %\VignetteEncoding{UTF-8}
+  %\VignetteIndexEntry{Serosolver Case Study 1}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
 ---
 
 ```{r setup, include=FALSE}
@@ -31,7 +33,7 @@ This vignette provides all of the analyses for case study 1 in the accompanying 
 `serosolver` may be installed from github using the `devtools` package. There are a number of additional packages that we need for this analysis.
 ```{r message=FALSE, warning=FALSE, r,eval=TRUE}
 # Required to run serosolver
-devtools::install_github("seroanalytics/serosolver")
+#devtools::install_github("seroanalytics/serosolver")
 library(serosolver)
 library(plyr)
 library(data.table)
