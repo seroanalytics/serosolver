@@ -31,7 +31,7 @@ This vignette provides all of the analyses for case study 1 in the accompanying 
 `serosolver` may be installed from github using the `devtools` package. There are a number of additional packages that we need for this analysis.
 ```{r message=FALSE, warning=FALSE, r,eval=TRUE}
 # Required to run serosolver
-#devtools::install_github("seroanalytics/serosolver")
+devtools::install_github("seroanalytics/serosolver")
 library(serosolver)
 library(plyr)
 library(data.table)
@@ -147,6 +147,7 @@ Changing the number of iterations and the length of the adaptive period are ofte
 ## Distinct filename for each chain
 no_chains <- 5
 filenames <- paste0(filename, "_",1:no_chains)
+chain_path <- sub("parTab_base.csv","",par_tab_path)
 
 ## Create the posterior solving function that will be used in the MCMC framework 
 f <- create_posterior_func_fast(par_tab=par_tab,
@@ -180,7 +181,7 @@ res <- foreach(x = filenames, .packages = 'serosolver') %dopar% {
                                 "save_block"=1000,"inf_propn"=1, 
                                 "hist_sample_prob"=1,"hist_switch_prob"=0.8,
                                 "year_swap_propn"=1),
-                  filename = paste0("inst/extdata/chains_main/",x), 
+                  filename = paste0(chain_path,x), 
                   CREATE_POSTERIOR_FUNC = create_posterior_func_fast, 
                   version = prior_version,
                   fast_version=TRUE)
@@ -193,8 +194,7 @@ Once the MCMC chains are run, `serosolver` provides a number of simple functions
 ```{r message=FALSE, warning=FALSE}
 ## Read in the MCMC chains
 ## Note that `thin` here is in addition to any thinning done during the fitting
-chain_path <- sub("parTab_base.csv","",par_tab_path)
-all_chains <- load_mcmc_chains(location=paste0(chain_path,"chains_main/"),thin=1,burnin=1000,
+all_chains <- load_mcmc_chains(location=chain_path,thin=1,burnin=1000,
                              par_tab=par_tab,unfixed=FALSE,convert_mcmc=TRUE)
 print(summary(all_chains))
 ```
@@ -307,7 +307,7 @@ We finish the vignette by presenting a simulation-recovery experiment to test th
 We simulate infection histories and antibody titre data based on the "real" parameters inferred from fitting the model above. First, we extract the maximum posterior probability antibody kinetics parameters and attack rates.
 ```{r message=FALSE, warning=FALSE}
 ## Read in MCMC chains from fitting
-all_chains <- load_mcmc_chains(location=paste0(chain_path,"chains_main/"),thin=10,burnin=1000,
+all_chains <- load_mcmc_chains(location=chain_path,thin=10,burnin=1000,
                                par_tab=par_tab,unfixed=FALSE,convert_mcmc=FALSE)
 
 ## Find samples that were in both theta and inf hist chains
@@ -430,7 +430,7 @@ res <- foreach(x = filenames, .packages = "serosolver") %dopar% {
                   mcmc_pars = c("iterations"=50000,"adaptive_period"=10000,"thin"=10,
                                 "thin_hist"=100,"save_block"=1000,
                                 "hist_switch_prob"=0.8, "hist_sample_prob"=1),
-                  filename = paste0("inst/extdata/chains_sim/",x), 
+                  filename = paste0(chain_path,x), 
                   CREATE_POSTERIOR_FUNC = create_posterior_func_fast, 
                   version = prior_version,
                   fast_version=TRUE)
@@ -443,7 +443,7 @@ MCMC chains should be checked for convergence under the usual diagnostics. We al
 ```{r message=FALSE, warning=FALSE}
 ## Read in the MCMC chains
 ## Note that `thin` here is in addition to any thinning done during the fitting
-sim_all_chains <- load_mcmc_chains(location=paste0(chain_path,"chains_sim/"),thin=1,burnin=1000,
+sim_all_chains <- load_mcmc_chains(location=chain_path,thin=1,burnin=1000,
                                    par_tab=par_tab,unfixed=FALSE,convert_mcmc=TRUE)
 theta_chain <- sim_all_chains$theta_chain
 ## Get the MCMC chains as a list
