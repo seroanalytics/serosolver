@@ -20,3 +20,5 @@ binaries
 *~
 *.o
 *.so
+doc
+Meta
