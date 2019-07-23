@@ -51,9 +51,6 @@ library(viridis)
 set.seed(1234)
 cl <- makeCluster(5)
 registerDoParallel(cl)
-
-## Choose wd to run anaylsis
-setwd("~/Documents/serosolver/vignettes")
 ```
 
 ## Assumptions
@@ -71,13 +68,20 @@ prior_version <- 2
 The data used in this analysis are haemagglutination inhibition (HI) titres against A/H1N1pdm09 that began circulating in 2009. The raw data have been pre-processed to both convert them into a form usable for `serosolver` and to separate the data into vaccinated and unvaccinated data sets. Details about the pre-processing can be found in the scripts folder of the `serosolver` package.
 ```{r}
 ## Read in titre data
- inputDat <- read.csv(file = "case_study_1/data/HKdata_h1n1_unvac.csv",header = TRUE)
-# inputDat <- read.csv(file = "case_study_1/data/HKdata_h1n1_vac.csv",header = TRUE)
+  mypath <- sub("HKdata_h1n1_unvac.csv","",
+                system.file("extdata", "HKdata_h1n1_unvac.csv", package = "serosolver"))
+  #setwd(mypath)
+# unvaccinated
+  input_dat_path <- system.file("extdata", "HKdata_h1n1_unvac.csv", package = "serosolver")
+  input_dat <- read.csv(file = input_dat_path, header = TRUE)
+# vaccinated
+# input_dat_path2 <- system.file("extdata", "HKdata_h1n1_vac.csv", package = "serosolver")
+# input_dat_vac <- read.csv(file = input_dat_path2, header = TRUE)
 
-indivs <- unique(inputDat$individual) #all individuals
+indivs <- unique(input_dat$individual) #all individuals
 
 # Subset data for indivs
-titre_dat <- inputDat[inputDat$individual %in% indivs,c("individual","virus","titre","samples","DOB")]
+titre_dat <- input_dat[input_dat$individual %in% indivs,c("individual","virus","titre","samples","DOB")]
 titre_dat$individual <- match(titre_dat$individual, indivs)
 
 titre_dat <- unique(titre_dat)
@@ -90,7 +94,8 @@ NOTE: vaccinated and unvaccinated data must be run separately.
 Given that this analysis uses titres from a single virus it is necessary to define an antigenic map with matching antigenic distance for each time point. We use coordinates based on the antigenic map created by Fonville et al. Generating the antigenic map involves fitting a smoothing spline through provided coordinates to give a representative virus for each time point (in this case, each quarter) that an individual could be infected. This process also imputs antigenic coordinates for time points that we do not have a measured virus. We then overwrite the coordinates at every time point with those of the first time point.
 ```{r}
 ## Read in raw coordinates
-antigenic_coords <- read.csv("case_study_1/data/fonville_map_approx.csv",stringsAsFactors=FALSE)
+antigenic_coords_path <- system.file("extdata", "fonville_map_approx.csv", package = "serosolver")
+antigenic_coords <- read.csv(antigenic_coords_path, stringsAsFactors=FALSE)
 
 ## Convert to form expected by serosolver
 antigenic_map <- generate_antigenic_map(antigenic_coords, resolution)
@@ -112,7 +117,8 @@ NOTE: `generate_antigenic_map` expects the provided file `fonville_map_approx.cs
 Finally, we must specify the `par_tab` data frame, which controls which parameters are included in the model, which are fixed, and their uniform prior ranges. Given that we are integrating out the probability of infection terms under prior version 2, we must remove these parameters from `par_tab`. Furthermore, given that we are interested in short-term dynamics with relatively sparse data, we remove parameters relating to the long-term antibody kinetics phase to avoid identifiability issues. We set alpha and beta to 1.
 
 ```{r}
-par_tab <- read.csv("case_study_1/data/parTab_base.csv",stringsAsFactors=FALSE)
+par_tab_path <- system.file("extdata", "parTab_base.csv", package = "serosolver")
+par_tab <- read.csv(par_tab_path, stringsAsFactors=FALSE)
 
 ## Set parameters for beta and alpha to 1
 par_tab[par_tab$names %in% c("alpha","beta"),"values"] <- c(1,1)
@@ -132,13 +138,12 @@ par_tab[par_tab$names %in% c("mu","tau","sigma1","sigma2"),"values"] <- 0 # set 
 + Generate antigenic map for the exposing virus
 + Generate parameter control table for MCMC
 
-
 # Running the MCMC
 We are now ready to fit our model. We will fit multiple chains in parallel, though the below analysis could easily be replicated by running chains sequentially. Starting conditions for the MCMC chain must be generated that return a finite likelihood. The user may modify many of the MCMC control parameters, though the defaults are fine for most purposes.
 
 Changing the number of iterations and the length of the adaptive period are often desirable. More crucially, the amount of chain thinning should be specified to ensure that users are not saving a large number of MCMC iterations (as this will rapidly fill disk space!). Thinning should be set such that at least 1000 iterations are saved (i.e., `iterations`/`thin` and `thin_hist`). Users are encouraged to pay extra attention to `thin_hist`, which dictates the thinning of the infection history chain, and can generate a very large file if left unchecked.
 
-```{r Run mcmc 1, eval=FALSE, include=TRUE}
+```{r Run mcmc 1, eval=TRUE, include=TRUE}
 ## Distinct filename for each chain
 no_chains <- 5
 filenames <- paste0(filename, "_",1:no_chains)
@@ -150,7 +155,7 @@ f <- create_posterior_func_fast(par_tab=par_tab,
                                 version=prior_version) # function in posteriors.R
 
 ## Generate results in parallel
-res <- foreach(x = filenames) %dopar% {
+res <- foreach(x = filenames, .packages = 'serosolver') %dopar% {
   ## Not all random starting conditions return finite likelihood, so for each chain generate random
   ## conditions until we get one with a finite likelihood
   start_prob <- -Inf
@@ -171,10 +176,11 @@ res <- foreach(x = filenames) %dopar% {
                   titre_dat = titre_dat,
                   antigenic_map = antigenic_map,
                   start_inf_hist = start_inf, 
-                  mcmc_pars = c("iterations"=500000,"adaptive_period"=100000,"thin"=10,"thin_hist"=1000,"save_block"=1000,
-                                "inf_propn"=1, "hist_sample_prob"=1,
-                                "hist_switch_prob"=0.8, "year_swap_propn"=1),
-                  filename = paste0("chains_main/",x), 
+                  mcmc_pars = c("iterations"=50000,"adaptive_period"=10000,"thin"=10,"thin_hist"=100,
+                                "save_block"=1000,"inf_propn"=1, 
+                                "hist_sample_prob"=1,"hist_switch_prob"=0.8,
+                                "year_swap_propn"=1),
+                  filename = paste0("inst/extdata/chains_main/",x), 
                   CREATE_POSTERIOR_FUNC = create_posterior_func_fast, 
                   version = prior_version,
                   fast_version=TRUE)
@@ -187,7 +193,8 @@ Once the MCMC chains are run, `serosolver` provides a number of simple functions
 ```{r message=FALSE, warning=FALSE}
 ## Read in the MCMC chains
 ## Note that `thin` here is in addition to any thinning done during the fitting
-all_chains <- load_mcmc_chains(location="case_study_1/chains_main",thin=1,burnin=10000,
+chain_path <- sub("parTab_base.csv","",par_tab_path)
+all_chains <- load_mcmc_chains(location=paste0(chain_path,"chains_main/"),thin=1,burnin=1000,
                              par_tab=par_tab,unfixed=FALSE,convert_mcmc=TRUE)
 print(summary(all_chains))
 ```
@@ -250,8 +257,9 @@ print(head(ps_infhist[["estimates"]]$by_indiv))
 
 ## Check for agreement between inferred cumulative infection histories 
 ## for some individuals
-p_indiv_inf_hists <- generate_cumulative_inf_plots(inf_chain,indivs=1:9,pad_chain=FALSE,
+p_indiv_inf_hists <- generate_cumulative_inf_plots(inf_chain, indivs=1:9, pad_chain=FALSE,
                                                   strain_isolation_times = strain_isolation_times,
+                                                  #nsamp = 50, 
                                                   number_col=3)
 print(p_indiv_inf_hists[[1]])
 
@@ -272,7 +280,7 @@ titre_preds <- get_titre_predictions(chain = chain1,
                                      infection_histories = inf_chain1, 
                                      titre_dat = titre_dat, 
                                      individuals = unique(titre_dat$individual),
-                                     nsamp = 50,
+                                     #nsamp = 50,
                                      antigenic_map = antigenic_map, 
                                      par_tab = par_tab,expand_titredat=FALSE)
 to_use <- titre_preds$predictions
@@ -299,7 +307,7 @@ We finish the vignette by presenting a simulation-recovery experiment to test th
 We simulate infection histories and antibody titre data based on the "real" parameters inferred from fitting the model above. First, we extract the maximum posterior probability antibody kinetics parameters and attack rates.
 ```{r message=FALSE, warning=FALSE}
 ## Read in MCMC chains from fitting
-all_chains <- load_mcmc_chains(location="case_study_1/chains_main/",thin=10,burnin=10000,
+all_chains <- load_mcmc_chains(location=paste0(chain_path,"chains_main/"),thin=10,burnin=1000,
                                par_tab=par_tab,unfixed=FALSE,convert_mcmc=FALSE)
 
 ## Find samples that were in both theta and inf hist chains
@@ -398,7 +406,7 @@ f <- create_posterior_func_fast(par_tab=sim_par_tab,
                                 version=prior_version) # function in posteriors.R
 
 ## Generate results in parallel
-res <- foreach(x = filenames) %dopar% {
+res <- foreach(x = filenames, .packages = "serosolver") %dopar% {
   ## Not all random starting conditions return finite likelihood, so for each chain generate random
   ## conditions until we get one with a finite likelihood
   start_prob <- -Inf
@@ -419,10 +427,10 @@ res <- foreach(x = filenames) %dopar% {
                   titre_dat = sim_titre_dat,
                   antigenic_map = antigenic_map,
                   start_inf_hist = start_inf, 
-                  mcmc_pars = c("iterations"=500000,"adaptive_period"=100000,"thin"=10,
-                                "thin_hist"=1000,"save_block"=1000,
+                  mcmc_pars = c("iterations"=50000,"adaptive_period"=10000,"thin"=10,
+                                "thin_hist"=100,"save_block"=1000,
                                 "hist_switch_prob"=0.8, "hist_sample_prob"=1),
-                  filename = paste0("chains_sim/",x), 
+                  filename = paste0("inst/extdata/chains_sim/",x), 
                   CREATE_POSTERIOR_FUNC = create_posterior_func_fast, 
                   version = prior_version,
                   fast_version=TRUE)
@@ -435,7 +443,7 @@ MCMC chains should be checked for convergence under the usual diagnostics. We al
 ```{r message=FALSE, warning=FALSE}
 ## Read in the MCMC chains
 ## Note that `thin` here is in addition to any thinning done during the fitting
-sim_all_chains <- load_mcmc_chains(location="case_study_1/chains_sim",thin=1,burnin=10000,
+sim_all_chains <- load_mcmc_chains(location=paste0(chain_path,"chains_sim/"),thin=1,burnin=1000,
                                    par_tab=par_tab,unfixed=FALSE,convert_mcmc=TRUE)
 theta_chain <- sim_all_chains$theta_chain
 ## Get the MCMC chains as a list
