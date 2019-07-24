@@ -70,9 +70,6 @@ prior_version <- 2
 The data used in this analysis are haemagglutination inhibition (HI) titres against A/H1N1pdm09 that began circulating in 2009. The raw data have been pre-processed to both convert them into a form usable for `serosolver` and to separate the data into vaccinated and unvaccinated data sets. Details about the pre-processing can be found in the scripts folder of the `serosolver` package.
 ```{r}
 ## Read in titre data
-  mypath <- sub("HKdata_h1n1_unvac.csv","",
-                system.file("extdata", "HKdata_h1n1_unvac.csv", package = "serosolver"))
-  #setwd(mypath)
 # unvaccinated
   input_dat_path <- system.file("extdata", "HKdata_h1n1_unvac.csv", package = "serosolver")
   input_dat <- read.csv(file = input_dat_path, header = TRUE)
@@ -119,7 +116,7 @@ NOTE: `generate_antigenic_map` expects the provided file `fonville_map_approx.cs
 Finally, we must specify the `par_tab` data frame, which controls which parameters are included in the model, which are fixed, and their uniform prior ranges. Given that we are integrating out the probability of infection terms under prior version 2, we must remove these parameters from `par_tab`. Furthermore, given that we are interested in short-term dynamics with relatively sparse data, we remove parameters relating to the long-term antibody kinetics phase to avoid identifiability issues. We set alpha and beta to 1.
 
 ```{r}
-par_tab_path <- system.file("extdata", "parTab_base.csv", package = "serosolver")
+par_tab_path <- system.file("extdata", "par_tab_base.csv", package = "serosolver")
 par_tab <- read.csv(par_tab_path, stringsAsFactors=FALSE)
 
 ## Set parameters for beta and alpha to 1
@@ -149,7 +146,7 @@ Changing the number of iterations and the length of the adaptive period are ofte
 ## Distinct filename for each chain
 no_chains <- 5
 filenames <- paste0(filename, "_",1:no_chains)
-chain_path <- sub("parTab_base.csv","",par_tab_path)
+chain_path <- sub("par_tab_base.csv","",par_tab_path)
 
 ## Create the posterior solving function that will be used in the MCMC framework 
 f <- create_posterior_func_fast(par_tab=par_tab,
