@@ -11,7 +11,9 @@ editor_options:
 subttitle: Inferring historical A/H3N2 attack rates using cross sectional serology
 bibliography: vignette_references.bib
 vignette: |
-  %\VignetteIndexEntry{Serosolver Vignette} %\VignetteEngine{knitr::rmarkdown} %\VignetteEncoding{UTF-8}
+  %\VignetteIndexEntry{Serosolver Case Study 2} 
+  %\VignetteEngine{knitr::rmarkdown} 
+  %\VignetteEncoding{UTF-8}
 ---
 
 ```{r setup, include=FALSE}
@@ -31,7 +33,7 @@ This vignette provides all of the analysis for case study 2 in the accompanying 
 `serosolver` may be installed from github using the `devtools` package. There are a number of additional packages that we need for this analysis.
 ```{r message=FALSE, warning=FALSE, r,eval=TRUE}
 # Required to run serosolver
-#devtools::install_github("seroanalytics/serosolver")
+devtools::install_github("seroanalytics/serosolver")
 library(serosolver)
 library(plyr)
 library(data.table)
@@ -39,18 +41,23 @@ library(data.table)
 ## Required for this analysis
 library(reshape2)
 library(foreach)
-library(doMC)
+library(doParallel)
 library(bayesplot)
-library(doRNG)
 library(coda)
 library(ggplot2)
 library(viridis)
 
-## doRNG handles seeding in the foreach loop
-## Note that this vignette was generated on a Linux machine,
-## and the setup for parallelisation is different on a Windows machine
+# set up cluster
 set.seed(1234)
-registerDoMC(cores=5)
+cl <- makeCluster(5)
+registerDoParallel(cl)
+
+## Note that this vignette was generated on a Windows machine,
+## and the setup for parallelisation is different on a Linux machine
+## for Linux machine:
+#  library(doMC)
+#  library(doRNG)
+#  registerDoMC(cores=5)
 ```
 
 ## Assumptions
@@ -99,7 +106,7 @@ melted_dat$DOB <- sample_year - melted_dat$DOB
 melted_dat$samples <- sample_year
 
 ## Add column for titre repeats, enumerating for each measurement for the same virus/sample/individual
-melted_dat <- plyr::ddply(melted_dat,.(individual,virus,samples),function(x) cbind(x,"run"=1:nrow(x)))
+melted_dat <- plyr::ddply(melted_dat,.(individual,virus,samples),function(x) cbind(x,"run"=1:nrow(x),"group"=1))
 
 ## Rename to data expected by serosolver
 titre_dat <- melted_dat
@@ -111,7 +118,7 @@ Given that this analysis uses titres from multiple, antigenically related viruse
 ```{r}
 ## Read in raw coordinates
 antigenic_coords_path <- system.file("extdata", "fonville_map_approx.csv", package = "serosolver")
-antigenic_coords <- read.csv(antigenic_coords_path, stringsAsFactors=FALSE)
+antigenic_coords <- read.csv(file = antigenic_coords_path, stringsAsFactors=FALSE)
 print(head(antigenic_coords))
 
 ## Convert to form expected by serosolver
@@ -139,7 +146,7 @@ Finally, we must specify the `par_tab` data frame, which controls which paramete
 
 ```{r}
 par_tab_path <- system.file("extdata", "par_tab_base.csv", package = "serosolver")
-par_tab <- read.csv(par_tab_path, stringsAsFactors=FALSE)
+par_tab <- read.csv(file = par_tab_path, stringsAsFactors=FALSE)
 
 ## Set parameters for Beta prior on infection histories
 beta_pars <- generate_alpha_beta_prior_mode(0.15,4)
@@ -169,7 +176,7 @@ We are now ready to fit our model. We will fit multiple chains in parallel, thou
 
 Changing the number of iterations and the length of the adaptive period are often desirable. More crucially, the amount of chain thinning should be specified to ensure that users are not saving a large number of MCMC iterations (as this will rapidly fill disk space!). Thinning should be set such that at least 1000 iterations are saved (ie. `iterations`/`thin` and `thin_hist`). Users are encouraged to pay extra attention to `thin_hist`, which dictates the thinning of the infection history chain, and can generate a very large file if left unchecked.
 
-```{r Run mcmc 1, eval=FALSE, include=TRUE}
+```{r Run mcmc 1, eval=TRUE, include=TRUE}
 ## Distinct filename for each chain
 no_chains <- 5
 filenames <- paste0(filename, "_",1:no_chains)
@@ -182,7 +189,7 @@ f <- create_posterior_func_fast(par_tab=par_tab,
                                 version=prior_version) # function in posteriors.R
 
 ## Generate results in parallel
-res <- foreach(x = filenames) %dopar% {
+res <- foreach(x = filenames, .packages = 'serosolver') %dopar% {
   ## Not all random starting conditions return finite likelihood, so for each chain generate random
   ## conditions until we get one with a finite likelihood
   start_prob <- -Inf
@@ -203,7 +210,7 @@ res <- foreach(x = filenames) %dopar% {
                   titre_dat = titre_dat,
                   antigenic_map = antigenic_map,
                   start_inf_hist = start_inf, 
-                  mcmc_pars = c("iterations"=500000,"adaptive_period"=100000,"thin"=10,"thin_hist"=1000,"save_block"=1000,
+                  mcmc_pars = c("iterations"=50000,"adaptive_period"=10000,"thin"=10,"thin_hist"=100,"save_block"=1000,
                                 "inf_propn"=1, "hist_sample_prob"=1,
                                 "hist_switch_prob"=0.8, "year_swap_propn"=1),
                   filename = paste0(chain_path,x), 
@@ -219,7 +226,7 @@ Once the MCMC chains are run, `serosolver` provides a number of simple functions
 ```{r message=FALSE, warning=FALSE}
 ## Read in the MCMC chains
 ## Note that `thin` here is in addition to any thinning done during the fitting
-all_chains <- load_mcmc_chains(location=chain_path,thin=1,burnin=100000,
+all_chains <- load_mcmc_chains(location=chain_path,thin=1,burnin=10000,
                                par_tab=par_tab,unfixed=FALSE,convert_mcmc=TRUE)
 print(summary(all_chains))
 ```
@@ -411,7 +418,8 @@ inf_chain <- pad_inf_chain(inf_chain)
 colnames(inf_chain) <- c("sampno","chain_no","individual","year","infected")
 
 ## Data on which strains belong to which cluster
-clusters <- read.csv("../data/fonville_clusters.csv", stringsAsFactors=FALSE)
+cluster_path <- system.file("extdata", "fonville_clusters.csv", package = "serosolver")
+clusters <- read.csv(file = cluster_path, stringsAsFactors=FALSE)
 clusters <- clusters[clusters$year <= sample_year,]
 
 ## j=1 corresponds to the year 1968
@@ -533,7 +541,7 @@ We finish the vignette by presenting a simulation-recovery experiment to test th
 We simulate infection histories and antibody titre data based on the "real" parameters inferred from fitting the model above. First, we extract the maximum posterior probability antibody kinetics parameters and attack rates.
 ```{r message=FALSE, warning=FALSE}
 ## Read in MCMC chains from fitting
-all_chains <- load_mcmc_chains(location=chain_path,thin=10,burnin=100000,
+all_chains <- load_mcmc_chains(location=chain_path,thin=10,burnin=10000,
                                par_tab=par_tab,unfixed=FALSE,convert_mcmc=FALSE)
 
 ## Find samples that were in both theta and inf hist chains
@@ -610,7 +618,7 @@ sim_ar <- dat[["attack_rates"]]
 
 ## Simulation fitting
 Once these simulated data have been generated, the work flow becomes exactly the same as with the real data above.
-```{r Run mcmc sim, eval=FALSE, include=TRUE}
+```{r Run mcmc sim, eval=TRUE, include=TRUE}
 filename <- "case_study_2_sim"
 
 ## Distinct filename for each chain
@@ -645,8 +653,8 @@ res <- foreach(x = filenames) %dopar% {
                   titre_dat = sim_titre_dat,
                   antigenic_map = antigenic_map,
                   start_inf_hist = start_inf, 
-                  mcmc_pars = c("iterations"=500000,"adaptive_period"=100000,"thin"=10,
-                                "thin_hist"=1000,"save_block"=1000,
+                  mcmc_pars = c("iterations"=50000,"adaptive_period"=10000,"thin"=10,
+                                "thin_hist"=100,"save_block"=1000,
                                 "hist_switch_prob"=0.8, "hist_sample_prob"=1),
                   filename = paste0(chain_path,x), 
                   CREATE_POSTERIOR_FUNC = create_posterior_func_fast, 
@@ -661,7 +669,7 @@ MCMC chains should be checked for convergence under the usual diagnostics. We al
 ```{r message=FALSE, warning=FALSE}
 ## Read in the MCMC chains
 ## Note that `thin` here is in addition to any thinning done during the fitting
-sim_all_chains <- load_mcmc_chains(location=chain_path,thin=1,burnin=100000,
+sim_all_chains <- load_mcmc_chains(location=chain_path,thin=1,burnin=10000,
                                par_tab=par_tab,unfixed=FALSE,convert_mcmc=TRUE)
 theta_chain <- sim_all_chains$theta_chain
 ## Get the MCMC chains as a list

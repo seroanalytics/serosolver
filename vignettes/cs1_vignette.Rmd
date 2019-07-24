@@ -47,12 +47,17 @@ library(coda)
 library(ggplot2)
 library(viridis)
 
-## doRNG handles seeding in the foreach loop
-## Note that this vignette was generated on a Linux machine,
-## and the setup for parallelisation is different on a Windows machine
+# set up cluster
 set.seed(1234)
 cl <- makeCluster(5)
 registerDoParallel(cl)
+
+## Note that this vignette was generated on a Windows machine,
+## and the setup for parallelisation is different on a Linux machine
+## for Linux machine:
+#  library(doMC)
+#  library(doRNG)
+#  registerDoMC(cores=5)
 ```
 
 ## Assumptions
