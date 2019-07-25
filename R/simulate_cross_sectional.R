@@ -31,7 +31,7 @@ simulate_cross_sectional <- function(parTab,n_indiv,buckets=12,
   if(N.cohorts==1){#if there is only one cohort then we just need to call this line once
     if(max(strainIsolationTimes)!=samplingTimes) warning('Cross-sectional study of one year is not testing strains cirulating in that year')
     dat <- simulate_data(parTab, 1, n_indiv, buckets,strainIsolationTimes,
-                             samplingTimes, length(samplingTimes), antigenicMap=fit_dat,sampleSensoring, titreSensoring, ageMin*buckets,ageMax*buckets,attackRates)
+                             samplingTimes, length(samplingTimes), antigenicMap,sampleSensoring, titreSensoring, ageMin,ageMax,attack_rates = attackRates)
     titreDat.final <- dat[[1]]
    # titreDat.final <- titreDat[titreDat$virus %in% viruses,]
 
@@ -45,7 +45,7 @@ simulate_cross_sectional <- function(parTab,n_indiv,buckets=12,
 
     #first cohort
     dat <- simulate_data(parTab, 1, n_indiv, buckets,strainIsolationTimes,
-                             samplingTimes[1], length(samplingTimes[1]), antigenicMap,sampleSensoring, titreSensoring, ageMin*buckets,ageMax*buckets,attackRates)
+                             samplingTimes[1], length(samplingTimes[1]), antigenicMap,sampleSensoring, titreSensoring, ageMin, ageMax,attack_rates = attackRates)
     titreDat.final <- dat[[1]]
     #titreDat.final <- titreDat <- titreDat[titreDat$virus %in% viruses,]
 
