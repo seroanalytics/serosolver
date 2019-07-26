@@ -135,8 +135,6 @@ run_MCMC <- function(par_tab,
   }
   message(prop_print)
   
-  if(hist_proposal != 2) stop('This proposal has not been updated to use infection data')
-  
   ## Extract parameter settings
   par_names <- as.character(par_tab$names) # Parameter names
 
@@ -380,8 +378,7 @@ run_MCMC <- function(par_tab,
         proposal <- current_pars ## Set proposal to be current parameters
         tempiter <- tempiter + 1
       } else { ## Else propose parameters
-        if(i %% 2 == 0){ ## Propose antibody pars
-          ## If using univariate proposals
+        if(delta_fixed){
           if (is.null(mvr_pars)) {
             ## For each parameter (Gibbs) except delta
             j <- unfixed_pars_vec[par_i]
@@ -394,16 +391,27 @@ run_MCMC <- function(par_tab,
             proposal <- mvr_proposal(current_pars, unfixed_pars, steps * cov_mat, steps * cov_mat0, FALSE, beta = 0.05)
             tempiter <- tempiter + 1
           }
-        }else{ ## Propose sensitivity
-          j <- delta_indicies
-          if(delta_fixed){
-            proposal <- current_pars ## Set proposal to be current parameters
-          }else{
+        }else{
+          if(i %% 2 == 0){ ## Propose antibody pars
+            ## If using univariate proposals
+            if (is.null(mvr_pars)) {
+              ## For each parameter (Gibbs) except delta
+              j <- unfixed_pars_vec[par_i]
+              par_i <- par_i + 1
+              if (par_i > unfixed_par_length_antibody) par_i <- 1
+              proposal <- univ_proposal(current_pars, lower_bounds, upper_bounds, steps, j)
+              tempiter[j] <- tempiter[j] + 1
+              ## If using multivariate proposals
+            } else {
+              proposal <- mvr_proposal(current_pars, unfixed_pars, steps * cov_mat, steps * cov_mat0, FALSE, beta = 0.05)
+              tempiter <- tempiter + 1
+            }
+          }else{ ## Propose sensitivity
+            j <- delta_indicies
             proposal <- univ_proposal(current_pars, lower_bounds, upper_bounds, steps, j)
+            tempiter[j] <- tempiter[j] + 1
           }
-          tempiter[j] <- tempiter[j] + 1
         }
-
       }
         
         ## Calculate new likelihood for these parameters
@@ -516,11 +524,14 @@ run_MCMC <- function(par_tab,
         histiter[indiv_sub_sample] <- histiter[indiv_sub_sample] + 1
       }
         
-        
-      new_infection_histories[which(inf_dat == 1)] <- 1
+      # if(!is.null(inf_dat)){
+      #   new_infection_histories[which(inf_dat == 1)] <- 1
+      # }
+      
+
       ## Calculate new likelihood with these infection histories
       ## If we didn't calculate the new likelihoods above, then need to do so here
-      #if (!new_likelihoods_calculated) { ALWASY CALCULATE NEW
+      #if (!new_likelihoods_calculated) { ALWAYS CALCULATE NEW
         new_likelihoods <- posterior_simp(proposal, new_infection_histories) / temp
      # }
       
@@ -541,7 +552,6 @@ run_MCMC <- function(par_tab,
       new_posterior <- new_total_likelihood + new_prior_prob
 
     }
-
     #############################
     ## METROPOLIS HASTINGS STEP
     #############################
@@ -582,6 +592,7 @@ run_MCMC <- function(par_tab,
       if (inf_swap_prob > hist_switch_prob) {
         ## MH step for each individual
         if (hist_proposal != 2) {
+          if(!is.null(inf_data)) stop("infection data extension has not been fully incoporated for this proposal")
           log_probs <- (new_likelihoods[indiv_sub_sample] - likelihoods[indiv_sub_sample])
           log_probs[log_probs > 0] <- 0
           x <- which(log(runif(length(indiv_sub_sample))) < log_probs)
@@ -649,7 +660,7 @@ run_MCMC <- function(par_tab,
     ## Save infection histories
     if (i %% hist_tab_thin == 0) 
       save_infection_history_to_disk(infection_histories, infection_history_file, sampno)
-
+browser(expr = i > burnin)
     ##############################
     ## ADAPTIVE PERIOD
     ##############################
@@ -722,9 +733,9 @@ run_MCMC <- function(par_tab,
         message(cat("Inf hist swap pcur: ", signif(infection_history_swap_accept / infection_history_swap_n, 3), sep = "\t"))
         message(cat("Pcur: ", signif(pcur, 3), sep = "\t"))
         message(cat("Step sizes: ", signif(steps, 3), sep = "\t"))
-
         ## If not accepting, send a warning
-        if (all(pcur == 0)) {
+        print(pcur)
+        if (all(pcur == 0 || !is.finite(pcur))) {
           message("Warning: acceptance rates are 0. Might be an error with the theta proposal?")
           if (message_slack) {
             text_slackr(paste0("Warning in ", message_slack_pars$username, ": acceptance rates are 0. Might be an error with the theta proposal?"),
