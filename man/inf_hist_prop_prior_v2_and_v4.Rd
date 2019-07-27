@@ -12,9 +12,10 @@ inf_hist_prop_prior_v2_and_v4(theta, infection_history_mat, old_probs_1,
   rows_per_indiv_in_samples, cum_nrows_per_individual_in_data,
   cum_nrows_per_individual_in_repeat_data, nrows_per_blood_sample,
   group_id_vec, measurement_strain_indices, antigenic_map_long,
-  antigenic_map_short, data, repeat_data, repeat_indices, titre_shifts,
-  mus, boosting_vec_indices, total_alive, temp = 1,
-  solve_likelihood = TRUE)
+  antigenic_map_short, antigenic_distances, data, repeat_data,
+  repeat_indices, titre_shifts, proposal_iter, accepted_iter,
+  proposal_swap, accepted_swap, mus, boosting_vec_indices, total_alive,
+  temp = 1, solve_likelihood = TRUE)
 }
 \arguments{
 \item{theta}{NumericVector, the model parameters used to solve the model}

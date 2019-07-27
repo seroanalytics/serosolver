@@ -27,7 +27,8 @@ arma::mat inf_hist_prop_prior_v3(arma::mat infection_history_mat,
 				 const IntegerVector& n_infs,
 				 double alpha, 
 				 double beta, 
-				 const NumericVector& rand_ns) {
+				 const NumericVector& rand_ns,
+				 const double& swap_propn) {
   // Copy input matrix
   arma::mat new_infection_history_mat = infection_history_mat;
   IntegerVector locs; // Locations to be updated
@@ -35,6 +36,8 @@ arma::mat inf_hist_prop_prior_v3(arma::mat infection_history_mat,
   arma::mat x;
   arma::mat y;
   IntegerVector samps;
+  IntegerVector subset_samps;
+  LogicalVector tmp_indices;
   int max_i_indiv;
   int indiv;
   int k;
@@ -46,7 +49,8 @@ arma::mat inf_hist_prop_prior_v3(arma::mat infection_history_mat,
   int id2;
   int tmp;
   int n_samp_max;
-
+  int x_n_cols;
+  
   double rand1;
   double ratio;
   
@@ -57,15 +61,14 @@ arma::mat inf_hist_prop_prior_v3(arma::mat infection_history_mat,
     indiv = sampled_indivs[i]-1;
     n_inf = n_infs[indiv];
     x = new_infection_history_mat.submat(indiv, age_mask[indiv]-1, indiv, strain_mask[indiv]-1);
-    samps = seq_len(x.n_cols);
-    n_samp_max = samps.size();
-    n_samp_max = std::min(n_inf, n_samp_max);
-    
-    // With 50% probability, add/remove infections or swap infections
-    if(rand_ns[i] < 1.0/2.0){
+    x_n_cols = x.n_cols;
+    samps = seq(0,x_n_cols-1);
+    // With some probability, add/remove infections or swap infections
+    if(rand_ns[i] > swap_propn){
+      n_samp_max = std::min(n_inf, x_n_cols); 
       // Sample N random locations
       locs = RcppArmadillo::sample(samps, n_samp_max, FALSE, NumericVector::create());
-      locs1 = as<arma::uvec>(locs)-1;
+      locs1 = as<arma::uvec>(locs);
       y = x.elem(locs1);
       // Count the number of 1s and 0s
       k = accu(x) - accu(y);
@@ -88,17 +91,19 @@ arma::mat inf_hist_prop_prior_v3(arma::mat infection_history_mat,
       }
     } else {
       // Otherwise, swap the contents of N random locations
-      max_i_indiv = x.size();
-      for(int j = 0; j < n_samp_max; j++){
-        id1 = floor(R::runif(0,1)*x.size());
-        move_max = move_sizes[indiv];
-        move = floor(R::runif(0,1)*2*move_max) - move_max;
-        id2 = id1 + move;
+      tmp_indices = as<LogicalVector>(wrap(x));
+      subset_samps = samps[tmp_indices];
+      if(subset_samps.size() > 0){
+	id1 = subset_samps(floor(R::runif(0,1)*subset_samps.size()));
+	max_i_indiv = x.size();
+	move_max = move_sizes[indiv];
+	move = floor(R::runif(0,1)*2*move_max) - move_max;
+	id2 = id1 + move;
 	while(id2 < 0) id2 += max_i_indiv;
-	if(id2 >= max_i_indiv) id2 = (id2 % max_i_indiv);
+	while(id2 >= max_i_indiv) id2 -= max_i_indiv;
 	tmp = x[id1];
-        x[id1] = x[id2];
-        x[id2] = tmp;
+	x[id1] = x[id2];
+	x[id2] = tmp;
       }
     }
     new_infection_history_mat.submat(indiv, age_mask[indiv]-1, indiv,  strain_mask[indiv]-1) = x;
@@ -109,15 +114,15 @@ arma::mat inf_hist_prop_prior_v3(arma::mat infection_history_mat,
 
 
 
-//' Infection history gibbs proposal, fast
-//'  Generates a new infection history matrix and corresponding individual likelihoods, using a gibbs sampler from the infection history prior. See \code{\link{infection_history_proposal_gibbs}}, as inputs are very similar.
-//' @param theta NumericVector, the model parameters used to solve the model
-//' @param infection_history_mat IntegerMatrix the matrix of 1s and 0s corresponding to individual infection histories
-//' @param old_probs_1 NumericVector, the current likelihoods for each individual
-//' @param sampled_indivs IntegerVector, indices of sampled individuals
-//' @param n_years_samp int, for each individual, how many time periods to resample infections for?
-//' @param age_mask IntegerVector, length of the number of individuals, with indices specifying first time period that an individual can be infected (indexed from 1, such that a value of 1 allows an individual to be infected in any time period)
-//' @param strain_mask IntegerVector, length of the number of individuals, with indices specifying last time period that an individual can be infected (ie. last time a sample was taken)
+  //' Infection history gibbs proposal, fast
+  //'  Generates a new infection history matrix and corresponding individual likelihoods, using a gibbs sampler from the infection history prior. See \code{\link{infection_history_proposal_gibbs}}, as inputs are very similar.
+  //' @param theta NumericVector, the model parameters used to solve the model
+  //' @param infection_history_mat IntegerMatrix the matrix of 1s and 0s corresponding to individual infection histories
+  //' @param old_probs_1 NumericVector, the current likelihoods for each individual
+  //' @param sampled_indivs IntegerVector, indices of sampled individuals
+  //' @param n_years_samp int, for each individual, how many time periods to resample infections for?
+  //' @param age_mask IntegerVector, length of the number of individuals, with indices specifying first time period that an individual can be infected (indexed from 1, such that a value of 1 allows an individual to be infected in any time period)
+  //' @param strain_mask IntegerVector, length of the number of individuals, with indices specifying last time period that an individual can be infected (ie. last time a sample was taken)
 //' @param n_alive IntegerMatrix, number of columns is the number of time periods that an individual could be infected, giving the number of individual alive in each time period. Number of rows is the number of distinct groups.
 //' @param swap_propn double, what proportion of proposals should be swap steps (ie. swap contents of two cells in infection_history rather than adding/removing infections)
 //' @param swap_distance int, in a swap step, how many time steps either side of the chosen time period to swap with
@@ -171,10 +176,15 @@ List inf_hist_prop_prior_v2_and_v4(const NumericVector &theta, // Model paramete
 				   const IntegerVector &measurement_strain_indices, // For each titre measurement, corresponding entry in antigenic map
 				   const NumericVector &antigenic_map_long, 
 				   const NumericVector &antigenic_map_short,
+				   const NumericVector &antigenic_distances,
 				   const NumericVector &data,
 				   const NumericVector &repeat_data,
 				   const IntegerVector &repeat_indices,
 				   const NumericVector &titre_shifts,
+				   IntegerVector proposal_iter,
+				   IntegerVector accepted_iter,
+				   IntegerVector proposal_swap,
+				   IntegerVector accepted_swap,
 				   const NumericVector &mus,
 				   const IntegerVector &boosting_vec_indices,
 				   const IntegerVector &total_alive,
@@ -200,7 +210,10 @@ List inf_hist_prop_prior_v2_and_v4(const NumericVector &theta, // Model paramete
   
   // Using prior version 2 or 4?
   bool prior_on_total = total_alive(0) > 0;
-    
+
+  //Repeat data?
+  bool repeat_data_exist = repeat_indices[0] >= 0;
+  
   // These indices allow us to step through the titre data vector
   // as if it were a matrix ie. number of rows for each individual
   // at a time
@@ -309,9 +322,28 @@ List inf_hist_prop_prior_v2_and_v4(const NumericVector &theta, // Model paramete
   if (mus.size() > 1) {
     strain_dep_boost = true;    
   }
+
+ // Back boosting model
+  double nu_long_recall;
+  double nu_short_recall;
+  double max_interference;
+  double interference_gradient;
+  double affinity_maturation;
+  int back_boosting_type = theta["back_boosting"];
+  bool back_boosting = back_boosting_type == 1;
+  if(back_boosting){
+    nu_long_recall = theta["nu_long"];
+    nu_short_recall = theta["nu_short"];
+    max_interference = theta["max_interference"];
+    interference_gradient = theta["interference_gradient"];
+    affinity_maturation = theta["affinity_maturation"];
+  }
   
   // 3. If not using one of the specific mechanism functions, set the base_function flag to TRUE
-  bool base_function = !(alternative_wane_func || titre_dependent_boosting || strain_dep_boost);
+  bool base_function = !(alternative_wane_func ||
+			 titre_dependent_boosting ||
+			 strain_dep_boost ||
+			 back_boosting);
   
   // 4. Extra titre shifts
   bool use_titre_shifts = false;
@@ -328,7 +360,6 @@ List inf_hist_prop_prior_v2_and_v4(const NumericVector &theta, // Model paramete
     indiv = sampled_indivs[i]-1;
     group_id = group_id_vec[indiv];
     old_prob = old_probs_1[indiv];
-
     // Indexing for data upkeep
     index_in_samples = rows_per_indiv_in_samples[indiv];
     end_index_in_samples = rows_per_indiv_in_samples[indiv+1] - 1;
@@ -340,7 +371,7 @@ List inf_hist_prop_prior_v2_and_v4(const NumericVector &theta, // Model paramete
     
     // Time sampling control
     n_years_samp = n_years_samp_vec[indiv]; // How many times are we intending to resample for this individual?
-    n_samp_length  = strain_mask[indiv] - age_mask[indiv]; // How many times maximum can we sample from?
+    n_samp_length  = strain_mask[indiv] - age_mask[indiv] + 1; // How many times maximum can we sample from?
     ////Rcpp::Rcout << "N samp length: " << n_samp_length << std::endl;
     // If swap step, only doing one proposal for this individual
     if(swap_step_option){
@@ -361,7 +392,7 @@ List inf_hist_prop_prior_v2_and_v4(const NumericVector &theta, // Model paramete
     } else {
       // Sample n_samp_length. Ths will be used to pull years from sample_years
       n_samp_max = std::min(n_years_samp, n_samp_length); // Use the smaller of these two numbers
-      samps = seq(0, n_samp_length);    // Create vector from 0:length of alive years
+      samps = seq(0, n_samp_length-1);    // Create vector from 0:length of alive years
       locs = RcppArmadillo::sample(samps, n_samp_max, FALSE, NumericVector::create());
     }
     // For each selected infection history entry
@@ -377,23 +408,26 @@ List inf_hist_prop_prior_v2_and_v4(const NumericVector &theta, // Model paramete
       // If swap step      
       if(swap_step_option){
 	prior_old = prior_new = 0;
-	if(samps.size() > 0){
+	if(samps.size() > 0){	  
+	  proposal_swap[indiv] += 1;
 	  //swap_proposals[indiv] += 1;
 	  loc1 = locs[j]; // Choose a location from age_mask to strain_mask
-	  loc2 = loc1 + floor(R::runif(-swap_distance,swap_distance)); // Perturb +/- swap_distance
+	  loc2 = loc1 + floor(R::runif(-swap_distance,swap_distance));
 
 	  // If we have gone too far left or right, reflect at the boundaries
 	  while(loc2 < 0){
-	    // If gone negative, then reflect to the other side. ie. -1 becomes the last entry, -2 becomes the second last entry etc.
-	    loc2 += n_samp_length + 1;
+	    // If gone negative, then reflect to the other side.
+	    // ie. -1 becomes the last entry, -2 becomes the second last entry etc.
+	    loc2 += n_samp_length;
 	  }
-	  if(loc2 > n_samp_length){
-	    loc2 -= floor(loc2/n_samp_length)*n_samp_length + 1;
+	  while(loc2 >= n_samp_length){
+	    loc2 -= n_samp_length;
 	  }
 	  // Get onto right scale (starting at age mask)
 	  loc1 += age_mask[indiv] - 1;
 	  loc2 += age_mask[indiv] - 1;
-	
+	 
+	  
 	  loc1_val_old = new_infection_history(loc1);
 	  loc2_val_old = new_infection_history(loc2);
 	  
@@ -438,6 +472,8 @@ List inf_hist_prop_prior_v2_and_v4(const NumericVector &theta, // Model paramete
 	// OPTION 2: Add/remove infection
 	///////////////////////////////////////////////////////
       } else {
+	
+	proposal_iter[indiv] += 1;
 	//add_proposals[indiv] += 1;
 	year = locs[j] + age_mask[indiv] - 1;
 	old_entry = new_infection_history(year);
@@ -543,6 +579,26 @@ List inf_hist_prop_prior_v2_and_v4(const NumericVector &theta, // Model paramete
 					   antigenic_map_short,
 					   antigenic_map_long,
 					   false);
+	} else if(back_boosting) {
+	  	titre_model_backboost_cpp(predicted_titres,
+				  mu, mu_short,
+				  wane, tau,
+				  affinity_maturation,
+				  nu_long_recall, nu_short_recall,
+				  max_interference, interference_gradient,
+				  infection_times,
+				  infection_strain_indices_tmp,
+				  measurement_strain_indices,
+				  sample_times,
+				  index_in_samples,
+				  end_index_in_samples,
+				  start_index_in_data,
+				  nrows_per_blood_sample,
+				  number_strains,
+				  antigenic_map_short,
+				  antigenic_map_long,
+				  antigenic_distances,
+				  false);	  
 	} else {
 	  titre_data_fast_individual_base(predicted_titres, mu, mu_short,
 					  wane, tau,
@@ -564,7 +620,6 @@ List inf_hist_prop_prior_v2_and_v4(const NumericVector &theta, // Model paramete
 	  add_measurement_shifts(predicted_titres, titre_shifts, 
 				 start_index_in_data, end_index_in_data);
 	}
-	  
 	// Now have all predicted titres for this individual calculated
 	// Need to calculate likelihood of these titres... 
 	new_prob = 0;
@@ -575,7 +630,7 @@ List inf_hist_prop_prior_v2_and_v4(const NumericVector &theta, // Model paramete
 
 	proposal_likelihood_func(new_prob, predicted_titres, indiv, data, repeat_data, repeat_indices,
 				 cum_nrows_per_individual_in_data, cum_nrows_per_individual_in_repeat_data,
-				 log_const, den, max_titre);
+				 log_const, den, max_titre, repeat_data_exist);
 
       } else {
 	old_prob = new_prob = old_probs[indiv];
@@ -598,6 +653,7 @@ List inf_hist_prop_prior_v2_and_v4(const NumericVector &theta, // Model paramete
 
 	// Carry out the swap
 	if(swap_step_option){
+	  accepted_swap[indiv] += 1;
 	  ////Rcpp::Rcout << "Carrying out swap" << std::endl;
 	  tmp = new_infection_history_mat(indiv,loc1);
 	  new_infection_history_mat(indiv,loc1) = new_infection_history_mat(indiv,loc2);
@@ -611,6 +667,7 @@ List inf_hist_prop_prior_v2_and_v4(const NumericVector &theta, // Model paramete
 	  // Don't need to update group infections if prior_on_total, as infections
 	  // only move within an individual (so number in group stays same)
 	} else {
+	  accepted_iter[indiv] += 1;
 	  new_infection_history_mat(indiv,year) = new_entry;	
 	  // Update total number of infections in group/time
 	  if(!prior_on_total){
@@ -627,6 +684,10 @@ List inf_hist_prop_prior_v2_and_v4(const NumericVector &theta, // Model paramete
   ////Rcpp::Rcout << "Old probs at end: " << old_probs << std::endl;
   ret["old_probs"] = old_probs;
   ret["new_infection_history"] = new_infection_history_mat;
+  ret["proposal_iter"] = proposal_iter;
+  ret["accepted_iter"] = accepted_iter;
+  ret["proposal_swap"] = proposal_swap;
+  ret["accepted_swap"] = accepted_swap;
   return(ret);
 }
 
@@ -776,6 +837,10 @@ List inf_hist_prop_prior_immunity(const NumericVector &theta, // Model parameter
 				  const NumericVector &repeat_data,
 				  const IntegerVector &repeat_indices,
 				  const NumericVector &titre_shifts,
+				  IntegerVector proposal_iter,
+				  IntegerVector accepted_iter,
+				  IntegerVector proposal_swap,
+				  IntegerVector accepted_swap,
 				  const double temp=1,
 				  bool solve_likelihood=true				   
 				  ){
@@ -784,15 +849,18 @@ List inf_hist_prop_prior_immunity(const NumericVector &theta, // Model parameter
   IntegerMatrix new_infection_history_mat(infection_history_mat);
   IntegerMatrix new_exposure_history_mat(exposure_history_mat);
   NumericMatrix new_titre_prob_inf = clone(titre_prob_inf);
-  
+
+  double min_titre = theta["min_titre"];
   int n_titres_total = data.size(); // How many titres are there in total?
-  NumericVector predicted_titres(n_titres_total); // Vector to store predicted titres
+  NumericVector predicted_titres(n_titres_total, min_titre); // Vector to store predicted titres
   double tmp_predicted_titre;
   NumericVector old_probs = clone(old_probs_1); // Create a copy of the current old probs
   
   // Variables related to solving likelihood and model as little as possible
   bool swap_step_option = true;
   bool lik_changed = true;
+  //Repeat data?
+  bool repeat_data_exist = repeat_indices[0] >= 0;
   
   // These quantities can be pre-computed
   int n_indivs = infection_history_mat.nrow();  // How many individuals are there in total?
@@ -839,6 +907,8 @@ List inf_hist_prop_prior_immunity(const NumericVector &theta, // Model parameter
   int year; // Index of year being updated
   int n_samp_max; // Maximum number of years to sample for individual
   int n_samp_length; // Number of years that COULD be sampled for this individual
+  int next_year;
+
   
   int new_entry_z;
   int new_entry_x;
@@ -861,6 +931,9 @@ List inf_hist_prop_prior_immunity(const NumericVector &theta, // Model parameter
   double n_1, n_2;
   double prior_1_old, prior_2_old, prior_1_new, prior_2_new, prior_new, prior_old;
 
+  double prior_new_to_remove;
+  double prior_old_to_remove;
+  
   double rand1; // Store a random number
   double rand2;
   double ratio_exposure; // Store the gibbs ratio for 0 or 1 proposal
@@ -905,6 +978,7 @@ List inf_hist_prop_prior_immunity(const NumericVector &theta, // Model parameter
     
     // Get index, group and current likelihood of individual under consideration
     indiv = sampled_indivs[i]-1;
+    //  Rcpp::Rcout << "Indiv: " << indiv << std::endl;
     group_id = group_id_vec[indiv];
     old_prob = old_probs_1[indiv];
 
@@ -926,7 +1000,7 @@ List inf_hist_prop_prior_immunity(const NumericVector &theta, // Model parameter
     new_exposure_history = new_exposure_history_mat(indiv,_);
     new_infection_history = new_infection_history_mat(indiv,_);
     new_titre_prob_inf_indiv = new_titre_prob_inf(indiv,_);
-    
+
     // Assume that proposal hasn't changed likelihood until shown otherwise
     lik_changed = false;
     ///////////////////////////////////////////////////////
@@ -943,17 +1017,25 @@ List inf_hist_prop_prior_immunity(const NumericVector &theta, // Model parameter
       titre_prob_old = titre_prob_new = sum(new_titre_prob_inf_indiv);
       
       // Only proceed with swap step if there was a viable infection time to be chosen
-      if(samps.size() > 0){	
+      if(samps.size() > 0){
+	proposal_swap[indiv] += 1;
 	// If so, then we want to start "samps" from 
 	samps = samps - age_mask[indiv] + 1;
 	locs = RcppArmadillo::sample(samps, 1, FALSE, NumericVector::create());
 	
 	loc1 = locs[0]; // Choose a location from age_mask to strain_mask
 	loc2 = loc1 + floor(R::runif(-swap_distance,swap_distance)); // Perturb +/- swap_distance
-	
+
 	// If we have gone too far left or right, reflect at the boundaries
-	while(loc2 < 0) loc2 += n_samp_length + 1;
-	if(loc2 > n_samp_length) loc2 -= floor(loc2/n_samp_length)*n_samp_length + 1;
+	while(loc2 < 0){
+	  // If gone negative, then reflect to the other side.
+	  // ie. -1 becomes the last entry, -2 becomes the second last entry etc.
+	  loc2 += n_samp_length;
+	}
+	while(loc2 >= n_samp_length){
+	  loc2 -= n_samp_length;
+	}
+	
 	
 	// Get onto right scale (starting at age mask)
 	loc1 += age_mask[indiv] - 1;
@@ -1004,7 +1086,8 @@ List inf_hist_prop_prior_immunity(const NumericVector &theta, // Model parameter
 	    old_entry_z = new_exposure_history[year_i];
 	    old_entry_x = new_infection_history[year_i];
 	    ratio_infection = titre_protection_cpp(tmp_predicted_titre, alpha_titre, beta_titre);
-	    new_titre_prob_inf_indiv(year_i) = prob_x_given_z_titre_protection(ratio_infection, alpha_titre, beta_titre,
+	    new_titre_prob_inf_indiv(year_i) = prob_x_given_z_titre_protection(ratio_infection,
+									       alpha_titre, beta_titre,
 									       old_entry_x, old_entry_z);
 	  }
 	  titre_prob_new = sum(new_titre_prob_inf_indiv);
@@ -1037,21 +1120,45 @@ List inf_hist_prop_prior_immunity(const NumericVector &theta, // Model parameter
       // OPTION 2: Add/remove infection
       ///////////////////////////////////////////////////////
     } else {
-      year = age_mask[indiv] - 1;
-      // Calculate infection prob likelihood for all times from the proposal
-      // time onwards
-      for(int year_i = year; year_i < strain_mask[indiv]; ++year_i){
-	// Location 1 titre and infection prob
+      // For the swap step, start by generating a vector from 0 to max     
+      n_samp_max = std::min(n_years_samp, n_samp_length); // Use the smaller of these two numbers
+      samps = seq(0, n_samp_length);    // Create vector from 0:length of alive years
+      locs = RcppArmadillo::sample(samps, n_samp_max, FALSE, NumericVector::create());
+      std::sort(locs.begin(), locs.end());
+      //    Rcpp::Rcout << "New_titre_prob_inf_indiv: " << new_titre_prob_inf_indiv << std::endl;
+      //    Rcpp::Rcout << "Old exposure history: " << new_exposure_history << std::endl;
+      //    Rcpp::Rcout << "Old infection history: " << new_infection_history << std::endl;
+      //    Rcpp::Rcout << "Locs chosen: " << locs << std::endl;
+      proposal_iter[indiv] += 1;
+      
+      // Old prior for infection state given exposure state
+      prior_old = sum(new_titre_prob_inf_indiv);
+      prior_new_to_remove = 0;
+      prior_old_to_remove = 0;
+      
+      for(int j=0; j < n_samp_max; ++j){
+	//	Rcpp::Rcout << "Loc selected: " << locs[j] << std::endl;
 	indices = new_infection_history > 0;
 	infection_times = circulation_times[indices];
-	infection_strain_indices_tmp = circulation_times_indices[indices];
-	
+	infection_strain_indices_tmp = circulation_times_indices[indices];     
+	year = locs[j] + age_mask[indiv] - 1;
+
+	//	Rcpp::Rcout << "Year selected: " << year << std::endl;;
+	if(j < n_samp_max - 1){
+	  next_year = locs[j+1]  + age_mask[indiv] - 1;
+	} else {
+	  next_year = strain_mask[indiv];
+	}
+	// Calculate infection prob likelihood for all times from the proposal
+	// time onwards
+	//for(int year_i = year; year_i < strain_mask[indiv]; ++year_i){
+	// Location 1 titre and infection prob
 	tmp_predicted_titre = titre_data_fast_individual_base_indiv(mu, mu_short,
 								    wane, tau,
 								    infection_times,
 								    infection_strain_indices_tmp,
-								    circulation_times_indices[year_i],
-								    circulation_times[year_i],
+								    circulation_times_indices[year],
+								    circulation_times[year],
 								    number_strains,
 								    antigenic_map_short,
 								    antigenic_map_long,
@@ -1059,45 +1166,100 @@ List inf_hist_prop_prior_immunity(const NumericVector &theta, // Model parameter
 	// Calculate the probability of infection given exposure at this time
 	ratio_infection = titre_protection_cpp(tmp_predicted_titre, alpha_titre, beta_titre);
 
-	old_entry_z = new_exposure_history[year_i];
-	old_entry_x = new_infection_history[year_i];
+	old_entry_z = new_exposure_history[year];
+	old_entry_x = new_infection_history[year];
 
+	//	Rcpp::Rcout << "Old entry z: " << old_entry_z << std::endl;
+	//	Rcpp::Rcout << "Old entry x: " << old_entry_x << std::endl;
+	
+	/* ================= PROPOSE NEW ENTRY =================== */
 	// Get number of individuals that were alive and/or infected in that year,
 	// less the current individual
 	// Number of infections in this year, less infection status of this individual in this year
-	m = n_exposures(group_id, year_i) - old_entry_z;
-	n = n_alive(group_id, year_i) - 1;
+	m = n_exposures(group_id, year) - old_entry_z;
+	n = n_alive(group_id, year) - 1;
    
 	// Work out proposal ratio - prior from alpha, beta and number of other infections
 	ratio_exposure = (m + alpha_Z)/(n + alpha_Z + beta_Z);
-
+	//	Rcpp::Rcout << "Ratio exposure: " << ratio_exposure << std::endl;
+	//	Rcpp::Rcout << "Ratio infection: " << 1-ratio_infection << std::endl;
+	
 	// Propose 1 or 0 based on this ratio
 	rand1 = R::runif(0,1);	
 	if(rand1 < ratio_exposure){
 	  new_entry_z = 1;
-	  new_exposure_history(year_i) = 1;
+	  new_exposure_history(year) = 1;
 	  rand2 = R::runif(0,1);
 	  // Propose a new infection state given the exposure state.
 	  // Just need prob infection at this time before the infection happens
 	  if(rand2 < (1.0 - ratio_infection)){
 	    new_entry_x = 1;
-	    new_infection_history(year_i) = 1;
+	    new_infection_history(year) = 1;
 	  } else {
 	    new_entry_x = 0;
-	    new_infection_history(year_i) = 0;
+	    new_infection_history(year) = 0;
 	  }
 	 
 	} else {
 	  new_entry_z = 0;
 	  new_entry_x = 0;
-	  new_exposure_history(year_i) = 0;
-	  new_infection_history(year_i) = 0;
+	  new_exposure_history(year) = 0;
+	  new_infection_history(year) = 0;
 	}
+	
+	//Rcpp::Rcout << "New entry z: " << new_entry_z << std::endl;
+	//Rcpp::Rcout << "New entry x: " << new_entry_x << std::endl;
 	// Calculate probability of these new outcomes
-	new_titre_prob_inf_indiv(year_i) = prob_x_given_z_titre_protection(ratio_infection,
+	// Sampling from prior, so remove old prior prob for this state
+	prior_old_to_remove += new_titre_prob_inf_indiv(year);
+	new_titre_prob_inf_indiv(year) = prob_x_given_z_titre_protection(ratio_infection,
 									   alpha_titre, beta_titre,
 									   new_entry_x, new_entry_z);
+	// Sampling from prior, so remove new prior prob for this state
+	prior_new_to_remove += new_titre_prob_inf_indiv(year);
+	
+	year++;
+
+	indices = new_infection_history > 0;
+	infection_times = circulation_times[indices];
+	infection_strain_indices_tmp = circulation_times_indices[indices];     
+	// Update probabilities up to next location or end
+	//for(int year_i = year; year_i < strain_mask[indiv]; ++year_i){
+	while(year < next_year){
+
+	  // Rcpp::Rcout << "Year: " << year << std::endl;
+	  tmp_predicted_titre = titre_data_fast_individual_base_indiv(mu, mu_short,
+								      wane, tau,
+								      infection_times,
+								      infection_strain_indices_tmp,
+								      circulation_times_indices[year],
+								      circulation_times[year],
+								      number_strains,
+								      antigenic_map_short,
+								      antigenic_map_long,
+								      true);
+	  old_entry_z = new_exposure_history[year];
+	  old_entry_x = new_infection_history[year];
+	  // Calculate the probability of infection given exposure at this time
+	  ratio_infection = titre_protection_cpp(tmp_predicted_titre, alpha_titre, beta_titre);
+	  // Update prior prob for new state
+	  
+	  //Rcpp::Rcout << "Old titre prob inf: " << new_titre_prob_inf_indiv(year) << std::endl;
+	  new_titre_prob_inf_indiv(year) = prob_x_given_z_titre_protection(ratio_infection,
+									   alpha_titre, beta_titre,
+									   old_entry_x, old_entry_z);
+	  // Rcpp::Rcout << "Old entry z: " << old_entry_z << std::endl;
+	  //  Rcpp::Rcout << "Old entry x: " << old_entry_x << std::endl;
+	  //  Rcpp::Rcout << "New titre prob inf: " << new_titre_prob_inf_indiv(year) << std::endl;
+	  year++;
+	}
       }
+      // Prior part of the acceptance ratio for the old state is the old prior, minus the reverse proposal
+      // ratio
+      prior_old = prior_old - prior_old_to_remove;
+      prior_new = sum(new_titre_prob_inf_indiv) - prior_new_to_remove;
+      //   Rcpp::Rcout << "Old prior: " << prior_old << std::endl;
+      //   Rcpp::Rcout << "New prior: " << prior_new << std::endl;
       lik_changed = true;
     }
     ////////////////////////
@@ -1143,7 +1305,7 @@ List inf_hist_prop_prior_immunity(const NumericVector &theta, // Model parameter
       // For unique data
       proposal_likelihood_func(new_prob, predicted_titres, indiv, data, repeat_data, repeat_indices,
 			       cum_nrows_per_individual_in_data, cum_nrows_per_individual_in_repeat_data,
-			       log_const, den, max_titre);
+			       log_const, den, max_titre, repeat_data_exist);
       
       // Don't need to add titre mediated immunity probs, as sampling from these
     } else {
@@ -1156,7 +1318,7 @@ List inf_hist_prop_prior_immunity(const NumericVector &theta, // Model parameter
     if(swap_step_option){ 
       log_prob = std::min<double>(0.0, (new_prob+prior_new) - (old_prob+prior_old));
     } else {
-      log_prob = std::min<double>(0.0, new_prob - old_prob);
+      log_prob = std::min<double>(0.0, (new_prob+prior_new) - (old_prob+prior_old));
     }
     rand1 = R::runif(0,1);
     if(lik_changed && log(rand1) < log_prob/temp){
@@ -1166,6 +1328,7 @@ List inf_hist_prop_prior_immunity(const NumericVector &theta, // Model parameter
 
       // Carry out the swap
       if(swap_step_option){
+	accepted_swap[indiv] += 1;
 	// Swap exposures
 	// Old prior for infection state given exposure state
 	new_exposure_history_mat(indiv,_) = new_exposure_history;
@@ -1185,6 +1348,7 @@ List inf_hist_prop_prior_immunity(const NumericVector &theta, // Model parameter
 	  new_infection_history_mat(indiv,loc2) = tmp;
 	*/		
       } else {
+	accepted_iter[indiv] += 1;
 	// Update total number of infections in group/time
 	n_exposures(group_id, _) = n_exposures(group_id, _) - new_exposure_history_mat(indiv,_);	
 	new_exposure_history_mat(indiv,_) = new_exposure_history;
@@ -1199,5 +1363,9 @@ List inf_hist_prop_prior_immunity(const NumericVector &theta, // Model parameter
   ret["old_probs"] = old_probs;
   ret["new_infection_history"] = new_infection_history_mat;
   ret["new_exposure_history"] = new_exposure_history_mat;
+  ret["proposal_iter"] = proposal_iter;
+  ret["accepted_iter"] = accepted_iter;
+  ret["proposal_swap"] = proposal_swap;
+  ret["accepted_swap"] = accepted_swap;
   return(ret);
 }

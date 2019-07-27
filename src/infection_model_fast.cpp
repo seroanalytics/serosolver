@@ -35,6 +35,7 @@ NumericVector titre_data_fast(const NumericVector &theta,
 			      const IntegerVector &measurement_strain_indices, // For each titre measurement, corresponding entry in antigenic map
 			      const NumericVector &antigenic_map_long,
 			      const NumericVector &antigenic_map_short,
+			      const NumericVector &antigenic_distances,			      
 			      const NumericVector &mus,
 			      const IntegerVector &boosting_vec_indices,
 			      bool boost_before_infection = false
@@ -77,6 +78,7 @@ NumericVector titre_data_fast(const NumericVector &theta,
   double mu_short = theta["mu_short"];
   double wane = theta["wane"];
   double tau = theta["tau"];
+  double min_titre = theta["min_titre"];
 
   // 2. Extract model parameters that are for specific mechanisms
   //    set a boolean flag to choose between model versions
@@ -106,13 +108,31 @@ NumericVector titre_data_fast(const NumericVector &theta,
     strain_dep_boost = true;    
   }
 
+  // Back boosting model
+  double nu_long_recall;
+  double nu_short_recall;
+  double max_interference;
+  double interference_gradient;
+  double affinity_maturation;
+  int back_boosting_type = theta["back_boosting"];
+  bool back_boosting = back_boosting_type == 1;
+  //Rcpp::Rcout << "Back boosting: " << back_boosting << std::endl;
+  if(back_boosting){
+    nu_long_recall = theta["nu_long"];
+    nu_short_recall = theta["nu_short"];
+    max_interference = theta["max_interference"];
+    interference_gradient = theta["interference_gradient"];
+    affinity_maturation = theta["affinity_maturation"];
+  }
+  
   // 3. If not using one of the specific mechanism functions, set the base_function flag to TRUE
   bool base_function = !(alternative_wane_func ||
 			 titre_dependent_boosting ||
-			 strain_dep_boost);
+			 strain_dep_boost ||
+			 back_boosting);
 
   // To store calculated titres
-  NumericVector predicted_titres(total_titres);
+  NumericVector predicted_titres(total_titres, min_titre);
   // For each individual
   for (int i = 1; i <= n; ++i) {
     infection_history = infection_history_mat(i-1,_);
@@ -196,6 +216,26 @@ NumericVector titre_data_fast(const NumericVector &theta,
 					 antigenic_map_short,
 					 antigenic_map_long,
 					 boost_before_infection);
+      } else if(back_boosting) {
+	titre_model_backboost_cpp(predicted_titres,
+				  mu, mu_short,
+				  wane, tau,
+				  affinity_maturation,
+				  nu_long_recall, nu_short_recall,
+				  max_interference, interference_gradient,
+				  infection_times,
+				  infection_strain_indices_tmp,
+				  measurement_strain_indices,
+				  sample_times,
+				  index_in_samples,
+				  end_index_in_samples,
+				  start_index_in_data,
+				  nrows_per_blood_sample,
+				  number_strains,
+				  antigenic_map_short,
+				  antigenic_map_long,
+				  antigenic_distances,
+				  boost_before_infection);
       } else {
 	titre_data_fast_individual_base(predicted_titres, mu, mu_short,
 					wane, tau,

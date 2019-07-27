@@ -5,7 +5,7 @@
 \title{Fast infection history proposal function}
 \usage{
 inf_hist_prop_prior_v3(infection_history_mat, sampled_indivs, age_mask,
-  strain_mask, move_sizes, n_infs, alpha, beta, rand_ns)
+  strain_mask, move_sizes, n_infs, alpha, beta, swap_propn)
 }
 \arguments{
 \item{infection_history_mat}{and RcppArmadillo matrix of infection histories, where rows represent individuals and columns represent potential infection times. The contents should be a set of 1s (presence of infection) and 0s (absence of infection)}

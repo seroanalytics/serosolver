@@ -54,7 +54,7 @@ simulate_data <- function(par_tab,
     pars <- par_tab$values
     theta <- pars[theta_indices]
     names(theta) <- par_names_theta
-    
+    print(theta)
     mus <- NULL
     if (!is.null(mu_indices)) {
       message(cat("Strain specific boosting"))
@@ -64,7 +64,7 @@ simulate_data <- function(par_tab,
     measurement_bias <- NULL
     if (!is.null(measurement_indices)) {
       message(cat("Measurement bias"))
-        measurement_bias <- pars[measurement_indices_par_tab]
+      measurement_bias <- pars[measurement_indices_par_tab]
     }
 
     if(is.null(measured_strains)){
@@ -172,7 +172,7 @@ simulate_group <- function(n_indiv,
     antigenic_map_melted <- melt_antigenic_coords(antigenic_map[, c("x_coord", "y_coord")])
     antigenic_map_long <- create_cross_reactivity_vector(antigenic_map_melted, theta["sigma1"])
     antigenic_map_short <- create_cross_reactivity_vector(antigenic_map_melted, theta["sigma2"])
-    
+    antigenic_distances <- c(antigenic_map_melted)
     dat <- NULL
     ## For each individual
     for (i in 1:n_indiv) {
@@ -195,6 +195,7 @@ simulate_group <- function(n_indiv,
             infection_histories[i, ],
             antigenic_map_long,
             antigenic_map_short,
+            antigenic_distances,
             samps, 
             strain_isolation_times,
             measured_strains, 
@@ -226,6 +227,7 @@ simulate_individual_faster <- function(theta,
                                 infection_history,
                                 antigenic_map_long,
                                 antigenic_map_short,
+                                antigenic_distances,
                                 sampling_times,
                                 strain_isolation_times,
                                 measured_strains,
@@ -263,7 +265,10 @@ simulate_individual_faster <- function(theta,
     titres <- titre_data_fast(theta, inf_hist, strain_isolation_times, strain_indices,
                               sampling_times, rows_per_indiv, cumu_rows,
                               rows_per_blood, measured_strain_indices,
-                              antigenic_map_long, antigenic_map_short, mus, mu_indices, FALSE)
+                              antigenic_map_long,
+                              antigenic_map_short,
+                              antigenic_distances,
+                              mus, mu_indices, FALSE)
 
     ## Repeated each simulated titre per observation repeat
     titres <- rep(titres, repeats)
@@ -277,6 +282,9 @@ simulate_individual_faster <- function(theta,
     ## Add observation noise, including measurement bias if selected
     if (add_noise) {
         if (!is.null(measurement_indices)) {
+            #print(dat[1:25,2])
+            #print(measurement_indices[match(dat[, 2], strain_isolation_times)][1:25])
+            #print(measurement_bias[measurement_indices[match(dat[, 2], strain_isolation_times)][1:25]])
             dat[, 3] <- add_noise(titres, theta, measurement_bias, measurement_indices[match(dat[, 2], strain_isolation_times)])
         } else {
             dat[, 3] <- add_noise(titres, theta, NULL, NULL)
@@ -318,7 +326,7 @@ simulate_individual <- function(theta,
     antigenic_map_melted <- melt_antigenic_coords(antigenic_map[, c("x_coord", "y_coord")])
     antigenic_map_long <- create_cross_reactivity_vector(antigenic_map_melted, theta["sigma1"])
     antigenic_map_short <- create_cross_reactivity_vector(antigenic_map_melted, theta["sigma2"])
-   
+    antigenic_distances <- c(antigenic_map_melted)
     inf_hist <- matrix(nrow=1,ncol=length(infection_history))
     inf_hist[1,] <- infection_history
 
@@ -343,7 +351,9 @@ simulate_individual <- function(theta,
     titres <- titre_data_fast(theta, inf_hist, strain_isolation_times, strain_indices,
                               sampling_times, rows_per_indiv, cumu_rows,
                               rows_per_blood, measured_strain_indices,
-                              antigenic_map_long, antigenic_map_short, mus, mu_indices)
+                              antigenic_map_long, antigenic_map_short,
+                              antigenic_distances,
+                              mus, mu_indices)
     ## Repeated each simulated titre per observation repeat
     titres <- rep(titres, repeats)
     ## Housekeeping for return data
@@ -492,7 +502,7 @@ simulate_infection_histories_titre <- function(pars, p_inf, strain_isolation_tim
     antigenic_map_melted <- melt_antigenic_coords(antigenic_map[, c("x_coord", "y_coord")])
     antigenic_map_long <- create_cross_reactivity_vector(antigenic_map_melted, pars["sigma1"])
     antigenic_map_short <- create_cross_reactivity_vector(antigenic_map_melted, pars["sigma2"])
-
+    antigenic_distances <- c(antigenic_map_melted)
     
     for(i in 1:n_indiv){
         infection_history <- exposure_history <- rep(0, n_strains)
@@ -515,6 +525,7 @@ simulate_infection_histories_titre <- function(pars, p_inf, strain_isolation_tim
                 y <- as.data.frame(simulate_individual_faster(pars, infection_history,
                                                               antigenic_map_long,
                                                               antigenic_map_short,
+                                                              antigenic_distances,
                                                               sample_time,
                                                               strain_isolation_times,
                                                               virus_samples,

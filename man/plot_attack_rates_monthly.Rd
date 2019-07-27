@@ -22,7 +22,7 @@ plot_attack_rates_monthly(infection_histories, titre_dat,
 
 \item{pad_chain}{if TRUE, fills the infection history data table with entries for non-infection events (ie. 0s). Can be switched to FALSE for speed to get a rough idea of what the attack rates look like.}
 
-\item{true_ar}{data frame of true attack rates, with first column `year` equal to `strain_isolation_times`, and second column `AR` giving the attack rate}
+\item{true_ar}{data frame of true attack rates, with first column `year` equal to `strain_isolation_times`, and second column `AR` giving the attack rate. Column names: group, j, AR}
 
 \item{by_group}{if TRUE, facets the plot by group ID}
 

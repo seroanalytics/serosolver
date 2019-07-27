@@ -304,7 +304,6 @@ create_posterior_func <- function(par_tab,
                                   function_type = 1,
                                   ...) {
 
-
     ## Seperate out initial readings and repeat readings - we only
     ## want to solve the model once for each unique indiv/sample/virus year tested
     titre_dat_unique <- titre_dat[titre_dat$run == 1, ]
@@ -315,17 +314,19 @@ create_posterior_func <- function(par_tab,
                      titre_dat_unique[, c("individual", "samples", "virus")])
     titre_dat_repeats$index <- tmp
 
+    
     ## Which entries in the overall titre_dat matrix does each entry in titre_dat_unique correspond to?
     overall_indices <- row.match(titre_dat[,c("individual", "samples", "virus")],
                                  titre_dat_unique[, c("individual", "samples", "virus")])
-    
+    print("Setup titre data...")
     ## Setup data vectors and extract
     setup_dat <- setup_titredat_for_posterior_func(titre_dat_unique, antigenic_map,
                                                    age_mask, n_alive)
 
     individuals <- setup_dat$individuals
     n_groups <- length(unique(titre_dat$group))
-    antigenic_map_melted <- setup_dat$antigenic_map_melted
+    antigenic_map_melted <- setup_dat$antigenic_map_melted    
+    antigenic_distances <- c(melt_antigenic_coords(antigenic_map[, c("x_coord", "y_coord")]))
     strain_isolation_times <- setup_dat$strain_isolation_times
     infection_strain_indices <- setup_dat$infection_strain_indices
     sample_times <- setup_dat$sample_times
@@ -344,6 +345,7 @@ create_posterior_func <- function(par_tab,
 
 ###################################################################
     ## CALCULATE TITRE-MEDIATED IMMUNITY ADMIN
+    print("Setup titre immunity data...")
     indivs_immunity <- unique(titre_dat[,c("individual","group","DOB")])
     ## This generates a structure like titre_dat, but with one entry for each individual
     ## assuming that a titre is tested against the circulating strain at the time it circulated
@@ -374,9 +376,10 @@ create_posterior_func <- function(par_tab,
     
     ## Some additional setup for the repeat data
     nrows_per_individual_in_data_repeats <- NULL
-    for (individual in unique(individuals)) {
-        nrows_per_individual_in_data_repeats <- c(nrows_per_individual_in_data_repeats, nrow(titre_dat_repeats[titre_dat_repeats$individual == individual, ]))
-    }
+    nrows_per_individual_in_data_repeats <- ddply(titre_dat_repeats, .(individual), nrow)$V1
+    #for (individual in unique(individuals)) {
+    #    nrows_per_individual_in_data_repeats <- c(nrows_per_individual_in_data_repeats, nrow(titre_dat_repeats[titre_dat_repeats$individual == individual, ]))
+    #}
     cum_nrows_per_individual_in_data_repeats <- cumsum(c(0, nrows_per_individual_in_data_repeats))
 
     titres_unique <- titre_dat_unique$titre
@@ -392,12 +395,15 @@ create_posterior_func <- function(par_tab,
     spline_phi <- (length(knot_indices) > 0)
     titre_immunity <- "alpha_titre" %in% par_names_theta
     use_measurement_bias <- (length(measurement_indices_par_tab) > 0) & !is.null(measurement_indices_by_time)
+
     titre_shifts <- c(0)
     expected_indices <- NULL
     measurement_bias <- NULL
     use_strain_dependent <- (length(mu_indices) > 0) & !is.null(mu_indices)
     additional_arguments <- NULL
 
+    repeat_data_exist <- nrow(titre_dat_repeats) > 0
+    
     if(!explicit_psi){
         psis <- rep(1, n_groups)
     }    
@@ -415,6 +421,10 @@ create_posterior_func <- function(par_tab,
         boosting_vec_indices <- mus <- c(-1)
     }
 
+    if(!repeat_data_exist){
+        repeat_indices_cpp <- c(-1)
+    }
+    
     if (function_type == 1) {
         f <- function(pars, infection_history_mat, exposure_history_mat=NULL) {
             theta <- pars[theta_indices]
@@ -424,15 +434,20 @@ create_posterior_func <- function(par_tab,
                 mus <- pars[mu_indices_par_tab]
             }
             
-            antigenic_map_long <- create_cross_reactivity_vector(antigenic_map_melted, theta["sigma1"])
-            antigenic_map_short <- create_cross_reactivity_vector(antigenic_map_melted, theta["sigma2"])
+            antigenic_map_long <- create_cross_reactivity_vector(antigenic_map_melted,
+                                                                 theta["sigma1"])
+            antigenic_map_short <- create_cross_reactivity_vector(antigenic_map_melted,
+                                                                  theta["sigma2"])
 
             ## Calculate titres for measured data
             y_new <- titre_data_fast(
                 theta, infection_history_mat, strain_isolation_times, infection_strain_indices,
                 sample_times, rows_per_indiv_in_samples, cum_nrows_per_individual_in_data,
-                nrows_per_blood_sample, measured_strain_indices, antigenic_map_long,
-                antigenic_map_short, mus, boosting_vec_indices
+                nrows_per_blood_sample, measured_strain_indices,
+                antigenic_map_long,
+                antigenic_map_short,
+                antigenic_distances,
+                mus, boosting_vec_indices
             )
             if(titre_immunity){
                 ## Calculate titres against viruses at the times they circulated
@@ -446,6 +461,7 @@ create_posterior_func <- function(par_tab,
                     setup_dat_immunity$measured_strain_indices,
                     antigenic_map_long,
                     antigenic_map_short,
+                    antigenic_distances,
                     mus, boosting_vec_indices,
                     TRUE
                 )
@@ -453,8 +469,11 @@ create_posterior_func <- function(par_tab,
             if (use_measurement_bias) {
                 measurement_bias <- pars[measurement_indices_par_tab]
                 titre_shifts <- measurement_bias[expected_indices]
+                #print(titre_shifts)
                 y_new <- y_new + titre_shifts
             }
+            #tmp <- cbind(titre_dat_unique, y_new)
+            #print(head(tmp))
             ## Transmission prob is the part of the likelihood function corresponding to each individual
             transmission_prob <- rep(0, n_indiv)
             if (explicit_phi) {
@@ -496,11 +515,13 @@ create_posterior_func <- function(par_tab,
             }
             if(solve_likelihood){
                 ## Calculate likelihood for unique titres and repeat data
+                ## Sum these for each individual               
                 liks <- likelihood_func_fast(theta, titres_unique, y_new)
-                liks_repeats <- likelihood_func_fast(theta, titres_repeats, y_new[repeat_indices])
-                ## Sum these for each individual
-                liks <- sum_buckets(liks, nrows_per_individual_in_data) +
-                    sum_buckets(liks_repeats, nrows_per_individual_in_data_repeats)
+                liks <- sum_buckets(liks, nrows_per_individual_in_data)
+                if(repeat_data_exist){
+                    liks_repeats <- likelihood_func_fast(theta, titres_repeats, y_new[repeat_indices])
+                    liks <- liks + sum_buckets(liks_repeats, nrows_per_individual_in_data_repeats)
+                } 
                 
             } else {
                 liks <- rep(-100000, n_indiv)
@@ -522,7 +543,12 @@ create_posterior_func <- function(par_tab,
                           titre_prob_inf,
                           probs, sampled_indivs,
                           alpha, beta,
-                          n_infs, swap_propn, swap_dist,
+                          n_infs, swap_propn,
+                          swap_dist,
+                          proposal_iter,
+                          accepted_iter,
+                          proposal_swap,
+                          accepted_swap,
                           temp) {
                 theta <- pars[theta_indices]
                 names(theta) <- par_names_theta
@@ -573,10 +599,15 @@ create_posterior_func <- function(par_tab,
                     measured_strain_indices,
                     antigenic_map_long,
                     antigenic_map_short,
+                    antigenic_distances,
                     titres_unique,
                     titres_repeats,
                     repeat_indices_cpp,
                     titre_shifts,
+                    proposal_iter=proposal_iter,
+                    accepted_iter=accepted_iter,
+                    proposal_swap=proposal_swap,
+                    accepted_swap=accepted_swap,
                     mus,
                     boosting_vec_indices,
                     n_alive_total,
@@ -593,7 +624,12 @@ create_posterior_func <- function(par_tab,
                           titre_prob_inf,
                           probs, sampled_indivs,
                           alpha, beta,
-                          n_infs, swap_propn, swap_dist,
+                          n_infs, swap_propn,
+                          swap_dist,
+                          proposal_iter,
+                          accepted_iter,
+                          proposal_swap,
+                          accepted_swap,
                           temp) {
                 theta <- pars[theta_indices]
                 names(theta) <- par_names_theta
@@ -644,8 +680,12 @@ create_posterior_func <- function(par_tab,
                     titres_repeats,
                     repeat_indices_cpp,
                     titre_shifts,
-                    temp,
-                    solve_likelihood                
+                    proposal_iter=proposal_iter,
+                    accepted_iter=accepted_iter,
+                    proposal_swap=proposal_swap,
+                    accepted_swap=accepted_swap,
+                    temp=temp,
+                    solve_likelihood=solve_likelihood                
                 )
                 return(res)
             }
@@ -674,7 +714,9 @@ create_posterior_func <- function(par_tab,
                 setup_dat_immunity$nrows_per_blood_sample,
                 setup_dat_immunity$measured_strain_indices,
                 antigenic_map_long,
-                antigenic_map_short, mus, boosting_vec_indices,
+                antigenic_map_short,
+                antigenic_distances,
+                mus, boosting_vec_indices,
                 TRUE
             )
             titre_dat_immunity$titre <- y_at_inf
@@ -698,7 +740,9 @@ create_posterior_func <- function(par_tab,
                 theta, infection_history_mat, strain_isolation_times, infection_strain_indices,
                 sample_times, rows_per_indiv_in_samples, cum_nrows_per_individual_in_data,
                 nrows_per_blood_sample, measured_strain_indices, antigenic_map_long,
-                antigenic_map_short, mus, boosting_vec_indices
+                antigenic_map_short,
+                antigenic_distances,
+                mus, boosting_vec_indices
             )
             if (use_measurement_bias) {
                 measurement_bias <- pars[measurement_indices_par_tab]

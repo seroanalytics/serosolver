@@ -335,22 +335,47 @@ run_MCMC <- function(par_tab,
                     n_exposures <- sum_infections_by_group(prior_exposure_history, group_ids_vec, n_groups)
                     if(any(n_exposures > n_alive)){
                         print("error")
-                        ##                        omg <- which(n_exposures > n_alive)
-                        ##                        print(omg)
-                        ##                        print(which(age_mask > omg))
-                        ##                        print(age_mask)
-                        ##                        print(prior_exposure_history[,omg])
                         stop()
                     }
                     prior_probab <- prior_probab + inf_mat_prior_group_cpp(n_exposures, n_alive, alpha, beta)
                 } else {
                     n_infections <- sum_infections_by_group(prior_infection_history, group_ids_vec, n_groups)
-                    if(any(n_infections > n_alive)) print("error")
-                    
+                    if(any(n_infections > n_alive)){
+                        #print("error")
+                        #print(n_alive)
+                        #print(n_infections)
+                        #print("Masks")
+
+                        last_infection <- unlist(apply(prior_infection_history, 1, function(x){
+                            tmp <- which(x == 1)
+                            if(length(tmp) == 0){
+                                y <- NA
+                            } else {
+                                y <- tmp[length(tmp)]
+                            }
+                            y
+                        }))
+                        first_infection <- unlist(apply(prior_infection_history, 1, function(x){
+                            tmp <- which(x == 1)
+                            if(length(tmp) == 0){
+                                y <- NA
+                            } else {
+                                y <- tmp[1]
+                            }
+                            y
+                        }))
+                        masks_report <- cbind(masks, first_infection, last_infection)
+                        masks_report <- as.data.frame(masks_report)
+                        masks_report$early <- masks_report$last_infection < masks_report$age_mask
+                        masks_report$late <- masks_report$last_infection > masks_report$strain_mask
+                        #print("wow")
+                        write.table(masks_report, "wow.csv",sep=",")
+                        stop()
+                    }
                     prior_probab <- prior_probab + inf_mat_prior_group_cpp(n_infections, n_alive, alpha, beta)
                 }
             }
-        } 
+        }
         if (!is.null(CREATE_PRIOR_FUNC)) prior_probab <- prior_probab + prior_func(prior_pars)
         if (!is.null(mu_indices)) prior_probab <- prior_probab + prior_mu(prior_pars)
         if (measurement_random_effects) prior_probab <- prior_probab + prior_shifts(prior_pars)
@@ -461,20 +486,19 @@ run_MCMC <- function(par_tab,
             ## Calculate new likelihood for these parameters
             tmp_new_posteriors <- posterior_simp(proposal, infection_histories, exposure_histories)
             new_indiv_likelihoods <-  tmp_new_posteriors[[1]]/temp # For each individual
-            new_indiv_priors <- tmp_new_posteriors[[2]]
-            
+            new_indiv_priors <- tmp_new_posteriors[[2]]            
             if(explicit_exposures) {
                 new_indiv_titre_prob_infs <- new_indiv_priors
                 new_indiv_priors <- rowSums(new_indiv_priors)
             }
             new_indiv_posteriors <- new_indiv_likelihoods + new_indiv_priors            
             new_total_likelihood <- sum(new_indiv_likelihoods) # Total
-            new_total_prior_prob <- sum(new_indiv_priors) + extra_probabilities(proposal, infection_histories, exposure_histories)
+            new_total_prior_prob <- sum(new_indiv_priors) +
+                extra_probabilities(proposal, infection_histories, exposure_histories)
             new_total_posterior <- new_total_likelihood + new_total_prior_prob # Posterior
             
             ## Otherwise, resample infection history
         } else {
-            #print("Inf hist")
             ## Choose a random subset of individuals to update
             indiv_sub_sample <- sample(1:n_indiv, ceiling(hist_sample_prob * n_indiv))
             indiv_sub_sample <- indiv_sub_sample[order(indiv_sub_sample)]
@@ -494,22 +518,20 @@ run_MCMC <- function(par_tab,
             if (hist_proposal == 1) {
                 ## Either swap entire contents or propose new infection history matrix
                 if (inf_swap_prob > hist_switch_prob) {
-                    proposed_inf_hist_data <-infection_history_proposal(
+                    #proposed_inf_hist_data <-infection_history_proposal(
+                    #    infection_histories,
+                    #    indiv_sub_sample,
+                    #    age_mask, strain_mask, move_sizes,
+                    #    n_infs_vec, rand_ns, swap_propn
+                    #)                    
+                    #new_infection_histories <- proposed_inf_hist_data#[[1]]
+                    #proposal_ratio <- proposed_inf_hist_data[[2]]
+                    new_infection_histories <- infection_history_symmetric(
                         infection_histories,
                         indiv_sub_sample,
                         age_mask, strain_mask, move_sizes,
                         n_infs_vec, rand_ns, swap_propn
                     )
-                    
-                    new_infection_histories <- proposed_inf_hist_data[[1]]
-                    proposal_ratio <- proposed_inf_hist_data[[2]]
-
-                    #new_infection_histories <- infection_history_symmetric(
-                    #    infection_histories,
-                    #    indiv_sub_sample,
-                    #    age_mask, strain_mask, move_sizes,
-                    #    n_infs_vec, rand_ns, swap_propn
-                    #)
                 } else {
                     tmp_hist_switch <- inf_hist_swap_phi(
                         infection_histories, proposal[phi_indices],
@@ -533,8 +555,14 @@ run_MCMC <- function(par_tab,
                         indiv_sub_sample,
                         alpha, beta,
                         n_infs_vec, swap_propn, move_size,
+                        histiter_add,
+                        histaccepted_add,
+                        histiter_move,
+                        histaccepted_move,
                         temp
                     )
+                    histiter <- prop_gibbs$proposal_iter
+                    histaccepted <- prop_gibbs$accepted_iter
                     new_indiv_likelihoods <- prop_gibbs$old_probs
                     new_infection_histories <- prop_gibbs$new_infection_history
                     new_indiv_priors <- prop_gibbs$titre_infection_probs
@@ -548,10 +576,13 @@ run_MCMC <- function(par_tab,
                     ## If using the slow version, just need to propose
                     ## Otherwise, swap contents
                 } else {
-                    new_infection_histories <- inf_hist_swap(
-                        infection_histories, age_mask, strain_mask,
+                    tmp <- inf_hist_swap(
+                        infection_histories, exposure_histories,
+                        age_mask, strain_mask,
                         year_swap_propn, move_size
                     )
+                    new_infection_histories <- tmp[[1]]
+                    new_exposure_histories <- tmp[[2]]
                     if (!identical(new_infection_histories, infection_histories)) {
                         infection_history_swap_n <- infection_history_swap_n + 1
                     }
@@ -562,7 +593,7 @@ run_MCMC <- function(par_tab,
                     infection_histories, indiv_sub_sample,
                     age_mask, strain_mask,
                     move_sizes, n_infs_vec,
-                    alpha, beta, rand_ns
+                    alpha, beta, rand_ns, swap_propn
                 )
                 ## Otherwise, default to symmetric proposals (hopefully this is never called)
             } else {
@@ -595,15 +626,15 @@ run_MCMC <- function(par_tab,
                 new_indiv_posteriors <- new_indiv_likelihoods + new_indiv_priors
             }
             new_total_likelihood <- sum(new_indiv_likelihoods)
-            new_total_prior_prob <- sum(new_indiv_priors) + extra_probabilities(proposal, new_infection_histories, new_exposure_histories)
+            new_total_prior_prob <- sum(new_indiv_priors) +
+                extra_probabilities(proposal, new_infection_histories, new_exposure_histories)
             new_total_posterior <- new_total_likelihood + new_total_prior_prob
         }
-        #print(new_total_prior_prob)
 #############################
         ## METROPOLIS HASTINGS STEP
 #############################
         ## Check that all proposed parameters are in allowable range
-        ## Skip if any parameters are outside of the allowable range         
+        ## Skip if any parameters are outside of the allowable range
         log_prob <- new_total_posterior - total_posterior
         if (theta_sample) {
             if (!is.na(log_prob) & !is.nan(log_prob) & is.finite(log_prob)) {
@@ -629,7 +660,7 @@ run_MCMC <- function(par_tab,
                         indiv_likelihoods <- new_indiv_likelihoods
                         indiv_priors <- new_indiv_priors
                         indiv_posteriors <- new_indiv_posteriors
-                                        
+                        
                         if(explicit_exposures) {
                             indiv_titre_prob_infs <- new_indiv_titre_prob_infs
                         }
@@ -646,7 +677,7 @@ run_MCMC <- function(par_tab,
                 if (hist_proposal != 2) {
                     log_probs <- (new_indiv_posteriors[indiv_sub_sample] -
                                   indiv_posteriors[indiv_sub_sample]) +
-                    proposal_ratio[indiv_sub_sample]
+                        proposal_ratio[indiv_sub_sample]
                     log_probs[log_probs > 0] <- 0                    
                     x <- which(log(runif(length(indiv_sub_sample))) < log_probs)
                     change_i <- indiv_sub_sample[x]
@@ -678,7 +709,7 @@ run_MCMC <- function(par_tab,
                         indiv_likelihoods <- new_indiv_likelihoods
                         indiv_priors <- new_indiv_priors
                         indiv_posteriors <- new_indiv_posteriors
-
+                        current_pars <- proposal
                         if(explicit_exposures) {
                             exposure_histories <- new_exposure_histories
                             indiv_titre_prob_infs <- new_indiv_titre_prob_infs
@@ -703,7 +734,10 @@ run_MCMC <- function(par_tab,
                                 indiv_likelihoods <- new_indiv_likelihoods
                                 indiv_priors <- new_indiv_priors
                                 indiv_posteriors <- new_indiv_posteriors
-                                
+                                if(explicit_exposures) {
+                                    exposure_histories <- new_exposure_histories
+                                    indiv_titre_prob_infs <- new_indiv_titre_prob_infs
+                                }
                                 total_likelihood <- new_total_likelihood
                                 total_prior_prob <- new_total_prior_prob
                                 total_posterior <- new_total_posterior
@@ -753,22 +787,21 @@ run_MCMC <- function(par_tab,
                         sep = "\t"))
             infection_history_swap_accept <- infection_history_swap_n <- 0
             tempaccepted <- tempiter <- reset
-
             ## Have a look at the acceptance rates for infection histories
-            if(hist_proposal != 2){
-                pcur_hist <- histaccepted / histiter ## Overall
-                pcur_hist_add <- histaccepted_add / histiter_add ## For adding
-                pcur_hist_move <- histaccepted_move / histiter_move ## For adding
-                message(cat("Pcur hist add: ", head(signif(pcur_hist_add, 3)), sep = "\t"))
-                message(cat("Pcur hist move: ", head(signif(pcur_hist_move, 3)), sep = "\t"))
-                
-                histiter <- integer(n_indiv)
-                histaccepted <- integer(n_indiv)
-                histiter_add <- integer(n_indiv)
-                histaccepted_add <- integer(n_indiv) 
-                histiter_move <- integer(n_indiv)
-                histaccepted_move <- integer(n_indiv)
-            }
+            ##if(hist_proposal != 2){
+            pcur_hist <- histaccepted / histiter ## Overall
+            pcur_hist_add <- histaccepted_add / histiter_add ## For adding
+            pcur_hist_move <- histaccepted_move / histiter_move ## For adding
+            message(cat("Pcur hist add: ", head(signif(pcur_hist_add, 3)), sep = "\t"))
+            message(cat("Pcur hist move: ", head(signif(pcur_hist_move, 3)), sep = "\t"))
+            
+            histiter <- integer(n_indiv)
+            histaccepted <- integer(n_indiv)
+            histiter_add <- integer(n_indiv)
+            histaccepted_add <- integer(n_indiv) 
+            histiter_move <- integer(n_indiv)
+            histaccepted_move <- integer(n_indiv)
+            ##}
         }
         if (i > burnin & i <= (adaptive_period + burnin)) {
             ## Current acceptance rate
@@ -794,51 +827,57 @@ run_MCMC <- function(par_tab,
                     }
                 }
                 ## NOTE THAT THIS IS ONLY RELEVANT TO INFECTION HISTORY PROPOSAL 1 & 3
-                if (hist_proposal != 2) {                   
-                    pcur_hist <- histaccepted / histiter
-                    pcur_hist_add <- histaccepted_add / histiter_add
-                    pcur_hist_move <- histaccepted_move / histiter_move
-                    message(cat("Mean hist acceptance: ", signif(mean(pcur_hist), 3), cat = "\t"))
-                    
-                    histiter <- integer(n_indiv)
-                    histaccepted <- integer(n_indiv)
-                    histiter_add <- integer(n_indiv)
-                    histaccepted_add <- integer(n_indiv) 
-                    histiter_move <- integer(n_indiv)
-                    histaccepted_move <- integer(n_indiv)
-                    if(hist_opt == 1){
-                        ## If adaptive infection history proposal
-                        ## Increase or decrease the number of infection history locations
-                        ## being changed to modify acceptance rate. If not accepting enough,
-                        ## reduce number. If accepting too many, increase number
-                        n_infs_vec[which(pcur_hist_add < popt_hist * (1 - OPT_TUNING))] <-
-                            n_infs_vec[which(pcur_hist_add < popt_hist * (1 - OPT_TUNING))] - 1
-                        n_infs_vec[which(pcur_hist_add >= popt_hist * (1 + OPT_TUNING))] <-
-                            n_infs_vec[which(pcur_hist_add >= popt_hist * (1 + OPT_TUNING))] + 1
-                        n_infs_vec[n_infs_vec < 1] <- 1
-                        
-                        move_sizes[which(pcur_hist_move < popt_hist * (1 - OPT_TUNING))] <-
-                            move_sizes[which(pcur_hist_move < popt_hist * (1 - OPT_TUNING))] - 1
-                        move_sizes[which(pcur_hist_move >= popt_hist * (1 + OPT_TUNING))] <-
-                            move_sizes[which(pcur_hist_move >= popt_hist * (1 + OPT_TUNING))] + 1
-                        move_sizes[move_sizes< 1] <- 1                        
+                ##if (hist_proposal != 2) {                   
+                pcur_hist <- histaccepted / histiter
+                pcur_hist_add <- histaccepted_add / histiter_add
+                pcur_hist_move <- histaccepted_move / histiter_move
+                pcur_hist_swap <- infection_history_swap_accept/infection_history_swap_n
+                #message(cat("Mean hist acceptance: ", signif(mean(pcur_hist), 3), cat = "\t"))
 
-                        for (ii in seq_along(n_infs_vec)) {
-                            move_sizes[ii] <- min(move_sizes[ii], length(age_mask[ii]:strain_mask[ii]))
-                            n_infs_vec[ii] <- min(n_infs_vec[ii], length(age_mask[ii]:strain_mask[ii]))
-                        }
+                infection_history_swap_accept <- infection_history_swap_n <- 0
+                histiter <- integer(n_indiv)
+                histaccepted <- integer(n_indiv)
+                histiter_add <- integer(n_indiv)
+                histaccepted_add <- integer(n_indiv) 
+                histiter_move <- integer(n_indiv)
+                histaccepted_move <- integer(n_indiv)
+                if(hist_opt == 1){
+                    ## If adaptive infection history proposal
+                    ## Increase or decrease the number of infection history locations
+                    ## being changed to modify acceptance rate. If not accepting enough,
+                    ## reduce number. If accepting too many, increase number
+                    n_infs_vec[which(pcur_hist_add < popt_hist * (1 - OPT_TUNING))] <-
+                        n_infs_vec[which(pcur_hist_add < popt_hist * (1 - OPT_TUNING))] - 1
+                    n_infs_vec[which(pcur_hist_add >= popt_hist * (1 + OPT_TUNING))] <-
+                        n_infs_vec[which(pcur_hist_add >= popt_hist * (1 + OPT_TUNING))] + 1
+                    n_infs_vec[n_infs_vec < 1] <- 1
+                    
+                    move_sizes[which(pcur_hist_move < popt_hist * (1 - OPT_TUNING))] <-
+                        move_sizes[which(pcur_hist_move < popt_hist * (1 - OPT_TUNING))] - 1
+                    move_sizes[which(pcur_hist_move >= popt_hist * (1 + OPT_TUNING))] <-
+                        move_sizes[which(pcur_hist_move >= popt_hist * (1 + OPT_TUNING))] + 1
+                    move_sizes[move_sizes< 1] <- 1                        
+                    
+                    ##if(pcur_hist_swap < popt_hist){
+                    ##    year_swap_propn <- scaletuning(year_swap_propn, popt_hist, pcur_hist_swap)
+                    ##    year_swap_propn <- min(1, year_swap_propn)
+                    ##                    }
+                    for (ii in seq_along(n_infs_vec)) {
+                        move_sizes[ii] <- min(move_sizes[ii], length(age_mask[ii]:strain_mask[ii]))
+                        move_sizes[ii] <- min(move_sizes[ii], 10)
+                        n_infs_vec[ii] <- min(n_infs_vec[ii], length(age_mask[ii]:strain_mask[ii]))
                     }
-                    ## Look at infection history proposal sizes
-                    message(cat("No. infections sampled: ", head(n_infs_vec), sep = "\t"))
-                    message(cat("Move sizes: ", head(move_sizes), sep = "\t"))
-                    message(cat("Pcur hist add: ", head(signif(pcur_hist_add, 3)), sep = "\t"))
-                    message(cat("Pcur hist move: ", head(signif(pcur_hist_move, 3)), sep = "\t"))
                 }
-                message(cat("Pcur: ", signif(pcur, 3), sep = "\t"))
+                ## Look at infection history proposal sizes
+                message(cat("Pcur hist add: ", head(signif(pcur_hist_add, 3)), sep = "\t"))
+                message(cat("No. infections sampled: ", head(n_infs_vec), sep = "\t"))
+                message(cat("Pcur hist move: ", head(signif(pcur_hist_move, 3)), sep = "\t"))
+                message(cat("Move sizes: ", head(move_sizes), sep = "\t"))
+                message(cat("Pcur theta: ", signif(pcur, 3), sep = "\t"))
                 message(cat("Step sizes: ", signif(steps, 3), sep = "\t"))
-                message(cat("Pcur inf hist swap: ", signif(infection_history_swap_accept / infection_history_swap_n, 3), sep = "\t"))
-                
-                
+                message(cat("Pcur inf hist swap: ", signif(pcur_hist_swap, 3), sep = "\t"))
+                message(cat("inf hist swap propn: ", year_swap_propn,sep="\t"))
+                pcur_hist <- histaccepted / histiter ## Overall
                 ## If not accepting, send a warning
                 if (all(pcur[!is.nan(pcur)] == 0)) {
                     message("Warning: acceptance rates are 0. Might be an error with the theta proposal?")

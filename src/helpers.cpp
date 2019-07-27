@@ -97,7 +97,7 @@ void add_measurement_shifts(NumericVector &predicted_titres,
 			    const int &end_index_in_data
 			    ){
   for(int j = start_index_in_data; j <= end_index_in_data; ++j){
-    predicted_titres[j] += to_add[j];    
+    predicted_titres[j] += to_add[j];
   }
 }
 			    

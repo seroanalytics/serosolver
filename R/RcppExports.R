@@ -99,8 +99,8 @@ calc_phi_probs_indiv_titre_cpp <- function(phis, titres, infection_history, age_
 #' @return NumericVector of predicted titres for each entry in measurement_strain_indices
 #' @export
 #' @family titre_model
-titre_data_fast <- function(theta, infection_history_mat, circulation_times, circulation_times_indices, sample_times, rows_per_indiv_in_samples, cum_nrows_per_individual_in_data, nrows_per_blood_sample, measurement_strain_indices, antigenic_map_long, antigenic_map_short, mus, boosting_vec_indices, boost_before_infection = FALSE) {
-    .Call('_serosolver_titre_data_fast', PACKAGE = 'serosolver', theta, infection_history_mat, circulation_times, circulation_times_indices, sample_times, rows_per_indiv_in_samples, cum_nrows_per_individual_in_data, nrows_per_blood_sample, measurement_strain_indices, antigenic_map_long, antigenic_map_short, mus, boosting_vec_indices, boost_before_infection)
+titre_data_fast <- function(theta, infection_history_mat, circulation_times, circulation_times_indices, sample_times, rows_per_indiv_in_samples, cum_nrows_per_individual_in_data, nrows_per_blood_sample, measurement_strain_indices, antigenic_map_long, antigenic_map_short, antigenic_distances, mus, boosting_vec_indices, boost_before_infection = FALSE) {
+    .Call('_serosolver_titre_data_fast', PACKAGE = 'serosolver', theta, infection_history_mat, circulation_times, circulation_times_indices, sample_times, rows_per_indiv_in_samples, cum_nrows_per_individual_in_data, nrows_per_blood_sample, measurement_strain_indices, antigenic_map_long, antigenic_map_short, antigenic_distances, mus, boosting_vec_indices, boost_before_infection)
 }
 
 #' Marginal prior probability (p(Z)) of a particular infection history matrix single prior
@@ -208,19 +208,10 @@ likelihood_titre_basic <- function(expected, data, theta, titre_shifts) {
 #' @return a matrix of 1s and 0s corresponding to the infection histories for all individuals
 #' @export
 #' @family infection_history_proposal
-inf_hist_prop_prior_v3 <- function(infection_history_mat, sampled_indivs, age_mask, strain_mask, move_sizes, n_infs, alpha, beta, rand_ns) {
-    .Call('_serosolver_inf_hist_prop_prior_v3', PACKAGE = 'serosolver', infection_history_mat, sampled_indivs, age_mask, strain_mask, move_sizes, n_infs, alpha, beta, rand_ns)
+inf_hist_prop_prior_v3 <- function(infection_history_mat, sampled_indivs, age_mask, strain_mask, move_sizes, n_infs, alpha, beta, rand_ns, swap_propn) {
+    .Call('_serosolver_inf_hist_prop_prior_v3', PACKAGE = 'serosolver', infection_history_mat, sampled_indivs, age_mask, strain_mask, move_sizes, n_infs, alpha, beta, rand_ns, swap_propn)
 }
 
-#' Infection history gibbs proposal, fast
-#'  Generates a new infection history matrix and corresponding individual likelihoods, using a gibbs sampler from the infection history prior. See \code{\link{infection_history_proposal_gibbs}}, as inputs are very similar.
-#' @param theta NumericVector, the model parameters used to solve the model
-#' @param infection_history_mat IntegerMatrix the matrix of 1s and 0s corresponding to individual infection histories
-#' @param old_probs_1 NumericVector, the current likelihoods for each individual
-#' @param sampled_indivs IntegerVector, indices of sampled individuals
-#' @param n_years_samp int, for each individual, how many time periods to resample infections for?
-#' @param age_mask IntegerVector, length of the number of individuals, with indices specifying first time period that an individual can be infected (indexed from 1, such that a value of 1 allows an individual to be infected in any time period)
-#' @param strain_mask IntegerVector, length of the number of individuals, with indices specifying last time period that an individual can be infected (ie. last time a sample was taken)
 #' @param n_alive IntegerMatrix, number of columns is the number of time periods that an individual could be infected, giving the number of individual alive in each time period. Number of rows is the number of distinct groups.
 #' @param swap_propn double, what proportion of proposals should be swap steps (ie. swap contents of two cells in infection_history rather than adding/removing infections)
 #' @param swap_distance int, in a swap step, how many time steps either side of the chosen time period to swap with
@@ -248,8 +239,8 @@ inf_hist_prop_prior_v3 <- function(infection_history_mat, sampled_indivs, age_ma
 #' @return an R list, one entry with the matrix of 1s and 0s corresponding to the infection histories for all individuals and the other with the new corresponding likelihoods per individual
 #' @export
 #' @family infection_history_proposal
-inf_hist_prop_prior_v2_and_v4 <- function(theta, infection_history_mat, old_probs_1, sampled_indivs, n_years_samp_vec, age_mask, strain_mask, n_alive, n_infections, n_infected_group, swap_propn, swap_distance, alpha, beta, circulation_times, circulation_times_indices, sample_times, rows_per_indiv_in_samples, cum_nrows_per_individual_in_data, cum_nrows_per_individual_in_repeat_data, nrows_per_blood_sample, group_id_vec, measurement_strain_indices, antigenic_map_long, antigenic_map_short, data, repeat_data, repeat_indices, titre_shifts, mus, boosting_vec_indices, total_alive, temp = 1, solve_likelihood = TRUE) {
-    .Call('_serosolver_inf_hist_prop_prior_v2_and_v4', PACKAGE = 'serosolver', theta, infection_history_mat, old_probs_1, sampled_indivs, n_years_samp_vec, age_mask, strain_mask, n_alive, n_infections, n_infected_group, swap_propn, swap_distance, alpha, beta, circulation_times, circulation_times_indices, sample_times, rows_per_indiv_in_samples, cum_nrows_per_individual_in_data, cum_nrows_per_individual_in_repeat_data, nrows_per_blood_sample, group_id_vec, measurement_strain_indices, antigenic_map_long, antigenic_map_short, data, repeat_data, repeat_indices, titre_shifts, mus, boosting_vec_indices, total_alive, temp, solve_likelihood)
+inf_hist_prop_prior_v2_and_v4 <- function(theta, infection_history_mat, old_probs_1, sampled_indivs, n_years_samp_vec, age_mask, strain_mask, n_alive, n_infections, n_infected_group, swap_propn, swap_distance, alpha, beta, circulation_times, circulation_times_indices, sample_times, rows_per_indiv_in_samples, cum_nrows_per_individual_in_data, cum_nrows_per_individual_in_repeat_data, nrows_per_blood_sample, group_id_vec, measurement_strain_indices, antigenic_map_long, antigenic_map_short, antigenic_distances, data, repeat_data, repeat_indices, titre_shifts, proposal_iter, accepted_iter, proposal_swap, accepted_swap, mus, boosting_vec_indices, total_alive, temp = 1, solve_likelihood = TRUE) {
+    .Call('_serosolver_inf_hist_prop_prior_v2_and_v4', PACKAGE = 'serosolver', theta, infection_history_mat, old_probs_1, sampled_indivs, n_years_samp_vec, age_mask, strain_mask, n_alive, n_infections, n_infected_group, swap_propn, swap_distance, alpha, beta, circulation_times, circulation_times_indices, sample_times, rows_per_indiv_in_samples, cum_nrows_per_individual_in_data, cum_nrows_per_individual_in_repeat_data, nrows_per_blood_sample, group_id_vec, measurement_strain_indices, antigenic_map_long, antigenic_map_short, antigenic_distances, data, repeat_data, repeat_indices, titre_shifts, proposal_iter, accepted_iter, proposal_swap, accepted_swap, mus, boosting_vec_indices, total_alive, temp, solve_likelihood)
 }
 
 titre_data_fast_individual_base_indiv <- function(mu, mu_short, wane, tau, infection_times, infection_strain_indices_tmp, measurement_strain_index, sampling_time, number_strains, antigenic_map_short, antigenic_map_long, boost_before_infection = FALSE) {
@@ -272,8 +263,8 @@ calc_titre_inf_prob <- function(titres, alpha1, beta1, Xs, Zs) {
     .Call('_serosolver_calc_titre_inf_prob', PACKAGE = 'serosolver', titres, alpha1, beta1, Xs, Zs)
 }
 
-inf_hist_prop_prior_immunity <- function(theta, exposure_history_mat, infection_history_mat, titre_prob_inf, old_probs_1, sampled_indivs, n_years_samp_vec, age_mask, strain_mask, n_alive, n_exposures, swap_propn, swap_distance, alpha_Z, beta_Z, circulation_times, circulation_times_indices, sample_times, rows_per_indiv_in_samples, cum_nrows_per_individual_in_data, cum_nrows_per_individual_in_repeat_data, nrows_per_blood_sample, group_id_vec, measurement_strain_indices, antigenic_map_long, antigenic_map_short, data, repeat_data, repeat_indices, titre_shifts, temp = 1, solve_likelihood = TRUE) {
-    .Call('_serosolver_inf_hist_prop_prior_immunity', PACKAGE = 'serosolver', theta, exposure_history_mat, infection_history_mat, titre_prob_inf, old_probs_1, sampled_indivs, n_years_samp_vec, age_mask, strain_mask, n_alive, n_exposures, swap_propn, swap_distance, alpha_Z, beta_Z, circulation_times, circulation_times_indices, sample_times, rows_per_indiv_in_samples, cum_nrows_per_individual_in_data, cum_nrows_per_individual_in_repeat_data, nrows_per_blood_sample, group_id_vec, measurement_strain_indices, antigenic_map_long, antigenic_map_short, data, repeat_data, repeat_indices, titre_shifts, temp, solve_likelihood)
+inf_hist_prop_prior_immunity <- function(theta, exposure_history_mat, infection_history_mat, titre_prob_inf, old_probs_1, sampled_indivs, n_years_samp_vec, age_mask, strain_mask, n_alive, n_exposures, swap_propn, swap_distance, alpha_Z, beta_Z, circulation_times, circulation_times_indices, sample_times, rows_per_indiv_in_samples, cum_nrows_per_individual_in_data, cum_nrows_per_individual_in_repeat_data, nrows_per_blood_sample, group_id_vec, measurement_strain_indices, antigenic_map_long, antigenic_map_short, data, repeat_data, repeat_indices, titre_shifts, proposal_iter, accepted_iter, proposal_swap, accepted_swap, temp = 1, solve_likelihood = TRUE) {
+    .Call('_serosolver_inf_hist_prop_prior_immunity', PACKAGE = 'serosolver', theta, exposure_history_mat, infection_history_mat, titre_prob_inf, old_probs_1, sampled_indivs, n_years_samp_vec, age_mask, strain_mask, n_alive, n_exposures, swap_propn, swap_distance, alpha_Z, beta_Z, circulation_times, circulation_times_indices, sample_times, rows_per_indiv_in_samples, cum_nrows_per_individual_in_data, cum_nrows_per_individual_in_repeat_data, nrows_per_blood_sample, group_id_vec, measurement_strain_indices, antigenic_map_long, antigenic_map_short, data, repeat_data, repeat_indices, titre_shifts, proposal_iter, accepted_iter, proposal_swap, accepted_swap, temp, solve_likelihood)
 }
 
 #' Function to calculate non-linear waning

@@ -167,7 +167,8 @@ void proposal_likelihood_func(double &new_prob,
 			      const IntegerVector &cum_nrows_per_individual_in_repeat_data,
 			      const double &log_const,
 			      const double &den,
-			      const double &max_titre){
+			      const double &max_titre,
+			      const bool &repeat_data_exist){
   for(int x = cum_nrows_per_individual_in_data[indiv]; x < cum_nrows_per_individual_in_data[indiv+1]; ++x){
     if(data[x] < max_titre && data[x] >= 1.0){
       new_prob += log_const + log((erf((data[x] + 1.0 - predicted_titres[x]) / den) -
@@ -181,14 +182,16 @@ void proposal_likelihood_func(double &new_prob,
 
   // =====================
   // Do something for repeat data here
-  for(int x = cum_nrows_per_individual_in_repeat_data[indiv]; x < cum_nrows_per_individual_in_repeat_data[indiv+1]; ++x){
-    if(repeat_data[x] < max_titre && repeat_data[x] >= 1.0){
-      new_prob += log_const + log((erf((repeat_data[x] + 1.0 - predicted_titres[repeat_indices[x]]) / den) -
-				   erf((repeat_data[x]     - predicted_titres[repeat_indices[x]]) / den)));    
-    } else if(repeat_data[x] >= max_titre) {
-      new_prob += log_const + log(erfc((max_titre - predicted_titres[repeat_indices[x]])/den));
-    } else {
-      new_prob += log_const + log(1.0 + erf((1.0 - predicted_titres[repeat_indices[x]])/den));
+  if(repeat_data_exist){
+    for(int x = cum_nrows_per_individual_in_repeat_data[indiv]; x < cum_nrows_per_individual_in_repeat_data[indiv+1]; ++x){
+      if(repeat_data[x] < max_titre && repeat_data[x] >= 1.0){
+	new_prob += log_const + log((erf((repeat_data[x] + 1.0 - predicted_titres[repeat_indices[x]]) / den) -
+				     erf((repeat_data[x]     - predicted_titres[repeat_indices[x]]) / den)));    
+      } else if(repeat_data[x] >= max_titre) {
+	new_prob += log_const + log(erfc((max_titre - predicted_titres[repeat_indices[x]])/den));
+      } else {
+	new_prob += log_const + log(1.0 + erf((1.0 - predicted_titres[repeat_indices[x]])/den));
+      }
     }
   }
   // Need to erase the predicted titre data...

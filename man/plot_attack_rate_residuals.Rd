@@ -13,7 +13,7 @@ plot_attack_rate_residuals(infection_histories, titre_dat,
 
 \item{strain_isolation_times}{vector of the epochs of potential circulation}
 
-\item{true_ar}{data frame of true attack rates, with first column `year` equal to `strain_isolation_times`, and second column `AR` giving the attack rate}
+\item{true_ar}{data frame of true attack rates, with first column `year` equal to `strain_isolation_times`, and second column `AR` giving the attack rate. Column names: group, j, AR}
 
 \item{n_alive}{vector with the number of people alive in each year of circulation. Can be left as NULL, and ages will be used to infer this}
 

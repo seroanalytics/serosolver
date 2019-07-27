@@ -8,7 +8,7 @@ inf_hist_swap_phi(infection_history, phis, age_mask, strain_mask,
   swap_propn, move_size, n_alive)
 }
 \arguments{
-\item{infection_history}{matrix of 1s and 0s to swap around}
+\item{infection_history}{matrix of 1s and 0s to swap around representing the infection history}
 
 \item{phis}{vector of force of infection parameters for each column}
 

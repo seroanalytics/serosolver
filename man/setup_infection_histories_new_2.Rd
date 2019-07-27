@@ -26,7 +26,8 @@ Very similar to \code{\link{setup_infection_histories_new}}, but is not restrict
 The idea is to move along time in the context of antigenic drift and look at an individual's titre against each strain. Where titres are raised, we suggest an infection. However, to avoid suggesting multiple infections for regions of high antigenic similarity, we place a necessary gap (defined by `space`) between proposed infection times.
 }
 \seealso{
-Other setup_infection_histories: \code{\link{setup_infection_histories_old}},
+Other setup_infection_histories: \code{\link{setup_infection_histories_immunity}},
+  \code{\link{setup_infection_histories_old}},
   \code{\link{setup_infection_histories_total}}
 }
 \concept{setup_infection_histories}

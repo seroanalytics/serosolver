@@ -7,7 +7,7 @@
 simulate_infection_histories_titre(pars, p_inf, strain_isolation_times,
   ages, antigenic_map, mus = NULL, mu_indices = NULL,
   measurement_bias = NULL, measurement_indices = NULL,
-  separate_exosures = FALSE)
+  separate_exposures = FALSE)
 }
 \arguments{
 \item{pars}{vector of model kinetics parameters}

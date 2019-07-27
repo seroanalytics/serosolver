@@ -66,6 +66,7 @@ get_titre_predictions <- function(chain, infection_histories, titre_dat,
     f <- create_posterior_func(par_tab, titre_dat, antigenic_map, 100, mu_indices = mu_indices,
                                measurement_indices_by_time = measurement_indices_by_time, function_type = 4)
 
+    
     predicted_titres <- residuals <- matrix(nrow = nrow(titre_dat), ncol = nsamp)
     samp_record <- numeric(nsamp)
 
@@ -74,8 +75,9 @@ get_titre_predictions <- function(chain, infection_histories, titre_dat,
     for (i in 1:nsamp) {
         index <- tmp_samp[i]
         pars <- get_index_pars(chain,index)
-        pars <- pars[!(names(pars) %in% c("lnlike","likelihood","prior_prob","sampno"))]
-        #pars <- pars[names(pars) %in% par_tab$names]
+        pars <- pars[!(names(pars) %in% c("lnlike","likelihood","prior_prob",
+                                          "sampno","total_infections","chain_no"))]
+                                        #pars <- pars[names(pars) %in% par_tab$names]
         tmp_inf_hist <- infection_histories[infection_histories$sampno == index, ]
         tmp_inf_hist <- as.matrix(Matrix::sparseMatrix(i = tmp_inf_hist$i, j = tmp_inf_hist$j, x = tmp_inf_hist$x, dims = c(n_indiv, nstrain)))
         predicted_titres[, i] <- f(pars, tmp_inf_hist)
@@ -110,7 +112,7 @@ get_titre_predictions <- function(chain, infection_histories, titre_dat,
     dat2 <- as.data.frame(dat2)
     colnames(dat2) <- c("lower", "lower_50","median", "upper_50","upper")
     dat2$max <- best_traj
-    dat2[dat2 < 0] <- 0
+    #dat2[dat2 < 0] <- 0
     dat2 <- cbind(titre_dat, dat2)
     tmp_inf_chain <- data.table(subset(infection_histories, sampno %in% tmp_samp))
 
@@ -656,14 +658,13 @@ plot_attack_rate_residuals<- function(infection_histories, titre_dat, strain_iso
 #' #' @param infection_histories the MCMC chain for infection histories
 #' @param titre_dat the data frame of titre data
 #' @param strain_isolation_times vector of the epochs of potential circulation
-#' @param true_ar data frame of true attack rates, with first column `year` equal to `strain_isolation_times`, and second column `AR` giving the attack rate
+#' @param true_ar data frame of true attack rates, with first column `year` equal to `strain_isolation_times`, and second column `AR` giving the attack rate. Column names: group, j, AR
 #' @param n_alive vector with the number of people alive in each year of circulation. Can be left as NULL, and ages will be used to infer this
 #' @param pointsize Numeric - how big should each point be?
 #' @param fatten Numeric - fatten parameter for ggplot pointrange
 #' @param pad_chain if TRUE, fills the infection history data table with entries for non-infection events (ie. 0s). Can be switched to FALSE for speed to get a rough idea of what the attack rates look like.
 #' @param prior_pars if not NULL, a list of parameters for the attack rate prior, giving the assumed prior_version along with alpha and beta
 #' @param plot_den if TRUE, produces a violin plot of attack rates rather than pointrange
-#' @param true_ar if not NULL, data frame with the true attack rates by time and group. Column names: group, j, AR
 #' @param by_group if TRUE, facets the plot by group ID
 #' @param group_subset if not NULL, plots only this subset of groups eg. 1:5
 #' @param plot_residuals if TRUE, plots the residuals between inferred and true attack rate
@@ -705,8 +706,9 @@ plot_attack_rates <- function(infection_histories, titre_dat, strain_isolation_t
     tmp$taken <- years[tmp$j] %in% unique(titre_dat$samples)
     tmp$taken <- ifelse(tmp$taken, "Yes", "No")
     prior_dens <- NULL
-
+    n_alive1 <- n_alive
     if(!is.null(prior_pars)){
+        #n_alive1 <- c(n_alive, 1)
         n_alive$Prior <- 1
         prior_ver <- prior_pars[["prior_version"]]
         alpha1 <- prior_pars[["alpha"]]
@@ -723,7 +725,7 @@ plot_attack_rates <- function(infection_histories, titre_dat, strain_isolation_t
             prior_dens$group <- i
             prior_dens_all <- rbind(prior_dens_all, prior_dens)
         }
-        tmp <- rbind(tmp, prior_dens_all)        
+        tmp <- rbind(tmp, prior_dens_all)
     }
     n_alive_tmp <- melt(n_alive, id.vars="group")
     n_alive_tmp$variable <- as.numeric(n_alive_tmp$variable)
@@ -762,7 +764,7 @@ plot_attack_rates <- function(infection_histories, titre_dat, strain_isolation_t
             true_ar <- true_ar[,c("group","j","AR")]
             if(!is.null(prior_pars)){
                 true_ar <- rbind(true_ar, data.frame(group=1:n_groups,
-                                                     j=max(strain_isolation_times),
+                                                     j=max(strain_isolation_times)+3,
                                                      AR=median(prior_dens$V1)))
             }
             tmp <- merge(tmp, true_ar, by=c("group","j"))
@@ -784,7 +786,10 @@ plot_attack_rates <- function(infection_histories, titre_dat, strain_isolation_t
             scale_y_continuous(limits = c(0, 1), expand = c(0, 0))
     }
 
-    p <- p + facet_wrap(~group,ncol=2) + 
+    if(by_group){
+        p <- p + facet_wrap(~group,ncol=2)
+    }
+    p <- p + 
         scale_x_continuous(breaks=year_breaks,labels=year_labels)+
         theme_classic() +
         theme(legend.position="none")+

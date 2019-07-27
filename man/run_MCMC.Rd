@@ -5,8 +5,8 @@
 \title{Adaptive Metropolis-within-Gibbs/Metropolis Hastings Random Walk Algorithm.}
 \usage{
 run_MCMC(par_tab, titre_dat, antigenic_map, mcmc_pars = c(),
-  mvr_pars = NULL, start_inf_hist = NULL, filename = "test",
-  CREATE_POSTERIOR_FUNC = create_posterior_func,
+  mvr_pars = NULL, start_exposure_hist = NULL, start_inf_hist = NULL,
+  filename = "test", CREATE_POSTERIOR_FUNC = create_posterior_func,
   CREATE_PRIOR_FUNC = NULL, version = 1, mu_indices = NULL,
   measurement_indices = NULL, measurement_random_effects = FALSE,
   OPT_TUNING = 0.1, temp = 1, solve_likelihood = TRUE,

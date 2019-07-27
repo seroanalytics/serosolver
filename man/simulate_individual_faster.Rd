@@ -5,10 +5,11 @@
 \title{Simulate individual data quickly}
 \usage{
 simulate_individual_faster(theta, infection_history, antigenic_map_long,
-  antigenic_map_short, sampling_times, strain_isolation_times,
-  measured_strains, mus = NULL, mu_indices = NULL,
-  measurement_bias = NULL, measurement_indices = NULL,
-  add_noise = TRUE, repeats = 1, age = NULL)
+  antigenic_map_short, antigenic_distances, sampling_times,
+  strain_isolation_times, measured_strains, mus = NULL,
+  mu_indices = NULL, measurement_bias = NULL,
+  measurement_indices = NULL, add_noise = TRUE, repeats = 1,
+  age = NULL)
 }
 \arguments{
 \item{theta}{the named parameter vector}

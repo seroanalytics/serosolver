@@ -24,7 +24,8 @@ Given a matrix of titre data, proposes plausible initial infection histories fro
 NOTE - MIGHT NEED TO UPDATE THIS FOR GROUPS
 }
 \seealso{
-Other setup_infection_histories: \code{\link{setup_infection_histories_new_2}},
+Other setup_infection_histories: \code{\link{setup_infection_histories_immunity}},
+  \code{\link{setup_infection_histories_new_2}},
   \code{\link{setup_infection_histories_total}}
 }
 \concept{setup_infection_histories}
