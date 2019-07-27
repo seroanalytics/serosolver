@@ -1,0 +1,230 @@
+---
+title: "Serosolver: Quick Start Guide"
+author: "Kylie Ainslie and James Hay"
+date: "`r Sys.Date()`"
+output: rmarkdown::html_vignette # rmarkdown::md_document - need for GitHub
+vignette: >
+  %\VignetteIndexEntry{Serosolver Quick Start Guide}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+bibliography: vignette_references.bib
+csl: plos.csl
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+## Introduction
+In disease systems where a single infection is expected in a given period of time, serological data can be combined with models of antibody kinetics to infer past infection times and the force of infection on a population [@white2014; @metcalf2016; @borremans2016; @pepin2017]. However, simple models of antibody kinetics are often incomplete for viruses, such as influenza outside of a single season, due to the antigenically variable nature of the virus. Whereas raised antibody titres against a pathogen with a single circulating phenotype are indicative of infection, cross-reactive antibodies from antigenically similar influenza viruses results in a measurable antibody response against strains that an individual may not have seen [@beyer2004; @tebeest2014; @freeman2016]. Understanding the immunological processes which build an individual's antibody repertoire is further complicated by the interference of a pre-existing memory B cell response on the production of new B cell populations against the infecting strain [@andrews2015; @zarnitsyna2016].
+
+Progress has been made in understanding the immunological mechanisms which link observed immune responses with disease incidence through experimental systems and human population studies [@li2013; @linderman2014; @gostic2016; @cobey2017; @monto2017]. Taking into account phenomena such as original antigenic sin (OAS), antigenic seniority, back-boosting and age-specific antibody responses have been used to significantly improve our interpretation of serological data [@kim2009; @lessler2012; @fonville2014; @monsterinhopping2016]. The full repertoire of humoral responses by one individual to all previous and future strains can be described by an antibody landscape, which quantifies the expected antibody titre against viruses on an antigenic map @fonville2014. Quantifying these mechanisms, along with antibody boosting and cross reactivity, can therefore be used to better predict antibody landscapes for humans @kucharski2015.
+
+### Model Description
+`serosolver` uses a dynamic model of antibody dynamics, previously described by Kucharski *et al.* @kucharski2018 to infer infection histories and attack rates from cross-sectional or longitudinal serological data. The model infers individual infection histories, historical attack rates, and patterns of antibody dynamics by accounting for short-term, broadly reactive antibody boosting following exposure; long-term, narrowly-reactive antibody boosting; boosting suppression through antigenic seniority; and measurement error.
+
+### Vignette Outline
+This quick start guide is designed to provide the basic instructions to use `serosolver` on serological data. For more in depth instructions about the different capabilities of `serosolver` see the case study vignettes.The following steps are covered in this guide:
+
+1. Formatting and inputting a serological data set
+2. Specifying inputs
+    + Parameter values
+    + Antigenic map
+    + Age mask
+    + Starting infection histories
+3. Running MCMC
+4. Processing outputs and generating plots
+
+## Install serosolver
+
+The easiest way to install the development version of `serosolver` is to use the `devtools` package:
+
+```{r,eval=FALSE}
+#devtools::install_github("seroanalytics/serosolver")
+library(serosolver)
+```
+
+## 1. Data Format
+
+`serosolver` expects a data frame as input in long format with the following columns: 
+
+1. individual: consecutive integer ID of individuals from $1,\dots,N$, where $N$ is the total number of individuals
+1. samples: integer value of the time each sample was collected
+    + For annual samples, the sample time is simply the year each sample was collected in. For example, data collected between 2009 and 2011 would have values of 2009, 2010, or 2011.
+    + For semi-annual samples, the sample time is the year the sample was collected multiplied by 2 (since there are two semesters in every year). For example, data collected between 2009 and 2011 would have values of $(2009 \times 2) + 1 = 4019$, $(2009.5 \times 2) + 1 = 4020$, $(2010 \times 2) + 1 = 4021$, $(2010.5 \times 2) + 1 = 4022$, $(2011 \times 2) + 1 = 4023$, $(2011.5 \times 2) + 1 = 4024$.
+    + Similarly, for quarterly or monthly samples, the sample time follows the same pattern. For example for a sample collected in July of 2009, the quarterly sample time would be $(2009.75 \times 4) + 1 = 8040$ (because July is in the third quarter of the year) and the monthly sample time would be $(2009.5833 \times 12) + 1 = 24116$ (because July is the seventh month and $7/12=0.5833$).  
+3. virus: numeric time of when the virus was circulating (should be in the same format as samples)
+4. titre: integer of titre value against the given virus at that sampling time (needs to be on log scale)
+5. run: integer value of the repeat number of each sample (if there are no repeat samples, then run should be 1 for every sample)
+6. DOB: integer value of date of birth (should be in the same format as samples)
+
+```{r,eval=FALSE}
+  titre_dat <- data.frame(individual=c(rep(1,4),rep(2,4)),
+                          samples=c(8039,8040,8044,8047,8039,8041,8045,8048),
+                          virus=c(rep(8036,8)),
+                          titre=c(0,0,7,7,0,5,6,5),
+                          run=c(rep(1,8)),
+                          DOB=c(rep(8036,8)),
+                          group=c(rep(1,8))
+                         )
+  knitr::kable(head(titre_dat))
+```
+
+For the remainder of this quick start guide we refer to the input data set as `titre_dat`.
+
+## 2. Specifying inputs
+Along with a data file, serosolver expects several additional inputs naemly, a parameter input file for starting values of antibody kinetics parameters, an antigenic map, an age mask, and starting infection histories. The following section will walk the users through creating each of these inputs. 
+
+### Parameter values
+Several input files are stored within the `serosolver` package in the 'inputs' directory, however users can create their own. The default parameter file 'parTab_base.csv' is shown below:
+```{r,echo=FALSE,results='asis'}
+  options(scipen=999)
+  par_tab_path <- system.file("extdata", "parTab_base.csv", package = "serosolver")
+  par_tab <- read.csv(par_tab_path, stringsAsFactors=FALSE)
+  par_tab[par_tab$names %in% c("alpha","beta"),"values"] <- c(1,1)
+  knitr::kable(par_tab)
+```
+
+In the parameter file, the column 'fixed' indicates if each parameter value is fixed or should be estimated. For values that are not fixed, starting values need to be generated. The below code generates a random starting value for unfixed parameter values.
+```{r,eval=FALSE}
+# generate starting parameter values
+  start_tab <- par_tab
+    for(i in 1:nrow(start_tab)){
+      if(start_tab[i,"fixed"] == 0){
+        start_tab[i,"values"] <- runif(1,start_tab[i,"lower_start"], 
+                                  start_tab[i,"upper_start"])
+      }
+    }
+
+```
+
+### Antigenic Map
+The antigenic map specifies the coordinates of different circulating viruses in antigenic space [@smith2004], informing the model about how antigenically similar these viruses are. Viruses that are further apart in this 2-dimensional space are expected to cross react less than viruses that are close together.
+
+```{r antigenic_map, echo=FALSE, fig.cap="Assumed antigenic locations of historical strains in model between 1968 and 2012 (from Kucharski *et al.* @kucharski2018).", out.width = '75%'}
+fig_path <- system.file("extdata", "antigenic_map.tiff", package = "serosolver")
+knitr::include_graphics(fig_path)
+```
+
+An antigenic map can be created using `generate_antigenic_map()` and input by the user depending on the source of their data. We use the antigenic map created by Fonville *et al.* [@fonville2014] in our analyses.
+
+```{r, eval=FALSE}
+## Read in raw coordinates
+antigenic_coords_path <- system.file("extdata", "fonville_map_approx.csv", package = "serosolver")
+antigenic_coords <- read.csv(antigenic_coords_path, stringsAsFactors=FALSE)
+
+## Convert to form expected by serosolver
+antigenic_map <- generate_antigenic_map(antigenic_coords, buckets = 4)
+
+# unique strain circulation times
+  strains_isolation_times <- unique(antigenic_map$inf_years)
+```
+
+### Age Mask
+An age mask is required to indicate when each individual could have had their first infection. For example an individual born in 1997 could not have been infected with a strain that circulated in 1990. The fuction `create_age_mask()` outputs a vector of indices of the first `strains_isolation_times` that an individual could have been infected with.
+
+```{r, eval=FALSE}
+  unique_indiv <- titre_dat[!duplicated(titre_dat$individual),]
+  ageMask <- create_age_mask(unique_indiv$DOB, strains_isolation_times)
+```
+
+The final inputs required by `serosolver` are starting infection histories for each individual. The function `setup_infection_histories_new_2()` creates a matrix of infection histories given a matrix of titre data by looking at an individual's titre against each strain. Where titres are raised, it suggests an infection. In this way, it can propose plausible initial infection histories from which to begin MCMC sampling.
+```{r, eval=FALSE}
+  start_inf <- setup_infection_histories_new_2(titre_dat, strains_isolation_times)
+```
+
+## 3. Run MCMC
+`seroslver` uses an Adaptive Metropolis-within-Gibbs algorithm. Given a starting point and the necessary MCMC parameters, `run_MCMC()` performs a random-walk of the posterior space to produce an MCMC chain that can be used to generate MCMC density and iteration plots (see section 4). 
+
+Using the default options, the MCMC can be run using the following.
+```{r, eval=FALSE}
+# run MCMC  
+  res <- run_MCMC(par_tab = start_tab, titre_dat = titre_dat, antigenic_map = antigenic_map, 
+                  start_inf_hist = start_inf, CREATE_POSTERIOR_FUNC = create_posterior_func,
+                  version = 2)
+```
+If you want to change any default options, such as increasing or decreasing the number of iterations and the adaptive period you can pass a vector of function argument values to `run_MCMC()`.
+
+```{r, eval=FALSE}
+   mcmcPars <- c("iterations"=50000,"popt"=0.44,"popt_hist"=0.44,"opt_freq"=1000,"thin"=1,
+                 "adaptive_period"=10000, "save_block"=1000, "thin2"=10, "histSampleProb"=0.5,
+                 "switch_sample"=2, "burnin"=0, "inf_propn"=0.5, "moveSize"=5, "histOpt"=1,
+                 "swapPropn"=0.5,"hist_switch_prob"=0.5,"year_swap_propn"=0.5)
+
+  res <- run_MCMC(par_tab = start_tab, titre_dat = titre_dat, antigenic_map = antigenic_map, 
+                  mcmcPars = mcmcPars, start_inf_hist = start_inf,
+                  CREATE_POSTERIOR_FUNC = create_posterior_func, version = 2)
+```
+
+## 4. Processing Outputs
+`serosolver` contains numerous plotting functions for visualizing results and evaluating model performance. Below are examples of several useful plotting functions.
+
+### Diagnostic plots
+To evaluate model performace, trace and density plots can be produced by plotting the MCMC chains. In the below example the adaptive period and burn-in from the MCMC are excluded in the diagnostic plots.
+```{r,eval=FALSE}
+# Density/trace plots
+  chain1 <- read.csv(res$chain_file)
+  chain1 <- chain1[chain1$sampno >= (mcmcPars["adaptive_period"]+mcmcPars["burnin"]),]
+  plot(coda::as.mcmc(chain1))
+```
+
+### Results plots
+Plot inferred attack rates.
+```{r,eval=FALSE}
+# Read in infection history file from MCMC output
+  inf_chain <- data.table::fread(res$history_file,data.table=FALSE)
+# Remove adaptive period and burn-in
+  inf_chain <- inf_chain[inf_chain$sampno >= (mcmcPars["adaptive_period"]+mcmcPars["burnin"]),]
+  inf_chain1 <- setDT(inf_chain)
+# Define year range
+  xs <- min(strains_isolation_times):max(strains_isolation_times)
+# Plot inferred attack rates
+  arP <- plot_attack_rates(infectionHistories = inf_chain1, dat = titre_dat, ages = titre_dat[,c('individual', 'DOB')], yearRange = xs)
+``` 
+
+Plot inferred infection histories.
+```{r, eval=FALSE}
+# Plot infection histories
+  IH_plot <- plot_infection_histories(chain = chain1, infection_histories = inf_chain, 
+                                      titre_dat = titre_dat, individuals = c(1:5),
+                                      antigenic_map = antigenic_map, par_tab = start_tab1)
+```
+
+Plot inferred antibody titres.
+```{r,eval=FALSE}
+# Plot inferred antibody titres
+  titre_preds <- get_titre_predictions(chain = chain1, infection_histories = inf_chain, 
+                                       titre_dat = titre_dat, individuals = c(1:311),
+                                       antigenic_map = antigenic_map, par_tab = start_tab1)
+  to_use <- titre_preds$predictions
+  
+  titre_pred_p <- ggplot(to_use[to_use$individual %in% 151:200,])+
+                  geom_line(aes(x=samples, y=median))+
+                  geom_point(aes(x=samples, y=titre))+
+                  geom_ribbon(aes(x=samples,ymin=lower, ymax=upper),alpha=0.2,col='red')+
+                  facet_wrap(~individual)
+```
+Generate cummulative incidence plots.
+```{r,eval=FALSE}
+  y <- generate_cumulative_inf_plots(inf_chain,burnin = 0,51:75,nsamp=100,
+                                     strain_isolation_times = strains_isolation_times,
+                                     pad_chain=FALSE,number_col = 2,subset_years = NULL)
+```
+
+### Parameter estimates
+The following code produces a table of the parameter estimates.
+```{r,eval=FALSE}
+# Table of antibody kinetics parameters
+  myresults <- matrix(c(rep(0,3*7)),nrow=3)
+  rownames(myresults) <- c("mu_short","wane","error")
+  colnames(myresults) <- c("mean","sd","2.5%","25%","50%","75%","97.5%")
+  
+  myresults[,"mean"] <- round(apply(chain1[,c("mu_short","wane","error")],2,mean),3)
+  myresults[,"sd"] <- round(apply(chain1[,c("mu_short","wane","error")],2,sd),3)  
+  myresults[,3:7] <- t(round(apply(chain1[,c("mu_short","wane","error")],2,
+                                   quantile,probs=c(0.025,0.25,0.5,0.75,0.975)),3))  
+``` 
+## References
