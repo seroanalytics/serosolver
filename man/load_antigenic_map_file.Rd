@@ -6,9 +6,23 @@
 \usage{
 load_antigenic_map_file(location = getwd())
 }
+\arguments{
+\item{location}{string giving the relative file path to be searched}
+}
 \value{
-one of the starting parameter tables in the current working directory
+data frame, the first found antigenic map tables in the current working directory
 }
 \description{
-Searches the working directory for a file with "antigenic_map" in the name and reads this in
+Searches the working directory for a file with "antigenic_map.csv" in the name and reads in the first one found
 }
+\examples{
+\dontrun{load_antigenic_map_file()}
+}
+\seealso{
+Other load_data_functions: \code{\link{load_infection_chains}},
+  \code{\link{load_mcmc_chains}},
+  \code{\link{load_start_tab}},
+  \code{\link{load_theta_chains}},
+  \code{\link{load_titre_dat}}
+}
+\concept{load_data_functions}

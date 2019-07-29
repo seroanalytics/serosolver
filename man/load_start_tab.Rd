@@ -6,9 +6,23 @@
 \usage{
 load_start_tab(location = getwd())
 }
+\arguments{
+\item{location}{string giving the relative file path to be searched}
+}
 \value{
-one of the starting parameter tables in the current working directory
+data frame, the first found starting parameter tables in the current working directory
 }
 \description{
-Searches the working directory for a file called "start_tab" and reads this in
+Searches the working directory for a file called "start_tab.csv" and reads in the first one found
 }
+\examples{
+\dontrun{load_start_tab()}
+}
+\seealso{
+Other load_data_functions: \code{\link{load_antigenic_map_file}},
+  \code{\link{load_infection_chains}},
+  \code{\link{load_mcmc_chains}},
+  \code{\link{load_theta_chains}},
+  \code{\link{load_titre_dat}}
+}
+\concept{load_data_functions}

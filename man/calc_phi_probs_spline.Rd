@@ -2,7 +2,7 @@
 % Please edit documentation in R/posteriors.R
 \name{calc_phi_probs_spline}
 \alias{calc_phi_probs_spline}
-\title{Calculate FOI from spline}
+\title{Calculate FOI from spline - INACTIVE}
 \usage{
 calc_phi_probs_spline(foi, knots, theta, infection_history, age_mask)
 }
@@ -23,3 +23,18 @@ a vector of log probabilities for each individual
 \description{
 Version of FOI prior that calculates a seasonal spline such that the FOI in a given time point (month) comes from this spline term
 }
+\seealso{
+Other priors: \code{\link{calc_phi_probs_indiv}},
+  \code{\link{calc_phi_probs}},
+  \code{\link{create_prior_mu}},
+  \code{\link{create_prob_shifts}},
+  \code{\link{find_beta_prior_mode}},
+  \code{\link{find_beta_prior_with_mean_var}},
+  \code{\link{find_beta_prior_with_mean}},
+  \code{\link{fit_beta_prior}},
+  \code{\link{fit_normal_prior}},
+  \code{\link{inf_mat_prior}},
+  \code{\link{infection_history_prior}},
+  \code{\link{prob_mus}}, \code{\link{prob_shifts}}
+}
+\concept{priors}

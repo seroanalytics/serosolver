@@ -1,15 +1,6 @@
 #include <Rcpp.h>
 using namespace Rcpp;
 
-#ifndef LIKELIHOOD_TITRE_BASIC_H
-#define LIKELIHOOD_TITRE_BASIC_H
-double likelihood_titre_basic(const NumericVector &expected, 
-			      const NumericVector &data, 
-			      const NumericVector &theta,
-			      const NumericVector &titre_shifts
-			      );
-#endif
-
 #ifndef PROPOSAL_LIKELIHOOD_FUNC_H
 #define PROPOSAL_LIKELIHOOD_FUNC_H
 void proposal_likelihood_func(double &new_prob,

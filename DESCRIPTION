@@ -1,24 +1,27 @@
 Package: serosolver
-Title: Inference framework for serological data
+Title: Inference Framework for Serological Data
 Version: 1.0.0
-Author: James Hay <james.hay13@imperial.ac.uk>
-Maintainer:  James Hay <jameshay218@gmail.com>, Adam Kucharski <Adam.Kucharski@lshtm.ac.uk>
+Authors@R: person("James","Hay",email="jameshay218@gmail.com",role=c("aut","cre"), comment="0000-0002-1998-1844")
+Maintainer:  James Hay <jameshay218@gmail.com>
 Description: Given a table of serological data for a population, infers the
     presence and timing of infections based on raised titres.
 License: GPL-3
-LazyData: true
+LazyData: TRUE
 URL: https://github.com/seroanalytics/serosolver
 BugReports: https://github.com/seroanalytics/serosolver/issues
+Depends: R (>= 3.3.0)
 Suggests:
-    testthat,
-    knitr,
-    rmarkdown,
-    ggplot2,
     coda,
-    plyr,
+    data.table,
+    foreach,
+    ggplot2,
+    knitr,
     Matrix,
-    data.table
-LinkingTo: Rcpp,	
+    plyr,
+    rmarkdown,
+    testthat
+LinkingTo: 
+    Rcpp,
     RcppArmadillo,
     RcppParallel
 SystemRequirements: C++11

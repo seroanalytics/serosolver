@@ -1,3 +1,21 @@
+#' Generate starting parameter table
+#'
+#' Generates a version of \code{par_tab} with random values between \code{lower_start} and \code{upper_start}
+#' @param par_tab See \code{\link{example_par_tab}}
+#' @return a data frame matching par_tab
+#' @family mcmc
+#' @examples
+#' data(example_par_tab)
+#' start_tab <- generate_start_tab(example_par_tab)
+#' @export
+generate_start_tab <- function(par_tab){
+    for(i in 1:nrow(par_tab)){
+        par_tab[i, "values"] <- runif(1,par_tab[i,"lower_start"], par_tab[i, "upper_start"])
+    }
+    return(par_tab)        
+}
+
+
 #' Scale step sizes
 #'
 #' Scales the given step size (between 0 and 1) based on the current acceptance rate to get closed to the desired acceptance rate
@@ -6,6 +24,7 @@
 #' @param pcur the current acceptance rate
 #' @return the scaled step size
 #' @export
+#' @family mcmc
 #' @useDynLib serosolver
 scaletuning <- function(step, popt, pcur) {
   if (pcur == 1) pcur <- 0.99
@@ -17,6 +36,7 @@ scaletuning <- function(step, popt, pcur) {
 }
 
 #' Robins and Monro scaler, thanks to Michael White
+#' @family mcmc
 #' @export
 rm_scale <- function(step_scale, mc, popt, log_prob, N_adapt) {
   dd <- exp(log_prob)
@@ -45,6 +65,10 @@ rm_scale <- function(step_scale, mc, popt, log_prob, N_adapt) {
 #' @param titre_cutoff specifies how high the titre must be to imply an infection
 #' @return an nxm matrix of infection histories containing 1s and 0s, where n is the number of individuals and m is the number of potential infecting strains
 #' @family setup_infection_histories
+#' @examples
+#' data(example_titre_dat)
+#' data(example_antigenic_map)
+#' start_inf <- setup_infection_histories_old(example_titre_dat, example_antigenic_map$inf_years, 0.2, 3)
 #' @export
 setup_infection_histories_old <- function(titre_dat, strain_isolation_times, sample_prob, titre_cutoff = 3) {
   SAMPLE_PROB <- sample_prob
@@ -100,6 +124,10 @@ setup_infection_histories_old <- function(titre_dat, strain_isolation_times, sam
 #' @param beta beta parameter for beta distribution to sample from
 #' @return an infection history matrix
 #' @family setup_infection_histories
+#' @examples
+#' data(example_titre_dat)
+#' data(example_antigenic_map)
+#' start_inf <- setup_infection_histories(example_titre_dat, example_antigenic_map$inf_years, 2,10)
 #' @export
 setup_infection_histories_total <- function(titre_dat, strain_isolation_times, alpha = 1, beta = 1) {
   DOBs <- unique(titre_dat[, c("individual", "DOB")])[, 2]
@@ -131,10 +159,15 @@ setup_infection_histories_total <- function(titre_dat, strain_isolation_times, a
 #'
 #' Given a matrix of titre data, proposes plausible initial infection histories from which to begin MCMC sampling.
 #' The idea is to move along time in the context of antigenic drift and look at an individual's titre against each strain. Where titres are raised, we suggest an infection. However, to avoid suggesting multiple infections for regions of high antigenic similarity, we place a necessary gap (defined by `space`) between proposed infection times.
-#' @inheritParams setup_infection_histories_new_2 
+#' @inheritParams setup_infection_histories_new_2
 #' @return an nxm matrix of infection histories containing 1s and 0s, where n is the number of individuals and m is the number of potential infecting strains
+#' @family setup_infection_histories
+#' @examples
+#' data(example_titre_dat)
+#' data(example_antigenic_map)
+#' start_inf <- setup_infection_histories_new(example_titre_dat, example_antigenic_map$inf_years)
 #' @export
-setup_infection_histories_new <- function(titre_dat, strain_isolation_times, space = 5, titre_cutoff = 2, sample_prob=0.9) {
+setup_infection_histories_new <- function(titre_dat, strain_isolation_times, space = 5, titre_cutoff = 2, sample_prob = 0.9) {
   start_inf <- NULL
   individuals <- unique(titre_dat$individual)
   ages <- unique(titre_dat[, c("individual", "DOB")])
@@ -174,7 +207,7 @@ setup_infection_histories_new <- function(titre_dat, strain_isolation_times, spa
             dist <- 0
           }
         }
-        if(runif(1) > sample_prob) inf_years <- c(inf_years, new_inf)
+        if (runif(1) > sample_prob) inf_years <- c(inf_years, new_inf)
         dist <- 0
       }
     }
@@ -198,8 +231,12 @@ setup_infection_histories_new <- function(titre_dat, strain_isolation_times, spa
 #' @param sample_prob if titre suggests an infection, then add an infection with 1 minus this probability
 #' @return an nxm matrix of infection histories containing 1s and 0s, where n is the number of individuals and m is the number of potential infecting strains
 #' @family setup_infection_histories
+#' @examples
+#' data(example_titre_dat)
+#' data(example_antigenic_map)
+#' start_inf <- setup_infection_histories_new_2(example_titre_dat, example_antigenic_map$inf_years)
 #' @export
-setup_infection_histories_new_2 <- function(titre_dat, strain_isolation_times, space = 5, titre_cutoff = 2, sample_prob=0.9) {
+setup_infection_histories_new_2 <- function(titre_dat, strain_isolation_times, space = 5, titre_cutoff = 2, sample_prob = 0.9) {
   start_inf <- NULL
   individuals <- unique(titre_dat$individual)
   ages <- unique(titre_dat[, c("individual", "DOB")])
@@ -242,7 +279,7 @@ setup_infection_histories_new_2 <- function(titre_dat, strain_isolation_times, s
             dist <- 0
           }
         }
-        if(runif(1) > sample_prob) inf_years <- c(inf_years, new_inf)
+        if (runif(1) > sample_prob) inf_years <- c(inf_years, new_inf)
         dist <- 0
       }
     }
@@ -264,13 +301,14 @@ setup_infection_histories_new_2 <- function(titre_dat, strain_isolation_times, s
 #' @param append if TRUE, just adds to the bottom of the file
 #' @param col_names if TRUE, saves column names first (only set to true if append = FALSE)
 #' @return nothing
+#' @family mcmc
 #' @export
 save_infection_history_to_disk <- function(infection_history, file, sampno, append = TRUE, col_names = FALSE) {
   save_inf_hist <- Matrix::Matrix(infection_history, sparse = TRUE)
   save_inf_hist <- as.data.frame(Matrix::summary(save_inf_hist))
   if (nrow(save_inf_hist) > 0) {
-      save_inf_hist$sampno <- sampno
-      try(data.table::fwrite(save_inf_hist, file = file, col.names = col_names, row.names = FALSE, sep = ",", append = append))
+    save_inf_hist$sampno <- sampno
+    try(data.table::fwrite(save_inf_hist, file = file, col.names = col_names, row.names = FALSE, sep = ",", append = append))
   }
 }
 
@@ -280,13 +318,13 @@ save_infection_history_to_disk <- function(infection_history, file, sampno, appe
 #' @param j optional vector of js to expand the infection history chain for
 #' @return long format, full infection history matrix chain
 #' @export
-expand_summary_infChain <- function(inf_chain,j_vec=NULL){
-    if(is.null(j_vec)) j_vec<-1:max(inf_chain$j)
-    full_inf_chain <- data.table::CJ(i=min(inf_chain$i):max(inf_chain$i), j=j_vec, sampno=sort(unique(inf_chain$sampno)))
-    inf_chain <- data.table::data.table(apply(inf_chain, 2, as.numeric))
-    summary_with_non_infections <- merge(inf_chain,full_inf_chain,by=c("sampno","j","i"),all=TRUE)
-    summary_with_non_infections[is.na(summary_with_non_infections$x),"x"] <- 0
-    colnames(summary_with_non_infections) <- c("sampno","j","individual","x")
-    expanded_chain <- data.table::dcast(summary_with_non_infections, sampno + individual ~ j,value.var="x")
-    return(expanded_chain)
+expand_summary_infChain <- function(inf_chain, j_vec = NULL) {
+  if (is.null(j_vec)) j_vec <- 1:max(inf_chain$j)
+  full_inf_chain <- data.table::CJ(i = min(inf_chain$i):max(inf_chain$i), j = j_vec, sampno = sort(unique(inf_chain$sampno)))
+  inf_chain <- data.table::data.table(apply(inf_chain, 2, as.numeric))
+  summary_with_non_infections <- merge(inf_chain, full_inf_chain, by = c("sampno", "j", "i"), all = TRUE)
+  summary_with_non_infections[is.na(summary_with_non_infections$x), "x"] <- 0
+  colnames(summary_with_non_infections) <- c("sampno", "j", "individual", "x")
+  expanded_chain <- data.table::dcast(summary_with_non_infections, sampno + individual ~ j, value.var = "x")
+  return(expanded_chain)
 }

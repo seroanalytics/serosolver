@@ -25,3 +25,14 @@ an nxm matrix of infection histories containing 1s and 0s, where n is the number
 Given a matrix of titre data, proposes plausible initial infection histories from which to begin MCMC sampling.
 The idea is to move along time in the context of antigenic drift and look at an individual's titre against each strain. Where titres are raised, we suggest an infection. However, to avoid suggesting multiple infections for regions of high antigenic similarity, we place a necessary gap (defined by `space`) between proposed infection times.
 }
+\examples{
+data(example_titre_dat)
+data(example_antigenic_map)
+start_inf <- setup_infection_histories_new(example_titre_dat, example_antigenic_map$inf_years)
+}
+\seealso{
+Other setup_infection_histories: \code{\link{setup_infection_histories_new_2}},
+  \code{\link{setup_infection_histories_old}},
+  \code{\link{setup_infection_histories_total}}
+}
+\concept{setup_infection_histories}

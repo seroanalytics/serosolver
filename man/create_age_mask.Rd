@@ -17,3 +17,11 @@ a vector giving the first index of strain_isolation_times that an individual can
 \description{
 Converts a data frame of individual ages to give the index of the first infection that individual could have had
 }
+\examples{
+data(example_titre_dat)
+data(example_antigenic_map)
+times <- example_antigenic_map$inf_years
+DOBs <- unique(example_titre_dat[,c("individual","DOB")])
+age_mask <- create_age_mask(DOBs$DOB, times)
+}
+\concept{create_masks}

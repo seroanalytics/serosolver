@@ -17,3 +17,13 @@ a named vector of the best parameters
 \description{
 Given an MCMC chain, returns the parameters at the specified index
 }
+\examples{
+\dontrun{
+mcmc_chains <- load_theta_chains()
+pars <- get_index_pars(mcmc_chains$chain, 1000)
+}
+}
+\seealso{
+Other mcmc_diagnostics: \code{\link{get_best_pars}}
+}
+\concept{mcmc_diagnostics}

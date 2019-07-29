@@ -60,6 +60,7 @@ library(serosolver)
 4. titre: integer of titre value against the given virus at that sampling time (needs to be on log scale)
 5. run: integer value of the repeat number of each sample (if there are no repeat samples, then run should be 1 for every sample)
 6. DOB: integer value of date of birth (should be in the same format as samples)
+7. group: integer value giving the population membership of the individual
 
 ```{r,eval=FALSE}
   titre_dat <- data.frame(individual=c(rep(1,4),rep(2,4)),
@@ -120,7 +121,7 @@ antigenic_coords <- read.csv(antigenic_coords_path, stringsAsFactors=FALSE)
 antigenic_map <- generate_antigenic_map(antigenic_coords, buckets = 4)
 
 # unique strain circulation times
-  strains_isolation_times <- unique(antigenic_map$inf_years)
+strains_isolation_times <- unique(antigenic_map$inf_years)
 ```
 
 ### Age Mask
@@ -151,7 +152,7 @@ If you want to change any default options, such as increasing or decreasing the 
 ```{r, eval=FALSE}
    mcmc_pars <- c("iterations"=50000,"popt"=0.44,"popt_hist"=0.44,"opt_freq"=1000,"thin"=1,
                  "adaptive_period"=10000, "save_block"=1000, "thin2"=10, "hist_sample_prob"=0.5,
-                 "switch_sample"=2, "burnin"=0, "inf_propn"=0.5, "move_size"=5, "hist_opt"=1,
+                 "switch_sample"=2, "inf_propn"=0.5, "move_size"=5, "hist_opt"=1,
                  "swap_propn"=0.5,"hist_switch_prob"=0.5,"year_swap_propn"=0.5)
 
   res <- run_MCMC(par_tab = start_tab, titre_dat = titre_dat, antigenic_map = antigenic_map, 

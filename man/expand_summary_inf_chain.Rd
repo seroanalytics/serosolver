@@ -2,7 +2,7 @@
 % Please edit documentation in R/helpers.R
 \name{expand_summary_inf_chain}
 \alias{expand_summary_inf_chain}
-\title{Expands default MCMC saved infChain}
+\title{Expands default MCMC saved inf_chain}
 \usage{
 expand_summary_inf_chain(inf_chain)
 }

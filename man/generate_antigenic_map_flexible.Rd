@@ -9,7 +9,7 @@ generate_antigenic_map_flexible(antigenic_distances, buckets = 1,
   year_min = 1968, year_max = 2016)
 }
 \arguments{
-\item{antigenic_distances}{a data frame of antigenic coordinates, with columns labelled X, Y and Strain for x coord, y coord and Strain label respectively. "Strain" should be a single number giving the year of circulation of that strain.}
+\item{antigenic_distances}{a data frame of antigenic coordinates, with columns labelled X, Y and Strain for x coord, y coord and Strain label respectively. "Strain" should be a single number giving the year of circulation of that strain. See \code{\link{example_antigenic_map}}}
 
 \item{buckets}{= 1 the number of epochs per year. 1 means that each year has 1 strain; 12 means that each year has 12 strains (monthly resolution)}
 
@@ -29,6 +29,26 @@ a fitted antigenic map
 \description{
 Firts a smoothing spline through a set of antigenic coordinates, and uses this to predict antigenic coordinates for all potential infection time points. This version is more flexible than \code{\link{generate_antigenic_map}}, and allows the user to specify "clusters" to assume that strains circulating in a given period are all identical, rather than on a continuous path through space as a function of time.
 }
+\examples{
+\dontrun{
+antigenic_coords_path <- system.file("extdata", "fonville_map_approx.csv", package = "serosolver")
+antigenic_coords <- read.csv(antigenic_coords_path, stringsAsFactors=FALSE)
+antigenic_coords$Strain <- c(68,72,75,77,79,87,89,92,95,97,102,104,105,106) + 1900
+antigenic_map <- generate_antigenic_map_flexible(antigenic_coords, buckets=1, year_min=1968, year_max=2010,spar=0.5)
+
+times <- 1968:2010
+n_times <- length(times)
+clusters <- rep(1:5, each=10)
+clusters <- clusters[1:n_times]
+clusters <- data.frame(year=times, cluster_used=clusters)
+antigenic_map <- generate_antigenic_map_flexible(antigenic_coords, buckets=1, 
+                                                clusters=clusters,use_clusters=TRUE,
+                                                year_min=1968, year_max=2010,spar=0.5)
+}
+}
 \seealso{
 \code{\link{generate_antigenic_map}}
+
+Other antigenic_maps: \code{\link{generate_antigenic_map}}
 }
+\concept{antigenic_maps}

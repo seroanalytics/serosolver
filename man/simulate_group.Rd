@@ -42,4 +42,11 @@ Simulates a full set of titre data for n_indiv individuals with known theta and 
 }
 \seealso{
 \code{\link{simulate_individual}}, \code{\link{simulate_individual_faster}}
+
+Other simulation_functions: \code{\link{simulate_attack_rates}},
+  \code{\link{simulate_data}},
+  \code{\link{simulate_individual_faster}},
+  \code{\link{simulate_individual}},
+  \code{\link{simulate_infection_histories}}
 }
+\concept{simulation_functions}

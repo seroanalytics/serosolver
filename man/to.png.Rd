@@ -14,3 +14,8 @@ to.png(expr, filename, ..., verbose = TRUE)
 \description{
 Prints to png, but turns dev off if fails
 }
+\seealso{
+Other safe_plot_saving: \code{\link{to.pdf}},
+  \code{\link{to.svg}}
+}
+\concept{safe_plot_saving}

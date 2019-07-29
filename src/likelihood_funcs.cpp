@@ -156,7 +156,7 @@ NumericVector likelihood_func_fast(const NumericVector &theta, const NumericVect
 } 
 
 // Likelihood calculation for infection history proposal
-// Not really to be used elsewhere other than in \code{\link{infection_history_proposal_gibbs_fast}}, as requires correct indexing for the predicted titres vector. Also, be very careful, as predicted_titres is set to 0 at the end!
+// Not really to be used elsewhere other than in \code{\link{inf_hist_prop_prior_v2_and_v4}}, as requires correct indexing for the predicted titres vector. Also, be very careful, as predicted_titres is set to 0 at the end!
 void proposal_likelihood_func(double &new_prob,
 			      NumericVector &predicted_titres,
 			      const int &indiv,
@@ -201,42 +201,3 @@ void proposal_likelihood_func(double &new_prob,
 }
 
 
-
-
-//' Calculate likelihood basic
-//'
-//' Calculates the likelihood of a given set of observed titres given predicted titres. Based on truncated discritised normal. DEPRECATED, as this is a very slow (but obvious) implementation
-//' @param expected NumericVector, as returned by \code{\link{infection_model_indiv}}
-//' @param data NumericVector, the vector of observed titres
-//' @param theta NumericVector, the vector of named model parameters, requiring MAX_TITRE and error
-//' @param titre_shifts NumericVector, OPTIONAL if using measurement bias, gives the shift to add to each expected titre
-//' @return a single log likelihood value
-//' @export
-//[[Rcpp::export]]
-double likelihood_titre_basic(const NumericVector &expected, 
-			const NumericVector &data, 
-			const NumericVector &theta,
-			const NumericVector &titre_shifts
-			){
-
-  NumericVector expected1 = expected;
-  if(titre_shifts.size() == expected.size()){
-    expected1 = expected1 + titre_shifts;
-  }
-  int n = expected.size();
-  double lnlike = 0;
-  
-  for(int i=0; i < n; ++i){
-    if(!NumericVector::is_na(data[i])){
-      if(data[i] >= theta["MAX_TITRE"]){
-	lnlike += R::pnorm(theta["MAX_TITRE"], expected[i], theta["error"],0,1);
-      } else if(data[i] < 1.0){
-	lnlike += R::pnorm(1, expected[i], theta["error"],1,1);
-      } else {
-	lnlike += log(R::pnorm(data[i]+1, expected[i],theta["error"], 1,0) - 
-		      R::pnorm(data[i], expected[i], theta["error"],1,0));
-      }
-    }
-  }
-  return(lnlike);
-}

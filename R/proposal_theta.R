@@ -7,6 +7,7 @@
 #' @param steps a vector of step sizes for the proposal
 #' @param index numeric value for the index of the parameter to be moved from the param table and vector
 #' @return the parameter vector after step
+#' @family proposals
 #' @export
 #' @useDynLib serosolver
 univ_proposal <- function(values, lower_bounds, upper_bounds, steps, index) {
@@ -58,6 +59,7 @@ univ_proposal <- function(values, lower_bounds, upper_bounds, steps, index) {
 #' @param use_log flag. If TRUE, propose on log scale
 #' @param beta Beta as in Rosenthal and Roberts 2009
 #' @return a parameter vector of a proposed move. Note that these may fall outside the allowable ranges.
+#' @family proposals
 #' @export
 #' @useDynLib serosolver
 mvr_proposal <- function(values, fixed, cov_mat, cov_mat0 = NULL, use_log = FALSE, beta = 0.05) {

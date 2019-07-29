@@ -15,3 +15,7 @@ the estimated mode of the given vector of values
 \description{
 Estimate vector mode
 }
+\examples{
+x <- runif(1000)
+y <- estimate_mode(x)
+}

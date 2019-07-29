@@ -4,13 +4,11 @@
 \alias{inf_hist_swap}
 \title{Swap infection history years}
 \usage{
-inf_hist_swap(infection_history, exposure_history = NULL, age_mask,
-  strain_mask, swap_propn, move_size)
+inf_hist_swap(infection_history, age_mask, strain_mask, swap_propn,
+  move_size)
 }
 \arguments{
 \item{infection_history}{matrix of 1s and 0s to swap around representing the infection history}
-
-\item{exposure_history}{optional NULL, matrix of 1s and 0s to swap around representing the expousre history}
 
 \item{age_mask}{the first index in infection_history that each individual (row) could be infected in}
 
@@ -26,3 +24,19 @@ the same infection_history matrix, but with two columns swapped
 \description{
 Swaps the entire contents of two columns of the infection history matrix, adhering to age and strain limitations.
 }
+\examples{
+data(example_inf_hist)
+data(example_titre_dat)
+data(example_antigenic_map)
+times <- example_antigenic_map$inf_years
+ages <- unique(example_titre_dat[,c("DOB","individual")])
+age_mask <- create_age_mask(ages$DOB, times)
+strain_mask <- create_strain_mask(example_titre_dat, times)
+new_inf_hist <- inf_hist_swap(example_inf_hist, age_mask,strain_mask, 1,3)[[1]]
+}
+\seealso{
+Other proposals: \code{\link{inf_hist_swap_phi}},
+  \code{\link{infection_history_symmetric}},
+  \code{\link{mvr_proposal}}, \code{\link{univ_proposal}}
+}
+\concept{proposals}

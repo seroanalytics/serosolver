@@ -19,3 +19,6 @@ calculates the variance of the beta binomial function
 \description{
 Beta binomial variance
 }
+\examples{
+bb_var(100, 1, 1)
+}

@@ -28,6 +28,23 @@ a list: the same infection_history matrix, but with two columns swapped; also th
 \description{
 Swaps the entire contents of two columns of the infection history matrix, adhering to age and strain limitations. Also swaps the values of phi that correspond to these years
 }
+\examples{
+data(example_inf_hist)
+data(example_titre_dat)
+data(example_antigenic_map)
+times <- example_antigenic_map$inf_years
+ages <- unique(example_titre_dat[,c("DOB","individual")])
+age_mask <- create_age_mask(ages$DOB, times)
+strain_mask <- create_strain_mask(example_titre_dat, times)
+phis <- runif(length(times))
+n_alive <- get_n_alive(example_titre_dat,times)
+new_inf_hist <- inf_hist_swap_phi(example_inf_hist, phis, age_mask,strain_mask, 1,3, n_alive)
+}
 \seealso{
 \code{\link{inf_hist_swap}}
+
+Other proposals: \code{\link{inf_hist_swap}},
+  \code{\link{infection_history_symmetric}},
+  \code{\link{mvr_proposal}}, \code{\link{univ_proposal}}
 }
+\concept{proposals}

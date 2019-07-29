@@ -8,8 +8,7 @@ simulate_data(par_tab, group = 1, n_indiv = 100, buckets = 1,
   strain_isolation_times, measured_strains = NULL, sampling_times,
   nsamps = 2, antigenic_map, titre_sensoring = 0, age_min = 5,
   age_max = 80, attack_rates, repeats = 1, mu_indices = NULL,
-  measurement_indices = NULL, add_noise = TRUE,
-  separate_exposures = FALSE)
+  measurement_indices = NULL, add_noise = TRUE)
 }
 \arguments{
 \item{par_tab}{the full parameter table controlling parameter ranges and values}
@@ -45,8 +44,6 @@ simulate_data(par_tab, group = 1, n_indiv = 100, buckets = 1,
 \item{measurement_indices}{default NULL, optional vector giving the index of `measurement_bias` that each strain uses the measurement shift from from. eg. if there's 6 circulation years and 3 strain clusters, then this might be c(1,1,2,2,3,3)}
 
 \item{add_noise}{if TRUE, adds observation noise to the simulated titres}
-
-\item{separate_exposures}{if TRUE, returns the exposure and infection histories as separate matrices}
 }
 \value{
 a list with: 1) the data frame of titre data as returned by \code{\link{simulate_group}}; 2) a matrix of infection histories as returned by \code{\link{simulate_infection_histories}}; 3) a vector of ages
@@ -54,3 +51,30 @@ a list with: 1) the data frame of titre data as returned by \code{\link{simulate
 \description{
 Simulates a full data set for a given set of parameters etc.
 }
+\examples{
+data(example_par_tab)
+data(example_antigenic_map)
+
+## Simulate some random attack rates between 0 and 0.2
+attack_rates <- runif(length(strain_isolation_times), 0, 0.2)
+## Times at which individuals can be infected
+strain_isolation_times <- example_antigenic_map$inf_years
+## Vector giving the circulation times of measured strains
+sampled_viruses <- seq(min(strain_isolation_times), max(strain_isolation_times), by=2)
+all_simulated_data <- simulate_data(par_tab=example_par_tab, group=1, n_indiv=50,    
+                                   strain_isolation_times=strain_isolation_times,
+                                   measured_strains=sampled_viruses,
+                                   sampling_times=2010:2015, nsamps=n_samps, antigenic_map=example_antigenic_map, 
+                                   age_min=10,age_max=75,
+                                   attack_rates=attack_rates, repeats=2)
+titre_dat <- all_simulated_data$data
+titre_dat <- merge(titre_dat, all_simulated_data$ages)
+}
+\seealso{
+Other simulation_functions: \code{\link{simulate_attack_rates}},
+  \code{\link{simulate_group}},
+  \code{\link{simulate_individual_faster}},
+  \code{\link{simulate_individual}},
+  \code{\link{simulate_infection_histories}}
+}
+\concept{simulation_functions}

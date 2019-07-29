@@ -17,9 +17,10 @@
 //' @param measurement_strain_indices IntegerVector, the indices of all measured strains in the melted antigenic map, with one entry per measured titre
 //' @param antigenic_map_long NumericVector, the collapsed cross reactivity map for long term boosting, after multiplying by sigma1 see \code{\link{create_cross_reactivity_vector}}
 //' @param antigenic_map_short NumericVector, the collapsed cross reactivity map for short term boosting, after multiplying by sigma2, see \code{\link{create_cross_reactivity_vector}}
+//' @param antigenic_distances NumericVector, the collapsed cross reactivity map giving euclidean antigenic distances, see \code{\link{create_cross_reactivity_vector}}
 //' @param mus NumericVector, if length is greater than one, assumes that strain-specific boosting is used rather than a single boosting parameter
 //' @param boosting_vec_indices IntegerVector, same length as circulation_times, giving the index in the vector \code{mus} that each entry should use as its boosting parameter.
-//' @param pre_infection bool to indicate if calculated titre for that time should be before the infection has occured, used to calculate titre-mediated immunity
+//' @param boost_before_infection bool to indicate if calculated titre for that time should be before the infection has occured, used to calculate titre-mediated immunity
 //' @return NumericVector of predicted titres for each entry in measurement_strain_indices
 //' @export
 //' @family titre_model
@@ -35,7 +36,7 @@ NumericVector titre_data_fast(const NumericVector &theta,
 			      const IntegerVector &measurement_strain_indices, // For each titre measurement, corresponding entry in antigenic map
 			      const NumericVector &antigenic_map_long,
 			      const NumericVector &antigenic_map_short,
-			      const NumericVector &antigenic_distances,			      
+			      const NumericVector &antigenic_distances,	// Currently not doing anything, but has uses for model extensions		      
 			      const NumericVector &mus,
 			      const IntegerVector &boosting_vec_indices,
 			      bool boost_before_infection = false
@@ -78,7 +79,7 @@ NumericVector titre_data_fast(const NumericVector &theta,
   double mu_short = theta["mu_short"];
   double wane = theta["wane"];
   double tau = theta["tau"];
-  double min_titre = theta["min_titre"];
+  double min_titre = 0; //theta["min_titre"];
 
   // 2. Extract model parameters that are for specific mechanisms
   //    set a boolean flag to choose between model versions
@@ -132,8 +133,8 @@ NumericVector titre_data_fast(const NumericVector &theta,
       // ====================================================== //
       // =============== CHOOSE MODEL TO SOLVE =============== //
       // ====================================================== //
-      // Go to sub function - this is where we'd have options for different models
-      // Note, this is in "boosting_functions.cpp"
+      // Go to sub function - this is where we have options for different models
+      // Note, these are in "boosting_functions.cpp"
       if (base_function) {
 	titre_data_fast_individual_base(predicted_titres, mu, mu_short,
 					wane, tau,

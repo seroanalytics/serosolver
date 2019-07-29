@@ -64,6 +64,13 @@ inf_mat_prior <- function(infection_history, age_mask, alpha1, beta1) {
 #' @param plot_fit = TRUE, if TRUE, plots the fit to the MCMC chain
 #' @return the model fit object as returned by optim
 #' @seealso \code{\link{fit_normal_prior}}
+#' @family priors
+#' @examples
+#' \dontrun{
+#' ## Output from a previous run_MCMC chain
+#' chain <- read.csv("madeup_chain.csv")
+#' results <- fit_beta_prior(chain, par_name="sigma1",plot_fit=FALSE)
+#' }
 fit_beta_prior <- function(chain_samples, par_name = "", error_tol = 999999999, try_attempts = 10, plot_fit = TRUE) {
   data <- density(chain_samples)
   data <- data.frame(x = data$x, y = data$y)
@@ -107,7 +114,14 @@ fit_beta_prior <- function(chain_samples, par_name = "", error_tol = 999999999, 
 #' @param try_attempts = 10 how many fitting attempts to try before giving up
 #' @param plot_fit = TRUE, if TRUE, plots the fit to the MCMC chain
 #' @return the model fit object as returned by optim
+#' @family priors
 #' @seealso \code{\link{fit_normal_prior}}
+#' #' @examples
+#' \dontrun{
+#' ## Output from a previous run_MCMC chain
+#' chain <- read.csv("madeup_chain.csv")
+#' results <- fit_normal_prior(chain, par_name="mu",plot_fit=FALSE)
+#' }
 fit_normal_prior <- function(chain_samples, par_name = "", error_tol = 999999999, try_attempts = 10, plot_fit = TRUE) {
   data <- density(chain_samples)
   data <- data.frame(x = data$x, y = data$y)
@@ -152,10 +166,13 @@ fit_normal_prior <- function(chain_samples, par_name = "", error_tol = 999999999
 #' @param var the variance of the beta distribution (this is likely going to be somewhere less than 0.25)
 #' @param make_plot if TRUE, plots the resulting beta distibution to the R device
 #' @return a list with alpha and beta
+#' @family priors
 #' @export
-find_beta_parameters <- function(mean, var, make_plot = FALSE) {
-  if(mean < 0 | mean > 1) stop("Mean is outside of bounds (0, 1)")
-  if(var < 0 | var > 0.25) stop("Var is outside of bounds (0, 0.25^2)")
+#' @examples
+#' find_beta_prior_with_mean_var(0.15,0.1,FALSE)
+find_beta_prior_with_mean_var <- function(mean, var, make_plot = FALSE) {
+  if (mean < 0 | mean > 1) stop("Mean is outside of bounds (0, 1)")
+  if (var < 0 | var > 0.25) stop("Var is outside of bounds (0, 0.25^2)")
   alpha <- ((1 - mean) / (var) - (1 / mean)) * mean^2
   beta <- alpha * (1 / mean - 1)
   x <- seq(0, 1, by = 0.001)
@@ -170,38 +187,37 @@ find_beta_parameters <- function(mean, var, make_plot = FALSE) {
 #' @param desired_annual_mean the desired ANNUAL mean attack rate
 #' @param the number of buckets to split each year into
 #' @return a list with alpha and beta
+#' @family priors
 #' @export
-generate_beta_prior_mean <- function(desired_annual_mean, buckets) {
+#' @examples
+#' find_beta_prior_with_mean(0.15, 1)
+find_beta_prior_with_mean <- function(desired_annual_mean, buckets) {
   mean1 <- desired_annual_mean / buckets
   max_var <- mean1 * (1 - mean1) - 0.000001
-  print(max_var)
-  pars <- find_beta_parameters(mean1, max_var)
+  message(cat("Maximum variance: ", max_var))
+  pars <- find_beta_prior_with_mean_var(mean1, max_var)
   alpha <- pars$alpha
   beta <- pars$beta
   return(pars)
   y <- dbeta(seq(0.01, 1 - 0.01, by = 0.01), alpha, beta, log = FALSE)
   while (!(all(y == cummin(y)))) {
-      print("next")
-      
-      max_var <- max_var - 0.001
-      print(max_var)
+    max_var <- max_var - 0.001
+    print(max_var)
     pars <- find_beta_parameters(mean1, max_var)
     alpha <- pars$alpha
     beta <- pars$beta
-      y <- dbeta(seq(0.01, 1 - 0.01, by = 0.01), alpha, beta, log = FALSE)
-      print(y)
-      print(cummin(y))
+    y <- dbeta(seq(0.01, 1 - 0.01, by = 0.01), alpha, beta, log = FALSE)
   }
   return(pars)
 }
 
 
-calc_a <- function(mode1, k){
-  mode1*(k-2) + 1
+calc_a <- function(mode1, k) {
+  mode1 * (k - 2) + 1
 }
 
-calc_b <- function(mode1, k){
-  (1-mode1)*(k-2) + 1
+calc_b <- function(mode1, k) {
+  (1 - mode1) * (k - 2) + 1
 }
 
 #' Find Beta distribution parameters with mode
@@ -210,11 +226,14 @@ calc_b <- function(mode1, k){
 #' @param mode1 the desired mode
 #' @param k the desired certainty in the prior, must be at least 2. The higher this number, the "stronger" the prior
 #' @return a list with alpha and beta parameters for the Beta distribution
+#' @family priors
 #' @export
-generate_alpha_beta_prior_mode<- function(mode1, k){
-    if(mode1 < 0 | mode1 > 1) stop("Mode1 is outside of bounds (0, 1)")
-    if(k < 2) stop("k is outside of bounds (must be at least 2)")
-    a <- calc_a(mode1,k)
-    b <- calc_b(mode1, k)
-    return(list(alpha=a,beta=b))
+#' @examples
+#' find_beta_prior_mode(0.15, 10)
+find_beta_prior_mode <- function(mode1, k) {
+  if (mode1 < 0 | mode1 > 1) stop("Mode1 is outside of bounds (0, 1)")
+  if (k < 2) stop("k is outside of bounds (must be at least 2)")
+  a <- calc_a(mode1, k)
+  b <- calc_b(mode1, k)
+  return(list(alpha = a, beta = b))
 }

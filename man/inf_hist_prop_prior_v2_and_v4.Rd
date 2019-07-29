@@ -2,8 +2,7 @@
 % Please edit documentation in R/RcppExports.R
 \name{inf_hist_prop_prior_v2_and_v4}
 \alias{inf_hist_prop_prior_v2_and_v4}
-\title{Infection history gibbs proposal, fast
- Generates a new infection history matrix and corresponding individual likelihoods, using a gibbs sampler from the infection history prior. See \code{\link{infection_history_proposal_gibbs}}, as inputs are very similar.}
+\title{Infection history gibbs proposal}
 \usage{
 inf_hist_prop_prior_v2_and_v4(theta, infection_history_mat, old_probs_1,
   sampled_indivs, n_years_samp_vec, age_mask, strain_mask, n_alive,
@@ -18,7 +17,7 @@ inf_hist_prop_prior_v2_and_v4(theta, infection_history_mat, old_probs_1,
   temp = 1, solve_likelihood = TRUE)
 }
 \arguments{
-\item{theta}{NumericVector, the model parameters used to solve the model}
+\item{theta}{NumericVector, the named model parameters used to solve the model}
 
 \item{infection_history_mat}{IntegerMatrix the matrix of 1s and 0s corresponding to individual infection histories}
 
@@ -26,13 +25,19 @@ inf_hist_prop_prior_v2_and_v4(theta, infection_history_mat, old_probs_1,
 
 \item{sampled_indivs}{IntegerVector, indices of sampled individuals}
 
+\item{n_years_samp_vec}{int, for each individual, how many time periods to resample infections for?}
+
 \item{age_mask}{IntegerVector, length of the number of individuals, with indices specifying first time period that an individual can be infected (indexed from 1, such that a value of 1 allows an individual to be infected in any time period)}
 
 \item{strain_mask}{IntegerVector, length of the number of individuals, with indices specifying last time period that an individual can be infected (ie. last time a sample was taken)}
 
 \item{n_alive}{IntegerMatrix, number of columns is the number of time periods that an individual could be infected, giving the number of individual alive in each time period. Number of rows is the number of distinct groups.}
 
-\item{swap_propn}{double, what proportion of proposals should be swap steps (ie. swap contents of two cells in infection_history rather than adding/removing infections)}
+\item{n_infections}{IntegerMatrix, the number of infections in each year (columns) for each group (rows)}
+
+\item{n_infected_group}{IntegerVector, the total number of infections across all times in each group}
+
+\item{swap_propn}{double, gives the proportion of proposals that will be swap steps (ie. swap contents of two cells in infection_history rather than adding/removing infections)}
 
 \item{swap_distance}{int, in a swap step, how many time steps either side of the chosen time period to swap with}
 
@@ -62,6 +67,8 @@ inf_hist_prop_prior_v2_and_v4(theta, infection_history_mat, old_probs_1,
 
 \item{antigenic_map_short}{NumericVector, the collapsed cross reactivity map for short term boosting, after multiplying by sigma2, see \code{\link{create_cross_reactivity_vector}}}
 
+\item{antigenic_distances}{NumericVector matching the dimensions of antigenic_map_long and antigenic_map_short, but with the raw antigenic distances between strains}
+
 \item{data}{NumericVector, data for all individuals for the first instance of each calculated titre}
 
 \item{repeat_data}{NumericVector, the repeat titre data for all individuals (ie. do not solve the same titres twice)}
@@ -70,22 +77,29 @@ inf_hist_prop_prior_v2_and_v4(theta, infection_history_mat, old_probs_1,
 
 \item{titre_shifts}{NumericVector, if length matches the length of \code{data}, adds these as measurement shifts to the predicted titres. If lengths do not match, is not used.}
 
+\item{proposal_iter}{IntegerVector, vector with entry for each individual, storing the number of infection history add/remove proposals for each individual.}
+
+\item{accepted_iter}{IntegerVector, vector with entry for each individual, storing the number of accepted infection history add/remove proposals for each individual.}
+
+\item{proposal_swap}{IntegerVector, vector with entry for each individual, storing the number of proposed infection history swaps}
+
+\item{accepted_swap}{IntegerVector, vector with entry for each individual, storing the number of accepted infection history swaps}
+
 \item{mus}{NumericVector, if length is greater than one, assumes that strain-specific boosting is used rather than a single boosting parameter}
 
 \item{boosting_vec_indices}{IntegerVector, same length as circulation_times, giving the index in the vector \code{mus} that each entry should use as its boosting parameter.}
 
+\item{total_alive}{IntegerVector, giving the total number of potential infection events for each group. This only applies to prior version 4. If set to a vector of values -1, then this is ignored.}
+
 \item{temp}{double, temperature for parallel tempering MCMC}
 
 \item{solve_likelihood}{bool, if FALSE does not solve likelihood when calculating acceptance probability}
-
-\item{n_years_samp}{int, for each individual, how many time periods to resample infections for?}
 }
 \value{
-an R list, one entry with the matrix of 1s and 0s corresponding to the infection histories for all individuals and the other with the new corresponding likelihoods per individual
+an R list with 6 entries: 1) the vector replacing old_probs_1, corresponding to the new likelihoods per individual; 2) the matrix of 1s and 0s corresponding to the new infection histories for all individuals; 3-6) the updated entries for proposal_iter, accepted_iter, proposal_swap and accepted_swap.
 }
 \description{
-Infection history gibbs proposal, fast
- Generates a new infection history matrix and corresponding individual likelihoods, using a gibbs sampler from the infection history prior. See \code{\link{infection_history_proposal_gibbs}}, as inputs are very similar.
+Generates a new infection history matrix and corresponding individual likelihoods, using a gibbs sampler from the infection history prior. See \code{\link{infection_history_proposal_gibbs}}, as inputs are very similar.
 }
 \seealso{
 Other infection_history_proposal: \code{\link{inf_hist_prop_prior_v3}}

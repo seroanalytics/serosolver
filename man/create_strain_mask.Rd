@@ -7,7 +7,7 @@
 create_strain_mask(titre_dat, strain_isolation_times)
 }
 \arguments{
-\item{titre_dat}{the data frame of titre data}
+\item{titre_dat}{the data frame of titre data. See \code{\link{example_titre_dat}}}
 
 \item{strain_isolation_times}{the vector of times that individuals can be infected}
 }
@@ -17,3 +17,8 @@ a vector giving the last index of strain_isolation_times that an individual can 
 \description{
 Converts a data frame of individual sampling times to give the index of the last infection that individual could have had
 }
+\concept{create_masks
+data(example_titre_dat)
+data(example_antigenic_map)
+times <- example_antigenic_map$inf_years
+strain_mask <- create_strain_mask(example_titre_dat, times)}

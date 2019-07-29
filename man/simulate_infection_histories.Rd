@@ -5,7 +5,7 @@
 \title{Simulate infection histories}
 \usage{
 simulate_infection_histories(p_inf, strain_isolation_times, sampling_times,
-  ages)
+  DOBs)
 }
 \arguments{
 \item{p_inf}{a vector of attack rates (infection probabilities) for each year}
@@ -14,7 +14,7 @@ simulate_infection_histories(p_inf, strain_isolation_times, sampling_times,
 
 \item{sampling_times}{vector of potential sampling times}
 
-\item{ages}{a vector of ages for each individual}
+\item{DOBs}{a vector of ages for each individual}
 }
 \value{
 a list with a matrix of infection histories for each individual in ages and the true attack rate for each epoch
@@ -22,3 +22,19 @@ a list with a matrix of infection histories for each individual in ages and the 
 \description{
 Given a vector of infection probabilities and potential infection times, simulates infections for each element of ages (ie. each element is an individual age. Only adds infections for alive individuals)
 }
+\examples{
+p_inf <- runif(40,0.1,0.4)
+strain_isolation_times <- seq_len(40) + 1967
+n_indivs <- 100
+sampling_times <- rep(max(strain_isolation_times), n_indivs)
+DOBs <- rep(min(strain_isolation_times), n_indivs)
+inf_hist <- simulate_infection_histories(p_inf, strain_isolation_times, sampling_times, DOBs)
+}
+\seealso{
+Other simulation_functions: \code{\link{simulate_attack_rates}},
+  \code{\link{simulate_data}},
+  \code{\link{simulate_group}},
+  \code{\link{simulate_individual_faster}},
+  \code{\link{simulate_individual}}
+}
+\concept{simulation_functions}

@@ -185,8 +185,7 @@ chain_path <- sub("par_tab_base.csv","",par_tab_path)
 ## Create the posterior solving function that will be used in the MCMC framework 
 f <- create_posterior_func(par_tab=par_tab,
                                 titre_dat=titre_dat,
-                                antigenic_map=antigenic_map,
-                                version=prior_version) # function in posteriors.R
+                                antigenic_map=antigenic_map) # function in posteriors.R
 
 ## Generate results in parallel
 res <- foreach(x = filenames, .packages = 'serosolver') %dopar% {
@@ -215,8 +214,7 @@ res <- foreach(x = filenames, .packages = 'serosolver') %dopar% {
                                 "hist_switch_prob"=0.8, "year_swap_propn"=1),
                   filename = paste0(chain_path,x), 
                   CREATE_POSTERIOR_FUNC = create_posterior_func, 
-                  version = prior_version,
-                  fast_version=TRUE)
+                  version = prior_version)
 }
 ```
 
@@ -628,8 +626,7 @@ filenames <- paste0(filename, "_",1:no_chains)
 ## Create the posterior solving function that will be used in the MCMC framework 
 f <- create_posterior_func(par_tab=sim_par_tab,
                                 titre_dat=sim_titre_dat,
-                                antigenic_map=antigenic_map,
-                                version=prior_version) # function in posteriors.R
+                                antigenic_map=antigenic_map) # function in posteriors.R
 
 ## Generate results in parallel
 res <- foreach(x = filenames) %dopar% {
@@ -658,8 +655,7 @@ res <- foreach(x = filenames) %dopar% {
                                 "hist_switch_prob"=0.8, "hist_sample_prob"=1),
                   filename = paste0(chain_path,x), 
                   CREATE_POSTERIOR_FUNC = create_posterior_func, 
-                  version = prior_version,
-                  fast_version=TRUE)
+                  version = prior_version)
 }
 ```
 

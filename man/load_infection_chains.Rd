@@ -12,7 +12,7 @@ load_infection_chains(location = getwd(), thin = 1, burnin = 0,
 
 \item{thin}{thin the chains by every thin'th sample}
 
-\item{burnin}{discard the first burnin samples}
+\item{burnin}{discard the first burnin samples from the MCMC chain}
 
 \item{chain_subset}{if not NULL, a vector of indices to only load and store a subset of the chains detected. eg. chain_subset = 1:3 means that only the first 3 detected files will be processed.}
 }
@@ -22,3 +22,14 @@ a list with a) a list of each chain as a data table seperately; b) a combined da
 \description{
 Searches the given working directory for MCMC outputs from \code{\link{run_MCMC}}, loads these in, subsets for burn in and thinning, and formats as both lists and a combined data table.
 }
+\examples{
+\dontrun{load_infection_chains(thin=10,burnin=5000,chain_subset=1:3)}
+}
+\seealso{
+Other load_data_functions: \code{\link{load_antigenic_map_file}},
+  \code{\link{load_mcmc_chains}},
+  \code{\link{load_start_tab}},
+  \code{\link{load_theta_chains}},
+  \code{\link{load_titre_dat}}
+}
+\concept{load_data_functions}

@@ -19,3 +19,14 @@ calculates the mean of the beta binomial function
 \description{
 Beta binomial mean
 }
+\examples{
+bb_mean(100, 1, 1)
+}
+\seealso{
+Other beta_binomial_functions: \code{\link{dbb}},
+  \code{\link{find_bb_2}},
+  \code{\link{find_prior_alpha_beta}},
+  \code{\link{hist_rbb}}, \code{\link{pbb}},
+  \code{\link{qbb}}, \code{\link{rbb}}
+}
+\concept{beta_binomial_functions}

@@ -7,9 +7,12 @@
 plot_attack_rates(infection_histories, titre_dat, strain_isolation_times,
   n_alive = NULL, pointsize = 1, fatten = 1, pad_chain = TRUE,
   prior_pars = NULL, plot_den = FALSE, true_ar = NULL,
-  by_group = FALSE, group_subset = NULL, plot_residuals = FALSE)
+  by_group = FALSE, group_subset = NULL, plot_residuals = FALSE,
+  colour_by_taken = TRUE, by_val = 5)
 }
 \arguments{
+\item{infection_histories}{the MCMC chain for infection histories}
+
 \item{titre_dat}{the data frame of titre data}
 
 \item{strain_isolation_times}{vector of the epochs of potential circulation}
@@ -33,11 +36,14 @@ plot_attack_rates(infection_histories, titre_dat, strain_isolation_times,
 \item{group_subset}{if not NULL, plots only this subset of groups eg. 1:5}
 
 \item{plot_residuals}{if TRUE, plots the residuals between inferred and true attack rate}
+
+\item{colour_by_taken}{if TRUE, then colours the attack rates by whether or not titres against the circulating virus at that time were measured}
+
+\item{by_val}{frequency of x-axis labels}
 }
 \value{
 a ggplot2 object with the inferred attack rates for each potential epoch of circulation
 }
 \description{
 Plots inferred historical attack rates from the MCMC output on infection histories
-#' @param infection_histories the MCMC chain for infection histories
 }

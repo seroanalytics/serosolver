@@ -20,6 +20,8 @@ simulate_individual_faster(theta, infection_history, antigenic_map_long,
 
 \item{antigenic_map_short}{the short term antigenic cross reactivity map generated from \code{\link{create_cross_reactivity_vector}}}
 
+\item{antigenic_distances}{same dimensions as antigenic_map_long and antigenic_map_short, but gives the raw euclidean antigenic distances}
+
 \item{sampling_times}{vector of times at which blood samples were taken}
 
 \item{strain_isolation_times}{vector of contiguous strain circulation times}
@@ -40,5 +42,13 @@ simulate_individual_faster(theta, infection_history, antigenic_map_long,
 a data frame with columns samples, virus and titre of simulated data
 }
 \description{
-Same as \code{\link{simulate_individual}}, but without calculating the cross reactivity map each time for speed. Simulates a full set of titre data for an individual with known theta and infection_history.
+FOR USERS: USE \code{\link{simulate_individual}}. This function does the samething, but with a few short cuts for speed. Simulates a full set of titre data for an individual with known theta and infection_history.
 }
+\seealso{
+Other simulation_functions: \code{\link{simulate_attack_rates}},
+  \code{\link{simulate_data}},
+  \code{\link{simulate_group}},
+  \code{\link{simulate_individual}},
+  \code{\link{simulate_infection_histories}}
+}
+\concept{simulation_functions}

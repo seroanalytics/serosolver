@@ -16,3 +16,13 @@ hist_rbb(n, mean, var)
 \description{
 Plots a histogram of the beta binomial function with given mean and variance
 }
+\examples{
+hist_rbb(100, 20, 10, 5)
+}
+\seealso{
+Other beta_binomial_functions: \code{\link{bb_mean}},
+  \code{\link{dbb}}, \code{\link{find_bb_2}},
+  \code{\link{find_prior_alpha_beta}}, \code{\link{pbb}},
+  \code{\link{qbb}}, \code{\link{rbb}}
+}
+\concept{beta_binomial_functions}

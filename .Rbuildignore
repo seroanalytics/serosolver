@@ -1,2 +1,4 @@
 ^doc$
 ^Meta$
+^codemeta\.json$
+^README\.Rmd$

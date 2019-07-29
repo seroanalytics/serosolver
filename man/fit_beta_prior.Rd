@@ -24,6 +24,27 @@ the model fit object as returned by optim
 \description{
 Attempts to fit a beta distribution to a data frame of MCMC output from a previous run.
 }
+\examples{
+\dontrun{
+## Output from a previous run_MCMC chain
+chain <- read.csv("madeup_chain.csv")
+results <- fit_beta_prior(chain, par_name="sigma1",plot_fit=FALSE)
+}
+}
 \seealso{
 \code{\link{fit_normal_prior}}
+
+Other priors: \code{\link{calc_phi_probs_indiv}},
+  \code{\link{calc_phi_probs_spline}},
+  \code{\link{calc_phi_probs}},
+  \code{\link{create_prior_mu}},
+  \code{\link{create_prob_shifts}},
+  \code{\link{find_beta_prior_mode}},
+  \code{\link{find_beta_prior_with_mean_var}},
+  \code{\link{find_beta_prior_with_mean}},
+  \code{\link{fit_normal_prior}},
+  \code{\link{inf_mat_prior}},
+  \code{\link{infection_history_prior}},
+  \code{\link{prob_mus}}, \code{\link{prob_shifts}}
 }
+\concept{priors}

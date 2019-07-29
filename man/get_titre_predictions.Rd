@@ -7,7 +7,7 @@
 get_titre_predictions(chain, infection_histories, titre_dat, individuals,
   antigenic_map, par_tab, nsamp = 100, add_residuals = FALSE,
   mu_indices = NULL, measurement_indices_by_time = NULL,
-  for_res_plot = FALSE)
+  for_res_plot = FALSE, expand_titredat = FALSE)
 }
 \arguments{
 \item{chain}{the full MCMC chain to generate titre trajectories from}
@@ -31,6 +31,8 @@ get_titre_predictions(chain, infection_histories, titre_dat, individuals,
 \item{measurement_indices_by_time}{default NULL, optional vector giving the index of `measurement_bias` that each strain uses the measurement shift from from. eg. if there's 6 circulation years and 3 strain clusters}
 
 \item{for_res_plot}{TRUE/FALSE value. If using the output of this for plotting of residuals, returns the actual data points rather than summary statistics}
+
+\item{expand_titredat}{TRUE/FALSE value. If TRUE, solves titre predictions for all possible infection times. If left FALSE, then only solves for the infections times at which a titre against the circulating virus was measured in titre_dat.}
 }
 \value{
 a list with the titre predictions (95% credible intervals, median and multivariate posterior mode) and the probabilities of infection for each individual in each epoch

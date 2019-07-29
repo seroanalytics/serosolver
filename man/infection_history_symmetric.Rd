@@ -30,3 +30,34 @@ a matrix of infection histories matching the input new_inf_hist
 \description{
 Performs a flipping/swapping infection history update step for a matrix of infection histories. 50/50 chance of performing a flip or a swap
 }
+\examples{
+data(example_inf_hist)
+data(example_titre_dat)
+data(example_antigenic_map)
+
+times <- example_antigenic_map$inf_years
+ages <- unique(example_titre_dat[,c("DOB","individual")])
+
+## Create age and strain mask
+age_mask <- create_age_mask(ages$DOB, times)
+strain_mask <- create_strain_mask(example_titre_dat, times)
+
+## Index of individuals to be resampled
+indivs <- 1:nrow(example_inf_hist)
+n_indiv <- length(indivs)
+
+## Parameters controlling proposal sizes for each individual
+move_sizes <- rep(3, n_indiv)
+n_infs <- rep(10, n_indiv)
+
+Pre-compute random numbers
+rand_ns <- runif(n_indiv)
+
+new_inf_hist <- infection_history_symmetric(example_inf_hist, indivs,age_mask ,strain_mask, move_sizes, n_infs, rand_ns, 0.5)
+}
+\seealso{
+Other proposals: \code{\link{inf_hist_swap_phi}},
+  \code{\link{inf_hist_swap}}, \code{\link{mvr_proposal}},
+  \code{\link{univ_proposal}}
+}
+\concept{proposals}

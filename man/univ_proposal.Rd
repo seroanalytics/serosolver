@@ -23,3 +23,10 @@ the parameter vector after step
 \description{
 Proposal function for MCMC random walk, taking random steps of a given size.
 }
+\seealso{
+Other proposals: \code{\link{inf_hist_swap_phi}},
+  \code{\link{inf_hist_swap}},
+  \code{\link{infection_history_symmetric}},
+  \code{\link{mvr_proposal}}
+}
+\concept{proposals}

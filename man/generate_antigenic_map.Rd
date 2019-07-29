@@ -7,7 +7,7 @@
 generate_antigenic_map(antigenic_distances, buckets = 1, spar = 0.3)
 }
 \arguments{
-\item{antigenic_distances}{a data frame of antigenic coordinates, with columns labelled X, Y and Strain for x coord, y coord and Strain label respectively. Strain labels should be in the virus_key vector which is at the top of this source code.}
+\item{antigenic_distances}{a data frame of antigenic coordinates, with columns labelled X, Y and Strain for x coord, y coord and Strain label respectively. Strain labels should be in the virus_key vector which is at the top of this source code. See \code{\link{example_antigenic_map}}}
 
 \item{buckets}{the number of epochs per year. 1 means that each year has 1 strain; 12 means that each year has 12 strains (monthly resolution)}
 
@@ -19,6 +19,16 @@ a fitted antigenic map
 \description{
 Firts a smoothing spline through a set of antigenic coordinates, and uses this to predict antigenic coordinates for all potential infection time points
 }
+\examples{
+\dontrun{
+antigenic_coords_path <- system.file("extdata", "fonville_map_approx.csv", package = "serosolver")
+antigenic_coords <- read.csv(antigenic_coords_path, stringsAsFactors=FALSE)
+antigenic_map <- generate_antigenic_map(antigenic_coords, 1)
+}
+}
 \seealso{
 \code{\link{generate_antigenic_map_flexible}}
+
+Other antigenic_maps: \code{\link{generate_antigenic_map_flexible}}
 }
+\concept{antigenic_maps}

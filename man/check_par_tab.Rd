@@ -14,8 +14,17 @@ check_par_tab(par_tab, mcmc = FALSE, version = NULL)
 \item{version}{which version of the posterior function is being used? See \code{\link{create_posterior_func}}}
 }
 \value{
-nothing at the moment
+nothing, only an error message if necessary
 }
 \description{
 Checks the entries of par_tab used in simulate_data
 }
+\examples{
+data(example_par_tab)
+check_par_tab(example_par_tab, FALSE, version=1)
+}
+\seealso{
+Other check_inputs: \code{\link{check_attack_rates}},
+  \code{\link{check_data}}, \code{\link{check_proposals}}
+}
+\concept{check_inputs}

@@ -3,6 +3,9 @@
 #' @param x the number of successes
 #' @inheritParams pbb
 #' @return the probability density of the beta binomial with given input parameters
+#' @family beta_binomial_functions
+#' @examples
+#' dbb(10,50,1,1)
 #' @export
 dbb <- function(x, N, u, v) {
   beta(x + u, N - x + v) / beta(u, v) * choose(N, x)
@@ -15,6 +18,9 @@ dbb <- function(x, N, u, v) {
 #' @param u equivalent to alpha in description
 #' @param v equivalent to beta in description
 #' @return the beta binomial distribution function
+#' @family beta_binomial_functions
+#' @examples
+#' pbb(10,50,1,1)
 #' @export
 pbb <- function(q, N, u, v) {
   sapply(q, function(xx) sum(dbb(0:xx, N, u, v)))
@@ -25,6 +31,9 @@ pbb <- function(q, N, u, v) {
 #' @param p vector of probabilities
 #' @inheritParams pbb
 #' @return the beta binomial quantile function
+#' @family beta_binomial_functions
+#' @examples
+#' qbb(10,50,1,1)
 #' @export
 qbb <- function(p, N, u, v) {
   pp <- cumsum(dbb(0:N, N, u, v))
@@ -36,6 +45,9 @@ qbb <- function(p, N, u, v) {
 #' @param n number of draws
 #' @inheritParams pbb
 #' @return the beta binomial random draw function
+#' @family beta_binomial_functions
+#' @examples
+#' rbb(100,50,1,1)
 #' @export
 rbb <- function(n, N, u, v) {
   p <- rbeta(n, u, v)
@@ -48,6 +60,9 @@ rbb <- function(n, N, u, v) {
 #' @param alpha alpha parameter
 #' @param beta beta parameter
 #' @return calculates the mean of the beta binomial function
+#' @family beta_binomial_functions
+#' @examples
+#' bb_mean(100, 1, 1)
 #' @export
 bb_mean <- function(n, alpha, beta) {
   return(n * alpha / (alpha + beta))
@@ -57,6 +72,8 @@ bb_mean <- function(n, alpha, beta) {
 #'
 #' @inheritParams bb_mean
 #' @return calculates the variance of the beta binomial function
+#' @examples
+#' bb_var(100, 1, 1)
 #' @export
 bb_var <- function(n, alpha, beta) {
   top <- n * alpha * beta * (alpha + beta + n)
@@ -65,9 +82,12 @@ bb_var <- function(n, alpha, beta) {
 }
 
 #' Beta binomial histogram
-#' 
+#'
 #' Plots a histogram of the beta binomial function with given mean and variance
 #' @inheritParams find_prior_alpha_beta
+#' @family beta_binomial_functions
+#' @examples
+#' hist_rbb(100, 20, 10, 5)
 #' @export
 hist_rbb <- function(n, mean, var) {
   pars <- find_prior_alpha_beta(n, mean, var)
@@ -83,16 +103,19 @@ hist_rbb <- function(n, mean, var) {
 #' @param mean desired mean
 #' @param var desired variance
 #' @return alpha and beta for the beta binomial
+#' @family beta_binomial_functions
+#' @examples
+#' find_prior_alpha_beta(n=100,mean=25,var=5)
 #' @export
 find_prior_alpha_beta <- function(n, mean, var) {
   y <- mean
   z <- var
   x <- (n - y) / y
   top <- z * (1 + x)^2 - (n^2) * x
-  bot <- n * x * (1 + x) - z * ( (1 + x)^3 )
+  bot <- n * x * (1 + x) - z * ((1 + x)^3)
   a2 <- top / bot
   b2 <- x * a2
-  return( c("a" = a2, "b" = b2) )
+  return(c("a" = a2, "b" = b2))
 }
 
 #' Beta binomial parameter match
@@ -103,6 +126,7 @@ find_prior_alpha_beta <- function(n, mean, var) {
 #' @param b1 beta in the first distribution
 #' @param n2 the number of trials in the second distribution
 #' @return alpha and beta for the second distribution
+#' @family beta_binomial_functions
 #' @export
 find_bb_2 <- function(n1, a1, b1, n2) {
   y <- bb_mean(n1, a1, b1)

@@ -17,3 +17,14 @@ nothing at the moment
 \description{
 Checks the attack_rates supplied in simulate_data
 }
+\examples{
+attack_rates <- runif(40)
+strain_isolation_times <- seq_len(40)
+check_attack_rates(attack_rates, strain_isolation_times)
+}
+\seealso{
+Other check_inputs: \code{\link{check_data}},
+  \code{\link{check_par_tab}},
+  \code{\link{check_proposals}}
+}
+\concept{check_inputs}

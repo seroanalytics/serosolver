@@ -39,3 +39,21 @@ a data frame with columns samples, virus and titre of simulated data
 \description{
 Simulates a full set of titre data for an individual with known theta and infection_history.
 }
+\examples{
+data(example_par_tab)
+data(example_antigenic_map)
+infection_history <- sample(c(0,1),size=nrow(example_antigenic_map), replace=TRUE,prob=c(0.9,0.1))
+pars <- example_par_tab$values
+names(pars) <- example_par_tab$names
+strain_isolation_times <- example_antigenic_map$inf_years
+y <- simulate_individual(pars, infection_history, example_antigenic_map, 2009, 
+                         strain_isolation_times,strain_isolation_times,add_noise=FALSE)
+}
+\seealso{
+Other simulation_functions: \code{\link{simulate_attack_rates}},
+  \code{\link{simulate_data}},
+  \code{\link{simulate_group}},
+  \code{\link{simulate_individual_faster}},
+  \code{\link{simulate_infection_histories}}
+}
+\concept{simulation_functions}

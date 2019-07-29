@@ -21,3 +21,14 @@ the beta binomial random draw function
 \description{
 Beta binomial random generation
 }
+\examples{
+rbb(100,50,1,1)
+}
+\seealso{
+Other beta_binomial_functions: \code{\link{bb_mean}},
+  \code{\link{dbb}}, \code{\link{find_bb_2}},
+  \code{\link{find_prior_alpha_beta}},
+  \code{\link{hist_rbb}}, \code{\link{pbb}},
+  \code{\link{qbb}}
+}
+\concept{beta_binomial_functions}

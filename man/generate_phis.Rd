@@ -2,7 +2,7 @@
 % Please edit documentation in R/posteriors.R
 \name{generate_phis}
 \alias{generate_phis}
-\title{Generate FOI phis}
+\title{Generate FOI phis - INACTIVE}
 \usage{
 generate_phis(foi, knots, theta, n_years, buckets, degree = 2)
 }

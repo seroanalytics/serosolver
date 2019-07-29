@@ -8,17 +8,17 @@ load_theta_chains(location = getwd(), par_tab = NULL, unfixed = TRUE,
   thin = 1, burnin = 0, convert_mcmc = TRUE)
 }
 \arguments{
-\item{location}{defaults to current working directory. Where to look for MCMC chains? These are files ending in "_chain.csv"}
+\item{location}{defaults to current working directory. Gives relative file path to look for files ending in "_chain.csv"}
 
 \item{par_tab}{if not NULL, can use this to only extract free model parameters}
 
-\item{unfixed}{if TRUE, only returns free model parameters if par_tab specified}
+\item{unfixed}{if TRUE, only returns free model parameters (par_tab$fixed == 0) if par_tab specified}
 
 \item{thin}{thin the chains by every thin'th sample}
 
-\item{burnin}{discard the first burnin samples}
+\item{burnin}{discard the first burnin samples from the MCMC chain}
 
-\item{convert_mcmc}{if TRUE, converts everything to MCMC objects (from the coda package)}
+\item{convert_mcmc}{if TRUE, converts everything to MCMC objects (from the `coda` R package)}
 }
 \value{
 a list with a) a list of each chain seperately; b) a combined data frame, indexing each iteration by which chain it comes from
@@ -26,3 +26,14 @@ a list with a) a list of each chain seperately; b) a combined data frame, indexi
 \description{
 Searches the given working directory for MCMC outputs from \code{\link{run_MCMC}}, loads these in, subsets for burn in and thinning, and formats as both lists and a combined data frame.
 }
+\examples{
+\dontrun{load_theta_chains(par_tab=par_tab, unfixed=TRUE,thin=10,burnin=5000,convert_mcmc=TRUE)}
+}
+\seealso{
+Other load_data_functions: \code{\link{load_antigenic_map_file}},
+  \code{\link{load_infection_chains}},
+  \code{\link{load_mcmc_chains}},
+  \code{\link{load_start_tab}},
+  \code{\link{load_titre_dat}}
+}
+\concept{load_data_functions}

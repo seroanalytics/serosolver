@@ -7,7 +7,7 @@
 get_n_alive(titre_dat, times)
 }
 \arguments{
-\item{titre_dat}{the data frame of titre data}
+\item{titre_dat}{the data frame of titre data. See \code{\link{example_titre_dat}}}
 
 \item{times}{the vector of times to calculate number alive for}
 }
@@ -17,3 +17,13 @@ a vector giving the number alive in each time point
 \description{
 Given the titre_dat data frame, calculates the number that are alive (alive to be infected, that is) for each time in times
 }
+\examples{
+data(example_titre_dat)
+data(example_antigenic_map)
+times <- unique(example_antigenic_map$inf_years)
+get_n_alive(example_titre_dat, times)
+}
+\seealso{
+Other get_summary: \code{\link{get_n_alive_group}}
+}
+\concept{get_summary}

@@ -9,6 +9,8 @@ plot_attack_rate_residuals(infection_histories, titre_dat,
   fatten = 1, pad_chain = TRUE, prior_pars = NULL)
 }
 \arguments{
+\item{infection_histories}{the MCMC chain for infection histories}
+
 \item{titre_dat}{the data frame of titre data}
 
 \item{strain_isolation_times}{vector of the epochs of potential circulation}

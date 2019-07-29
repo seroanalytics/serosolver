@@ -10,6 +10,8 @@ plot_attack_rates_monthly(infection_histories, titre_dat,
   group_subset = NULL, cumulative = FALSE)
 }
 \arguments{
+\item{infection_histories}{the MCMC chain for infection histories}
+
 \item{titre_dat}{the data frame of titre data}
 
 \item{strain_isolation_times}{vector of the epochs of potential circulation}

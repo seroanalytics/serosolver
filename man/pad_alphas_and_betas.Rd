@@ -14,3 +14,8 @@ pad_alphas_and_betas(par_tab, n_times)
 \description{
 Pads par_tab with a new row for each infection epoch, such that each epoch has its own alpha and beta
 }
+\examples{
+n_times <- 40:2015
+data(example_par_tab)
+new_par_tab <- pad_alphas_betas(example_par_tab, n_times)
+}

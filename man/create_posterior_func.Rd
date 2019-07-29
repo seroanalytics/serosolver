@@ -2,7 +2,7 @@
 % Please edit documentation in R/posteriors.R
 \name{create_posterior_func}
 \alias{create_posterior_func}
-\title{Posterior function pointer - FAST VERSION}
+\title{Posterior function pointer}
 \usage{
 create_posterior_func(par_tab, titre_dat, antigenic_map, version = 1,
   solve_likelihood = TRUE, age_mask = NULL,
@@ -10,15 +10,15 @@ create_posterior_func(par_tab, titre_dat, antigenic_map, version = 1,
   n_alive = NULL, function_type = 1, ...)
 }
 \arguments{
-\item{par_tab}{the parameter table controlling information such as bounds, initial values etc}
+\item{par_tab}{the parameter table controlling information such as bounds, initial values etc. See \code{\link{example_par_tab}}}
 
-\item{titre_dat}{the data frame of data to be fitted. Must have columns: group (index of group); individual (integer ID of individual); samples (numeric time of sample taken); virus (numeric time of when the virus was circulating); titre (integer of titre value against the given virus at that sampling time)}
+\item{titre_dat}{the data frame of data to be fitted. Must have columns: group (index of group); individual (integer ID of individual); samples (numeric time of sample taken); virus (numeric time of when the virus was circulating); titre (integer of titre value against the given virus at that sampling time). See \code{\link{example_titre_dat}}}
 
-\item{antigenic_map}{a data frame of antigenic x and y coordinates. Must have column names: x_coord; y_coord; inf_years}
+\item{antigenic_map}{a data frame of antigenic x and y coordinates. Must have column names: x_coord; y_coord; inf_years. See \code{\link{example_antigenic_map}}}
 
 \item{version}{which version of the posterior function to solve (corresponds mainly to the infection history prior). Mostly just left to 1, but there is one special case where this should be set to 4 for the gibbs sampler. This is only really used by \code{\link{run_MCMC}} to place the infection history prior on the total number of infections across all years and individuals when version = 4}
 
-\item{solve_likelihood}{usually set to TRUE. If FALSE< does not solve the likelihood and instead just samples/solves based on the model prior}
+\item{solve_likelihood}{usually set to TRUE. If FALSE, does not solve the likelihood and instead just samples/solves based on the model prior}
 
 \item{age_mask}{see \code{\link{create_age_mask}} - a vector with one entry for each individual specifying the first epoch of circulation in which an individual could have been exposed}
 
@@ -28,7 +28,7 @@ create_posterior_func(par_tab, titre_dat, antigenic_map, version = 1,
 
 \item{n_alive}{if not NULL, uses this as the number alive in a given year rather than calculating from the ages. This is needed if the number of alive individuals is known, but individual birth dates are not}
 
-\item{function_type}{integer specifying which version of this function to use. Specify 1 to give a posterior solving function; 2 to give the gibbs sampler for infection history proposals; otherwise just solves the titre model and returns predicted titres. NOTE that this is not the same as the attack rate prior argument!}
+\item{function_type}{integer specifying which version of this function to use. Specify 1 to give a posterior solving function; 2 to give the gibbs sampler for infection history proposals; otherwise just solves the titre model and returns predicted titres. NOTE that this is not the same as the attack rate prior argument, \code{version}!}
 
 \item{...}{other arguments to pass to the posterior solving function}
 }
@@ -36,5 +36,20 @@ create_posterior_func(par_tab, titre_dat, antigenic_map, version = 1,
 a single function pointer that takes only pars and infection_histories as unnamed arguments. This function goes on to return a vector of posterior values for each individual
 }
 \description{
-Takes all of the input data/parameters and returns a function pointer. This function finds the posterior for a given set of input parameters (theta) and infection histories without needing to pass the data set back and forth.
+Takes all of the input data/parameters and returns a function pointer. This function finds the posterior for a given set of input parameters (theta) and infection histories without needing to pass the data set back and forth. No example is provided for function_type=2, as this should only be called within \code{\link{run_MCMC}}
+}
+\examples{
+load(example_par_tab)
+load(example_titre_dat)
+load(example_antigenic_map)
+load(example_inf_hist)
+
+## Simple model solving code. Output matches entries of example_titre_dat
+model_func <- create_posterior_func(example_par_tab, example_titre_dat, example_antigenic_map, function_type = 3)
+y <- model_func(example_par_tab$values, example_inf_hist)
+
+## Solve likelihood
+par_tab <- example_par_tab[example_par_tab$names != "phi",]
+likelihood_func <- create_posterior_func(par_tab, example_titre_dat, example_antigenic_map, function_type = 1, version = 2)
+liks <- likelihood_func(par_tab$values, example_inf_hist)
 }

@@ -24,3 +24,9 @@ nothing
 \description{
 Write given infection history to disk
 }
+\seealso{
+Other mcmc: \code{\link{generate_start_tab}},
+  \code{\link{rm_scale}}, \code{\link{run_MCMC}},
+  \code{\link{scaletuning}}
+}
+\concept{mcmc}

@@ -17,3 +17,9 @@ a data table
 \description{
 Finds the total number of infections for each iteration of an MCMC chain
 }
+\examples{
+\dontrun{
+inf_chain <- load_infection_chains(thin=10,burnin=5000,chain_subset=1:3)
+n_infs <- get_total_number_infections(inf_chain$chain, pad_chain=FALSE)
+}
+}

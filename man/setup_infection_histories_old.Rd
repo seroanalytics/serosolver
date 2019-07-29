@@ -23,9 +23,14 @@ an nxm matrix of infection histories containing 1s and 0s, where n is the number
 Given a matrix of titre data, proposes plausible initial infection histories from which to begin MCMC sampling.
 NOTE - MIGHT NEED TO UPDATE THIS FOR GROUPS
 }
+\examples{
+data(example_titre_dat)
+data(example_antigenic_map)
+start_inf <- setup_infection_histories_old(example_titre_dat, example_antigenic_map$inf_years, 0.2, 3)
+}
 \seealso{
-Other setup_infection_histories: \code{\link{setup_infection_histories_immunity}},
-  \code{\link{setup_infection_histories_new_2}},
+Other setup_infection_histories: \code{\link{setup_infection_histories_new_2}},
+  \code{\link{setup_infection_histories_new}},
   \code{\link{setup_infection_histories_total}}
 }
 \concept{setup_infection_histories}

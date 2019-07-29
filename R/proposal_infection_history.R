@@ -7,6 +7,16 @@
 #' @param swap_propn what proportion of infections should be swapped?
 #' @param move_size How many time points away should be chosen as candidate swaps?
 #' @return the same infection_history matrix, but with two columns swapped
+#' @family proposals
+#' @examples
+#' data(example_inf_hist)
+#' data(example_titre_dat)
+#' data(example_antigenic_map)
+#' times <- example_antigenic_map$inf_years
+#' ages <- unique(example_titre_dat[,c("DOB","individual")])
+#' age_mask <- create_age_mask(ages$DOB, times)
+#' strain_mask <- create_strain_mask(example_titre_dat, times)
+#' new_inf_hist <- inf_hist_swap(example_inf_hist, age_mask,strain_mask, 1,3)[[1]]
 #' @export
 inf_hist_swap <- function(infection_history, age_mask, strain_mask, swap_propn, move_size) {
   ## Choose a column
@@ -16,28 +26,27 @@ inf_hist_swap <- function(infection_history, age_mask, strain_mask, swap_propn, 
   move <- 0
   while (move == 0) move <- sample((-move_size):move_size, 1)
 
-    ## Need to adjust if we've proposed too far away
-    y2 <- y1 + move
-    while (y2 < 1) y2 <- y2 + ncol(infection_history)
-    if (y2 > ncol(infection_history)) y2 <- y2 - floor(y2 / ncol(infection_history)) * ncol(infection_history)
+  ## Need to adjust if we've proposed too far away
+  y2 <- y1 + move
+  while (y2 < 1) y2 <- y2 + ncol(infection_history)
+  if (y2 > ncol(infection_history)) y2 <- y2 - floor(y2 / ncol(infection_history)) * ncol(infection_history)
 
-    ## Get the first and last year chronologically
-    small_year <- min(y1, y2)
-    big_year <- max(y1, y2)
+  ## Get the first and last year chronologically
+  small_year <- min(y1, y2)
+  big_year <- max(y1, y2)
 
-    ## Find individuals that are alive/sampled in both years and choose the lesser of swap_propn*n_indivs and
-    ## the number that are actually able to be infected in both years
-    indivs <- 1:nrow(infection_history)
-    alive_indivs <- indivs[intersect(which(age_mask <= small_year), which(strain_mask >= big_year))]
-    samp_indivs <- sample(alive_indivs, floor(length(alive_indivs) * swap_propn))
+  ## Find individuals that are alive/sampled in both years and choose the lesser of swap_propn*n_indivs and
+  ## the number that are actually able to be infected in both years
+  indivs <- 1:nrow(infection_history)
+  alive_indivs <- indivs[intersect(which(age_mask <= small_year), which(strain_mask >= big_year))]
+  samp_indivs <- sample(alive_indivs, floor(length(alive_indivs) * swap_propn))
 
-    ## Swap contents
-    tmp <- infection_history[samp_indivs, y1]
-    infection_history[samp_indivs, y1] <- infection_history[samp_indivs, y2]
-    infection_history[samp_indivs, y2] <- tmp
+  ## Swap contents
+  tmp <- infection_history[samp_indivs, y1]
+  infection_history[samp_indivs, y1] <- infection_history[samp_indivs, y2]
+  infection_history[samp_indivs, y2] <- tmp
 
-    
-    return(list(infection_history))
+  return(list(infection_history))
 }
 #' Swap infection history years with phi term
 #'
@@ -47,6 +56,18 @@ inf_hist_swap <- function(infection_history, age_mask, strain_mask, swap_propn, 
 #' @param n_alive number of individuals alive in each entry of phis
 #' @return a list: the same infection_history matrix, but with two columns swapped; also the swapped phis
 #' @seealso \code{\link{inf_hist_swap}}
+#' @family proposals
+#' @examples
+#' data(example_inf_hist)
+#' data(example_titre_dat)
+#' data(example_antigenic_map)
+#' times <- example_antigenic_map$inf_years
+#' ages <- unique(example_titre_dat[,c("DOB","individual")])
+#' age_mask <- create_age_mask(ages$DOB, times)
+#' strain_mask <- create_strain_mask(example_titre_dat, times)
+#' phis <- runif(length(times))
+#' n_alive <- get_n_alive(example_titre_dat,times)
+#' new_inf_hist <- inf_hist_swap_phi(example_inf_hist, phis, age_mask,strain_mask, 1,3, n_alive)
 #' @export
 inf_hist_swap_phi <- function(infection_history, phis, age_mask, strain_mask, swap_propn, move_size, n_alive) {
   ## This first bit of code is the same as inf_hist_swap
@@ -118,11 +139,36 @@ inf_hist_swap_phi <- function(infection_history, phis, age_mask, strain_mask, sw
 #' @param rand_ns pre-computed random numbers (0-1) for each individual, deciding whether to do a flip or swap
 #' @param swap_propn threshold for deciding if swap or add/remove step
 #' @return a matrix of infection histories matching the input new_inf_hist
+#' @family proposals
+#' @examples
+#' data(example_inf_hist)
+#' data(example_titre_dat)
+#' data(example_antigenic_map)
+#'
+#' times <- example_antigenic_map$inf_years
+#' ages <- unique(example_titre_dat[,c("DOB","individual")])
+#'
+#' ## Create age and strain mask
+#' age_mask <- create_age_mask(ages$DOB, times)
+#' strain_mask <- create_strain_mask(example_titre_dat, times)
+#'
+#' ## Index of individuals to be resampled
+#' indivs <- 1:nrow(example_inf_hist)
+#' n_indiv <- length(indivs)
+#' 
+#' ## Parameters controlling proposal sizes for each individual
+#' move_sizes <- rep(3, n_indiv)
+#' n_infs <- rep(10, n_indiv)
+#' 
+#' Pre-compute random numbers
+#' rand_ns <- runif(n_indiv)
+#'
+#' new_inf_hist <- infection_history_symmetric(example_inf_hist, indivs,age_mask ,strain_mask, move_sizes, n_infs, rand_ns, 0.5)
 #' @export
-infection_history_symmetric <- function(new_inf_hist, sampled_indivs, age_mask, strain_mask, move_sizes, n_infs, rand_ns,swap_propn=0.5) {
+infection_history_symmetric <- function(new_inf_hist, sampled_indivs, age_mask, strain_mask, move_sizes, n_infs, rand_ns, swap_propn = 0.5) {
   new_inf <- new_inf_hist
   ks <- rpois(length(sampled_indivs), n_infs)
-  #ks <- n_infs
+  # ks <- n_infs
   ## For each individual
   for (i in 1:length(sampled_indivs)) {
     indiv <- sampled_indivs[i]
@@ -132,35 +178,34 @@ infection_history_symmetric <- function(new_inf_hist, sampled_indivs, age_mask, 
 
     ## Flip or swap with prob 50%
     if (rand_ns[i] > swap_propn) {
-        ## Choose a location and turn 0 -> 1 or 1 -> 0
-        ## Poisson number of changes?
-        k <- min(max_i, max(ks[i], 1))
-        locs <- sample(length(x), k)
-        x[locs] <- !x[locs]
+      ## Choose a location and turn 0 -> 1 or 1 -> 0
+      ## Poisson number of changes?
+      k <- min(max_i, max(ks[i], 1))
+      locs <- sample(length(x), k)
+      x[locs] <- !x[locs]
     } else {
-        ## Choose a location
-        infs <- which(x==1)
-        if(length(infs > 0)){
-            id1 <- sample(infs, 1)
-            #id1 <- sample(length(x),1)
-            move_max <- move_sizes[indiv]
-        
-            ## Choose another location up to move_max epochs away
-            move <- sample(-move_max:move_max, 1)
-            id2 <- id1 + move
-            
-            ## Control boundaries
-            if (id2 < 1) id2 <- (move %% max_i) + id1
-            if (id2 > max_i) id2 <- (id2 - 1) %% max_i + 1
-            
-            ## Swap the contents of these locations
-            tmp <- x[id1]
-            x[id1] <- x[id2]
-            x[id2] <- tmp
-        }
+      ## Choose a location
+      infs <- which(x == 1)
+      if (length(infs > 0)) {
+        id1 <- sample(infs, 1)
+        # id1 <- sample(length(x),1)
+        move_max <- move_sizes[indiv]
+
+        ## Choose another location up to move_max epochs away
+        move <- sample(-move_max:move_max, 1)
+        id2 <- id1 + move
+
+        ## Control boundaries
+        if (id2 < 1) id2 <- (move %% max_i) + id1
+        if (id2 > max_i) id2 <- (id2 - 1) %% max_i + 1
+
+        ## Swap the contents of these locations
+        tmp <- x[id1]
+        x[id1] <- x[id2]
+        x[id2] <- tmp
+      }
     }
     new_inf[indiv, age_mask[indiv]:strain_mask[indiv]] <- x
   }
   return(new_inf)
 }
-

@@ -17,3 +17,8 @@ nothing at the moment
 \description{
 Checks if the multivarite proposal is being used with the FOI proposal
 }
+\seealso{
+Other check_inputs: \code{\link{check_attack_rates}},
+  \code{\link{check_data}}, \code{\link{check_par_tab}}
+}
+\concept{check_inputs}

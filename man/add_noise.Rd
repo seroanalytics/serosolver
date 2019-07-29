@@ -17,3 +17,9 @@ a noisy titre
 \description{
 Adds truncated noise to titre data
 }
+\examples{
+\dontrun{
+## ... example in simulate_individual
+noisy_y <- add_noise(y, pars)
+}
+}

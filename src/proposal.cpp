@@ -56,9 +56,8 @@ arma::mat inf_hist_prop_prior_v3(arma::mat infection_history_mat,
   
   // For each sampled individual
   for(int i = 0; i < sampled_indivs.size(); ++i){
-
-    // Isolate that individual's infection histories
-    indiv = sampled_indivs[i]-1;
+      // Isolate that individual's infection histories
+      indiv = sampled_indivs[i]-1;
     n_inf = n_infs[indiv];
     x = new_infection_history_mat.submat(indiv, age_mask[indiv]-1, indiv, strain_mask[indiv]-1);
     x_n_cols = x.n_cols;
@@ -114,15 +113,16 @@ arma::mat inf_hist_prop_prior_v3(arma::mat infection_history_mat,
 
 
 
-  //' Infection history gibbs proposal, fast
-  //'  Generates a new infection history matrix and corresponding individual likelihoods, using a gibbs sampler from the infection history prior. See \code{\link{infection_history_proposal_gibbs}}, as inputs are very similar.
-  //' @param theta NumericVector, the named model parameters used to solve the model
-  //' @param infection_history_mat IntegerMatrix the matrix of 1s and 0s corresponding to individual infection histories
-  //' @param old_probs_1 NumericVector, the current likelihoods for each individual
-  //' @param sampled_indivs IntegerVector, indices of sampled individuals
-  //' @param n_years_samp_vec int, for each individual, how many time periods to resample infections for?
-  //' @param age_mask IntegerVector, length of the number of individuals, with indices specifying first time period that an individual can be infected (indexed from 1, such that a value of 1 allows an individual to be infected in any time period)
-  //' @param strain_mask IntegerVector, length of the number of individuals, with indices specifying last time period that an individual can be infected (ie. last time a sample was taken)
+//' Infection history gibbs proposal
+//'
+//' Generates a new infection history matrix and corresponding individual likelihoods, using a gibbs sampler from the infection history prior. See \code{\link{infection_history_proposal_gibbs}}, as inputs are very similar.
+//' @param theta NumericVector, the named model parameters used to solve the model
+//' @param infection_history_mat IntegerMatrix the matrix of 1s and 0s corresponding to individual infection histories
+//' @param old_probs_1 NumericVector, the current likelihoods for each individual
+//' @param sampled_indivs IntegerVector, indices of sampled individuals
+//' @param n_years_samp_vec int, for each individual, how many time periods to resample infections for?
+//' @param age_mask IntegerVector, length of the number of individuals, with indices specifying first time period that an individual can be infected (indexed from 1, such that a value of 1 allows an individual to be infected in any time period)
+//' @param strain_mask IntegerVector, length of the number of individuals, with indices specifying last time period that an individual can be infected (ie. last time a sample was taken)
 //' @param n_alive IntegerMatrix, number of columns is the number of time periods that an individual could be infected, giving the number of individual alive in each time period. Number of rows is the number of distinct groups.
 //' @param n_infections IntegerMatrix, the number of infections in each year (columns) for each group (rows)
 //' @param n_infected_group IntegerVector, the total number of infections across all times in each group
