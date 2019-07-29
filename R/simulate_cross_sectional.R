@@ -1,4 +1,5 @@
 #' Simulates multiple cohorts in a cross-sectional framework.
+#' 
 #' @param parTab the full parameter table controlling parameter ranges and values
 #' @param group which group index to give this simulated data
 #' @param n_indiv number of individuals to simulate
@@ -25,7 +26,7 @@ simulate_cross_sectional <- function(parTab, n_indiv, buckets = 12,
   N.cohorts <- length(samplingTimes)
 
   ## Order sampling times in ascending order
-  samplingTimes <- sort(samplingTimes, decreasing = T)
+  samplingTimes <- sort(samplingTimes, decreasing = TRUE)
 
   if (N.cohorts == 1) { # if there is only one cohort then we just need to call this line once
     if (max(strainIsolationTimes) != samplingTimes) warning("Cross-sectional study of one year is not testing strains cirulating in that year")

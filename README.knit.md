@@ -4,14 +4,7 @@ output: github_document
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
 
-```{r, include = FALSE}
-knitr::opts_chunk$set(
-  collapse = TRUE,
-  comment = "#>",
-  fig.path = "man/figures/README-",
-  out.width = "100%"
-)
-```
+
 # serosolver
 
 [![Project Status: Active – The project has reached a stable, usable state and is being actively developed.](https://www.repostatus.org/badges/latest/active.svg)](https://www.repostatus.org/#active)
@@ -27,7 +20,8 @@ knitr::opts_chunk$set(
 
 2. Install the development version of serosolver from [GitHub](https://github.com/seroanalytics/serosolver):
 
-```{r installation,eval=FALSE}
+
+```r
 devtools::install_github("seroanalytics/serosolver")
 library(serosolver)
 ```
@@ -42,7 +36,8 @@ Read the [quick start vignette][vignette-doc] to set up and run a simple impleme
 
 This is a basic example of simulating some serological data and fitting the model using the MCMC framework.
 
-```{r example, message=FALSE,warning=FALSE,eval=FALSE}
+
+```r
 library(serosolver)
 library(plyr)
 ## Load in example parameter values and antigenic map

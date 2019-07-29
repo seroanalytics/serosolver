@@ -366,7 +366,7 @@ plot_posteriors_theta <- function(chain,
   free_chain$errorCorrect2 <- pnorm(4, mean = 1.5, sd = free_chain$error) - pnorm(1, mean = 2.5, sd = free_chain$error)
 
 
-  thin_free_chain <- free_chain[sample(1:nrow(free_chain), samples, replace = T), ]
+  thin_free_chain <- free_chain[sample(1:nrow(free_chain), samples, replace = TRUE), ]
 
   parameter <- c(
     par_tab[which(par_tab$fixed == 0), "names"],
@@ -819,7 +819,7 @@ plot_attack_rates <- function(infection_histories, titre_dat, strain_isolation_t
       xlab("Year")
 
     ## Colour depending on whether or not titres were taken in each year
-    if (colour_by_taken == TRUE) {
+     if (colour_by_taken == TRUE) {
       p <- p + geom_pointrange(aes(
         x = j, y = median, ymin = lower, ymax = upper,
         col = `Sample taken`, shape = `Sample taken`
