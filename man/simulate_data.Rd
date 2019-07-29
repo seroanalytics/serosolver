@@ -23,7 +23,7 @@ simulate_data(par_tab, group = 1, n_indiv = 100, buckets = 1,
 
 \item{measured_strains}{vector of strains that have titres measured matching entries in strain_isolation_times}
 
-\item{sampling_times}{possible sampling times for the individuals, matching entries in strain_isoltion_times}
+\item{sampling_times}{possible sampling times for the individuals, matching entries in strain_isolation_times}
 
 \item{nsamps}{the number of samples each individual has (eg. nsamps=2 gives each individual 2 random sampling times from sampling_times)}
 

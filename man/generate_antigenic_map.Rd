@@ -17,7 +17,7 @@ generate_antigenic_map(antigenic_distances, buckets = 1, spar = 0.3)
 a fitted antigenic map
 }
 \description{
-Firts a smoothing spline through a set of antigenic coordinates, and uses this to predict antigenic coordinates for all potential infection time points
+Fits a smoothing spline through a set of antigenic coordinates, and uses this to predict antigenic coordinates for all potential infection time points
 }
 \examples{
 \dontrun{

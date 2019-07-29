@@ -3,7 +3,7 @@
 #' @param parTab the full parameter table controlling parameter ranges and values
 #' @param group which group index to give this simulated data
 #' @param n_indiv number of individuals to simulate
-#' @param strainIsolationTimes vector of strain ciruclation times
+#' @param strainIsolationTimes vector of strain circulation times
 #' @param samplingTimes possible sampling times for the individuals
 #' @param antigenicMap the raw antigenic map with colnames x_coord, y_coord and inf_years
 #' @param titreSensoring what proportion of titres are randomly missing?

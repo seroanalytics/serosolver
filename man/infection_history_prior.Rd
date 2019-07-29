@@ -9,7 +9,7 @@ infection_history_prior(pars, infection_history, age_mask)
 \arguments{
 \item{pars}{the named parameter vector with alpha and beta}
 
-\item{infection_history}{the infection hsitory matrix}
+\item{infection_history}{the infection history matrix}
 
 \item{age_mask}{the age mask, giving the first index of the infection_history matrix that each individual can be exposed to. One entry per individual}
 }

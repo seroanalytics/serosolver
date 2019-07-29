@@ -118,7 +118,7 @@ load_mcmc_chains <- function(location = getwd(), par_tab = NULL, unfixed = TRUE,
 #' @param thin thin the chains by every thin'th sample
 #' @param burnin discard the first burnin samples from the MCMC chain
 #' @param convert_mcmc if TRUE, converts everything to MCMC objects (from the `coda` R package)
-#' @return a list with a) a list of each chain seperately; b) a combined data frame, indexing each iteration by which chain it comes from
+#' @return a list with a) a list of each chain separately; b) a combined data frame, indexing each iteration by which chain it comes from
 #' @family load_data_functions
 #' @examples
 #' \dontrun{load_theta_chains(par_tab=par_tab, unfixed=TRUE,thin=10,burnin=5000,convert_mcmc=TRUE)}
@@ -186,7 +186,7 @@ load_theta_chains <- function(location = getwd(), par_tab = NULL, unfixed = TRUE
 #' @param location defaults to current working directory. Where to look for MCMC chains? These are files ending in "_infection_histories.csv"
 #' @inheritParams load_theta_chains
 #' @param chain_subset if not NULL, a vector of indices to only load and store a subset of the chains detected. eg. chain_subset = 1:3 means that only the first 3 detected files will be processed.
-#' @return a list with a) a list of each chain as a data table seperately; b) a combined data table, indexing each iteration by which chain it comes from
+#' @return a list with a) a list of each chain as a data table separately; b) a combined data table, indexing each iteration by which chain it comes from
 #' @family load_data_functions
 #' @examples
 #' \dontrun{load_infection_chains(thin=10,burnin=5000,chain_subset=1:3)}

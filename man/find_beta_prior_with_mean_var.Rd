@@ -11,7 +11,7 @@ find_beta_prior_with_mean_var(mean, var, make_plot = FALSE)
 
 \item{var}{the variance of the beta distribution (this is likely going to be somewhere less than 0.25)}
 
-\item{make_plot}{if TRUE, plots the resulting beta distibution to the R device}
+\item{make_plot}{if TRUE, plots the resulting beta distribution to the R device}
 }
 \value{
 a list with alpha and beta

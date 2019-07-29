@@ -84,7 +84,7 @@ check_data <- function(data) {
 
 #' Checks the attack_rates supplied in simulate_data
 #' @param attack_rates a vector of attack_rates to be used in the simulation
-#' @param strain_isolation_times vector of strain ciruclation times
+#' @param strain_isolation_times vector of strain circulation times
 #' @return nothing at the moment
 #' @family check_inputs
 #' @examples

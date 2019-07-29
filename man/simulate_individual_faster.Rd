@@ -42,7 +42,7 @@ simulate_individual_faster(theta, infection_history, antigenic_map_long,
 a data frame with columns samples, virus and titre of simulated data
 }
 \description{
-FOR USERS: USE \code{\link{simulate_individual}}. This function does the samething, but with a few short cuts for speed. Simulates a full set of titre data for an individual with known theta and infection_history.
+FOR USERS: USE \code{\link{simulate_individual}}. This function does the same thing, but with a few short cuts for speed. Simulates a full set of titre data for an individual with known theta and infection_history.
 }
 \seealso{
 Other simulation_functions: \code{\link{simulate_attack_rates}},

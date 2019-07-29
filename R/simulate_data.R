@@ -7,7 +7,7 @@
 #' @param buckets time resolution of the simulated data. buckets=1 indicates annual time resolution; buckets=4 indicates quarterly; buckets=12 monthly
 #' @param strain_isolation_times vector of contiguous strain circulation times
 #' @param measured_strains vector of strains that have titres measured matching entries in strain_isolation_times
-#' @param sampling_times possible sampling times for the individuals, matching entries in strain_isoltion_times
+#' @param sampling_times possible sampling times for the individuals, matching entries in strain_isolation_times
 #' @param nsamps the number of samples each individual has (eg. nsamps=2 gives each individual 2 random sampling times from sampling_times)
 #' @param antigenic_map the raw antigenic map with colnames x_coord, y_coord and inf_years, as returned from \code{\link{generate_antigenic_map_flexible}} or \code{\link{generate_antigenic_map}}
 #' @param titre_sensoring numeric between 0 and 1, used to censor a proportion of titre observations at random (MAR)
@@ -214,7 +214,7 @@ simulate_group <- function(n_indiv,
 }
 #' Simulate individual data quickly
 #'
-#' FOR USERS: USE \code{\link{simulate_individual}}. This function does the samething, but with a few short cuts for speed. Simulates a full set of titre data for an individual with known theta and infection_history.
+#' FOR USERS: USE \code{\link{simulate_individual}}. This function does the same thing, but with a few short cuts for speed. Simulates a full set of titre data for an individual with known theta and infection_history.
 #' @inheritParams simulate_group
 #' @param infection_history the vector of 1s and 0s giving presence/absence of infections
 #' @param antigenic_map_long the long term antigenic cross reactivity map generated from \code{\link{create_cross_reactivity_vector}}

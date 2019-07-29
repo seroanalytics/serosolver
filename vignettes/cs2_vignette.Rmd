@@ -113,7 +113,7 @@ titre_dat <- melted_dat
 print(head(titre_dat))
 ```
 
-Given that this analysis uses titres from multiple, antigenically related viruses, it is necessary to define an antigenic map describing the antigenic distance between all of the viruses here. We use coordinates based on the antigenic map created by Fonville et al. Generating the antigenic map involves fitting a smoothing spline through provided coordinates to give a representative virus for each time point (in this case, each year) that an individual could be infected. This process also imputs antigenic coordinates for time points that we do not have a measured virus.
+Given that this analysis uses titres from multiple, antigenically related viruses, it is necessary to define an antigenic map describing the antigenic distance between all of the viruses here. We use coordinates based on the antigenic map created by Fonville et al. Generating the antigenic map involves fitting a smoothing spline through provided coordinates to give a representative virus for each time point (in this case, each year) that an individual could be infected. This process also inputs antigenic coordinates for time points that we do not have a measured virus.
 
 ```{r}
 ## Read in raw coordinates

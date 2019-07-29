@@ -2,7 +2,7 @@
 #'
 #' Calculates the beta binomial infection history prior for each individual, taking into account the number of years they could be infected.
 #' @param pars the named parameter vector with alpha and beta
-#' @param infection_history the infection hsitory matrix
+#' @param infection_history the infection history matrix
 #' @param age_mask the age mask, giving the first index of the infection_history matrix that each individual can be exposed to. One entry per individual
 #' @return a prior probability for each individual
 #' @family priors
@@ -164,7 +164,7 @@ fit_normal_prior <- function(chain_samples, par_name = "", error_tol = 999999999
 #' Finds the alpha and beta parameters for a beta distribution that gives the desired mean and variance
 #' @param mean the mean of the beta distribution (between 0 and 1)
 #' @param var the variance of the beta distribution (this is likely going to be somewhere less than 0.25)
-#' @param make_plot if TRUE, plots the resulting beta distibution to the R device
+#' @param make_plot if TRUE, plots the resulting beta distribution to the R device
 #' @return a list with alpha and beta
 #' @family priors
 #' @export

@@ -9,7 +9,7 @@ check_attack_rates(attack_rates, strain_isolation_times)
 \arguments{
 \item{attack_rates}{a vector of attack_rates to be used in the simulation}
 
-\item{strain_isolation_times}{vector of strain ciruclation times}
+\item{strain_isolation_times}{vector of strain circulation times}
 }
 \value{
 nothing at the moment
