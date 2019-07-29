@@ -16,8 +16,10 @@ a ggplot2 object
 Plot time between serum samples
 }
 \examples{
+\dontrun{
 data(example_titre_dat)
 plot_samples_distances(example_titre_dat)
+}
 }
 \seealso{
 Other theta_plots: \code{\link{plot_posteriors_theta}}

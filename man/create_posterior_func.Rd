@@ -39,10 +39,11 @@ a single function pointer that takes only pars and infection_histories as unname
 Takes all of the input data/parameters and returns a function pointer. This function finds the posterior for a given set of input parameters (theta) and infection histories without needing to pass the data set back and forth. No example is provided for function_type=2, as this should only be called within \code{\link{run_MCMC}}
 }
 \examples{
-load(example_par_tab)
-load(example_titre_dat)
-load(example_antigenic_map)
-load(example_inf_hist)
+\dontrun{
+data(example_par_tab)
+data(example_titre_dat)
+data(example_antigenic_map)
+data(example_inf_hist)
 
 ## Simple model solving code. Output matches entries of example_titre_dat
 model_func <- create_posterior_func(example_par_tab, example_titre_dat, example_antigenic_map, function_type = 3)
@@ -52,4 +53,5 @@ y <- model_func(example_par_tab$values, example_inf_hist)
 par_tab <- example_par_tab[example_par_tab$names != "phi",]
 likelihood_func <- create_posterior_func(par_tab, example_titre_dat, example_antigenic_map, function_type = 1, version = 2)
 liks <- likelihood_func(par_tab$values, example_inf_hist)
+}
 }

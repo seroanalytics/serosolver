@@ -127,7 +127,7 @@ setup_infection_histories_old <- function(titre_dat, strain_isolation_times, sam
 #' @examples
 #' data(example_titre_dat)
 #' data(example_antigenic_map)
-#' start_inf <- setup_infection_histories(example_titre_dat, example_antigenic_map$inf_years, 2,10)
+#' start_inf <- setup_infection_histories_total(example_titre_dat, example_antigenic_map$inf_years, 2,10)
 #' @export
 setup_infection_histories_total <- function(titre_dat, strain_isolation_times, alpha = 1, beta = 1) {
   DOBs <- unique(titre_dat[, c("individual", "DOB")])[, 2]

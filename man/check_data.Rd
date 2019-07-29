@@ -17,7 +17,7 @@ Checks the entries of data used in run_MCMC
 }
 \examples{
 data(example_titre_dat)
-check_data(titre_dat)
+check_data(example_titre_dat)
 }
 \seealso{
 Other check_inputs: \code{\link{check_attack_rates}},

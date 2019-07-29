@@ -41,6 +41,7 @@ a list with the titre predictions (95% credible intervals, median and multivaria
 Generates credible intervals on titres and infection histories from an MCMC chain output.
 }
 \examples{
+\dontrun{
 data(example_theta_chain)
 data(example_inf_chain)
 data(example_titre_dat)
@@ -50,4 +51,5 @@ data(example_par_tab)
 y <- get_titre_predictions(example_theta_chain, example_inf_chain, example_titre_dat,
                           unique(example_titre_dat$individual), example_antigenic_map,
                           example_par_tab,expand_titredat = FALSE)
+}
 }

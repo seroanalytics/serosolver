@@ -246,10 +246,11 @@ prob_mus <- function(mus, pars) {
 #' @param ... other arguments to pass to the posterior solving function
 #' @return a single function pointer that takes only pars and infection_histories as unnamed arguments. This function goes on to return a vector of posterior values for each individual
 #' @examples
-#' load(example_par_tab)
-#' load(example_titre_dat)
-#' load(example_antigenic_map)
-#' load(example_inf_hist)
+#' \dontrun{
+#' data(example_par_tab)
+#' data(example_titre_dat)
+#' data(example_antigenic_map)
+#' data(example_inf_hist)
 #'
 #' ## Simple model solving code. Output matches entries of example_titre_dat
 #' model_func <- create_posterior_func(example_par_tab, example_titre_dat, example_antigenic_map, function_type = 3)
@@ -259,6 +260,7 @@ prob_mus <- function(mus, pars) {
 #' par_tab <- example_par_tab[example_par_tab$names != "phi",]
 #' likelihood_func <- create_posterior_func(par_tab, example_titre_dat, example_antigenic_map, function_type = 1, version = 2)
 #' liks <- likelihood_func(par_tab$values, example_inf_hist)
+#' }
 #' @export
 create_posterior_func <- function(par_tab,
                                   titre_dat,

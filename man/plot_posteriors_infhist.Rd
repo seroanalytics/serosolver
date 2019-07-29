@@ -32,6 +32,7 @@ a list of ggplot objects and data frame of posterior estimates
 Plots and calculates many summary statistics from the infection history MCMC chain
 }
 \examples{
+\dontrun{
 ## Load in exaple data
 data(example_inf_chain)
 data(example_antigenic_map)
@@ -53,6 +54,7 @@ n_alive_group$j <- strain_isolation_times[n_alive_group$j]
 all_plots <- plot_posteriors_infhist(example_inf_chain, strain_isolation_times, n_alive_group,
                                      known_ar=known_ar,known_infection_history = known_inf_hist,
                                      samples=100)
+}
 }
 \seealso{
 Other infection_history_plots: \code{\link{calculate_infection_history_statistics}},

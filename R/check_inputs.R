@@ -70,7 +70,7 @@ check_par_tab <- function(par_tab, mcmc = FALSE, version = NULL) {
 #' @family check_inputs
 #' @examples
 #' data(example_titre_dat)
-#' check_data(titre_dat)
+#' check_data(example_titre_dat)
 #' @export
 check_data <- function(data) {
     ## Check that all columns are present

@@ -87,7 +87,7 @@ bb_var <- function(n, alpha, beta) {
 #' @inheritParams find_prior_alpha_beta
 #' @family beta_binomial_functions
 #' @examples
-#' hist_rbb(100, 20, 10, 5)
+#' hist_rbb(100, 0.15, 0.1)
 #' @export
 hist_rbb <- function(n, mean, var) {
   pars <- find_prior_alpha_beta(n, mean, var)

@@ -23,8 +23,10 @@ a list of two ggplot objects - the MCMC trace and MCMC densities
 Plot MCMC trace for infections per individual
 }
 \examples{
+\dontrun{
 data(example_inf_chain)
 plot_infection_history_chains_indiv(example_inf_chain, 0, 1:10, FALSE)
+}
 }
 \seealso{
 \code{\link{plot_infection_history_chains_indiv}}

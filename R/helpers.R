@@ -264,9 +264,9 @@ logit_transform <- function(p, maxX) {
 #' @param par_tab as per usual
 #' @param n_times the number of additional rows to add for each alpha and beta
 #' @examples
-#' n_times <- 40:2015
+#' n_times <- 40
 #' data(example_par_tab)
-#' new_par_tab <- pad_alphas_betas(example_par_tab, n_times)
+#' new_par_tab <- pad_alphas_and_betas(example_par_tab, n_times)
 #' @export
 pad_alphas_and_betas <- function(par_tab, n_times) {
   alpha_row <- par_tab[par_tab$names == "alpha", ]

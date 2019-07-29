@@ -20,6 +20,8 @@ Adds truncated noise to titre data
 \examples{
 \dontrun{
 ## ... example in simulate_individual
+pars <- c("error"=1)
+y <- runif(100)
 noisy_y <- add_noise(y, pars)
 }
 }

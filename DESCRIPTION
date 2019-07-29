@@ -2,8 +2,14 @@ Package: serosolver
 Title: Inference Framework for Serological Data
 Version: 1.0.0
 Authors@R: 
-    c(person("James","Hay",email="jameshay218@gmail.com",role=c("aut","cre"), comment="0000-0002-1998-1844",
-    person("Adam", "Kucharski",email="Adam.Kucharski@lshtm.ac.uk", role=c("aut")))
+    c(person(given = "James",
+             family = "Hay",
+             role = c("aut", "cre"),
+             email = "jameshay218@gmail.com",
+             comment = c(ORCID = "0000-0002-1998-1844")),
+      person(given = "Adam",
+             family = "Kucharski",
+             role = "aut"))
 Maintainer:  James Hay <jameshay218@gmail.com>
 Description: Given a table of serological data for a population, infers the
     presence and timing of infections based on raised titres.
@@ -12,14 +18,15 @@ LazyData: TRUE
 URL: https://github.com/seroanalytics/serosolver
 BugReports: https://github.com/seroanalytics/serosolver/issues
 Depends: R (>= 3.3.0)
+Imports:
+    data.table,
+    ggplot2,
+    plyr
 Suggests:
     coda,
-    data.table,
     foreach,
-    ggplot2,
     knitr,
     Matrix,
-    plyr,
     rmarkdown,
     testthat
 LinkingTo: 

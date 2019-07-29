@@ -17,7 +17,7 @@ hist_rbb(n, mean, var)
 Plots a histogram of the beta binomial function with given mean and variance
 }
 \examples{
-hist_rbb(100, 20, 10, 5)
+hist_rbb(100, 0.15, 0.1)
 }
 \seealso{
 Other beta_binomial_functions: \code{\link{bb_mean}},

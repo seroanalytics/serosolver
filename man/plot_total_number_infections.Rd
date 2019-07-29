@@ -18,8 +18,10 @@ two ggplot2 objects
 Plots the total number of inferred infections in the MCMC chain as a trace plot and density plot
 }
 \examples{
+\dontrun{
 data(example_inf_chain)
 plot_total_number_infections(example_inf_chain)
+}
 }
 \seealso{
 Other infection_history_plots: \code{\link{calculate_infection_history_statistics}},

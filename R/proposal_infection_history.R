@@ -160,7 +160,7 @@ inf_hist_swap_phi <- function(infection_history, phis, age_mask, strain_mask, sw
 #' move_sizes <- rep(3, n_indiv)
 #' n_infs <- rep(10, n_indiv)
 #' 
-#' Pre-compute random numbers
+#' ## Pre-compute random numbers
 #' rand_ns <- runif(n_indiv)
 #'
 #' new_inf_hist <- infection_history_symmetric(example_inf_hist, indivs,age_mask ,strain_mask, move_sizes, n_infs, rand_ns, 0.5)

@@ -25,7 +25,7 @@ Sets up an initial random infection history, where start is sampled from a prior
 \examples{
 data(example_titre_dat)
 data(example_antigenic_map)
-start_inf <- setup_infection_histories(example_titre_dat, example_antigenic_map$inf_years, 2,10)
+start_inf <- setup_infection_histories_total(example_titre_dat, example_antigenic_map$inf_years, 2,10)
 }
 \seealso{
 Other setup_infection_histories: \code{\link{setup_infection_histories_new_2}},

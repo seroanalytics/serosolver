@@ -24,6 +24,15 @@ a ggplot object
 \description{
 Plots measured titres and known infection histories for all individuals, facetted by sample time
 }
+\examples{
+\dontrun{
+data(example_titre_dat)
+data(example_inf_hist)
+data(example_antigenic_map)
+strain_isolation_times <- example_antigenic_map$inf_years
+plot_data(example_titre_dat, example_inf_hist, strain_isolation_times, 5)
+}
+}
 \seealso{
 Other infection_history_plots: \code{\link{calculate_infection_history_statistics}},
   \code{\link{generate_cumulative_inf_plots}},

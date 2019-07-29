@@ -41,6 +41,7 @@ two ggplot objects
 For each individual requested, plots the median and 95% quantiles on a) the cumulative number of infections over a lifetime and b) the posterior probability that an infection occured in a given time point
 }
 \examples{
+\dontrun{
 data(example_inf_chain)
 data(example_antigenic_map)
 data(example_inf_hist)
@@ -51,6 +52,7 @@ times <- example_antigenic_map$inf_years
 indivs <- 1:10
 generate_cumulative_inf_plots(example_inf_chain, 0, indivs, example_inf_hist, NULL, times,
                               ages=ages, number_col=2,pad_chain=FALSE, return_data=TRUE)
+}
 }
 \seealso{
 Other infection_history_plots: \code{\link{calculate_infection_history_statistics}},

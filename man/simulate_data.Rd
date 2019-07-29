@@ -55,16 +55,16 @@ Simulates a full data set for a given set of parameters etc.
 data(example_par_tab)
 data(example_antigenic_map)
 
-## Simulate some random attack rates between 0 and 0.2
-attack_rates <- runif(length(strain_isolation_times), 0, 0.2)
 ## Times at which individuals can be infected
 strain_isolation_times <- example_antigenic_map$inf_years
+## Simulate some random attack rates between 0 and 0.2
+attack_rates <- runif(length(strain_isolation_times), 0, 0.2)
 ## Vector giving the circulation times of measured strains
 sampled_viruses <- seq(min(strain_isolation_times), max(strain_isolation_times), by=2)
 all_simulated_data <- simulate_data(par_tab=example_par_tab, group=1, n_indiv=50,    
                                    strain_isolation_times=strain_isolation_times,
                                    measured_strains=sampled_viruses,
-                                   sampling_times=2010:2015, nsamps=n_samps, antigenic_map=example_antigenic_map, 
+                                   sampling_times=2010:2015, nsamps=2, antigenic_map=example_antigenic_map, 
                                    age_min=10,age_max=75,
                                    attack_rates=attack_rates, repeats=2)
 titre_dat <- all_simulated_data$data

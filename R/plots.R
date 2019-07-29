@@ -37,6 +37,7 @@ generate_quantiles <- function(x, sig_f = 3, qs = c(0.025, 0.5, 0.975), as_text 
 #' @param expand_titredat TRUE/FALSE value. If TRUE, solves titre predictions for all possible infection times. If left FALSE, then only solves for the infections times at which a titre against the circulating virus was measured in titre_dat.
 #' @return a list with the titre predictions (95% credible intervals, median and multivariate posterior mode) and the probabilities of infection for each individual in each epoch
 #' @examples
+#' \dontrun{
 #' data(example_theta_chain)
 #' data(example_inf_chain)
 #' data(example_titre_dat)
@@ -46,6 +47,7 @@ generate_quantiles <- function(x, sig_f = 3, qs = c(0.025, 0.5, 0.975), as_text 
 #' y <- get_titre_predictions(example_theta_chain, example_inf_chain, example_titre_dat,
 #'                           unique(example_titre_dat$individual), example_antigenic_map,
 #'                           example_par_tab,expand_titredat = FALSE)
+#' }
 #' @export
 get_titre_predictions <- function(chain, infection_histories, titre_dat,
                                   individuals, antigenic_map,
@@ -244,6 +246,7 @@ plot_infection_histories <- function(chain, infection_histories, titre_dat,
 #' @return a list of ggplot objects and data frame of posterior estimates
 #' @family infection_history_plots
 #' @examples
+#' \dontrun{
 #' ## Load in exaple data
 #' data(example_inf_chain)
 #' data(example_antigenic_map)
@@ -265,6 +268,7 @@ plot_infection_histories <- function(chain, infection_histories, titre_dat,
 #' all_plots <- plot_posteriors_infhist(example_inf_chain, strain_isolation_times, n_alive_group,
 #'                                      known_ar=known_ar,known_infection_history = known_inf_hist,
 #'                                      samples=100)
+#' }
 #' @export
 plot_posteriors_infhist <- function(inf_chain,
                                     years,
@@ -644,7 +648,7 @@ plot_attack_rates_monthly <- function(infection_histories, titre_dat, strain_iso
     n_alive <- as.data.frame(get_n_alive_group(titre_dat, strain_isolation_times))
     n_alive$group <- 1:nrow(n_alive)
   }
-  n_alive_tmp <- melt(n_alive, id.vars = "group")
+  n_alive_tmp <- reshape2::melt(n_alive, id.vars = "group")
   n_alive_tmp$variable <- as.numeric(n_alive_tmp$variable)
   colnames(n_alive_tmp) <- c("group", "j", "n_alive")
 
@@ -771,7 +775,7 @@ plot_attack_rates <- function(infection_histories, titre_dat, strain_isolation_t
     }
     tmp <- rbind(tmp, prior_dens_all)
   }
-  n_alive_tmp <- melt(n_alive, id.vars = "group")
+  n_alive_tmp <- reshape2::melt(n_alive, id.vars = "group")
   n_alive_tmp$variable <- as.numeric(n_alive_tmp$variable)
   colnames(n_alive_tmp) <- c("group", "j", "n_alive")
   tmp <- merge(tmp, data.table(n_alive_tmp), by = c("group", "j"))
@@ -927,6 +931,7 @@ pad_inf_chain <- function(inf_chain) {
 #' @seealso \code{\link{plot_infection_history_chains_indiv}}
 #' @family infection_history_plots
 #' @examples
+#' \dontrun{
 #' data(example_inf_chain)
 #' data(example_titre_dat)
 #' data(example_antigenic_map)
@@ -934,6 +939,7 @@ pad_inf_chain <- function(inf_chain) {
 #' n_alive_group <- get_n_alive_group(example_titre_dat, strain_isolation_times,melt_dat = TRUE)
 #' n_alive_group$j <- strain_isolation_times[n_alive_group$j]
 #' plot_infection_history_chains_time(example_inf_chain, 0, sample(1:length(times),10),n_alive,FALSE)
+#' }
 #' @export
 plot_infection_history_chains_time <- function(inf_chain, burnin = 0, years = NULL,
                                                n_alive = NULL, pad_chain = TRUE) {
@@ -975,8 +981,10 @@ plot_infection_history_chains_time <- function(inf_chain, burnin = 0, years = NU
 #' @seealso \code{\link{plot_infection_history_chains_indiv}}
 #' @family infection_history_plots
 #' @examples
+#' \dontrun{
 #' data(example_inf_chain)
 #' plot_infection_history_chains_indiv(example_inf_chain, 0, 1:10, FALSE)
+#' }
 #' @export
 plot_infection_history_chains_indiv <- function(inf_chain, burnin = 0, indivs = NULL, pad_chain = TRUE) {
   inf_chain <- inf_chain[inf_chain$sampno > burnin, ]
@@ -1012,8 +1020,10 @@ plot_infection_history_chains_indiv <- function(inf_chain, burnin = 0, indivs = 
 #' @return two ggplot2 objects
 #' @family infection_history_plots
 #' @examples
+#' \dontrun{
 #' data(example_inf_chain)
 #' plot_total_number_infections(example_inf_chain)
+#' }
 #' @export
 plot_total_number_infections <- function(inf_chain, pad_chain = TRUE) {
   if (is.null(inf_chain$chain_no)) {
@@ -1038,8 +1048,10 @@ plot_total_number_infections <- function(inf_chain, pad_chain = TRUE) {
 #' @return a ggplot object
 #' @family infection_history_plots
 #' @examples
+#' \dontrun{
 #' data(example_inf_chain)
 #' plot_number_infections(example_inf_chain)
+#' }
 #' @export
 plot_number_infections <- function(inf_chain, pad_chain = TRUE) {
   if (is.null(inf_chain$chain_no)) {
@@ -1079,12 +1091,14 @@ plot_number_infections <- function(inf_chain, pad_chain = TRUE) {
 #' @param start_inf if not NULL, plots the infection history matrix used as the starting point in the MCMC chain
 #' @return a ggplot object
 #' @family infection_history_plots
-#' @example 
+#' @examples
+#' \dontrun{
 #' data(example_titre_dat)
 #' data(example_inf_hist)
 #' data(example_antigenic_map)
 #' strain_isolation_times <- example_antigenic_map$inf_years
 #' plot_data(example_titre_dat, example_inf_hist, strain_isolation_times, 5)
+#' }
 #' @export
 plot_data <- function(titre_dat, infection_histories, strain_isolation_times, n_samps, start_inf = NULL) {
   indivs <- unique(titre_dat$individual)
@@ -1133,7 +1147,8 @@ plot_data <- function(titre_dat, infection_histories, strain_isolation_times, n_
 #' @param return_data if TRUE, returns the infection history posterior densities used to generate the plots
 #' @return two ggplot objects
 #' @family infection_history_plots
-#' @examples 
+#' @examples
+#' \dontrun{
 #' data(example_inf_chain)
 #' data(example_antigenic_map)
 #' data(example_inf_hist)
@@ -1144,6 +1159,7 @@ plot_data <- function(titre_dat, infection_histories, strain_isolation_times, n_
 #' indivs <- 1:10
 #' generate_cumulative_inf_plots(example_inf_chain, 0, indivs, example_inf_hist, NULL, times,
 #'                               ages=ages, number_col=2,pad_chain=FALSE, return_data=TRUE)
+#' }
 #' @export
 generate_cumulative_inf_plots <- function(inf_chain, burnin = 0, indivs, real_inf_hist = NULL, start_inf = NULL,
                                           strain_isolation_times, nsamp = 100, ages = NULL, number_col = 1,
@@ -1338,8 +1354,10 @@ plot_2d_density <- function(chain, par1, par2) {
 #' @return a ggplot2 object
 #' @family theta_plots
 #' @examples
+#' \dontrun{
 #' data(example_titre_dat)
 #' plot_samples_distances(example_titre_dat)
+#' }
 #' @export
 plot_samples_distances <- function(titre_dat) {
   samples <- unique(titre_dat[, c("individual", "samples")])
