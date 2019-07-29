@@ -5,7 +5,7 @@
 \title{Brute force infection history proposal}
 \usage{
 infection_history_symmetric(new_inf_hist, sampled_indivs, age_mask,
-  strain_mask, move_sizes, n_infs, rand_ns)
+  strain_mask, move_sizes, n_infs, rand_ns, swap_propn = 0.5)
 }
 \arguments{
 \item{new_inf_hist}{a matrix of infection histories - rows for individuals, columns for infection epochs. Contents should be 1s and 0s}
@@ -21,6 +21,8 @@ infection_history_symmetric(new_inf_hist, sampled_indivs, age_mask,
 \item{n_infs}{number of infection epochs to flip}
 
 \item{rand_ns}{pre-computed random numbers (0-1) for each individual, deciding whether to do a flip or swap}
+
+\item{swap_propn}{threshold for deciding if swap or add/remove step}
 }
 \value{
 a matrix of infection histories matching the input new_inf_hist

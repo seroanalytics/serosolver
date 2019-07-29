@@ -22,7 +22,7 @@ library(data.table)
   buckets <- 1 ## Set to 1 for annual model. Greater than 1 gives subannual (eg. buckets = 2 is infection period every half year)
 
 # Read in parameter table to simulate from and change waning rate and alpha/beta if necessary
-  parTab <- read.csv("Q:/serosolver_testing/parTab_base.csv",stringsAsFactors=FALSE)
+  #parTab <- read.csv("Q:/serosolver_testing/parTab_base.csv",stringsAsFactors=FALSE)
   parTab[parTab$names %in% c("alpha","beta"),"values"] <- c(1,1)
   parTab[parTab$names == "wane","values"] <- 1
   parTab[parTab$names == "wane","values"] <- parTab[parTab$names == "wane","values"]/buckets

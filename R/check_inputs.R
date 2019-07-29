@@ -54,13 +54,14 @@ check_par_tab <- function(par_tab, mcmc = FALSE, version = NULL) {
 #' @return nothing at the moment
 #' @export
 check_data <- function(data) {
-    ## Check that all columns are present
-    col.names <- c("individual", "samples", "virus", "titre","group","run")
-    ## If there are any missing columns (NOTE: not checking if group or run are present)
-    if (all(col.names %in% colnames(data)) != TRUE) {
-        missing.cols <- col.names[which(col.names %in% colnames(data) == FALSE)] ## Find the missing column names
-        stop(paste(c("The following column(s) are missing from data: ", missing.cols), collapse = " "))
-    }
+  ## Check that all columns are present
+  col.names <- c("individual", "samples", "virus", "titre","group")
+  ## If there are any missing columns (NOTE: not checking if group or run are present)
+  if (all(col.names %in% colnames(data)) != TRUE) {
+    missing.cols <- col.names[which(col.names %in% colnames(data) == FALSE)] ## Find the missing column names
+    stop(paste(c("The following column(s) are missing from data: ", missing.cols), collapse = " "))
+  }
+
 }
 
 #' Checks the attack_rates supplied in simulate_data

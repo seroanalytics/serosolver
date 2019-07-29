@@ -24,7 +24,7 @@ run_MCMC_pt_fast(par_tab, titre_dat, antigenic_map, mcmc_pars = c(),
 
 \item{filename}{The full filepath at which the MCMC chain should be saved. "_chain.csv" will be appended to the end of this, so filename should have no file extensions}
 
-\item{CREATE_POSTERIOR_FUNC}{Pointer to posterior function used to calculate a likelihood. This will probably be \code{\link{create_posterior_func}}, but if might also be \code{\link{create_posterior_func_fast}}}
+\item{CREATE_POSTERIOR_FUNC}{Pointer to posterior function used to calculate a likelihood. This will probably be \code{\link{create_posterior_func}}}
 
 \item{seed}{random seed to set for the MCMC, if desired}
 

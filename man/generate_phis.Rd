@@ -23,5 +23,5 @@ generate_phis(foi, knots, theta, n_years, buckets, degree = 2)
 a vector of FOIs for each time point
 }
 \description{
-Calculates the seasonal spline for \code{\link{calc_phi_probs_monthly}}
+Calculates the seasonal spline for \code{\link{calc_phi_probs_spline}}
 }

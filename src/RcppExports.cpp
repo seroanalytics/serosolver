@@ -56,6 +56,19 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// sum_infections_by_group
+IntegerMatrix sum_infections_by_group(IntegerMatrix inf_hist, IntegerVector group_ids_vec, int n_groups);
+RcppExport SEXP _serosolver_sum_infections_by_group(SEXP inf_histSEXP, SEXP group_ids_vecSEXP, SEXP n_groupsSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< IntegerMatrix >::type inf_hist(inf_histSEXP);
+    Rcpp::traits::input_parameter< IntegerVector >::type group_ids_vec(group_ids_vecSEXP);
+    Rcpp::traits::input_parameter< int >::type n_groups(n_groupsSEXP);
+    rcpp_result_gen = Rcpp::wrap(sum_infections_by_group(inf_hist, group_ids_vec, n_groups));
+    return rcpp_result_gen;
+END_RCPP
+}
 // add_measurement_shifts
 void add_measurement_shifts(NumericVector& predicted_titres, const NumericVector& to_add, const int& start_index_in_data, const int& end_index_in_data);
 RcppExport SEXP _serosolver_add_measurement_shifts(SEXP predicted_titresSEXP, SEXP to_addSEXP, SEXP start_index_in_dataSEXP, SEXP end_index_in_dataSEXP) {
@@ -69,9 +82,53 @@ BEGIN_RCPP
     return R_NilValue;
 END_RCPP
 }
+// titre_protection_cpp
+double titre_protection_cpp(double titre, double alpha1, double beta1);
+RcppExport SEXP _serosolver_titre_protection_cpp(SEXP titreSEXP, SEXP alpha1SEXP, SEXP beta1SEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< double >::type titre(titreSEXP);
+    Rcpp::traits::input_parameter< double >::type alpha1(alpha1SEXP);
+    Rcpp::traits::input_parameter< double >::type beta1(beta1SEXP);
+    rcpp_result_gen = Rcpp::wrap(titre_protection_cpp(titre, alpha1, beta1));
+    return rcpp_result_gen;
+END_RCPP
+}
+// p_infection_cpp
+double p_infection_cpp(double phi, double titre, double alpha1, double beta1);
+RcppExport SEXP _serosolver_p_infection_cpp(SEXP phiSEXP, SEXP titreSEXP, SEXP alpha1SEXP, SEXP beta1SEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< double >::type phi(phiSEXP);
+    Rcpp::traits::input_parameter< double >::type titre(titreSEXP);
+    Rcpp::traits::input_parameter< double >::type alpha1(alpha1SEXP);
+    Rcpp::traits::input_parameter< double >::type beta1(beta1SEXP);
+    rcpp_result_gen = Rcpp::wrap(p_infection_cpp(phi, titre, alpha1, beta1));
+    return rcpp_result_gen;
+END_RCPP
+}
+// calc_phi_probs_indiv_titre_cpp
+NumericVector calc_phi_probs_indiv_titre_cpp(NumericVector phis, NumericVector titres, IntegerMatrix infection_history, IntegerVector age_mask, IntegerVector strain_mask, double alpha1, double beta1);
+RcppExport SEXP _serosolver_calc_phi_probs_indiv_titre_cpp(SEXP phisSEXP, SEXP titresSEXP, SEXP infection_historySEXP, SEXP age_maskSEXP, SEXP strain_maskSEXP, SEXP alpha1SEXP, SEXP beta1SEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< NumericVector >::type phis(phisSEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type titres(titresSEXP);
+    Rcpp::traits::input_parameter< IntegerMatrix >::type infection_history(infection_historySEXP);
+    Rcpp::traits::input_parameter< IntegerVector >::type age_mask(age_maskSEXP);
+    Rcpp::traits::input_parameter< IntegerVector >::type strain_mask(strain_maskSEXP);
+    Rcpp::traits::input_parameter< double >::type alpha1(alpha1SEXP);
+    Rcpp::traits::input_parameter< double >::type beta1(beta1SEXP);
+    rcpp_result_gen = Rcpp::wrap(calc_phi_probs_indiv_titre_cpp(phis, titres, infection_history, age_mask, strain_mask, alpha1, beta1));
+    return rcpp_result_gen;
+END_RCPP
+}
 // titre_data_fast
-NumericVector titre_data_fast(const NumericVector& theta, const IntegerMatrix& infection_history_mat, const NumericVector& circulation_times, const IntegerVector& circulation_times_indices, const NumericVector& sample_times, const IntegerVector& rows_per_indiv_in_samples, const IntegerVector& cum_nrows_per_individual_in_data, const IntegerVector& nrows_per_blood_sample, const IntegerVector& measurement_strain_indices, const NumericVector& antigenic_map_long, const NumericVector& antigenic_map_short, const NumericVector& mus, const IntegerVector& boosting_vec_indices);
-RcppExport SEXP _serosolver_titre_data_fast(SEXP thetaSEXP, SEXP infection_history_matSEXP, SEXP circulation_timesSEXP, SEXP circulation_times_indicesSEXP, SEXP sample_timesSEXP, SEXP rows_per_indiv_in_samplesSEXP, SEXP cum_nrows_per_individual_in_dataSEXP, SEXP nrows_per_blood_sampleSEXP, SEXP measurement_strain_indicesSEXP, SEXP antigenic_map_longSEXP, SEXP antigenic_map_shortSEXP, SEXP musSEXP, SEXP boosting_vec_indicesSEXP) {
+NumericVector titre_data_fast(const NumericVector& theta, const IntegerMatrix& infection_history_mat, const NumericVector& circulation_times, const IntegerVector& circulation_times_indices, const NumericVector& sample_times, const IntegerVector& rows_per_indiv_in_samples, const IntegerVector& cum_nrows_per_individual_in_data, const IntegerVector& nrows_per_blood_sample, const IntegerVector& measurement_strain_indices, const NumericVector& antigenic_map_long, const NumericVector& antigenic_map_short, const NumericVector& antigenic_distances, const NumericVector& mus, const IntegerVector& boosting_vec_indices, bool boost_before_infection);
+RcppExport SEXP _serosolver_titre_data_fast(SEXP thetaSEXP, SEXP infection_history_matSEXP, SEXP circulation_timesSEXP, SEXP circulation_times_indicesSEXP, SEXP sample_timesSEXP, SEXP rows_per_indiv_in_samplesSEXP, SEXP cum_nrows_per_individual_in_dataSEXP, SEXP nrows_per_blood_sampleSEXP, SEXP measurement_strain_indicesSEXP, SEXP antigenic_map_longSEXP, SEXP antigenic_map_shortSEXP, SEXP antigenic_distancesSEXP, SEXP musSEXP, SEXP boosting_vec_indicesSEXP, SEXP boost_before_infectionSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::traits::input_parameter< const NumericVector& >::type theta(thetaSEXP);
@@ -85,99 +142,11 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< const IntegerVector& >::type measurement_strain_indices(measurement_strain_indicesSEXP);
     Rcpp::traits::input_parameter< const NumericVector& >::type antigenic_map_long(antigenic_map_longSEXP);
     Rcpp::traits::input_parameter< const NumericVector& >::type antigenic_map_short(antigenic_map_shortSEXP);
+    Rcpp::traits::input_parameter< const NumericVector& >::type antigenic_distances(antigenic_distancesSEXP);
     Rcpp::traits::input_parameter< const NumericVector& >::type mus(musSEXP);
     Rcpp::traits::input_parameter< const IntegerVector& >::type boosting_vec_indices(boosting_vec_indicesSEXP);
-    rcpp_result_gen = Rcpp::wrap(titre_data_fast(theta, infection_history_mat, circulation_times, circulation_times_indices, sample_times, rows_per_indiv_in_samples, cum_nrows_per_individual_in_data, nrows_per_blood_sample, measurement_strain_indices, antigenic_map_long, antigenic_map_short, mus, boosting_vec_indices));
-    return rcpp_result_gen;
-END_RCPP
-}
-// infection_model_indiv
-NumericVector infection_model_indiv(const NumericVector& theta, const IntegerVector& infection_history, const NumericVector& infection_times, const IntegerVector& infection_times_indices, const double& samplingTime, const IntegerVector& measurement_strain_indices, const NumericVector& antigenic_map_long, const NumericVector& antigenic_map_short, const int& number_strains, const double& DOB, const Nullable<List>& additional_arguments);
-RcppExport SEXP _serosolver_infection_model_indiv(SEXP thetaSEXP, SEXP infection_historySEXP, SEXP infection_timesSEXP, SEXP infection_times_indicesSEXP, SEXP samplingTimeSEXP, SEXP measurement_strain_indicesSEXP, SEXP antigenic_map_longSEXP, SEXP antigenic_map_shortSEXP, SEXP number_strainsSEXP, SEXP DOBSEXP, SEXP additional_argumentsSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< const NumericVector& >::type theta(thetaSEXP);
-    Rcpp::traits::input_parameter< const IntegerVector& >::type infection_history(infection_historySEXP);
-    Rcpp::traits::input_parameter< const NumericVector& >::type infection_times(infection_timesSEXP);
-    Rcpp::traits::input_parameter< const IntegerVector& >::type infection_times_indices(infection_times_indicesSEXP);
-    Rcpp::traits::input_parameter< const double& >::type samplingTime(samplingTimeSEXP);
-    Rcpp::traits::input_parameter< const IntegerVector& >::type measurement_strain_indices(measurement_strain_indicesSEXP);
-    Rcpp::traits::input_parameter< const NumericVector& >::type antigenic_map_long(antigenic_map_longSEXP);
-    Rcpp::traits::input_parameter< const NumericVector& >::type antigenic_map_short(antigenic_map_shortSEXP);
-    Rcpp::traits::input_parameter< const int& >::type number_strains(number_strainsSEXP);
-    Rcpp::traits::input_parameter< const double& >::type DOB(DOBSEXP);
-    Rcpp::traits::input_parameter< const Nullable<List>& >::type additional_arguments(additional_argumentsSEXP);
-    rcpp_result_gen = Rcpp::wrap(infection_model_indiv(theta, infection_history, infection_times, infection_times_indices, samplingTime, measurement_strain_indices, antigenic_map_long, antigenic_map_short, number_strains, DOB, additional_arguments));
-    return rcpp_result_gen;
-END_RCPP
-}
-// titre_data_individual
-NumericVector titre_data_individual(const NumericVector& theta, const IntegerVector& infection_history, const NumericVector& circulation_times, const IntegerVector& circulation_times_indices, const NumericVector& sample_times, const IntegerVector& data_indices, const IntegerVector& measurement_strain_indices, const NumericVector& antigenic_map_long, const NumericVector& antigenic_map_short, const int& number_strains, const double& DOB, const Nullable<List>& additional_arguments);
-RcppExport SEXP _serosolver_titre_data_individual(SEXP thetaSEXP, SEXP infection_historySEXP, SEXP circulation_timesSEXP, SEXP circulation_times_indicesSEXP, SEXP sample_timesSEXP, SEXP data_indicesSEXP, SEXP measurement_strain_indicesSEXP, SEXP antigenic_map_longSEXP, SEXP antigenic_map_shortSEXP, SEXP number_strainsSEXP, SEXP DOBSEXP, SEXP additional_argumentsSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< const NumericVector& >::type theta(thetaSEXP);
-    Rcpp::traits::input_parameter< const IntegerVector& >::type infection_history(infection_historySEXP);
-    Rcpp::traits::input_parameter< const NumericVector& >::type circulation_times(circulation_timesSEXP);
-    Rcpp::traits::input_parameter< const IntegerVector& >::type circulation_times_indices(circulation_times_indicesSEXP);
-    Rcpp::traits::input_parameter< const NumericVector& >::type sample_times(sample_timesSEXP);
-    Rcpp::traits::input_parameter< const IntegerVector& >::type data_indices(data_indicesSEXP);
-    Rcpp::traits::input_parameter< const IntegerVector& >::type measurement_strain_indices(measurement_strain_indicesSEXP);
-    Rcpp::traits::input_parameter< const NumericVector& >::type antigenic_map_long(antigenic_map_longSEXP);
-    Rcpp::traits::input_parameter< const NumericVector& >::type antigenic_map_short(antigenic_map_shortSEXP);
-    Rcpp::traits::input_parameter< const int& >::type number_strains(number_strainsSEXP);
-    Rcpp::traits::input_parameter< const double& >::type DOB(DOBSEXP);
-    Rcpp::traits::input_parameter< const Nullable<List>& >::type additional_arguments(additional_argumentsSEXP);
-    rcpp_result_gen = Rcpp::wrap(titre_data_individual(theta, infection_history, circulation_times, circulation_times_indices, sample_times, data_indices, measurement_strain_indices, antigenic_map_long, antigenic_map_short, number_strains, DOB, additional_arguments));
-    return rcpp_result_gen;
-END_RCPP
-}
-// titre_data_group
-NumericVector titre_data_group(const NumericVector& theta, const IntegerMatrix& infection_history_mat, const NumericVector& circulation_times, const IntegerVector& circulation_times_indices, const NumericVector& sample_times, const IntegerVector& rows_per_indiv_in_samples, const IntegerVector& cum_nrows_per_individual_in_data, const IntegerVector& nrows_per_blood_sample, const IntegerVector& measurement_strain_indices, const NumericVector& antigenic_map_long, const NumericVector& antigenic_map_short, const NumericVector& DOBs, const Nullable<List>& additional_arguments);
-RcppExport SEXP _serosolver_titre_data_group(SEXP thetaSEXP, SEXP infection_history_matSEXP, SEXP circulation_timesSEXP, SEXP circulation_times_indicesSEXP, SEXP sample_timesSEXP, SEXP rows_per_indiv_in_samplesSEXP, SEXP cum_nrows_per_individual_in_dataSEXP, SEXP nrows_per_blood_sampleSEXP, SEXP measurement_strain_indicesSEXP, SEXP antigenic_map_longSEXP, SEXP antigenic_map_shortSEXP, SEXP DOBsSEXP, SEXP additional_argumentsSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< const NumericVector& >::type theta(thetaSEXP);
-    Rcpp::traits::input_parameter< const IntegerMatrix& >::type infection_history_mat(infection_history_matSEXP);
-    Rcpp::traits::input_parameter< const NumericVector& >::type circulation_times(circulation_timesSEXP);
-    Rcpp::traits::input_parameter< const IntegerVector& >::type circulation_times_indices(circulation_times_indicesSEXP);
-    Rcpp::traits::input_parameter< const NumericVector& >::type sample_times(sample_timesSEXP);
-    Rcpp::traits::input_parameter< const IntegerVector& >::type rows_per_indiv_in_samples(rows_per_indiv_in_samplesSEXP);
-    Rcpp::traits::input_parameter< const IntegerVector& >::type cum_nrows_per_individual_in_data(cum_nrows_per_individual_in_dataSEXP);
-    Rcpp::traits::input_parameter< const IntegerVector& >::type nrows_per_blood_sample(nrows_per_blood_sampleSEXP);
-    Rcpp::traits::input_parameter< const IntegerVector& >::type measurement_strain_indices(measurement_strain_indicesSEXP);
-    Rcpp::traits::input_parameter< const NumericVector& >::type antigenic_map_long(antigenic_map_longSEXP);
-    Rcpp::traits::input_parameter< const NumericVector& >::type antigenic_map_short(antigenic_map_shortSEXP);
-    Rcpp::traits::input_parameter< const NumericVector& >::type DOBs(DOBsSEXP);
-    Rcpp::traits::input_parameter< const Nullable<List>& >::type additional_arguments(additional_argumentsSEXP);
-    rcpp_result_gen = Rcpp::wrap(titre_data_group(theta, infection_history_mat, circulation_times, circulation_times_indices, sample_times, rows_per_indiv_in_samples, cum_nrows_per_individual_in_data, nrows_per_blood_sample, measurement_strain_indices, antigenic_map_long, antigenic_map_short, DOBs, additional_arguments));
-    return rcpp_result_gen;
-END_RCPP
-}
-// likelihood_data_individual
-double likelihood_data_individual(const NumericVector& theta, const IntegerVector& infection_history, const NumericVector& circulation_times, const IntegerVector& circulation_times_indices, const NumericVector& sample_times, const IntegerVector& data_indices, const IntegerVector& measurement_strain_indices, const NumericVector& antigenic_map_long, const NumericVector& antigenic_map_short, const int& number_strains, const NumericVector& data, const NumericVector& titre_shifts, const double& DOB, const Nullable<List>& additional_arguments);
-RcppExport SEXP _serosolver_likelihood_data_individual(SEXP thetaSEXP, SEXP infection_historySEXP, SEXP circulation_timesSEXP, SEXP circulation_times_indicesSEXP, SEXP sample_timesSEXP, SEXP data_indicesSEXP, SEXP measurement_strain_indicesSEXP, SEXP antigenic_map_longSEXP, SEXP antigenic_map_shortSEXP, SEXP number_strainsSEXP, SEXP dataSEXP, SEXP titre_shiftsSEXP, SEXP DOBSEXP, SEXP additional_argumentsSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< const NumericVector& >::type theta(thetaSEXP);
-    Rcpp::traits::input_parameter< const IntegerVector& >::type infection_history(infection_historySEXP);
-    Rcpp::traits::input_parameter< const NumericVector& >::type circulation_times(circulation_timesSEXP);
-    Rcpp::traits::input_parameter< const IntegerVector& >::type circulation_times_indices(circulation_times_indicesSEXP);
-    Rcpp::traits::input_parameter< const NumericVector& >::type sample_times(sample_timesSEXP);
-    Rcpp::traits::input_parameter< const IntegerVector& >::type data_indices(data_indicesSEXP);
-    Rcpp::traits::input_parameter< const IntegerVector& >::type measurement_strain_indices(measurement_strain_indicesSEXP);
-    Rcpp::traits::input_parameter< const NumericVector& >::type antigenic_map_long(antigenic_map_longSEXP);
-    Rcpp::traits::input_parameter< const NumericVector& >::type antigenic_map_short(antigenic_map_shortSEXP);
-    Rcpp::traits::input_parameter< const int& >::type number_strains(number_strainsSEXP);
-    Rcpp::traits::input_parameter< const NumericVector& >::type data(dataSEXP);
-    Rcpp::traits::input_parameter< const NumericVector& >::type titre_shifts(titre_shiftsSEXP);
-    Rcpp::traits::input_parameter< const double& >::type DOB(DOBSEXP);
-    Rcpp::traits::input_parameter< const Nullable<List>& >::type additional_arguments(additional_argumentsSEXP);
-    rcpp_result_gen = Rcpp::wrap(likelihood_data_individual(theta, infection_history, circulation_times, circulation_times_indices, sample_times, data_indices, measurement_strain_indices, antigenic_map_long, antigenic_map_short, number_strains, data, titre_shifts, DOB, additional_arguments));
+    Rcpp::traits::input_parameter< bool >::type boost_before_infection(boost_before_infectionSEXP);
+    rcpp_result_gen = Rcpp::wrap(titre_data_fast(theta, infection_history_mat, circulation_times, circulation_times_indices, sample_times, rows_per_indiv_in_samples, cum_nrows_per_individual_in_data, nrows_per_blood_sample, measurement_strain_indices, antigenic_map_long, antigenic_map_short, antigenic_distances, mus, boosting_vec_indices, boost_before_infection));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -209,17 +178,45 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
-// inf_mat_prior_total_cpp
-double inf_mat_prior_total_cpp(const IntegerMatrix& infection_history, const int& n_alive, double alpha, double beta);
-RcppExport SEXP _serosolver_inf_mat_prior_total_cpp(SEXP infection_historySEXP, SEXP n_aliveSEXP, SEXP alphaSEXP, SEXP betaSEXP) {
+// inf_mat_prior_group_cpp
+double inf_mat_prior_group_cpp(const IntegerMatrix& n_infections, const IntegerMatrix& n_alive, double alpha, double beta);
+RcppExport SEXP _serosolver_inf_mat_prior_group_cpp(SEXP n_infectionsSEXP, SEXP n_aliveSEXP, SEXP alphaSEXP, SEXP betaSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< const IntegerMatrix& >::type infection_history(infection_historySEXP);
-    Rcpp::traits::input_parameter< const int& >::type n_alive(n_aliveSEXP);
+    Rcpp::traits::input_parameter< const IntegerMatrix& >::type n_infections(n_infectionsSEXP);
+    Rcpp::traits::input_parameter< const IntegerMatrix& >::type n_alive(n_aliveSEXP);
     Rcpp::traits::input_parameter< double >::type alpha(alphaSEXP);
     Rcpp::traits::input_parameter< double >::type beta(betaSEXP);
-    rcpp_result_gen = Rcpp::wrap(inf_mat_prior_total_cpp(infection_history, n_alive, alpha, beta));
+    rcpp_result_gen = Rcpp::wrap(inf_mat_prior_group_cpp(n_infections, n_alive, alpha, beta));
+    return rcpp_result_gen;
+END_RCPP
+}
+// inf_mat_prior_group_cpp_vector
+double inf_mat_prior_group_cpp_vector(const IntegerMatrix& n_infections, const IntegerMatrix& n_alive, const NumericVector& alphas, const NumericVector& betas);
+RcppExport SEXP _serosolver_inf_mat_prior_group_cpp_vector(SEXP n_infectionsSEXP, SEXP n_aliveSEXP, SEXP alphasSEXP, SEXP betasSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const IntegerMatrix& >::type n_infections(n_infectionsSEXP);
+    Rcpp::traits::input_parameter< const IntegerMatrix& >::type n_alive(n_aliveSEXP);
+    Rcpp::traits::input_parameter< const NumericVector& >::type alphas(alphasSEXP);
+    Rcpp::traits::input_parameter< const NumericVector& >::type betas(betasSEXP);
+    rcpp_result_gen = Rcpp::wrap(inf_mat_prior_group_cpp_vector(n_infections, n_alive, alphas, betas));
+    return rcpp_result_gen;
+END_RCPP
+}
+// inf_mat_prior_total_group_cpp
+double inf_mat_prior_total_group_cpp(const IntegerVector& n_infections_group, const IntegerVector& n_alive_group, double alpha, double beta);
+RcppExport SEXP _serosolver_inf_mat_prior_total_group_cpp(SEXP n_infections_groupSEXP, SEXP n_alive_groupSEXP, SEXP alphaSEXP, SEXP betaSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const IntegerVector& >::type n_infections_group(n_infections_groupSEXP);
+    Rcpp::traits::input_parameter< const IntegerVector& >::type n_alive_group(n_alive_groupSEXP);
+    Rcpp::traits::input_parameter< double >::type alpha(alphaSEXP);
+    Rcpp::traits::input_parameter< double >::type beta(betaSEXP);
+    rcpp_result_gen = Rcpp::wrap(inf_mat_prior_total_group_cpp(n_infections_group, n_alive_group, alpha, beta));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -249,86 +246,9 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
-// infection_history_proposal_gibbs_fast
-List infection_history_proposal_gibbs_fast(const NumericVector& theta, const IntegerMatrix& infection_history_mat, const NumericVector& old_probs_1, const IntegerVector& sampled_indivs, const IntegerVector& n_years_samp_vec, const IntegerVector& age_mask, const IntegerVector& strain_mask, const IntegerVector& n_alive, const double& swap_propn, const int& swap_distance, const double& alpha, const double& beta, const NumericVector& circulation_times, const IntegerVector& circulation_times_indices, const NumericVector& sample_times, const IntegerVector& rows_per_indiv_in_samples, const IntegerVector& cum_nrows_per_individual_in_data, const IntegerVector& cum_nrows_per_individual_in_repeat_data, const IntegerVector& nrows_per_blood_sample, const IntegerVector& measurement_strain_indices, const NumericVector& antigenic_map_long, const NumericVector& antigenic_map_short, const NumericVector& data, const NumericVector& repeat_data, const IntegerVector& repeat_indices, const NumericVector& titre_shifts, const NumericVector& mus, const IntegerVector& boosting_vec_indices, const double temp, bool solve_likelihood);
-RcppExport SEXP _serosolver_infection_history_proposal_gibbs_fast(SEXP thetaSEXP, SEXP infection_history_matSEXP, SEXP old_probs_1SEXP, SEXP sampled_indivsSEXP, SEXP n_years_samp_vecSEXP, SEXP age_maskSEXP, SEXP strain_maskSEXP, SEXP n_aliveSEXP, SEXP swap_propnSEXP, SEXP swap_distanceSEXP, SEXP alphaSEXP, SEXP betaSEXP, SEXP circulation_timesSEXP, SEXP circulation_times_indicesSEXP, SEXP sample_timesSEXP, SEXP rows_per_indiv_in_samplesSEXP, SEXP cum_nrows_per_individual_in_dataSEXP, SEXP cum_nrows_per_individual_in_repeat_dataSEXP, SEXP nrows_per_blood_sampleSEXP, SEXP measurement_strain_indicesSEXP, SEXP antigenic_map_longSEXP, SEXP antigenic_map_shortSEXP, SEXP dataSEXP, SEXP repeat_dataSEXP, SEXP repeat_indicesSEXP, SEXP titre_shiftsSEXP, SEXP musSEXP, SEXP boosting_vec_indicesSEXP, SEXP tempSEXP, SEXP solve_likelihoodSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< const NumericVector& >::type theta(thetaSEXP);
-    Rcpp::traits::input_parameter< const IntegerMatrix& >::type infection_history_mat(infection_history_matSEXP);
-    Rcpp::traits::input_parameter< const NumericVector& >::type old_probs_1(old_probs_1SEXP);
-    Rcpp::traits::input_parameter< const IntegerVector& >::type sampled_indivs(sampled_indivsSEXP);
-    Rcpp::traits::input_parameter< const IntegerVector& >::type n_years_samp_vec(n_years_samp_vecSEXP);
-    Rcpp::traits::input_parameter< const IntegerVector& >::type age_mask(age_maskSEXP);
-    Rcpp::traits::input_parameter< const IntegerVector& >::type strain_mask(strain_maskSEXP);
-    Rcpp::traits::input_parameter< const IntegerVector& >::type n_alive(n_aliveSEXP);
-    Rcpp::traits::input_parameter< const double& >::type swap_propn(swap_propnSEXP);
-    Rcpp::traits::input_parameter< const int& >::type swap_distance(swap_distanceSEXP);
-    Rcpp::traits::input_parameter< const double& >::type alpha(alphaSEXP);
-    Rcpp::traits::input_parameter< const double& >::type beta(betaSEXP);
-    Rcpp::traits::input_parameter< const NumericVector& >::type circulation_times(circulation_timesSEXP);
-    Rcpp::traits::input_parameter< const IntegerVector& >::type circulation_times_indices(circulation_times_indicesSEXP);
-    Rcpp::traits::input_parameter< const NumericVector& >::type sample_times(sample_timesSEXP);
-    Rcpp::traits::input_parameter< const IntegerVector& >::type rows_per_indiv_in_samples(rows_per_indiv_in_samplesSEXP);
-    Rcpp::traits::input_parameter< const IntegerVector& >::type cum_nrows_per_individual_in_data(cum_nrows_per_individual_in_dataSEXP);
-    Rcpp::traits::input_parameter< const IntegerVector& >::type cum_nrows_per_individual_in_repeat_data(cum_nrows_per_individual_in_repeat_dataSEXP);
-    Rcpp::traits::input_parameter< const IntegerVector& >::type nrows_per_blood_sample(nrows_per_blood_sampleSEXP);
-    Rcpp::traits::input_parameter< const IntegerVector& >::type measurement_strain_indices(measurement_strain_indicesSEXP);
-    Rcpp::traits::input_parameter< const NumericVector& >::type antigenic_map_long(antigenic_map_longSEXP);
-    Rcpp::traits::input_parameter< const NumericVector& >::type antigenic_map_short(antigenic_map_shortSEXP);
-    Rcpp::traits::input_parameter< const NumericVector& >::type data(dataSEXP);
-    Rcpp::traits::input_parameter< const NumericVector& >::type repeat_data(repeat_dataSEXP);
-    Rcpp::traits::input_parameter< const IntegerVector& >::type repeat_indices(repeat_indicesSEXP);
-    Rcpp::traits::input_parameter< const NumericVector& >::type titre_shifts(titre_shiftsSEXP);
-    Rcpp::traits::input_parameter< const NumericVector& >::type mus(musSEXP);
-    Rcpp::traits::input_parameter< const IntegerVector& >::type boosting_vec_indices(boosting_vec_indicesSEXP);
-    Rcpp::traits::input_parameter< const double >::type temp(tempSEXP);
-    Rcpp::traits::input_parameter< bool >::type solve_likelihood(solve_likelihoodSEXP);
-    rcpp_result_gen = Rcpp::wrap(infection_history_proposal_gibbs_fast(theta, infection_history_mat, old_probs_1, sampled_indivs, n_years_samp_vec, age_mask, strain_mask, n_alive, swap_propn, swap_distance, alpha, beta, circulation_times, circulation_times_indices, sample_times, rows_per_indiv_in_samples, cum_nrows_per_individual_in_data, cum_nrows_per_individual_in_repeat_data, nrows_per_blood_sample, measurement_strain_indices, antigenic_map_long, antigenic_map_short, data, repeat_data, repeat_indices, titre_shifts, mus, boosting_vec_indices, temp, solve_likelihood));
-    return rcpp_result_gen;
-END_RCPP
-}
-// infection_history_proposal_gibbs
-IntegerMatrix infection_history_proposal_gibbs(const NumericVector& pars, const IntegerMatrix& infection_history_mat, double indiv_samp_propn, const IntegerVector& n_years_samp_vec, const IntegerVector& age_mask, const IntegerVector& strain_mask, const IntegerVector& n_alive, double swap_propn, int swap_distance, double alpha, double beta, const NumericVector& circulation_times, const IntegerVector& circulation_times_indices, const NumericVector& sample_times, const IntegerVector& rows_per_indiv_in_samples, const IntegerVector& cum_nrows_per_individual_in_data, const IntegerVector& nrows_per_blood_sample, const IntegerVector& measurement_strain_indices, const NumericVector& antigenic_map_long, const NumericVector& antigenic_map_short, const NumericVector& data, const Nullable<NumericVector>& to_add, const Nullable<List>& additional_arguments, const NumericVector& DOBs, bool solve_likelihood, int total_alive, double temp);
-RcppExport SEXP _serosolver_infection_history_proposal_gibbs(SEXP parsSEXP, SEXP infection_history_matSEXP, SEXP indiv_samp_propnSEXP, SEXP n_years_samp_vecSEXP, SEXP age_maskSEXP, SEXP strain_maskSEXP, SEXP n_aliveSEXP, SEXP swap_propnSEXP, SEXP swap_distanceSEXP, SEXP alphaSEXP, SEXP betaSEXP, SEXP circulation_timesSEXP, SEXP circulation_times_indicesSEXP, SEXP sample_timesSEXP, SEXP rows_per_indiv_in_samplesSEXP, SEXP cum_nrows_per_individual_in_dataSEXP, SEXP nrows_per_blood_sampleSEXP, SEXP measurement_strain_indicesSEXP, SEXP antigenic_map_longSEXP, SEXP antigenic_map_shortSEXP, SEXP dataSEXP, SEXP to_addSEXP, SEXP additional_argumentsSEXP, SEXP DOBsSEXP, SEXP solve_likelihoodSEXP, SEXP total_aliveSEXP, SEXP tempSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< const NumericVector& >::type pars(parsSEXP);
-    Rcpp::traits::input_parameter< const IntegerMatrix& >::type infection_history_mat(infection_history_matSEXP);
-    Rcpp::traits::input_parameter< double >::type indiv_samp_propn(indiv_samp_propnSEXP);
-    Rcpp::traits::input_parameter< const IntegerVector& >::type n_years_samp_vec(n_years_samp_vecSEXP);
-    Rcpp::traits::input_parameter< const IntegerVector& >::type age_mask(age_maskSEXP);
-    Rcpp::traits::input_parameter< const IntegerVector& >::type strain_mask(strain_maskSEXP);
-    Rcpp::traits::input_parameter< const IntegerVector& >::type n_alive(n_aliveSEXP);
-    Rcpp::traits::input_parameter< double >::type swap_propn(swap_propnSEXP);
-    Rcpp::traits::input_parameter< int >::type swap_distance(swap_distanceSEXP);
-    Rcpp::traits::input_parameter< double >::type alpha(alphaSEXP);
-    Rcpp::traits::input_parameter< double >::type beta(betaSEXP);
-    Rcpp::traits::input_parameter< const NumericVector& >::type circulation_times(circulation_timesSEXP);
-    Rcpp::traits::input_parameter< const IntegerVector& >::type circulation_times_indices(circulation_times_indicesSEXP);
-    Rcpp::traits::input_parameter< const NumericVector& >::type sample_times(sample_timesSEXP);
-    Rcpp::traits::input_parameter< const IntegerVector& >::type rows_per_indiv_in_samples(rows_per_indiv_in_samplesSEXP);
-    Rcpp::traits::input_parameter< const IntegerVector& >::type cum_nrows_per_individual_in_data(cum_nrows_per_individual_in_dataSEXP);
-    Rcpp::traits::input_parameter< const IntegerVector& >::type nrows_per_blood_sample(nrows_per_blood_sampleSEXP);
-    Rcpp::traits::input_parameter< const IntegerVector& >::type measurement_strain_indices(measurement_strain_indicesSEXP);
-    Rcpp::traits::input_parameter< const NumericVector& >::type antigenic_map_long(antigenic_map_longSEXP);
-    Rcpp::traits::input_parameter< const NumericVector& >::type antigenic_map_short(antigenic_map_shortSEXP);
-    Rcpp::traits::input_parameter< const NumericVector& >::type data(dataSEXP);
-    Rcpp::traits::input_parameter< const Nullable<NumericVector>& >::type to_add(to_addSEXP);
-    Rcpp::traits::input_parameter< const Nullable<List>& >::type additional_arguments(additional_argumentsSEXP);
-    Rcpp::traits::input_parameter< const NumericVector& >::type DOBs(DOBsSEXP);
-    Rcpp::traits::input_parameter< bool >::type solve_likelihood(solve_likelihoodSEXP);
-    Rcpp::traits::input_parameter< int >::type total_alive(total_aliveSEXP);
-    Rcpp::traits::input_parameter< double >::type temp(tempSEXP);
-    rcpp_result_gen = Rcpp::wrap(infection_history_proposal_gibbs(pars, infection_history_mat, indiv_samp_propn, n_years_samp_vec, age_mask, strain_mask, n_alive, swap_propn, swap_distance, alpha, beta, circulation_times, circulation_times_indices, sample_times, rows_per_indiv_in_samples, cum_nrows_per_individual_in_data, nrows_per_blood_sample, measurement_strain_indices, antigenic_map_long, antigenic_map_short, data, to_add, additional_arguments, DOBs, solve_likelihood, total_alive, temp));
-    return rcpp_result_gen;
-END_RCPP
-}
-// inf_hist_prop_cpp
-arma::mat inf_hist_prop_cpp(arma::mat infection_history_mat, const IntegerVector& sampled_indivs, const IntegerVector& age_mask, const IntegerVector& strain_mask, const IntegerVector& move_sizes, const IntegerVector& n_infs, double alpha, double beta, const NumericVector& rand_ns);
-RcppExport SEXP _serosolver_inf_hist_prop_cpp(SEXP infection_history_matSEXP, SEXP sampled_indivsSEXP, SEXP age_maskSEXP, SEXP strain_maskSEXP, SEXP move_sizesSEXP, SEXP n_infsSEXP, SEXP alphaSEXP, SEXP betaSEXP, SEXP rand_nsSEXP) {
+// inf_hist_prop_prior_v3
+arma::mat inf_hist_prop_prior_v3(arma::mat infection_history_mat, const IntegerVector& sampled_indivs, const IntegerVector& age_mask, const IntegerVector& strain_mask, const IntegerVector& move_sizes, const IntegerVector& n_infs, double alpha, double beta, const NumericVector& rand_ns, const double& swap_propn);
+RcppExport SEXP _serosolver_inf_hist_prop_prior_v3(SEXP infection_history_matSEXP, SEXP sampled_indivsSEXP, SEXP age_maskSEXP, SEXP strain_maskSEXP, SEXP move_sizesSEXP, SEXP n_infsSEXP, SEXP alphaSEXP, SEXP betaSEXP, SEXP rand_nsSEXP, SEXP swap_propnSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -341,7 +261,185 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< double >::type alpha(alphaSEXP);
     Rcpp::traits::input_parameter< double >::type beta(betaSEXP);
     Rcpp::traits::input_parameter< const NumericVector& >::type rand_ns(rand_nsSEXP);
-    rcpp_result_gen = Rcpp::wrap(inf_hist_prop_cpp(infection_history_mat, sampled_indivs, age_mask, strain_mask, move_sizes, n_infs, alpha, beta, rand_ns));
+    Rcpp::traits::input_parameter< const double& >::type swap_propn(swap_propnSEXP);
+    rcpp_result_gen = Rcpp::wrap(inf_hist_prop_prior_v3(infection_history_mat, sampled_indivs, age_mask, strain_mask, move_sizes, n_infs, alpha, beta, rand_ns, swap_propn));
+    return rcpp_result_gen;
+END_RCPP
+}
+// inf_hist_prop_prior_v2_and_v4
+List inf_hist_prop_prior_v2_and_v4(const NumericVector& theta, const IntegerMatrix& infection_history_mat, const NumericVector& old_probs_1, const IntegerVector& sampled_indivs, const IntegerVector& n_years_samp_vec, const IntegerVector& age_mask, const IntegerVector& strain_mask, const IntegerMatrix& n_alive, IntegerMatrix& n_infections, IntegerVector& n_infected_group, const double& swap_propn, const int& swap_distance, const double& alpha, const double& beta, const NumericVector& circulation_times, const IntegerVector& circulation_times_indices, const NumericVector& sample_times, const IntegerVector& rows_per_indiv_in_samples, const IntegerVector& cum_nrows_per_individual_in_data, const IntegerVector& cum_nrows_per_individual_in_repeat_data, const IntegerVector& nrows_per_blood_sample, const IntegerVector& group_id_vec, const IntegerVector& measurement_strain_indices, const NumericVector& antigenic_map_long, const NumericVector& antigenic_map_short, const NumericVector& antigenic_distances, const NumericVector& data, const NumericVector& repeat_data, const IntegerVector& repeat_indices, const NumericVector& titre_shifts, IntegerVector proposal_iter, IntegerVector accepted_iter, IntegerVector proposal_swap, IntegerVector accepted_swap, const NumericVector& mus, const IntegerVector& boosting_vec_indices, const IntegerVector& total_alive, const double temp, bool solve_likelihood);
+RcppExport SEXP _serosolver_inf_hist_prop_prior_v2_and_v4(SEXP thetaSEXP, SEXP infection_history_matSEXP, SEXP old_probs_1SEXP, SEXP sampled_indivsSEXP, SEXP n_years_samp_vecSEXP, SEXP age_maskSEXP, SEXP strain_maskSEXP, SEXP n_aliveSEXP, SEXP n_infectionsSEXP, SEXP n_infected_groupSEXP, SEXP swap_propnSEXP, SEXP swap_distanceSEXP, SEXP alphaSEXP, SEXP betaSEXP, SEXP circulation_timesSEXP, SEXP circulation_times_indicesSEXP, SEXP sample_timesSEXP, SEXP rows_per_indiv_in_samplesSEXP, SEXP cum_nrows_per_individual_in_dataSEXP, SEXP cum_nrows_per_individual_in_repeat_dataSEXP, SEXP nrows_per_blood_sampleSEXP, SEXP group_id_vecSEXP, SEXP measurement_strain_indicesSEXP, SEXP antigenic_map_longSEXP, SEXP antigenic_map_shortSEXP, SEXP antigenic_distancesSEXP, SEXP dataSEXP, SEXP repeat_dataSEXP, SEXP repeat_indicesSEXP, SEXP titre_shiftsSEXP, SEXP proposal_iterSEXP, SEXP accepted_iterSEXP, SEXP proposal_swapSEXP, SEXP accepted_swapSEXP, SEXP musSEXP, SEXP boosting_vec_indicesSEXP, SEXP total_aliveSEXP, SEXP tempSEXP, SEXP solve_likelihoodSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const NumericVector& >::type theta(thetaSEXP);
+    Rcpp::traits::input_parameter< const IntegerMatrix& >::type infection_history_mat(infection_history_matSEXP);
+    Rcpp::traits::input_parameter< const NumericVector& >::type old_probs_1(old_probs_1SEXP);
+    Rcpp::traits::input_parameter< const IntegerVector& >::type sampled_indivs(sampled_indivsSEXP);
+    Rcpp::traits::input_parameter< const IntegerVector& >::type n_years_samp_vec(n_years_samp_vecSEXP);
+    Rcpp::traits::input_parameter< const IntegerVector& >::type age_mask(age_maskSEXP);
+    Rcpp::traits::input_parameter< const IntegerVector& >::type strain_mask(strain_maskSEXP);
+    Rcpp::traits::input_parameter< const IntegerMatrix& >::type n_alive(n_aliveSEXP);
+    Rcpp::traits::input_parameter< IntegerMatrix& >::type n_infections(n_infectionsSEXP);
+    Rcpp::traits::input_parameter< IntegerVector& >::type n_infected_group(n_infected_groupSEXP);
+    Rcpp::traits::input_parameter< const double& >::type swap_propn(swap_propnSEXP);
+    Rcpp::traits::input_parameter< const int& >::type swap_distance(swap_distanceSEXP);
+    Rcpp::traits::input_parameter< const double& >::type alpha(alphaSEXP);
+    Rcpp::traits::input_parameter< const double& >::type beta(betaSEXP);
+    Rcpp::traits::input_parameter< const NumericVector& >::type circulation_times(circulation_timesSEXP);
+    Rcpp::traits::input_parameter< const IntegerVector& >::type circulation_times_indices(circulation_times_indicesSEXP);
+    Rcpp::traits::input_parameter< const NumericVector& >::type sample_times(sample_timesSEXP);
+    Rcpp::traits::input_parameter< const IntegerVector& >::type rows_per_indiv_in_samples(rows_per_indiv_in_samplesSEXP);
+    Rcpp::traits::input_parameter< const IntegerVector& >::type cum_nrows_per_individual_in_data(cum_nrows_per_individual_in_dataSEXP);
+    Rcpp::traits::input_parameter< const IntegerVector& >::type cum_nrows_per_individual_in_repeat_data(cum_nrows_per_individual_in_repeat_dataSEXP);
+    Rcpp::traits::input_parameter< const IntegerVector& >::type nrows_per_blood_sample(nrows_per_blood_sampleSEXP);
+    Rcpp::traits::input_parameter< const IntegerVector& >::type group_id_vec(group_id_vecSEXP);
+    Rcpp::traits::input_parameter< const IntegerVector& >::type measurement_strain_indices(measurement_strain_indicesSEXP);
+    Rcpp::traits::input_parameter< const NumericVector& >::type antigenic_map_long(antigenic_map_longSEXP);
+    Rcpp::traits::input_parameter< const NumericVector& >::type antigenic_map_short(antigenic_map_shortSEXP);
+    Rcpp::traits::input_parameter< const NumericVector& >::type antigenic_distances(antigenic_distancesSEXP);
+    Rcpp::traits::input_parameter< const NumericVector& >::type data(dataSEXP);
+    Rcpp::traits::input_parameter< const NumericVector& >::type repeat_data(repeat_dataSEXP);
+    Rcpp::traits::input_parameter< const IntegerVector& >::type repeat_indices(repeat_indicesSEXP);
+    Rcpp::traits::input_parameter< const NumericVector& >::type titre_shifts(titre_shiftsSEXP);
+    Rcpp::traits::input_parameter< IntegerVector >::type proposal_iter(proposal_iterSEXP);
+    Rcpp::traits::input_parameter< IntegerVector >::type accepted_iter(accepted_iterSEXP);
+    Rcpp::traits::input_parameter< IntegerVector >::type proposal_swap(proposal_swapSEXP);
+    Rcpp::traits::input_parameter< IntegerVector >::type accepted_swap(accepted_swapSEXP);
+    Rcpp::traits::input_parameter< const NumericVector& >::type mus(musSEXP);
+    Rcpp::traits::input_parameter< const IntegerVector& >::type boosting_vec_indices(boosting_vec_indicesSEXP);
+    Rcpp::traits::input_parameter< const IntegerVector& >::type total_alive(total_aliveSEXP);
+    Rcpp::traits::input_parameter< const double >::type temp(tempSEXP);
+    Rcpp::traits::input_parameter< bool >::type solve_likelihood(solve_likelihoodSEXP);
+    rcpp_result_gen = Rcpp::wrap(inf_hist_prop_prior_v2_and_v4(theta, infection_history_mat, old_probs_1, sampled_indivs, n_years_samp_vec, age_mask, strain_mask, n_alive, n_infections, n_infected_group, swap_propn, swap_distance, alpha, beta, circulation_times, circulation_times_indices, sample_times, rows_per_indiv_in_samples, cum_nrows_per_individual_in_data, cum_nrows_per_individual_in_repeat_data, nrows_per_blood_sample, group_id_vec, measurement_strain_indices, antigenic_map_long, antigenic_map_short, antigenic_distances, data, repeat_data, repeat_indices, titre_shifts, proposal_iter, accepted_iter, proposal_swap, accepted_swap, mus, boosting_vec_indices, total_alive, temp, solve_likelihood));
+    return rcpp_result_gen;
+END_RCPP
+}
+// titre_data_fast_individual_base_indiv
+double titre_data_fast_individual_base_indiv(const double& mu, const double& mu_short, const double& wane, const double& tau, const NumericVector& infection_times, const IntegerVector& infection_strain_indices_tmp, const int& measurement_strain_index, const double& sampling_time, const int& number_strains, const NumericVector& antigenic_map_short, const NumericVector& antigenic_map_long, bool boost_before_infection);
+RcppExport SEXP _serosolver_titre_data_fast_individual_base_indiv(SEXP muSEXP, SEXP mu_shortSEXP, SEXP waneSEXP, SEXP tauSEXP, SEXP infection_timesSEXP, SEXP infection_strain_indices_tmpSEXP, SEXP measurement_strain_indexSEXP, SEXP sampling_timeSEXP, SEXP number_strainsSEXP, SEXP antigenic_map_shortSEXP, SEXP antigenic_map_longSEXP, SEXP boost_before_infectionSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const double& >::type mu(muSEXP);
+    Rcpp::traits::input_parameter< const double& >::type mu_short(mu_shortSEXP);
+    Rcpp::traits::input_parameter< const double& >::type wane(waneSEXP);
+    Rcpp::traits::input_parameter< const double& >::type tau(tauSEXP);
+    Rcpp::traits::input_parameter< const NumericVector& >::type infection_times(infection_timesSEXP);
+    Rcpp::traits::input_parameter< const IntegerVector& >::type infection_strain_indices_tmp(infection_strain_indices_tmpSEXP);
+    Rcpp::traits::input_parameter< const int& >::type measurement_strain_index(measurement_strain_indexSEXP);
+    Rcpp::traits::input_parameter< const double& >::type sampling_time(sampling_timeSEXP);
+    Rcpp::traits::input_parameter< const int& >::type number_strains(number_strainsSEXP);
+    Rcpp::traits::input_parameter< const NumericVector& >::type antigenic_map_short(antigenic_map_shortSEXP);
+    Rcpp::traits::input_parameter< const NumericVector& >::type antigenic_map_long(antigenic_map_longSEXP);
+    Rcpp::traits::input_parameter< bool >::type boost_before_infection(boost_before_infectionSEXP);
+    rcpp_result_gen = Rcpp::wrap(titre_data_fast_individual_base_indiv(mu, mu_short, wane, tau, infection_times, infection_strain_indices_tmp, measurement_strain_index, sampling_time, number_strains, antigenic_map_short, antigenic_map_long, boost_before_infection));
+    return rcpp_result_gen;
+END_RCPP
+}
+// prob_x_given_z_titre_protection
+double prob_x_given_z_titre_protection(const double& titre_p, const double& alpha1, const double& beta1, const int& x, const int& z);
+RcppExport SEXP _serosolver_prob_x_given_z_titre_protection(SEXP titre_pSEXP, SEXP alpha1SEXP, SEXP beta1SEXP, SEXP xSEXP, SEXP zSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const double& >::type titre_p(titre_pSEXP);
+    Rcpp::traits::input_parameter< const double& >::type alpha1(alpha1SEXP);
+    Rcpp::traits::input_parameter< const double& >::type beta1(beta1SEXP);
+    Rcpp::traits::input_parameter< const int& >::type x(xSEXP);
+    Rcpp::traits::input_parameter< const int& >::type z(zSEXP);
+    rcpp_result_gen = Rcpp::wrap(prob_x_given_z_titre_protection(titre_p, alpha1, beta1, x, z));
+    return rcpp_result_gen;
+END_RCPP
+}
+// prob_x_given_z_titre
+double prob_x_given_z_titre(const double& titre, const double& alpha1, const double& beta1, const int& x, const int& z);
+RcppExport SEXP _serosolver_prob_x_given_z_titre(SEXP titreSEXP, SEXP alpha1SEXP, SEXP beta1SEXP, SEXP xSEXP, SEXP zSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const double& >::type titre(titreSEXP);
+    Rcpp::traits::input_parameter< const double& >::type alpha1(alpha1SEXP);
+    Rcpp::traits::input_parameter< const double& >::type beta1(beta1SEXP);
+    Rcpp::traits::input_parameter< const int& >::type x(xSEXP);
+    Rcpp::traits::input_parameter< const int& >::type z(zSEXP);
+    rcpp_result_gen = Rcpp::wrap(prob_x_given_z_titre(titre, alpha1, beta1, x, z));
+    return rcpp_result_gen;
+END_RCPP
+}
+// calc_titre_inf_likelihoods
+NumericMatrix calc_titre_inf_likelihoods(const NumericMatrix& titres, const double& alpha1, const double& beta1, const NumericMatrix& Xs, const NumericMatrix& Zs);
+RcppExport SEXP _serosolver_calc_titre_inf_likelihoods(SEXP titresSEXP, SEXP alpha1SEXP, SEXP beta1SEXP, SEXP XsSEXP, SEXP ZsSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const NumericMatrix& >::type titres(titresSEXP);
+    Rcpp::traits::input_parameter< const double& >::type alpha1(alpha1SEXP);
+    Rcpp::traits::input_parameter< const double& >::type beta1(beta1SEXP);
+    Rcpp::traits::input_parameter< const NumericMatrix& >::type Xs(XsSEXP);
+    Rcpp::traits::input_parameter< const NumericMatrix& >::type Zs(ZsSEXP);
+    rcpp_result_gen = Rcpp::wrap(calc_titre_inf_likelihoods(titres, alpha1, beta1, Xs, Zs));
+    return rcpp_result_gen;
+END_RCPP
+}
+// calc_titre_inf_prob
+NumericMatrix calc_titre_inf_prob(const NumericMatrix& titres, const double& alpha1, const double& beta1, const NumericMatrix& Xs, const NumericMatrix& Zs);
+RcppExport SEXP _serosolver_calc_titre_inf_prob(SEXP titresSEXP, SEXP alpha1SEXP, SEXP beta1SEXP, SEXP XsSEXP, SEXP ZsSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const NumericMatrix& >::type titres(titresSEXP);
+    Rcpp::traits::input_parameter< const double& >::type alpha1(alpha1SEXP);
+    Rcpp::traits::input_parameter< const double& >::type beta1(beta1SEXP);
+    Rcpp::traits::input_parameter< const NumericMatrix& >::type Xs(XsSEXP);
+    Rcpp::traits::input_parameter< const NumericMatrix& >::type Zs(ZsSEXP);
+    rcpp_result_gen = Rcpp::wrap(calc_titre_inf_prob(titres, alpha1, beta1, Xs, Zs));
+    return rcpp_result_gen;
+END_RCPP
+}
+// inf_hist_prop_prior_immunity
+List inf_hist_prop_prior_immunity(const NumericVector& theta, const IntegerMatrix& exposure_history_mat, const IntegerMatrix& infection_history_mat, const NumericMatrix& titre_prob_inf, const NumericVector& old_probs_1, const IntegerVector& sampled_indivs, const IntegerVector& n_years_samp_vec, const IntegerVector& age_mask, const IntegerVector& strain_mask, const IntegerMatrix& n_alive, IntegerMatrix& n_exposures, const double& swap_propn, const int& swap_distance, const double& alpha_Z, const double& beta_Z, const NumericVector& circulation_times, const IntegerVector& circulation_times_indices, const NumericVector& sample_times, const IntegerVector& rows_per_indiv_in_samples, const IntegerVector& cum_nrows_per_individual_in_data, const IntegerVector& cum_nrows_per_individual_in_repeat_data, const IntegerVector& nrows_per_blood_sample, const IntegerVector& group_id_vec, const IntegerVector& measurement_strain_indices, const NumericVector& antigenic_map_long, const NumericVector& antigenic_map_short, const NumericVector& data, const NumericVector& repeat_data, const IntegerVector& repeat_indices, const NumericVector& titre_shifts, IntegerVector proposal_iter, IntegerVector accepted_iter, IntegerVector proposal_swap, IntegerVector accepted_swap, const double temp, bool solve_likelihood);
+RcppExport SEXP _serosolver_inf_hist_prop_prior_immunity(SEXP thetaSEXP, SEXP exposure_history_matSEXP, SEXP infection_history_matSEXP, SEXP titre_prob_infSEXP, SEXP old_probs_1SEXP, SEXP sampled_indivsSEXP, SEXP n_years_samp_vecSEXP, SEXP age_maskSEXP, SEXP strain_maskSEXP, SEXP n_aliveSEXP, SEXP n_exposuresSEXP, SEXP swap_propnSEXP, SEXP swap_distanceSEXP, SEXP alpha_ZSEXP, SEXP beta_ZSEXP, SEXP circulation_timesSEXP, SEXP circulation_times_indicesSEXP, SEXP sample_timesSEXP, SEXP rows_per_indiv_in_samplesSEXP, SEXP cum_nrows_per_individual_in_dataSEXP, SEXP cum_nrows_per_individual_in_repeat_dataSEXP, SEXP nrows_per_blood_sampleSEXP, SEXP group_id_vecSEXP, SEXP measurement_strain_indicesSEXP, SEXP antigenic_map_longSEXP, SEXP antigenic_map_shortSEXP, SEXP dataSEXP, SEXP repeat_dataSEXP, SEXP repeat_indicesSEXP, SEXP titre_shiftsSEXP, SEXP proposal_iterSEXP, SEXP accepted_iterSEXP, SEXP proposal_swapSEXP, SEXP accepted_swapSEXP, SEXP tempSEXP, SEXP solve_likelihoodSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const NumericVector& >::type theta(thetaSEXP);
+    Rcpp::traits::input_parameter< const IntegerMatrix& >::type exposure_history_mat(exposure_history_matSEXP);
+    Rcpp::traits::input_parameter< const IntegerMatrix& >::type infection_history_mat(infection_history_matSEXP);
+    Rcpp::traits::input_parameter< const NumericMatrix& >::type titre_prob_inf(titre_prob_infSEXP);
+    Rcpp::traits::input_parameter< const NumericVector& >::type old_probs_1(old_probs_1SEXP);
+    Rcpp::traits::input_parameter< const IntegerVector& >::type sampled_indivs(sampled_indivsSEXP);
+    Rcpp::traits::input_parameter< const IntegerVector& >::type n_years_samp_vec(n_years_samp_vecSEXP);
+    Rcpp::traits::input_parameter< const IntegerVector& >::type age_mask(age_maskSEXP);
+    Rcpp::traits::input_parameter< const IntegerVector& >::type strain_mask(strain_maskSEXP);
+    Rcpp::traits::input_parameter< const IntegerMatrix& >::type n_alive(n_aliveSEXP);
+    Rcpp::traits::input_parameter< IntegerMatrix& >::type n_exposures(n_exposuresSEXP);
+    Rcpp::traits::input_parameter< const double& >::type swap_propn(swap_propnSEXP);
+    Rcpp::traits::input_parameter< const int& >::type swap_distance(swap_distanceSEXP);
+    Rcpp::traits::input_parameter< const double& >::type alpha_Z(alpha_ZSEXP);
+    Rcpp::traits::input_parameter< const double& >::type beta_Z(beta_ZSEXP);
+    Rcpp::traits::input_parameter< const NumericVector& >::type circulation_times(circulation_timesSEXP);
+    Rcpp::traits::input_parameter< const IntegerVector& >::type circulation_times_indices(circulation_times_indicesSEXP);
+    Rcpp::traits::input_parameter< const NumericVector& >::type sample_times(sample_timesSEXP);
+    Rcpp::traits::input_parameter< const IntegerVector& >::type rows_per_indiv_in_samples(rows_per_indiv_in_samplesSEXP);
+    Rcpp::traits::input_parameter< const IntegerVector& >::type cum_nrows_per_individual_in_data(cum_nrows_per_individual_in_dataSEXP);
+    Rcpp::traits::input_parameter< const IntegerVector& >::type cum_nrows_per_individual_in_repeat_data(cum_nrows_per_individual_in_repeat_dataSEXP);
+    Rcpp::traits::input_parameter< const IntegerVector& >::type nrows_per_blood_sample(nrows_per_blood_sampleSEXP);
+    Rcpp::traits::input_parameter< const IntegerVector& >::type group_id_vec(group_id_vecSEXP);
+    Rcpp::traits::input_parameter< const IntegerVector& >::type measurement_strain_indices(measurement_strain_indicesSEXP);
+    Rcpp::traits::input_parameter< const NumericVector& >::type antigenic_map_long(antigenic_map_longSEXP);
+    Rcpp::traits::input_parameter< const NumericVector& >::type antigenic_map_short(antigenic_map_shortSEXP);
+    Rcpp::traits::input_parameter< const NumericVector& >::type data(dataSEXP);
+    Rcpp::traits::input_parameter< const NumericVector& >::type repeat_data(repeat_dataSEXP);
+    Rcpp::traits::input_parameter< const IntegerVector& >::type repeat_indices(repeat_indicesSEXP);
+    Rcpp::traits::input_parameter< const NumericVector& >::type titre_shifts(titre_shiftsSEXP);
+    Rcpp::traits::input_parameter< IntegerVector >::type proposal_iter(proposal_iterSEXP);
+    Rcpp::traits::input_parameter< IntegerVector >::type accepted_iter(accepted_iterSEXP);
+    Rcpp::traits::input_parameter< IntegerVector >::type proposal_swap(proposal_swapSEXP);
+    Rcpp::traits::input_parameter< IntegerVector >::type accepted_swap(accepted_swapSEXP);
+    Rcpp::traits::input_parameter< const double >::type temp(tempSEXP);
+    Rcpp::traits::input_parameter< bool >::type solve_likelihood(solve_likelihoodSEXP);
+    rcpp_result_gen = Rcpp::wrap(inf_hist_prop_prior_immunity(theta, exposure_history_mat, infection_history_mat, titre_prob_inf, old_probs_1, sampled_indivs, n_years_samp_vec, age_mask, strain_mask, n_alive, n_exposures, swap_propn, swap_distance, alpha_Z, beta_Z, circulation_times, circulation_times_indices, sample_times, rows_per_indiv_in_samples, cum_nrows_per_individual_in_data, cum_nrows_per_individual_in_repeat_data, nrows_per_blood_sample, group_id_vec, measurement_strain_indices, antigenic_map_long, antigenic_map_short, data, repeat_data, repeat_indices, titre_shifts, proposal_iter, accepted_iter, proposal_swap, accepted_swap, temp, solve_likelihood));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -364,20 +462,27 @@ static const R_CallMethodDef CallEntries[] = {
     {"_serosolver_sum_likelihoods", (DL_FUNC) &_serosolver_sum_likelihoods, 3},
     {"_serosolver_create_cross_reactivity_vector", (DL_FUNC) &_serosolver_create_cross_reactivity_vector, 2},
     {"_serosolver_sum_buckets", (DL_FUNC) &_serosolver_sum_buckets, 2},
+    {"_serosolver_sum_infections_by_group", (DL_FUNC) &_serosolver_sum_infections_by_group, 3},
     {"_serosolver_add_measurement_shifts", (DL_FUNC) &_serosolver_add_measurement_shifts, 4},
-    {"_serosolver_titre_data_fast", (DL_FUNC) &_serosolver_titre_data_fast, 13},
-    {"_serosolver_infection_model_indiv", (DL_FUNC) &_serosolver_infection_model_indiv, 11},
-    {"_serosolver_titre_data_individual", (DL_FUNC) &_serosolver_titre_data_individual, 12},
-    {"_serosolver_titre_data_group", (DL_FUNC) &_serosolver_titre_data_group, 13},
-    {"_serosolver_likelihood_data_individual", (DL_FUNC) &_serosolver_likelihood_data_individual, 14},
+    {"_serosolver_titre_protection_cpp", (DL_FUNC) &_serosolver_titre_protection_cpp, 3},
+    {"_serosolver_p_infection_cpp", (DL_FUNC) &_serosolver_p_infection_cpp, 4},
+    {"_serosolver_calc_phi_probs_indiv_titre_cpp", (DL_FUNC) &_serosolver_calc_phi_probs_indiv_titre_cpp, 7},
+    {"_serosolver_titre_data_fast", (DL_FUNC) &_serosolver_titre_data_fast, 15},
     {"_serosolver_inf_mat_prior_cpp", (DL_FUNC) &_serosolver_inf_mat_prior_cpp, 4},
     {"_serosolver_inf_mat_prior_cpp_vector", (DL_FUNC) &_serosolver_inf_mat_prior_cpp_vector, 4},
-    {"_serosolver_inf_mat_prior_total_cpp", (DL_FUNC) &_serosolver_inf_mat_prior_total_cpp, 4},
+    {"_serosolver_inf_mat_prior_group_cpp", (DL_FUNC) &_serosolver_inf_mat_prior_group_cpp, 4},
+    {"_serosolver_inf_mat_prior_group_cpp_vector", (DL_FUNC) &_serosolver_inf_mat_prior_group_cpp_vector, 4},
+    {"_serosolver_inf_mat_prior_total_group_cpp", (DL_FUNC) &_serosolver_inf_mat_prior_total_group_cpp, 4},
     {"_serosolver_likelihood_func_fast", (DL_FUNC) &_serosolver_likelihood_func_fast, 3},
     {"_serosolver_likelihood_titre_basic", (DL_FUNC) &_serosolver_likelihood_titre_basic, 4},
-    {"_serosolver_infection_history_proposal_gibbs_fast", (DL_FUNC) &_serosolver_infection_history_proposal_gibbs_fast, 30},
-    {"_serosolver_infection_history_proposal_gibbs", (DL_FUNC) &_serosolver_infection_history_proposal_gibbs, 27},
-    {"_serosolver_inf_hist_prop_cpp", (DL_FUNC) &_serosolver_inf_hist_prop_cpp, 9},
+    {"_serosolver_inf_hist_prop_prior_v3", (DL_FUNC) &_serosolver_inf_hist_prop_prior_v3, 10},
+    {"_serosolver_inf_hist_prop_prior_v2_and_v4", (DL_FUNC) &_serosolver_inf_hist_prop_prior_v2_and_v4, 39},
+    {"_serosolver_titre_data_fast_individual_base_indiv", (DL_FUNC) &_serosolver_titre_data_fast_individual_base_indiv, 12},
+    {"_serosolver_prob_x_given_z_titre_protection", (DL_FUNC) &_serosolver_prob_x_given_z_titre_protection, 5},
+    {"_serosolver_prob_x_given_z_titre", (DL_FUNC) &_serosolver_prob_x_given_z_titre, 5},
+    {"_serosolver_calc_titre_inf_likelihoods", (DL_FUNC) &_serosolver_calc_titre_inf_likelihoods, 5},
+    {"_serosolver_calc_titre_inf_prob", (DL_FUNC) &_serosolver_calc_titre_inf_prob, 5},
+    {"_serosolver_inf_hist_prop_prior_immunity", (DL_FUNC) &_serosolver_inf_hist_prop_prior_immunity, 36},
     {"_serosolver_wane_function", (DL_FUNC) &_serosolver_wane_function, 3},
     {NULL, NULL, 0}
 };

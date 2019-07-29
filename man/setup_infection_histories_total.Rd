@@ -23,7 +23,8 @@ an infection history matrix
 Sets up an initial random infection history, where start is sampled from a prior on the total number of infections across all individuals and years
 }
 \seealso{
-Other setup_infection_histories: \code{\link{setup_infection_histories_new_2}},
+Other setup_infection_histories: \code{\link{setup_infection_histories_immunity}},
+  \code{\link{setup_infection_histories_new_2}},
   \code{\link{setup_infection_histories_old}}
 }
 \concept{setup_infection_histories}

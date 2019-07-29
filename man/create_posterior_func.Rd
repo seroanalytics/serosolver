@@ -2,7 +2,7 @@
 % Please edit documentation in R/posteriors.R
 \name{create_posterior_func}
 \alias{create_posterior_func}
-\title{Posterior function pointer}
+\title{Posterior function pointer - FAST VERSION}
 \usage{
 create_posterior_func(par_tab, titre_dat, antigenic_map, version = 1,
   solve_likelihood = TRUE, age_mask = NULL,
@@ -36,5 +36,5 @@ create_posterior_func(par_tab, titre_dat, antigenic_map, version = 1,
 a single function pointer that takes only pars and infection_histories as unnamed arguments. This function goes on to return a vector of posterior values for each individual
 }
 \description{
-Essential for the MCMC algorithm. Takes all of the input data/parameters and returns a function pointer. This function finds the posterior for a given set of input parameters (theta) and infection histories without needing to pass the data set back and forth.
+Takes all of the input data/parameters and returns a function pointer. This function finds the posterior for a given set of input parameters (theta) and infection histories without needing to pass the data set back and forth.
 }

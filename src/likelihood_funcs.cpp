@@ -40,28 +40,84 @@ double inf_mat_prior_cpp_vector(const IntegerMatrix& infection_history, const In
   for(int i = 0; i < n_alive.size(); ++i){ 
     m = sum(infection_history(_,i)); // Number of infections in that year
     n = n_alive(i); // Number of individuals alive in that year
-    lik += R::lbeta(m+alphas[i],n-m+betas[i]) - R::lbeta(alphas[i], betas[i]); // Contribution of augmented data and prior for that year
+    if(n > 0){
+      lik += R::lbeta(m+alphas[i],n-m+betas[i]) - R::lbeta(alphas[i], betas[i]); // Contribution of augmented data and prior for that year
+    }
   }
   return(lik);
 }
 
-
-
-//' Marginal prior probability (p(Z)) of a particular infection history matrix total prior
-//'  Prior here is on the total number of infections across all individuals and years
-//' @param infection_history IntegerMatrix, the infection history matrix
-//' @param n_alive IntegerVector, vector giving the number of individuals alive in each year
+//' Marginal prior probability (p(Z)) of infection history matrix with groups
+//'  Prior is independent contribution from each year and group
+//' @param n_infections IntegerMatrix, the total number of infections in each time point/group
+//' @param n_alive IntegerMatrix, matrix giving the number of individuals alive in each time unit in each group
 //' @param alpha double, alpha parameter for beta distribution prior
 //' @param beta double, beta parameter for beta distribution prior
 //' @return a single prior probability
 //' @export
 //' @family inf_mat_prior
 // [[Rcpp::export]]
-double inf_mat_prior_total_cpp(const IntegerMatrix& infection_history, const int& n_alive, double alpha, double beta){
+double inf_mat_prior_group_cpp(const IntegerMatrix& n_infections, const IntegerMatrix& n_alive, double alpha, double beta){
+  // Prior on each time
   double m, n;
   double lik=0;
-  int n_infections = sum(infection_history);
-  lik = R::lbeta(n_infections + alpha, n_alive - n_infections + beta) - R::lbeta(alpha, beta);
+  double lbeta_const = R::lbeta(alpha, beta); // Contribution of prior
+  for(int j = 0; j < n_alive.nrow(); ++j){
+    for(int i = 0; i < n_alive.ncol(); ++i){
+      m = n_infections(j,i);
+      n = n_alive(j,i); // Number of individuals alive in that time
+      // Only solve if n > 0
+      if(n > 0){
+	lik += R::lbeta(m+alpha,n-m+beta)-lbeta_const; // Contribution of augmented data and prior for that time
+      }
+    }
+  }
+  return(lik);
+}
+
+//' Marginal prior probability (p(Z)) of a particular infection history matrix vector prior by group
+//'  Prior is independent contribution from each time, but each time has its own alpha and beta
+//' @param n_infections IntegerMatrix, the total number of infections in each time point/group
+//' @param n_alive IntegerMatrix, matrix giving the number of individuals alive in each time unit in each group
+//' @param alphas NumericVector, alpha parameters for beta distribution prior, one for each time unit
+//' @param betas NumericVector, beta parameters for beta distribution prior, one for each time unit
+//' @return a single prior probability
+//' @export
+//' @family inf_mat_prior
+// [[Rcpp::export]]
+double inf_mat_prior_group_cpp_vector(const IntegerMatrix& n_infections, const IntegerMatrix& n_alive, const NumericVector& alphas, const NumericVector& betas){
+  // Prior on each time
+  double m, n;
+  double lik=0;
+  for(int j = 0; j < n_alive.nrow(); ++j){
+    for(int i = 0; i < n_alive.ncol(); ++i){ 
+      m = n_infections(j,i); // Number of infections in that time
+      n = n_alive(j,i); // Number of individuals alive in that time
+      lik += R::lbeta(m+alphas[i],n-m+betas[i]) - R::lbeta(alphas[i], betas[i]); // Contribution of augmented data and prior for that time
+    }
+  }
+  return(lik);
+}
+
+//' Marginal prior probability (p(Z)) of a particular infection history matrix total prior
+//'  Prior here is on the total number of infections across all individuals and times
+//' @param n_infections_group IntegerVector, the total number of infections in each group
+//' @param n_alive_group IntegerVector, vector giving total number of potential infection events per group
+//' @param alpha double, alpha parameter for beta distribution prior
+//' @param beta double, beta parameter for beta distribution prior
+//' @return a single prior probability
+//' @export
+//' @family inf_mat_prior
+// [[Rcpp::export]]
+double inf_mat_prior_total_group_cpp(const IntegerVector& n_infections_group, const IntegerVector& n_alive_group, double alpha, double beta){
+  double m, n;
+  double lik=0;
+  double beta_const = R::lbeta(alpha, beta);
+  int n_infections =0;
+  for(int i = 0; i < n_alive_group.size(); ++i){
+    n_infections = n_infections_group(i);
+    lik += R::lbeta(n_infections + alpha, n_alive_group(i) - n_infections + beta) - beta_const;
+  }
   return(lik);
 }
 
@@ -111,7 +167,8 @@ void proposal_likelihood_func(double &new_prob,
 			      const IntegerVector &cum_nrows_per_individual_in_repeat_data,
 			      const double &log_const,
 			      const double &den,
-			      const double &max_titre){
+			      const double &max_titre,
+			      const bool &repeat_data_exist){
   for(int x = cum_nrows_per_individual_in_data[indiv]; x < cum_nrows_per_individual_in_data[indiv+1]; ++x){
     if(data[x] < max_titre && data[x] >= 1.0){
       new_prob += log_const + log((erf((data[x] + 1.0 - predicted_titres[x]) / den) -
@@ -125,14 +182,16 @@ void proposal_likelihood_func(double &new_prob,
 
   // =====================
   // Do something for repeat data here
-  for(int x = cum_nrows_per_individual_in_repeat_data[indiv]; x < cum_nrows_per_individual_in_repeat_data[indiv+1]; ++x){
-    if(repeat_data[x] < max_titre && repeat_data[x] >= 1.0){
-      new_prob += log_const + log((erf((repeat_data[x] + 1.0 - predicted_titres[repeat_indices[x]]) / den) -
-				   erf((repeat_data[x]     - predicted_titres[repeat_indices[x]]) / den)));    
-    } else if(repeat_data[x] >= max_titre) {
-      new_prob += log_const + log(erfc((max_titre - predicted_titres[repeat_indices[x]])/den));
-    } else {
-      new_prob += log_const + log(1.0 + erf((1.0 - predicted_titres[repeat_indices[x]])/den));
+  if(repeat_data_exist){
+    for(int x = cum_nrows_per_individual_in_repeat_data[indiv]; x < cum_nrows_per_individual_in_repeat_data[indiv+1]; ++x){
+      if(repeat_data[x] < max_titre && repeat_data[x] >= 1.0){
+	new_prob += log_const + log((erf((repeat_data[x] + 1.0 - predicted_titres[repeat_indices[x]]) / den) -
+				     erf((repeat_data[x]     - predicted_titres[repeat_indices[x]]) / den)));    
+      } else if(repeat_data[x] >= max_titre) {
+	new_prob += log_const + log(erfc((max_titre - predicted_titres[repeat_indices[x]])/den));
+      } else {
+	new_prob += log_const + log(1.0 + erf((1.0 - predicted_titres[repeat_indices[x]])/den));
+      }
     }
   }
   // Need to erase the predicted titre data...

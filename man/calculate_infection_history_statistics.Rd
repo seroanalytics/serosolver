@@ -5,7 +5,7 @@
 \title{Get posterior information infection histories}
 \usage{
 calculate_infection_history_statistics(inf_chain, burnin = 0,
-  years = NULL, n_alive = NULL, known_ar = NULL,
+  years = NULL, n_alive = NULL, known_ar = NULL, group_ids = NULL,
   known_infection_history = NULL, pad_chain = TRUE)
 }
 \arguments{

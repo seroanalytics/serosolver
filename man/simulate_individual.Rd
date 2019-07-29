@@ -4,45 +4,38 @@
 \alias{simulate_individual}
 \title{Simulate individual data}
 \usage{
-simulate_individual(theta, infection_history, sampling_times, data_indices,
-  strain_isolation_times, virus_indices, antigenic_map_long,
-  antigenic_map_short, strains, repeats = 1, mus = NULL,
+simulate_individual(theta, infection_history, antigenic_map,
+  sampling_times, strain_isolation_times, measured_strains, mus = NULL,
   mu_indices = NULL, measurement_bias = NULL,
-  measurement_indices = NULL, add_noise = TRUE)
+  measurement_indices = NULL, add_noise = TRUE, repeats = 1,
+  age = NULL)
 }
 \arguments{
 \item{theta}{the named parameter vector}
 
 \item{infection_history}{the vector of 1s and 0s giving presence/absence of infections}
 
-\item{data_indices}{see \code{\link{create_posterior_func}}}
+\item{antigenic_map}{the raw antigenic map with colnames x_coord, y_coord and inf_years, as returned from \code{\link{generate_antigenic_map_flexible}} or \code{\link{generate_antigenic_map}}}
 
-\item{strain_isolation_times}{the vector of strain circulation times (ie. possible infection times)}
+\item{sampling_times}{vector of times at which blood samples were taken}
 
-\item{virus_indices}{see \code{\link{create_posterior_func}}}
+\item{strain_isolation_times}{vector of contiguous strain circulation times}
 
-\item{antigenic_map_long}{the collapsed antigenic map for long term cross reactivity, after multiplying by sigma1}
-
-\item{antigenic_map_short}{the collapsed antigenic map for short term cross reactivity, after multiplying by sigma2}
-
-\item{repeats}{number of repeated samples for each year}
+\item{measured_strains}{vector of which strains had titres measured in `strain_isolation_times`}
 
 \item{mus}{default NULL, optional vector of boosting parameters for each strain}
 
-\item{mu_indices}{default NULL, optional vector giving the index of `mus` that each strain uses the boosting parameter from. eg. if there's 6 circulation years and 3 strain clusters, then this might be c(1,1,2,2,3,3)}
-
-\item{measurement_bias}{default NULL, optional vector of measurement bias shift parameters for each strain}
+\item{mu_indices}{default NULL, optional vector giving the index of `mus` that each strain uses the boosting parameter from. eg. if there are 6 circulation years in strain_isolation_times and 3 strain clusters, then this might be c(1,1,2,2,3,3)}
 
 \item{measurement_indices}{default NULL, optional vector giving the index of `measurement_bias` that each strain uses the measurement shift from from. eg. if there's 6 circulation years and 3 strain clusters, then this might be c(1,1,2,2,3,3)}
 
-\item{add_noise}{defaults TRUE, adds observation error to simulated titres}
+\item{add_noise}{if TRUE, adds observation noise to the simulated titres}
+
+\item{repeats}{number of repeat observations for each year}
 }
 \value{
 a data frame with columns samples, virus and titre of simulated data
 }
 \description{
 Simulates a full set of titre data for an individual with known theta and infection_history.
-}
-\seealso{
-\code{\link{infection_model_indiv}}
 }

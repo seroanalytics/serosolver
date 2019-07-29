@@ -4,7 +4,7 @@ setwd("~/Documents/Fluscape/serosolver")
 fluscapeWD <- "~/Documents/Fluscape"
 devtools::load_all()
 setwd(fluscapeWD)
-resolution <- "quarter"
+resolution <- "quarterly"
 buckets <- 4
 use_buckets <- 1/buckets
 firstYear <- 1968
@@ -14,12 +14,11 @@ virus_key <- c("HK68"=1968, "EN72"=1972, "VI75"=1975, "TX77"=1977, "BK79"=1979, 
                "BE92"=1992, "WU95"=1995, "SY97"=1997, "FU02"=2002, "CA04"=2004, "WI05"=2005, "PE06"=2006)
 
 ## Following assumptions:
-## 1. X31 == 1969
-## 2. PE2009 is like the strain circulating in 2010
-
+## 1. X31 == 1968/69
+## 2. PE2009 is like the strain circulating in 2010 (vaccine strain)
 fluscape_virus_key <- c("BJ89"=1989, "SC87"=1987, "PH82"=1982, "BR07"=2007, "WU95"=1995, "BK79"=1979, "HK14"=2014, "TX12"=2012, 
                         "PE09"=2010, "BJ92"=1992, "TX77"=1977, "VC09"=2009, "CL04"=2004, "VC98"=1998, "FJ00"=2000, "VC75"=1975, 
-                        "MS85"=1985, "FJ02"=2002, "EN72"=1972, "X31"=1970, "HK68"=1968)
+                        "MS85"=1985, "FJ02"=2002, "EN72"=1972, "X31"=1968, "HK68"=1968)
 
 if(resolution == "monthly"){
   firstYear <- firstYear*12
@@ -150,12 +149,13 @@ finalDat <- finalDat[complete.cases(finalDat),]
 finalDat <- plyr::ddply(finalDat,.(group,individual,virus,samples),function(x) cbind(x,"run"=1:nrow(x)))
 finalDat <- finalDat[order(finalDat$group,finalDat$individual,finalDat$samples,finalDat$run),c("group","individual","samples","virus","titre","run","Participant_ID")]
 
-finalDat$samples <- floor(finalDat$samples/use_buckets)
-finalDat$virus <- ceiling(finalDat$virus/use_buckets)
-ages$DOB <- ceiling(ages$DOB/use_buckets)
-ages[is.na(ages$DOB),"DOB"] <- 1933*use_buckets
+finalDat$samples <- floor((finalDat$samples/12)*buckets)
+finalDat$virus <- ceiling(finalDat$virus*buckets)
+finalDat <- finalDat[finalDat$samples >= 2009*buckets,]
+ages$DOB <- ceiling(ages$DOB/3)
+ages[is.na(ages$DOB),"DOB"] <- 1933*buckets
 
-setwd("~/net/home/serosolver/data_Oct2018")
+setwd("~/Documents/Fluscape/serosolver/data/real")
 all_dat <- merge(finalDat, ages)
 all_dat <- all_dat[order(all_dat$group,all_dat$individual,all_dat$samples,all_dat$run),c("group","individual","samples","virus","titre","run","DOB","Participant_ID")]
 
