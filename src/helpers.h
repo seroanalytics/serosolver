@@ -33,9 +33,3 @@ void add_measurement_shifts(NumericVector &predicted_titres,
 			    const int &end_index_in_data
 			    );
 #endif
-
-
-#ifndef TITRE_PRORECTION_CPP
-#define TITRE_PROTECTION_CPP
-double titre_protection_cpp(double titre, double alpha1, double beta1);
-#endif

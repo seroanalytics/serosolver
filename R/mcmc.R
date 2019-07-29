@@ -9,7 +9,7 @@
 #' @param start_inf_hist Infection history matrix to start MCMC at. Can be left NULL
 #' @param filename The full filepath at which the MCMC chain should be saved. "_chain.csv" will be appended to the end of this, so filename should have no file extensions
 #' @param CREATE_POSTERIOR_FUNC Pointer to posterior function used to calculate a likelihood. This will probably be \code{\link{create_posterior_func}}
-#' @param PRIOR_FUNC User function of prior for model parameters. Should take parameter values only
+#' @param CREATE_PRIOR_FUNC User function of prior for model parameters. Should take parameter values only
 #' @param version which infection history assumption version to use? See \code{\link{describe_proposals}} for options
 #' @param mu_indices For random effects on boosting parameter, mu. Vector of indices of length equal to number of circulation times. If random mus are included in the parameter table, this vector specifies which mu to use for each circulation year. For example, if years 1970-1976 have unique boosting, then mu_indices should be c(1,2,3,4,5,6). If every 3 year block shares has a unique boosting parameter, then this should be c(1,1,1,2,2,2)
 #' @param measurement_indices For measurement bias function. Vector of indices of length equal to number of circulation times. For each year, gives the index of parameters named "rho" that correspond to each time period
@@ -26,7 +26,6 @@
 #' The `mcmc_pars` argument has the following options:
 #'  * iterations (number of post adaptive period iterations to run)
 #'  * adaptive_period (for this many iterations, change proposal step size adaptively every `opt_freq` iterations)
-#'  * burnin (sample for this many iterations before beginning adaptation)
 #'  * opt_freq (adapt proposal step size every opt_freq iterations)
 #'  * thin (save every n iterations)
 #'  * thin_hist (infection history thinning)
@@ -48,7 +47,6 @@ run_MCMC <- function(par_tab,
                      antigenic_map,
                      mcmc_pars = c(),
                      mvr_pars = NULL,
-                     start_exposure_hist = NULL,
                      start_inf_hist = NULL,
                      filename = "test",
                      CREATE_POSTERIOR_FUNC = create_posterior_func,
@@ -147,21 +145,6 @@ run_MCMC <- function(par_tab,
     if ("phi" %in% par_names) {
         phi_indices <- which(par_tab$names == "phi")
     }
-
-    if("psi" %in% par_names){
-        psi_indices <- which(par_tab$names == "psi")
-    }
-    explicit_exposures <- FALSE
-    if("alpha_titre" %in% par_names){
-        message(cat("Parameters for titre-mediated immunity included"))
-        if(version == 2){
-            explicit_exposures <- TRUE
-            message(cat("... also integrated out phi, so explicitly representing exposure states"))
-        }
-        if(version %in% c(3,4)) {
-            stop("Invalid version specified - titre-mediated immunity is currently only implemented for prior versions 1 and 2")
-        }
-    }
     
     alpha <- par_tab[par_tab$names == "alpha", "values"]
     beta <- par_tab[par_tab$names == "beta", "values"]
@@ -187,10 +170,6 @@ run_MCMC <- function(par_tab,
     mcmc_chain_file <- paste0(filename, "_chain.csv")
     infection_history_file <- paste0(filename, "_infection_histories.csv")
 
-    exposure_history_file <- NULL
-    if(explicit_exposures) {
-        exposure_history_file <- paste0(filename, "_exposure_histories.csv")
-    }
 
 ###############
     ## Extract titre_dat parameters
@@ -285,37 +264,24 @@ run_MCMC <- function(par_tab,
 
     ## Setup initial conditions
     infection_histories <- start_inf_hist
-    exposure_histories <- start_exposure_hist
 
-    ## In most versions, we do not consider exposures and titre-mediated immunity
-    ## explicitly, and these will stay as NULL
-    new_exposure_histories <- new_indiv_titre_prob_infs <- NULL
     
     if (is.null(start_inf_hist)) {
         infection_histories <- setup_infection_histories_new(titre_dat, strain_isolation_times, space = 5, titre_cutoff = 3)
-        if(explicit_exposures) {
-            exposure_histories <- infection_histories
-        } else {
-            exposure_histories <- NULL
-        }
     }
 
     ## Initial likelihoods and individual priors
-    tmp_posterior <- posterior_simp(current_pars, infection_histories, exposure_histories)
+    tmp_posterior <- posterior_simp(current_pars, infection_histories)
     indiv_likelihoods <- tmp_posterior[[1]]/temp
     indiv_priors <- tmp_posterior[[2]]
-    if(explicit_exposures) {
-        indiv_titre_prob_infs <- indiv_priors
-        indiv_priors <- rowSums(indiv_priors)
-    }
-    ## Initial total likelihoods
+     ## Initial total likelihoods
     indiv_posteriors <- indiv_likelihoods + indiv_priors
 
     ## If needed for some proposal types per individual
     proposal_ratio <- rep(0, n_indiv)    
     n_alive_tot <- rowSums(n_alive)
     ## Create closure to add extra prior probabilities, to avoid re-typing later
-    extra_probabilities <- function(prior_pars, prior_infection_history, prior_exposure_history=NULL) {
+    extra_probabilities <- function(prior_pars, prior_infection_history) {
         names(prior_pars) <- par_names
         beta <- prior_pars["beta"]
         alpha <- prior_pars["alpha"]
@@ -329,51 +295,9 @@ run_MCMC <- function(par_tab,
                 n_infections_group <- rowSums(n_infections)
                 prior_probab <- prior_probab + inf_mat_prior_total_group_cpp(n_infections_group,
                                                                              n_alive_tot, alpha, beta)
-            } else {
-                ## Prior version 2
-                if(explicit_exposures){
-                    n_exposures <- sum_infections_by_group(prior_exposure_history, group_ids_vec, n_groups)
-                    if(any(n_exposures > n_alive)){
-                        print("error")
-                        stop()
-                    }
-                    prior_probab <- prior_probab + inf_mat_prior_group_cpp(n_exposures, n_alive, alpha, beta)
-                } else {
-                    n_infections <- sum_infections_by_group(prior_infection_history, group_ids_vec, n_groups)
-                    if(any(n_infections > n_alive)){
-                        #print("error")
-                        #print(n_alive)
-                        #print(n_infections)
-                        #print("Masks")
-
-                        last_infection <- unlist(apply(prior_infection_history, 1, function(x){
-                            tmp <- which(x == 1)
-                            if(length(tmp) == 0){
-                                y <- NA
-                            } else {
-                                y <- tmp[length(tmp)]
-                            }
-                            y
-                        }))
-                        first_infection <- unlist(apply(prior_infection_history, 1, function(x){
-                            tmp <- which(x == 1)
-                            if(length(tmp) == 0){
-                                y <- NA
-                            } else {
-                                y <- tmp[1]
-                            }
-                            y
-                        }))
-                        masks_report <- cbind(masks, first_infection, last_infection)
-                        masks_report <- as.data.frame(masks_report)
-                        masks_report$early <- masks_report$last_infection < masks_report$age_mask
-                        masks_report$late <- masks_report$last_infection > masks_report$strain_mask
-                        #print("wow")
-                        write.table(masks_report, "wow.csv",sep=",")
-                        stop()
-                    }
-                    prior_probab <- prior_probab + inf_mat_prior_group_cpp(n_infections, n_alive, alpha, beta)
-                }
+            } else {                
+                n_infections <- sum_infections_by_group(prior_infection_history, group_ids_vec, n_groups)
+                prior_probab <- prior_probab + inf_mat_prior_group_cpp(n_infections, n_alive, alpha, beta)
             }
         }
         if (!is.null(CREATE_PRIOR_FUNC)) prior_probab <- prior_probab + prior_func(prior_pars)
@@ -383,8 +307,7 @@ run_MCMC <- function(par_tab,
     }
     ## Initial total prior prob
     total_prior_prob <- sum(indiv_priors) + extra_probabilities(current_pars,
-                                                                infection_histories,
-                                                                exposure_histories)
+                                                                infection_histories)
     total_likelihood <- sum(indiv_likelihoods)
     ## Initial posterior prob
     total_posterior <- total_likelihood + total_prior_prob
@@ -417,10 +340,6 @@ run_MCMC <- function(par_tab,
     
     save_infection_history_to_disk(infection_histories, infection_history_file, 1,
                                    append = FALSE, col_names = TRUE)
-    if(explicit_exposures) {
-        save_infection_history_to_disk(exposure_histories, exposure_history_file, 1,
-                                       append = FALSE, col_names = TRUE)
-    }
     ## Initial indexing parameters
     no_recorded <- 1
     sampno <- 2
@@ -484,17 +403,13 @@ run_MCMC <- function(par_tab,
                 }
             }
             ## Calculate new likelihood for these parameters
-            tmp_new_posteriors <- posterior_simp(proposal, infection_histories, exposure_histories)
+            tmp_new_posteriors <- posterior_simp(proposal, infection_histories)
             new_indiv_likelihoods <-  tmp_new_posteriors[[1]]/temp # For each individual
-            new_indiv_priors <- tmp_new_posteriors[[2]]            
-            if(explicit_exposures) {
-                new_indiv_titre_prob_infs <- new_indiv_priors
-                new_indiv_priors <- rowSums(new_indiv_priors)
-            }
+            new_indiv_priors <- tmp_new_posteriors[[2]]   
             new_indiv_posteriors <- new_indiv_likelihoods + new_indiv_priors            
             new_total_likelihood <- sum(new_indiv_likelihoods) # Total
             new_total_prior_prob <- sum(new_indiv_priors) +
-                extra_probabilities(proposal, infection_histories, exposure_histories)
+                extra_probabilities(proposal, infection_histories)
             new_total_posterior <- new_total_likelihood + new_total_prior_prob # Posterior
             
             ## Otherwise, resample infection history
@@ -518,14 +433,6 @@ run_MCMC <- function(par_tab,
             if (hist_proposal == 1) {
                 ## Either swap entire contents or propose new infection history matrix
                 if (inf_swap_prob > hist_switch_prob) {
-                    #proposed_inf_hist_data <-infection_history_proposal(
-                    #    infection_histories,
-                    #    indiv_sub_sample,
-                    #    age_mask, strain_mask, move_sizes,
-                    #    n_infs_vec, rand_ns, swap_propn
-                    #)                    
-                    #new_infection_histories <- proposed_inf_hist_data#[[1]]
-                    #proposal_ratio <- proposed_inf_hist_data[[2]]
                     new_infection_histories <- infection_history_symmetric(
                         infection_histories,
                         indiv_sub_sample,
@@ -549,8 +456,6 @@ run_MCMC <- function(par_tab,
                     prop_gibbs <- proposal_gibbs(
                         proposal,
                         infection_histories,
-                        exposure_histories,
-                        indiv_titre_prob_infs,
                         indiv_likelihoods,
                         indiv_sub_sample,
                         alpha, beta,
@@ -565,24 +470,17 @@ run_MCMC <- function(par_tab,
                     histaccepted <- prop_gibbs$accepted_iter
                     new_indiv_likelihoods <- prop_gibbs$old_probs
                     new_infection_histories <- prop_gibbs$new_infection_history
-                    new_indiv_priors <- prop_gibbs$titre_infection_probs
-                    if(explicit_exposures) {
-                        new_exposure_histories <- prop_gibbs$new_exposure_history
-                        new_indiv_titre_prob_infs <- new_indiv_priors
-                        new_indiv_priors <- rowSums(new_indiv_priors)
-                    }
                     new_likelihoods_calculated <- TRUE
                     
                     ## If using the slow version, just need to propose
                     ## Otherwise, swap contents
                 } else {
                     tmp <- inf_hist_swap(
-                        infection_histories, exposure_histories,
+                        infection_histories,
                         age_mask, strain_mask,
                         year_swap_propn, move_size
                     )
                     new_infection_histories <- tmp[[1]]
-                    new_exposure_histories <- tmp[[2]]
                     if (!identical(new_infection_histories, infection_histories)) {
                         infection_history_swap_n <- infection_history_swap_n + 1
                     }
@@ -615,19 +513,14 @@ run_MCMC <- function(par_tab,
             ## Calculate new likelihood with these infection histories
             ## If we didn't calculate the new likelihoods above, then need to do so here
             if (!new_likelihoods_calculated) {
-                new_post <- posterior_simp(proposal, new_infection_histories, new_exposure_histories)
+                new_post <- posterior_simp(proposal, new_infection_histories)
                 new_indiv_likelihoods <- new_post[[1]]/temp
                 new_indiv_priors <- new_post[[2]]
-
-                if(explicit_exposures) {
-                    new_indiv_titre_prob_infs <- new_indiv_priors
-                    new_indiv_priors <- rowSums(new_indiv_priors)
-                }
                 new_indiv_posteriors <- new_indiv_likelihoods + new_indiv_priors
             }
             new_total_likelihood <- sum(new_indiv_likelihoods)
             new_total_prior_prob <- sum(new_indiv_priors) +
-                extra_probabilities(proposal, new_infection_histories, new_exposure_histories)
+                extra_probabilities(proposal, new_infection_histories)
             new_total_posterior <- new_total_likelihood + new_total_prior_prob
         }
 #############################
@@ -661,10 +554,6 @@ run_MCMC <- function(par_tab,
                         indiv_priors <- new_indiv_priors
                         indiv_posteriors <- new_indiv_posteriors
                         
-                        if(explicit_exposures) {
-                            indiv_titre_prob_infs <- new_indiv_titre_prob_infs
-                        }
-                        
                         total_likelihood <- new_total_likelihood
                         total_prior_prob <- new_total_prior_prob
                         total_posterior <- new_total_posterior
@@ -690,7 +579,7 @@ run_MCMC <- function(par_tab,
                     
                     total_likelihood <- sum(indiv_likelihoods)
                     total_prior_prob <- sum(indiv_priors) +
-                        extra_probabilities(current_pars, infection_histories, exposure_histories)
+                        extra_probabilities(current_pars, infection_histories)
                     total_posterior <- total_likelihood + total_prior_prob
 
                     ## Record acceptances for each add or move step
@@ -710,10 +599,6 @@ run_MCMC <- function(par_tab,
                         indiv_priors <- new_indiv_priors
                         indiv_posteriors <- new_indiv_posteriors
                         current_pars <- proposal
-                        if(explicit_exposures) {
-                            exposure_histories <- new_exposure_histories
-                            indiv_titre_prob_infs <- new_indiv_titre_prob_infs
-                        }
                         
                         total_likelihood <- new_total_likelihood
                         total_posterior <- new_total_posterior
@@ -734,10 +619,7 @@ run_MCMC <- function(par_tab,
                                 indiv_likelihoods <- new_indiv_likelihoods
                                 indiv_priors <- new_indiv_priors
                                 indiv_posteriors <- new_indiv_posteriors
-                                if(explicit_exposures) {
-                                    exposure_histories <- new_exposure_histories
-                                    indiv_titre_prob_infs <- new_indiv_titre_prob_infs
-                                }
+                                
                                 total_likelihood <- new_total_likelihood
                                 total_prior_prob <- new_total_prior_prob
                                 total_posterior <- new_total_posterior
@@ -769,9 +651,6 @@ run_MCMC <- function(par_tab,
         ## Save infection histories
         if (i %% hist_tab_thin == 0) {
             save_infection_history_to_disk(infection_histories, infection_history_file, sampno)
-            if(explicit_exposures) {
-                save_infection_history_to_disk(exposure_histories, exposure_history_file, sampno)
-            }
         }
 
 ##############################
@@ -857,11 +736,7 @@ run_MCMC <- function(par_tab,
                     move_sizes[which(pcur_hist_move >= popt_hist * (1 + OPT_TUNING))] <-
                         move_sizes[which(pcur_hist_move >= popt_hist * (1 + OPT_TUNING))] + 1
                     move_sizes[move_sizes< 1] <- 1                        
-                    
-                    ##if(pcur_hist_swap < popt_hist){
-                    ##    year_swap_propn <- scaletuning(year_swap_propn, popt_hist, pcur_hist_swap)
-                    ##    year_swap_propn <- min(1, year_swap_propn)
-                    ##                    }
+                  
                     for (ii in seq_along(n_infs_vec)) {
                         move_sizes[ii] <- min(move_sizes[ii], length(age_mask[ii]:strain_mask[ii]))
                         move_sizes[ii] <- min(move_sizes[ii], 10)
@@ -926,7 +801,6 @@ run_MCMC <- function(par_tab,
     }
     return(list(
         "chain_file" = mcmc_chain_file, "history_file" = infection_history_file,
-        "exposure_file" = exposure_history_file,
         "cov_mat" = cov_mat, "step_scale" = steps
     ))
 }

@@ -40,16 +40,16 @@ db <- function(x, a, b) {
 #' R implementation of the infection history prior assuming common infection risk across individuals in a given year
 #' @param infection_history the infection history matrix
 #' @param age_mask the age mask, giving the first index of the infection_history matrix that each individual can be exposed to. One entry per individual
-#' @param alpha alpha parameter for beta distribution
-#' @param beta beta parameter for beta distribution
+#' @param alpha1 alpha parameter for beta distribution
+#' @param beta1 beta parameter for beta distribution
 #' @return a prior probability for each individual
 #' @family priors
 #' @export
-inf_mat_prior <- function(infection_history, age_mask, alpha, beta1) {
+inf_mat_prior <- function(infection_history, age_mask, alpha1, beta1) {
   n_alive <- sapply(1:ncol(infection_history), function(x) length(age_mask[age_mask <= x]))
   lk <- 0
   for (i in 1:length(n_alive)) {
-    lk <- lk + log(beta(sum(infection_history[, i]) + alpha, n_alive[i] - sum(infection_history[, i]) + beta1) / beta(alpha, beta1))
+    lk <- lk + log(beta(sum(infection_history[, i]) + alpha1, n_alive[i] - sum(infection_history[, i]) + beta1) / beta(alpha1, beta1))
   }
   return(lk)
 }

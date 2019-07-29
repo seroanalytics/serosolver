@@ -20,9 +20,3 @@ Read the [quick start vignette][vignette-doc] to set up and run a simple impleme
 
 [r-project]: http://cran.r-project.org
 [vignette-doc]: https://github.com/seroanalytics/serosolver/blob/master/vignettes/serosolver-quick_start_guide.md
-
-## Adding antibody kinetics mechanisms
-To add a new antibody kinetics mechanism, the following functions need to be updated:
-`titre_data_fast` in `src/infection_model.cpp`
-`infection_history_proposal_gibbs_fast` in `src/proposal.cpp`
-`create_posterior_func_fast` in `R/posteriors.R`

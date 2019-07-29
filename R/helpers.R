@@ -282,15 +282,6 @@ setup_titredat_for_posterior_func <- function(titre_dat, antigenic_map, age_mask
     ## ie. each element of this vector corresponds to one set of titres that need to be predicted
     #nrows_per_blood_sample <- NULL
     nrows_per_blood_sample <- ddply(titre_dat, .(individual, samples, run), nrow)$V1
-
-    #nrows_per_blood_sample_tmp <- NULL
-    #for (i in 1:nrow(samples)) {
-    #    nrows_per_blood_sample_tmp <- c(nrows_per_blood_sample_tmp,
-    #                                nrow(samples[titre_dat$individual == samples[i, "individual"] &
-    #                                             titre_dat$samples == samples[i, "samples"] &
-    #                                             titre_dat$run == samples[i, "run"], ]))
-    #}
-    #print(identical(nrows_per_blood_sample, nrows_per_blood_sample_tmp))
   
     ## Which indices in the sampling times vector correspond to each individual?
     ## ie. each contiguous pair of entries in this vector corresponds to the
@@ -304,14 +295,7 @@ setup_titredat_for_posterior_func <- function(titre_dat, antigenic_map, age_mask
     ## Which indices in the titre data matrix correspond to each individual?
     ## And, how many rows match each individual?
     nrows_per_individual_in_data <- ddply(titre_dat, .(individual), nrow)$V1
-    
-    #nrows_per_individual_in_data_tmp <- NULL
-    #for (individual in unique(individuals)) {
-    #    nrows_per_individual_in_data_tmp <- c(nrows_per_individual_in_data_tmp, nrow(titre_dat[titre_dat$individual == individual, ]))
-    #}
     cum_nrows_per_individual_in_data <- cumsum(c(0, nrows_per_individual_in_data))
-
-    #print(identical(nrows_per_individual_in_data, nrows_per_individual_in_data_tmp))
     
     if (!is.null(titre_dat$DOB)) {
         DOBs <- unique(titre_dat[, c("individual", "DOB")])[, 2]

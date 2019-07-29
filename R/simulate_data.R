@@ -18,7 +18,6 @@
 #' @param mu_indices default NULL, optional vector giving the index of `mus` that each strain uses the boosting parameter from. eg. if there are 6 circulation years in strain_isolation_times and 3 strain clusters, then this might be c(1,1,2,2,3,3)
 #' @param measurement_indices default NULL, optional vector giving the index of `measurement_bias` that each strain uses the measurement shift from from. eg. if there's 6 circulation years and 3 strain clusters, then this might be c(1,1,2,2,3,3)
 #' @param add_noise if TRUE, adds observation noise to the simulated titres
-#' @param separate_exposures if TRUE, returns the exposure and infection histories as separate matrices
 #' @return a list with: 1) the data frame of titre data as returned by \code{\link{simulate_group}}; 2) a matrix of infection histories as returned by \code{\link{simulate_infection_histories}}; 3) a vector of ages
 #' @export
 simulate_data <- function(par_tab,
@@ -36,8 +35,7 @@ simulate_data <- function(par_tab,
                           repeats = 1,
                           mu_indices = NULL,
                           measurement_indices = NULL,
-                          add_noise = TRUE,
-                          separate_exposures=FALSE) {
+                          add_noise = TRUE) {
 
     ## Check attack_rates entry
     check_attack_rates(attack_rates, strain_isolation_times)
@@ -77,29 +75,13 @@ simulate_data <- function(par_tab,
     DOBs <- max(sampling_times) - floor(runif(n_indiv, age_min, age_max))
 
     ## Simulate infection histories
-    ## If immunity parameters are present, simulate using titre-mediated immunity
-    if("alpha_titre" %in% par_names_theta){
-        message("Simulating data with titre-dependent immunity")
-        tmp <- simulate_infection_histories_titre(
-            theta, attack_rates, strain_isolation_times,
-            DOBs, antigenic_map,
-            mus, mu_indices, measurement_bias, measurement_indices,
-            separate_exposures=separate_exposures
-        )
-        infection_history <- tmp[[1]]
-        exposure_histories <- tmp[[2]]
-        ARs <- tmp[[3]]
-        ## Otherwise, no immunity across time
-    } else {
-        message("Simulating data with no titre-dependent immunity")
-        tmp <- simulate_infection_histories(
-            attack_rates, strain_isolation_times,
-            sampling_times, DOBs
-        )
-        exposure_histories <- infection_history <- tmp[[1]]
-        ARs <- tmp[[2]]
-    }
-    
+    message("Simulating data with no titre-dependent immunity")
+    tmp <- simulate_infection_histories(
+        attack_rates, strain_isolation_times,
+        sampling_times, DOBs
+    )
+    exposure_histories <- infection_history <- tmp[[1]]
+    ARs <- tmp[[2]]
 
 
 
@@ -120,9 +102,9 @@ simulate_data <- function(par_tab,
     age_mask <- create_age_mask(DOBs, strain_isolation_times)
     strain_mask <- create_strain_mask(y, strain_isolation_times)
     ## Can't be exposed or infected after the last sampling time
-    for(i in 1:nrow(exposure_histories)){
-        if(strain_mask[i] < ncol(exposure_histories)){
-            exposure_histories[i,(strain_mask[i]+1):ncol(exposure_histories)] <- 0
+    for(i in 1:nrow(infection_history)){
+        if(strain_mask[i] < ncol(infection_history)){
+            infection_history[i,(strain_mask[i]+1):ncol(infection_history)] <- 0
         }
     }
     
@@ -137,8 +119,7 @@ simulate_data <- function(par_tab,
     ages <- data.frame("individual" = 1:n_indiv, "DOB" = DOBs)
     attack_rates <- data.frame("year" = strain_isolation_times, "AR" = ARs)
     return(list(data = y, infection_histories = infection_history,
-                ages = ages, attack_rates = attack_rates, phis = attack_rates,
-                exposure_histories=exposure_histories))
+                ages = ages, attack_rates = attack_rates, phis = attack_rates))
 }
 
 
@@ -219,6 +200,7 @@ simulate_group <- function(n_indiv,
 #' @param infection_history the vector of 1s and 0s giving presence/absence of infections
 #' @param antigenic_map_long the long term antigenic cross reactivity map generated from \code{\link{create_cross_reactivity_vector}}
 #' @param antigenic_map_short the short term antigenic cross reactivity map generated from \code{\link{create_cross_reactivity_vector}}
+#' @param antigenic_distances same dimensions as antigenic_map_long and antigenic_map_short, but gives the raw euclidean antigenic distances
 #' @param sampling_times vector of times at which blood samples were taken
 #' @param measured_strains vector of which strains had titres measured in `strain_isolation_times`
 #' @return a data frame with columns samples, virus and titre of simulated data
@@ -282,9 +264,6 @@ simulate_individual_faster <- function(theta,
     ## Add observation noise, including measurement bias if selected
     if (add_noise) {
         if (!is.null(measurement_indices)) {
-            #print(dat[1:25,2])
-            #print(measurement_indices[match(dat[, 2], strain_isolation_times)][1:25])
-            #print(measurement_bias[measurement_indices[match(dat[, 2], strain_isolation_times)][1:25]])
             dat[, 3] <- add_noise(titres, theta, measurement_bias, measurement_indices[match(dat[, 2], strain_isolation_times)])
         } else {
             dat[, 3] <- add_noise(titres, theta, NULL, NULL)
@@ -354,6 +333,7 @@ simulate_individual <- function(theta,
                               antigenic_map_long, antigenic_map_short,
                               antigenic_distances,
                               mus, mu_indices)
+    
     ## Repeated each simulated titre per observation repeat
     titres <- rep(titres, repeats)
     ## Housekeeping for return data
@@ -460,110 +440,6 @@ simulate_infection_histories <- function(p_inf, strain_isolation_times, sampling
     return(list(infection_histories, ARs))
 }
 
-
-#' Simulate infection histories
-#'
-#' Given a vector of infection probabilities and potential infection times, simulates infections for each element of ages (ie. each element is an individual age. Only adds infections for alive individuals)
-#' @param pars vector of model kinetics parameters
-#' @param p_inf a vector of attack rates (infection probabilities) for each year
-#' @param strain_isolation_times the vector of possible infection times
-#' @param ages a vector of ages for each individual
-#' @param antigenic_map
-#' @param mus vector of boosting terms for strain dependent boosting
-#' @param mu_indices default NULL, optional vector giving the index of `mus` that each strain uses the boosting parameter from. eg. if there's 6 circulation years and 3 strain clusters, then this might be c(1,1,2,2,3,3)
-#' @param measurement_bias vector of strain-specific measurement shifts
-#' @param measurement_indices default NULL, optional vector giving the index of `measurement_bias` that each strain uses the measurement shift from from. eg. if there's 6 circulation years and 3 strain clusters, then this might be c(1,1,2,2,3,3)
-#' @param separate_exposures if TRUE, returns the exposure and infection histories as separate matrices
-#' @return a list with a matrix of infection histories for each individual in ages and the true attack rate for each epoch
-#' @export
-simulate_infection_histories_titre <- function(pars, p_inf, strain_isolation_times, ages,
-                                               antigenic_map,mus=NULL, mu_indices=NULL,
-                                               measurement_bias=NULL,measurement_indices=NULL,
-                                               separate_exposures=FALSE) {
-    n_strains <- length(p_inf) # How many strains
-    n_indiv <- length(ages) # How many individuals
-    indivs <- 1:n_indiv
-    
-    ## Empty matrix
-    infection_histories <- exposure_histories <- matrix(0, ncol = n_strains, nrow = n_indiv)  
-    ## Simulate attack rates
-    attack_rates <- p_inf
-    
-    ## Should this be necessary?
-    attack_rates[attack_rates > 1] <- 1
-    ARs <- numeric(n_strains)
-    
-    age_mask <- create_age_mask(ages, strain_isolation_times)
-
-    alpha1 <- pars["alpha_titre"]
-    beta1 <- pars["beta_titre"]
-
-    ## Create antigenic map for short and long term boosting
-    antigenic_map_melted <- melt_antigenic_coords(antigenic_map[, c("x_coord", "y_coord")])
-    antigenic_map_long <- create_cross_reactivity_vector(antigenic_map_melted, pars["sigma1"])
-    antigenic_map_short <- create_cross_reactivity_vector(antigenic_map_melted, pars["sigma2"])
-    antigenic_distances <- c(antigenic_map_melted)
-    
-    for(i in 1:n_indiv){
-        infection_history <- exposure_history <- rep(0, n_strains)
-        #print("")
-        #print(paste0("Indiv: ", i))
-        ## Find out if individual was alive
-        for(j in 1:n_strains) {
-            #print(paste0("Year: ", strain_isolation_times[j]))
-            alive <- age_mask[i] <= j
-            baseline_risk <- attack_rates[j]
-
-            ## Get current time
-            infection_time <- sample_time <- strain_isolation_times[j]
-            Z <- 0
-            X <- 0
-            virus_samples <- strain_isolation_times[j]
-
-            ## If alive, calculate titre to circulating strain at this time
-            if(alive) {
-                y <- as.data.frame(simulate_individual_faster(pars, infection_history,
-                                                              antigenic_map_long,
-                                                              antigenic_map_short,
-                                                              antigenic_distances,
-                                                              sample_time,
-                                                              strain_isolation_times,
-                                                              virus_samples,
-                                                              mus,mu_indices,measurement_bias,
-                                                              measurement_indices,add_noise=FALSE,repeats=1,
-                                                              age=NULL))
-                ## Find prob of infection given titre and baseline risk
-                if(!separate_exposures) {
-                    p_inf_indiv <- p_infection_cpp(baseline_risk,y[1,3],alpha1,beta1)
-                    ## Simulate an exposure state from the baseline risk
-                    X <- Z <- sample(c(1,0),1,p=c(p_inf_indiv, 1-p_inf_indiv))
-                } else {
-                    Z <- sample(c(1,0), 1, p=c(baseline_risk, 1-baseline_risk))
-                    if(Z == 0) {
-                        X <- 0
-                    } else {
-                        titre_p <- titre_protection_cpp(y[1,3], alpha1, beta1)
-                        p_inf_indiv <- 1 - titre_p
-                        X <- sample(c(1,0),1, p=c(p_inf_indiv, 1-p_inf_indiv))
-                    }
-                }             
-                exposure_history[j] <- Z
-                infection_history[j] <- X
-            } 
-        }
-        exposure_histories[i,] <- exposure_history
-        infection_histories[i,] <- infection_history
-    }
-    n_alive <- sapply(seq(1, length(strain_isolation_times)), function(x)
-        sum(age_mask <= x))
-    ARs <- colSums(infection_histories)/n_alive
-
-    if(!separate_exposures) {
-        exposure_histories <- infection_histories
-    }
-
-    return(list(infection_histories, exposure_histories, ARs))
-}
 
 #' Generates attack rates from an SIR model with fixed beta/gamma, specified final attack rate and the number of time "buckets" to solve over ie. buckets=12 returns attack rates for 12 time periods
 #' @export

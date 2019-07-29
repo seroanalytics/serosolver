@@ -12,8 +12,8 @@ subttitle: Inferring historical A/H3N2 attack rates using cross sectional serolo
 bibliography: vignette_references.bib
 vignette: |
   %\VignetteIndexEntry{Serosolver Case Study 2} 
-  %\VignetteEngine{knitr::rmarkdown} 
   %\VignetteEncoding{UTF-8}
+  %\VignetteEngine{knitr::rmarkdown} 
 ---
 
 ```{r setup, include=FALSE}
@@ -183,7 +183,7 @@ filenames <- paste0(filename, "_",1:no_chains)
 chain_path <- sub("par_tab_base.csv","",par_tab_path)
 
 ## Create the posterior solving function that will be used in the MCMC framework 
-f <- create_posterior_func_fast(par_tab=par_tab,
+f <- create_posterior_func(par_tab=par_tab,
                                 titre_dat=titre_dat,
                                 antigenic_map=antigenic_map,
                                 version=prior_version) # function in posteriors.R
@@ -214,7 +214,7 @@ res <- foreach(x = filenames, .packages = 'serosolver') %dopar% {
                                 "inf_propn"=1, "hist_sample_prob"=1,
                                 "hist_switch_prob"=0.8, "year_swap_propn"=1),
                   filename = paste0(chain_path,x), 
-                  CREATE_POSTERIOR_FUNC = create_posterior_func_fast, 
+                  CREATE_POSTERIOR_FUNC = create_posterior_func, 
                   version = prior_version,
                   fast_version=TRUE)
 }
@@ -626,7 +626,7 @@ no_chains <- 5
 filenames <- paste0(filename, "_",1:no_chains)
 
 ## Create the posterior solving function that will be used in the MCMC framework 
-f <- create_posterior_func_fast(par_tab=sim_par_tab,
+f <- create_posterior_func(par_tab=sim_par_tab,
                                 titre_dat=sim_titre_dat,
                                 antigenic_map=antigenic_map,
                                 version=prior_version) # function in posteriors.R
@@ -657,7 +657,7 @@ res <- foreach(x = filenames) %dopar% {
                                 "thin_hist"=100,"save_block"=1000,
                                 "hist_switch_prob"=0.8, "hist_sample_prob"=1),
                   filename = paste0(chain_path,x), 
-                  CREATE_POSTERIOR_FUNC = create_posterior_func_fast, 
+                  CREATE_POSTERIOR_FUNC = create_posterior_func, 
                   version = prior_version,
                   fast_version=TRUE)
 }

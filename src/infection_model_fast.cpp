@@ -107,29 +107,11 @@ NumericVector titre_data_fast(const NumericVector &theta,
   if (mus.size() > 1) {
     strain_dep_boost = true;    
   }
-
-  // Back boosting model
-  double nu_long_recall;
-  double nu_short_recall;
-  double max_interference;
-  double interference_gradient;
-  double affinity_maturation;
-  int back_boosting_type = theta["back_boosting"];
-  bool back_boosting = back_boosting_type == 1;
-  //Rcpp::Rcout << "Back boosting: " << back_boosting << std::endl;
-  if(back_boosting){
-    nu_long_recall = theta["nu_long"];
-    nu_short_recall = theta["nu_short"];
-    max_interference = theta["max_interference"];
-    interference_gradient = theta["interference_gradient"];
-    affinity_maturation = theta["affinity_maturation"];
-  }
   
   // 3. If not using one of the specific mechanism functions, set the base_function flag to TRUE
   bool base_function = !(alternative_wane_func ||
 			 titre_dependent_boosting ||
-			 strain_dep_boost ||
-			 back_boosting);
+			 strain_dep_boost);
 
   // To store calculated titres
   NumericVector predicted_titres(total_titres, min_titre);
@@ -216,26 +198,6 @@ NumericVector titre_data_fast(const NumericVector &theta,
 					 antigenic_map_short,
 					 antigenic_map_long,
 					 boost_before_infection);
-      } else if(back_boosting) {
-	titre_model_backboost_cpp(predicted_titres,
-				  mu, mu_short,
-				  wane, tau,
-				  affinity_maturation,
-				  nu_long_recall, nu_short_recall,
-				  max_interference, interference_gradient,
-				  infection_times,
-				  infection_strain_indices_tmp,
-				  measurement_strain_indices,
-				  sample_times,
-				  index_in_samples,
-				  end_index_in_samples,
-				  start_index_in_data,
-				  nrows_per_blood_sample,
-				  number_strains,
-				  antigenic_map_short,
-				  antigenic_map_long,
-				  antigenic_distances,
-				  boost_before_infection);
       } else {
 	titre_data_fast_individual_base(predicted_titres, mu, mu_short,
 					wane, tau,

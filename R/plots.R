@@ -30,6 +30,7 @@ generate_quantiles <- function(x, sig_f = 3, qs = c(0.025, 0.5, 0.975), as_text 
 #' @param mu_indices vector of integers. for random effects on boosting parameter, mu. If random mus are included in the parameter table, this vector specifies which mu to use for each circulation year. For example, if years 1970-1976 have unique boosting, then mu_indices should be c(1,2,3,4,5,6). If every 3 year block shares has a unique boosting parameter, then this should be c(1,1,1,2,2,2)
 #' @param measurement_indices_by_time default NULL, optional vector giving the index of `measurement_bias` that each strain uses the measurement shift from from. eg. if there's 6 circulation years and 3 strain clusters
 #' @param for_res_plot TRUE/FALSE value. If using the output of this for plotting of residuals, returns the actual data points rather than summary statistics
+#' @param expand_titredat TRUE/FALSE value. If TRUE, solves titre predictions for all possible infection times. If left FALSE, then only solves for the infections times at which a titre against the circulating virus was measured in titre_dat.
 #' @return a list with the titre predictions (95% credible intervals, median and multivariate posterior mode) and the probabilities of infection for each individual in each epoch
 #' @export
 get_titre_predictions <- function(chain, infection_histories, titre_dat,
@@ -44,7 +45,6 @@ get_titre_predictions <- function(chain, infection_histories, titre_dat,
     samps <- intersect(unique(infection_histories$sampno), unique(chain$sampno))
     #chain <- chain[chain$sampno %in% samps, ]
     infection_histories <- infection_histories[infection_histories$sampno %in% samps, ]
-
     
     ## Take subset of individuals
     titre_dat <- titre_dat[titre_dat$individual %in% individuals, ]
@@ -99,7 +99,7 @@ get_titre_predictions <- function(chain, infection_histories, titre_dat,
     colnames(predicted_titres) <- tmp_samp
 
     ## If generating for residual plot, can return now
-    if (for_res_plot) return(list(residuals, samp_record, titre_dat, predicted_titres))
+    if (for_res_plot) return(list(residuals, samp_record, titre_dat1, predicted_titres))
 
     residuals <- cbind(titre_dat1, residuals)
 
@@ -664,19 +664,21 @@ plot_attack_rate_residuals<- function(infection_histories, titre_dat, strain_iso
 #' Plot historical attack rates
 #'
 #' Plots inferred historical attack rates from the MCMC output on infection histories
-#' #' @param infection_histories the MCMC chain for infection histories
+#' @param infection_histories the MCMC chain for infection histories
 #' @param titre_dat the data frame of titre data
 #' @param strain_isolation_times vector of the epochs of potential circulation
-#' @param true_ar data frame of true attack rates, with first column `year` equal to `strain_isolation_times`, and second column `AR` giving the attack rate. Column names: group, j, AR
 #' @param n_alive vector with the number of people alive in each year of circulation. Can be left as NULL, and ages will be used to infer this
 #' @param pointsize Numeric - how big should each point be?
 #' @param fatten Numeric - fatten parameter for ggplot pointrange
 #' @param pad_chain if TRUE, fills the infection history data table with entries for non-infection events (ie. 0s). Can be switched to FALSE for speed to get a rough idea of what the attack rates look like.
 #' @param prior_pars if not NULL, a list of parameters for the attack rate prior, giving the assumed prior_version along with alpha and beta
 #' @param plot_den if TRUE, produces a violin plot of attack rates rather than pointrange
+#' @param true_ar data frame of true attack rates, with first column `year` equal to `strain_isolation_times`, and second column `AR` giving the attack rate. Column names: group, j, AR
 #' @param by_group if TRUE, facets the plot by group ID
 #' @param group_subset if not NULL, plots only this subset of groups eg. 1:5
 #' @param plot_residuals if TRUE, plots the residuals between inferred and true attack rate
+#' @param colour_by_taken if TRUE, then colours the attack rates by whether or not titres against the circulating virus at that time were measured
+#' @param by_val frequency of x-axis labels
 #' @return a ggplot2 object with the inferred attack rates for each potential epoch of circulation
 #' @export
 plot_attack_rates <- function(infection_histories, titre_dat, strain_isolation_times, n_alive = NULL,
