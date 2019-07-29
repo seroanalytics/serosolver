@@ -68,14 +68,14 @@ add_measurement_shifts <- function(predicted_titres, to_add, start_index_in_data
 #' @param sample_times NumericVector, the times that each blood sample was taken
 #' @param rows_per_indiv_in_samples IntegerVector, one entry for each individual. Each entry dictates how many indices through sample_times to iterate per individual (ie. how many sample times does each individual have?)
 #' @param cum_nrows_per_individual_in_data IntegerVector, How many cumulative rows in the titre data correspond to each individual? 
-#' @param nrows_per_blood_sample IntegerVector, one entry per sample taken. Dicates how many entries to iterate through cum_nrows_per_individual_in_data for each sampling time considered
+#' @param nrows_per_blood_sample IntegerVector, one entry per sample taken. Dictates how many entries to iterate through cum_nrows_per_individual_in_data for each sampling time considered
 #' @param measurement_strain_indices IntegerVector, the indices of all measured strains in the melted antigenic map, with one entry per measured titre
 #' @param antigenic_map_long NumericVector, the collapsed cross reactivity map for long term boosting, after multiplying by sigma1 see \code{\link{create_cross_reactivity_vector}}
 #' @param antigenic_map_short NumericVector, the collapsed cross reactivity map for short term boosting, after multiplying by sigma2, see \code{\link{create_cross_reactivity_vector}}
 #' @param antigenic_distances NumericVector, the collapsed cross reactivity map giving euclidean antigenic distances, see \code{\link{create_cross_reactivity_vector}}
 #' @param mus NumericVector, if length is greater than one, assumes that strain-specific boosting is used rather than a single boosting parameter
 #' @param boosting_vec_indices IntegerVector, same length as circulation_times, giving the index in the vector \code{mus} that each entry should use as its boosting parameter.
-#' @param boost_before_infection bool to indicate if calculated titre for that time should be before the infection has occured, used to calculate titre-mediated immunity
+#' @param boost_before_infection bool to indicate if calculated titre for that time should be before the infection has occurred, used to calculate titre-mediated immunity
 #' @return NumericVector of predicted titres for each entry in measurement_strain_indices
 #' @export
 #' @family titre_model

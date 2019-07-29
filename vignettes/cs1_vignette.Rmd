@@ -76,8 +76,8 @@ The data used in this analysis are haemagglutination inhibition (HI) titres agai
 ```{r}
 ## Read in titre data
 # unvaccinated
-  input_dat_path <- system.file("extdata", "HKdata_h1n1_unvac.csv", package = "serosolver")
-  input_dat <- read.csv(file = input_dat_path, header = TRUE)
+input_dat_path <- system.file("extdata", "HKdata_h1n1_unvac.csv", package = "serosolver")
+input_dat <- read.csv(file = input_dat_path, header = TRUE)
 # vaccinated
 # input_dat_path2 <- system.file("extdata", "HKdata_h1n1_vac.csv", package = "serosolver")
 # input_dat_vac <- read.csv(file = input_dat_path2, header = TRUE)
@@ -154,27 +154,24 @@ filenames <- paste0(filename, "_",1:no_chains)
 chain_path <- sub("par_tab_base.csv","",par_tab_path)
 
 ## Create the posterior solving function that will be used in the MCMC framework 
-f <- create_posterior_func(par_tab=par_tab,
-                                titre_dat=titre_dat,
-                                antigenic_map=antigenic_map,
-                                version=1) # function in posteriors.R
-
+par_tab[par_tab$names == "mu_short","lower_bound"] <- 1
+model_func <- create_posterior_func(par_tab=par_tab,
+                            titre_dat=titre_dat,
+                            antigenic_map=antigenic_map,
+                            version=prior_version) # function in posteriors.R
+  
 ## Generate results in parallel
-res <- foreach(x = filenames, .packages = 'serosolver') %dopar% {
+res <- foreach(x = filenames, .packages = c('serosolver','data.table','plyr')) %dopar% {
   ## Not all random starting conditions return finite likelihood, so for each chain generate random
   ## conditions until we get one with a finite likelihood
   start_prob <- -Inf
   while(!is.finite(start_prob)){
-    start_tab <- par_tab
-    for(i in 1:nrow(start_tab)){
-      if(start_tab[i,"fixed"] == 0){
-        start_tab[i,"values"] <- runif(1,start_tab[i,"lower_start"], 
-                                      start_tab[i,"upper_start"])
-      }
-    }
+    ## Generating starting antibody kinetics parameters
+    start_tab <- generate_start_tab(par_tab)
+    
     ## Generate starting infection history
     start_inf <- setup_infection_histories_new_2(titre_dat, strain_isolation_times, space=3,titre_cutoff=4)
-    start_prob <- sum(f(start_tab$values, start_inf))
+    start_prob <- sum(model_func(start_tab$values, start_inf)[[1]])
   }
   
   res <- run_MCMC(par_tab = start_tab, 
@@ -185,9 +182,9 @@ res <- foreach(x = filenames, .packages = 'serosolver') %dopar% {
                                 "save_block"=1000,"inf_propn"=1, 
                                 "hist_sample_prob"=1,"hist_switch_prob"=0.8,
                                 "year_swap_propn"=1),
-                  filename = paste0(chain_path,x), 
+                  filename = paste0(chain_path,"_",x), 
                   CREATE_POSTERIOR_FUNC = create_posterior_func, 
-                  version = prior_version)
+                  version = 2)
 }
 ```
 
@@ -197,7 +194,7 @@ Once the MCMC chains are run, `serosolver` provides a number of simple functions
 ```{r message=FALSE, warning=FALSE}
 ## Read in the MCMC chains
 ## Note that `thin` here is in addition to any thinning done during the fitting
-all_chains <- load_mcmc_chains(location=chain_path,thin=1,burnin=1000,
+all_chains <- load_mcmc_chains(location=chain_path,thin=1,burnin=0,
                              par_tab=par_tab,unfixed=FALSE,convert_mcmc=TRUE)
 print(summary(all_chains))
 ```
@@ -242,7 +239,7 @@ print(p_ar)
 
 ## Calculate convergence diagnostics and summary statistics on infection histories
 ## Important to scale all infection estimates by number alive from titre_dat
-n_alive <- get_n_alive(titre_dat, strain_isolation_times)
+n_alive <- get_n_alive_group(titre_dat, strain_isolation_times,melt=TRUE)
 
 ## This function generates a number of MCMC outputs
 ps_infhist <- plot_posteriors_infhist(inf_chain=inf_chain, 
@@ -408,18 +405,13 @@ f <- create_posterior_func(par_tab=sim_par_tab,
                                 antigenic_map=antigenic_map) # function in posteriors.R
 
 ## Generate results in parallel
-res <- foreach(x = filenames, .packages = "serosolver") %dopar% {
+res <- foreach(x = filenames, .packages = c('serosolver','data.table','plyr')) %dopar% {
   ## Not all random starting conditions return finite likelihood, so for each chain generate random
   ## conditions until we get one with a finite likelihood
   start_prob <- -Inf
   while(!is.finite(start_prob)){
-    start_tab <- sim_par_tab
-    for(i in 1:nrow(start_tab)){
-      if(start_tab[i,"fixed"] == 0){
-        start_tab[i,"values"] <- runif(1,start_tab[i,"lower_start"], 
-                                      start_tab[i,"upper_start"])
-      }
-    }
+    ## Generate starting values for theta
+    start_tab <- generate_start_tab(par_tab)
     ## Generate starting infection history
     start_inf <- setup_infection_histories_new_2(sim_titre_dat, strain_isolation_times, space=3,titre_cutoff=4)
     start_prob <- sum(f(start_tab$values, start_inf))
@@ -486,6 +478,7 @@ p_ar <- plot_attack_rates(inf_chain, sim_titre_dat, strain_isolation_times, pad_
                                                           alpha=par_tab[par_tab$names=="alpha","values"],
                                                           beta=par_tab[par_tab$names=="beta","values"]))  +
   geom_point(data=sim_ar,aes(x=year,y=AR),col="purple")
+
 print(p_ar)
 
 ## Calculate convergence diagnostics and summary statistics on infection histories

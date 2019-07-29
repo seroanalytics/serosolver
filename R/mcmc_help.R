@@ -10,7 +10,9 @@
 #' @export
 generate_start_tab <- function(par_tab){
     for(i in 1:nrow(par_tab)){
-        par_tab[i, "values"] <- runif(1,par_tab[i,"lower_start"], par_tab[i, "upper_start"])
+        if(par_tab[i,"fixed"] == 0){
+            par_tab[i, "values"] <- runif(1,par_tab[i,"lower_start"], par_tab[i, "upper_start"])
+        }
     }
     return(par_tab)        
 }
