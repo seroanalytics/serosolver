@@ -22,3 +22,8 @@ the formatted quantiles
 \description{
 Given a vector of MCMC samples, generates and formats the desired quantile estimates
 }
+\examples{
+data(example_theta_chain)
+x <- example_theta_chain$mu
+generate_quantiles(x)
+}

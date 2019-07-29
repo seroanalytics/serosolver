@@ -81,6 +81,14 @@ The \code{mcmc_pars} argument has the following options:
 \item year_swap_propn (when swapping contents of two time points, what proportion of individuals should have their contents swapped)
 }
 }
+\examples{
+\dontrun{
+data(example_titre_dat)
+data(example_par_tab)
+data(example_antigenic_map)
+res <- run_MCMC(example_par_tab[example_par_tab$names != "phi",], example_titre_dat, example_antigenic_map, version=2)
+}
+}
 \seealso{
 \url{https://github.com/jameshay218/lazymcmc}
 

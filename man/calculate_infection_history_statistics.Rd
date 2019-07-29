@@ -15,8 +15,6 @@ calculate_infection_history_statistics(inf_chain, burnin = 0,
 
 \item{years}{vector of the epochs of potential circulation}
 
-\item{n_alive}{vector with the number of people alive in each year of circulation.}
-
 \item{known_ar}{data frame of known attack rates, if known.}
 
 \item{known_infection_history}{data frame of known infection histories.}
@@ -29,3 +27,39 @@ a list of data frames with summary statistics
 \description{
 Finds the median, mean and 95% credible intervals for the attack rates and total number of infections per individual
 }
+\examples{
+data(example_inf_chain)
+data(example_antigenic_map)
+data(example_titre_dat)
+data(example_inf_hist)
+strain_isolation_times <- example_antigenic_map$inf_years
+## Find number alive in each time period
+n_alive <- get_n_alive(example_titre_dat, strain_isolation_times)
+## Get actual number of infections per time
+n_infs <- colSums(example_inf_hist)
+## Create data frame of true ARs
+known_ar <- n_infs/n_alive
+known_ar <- data.frame("j"=strain_isolation_times,"AR"=known_ar,"group"=1)
+## Get true infection histories
+known_inf_hist <- data.frame(example_inf_hist)
+colnames(known_inf_hist) <- strain_isolation_times
+
+## Need to get group specific n_alive and adjust to correct time frame 
+n_alive_group <- get_n_alive_group(example_titre_dat, strain_isolation_times,melt_dat = TRUE)
+n_alive_group$j <- strain_isolation_times[n_alive_group$j]
+results <- calculate_infection_history_statistics(example_inf_chain, 0, strain_isolation_times,
+                                                  n_alive=n_alive_group, known_ar=known_ar,
+                                                  known_infection_history=known_inf_hist,
+                                                  pad_chain = FALSE)
+}
+\seealso{
+Other infection_history_plots: \code{\link{generate_cumulative_inf_plots}},
+  \code{\link{plot_data}},
+  \code{\link{plot_infection_histories}},
+  \code{\link{plot_infection_history_chains_indiv}},
+  \code{\link{plot_infection_history_chains_time}},
+  \code{\link{plot_number_infections}},
+  \code{\link{plot_posteriors_infhist}},
+  \code{\link{plot_total_number_infections}}
+}
+\concept{infection_history_plots}

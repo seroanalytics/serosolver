@@ -4,7 +4,7 @@
 \alias{plot_posteriors_theta}
 \title{Plot inferred posteriors theta}
 \usage{
-plot_posteriors_theta(chain, par_tab, burnin = 0, samples = 1000,
+plot_posteriors_theta(chain, par_tab, burnin = 0, samples = 100,
   calculate_ess = TRUE, plot_corr = TRUE, save_plots = FALSE,
   plot_mcmc = TRUE, save_loc = "")
 }
@@ -33,3 +33,14 @@ a list of ggplot objects and a data frame of estimates
 \description{
 Produces and saves estimated posterior distributions for the antibody kinetics parameters
 }
+\examples{
+\dontrun{
+data(example_theta_chain)
+data(example_par_tab)
+plot_posteriors_theta(example_theta_chain,example_par_tab,samples=100)
+}
+}
+\seealso{
+Other theta_plots: \code{\link{plot_samples_distances}}
+}
+\concept{theta_plots}

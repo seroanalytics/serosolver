@@ -7,7 +7,7 @@
 generate_start_tab(par_tab)
 }
 \arguments{
-\item{par_tab}{See \code{\example{example_par_tab}}}
+\item{par_tab}{See \code{\link{example_par_tab}}}
 }
 \value{
 a data frame matching par_tab

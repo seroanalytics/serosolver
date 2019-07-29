@@ -2,7 +2,7 @@
 % Please edit documentation in R/plots.R
 \name{plot_samples_distances}
 \alias{plot_samples_distances}
-\title{Plot time between samples}
+\title{Plot time between serum samples}
 \usage{
 plot_samples_distances(titre_dat)
 }
@@ -13,5 +13,13 @@ plot_samples_distances(titre_dat)
 a ggplot2 object
 }
 \description{
-Plot time between samples
+Plot time between serum samples
 }
+\examples{
+data(example_titre_dat)
+plot_samples_distances(example_titre_dat)
+}
+\seealso{
+Other theta_plots: \code{\link{plot_posteriors_theta}}
+}
+\concept{theta_plots}

@@ -33,3 +33,26 @@ a ggplot2 object
 \description{
 Given outputs from an MCMC run and the data used for fitting, generates an NxM matrix of plots where N is the number of individuals to be plotted and M is the range of sampling times. Where data are available, plots the observed titres and model predicted trajectories
 }
+\examples{
+\dontrun{
+data(example_theta_chain)
+data(example_inf_chain)
+data(example_titre_dat)
+data(example_antigenic_map)
+data(example_par_tab)
+
+model_fit_plot <- plot_infection_histories(example_theta_chain, example_inf_chain, example_titre_dat, 
+                                           1:10, example_antigenic_map, example_par_tab)
+}
+}
+\seealso{
+Other infection_history_plots: \code{\link{calculate_infection_history_statistics}},
+  \code{\link{generate_cumulative_inf_plots}},
+  \code{\link{plot_data}},
+  \code{\link{plot_infection_history_chains_indiv}},
+  \code{\link{plot_infection_history_chains_time}},
+  \code{\link{plot_number_infections}},
+  \code{\link{plot_posteriors_infhist}},
+  \code{\link{plot_total_number_infections}}
+}
+\concept{infection_history_plots}

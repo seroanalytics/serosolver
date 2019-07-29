@@ -34,7 +34,7 @@ Firts a smoothing spline through a set of antigenic coordinates, and uses this t
 antigenic_coords_path <- system.file("extdata", "fonville_map_approx.csv", package = "serosolver")
 antigenic_coords <- read.csv(antigenic_coords_path, stringsAsFactors=FALSE)
 antigenic_coords$Strain <- c(68,72,75,77,79,87,89,92,95,97,102,104,105,106) + 1900
-antigenic_map <- generate_antigenic_map_flexible(antigenic_coords, buckets=1, year_min=1968, year_max=2010,spar=0.5)
+antigenic_map <- generate_antigenic_map_flexible(antigenic_coords, buckets=1, year_min=1968, year_max=2015,spar=0.3)
 
 times <- 1968:2010
 n_times <- length(times)

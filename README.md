@@ -16,9 +16,7 @@ Installation
 
 ``` r
 #library(devtools)
-devtools::install_github("seroanalytics/serosolver")
-#> Skipping install of 'serosolver' from a github remote, the SHA1 (38883fee) has not changed since last install.
-#>   Use `force = TRUE` to force installation
+#devtools::install_github("seroanalytics/serosolver")
 library(serosolver)
 ```
 
@@ -35,7 +33,7 @@ This is a basic example of simulating some serological data and fitting the mode
 ``` r
 # library(serosolver)
 # ## Load in example parameter values and antigenic map
-# data(example_par_tab) 
+# data(example_par_tab)
 # data(example_antigenic_map)
 # 
 # ## Get all possible infection times
@@ -54,11 +52,11 @@ This is a basic example of simulating some serological data and fitting the mode
 # attack_rates <- runif(length(strain_isolation_times), 0.05, 0.15)
 # 
 # ## Simulate a full serosurvey with these parameters
-# all_simulated_data <- simulate_data(par_tab=example_par_tab, group=1, n_indiv=50,    
+# all_simulated_data <- simulate_data(par_tab=example_par_tab, group=1, n_indiv=50,
 #                                   strain_isolation_times=strain_isolation_times,
 #                                   measured_strains=sampled_viruses,
-#                                   sampling_times=2010:2015, nsamps=n_samps, 
-#                                   antigenic_map=example_antigenic_map, 
+#                                   sampling_times=2010:2015, nsamps=n_samps,
+#                                   antigenic_map=example_antigenic_map,
 #                                   age_min=10,age_max=75,
 #                                   attack_rates=attack_rates, repeats=2)
 # 
@@ -76,5 +74,5 @@ This is a basic example of simulating some serological data and fitting the mode
 # ## Read in the MCMC chains and plot!
 # chain <- read.csv(res$chain_file)
 # inf_chain <- data.table::fread(res$history_file)
-# plot(coda::as.mcmc(chain[chain$sampno > 10000,c("mu","mu_short","wane")]))      
+# plot(coda::as.mcmc(chain[chain$sampno > 10000,c("mu","mu_short","wane")]))
 ```

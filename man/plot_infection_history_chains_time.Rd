@@ -24,6 +24,25 @@ a list of two ggplot objects - the MCMC trace and MCMC densities
 \description{
 Plot MCMC trace for infections per year
 }
+\examples{
+data(example_inf_chain)
+data(example_titre_dat)
+data(example_antigenic_map)
+times <- example_antigenic_map$inf_years
+n_alive_group <- get_n_alive_group(example_titre_dat, strain_isolation_times,melt_dat = TRUE)
+n_alive_group$j <- strain_isolation_times[n_alive_group$j]
+plot_infection_history_chains_time(example_inf_chain, 0, sample(1:length(times),10),n_alive,FALSE)
+}
 \seealso{
 \code{\link{plot_infection_history_chains_indiv}}
+
+Other infection_history_plots: \code{\link{calculate_infection_history_statistics}},
+  \code{\link{generate_cumulative_inf_plots}},
+  \code{\link{plot_data}},
+  \code{\link{plot_infection_histories}},
+  \code{\link{plot_infection_history_chains_indiv}},
+  \code{\link{plot_number_infections}},
+  \code{\link{plot_posteriors_infhist}},
+  \code{\link{plot_total_number_infections}}
 }
+\concept{infection_history_plots}

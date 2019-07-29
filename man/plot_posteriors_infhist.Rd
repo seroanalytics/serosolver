@@ -5,15 +5,13 @@
 \title{Plot inferred posteriors infection histories}
 \usage{
 plot_posteriors_infhist(inf_chain, years, n_alive, known_ar = NULL,
-  known_infection_history = NULL, burnin = 0, samples = 1000,
+  known_infection_history = NULL, burnin = 0, samples = 100,
   pad_chain = FALSE)
 }
 \arguments{
 \item{inf_chain}{the data table with infection history samples from \code{\link{run_MCMC}}}
 
 \item{years}{vector of the epochs of potential circulation}
-
-\item{n_alive}{vector with the number of people alive in each year of circulation.}
 
 \item{known_ar}{data frame of known attack rates, if known.}
 
@@ -24,6 +22,8 @@ plot_posteriors_infhist(inf_chain, years, n_alive, known_ar = NULL,
 \item{samples}{how many samples from the chain to take}
 
 \item{pad_chain}{if TRUE, pads the infection history MCMC chain with non-infection events}
+
+\item{n_alive_group}{vector with the number of people alive in each year of circulation.}
 }
 \value{
 a list of ggplot objects and data frame of posterior estimates
@@ -31,3 +31,37 @@ a list of ggplot objects and data frame of posterior estimates
 \description{
 Plots and calculates many summary statistics from the infection history MCMC chain
 }
+\examples{
+## Load in exaple data
+data(example_inf_chain)
+data(example_antigenic_map)
+data(example_titre_dat)
+
+strain_isolation_times <- example_antigenic_map$inf_years
+## Setup known attack rates
+n_alive <- get_n_alive(example_titre_dat, strain_isolation_times)
+n_infs <- colSums(example_inf_hist)
+known_ar <- n_infs/n_alive
+known_ar <- data.frame("j"=strain_isolation_times,"AR"=known_ar,"group"=1)
+
+## Setup known infection histories
+known_inf_hist <- data.frame(example_inf_hist)
+colnames(known_inf_hist) <- strain_isolation_times
+
+n_alive_group <- get_n_alive_group(example_titre_dat, strain_isolation_times,melt_dat = TRUE)
+n_alive_group$j <- strain_isolation_times[n_alive_group$j]
+all_plots <- plot_posteriors_infhist(example_inf_chain, strain_isolation_times, n_alive_group,
+                                     known_ar=known_ar,known_infection_history = known_inf_hist,
+                                     samples=100)
+}
+\seealso{
+Other infection_history_plots: \code{\link{calculate_infection_history_statistics}},
+  \code{\link{generate_cumulative_inf_plots}},
+  \code{\link{plot_data}},
+  \code{\link{plot_infection_histories}},
+  \code{\link{plot_infection_history_chains_indiv}},
+  \code{\link{plot_infection_history_chains_time}},
+  \code{\link{plot_number_infections}},
+  \code{\link{plot_total_number_infections}}
+}
+\concept{infection_history_plots}
