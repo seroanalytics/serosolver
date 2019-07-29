@@ -24,8 +24,8 @@ binaries
 *chain.csv
 *infection_histories.csv
 
-inst/extdata/cs1_real/*
-inst/extdata/cs1_sim/*
-inst/extdata/cs2_real/*
-inst/extdata/cs2_sim/*
+inst/extdata/cs1_real/*.csv
+inst/extdata/cs1_sim/*.csv
+inst/extdata/cs2_real/*.csv
+inst/extdata/cs2_sim/*.csv
 
