@@ -1,7 +1,9 @@
 Package: serosolver
 Title: Inference Framework for Serological Data
 Version: 1.0.0
-Authors@R: person("James","Hay",email="jameshay218@gmail.com",role=c("aut","cre"), comment="0000-0002-1998-1844")
+Authors@R: 
+    c(person("James","Hay",email="jameshay218@gmail.com",role=c("aut","cre"), comment="0000-0002-1998-1844",
+    person("Adam", "Kucharski",email="Adam.Kucharski@lshtm.ac.uk", role=c("aut")))
 Maintainer:  James Hay <jameshay218@gmail.com>
 Description: Given a table of serological data for a population, infers the
     presence and timing of infections based on raised titres.

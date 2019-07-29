@@ -22,3 +22,4 @@ binaries
 *.so
 
 *chain.csv
+*infection_histories.csv
