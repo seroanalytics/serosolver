@@ -133,7 +133,7 @@ void titre_model_backboost_cpp(NumericVector &predicted_titres,
   double maturation_amount;
   
   // Parameters to calculate recall boosting amounts
-  double overall_suppresion;
+  double overall_suppression;
   double distance;
   double boost_propn_tmp;
   double tmp_boost_long;
@@ -154,20 +154,23 @@ void titre_model_backboost_cpp(NumericVector &predicted_titres,
   // Go through each infection and calculate HOMOLOGOUS boosting from novel and recall responses
   n_inf = 1;
   for(int i = 0; i < max_infections; ++i){
-    overall_suppresion = 0;
+    //Rcpp::Rcout << "Infection number: " << i << std::endl;
+    overall_suppression = 0;
     seniority_terms = MAX(0, 1.0 - tau*(n_inf - 1.0));
     n_inf++;
     // From this infection, calculate back-boost to each previous strain
     for(int j = 0; j < i; ++j){
+      //Rcpp::Rcout << "Back boost number: " << j << std::endl;
       // Find distance between this infection and each previous strain
       distance = antigenic_distances[infection_strain_indices[i]*number_strains + infection_strain_indices[j]];
+      //Rcpp::Rcout << "Antigenic distance: " << distance << std::endl;
       //Rcpp::Rcout << "Distance: " << distance << std::endl;
       // Amount of boosting "stolen" by this infection
-      boost_propn_tmp = MAX(0, max_interference - interference_gradient*distance);
-      //Rcpp::Rcout << "Boost propn: " << boost_propn_tmp << std::endl;
+      boost_propn_tmp = MAX(0, 1.0 - interference_gradient*distance);
+      //Rcpp::Rcout << "Stolen boost: " << boost_propn_tmp << std::endl;
       
       // Total boosting stolen
-      overall_suppresion += boost_propn_tmp;
+      overall_suppression += boost_propn_tmp;
       
       // If recall boost, use recall pars
       long_term_boosts(i, j) = nu_long_recall;
@@ -175,14 +178,15 @@ void titre_model_backboost_cpp(NumericVector &predicted_titres,
       boost_propns(i, j) = boost_propn_tmp;
     }
     // If there was some stolen recall boost, re-normalise
-    if(overall_suppresion > 0){
-      boost_propns(i,_) = boost_propns(i,_)/overall_suppresion;
-      boost_propns(i,_) = boost_propns(i,_)*MIN(max_interference, overall_suppresion);
+    if(overall_suppression > 0){
+      boost_propns(i,_) = boost_propns(i,_)/overall_suppression;
+      boost_propns(i,_) = boost_propns(i,_)*MIN(max_interference, overall_suppression);
     }
+    //Rcpp::Rcout << "Back boosts: " << boost_propns(i,_) << std::endl;
     // Remaining boost is novel boost
-    boost_propns(i,i) = 1.0 - MIN(max_interference, overall_suppresion);
-    long_term_boosts(i,i) = nu_long_recall;
-    short_term_boosts(i,i) = nu_short_recall;
+    boost_propns(i,i) = 1.0 - MIN(max_interference, overall_suppression);
+    long_term_boosts(i,i) = mu;
+    short_term_boosts(i,i) = mu_short;
   }
 
   // Now that boosting has been calculated, work out observed titre for each observed strain at
@@ -200,7 +204,7 @@ void titre_model_backboost_cpp(NumericVector &predicted_titres,
     n_titres = nrows_per_blood_sample[i];
     end_index_in_data = start_index_in_data + n_titres;
     tmp_titre_index = start_index_in_data;
-    // Rcpp::Rcout << "Sampling time: " << sampling_time << std::endl;
+    //Rcpp::Rcout << "Sampling time: " << sampling_time << std::endl;
     // Contribution of all infections
     for(int j = 0; j < max_infections; ++j){
       infection_time = infection_times[j];
@@ -236,7 +240,7 @@ void titre_model_backboost_cpp(NumericVector &predicted_titres,
           // For each measured strain at each sample
           for(int k = 0; k < n_titres; ++k){
             index = measurement_strain_indices[tmp_titre_index + k]*number_strains + inf_map_index;
-            predicted_titres[tmp_titre_index + k] += tmp_boost_propn* // Modified boost
+            predicted_titres[tmp_titre_index + k] +=  seniority*tmp_boost_propn* // Modified boost
               (tmp_boost_long*antigenic_map_long[index]*maturation_amount + // Long term
                tmp_boost_short*antigenic_map_short[index]*wane_amount); // Short term
           }
