@@ -234,7 +234,7 @@ simulate_individual_faster <- function(theta,
                                 mus=NULL,mu_indices=NULL,
                                 measurement_bias = NULL, measurement_indices = NULL,
                                 add_noise=TRUE,repeats=1,
-                                age=NULL){
+                                age=0){
     if(is.null(mus)){
         mus <- c(-1)
         mu_indices <- c(-1)
@@ -268,7 +268,9 @@ simulate_individual_faster <- function(theta,
                               antigenic_map_long,
                               antigenic_map_short,
                               antigenic_distances,
-                              mus, mu_indices, FALSE)
+                              mus, mu_indices,
+                              age,
+                              FALSE)
 
     ## Repeated each simulated titre per observation repeat
     titres <- rep(titres, repeats)
@@ -316,7 +318,7 @@ simulate_individual <- function(theta,
                                 mus=NULL,mu_indices=NULL,
                                 measurement_bias = NULL, measurement_indices = NULL,
                                 add_noise=TRUE,repeats=1,
-                                age=NULL){
+                                age=0){
     if(is.null(mus)){
         mus <- c(-1)
         mu_indices <- c(-1)
@@ -353,7 +355,8 @@ simulate_individual <- function(theta,
                               rows_per_blood, measured_strain_indices,
                               antigenic_map_long, antigenic_map_short,
                               antigenic_distances,
-                              mus, mu_indices)
+                              mus, mu_indices,
+                              age)
     ## Repeated each simulated titre per observation repeat
     titres <- rep(titres, repeats)
     ## Housekeeping for return data

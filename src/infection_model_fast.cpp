@@ -38,6 +38,7 @@ NumericVector titre_data_fast(const NumericVector &theta,
 			      const NumericVector &antigenic_distances,			      
 			      const NumericVector &mus,
 			      const IntegerVector &boosting_vec_indices,
+			      const NumericVector &birth_times,
 			      bool boost_before_infection = false
 			      ){
   // Dimensions of structures

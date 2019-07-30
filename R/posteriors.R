@@ -447,7 +447,8 @@ create_posterior_func <- function(par_tab,
                 antigenic_map_long,
                 antigenic_map_short,
                 antigenic_distances,
-                mus, boosting_vec_indices
+                mus, boosting_vec_indices,
+                birth_times
             )
             if(titre_immunity){
                 ## Calculate titres against viruses at the times they circulated
@@ -463,6 +464,7 @@ create_posterior_func <- function(par_tab,
                     antigenic_map_short,
                     antigenic_distances,
                     mus, boosting_vec_indices,
+                    birth_times,
                     TRUE
                 )
             }            
@@ -610,6 +612,7 @@ create_posterior_func <- function(par_tab,
                     accepted_swap=accepted_swap,
                     mus,
                     boosting_vec_indices,
+                    birth_times,
                     n_alive_total,
                     temp,
                     solve_likelihood                
@@ -717,6 +720,7 @@ create_posterior_func <- function(par_tab,
                 antigenic_map_short,
                 antigenic_distances,
                 mus, boosting_vec_indices,
+                birth_times,
                 TRUE
             )
             titre_dat_immunity$titre <- y_at_inf
@@ -742,7 +746,8 @@ create_posterior_func <- function(par_tab,
                 nrows_per_blood_sample, measured_strain_indices, antigenic_map_long,
                 antigenic_map_short,
                 antigenic_distances,
-                mus, boosting_vec_indices
+                mus, boosting_vec_indices,
+                birth_times
             )
             if (use_measurement_bias) {
                 measurement_bias <- pars[measurement_indices_par_tab]

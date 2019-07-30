@@ -181,6 +181,7 @@ List inf_hist_prop_prior_v2_and_v4(const NumericVector &theta, // Model paramete
 				   const NumericVector &repeat_data,
 				   const IntegerVector &repeat_indices,
 				   const NumericVector &titre_shifts,
+				   const NumericVector &birth_times,
 				   IntegerVector proposal_iter,
 				   IntegerVector accepted_iter,
 				   IntegerVector proposal_swap,
@@ -695,18 +696,18 @@ List inf_hist_prop_prior_v2_and_v4(const NumericVector &theta, // Model paramete
 
 // [[Rcpp::export]]
 double titre_data_fast_individual_base_indiv(const double &mu,
-                                           const double &mu_short,
-                                           const double &wane,
-                                           const double &tau,
-                                           const NumericVector &infection_times,
-                                           const IntegerVector &infection_strain_indices_tmp,
-                                           const int &measurement_strain_index,
-                                           const double &sampling_time,
-                                           const int &number_strains,
-                                           const NumericVector &antigenic_map_short,
-                                           const NumericVector &antigenic_map_long,
-                                           bool boost_before_infection = false
-){
+					     const double &mu_short,
+					     const double &wane,
+					     const double &tau,
+					     const NumericVector &infection_times,
+					     const IntegerVector &infection_strain_indices_tmp,
+					     const int &measurement_strain_index,
+					     const double &sampling_time,
+					     const int &number_strains,
+					     const NumericVector &antigenic_map_short,
+					     const NumericVector &antigenic_map_long,
+					     bool boost_before_infection = false
+					     ){
   double predicted_titre=0;
   double time;
   double n_inf = 1.0;
