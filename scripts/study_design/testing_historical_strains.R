@@ -32,12 +32,13 @@ for(filename in filename_vec){
     
     titre_dat <- merge(titre_dat, ages)
     
-    res <- run_MCMC(par_tab = par_tab, titre_dat = titre_dat, 
+    tryCatch(res <- run_MCMC(par_tab = par_tab, titre_dat = titre_dat, 
                     antigenic_map = fit_dat, mcmc_pars = mcmc_pars,
                     mvr_pars = NULL, start_inf_hist = NULL, filename=paste('chains/',filename,"_",h,sep=""),
                     CREATE_POSTERIOR_FUNC = create_posterior_func_fast, CREATE_PRIOR_FUNC = NULL,
                     version = 2,  
-                    fast_version = TRUE)
+                    fast_version = TRUE),
+             error = function(e) write.table(paste(filename,"_",h,sep=""), paste(filename,"_",h,".txt",sep="")))
   }
   
 }

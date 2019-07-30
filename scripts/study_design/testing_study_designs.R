@@ -40,12 +40,13 @@ for(f in 1:3){
       titre_dat <- read.csv(paste("data/study_design/",filename,"dat.csv",sep = ""))
       ages <- read.csv(paste("data/study_design/",filename,"ages.csv",sep = ""))
       
-      res <- run_MCMC(par_tab = par_tab, titre_dat = merge(titre_dat,ages, by = "individual"), 
+     tryCatch( res <- run_MCMC(par_tab = par_tab, titre_dat = merge(titre_dat,ages, by = "individual"), 
                       antigenic_map = fit_dat, mcmc_pars = mcmc_pars,
                       mvr_pars = NULL, start_inf_hist = NULL, filename=paste("chains/", filename,sep=""),
                       CREATE_POSTERIOR_FUNC = create_posterior_func_fast, CREATE_PRIOR_FUNC = NULL,
                       version = 2,  
-                      fast_version = TRUE)
+                      fast_version = TRUE),
+      error = function(e) write.table(filename, paste(filename,".txt",sep="")))
     }
   }
 }
