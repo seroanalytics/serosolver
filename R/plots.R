@@ -733,7 +733,10 @@ plot_attack_rates <- function(infection_histories, titre_dat, strain_isolation_t
   if (is.null(group_subset)) {
     group_subset <- unique(titre_dat$group)
   }
-  if (!by_group) titre_dat$group <- 1
+    if (!by_group) {
+        titre_dat$group <- 1
+        infection_histories$group <- 1
+    }
 
   ## Find inferred total number of infections from the MCMC output
   ## Scale by number of individuals that were alive in each epoch
@@ -745,7 +748,7 @@ plot_attack_rates <- function(infection_histories, titre_dat, strain_isolation_t
   n_groups <- length(unique(titre_dat$group))
   n_alive_tot <- get_n_alive(titre_dat, strain_isolation_times)
   colnames(infection_histories)[1] <- "individual"
-  infection_histories <- merge(infection_histories, data.table(unique(titre_dat[, c("individual", "group")])), by = "individual")
+  infection_histories <- merge(infection_histories, data.table(unique(titre_dat[, c("individual", "group")])), by = c("individual","group"))
   years <- c(strain_isolation_times, max(strain_isolation_times) + 3)
   data.table::setkey(infection_histories, "sampno", "j", "chain_no", "group")
   tmp <- infection_histories[, list(V1 = sum(x)), by = key(infection_histories)]
@@ -808,10 +811,10 @@ plot_attack_rates <- function(infection_histories, titre_dat, strain_isolation_t
     if (!is.null(prior_dens)) {
       quantiles[quantiles$j == max(years), "taken"] <- "Prior"
     }
-    colnames(quantiles)[5] <- "Sample taken"
-    colnames(quantiles)[6] <- "Virus tested"
+    colnames(quantiles)[which(colnames(quantiles) == "taken")] <- "Sample taken"
+    colnames(quantiles)[which(colnames(quantiles) == "tested")]  <- "Virus tested"
 
-    p <- ggplot(quantiles[quantiles$group %in% grou_subset, ]) +
+    p <- ggplot(quantiles[quantiles$group %in% group_subset, ]) +
       scale_y_continuous(limits = c(0, 1), expand = c(0, 0)) +
       scale_x_continuous(breaks = year_breaks, labels = year_labels) +
       theme_classic() +

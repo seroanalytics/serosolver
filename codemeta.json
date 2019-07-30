@@ -15,7 +15,39 @@
     "url": "https://r-project.org"
   },
   "runtimePlatform": "R version 3.6.1 (2019-07-05)",
-  "author": {},
+  "author": [
+    {
+      "@type": "Person",
+      "givenName": "James",
+      "familyName": "Hay",
+      "email": "jameshay218@gmail.com",
+      "@id": "https://orcid.org/0000-0002-1998-1844"
+    },
+    {
+      "@type": "Person",
+      "givenName": "Adam",
+      "familyName": "Kucharski",
+      "email": "Adam.Kucharski@lshtm.ac.uk"
+    },
+    {
+      "@type": "Person",
+      "givenName": "Kylie",
+      "familyName": "Ainslie",
+      "email": "k.ainslie@imperial.ac.uk"
+    },
+    {
+      "@type": "Person",
+      "givenName": "Amanda",
+      "familyName": "Minter",
+      "email": "Amanda.Minter@lshtm.ac.uk"
+    },
+    {
+      "@type": "Person",
+      "givenName": "Steven",
+      "familyName": "Riley",
+      "email": "s.riley@imperial.ac.uk"
+    }
+  ],
   "contributor": {},
   "copyrightHolder": {},
   "funder": {},
@@ -24,21 +56,34 @@
       "@type": "Person",
       "givenName": "James",
       "familyName": "Hay",
-      "email": "jameshay218@gmail.com"
+      "email": "jameshay218@gmail.com",
+      "@id": "https://orcid.org/0000-0002-1998-1844"
     }
   ],
   "softwareSuggestions": [
     {
       "@type": "SoftwareApplication",
-      "identifier": "testthat",
-      "name": "testthat",
+      "identifier": "coda",
+      "name": "coda",
       "provider": {
         "@id": "https://cran.r-project.org",
         "@type": "Organization",
         "name": "Comprehensive R Archive Network (CRAN)",
         "url": "https://cran.r-project.org"
       },
-      "sameAs": "https://CRAN.R-project.org/package=testthat"
+      "sameAs": "https://CRAN.R-project.org/package=coda"
+    },
+    {
+      "@type": "SoftwareApplication",
+      "identifier": "foreach",
+      "name": "foreach",
+      "provider": {
+        "@id": "https://cran.r-project.org",
+        "@type": "Organization",
+        "name": "Comprehensive R Archive Network (CRAN)",
+        "url": "https://cran.r-project.org"
+      },
+      "sameAs": "https://CRAN.R-project.org/package=foreach"
     },
     {
       "@type": "SoftwareApplication",
@@ -54,6 +99,18 @@
     },
     {
       "@type": "SoftwareApplication",
+      "identifier": "Matrix",
+      "name": "Matrix",
+      "provider": {
+        "@id": "https://cran.r-project.org",
+        "@type": "Organization",
+        "name": "Comprehensive R Archive Network (CRAN)",
+        "url": "https://cran.r-project.org"
+      },
+      "sameAs": "https://CRAN.R-project.org/package=Matrix"
+    },
+    {
+      "@type": "SoftwareApplication",
       "identifier": "rmarkdown",
       "name": "rmarkdown",
       "provider": {
@@ -63,6 +120,38 @@
         "url": "https://cran.r-project.org"
       },
       "sameAs": "https://CRAN.R-project.org/package=rmarkdown"
+    },
+    {
+      "@type": "SoftwareApplication",
+      "identifier": "testthat",
+      "name": "testthat",
+      "provider": {
+        "@id": "https://cran.r-project.org",
+        "@type": "Organization",
+        "name": "Comprehensive R Archive Network (CRAN)",
+        "url": "https://cran.r-project.org"
+      },
+      "sameAs": "https://CRAN.R-project.org/package=testthat"
+    }
+  ],
+  "softwareRequirements": [
+    {
+      "@type": "SoftwareApplication",
+      "identifier": "R",
+      "name": "R",
+      "version": ">= 3.5.0"
+    },
+    {
+      "@type": "SoftwareApplication",
+      "identifier": "data.table",
+      "name": "data.table",
+      "provider": {
+        "@id": "https://cran.r-project.org",
+        "@type": "Organization",
+        "name": "Comprehensive R Archive Network (CRAN)",
+        "url": "https://cran.r-project.org"
+      },
+      "sameAs": "https://CRAN.R-project.org/package=data.table"
     },
     {
       "@type": "SoftwareApplication",
@@ -78,18 +167,6 @@
     },
     {
       "@type": "SoftwareApplication",
-      "identifier": "coda",
-      "name": "coda",
-      "provider": {
-        "@id": "https://cran.r-project.org",
-        "@type": "Organization",
-        "name": "Comprehensive R Archive Network (CRAN)",
-        "url": "https://cran.r-project.org"
-      },
-      "sameAs": "https://CRAN.R-project.org/package=coda"
-    },
-    {
-      "@type": "SoftwareApplication",
       "identifier": "plyr",
       "name": "plyr",
       "provider": {
@@ -99,32 +176,9 @@
         "url": "https://cran.r-project.org"
       },
       "sameAs": "https://CRAN.R-project.org/package=plyr"
-    },
-    {
-      "@type": "SoftwareApplication",
-      "identifier": "Matrix",
-      "name": "Matrix",
-      "provider": {
-        "@id": "https://cran.r-project.org",
-        "@type": "Organization",
-        "name": "Comprehensive R Archive Network (CRAN)",
-        "url": "https://cran.r-project.org"
-      },
-      "sameAs": "https://CRAN.R-project.org/package=Matrix"
-    },
-    {
-      "@type": "SoftwareApplication",
-      "identifier": "data.table",
-      "name": "data.table",
-      "provider": {
-        "@id": "https://cran.r-project.org",
-        "@type": "Organization",
-        "name": "Comprehensive R Archive Network (CRAN)",
-        "url": "https://cran.r-project.org"
-      },
-      "sameAs": "https://CRAN.R-project.org/package=data.table"
     }
   ],
-  "softwareRequirements": [],
-  "readme": "https://github.com/seroanalytics/serosolver/blob/master/README.md"
+  "readme": "https://github.com/seroanalytics/serosolver/blob/master/README.md",
+  "developmentStatus": "https://www.repostatus.org/#active",
+  "citation": []
 }
