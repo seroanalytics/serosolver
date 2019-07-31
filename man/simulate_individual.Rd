@@ -8,7 +8,7 @@ simulate_individual(theta, infection_history, antigenic_map,
   sampling_times, strain_isolation_times, measured_strains, mus = NULL,
   mu_indices = NULL, measurement_bias = NULL,
   measurement_indices = NULL, add_noise = TRUE, repeats = 1,
-  age = NULL)
+  DOB = 0)
 }
 \arguments{
 \item{theta}{the named parameter vector}

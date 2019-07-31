@@ -110,7 +110,8 @@ simulate_data <- function(par_tab,
         sampling_times,
         nsamps, antigenic_map, repeats,
         mus, mu_indices, measurement_bias,
-        measurement_indices, add_noise
+        measurement_indices, add_noise,
+        DOBs
     )
 
     y <- sim_dat$titre_dat
@@ -166,7 +167,8 @@ simulate_group <- function(n_indiv,
                            mu_indices = NULL,
                            measurement_bias = NULL,
                            measurement_indices = NULL,
-                           add_noise = TRUE) {
+                           add_noise = TRUE,
+                           DOBs) {
     
     ## Create antigenic map for short and long term boosting
     antigenic_map_melted <- melt_antigenic_coords(antigenic_map[, c("x_coord", "y_coord")])
@@ -202,7 +204,8 @@ simulate_group <- function(n_indiv,
             mus, mu_indices,
             measurement_bias, 
             measurement_indices,
-            add_noise, repeats
+            add_noise, repeats,
+            DOBs[i]
         ))
         ## Record individual ID
         y$indiv <- i
@@ -234,7 +237,7 @@ simulate_individual_faster <- function(theta,
                                 mus=NULL,mu_indices=NULL,
                                 measurement_bias = NULL, measurement_indices = NULL,
                                 add_noise=TRUE,repeats=1,
-                                age=0){
+                                DOB=0){
     if(is.null(mus)){
         mus <- c(-1)
         mu_indices <- c(-1)
@@ -269,7 +272,7 @@ simulate_individual_faster <- function(theta,
                               antigenic_map_short,
                               antigenic_distances,
                               mus, mu_indices,
-                              age,
+                              DOB,
                               FALSE)
 
     ## Repeated each simulated titre per observation repeat
@@ -318,7 +321,7 @@ simulate_individual <- function(theta,
                                 mus=NULL,mu_indices=NULL,
                                 measurement_bias = NULL, measurement_indices = NULL,
                                 add_noise=TRUE,repeats=1,
-                                age=0){
+                                DOB=0){
     if(is.null(mus)){
         mus <- c(-1)
         mu_indices <- c(-1)
@@ -356,7 +359,7 @@ simulate_individual <- function(theta,
                               antigenic_map_long, antigenic_map_short,
                               antigenic_distances,
                               mus, mu_indices,
-                              age)
+                              DOB)
     ## Repeated each simulated titre per observation repeat
     titres <- rep(titres, repeats)
     ## Housekeeping for return data

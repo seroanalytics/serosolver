@@ -1,6 +1,6 @@
 library(ggplot2)
 library(plyr)
-setwd("~/Documents/Fluscape/serosolver/OLD")
+setwd("~/Documents/Fluscape/flu-model/sero_model/R_datasets/")
 load("HaNam_data.RData")
 overall <- NULL
 for(indiv in 1:n_part){
@@ -23,3 +23,15 @@ ggplot(finalDat[finalDat$run == 1 & finalDat$individual %in% 1:5,]) +
   geom_point(aes(x=virus,y=titre)) + 
   facet_grid(individual~samples)
 
+dat <- read.csv("~/Documents/Fluscape/flu-model/sero_model/datasets/HaNamCohort.csv",stringsAsFactors=FALSE)
+dat[dat == "*"] <- NA
+dat[,3:ncol(dat)] <- apply(dat[,3:ncol(dat)], 2,function(x) as.character(as.numeric(x)))
+dat <- reshape2::melt(dat,id.vars=c("Subject.number","Sample.year"))
+dat <- dat[complete.cases(dat),]
+dat$value <- as.numeric(dat$value)
+dat$value <- log2(dat$value/5)
+dat$variable <- as.character(dat$variable)
+
+all_names <- unique(unlist(lapply(test.list, function(x) lapply(x ,colnames))))
+
+                    

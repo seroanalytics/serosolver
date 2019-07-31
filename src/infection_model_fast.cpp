@@ -62,6 +62,7 @@ NumericVector titre_data_fast(const NumericVector &theta,
   double sampling_time;
   double time;
   double n_inf;
+  double age;
   
   // Only use the infections that actually happened
   IntegerVector infection_history(number_strains);
@@ -125,20 +126,33 @@ NumericVector titre_data_fast(const NumericVector &theta,
     interference_gradient = theta["interference_gradient"];
     affinity_maturation = theta["affinity_maturation"];
   }
-  
+
+
+  // Age model
+  double age_gradient;
+  double age_min_boost_propn;
+  int age_boosting_type = theta["use_age"];
+  bool age_boosting = age_boosting_type == 1;
+  if (age_boosting) {
+    age_gradient = theta["age_gradient"];
+    age_min_boost_propn = theta["age_min_boost_propn"];
+  }
   // 3. If not using one of the specific mechanism functions, set the base_function flag to TRUE
   bool base_function = !(alternative_wane_func ||
 			 titre_dependent_boosting ||
 			 strain_dep_boost ||
-			 back_boosting);
+			 back_boosting ||
+			 age_boosting);
 
   // To store calculated titres
   NumericVector predicted_titres(total_titres, min_titre);
   // For each individual
   for (int i = 1; i <= n; ++i) {
+
     infection_history = infection_history_mat(i-1,_);
     indices = infection_history > 0;
     infection_times = circulation_times[indices];
+    age = birth_times[i-1];
     // Only solve is this individual has had infections
     if (infection_times.size() > 0) {
       infection_strain_indices_tmp = circulation_times_indices[indices];
@@ -201,7 +215,7 @@ NumericVector titre_data_fast(const NumericVector &theta,
 						    antigenic_map_short,
 						    antigenic_map_long,
 						    boost_before_infection);
-      } else if(alternative_wane_func) {
+      } else if (alternative_wane_func) {
 	titre_data_fast_individual_wane2(predicted_titres, mu, mu_short,
 					 wane, tau,
 					 kappa, t_change,
@@ -217,7 +231,7 @@ NumericVector titre_data_fast(const NumericVector &theta,
 					 antigenic_map_short,
 					 antigenic_map_long,
 					 boost_before_infection);
-      } else if(back_boosting) {
+      } else if( back_boosting) {
 	titre_model_backboost_cpp(predicted_titres,
 				  mu, mu_short,
 				  wane, tau,
@@ -237,6 +251,23 @@ NumericVector titre_data_fast(const NumericVector &theta,
 				  antigenic_map_long,
 				  antigenic_distances,
 				  boost_before_infection);
+      } else if (age_boosting) {
+	titre_data_fast_individual_age(predicted_titres, mu, mu_short,
+				       age_gradient, age_min_boost_propn,
+				       wane, tau,
+				       age,
+				       infection_times,
+				       infection_strain_indices_tmp,
+				       measurement_strain_indices,
+				       sample_times,
+				       index_in_samples,
+				       end_index_in_samples,
+				       start_index_in_data,
+				       nrows_per_blood_sample,
+				       number_strains,
+				       antigenic_map_short,
+				       antigenic_map_long,
+				       boost_before_infection);	
       } else {
 	titre_data_fast_individual_base(predicted_titres, mu, mu_short,
 					wane, tau,

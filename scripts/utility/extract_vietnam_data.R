@@ -1,3 +1,12 @@
+fluscape_match <- TRUE
+to_extract <- c("A.BEIJING.32.92", 
+                "A.FUJIAN.140.2000",
+                "FU.411.02",
+                "A.BRISBANE.10.2007",
+                "A.VICTORIA.208.2009",
+                "A.PERTH.16.2009"
+                )
+
 #### Extract vietnam data
 options(StringsAsFactors=F)
 data1=read.csv("~/Documents/Fluscape/flu-model/sero_model/datasets/HaNamCohort.csv", as.is=T)
@@ -10,6 +19,11 @@ test.index=c(1:nstrains)
 # Convert to log titres and set missing data = NA
 data1[data1=="*"]=NA
 data1[,strain_names]=apply(data1[,strain_names],2,function(x){log2(as.numeric(x)/10)+1}) 
+
+if(fluscape_match) {
+  data1 <- data1[,c("Subject.number","Sample.year",to_extract)]
+}
+
 
 # Convert names into strain years
 strain_years=as.numeric(sapply(strain_names,function(x){
@@ -44,5 +58,8 @@ dataMelt <- dataMelt[complete.cases(dataMelt),]
 dataMelt <- dataMelt[order(dataMelt$individual, dataMelt$samples, dataMelt$virus),]
 finalDat <- plyr::ddply(dataMelt,.(individual,virus,samples),function(x) cbind(x,"run"=1:nrow(x)))
 finalDat <- finalDat[order(finalDat$individual, finalDat$run, finalDat$samples, finalDat$virus),]
-write.table(finalDat[finalDat$run == 1,], "~/net/home/serosolver/data_Oct2018/vietnam_data_annual_1_repeat.csv",sep=",",row.names=FALSE)
-write.table(finalDat,"~/Documents/Fluscape/serosolver/data/real/vietnam_data_primary.csv",sep=",",row.names=FALSE)
+
+if(fluscape_match){
+  write.table(finalDat[finalDat$run == 1,], "~/net/home/serosolver/data_Oct2018/vietnam_fluscape_match.csv",sep=",",row.names=FALSE)
+  write.table(finalDat,"~/Documents/Fluscape/serosolver/data/real/vietnam_fluscape_match.csv",sep=",",row.names=FALSE)
+}

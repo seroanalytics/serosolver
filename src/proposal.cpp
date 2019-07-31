@@ -114,15 +114,16 @@ arma::mat inf_hist_prop_prior_v3(arma::mat infection_history_mat,
 
 
 
-  //' Infection history gibbs proposal, fast
-  //'  Generates a new infection history matrix and corresponding individual likelihoods, using a gibbs sampler from the infection history prior. See \code{\link{infection_history_proposal_gibbs}}, as inputs are very similar.
-  //' @param theta NumericVector, the model parameters used to solve the model
-  //' @param infection_history_mat IntegerMatrix the matrix of 1s and 0s corresponding to individual infection histories
-  //' @param old_probs_1 NumericVector, the current likelihoods for each individual
-  //' @param sampled_indivs IntegerVector, indices of sampled individuals
-  //' @param n_years_samp int, for each individual, how many time periods to resample infections for?
-  //' @param age_mask IntegerVector, length of the number of individuals, with indices specifying first time period that an individual can be infected (indexed from 1, such that a value of 1 allows an individual to be infected in any time period)
-  //' @param strain_mask IntegerVector, length of the number of individuals, with indices specifying last time period that an individual can be infected (ie. last time a sample was taken)
+//' Infection history gibbs proposal, fast
+
+//' Generates a new infection history matrix and corresponding individual likelihoods, using a gibbs sampler from the infection history prior. See \code{\link{infection_history_proposal_gibbs}}, as inputs are very similar.
+//' @param theta NumericVector, the model parameters used to solve the model
+//' @param infection_history_mat IntegerMatrix the matrix of 1s and 0s corresponding to individual infection histories
+//' @param old_probs_1 NumericVector, the current likelihoods for each individual
+//' @param sampled_indivs IntegerVector, indices of sampled individuals
+//' @param n_years_samp int, for each individual, how many time periods to resample infections for?
+//' @param age_mask IntegerVector, length of the number of individuals, with indices specifying first time period that an individual can be infected (indexed from 1, such that a value of 1 allows an individual to be infected in any time period)
+//' @param strain_mask IntegerVector, length of the number of individuals, with indices specifying last time period that an individual can be infected (ie. last time a sample was taken)
 //' @param n_alive IntegerMatrix, number of columns is the number of time periods that an individual could be infected, giving the number of individual alive in each time period. Number of rows is the number of distinct groups.
 //' @param swap_propn double, what proportion of proposals should be swap steps (ie. swap contents of two cells in infection_history rather than adding/removing infections)
 //' @param swap_distance int, in a swap step, how many time steps either side of the chosen time period to swap with
@@ -295,7 +296,7 @@ List inf_hist_prop_prior_v2_and_v4(const NumericVector &theta, // Model paramete
   double tau = theta["tau"];
   double seniority;
   double n_inf;
-
+  double age;
   // 2. Extract model parameters that are for specific mechanisms
   //    set a boolean flag to choose between model versions
   
@@ -340,11 +341,23 @@ List inf_hist_prop_prior_v2_and_v4(const NumericVector &theta, // Model paramete
     affinity_maturation = theta["affinity_maturation"];
   }
   
+  // Age model
+  double age_gradient;
+  double age_min_boost_propn;
+  int age_boosting_type = theta["use_age"];
+  bool age_boosting = age_boosting_type == 1;
+  if(age_boosting){
+    age_gradient = theta["age_gradient"];
+    age_min_boost_propn = theta["age_min_boost_propn"];
+  }
+  
   // 3. If not using one of the specific mechanism functions, set the base_function flag to TRUE
   bool base_function = !(alternative_wane_func ||
 			 titre_dependent_boosting ||
 			 strain_dep_boost ||
-			 back_boosting);
+			 back_boosting ||
+			 age_boosting);
+  
   
   // 4. Extra titre shifts
   bool use_titre_shifts = false;
@@ -359,6 +372,7 @@ List inf_hist_prop_prior_v2_and_v4(const NumericVector &theta, // Model paramete
     
     // Get index, group and current likelihood of individual under consideration
     indiv = sampled_indivs[i]-1;
+    age = birth_times[indiv];
     group_id = group_id_vec[indiv];
     old_prob = old_probs_1[indiv];
     // Indexing for data upkeep
@@ -580,7 +594,7 @@ List inf_hist_prop_prior_v2_and_v4(const NumericVector &theta, // Model paramete
 					   antigenic_map_short,
 					   antigenic_map_long,
 					   false);
-	} else if(back_boosting) {
+	} else if (back_boosting) {
 	  	titre_model_backboost_cpp(predicted_titres,
 				  mu, mu_short,
 				  wane, tau,
@@ -600,6 +614,23 @@ List inf_hist_prop_prior_v2_and_v4(const NumericVector &theta, // Model paramete
 				  antigenic_map_long,
 				  antigenic_distances,
 				  false);	  
+	} else if (age_boosting) {
+	  titre_data_fast_individual_age(predicted_titres, mu, mu_short,
+					 age_gradient, age_min_boost_propn,
+					 wane, tau,
+					 age,
+					 infection_times,
+					 infection_strain_indices_tmp,
+					 measurement_strain_indices,
+					 sample_times,
+					 index_in_samples,
+					 end_index_in_samples,
+					 start_index_in_data,
+					 nrows_per_blood_sample,
+					 number_strains,
+					 antigenic_map_short,
+					 antigenic_map_long,
+					 false);	
 	} else {
 	  titre_data_fast_individual_base(predicted_titres, mu, mu_short,
 					  wane, tau,

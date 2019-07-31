@@ -7,7 +7,7 @@
 simulate_group(n_indiv, theta, infection_histories, strain_isolation_times,
   measured_strains, sample_times, nsamps, antigenic_map, repeats = 1,
   mus = NULL, mu_indices = NULL, measurement_bias = NULL,
-  measurement_indices = NULL, add_noise = TRUE)
+  measurement_indices = NULL, add_noise = TRUE, DOBs)
 }
 \arguments{
 \item{n_indiv}{number of individuals to simulate}

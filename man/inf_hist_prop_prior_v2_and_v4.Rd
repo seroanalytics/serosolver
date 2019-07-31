@@ -2,8 +2,7 @@
 % Please edit documentation in R/RcppExports.R
 \name{inf_hist_prop_prior_v2_and_v4}
 \alias{inf_hist_prop_prior_v2_and_v4}
-\title{Infection history gibbs proposal, fast
- Generates a new infection history matrix and corresponding individual likelihoods, using a gibbs sampler from the infection history prior. See \code{\link{infection_history_proposal_gibbs}}, as inputs are very similar.}
+\title{Generates a new infection history matrix and corresponding individual likelihoods, using a gibbs sampler from the infection history prior. See \code{\link{infection_history_proposal_gibbs}}, as inputs are very similar.}
 \usage{
 inf_hist_prop_prior_v2_and_v4(theta, infection_history_mat, old_probs_1,
   sampled_indivs, n_years_samp_vec, age_mask, strain_mask, n_alive,
@@ -13,7 +12,7 @@ inf_hist_prop_prior_v2_and_v4(theta, infection_history_mat, old_probs_1,
   cum_nrows_per_individual_in_repeat_data, nrows_per_blood_sample,
   group_id_vec, measurement_strain_indices, antigenic_map_long,
   antigenic_map_short, antigenic_distances, data, repeat_data,
-  repeat_indices, titre_shifts, proposal_iter, accepted_iter,
+  repeat_indices, titre_shifts, birth_times, proposal_iter, accepted_iter,
   proposal_swap, accepted_swap, mus, boosting_vec_indices, total_alive,
   temp = 1, solve_likelihood = TRUE)
 }
@@ -84,8 +83,7 @@ inf_hist_prop_prior_v2_and_v4(theta, infection_history_mat, old_probs_1,
 an R list, one entry with the matrix of 1s and 0s corresponding to the infection histories for all individuals and the other with the new corresponding likelihoods per individual
 }
 \description{
-Infection history gibbs proposal, fast
- Generates a new infection history matrix and corresponding individual likelihoods, using a gibbs sampler from the infection history prior. See \code{\link{infection_history_proposal_gibbs}}, as inputs are very similar.
+Generates a new infection history matrix and corresponding individual likelihoods, using a gibbs sampler from the infection history prior. See \code{\link{infection_history_proposal_gibbs}}, as inputs are very similar.
 }
 \seealso{
 Other infection_history_proposal: \code{\link{inf_hist_prop_prior_v3}}
