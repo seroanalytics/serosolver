@@ -764,17 +764,29 @@ create_posterior_func_fast <- function(par_tab,
 #' @param par_tab  parameter table controlling information such as bounds, initial values etc
 #' @return log likelihood value
 #' @export
-inf_likelihood<-function(inf_dat,infection_histories,pars,par_tab){
+inf_likelihood <- function(inf_dat, infection_histories, pars, par_tab){
   theta_indices <- which(par_tab$type %in% c(0, 1))
   par_names_theta <- par_tab[theta_indices, "names"]
   theta <- pars[theta_indices]
   names(theta) <- par_names_theta
   
-  #extract sensitivity parameter from parTab 
+  n_indiv <- dim(inf_dat)[1]
+  # Extract sensitivity parameter from par_tab 
   delta <- theta["delta"]
+
+  # Which columns have data
+  data_cols <- apply(inf_dat, 2, function(x) all(!is.na(x)))
+  infection_histories_NA <- infection_histories[, data_cols]
   
-  infection_histories_NA <- infection_histories[which(!is.na(inf_dat))]
-  inf_dat_NA <- inf_dat[which(!is.na(inf_dat))]
+  inf_dat_NA <- inf_dat[, data_cols]
+  
+  liks <- sapply(1:n_indiv, function(x) 
+    inf_point_likelihood(inf_dat_NA[x,], infection_histories_NA[x,], delta))
+  
+  return(liks)
+}
+
+inf_point_likelihood <- function(inf_dat_NA, infection_histories_NA, delta){
   
   #of the infected and susceptible in infection histories
   n_1 <- inf_vec <- length(which(infection_histories_NA == 1))
@@ -783,7 +795,7 @@ inf_likelihood<-function(inf_dat,infection_histories,pars,par_tab){
   #how do the results match with the observation 
   obs_vec_inf <- inf_dat_NA[which(infection_histories_NA == 1)]
   x_1 <- length(which(obs_vec_inf == 1)) #true positives in a 
-
+  
   obs_vec_sus <- inf_dat_NA[which(infection_histories_NA == 0)]
   x_2 <- length(which(obs_vec_sus == 0))
   
