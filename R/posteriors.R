@@ -379,6 +379,8 @@ create_posterior_func <- function(par_tab,
 
     titre_shifts <- c(0)
     titre_immunity <- "alpha_titre" %in% par_names_theta
+    age_boosting <- par_tab[par_tab$names == "use_age","values"] == 1
+    back_boosting <- par_tab[par_tab$names == "back_boosting","values"] == 1
     expected_indices <- NULL
     measurement_bias <- NULL
     use_strain_dependent <- (length(mu_indices) > 0) & !is.null(mu_indices)
@@ -391,6 +393,14 @@ create_posterior_func <- function(par_tab,
         expected_indices <- measurement_indices_by_time[match(titre_dat_unique$virus, strain_isolation_times)]
     } else {
         expected_indices <- c(-1)
+    }
+
+    if (age_boosting) {
+        message(cat("Using age-dependent boosting"))
+    }
+
+    if (back_boosting) {
+        message(cat("Using back-boosting"))
     }
 
     if (use_strain_dependent) {
@@ -407,7 +417,7 @@ create_posterior_func <- function(par_tab,
     if (titre_immunity) {
 ###################################################################
         ## CALCULATE TITRE-MEDIATED IMMUNITY ADMIN
-        message("Setup titre immunity data...")
+        message(cat("Setup titre immunity data..."))
         indivs_immunity <- unique(titre_dat[,c("individual","group","DOB")])
         ## This generates a structure like titre_dat, but with one entry for each individual
         ## assuming that a titre is tested against the circulating strain at the time it circulated
@@ -428,7 +438,7 @@ create_posterior_func <- function(par_tab,
 
     
     if (function_type == 1) {
-        message("Creating posterior solving function...")
+        message(cat("Creating posterior solving function..."))
         f <- function(pars, infection_history_mat, exposure_history_mat=NULL) {
             theta <- pars[theta_indices]
             names(theta) <- par_names_theta
@@ -542,7 +552,7 @@ create_posterior_func <- function(par_tab,
         ## Generate prior lookup table
         lookup_tab <- create_prior_lookup(titre_dat, strain_isolation_times, alpha, beta)
         if(!titre_immunity){
-            message("Creating infection history proposal function, no titre-mediated immunity")
+            message(cat("Creating infection history proposal function, no titre-mediated immunity"))
             ## Use the original gibbs proposal function if no titre immunity
             f <- function(pars, infection_history_mat,
                           exposure_history_mat,
@@ -622,7 +632,7 @@ create_posterior_func <- function(par_tab,
                 return(res)
             }
         } else {
-            message("Generating infection history proposal function, with titre-mediated immunity")
+            message(cat("Generating infection history proposal function, with titre-mediated immunity"))
             ## Otherwise, we need to the titre immunity specific proposal function
             f <- function(pars, infection_history_mat,
                           exposure_history_mat,
@@ -696,7 +706,7 @@ create_posterior_func <- function(par_tab,
             }
         }
     } else if (function_type == 3) {
-        message("Creating model solving function for titre pre-infection...")
+        message(cat("Creating model solving function for titre pre-infection..."))
          ## For titres at time of infection, calculated before an infection happens
         f <- function(pars, infection_history_mat) {
             theta <- pars[theta_indices]
@@ -729,7 +739,7 @@ create_posterior_func <- function(par_tab,
             return(titre_dat_immunity)
         }
     } else {
-        message("Creating model solving function...")
+        message(cat("Creating model solving function..."))
         ## Final version is just the model solving function
         f <- function(pars, infection_history_mat) {
             theta <- pars[theta_indices]

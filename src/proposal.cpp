@@ -379,9 +379,7 @@ List inf_hist_prop_prior_v2_and_v4(const NumericVector &theta, // Model paramete
     
     // Get index, group and current likelihood of individual under consideration
     indiv = sampled_indivs[i]-1;
-    //Rcpp::Rcout << "Indiv: " << indiv << std::endl;
-    //Rcpp::Rcout << "Age mask: " << age_mask[indiv]-1 << std::endl;
-    //Rcpp::Rcout << "Strain mask: " << strain_mask[indiv]-1 << std::endl;
+    age = birth_times[indiv];
     group_id = group_id_vec[indiv];
     old_prob = old_probs_1[indiv];
     // Indexing for data upkeep

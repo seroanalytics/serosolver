@@ -403,9 +403,22 @@ void titre_model_backboost_cpp(NumericVector &predicted_titres,
 			       const NumericVector &antigenic_map_long,
 			       const NumericVector &antigenic_distances,
 			       bool boost_before_infection = false){
-  
-  //int n_samps = sample_times.size();
-  //  int n_titres = measurement_strain_indices.size();
+
+  // If mu is 0, then we're using nu as the main boost as well
+  double use_mu = mu;
+  double use_mu_short = mu_short;
+  if(mu == 0) use_mu = nu_long_recall;
+  if(mu_short == 0) use_mu_short = nu_long_recall;
+  /*  Rcpp::Rcout << std::endl;
+  Rcpp::Rcout << "mu: " << mu << std::endl;
+  Rcpp::Rcout << "mu_short: " << mu_short << std::endl;
+  Rcpp::Rcout << "nu_long: " << nu_long_recall << std::endl;
+  Rcpp::Rcout << "nu_short: " << nu_short_recall << std::endl;
+  Rcpp::Rcout << "wane: " << wane << std::endl;
+  Rcpp::Rcout << "max_interference: " << max_interference << std::endl;
+  Rcpp::Rcout << "interference_gradient: " << interference_gradient << std::endl;
+  Rcpp::Rcout << "tau: " << tau << std::endl;
+  */
   int n_titres;
   int max_infections = infection_times.size();
   
@@ -435,10 +448,6 @@ void titre_model_backboost_cpp(NumericVector &predicted_titres,
   double tmp_boost_long;
   double tmp_boost_short;
   double tmp_boost_propn;
-
-  //Rcpp::Rcout << "Max interference: " << max_interference << std::endl;
-  //Rcpp::Rcout << "Interference gradient: " << interference_gradient << std::endl;
-  
   
   // Store boosting from novel and recall responses 
   NumericMatrix boost_propns(max_infections, max_infections);
@@ -448,22 +457,16 @@ void titre_model_backboost_cpp(NumericVector &predicted_titres,
   NumericVector seniority_terms(max_infections);
   double seniority;
   // Go through each infection and calculate HOMOLOGOUS boosting from novel and recall responses
-  n_inf = 1;
+  n_inf = 1.0;
   for(int i = 0; i < max_infections; ++i){
-    //Rcpp::Rcout << "Infection number: " << i << std::endl;
     overall_suppression = 0;
-    seniority_terms = MAX(0, 1.0 - tau*(n_inf - 1.0));
+    seniority_terms[i] = MAX(0, 1.0 - tau*(n_inf - 1.0));
     n_inf++;
     // From this infection, calculate back-boost to each previous strain
     for(int j = 0; j < i; ++j){
-      //Rcpp::Rcout << "Back boost number: " << j << std::endl;
       // Find distance between this infection and each previous strain
       distance = antigenic_distances[infection_strain_indices[i]*number_strains + infection_strain_indices[j]];
-      //Rcpp::Rcout << "Antigenic distance: " << distance << std::endl;
-      //Rcpp::Rcout << "Distance: " << distance << std::endl;
-      // Amount of boosting "stolen" by this infection
-      boost_propn_tmp = MAX(0, 1.0 - interference_gradient*distance);
-      //Rcpp::Rcout << "Stolen boost: " << boost_propn_tmp << std::endl;
+      boost_propn_tmp = MAX(0, max_interference - interference_gradient*distance);
       
       // Total boosting stolen
       overall_suppression += boost_propn_tmp;
@@ -509,10 +512,6 @@ void titre_model_backboost_cpp(NumericVector &predicted_titres,
 	// ####################
 	// ## HERE TO CHANGE INFECTION GIVING BOOST AT SAMPLE TIME RATHER THAN AFTER
 	// ####################
-	// Only count infections that happened before the sampling time
-	//if(infection_time < sampling_time){
-	// Rcpp::Rcout << "Infection time: " << infection_time << std::endl;
-        
         // Time since infection 
         time = sampling_time - infection_time;
         
@@ -521,18 +520,13 @@ void titre_model_backboost_cpp(NumericVector &predicted_titres,
         wane_amount = MAX(0, 1.0 - wane*time);
         maturation_amount = MIN(1.0, affinity_maturation);
 	seniority = seniority_terms[j];
-	
         // Each infection boosts recall response
         for(int l = 0; l <= j; ++l){
           // Which strain does this recall infection correspond to?
           inf_map_index = infection_strain_indices[l];
           tmp_boost_long = long_term_boosts(j, l);
-	  //Rcpp::Rcout << "Tmp boost long: " << tmp_boost_long << std::endl;
 	  tmp_boost_short = short_term_boosts(j, l);
           tmp_boost_propn = boost_propns(j,l);
-
-	  // Rcpp::Rcout << "Tmp boost propn: " << tmp_boost_propn << std::endl;
-          
           // For each measured strain at each sample
           for(int k = 0; k < n_titres; ++k){
             index = measurement_strain_indices[tmp_titre_index + k]*number_strains + inf_map_index;

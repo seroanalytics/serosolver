@@ -310,7 +310,7 @@ run_MCMC <- function(par_tab,
         }
     }
     check_inf_hist(titre_dat, strain_isolation_times, infection_histories)
-    check_inf_hist(titre_dat, strain_isolation_times, exposure_histories)
+    if(explicit_exposures) check_inf_hist(titre_dat, strain_isolation_times, exposure_histories)
     
     ## Initial likelihoods and individual priors
     tmp_posterior <- posterior_simp(current_pars, infection_histories, exposure_histories)
@@ -476,7 +476,6 @@ run_MCMC <- function(par_tab,
         new_total_prior_prob <- sum(new_indiv_priors) +
             extra_probabilities(proposal, infection_histories, exposure_histories)
         new_total_posterior <- new_total_likelihood + new_total_prior_prob # Posterior
-
         ## Otherwise, resample infection history
     } else {
         ## Choose a random subset of individuals to update

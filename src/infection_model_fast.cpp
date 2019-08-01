@@ -145,7 +145,6 @@ NumericVector titre_data_fast(const NumericVector &theta,
 			 strain_dep_boost ||
 			 back_boosting ||
 			 age_boosting);
-
   // To store calculated titres
   NumericVector predicted_titres(total_titres, min_titre);
   // For each individual
@@ -153,6 +152,7 @@ NumericVector titre_data_fast(const NumericVector &theta,
     infection_history = infection_history_mat(i-1,_);
     indices = infection_history > 0;
     infection_times = circulation_times[indices];
+    age = birth_times[i-1];
     // Only solve is this individual has had infections
     if (infection_times.size() > 0) {
       infection_strain_indices_tmp = circulation_times_indices[indices];
