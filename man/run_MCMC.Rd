@@ -5,8 +5,8 @@
 \title{Adaptive Metropolis-within-Gibbs/Metropolis Hastings Random Walk Algorithm.}
 \usage{
 run_MCMC(par_tab, titre_dat, antigenic_map, mcmc_pars = c(),
-  mvr_pars = NULL, start_inf_hist = NULL, filename = "test",
-  CREATE_POSTERIOR_FUNC = create_posterior_func,
+  mvr_pars = NULL, start_inf_hist = NULL, start_exposure_hist = NULL,
+  filename = "test", CREATE_POSTERIOR_FUNC = create_posterior_func,
   CREATE_PRIOR_FUNC = NULL, version = 1, mu_indices = NULL,
   measurement_indices = NULL, measurement_random_effects = FALSE,
   OPT_TUNING = 0.1, temp = 1, solve_likelihood = TRUE,
@@ -25,6 +25,8 @@ run_MCMC(par_tab, titre_dat, antigenic_map, mcmc_pars = c(),
 \item{mvr_pars}{Leave NULL to use univariate proposals. Otherwise, a list of parameters if using a multivariate proposal. Must contain an initial covariance matrix, weighting for adapting cov matrix, and an initial scaling parameter (0-1)}
 
 \item{start_inf_hist}{Infection history matrix to start MCMC at. Can be left NULL. See \code{\link{example_inf_hist}}}
+
+\item{start_exposure_hist}{Exposure history matrix to start MCMC at, if using titre mediated immunity and explicit exposure states. Can be left NULL. See \code{\link{example_inf_hist}}}
 
 \item{filename}{The full filepath at which the MCMC chain should be saved. "_chain.csv" will be appended to the end of this, so filename should have no file extensions}
 
@@ -55,7 +57,7 @@ run_MCMC(par_tab, titre_dat, antigenic_map, mcmc_pars = c(),
 \item{...}{Other arguments to pass to CREATE_POSTERIOR_FUNC}
 }
 \value{
-A list with: 1) relative file path at which the MCMC chain is saved as a .csv file; 2) relative file path at which the infection history chain is saved as a .csv file; 3) the last used covariance matrix if mvr_pars != NULL; 4) the last used scale/step size (if multivariate proposals) or vector of step sizes (if univariate proposals)
+A list with: 1) relative file path at which the MCMC chain is saved as a .csv file; 2) relative file path at which the infection history chain is saved as a .csv file; 3) the last used covariance matrix if mvr_pars != NULL; 4) the last used scale/step size (if multivariate proposals) or vector of step sizes (if univariate proposals) 4) relative file path for the exposure history chain
 }
 \description{
 The Adaptive Metropolis-within-Gibbs algorithm. Given a starting point and the necessary MCMC parameters as set out below, performs a random-walk of the posterior space to produce an MCMC chain that can be used to generate MCMC density and iteration plots. The algorithm undergoes an adaptive period, where it changes the step size of the random walk for each parameter to approach the desired acceptance rate, popt. The algorithm then uses \code{\link{univ_proposal}} or \code{\link{mvr_proposal}} to explore parameter space, recording the value and posterior value at each step. The MCMC chain is saved in blocks as a .csv file at the location given by filename. This version of the algorithm is also designed to explore posterior densities for infection histories. See the package vignettes for examples.

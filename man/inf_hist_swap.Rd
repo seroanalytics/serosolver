@@ -4,11 +4,13 @@
 \alias{inf_hist_swap}
 \title{Swap infection history years}
 \usage{
-inf_hist_swap(infection_history, age_mask, strain_mask, swap_propn,
-  move_size)
+inf_hist_swap(infection_history, exposure_history = NULL, age_mask,
+  strain_mask, swap_propn, move_size)
 }
 \arguments{
 \item{infection_history}{matrix of 1s and 0s to swap around representing the infection history}
+
+\item{exposure_history}{optional NULL, matrix of 1s and 0s to swap around representing the expousre history}
 
 \item{age_mask}{the first index in infection_history that each individual (row) could be infected in}
 

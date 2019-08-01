@@ -31,7 +31,8 @@ data(example_antigenic_map)
 start_inf <- setup_infection_histories_new_2(example_titre_dat, example_antigenic_map$inf_years)
 }
 \seealso{
-Other setup_infection_histories: \code{\link{setup_infection_histories_new}},
+Other setup_infection_histories: \code{\link{setup_infection_histories_immunity}},
+  \code{\link{setup_infection_histories_new}},
   \code{\link{setup_infection_histories_old}},
   \code{\link{setup_infection_histories_total}}
 }

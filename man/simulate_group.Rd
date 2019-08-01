@@ -7,7 +7,7 @@
 simulate_group(n_indiv, theta, infection_histories, strain_isolation_times,
   measured_strains, sample_times, nsamps, antigenic_map, repeats = 1,
   mus = NULL, mu_indices = NULL, measurement_bias = NULL,
-  measurement_indices = NULL, add_noise = TRUE)
+  measurement_indices = NULL, add_noise = TRUE, DOBs)
 }
 \arguments{
 \item{n_indiv}{number of individuals to simulate}
@@ -33,6 +33,8 @@ simulate_group(n_indiv, theta, infection_histories, strain_isolation_times,
 \item{measurement_indices}{default NULL, optional vector giving the index of `measurement_bias` that each strain uses the measurement shift from from. eg. if there's 6 circulation years and 3 strain clusters, then this might be c(1,1,2,2,3,3)}
 
 \item{add_noise}{if TRUE, adds observation noise to the simulated titres}
+
+\item{DOBs}{vector of dates of birth of all simulated individuals}
 }
 \value{
 a data frame with columns individual, samples, virus and titre of simulated data

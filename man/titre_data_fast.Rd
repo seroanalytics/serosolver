@@ -8,7 +8,7 @@ titre_data_fast(theta, infection_history_mat, circulation_times,
   circulation_times_indices, sample_times, rows_per_indiv_in_samples,
   cum_nrows_per_individual_in_data, nrows_per_blood_sample,
   measurement_strain_indices, antigenic_map_long, antigenic_map_short,
-  antigenic_distances, mus, boosting_vec_indices,
+  antigenic_distances, mus, boosting_vec_indices, birth_times,
   boost_before_infection = FALSE)
 }
 \arguments{
@@ -39,6 +39,8 @@ titre_data_fast(theta, infection_history_mat, circulation_times,
 \item{mus}{NumericVector, if length is greater than one, assumes that strain-specific boosting is used rather than a single boosting parameter}
 
 \item{boosting_vec_indices}{IntegerVector, same length as circulation_times, giving the index in the vector \code{mus} that each entry should use as its boosting parameter.}
+
+\item{birth_times}{NumericVector, dates of birth of all individuals}
 
 \item{boost_before_infection}{bool to indicate if calculated titre for that time should be before the infection has occurred, used to calculate titre-mediated immunity}
 }

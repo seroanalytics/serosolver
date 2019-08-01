@@ -100,3 +100,57 @@ void add_measurement_shifts(NumericVector &predicted_titres,
     predicted_titres[j] += to_add[j];
   }
 }
+
+
+//' Titre protection
+//'
+//' @export
+//[[Rcpp::export]]
+double titre_protection_cpp(double titre, double alpha1, double beta1){
+  double risk = 1.0 - 1.0/(1.0 + exp(beta1*(titre - alpha1)));
+  return risk;
+}
+
+//' Titre protection
+//'
+//' @export
+//[[Rcpp::export]]
+double p_infection_cpp(double phi, double titre, double alpha1, double beta1){
+  double p = phi*(1.0 - titre_protection_cpp(titre, alpha1, beta1));
+  return p;
+}
+
+
+
+//' Calc titre probs
+//'
+//' @export
+//[[Rcpp::export]]
+NumericVector calc_phi_probs_indiv_titre_cpp(NumericVector phis, NumericVector titres,
+					     IntegerMatrix infection_history,
+					     IntegerVector age_mask,
+					     IntegerVector strain_mask,
+					     double alpha1, double beta1){
+  int n_indivs = age_mask.size();
+  int n_strains = infection_history.ncol();
+  int index = 0;
+  int x;
+  double titre_p;
+  double prob;
+  double first;
+  double second;
+  NumericVector liks(n_indivs);
+  for(int i = 0; i < n_indivs; ++i){
+    for(int j = 0; j < n_strains; ++j){
+      x = infection_history(i,j);
+      index = i*n_strains + j;
+      prob = 0;
+      if(age_mask[i] <= (j+1) && strain_mask[i] >= (j+1)){
+	titre_p = titre_protection_cpp(titres[index], alpha1, beta1);
+	prob = log(x*(1-titre_p)*phis[j] + (1-x)*(1 + phis[j]*(titre_p*phis[j] - 1)));
+      }
+      liks[i] += prob;
+    }
+  }
+  return liks;}
+

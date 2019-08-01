@@ -2,6 +2,7 @@
 #'
 #' Swaps the entire contents of two columns of the infection history matrix, adhering to age and strain limitations.
 #' @param infection_history matrix of 1s and 0s to swap around representing the infection history
+#' @param exposure_history optional NULL, matrix of 1s and 0s to swap around representing the expousre history
 #' @param age_mask the first index in infection_history that each individual (row) could be infected in
 #' @param strain_mask the last index in infection_history that each individual (row) could be infected in ie. the time of the latest blood sample
 #' @param swap_propn what proportion of infections should be swapped?
@@ -18,7 +19,7 @@
 #' strain_mask <- create_strain_mask(example_titre_dat, times)
 #' new_inf_hist <- inf_hist_swap(example_inf_hist, age_mask,strain_mask, 1,3)[[1]]
 #' @export
-inf_hist_swap <- function(infection_history, age_mask, strain_mask, swap_propn, move_size) {
+inf_hist_swap <- function(infection_history, exposure_history=NULL, age_mask, strain_mask, swap_propn, move_size) {
     ## Choose a column
     y1 <- sample(1:ncol(infection_history), 1)
 
@@ -46,7 +47,14 @@ inf_hist_swap <- function(infection_history, age_mask, strain_mask, swap_propn, 
     infection_history[samp_indivs, y1] <- infection_history[samp_indivs, y2]
     infection_history[samp_indivs, y2] <- tmp
 
-    return(list(infection_history))
+    if(!is.null(exposure_history)){
+        tmp <-  exposure_history[samp_indivs, y1]
+        exposure_history[samp_indivs, y1] <- exposure_history[samp_indivs, y2]
+        exposure_history[samp_indivs, y2] <- tmp
+    }
+    
+    
+    return(list(infection_history, exposure_history))
 }
 #' Swap infection history years with phi term
 #'

@@ -330,3 +330,42 @@ expand_summary_infChain <- function(inf_chain, j_vec = NULL) {
   expanded_chain <- data.table::dcast(summary_with_non_infections, sampno + individual ~ j, value.var = "x")
   return(expanded_chain)
 }
+
+
+
+
+#' Initial infection history immunity
+#'
+#' Sets up an initial random infection history, where start is sampled from a prior on the total number of infections across all individuals and years
+#' @inheritParams setup_infection_histories_new_2
+#' @param alpha alpha parameter for beta distribution to sample from
+#' @param beta beta parameter for beta distribution to sample from
+#' @return an infection history matrix and exposure history matrix
+#' @family setup_infection_histories
+#' @export
+setup_infection_histories_immunity <- function(titre_dat, strain_isolation_times, alpha = 1, beta = 1,titre_prob_default=0.8) {
+  DOBs <- unique(titre_dat[, c("individual", "DOB")])[, 2]
+  n_indiv <- length(unique(titre_dat$individual))
+  n_strain <- length(strain_isolation_times)
+
+  age_mask <- create_age_mask(DOBs, strain_isolation_times)
+  strain_mask <- create_strain_mask(titre_dat, strain_isolation_times)
+  masks <- data.frame(cbind(age_mask, strain_mask))
+  ## Number of people that were born before each year and have had a sample taken since that year happened
+  n_alive <- sum(sapply(seq(1, length(strain_isolation_times)), function(x) nrow(masks[masks$age_mask <= x & masks$strain_mask >= x, ])))
+
+  ## How many exposure are we spreading across everyone?
+  total_infs <- rbb(1, n_alive, alpha, beta)
+
+  ## Go through each possible infection and assign random with p total_infs/n_alive
+  exposure_histories <- infection_histories <- matrix(0, nrow = n_indiv, ncol = n_strain)
+
+  for (i in 1:nrow(masks)) {
+    years <- age_mask[i]:strain_mask[i]
+    n <- length(years)
+    exposure_histories[i, years] <- ifelse(runif(n) < total_infs / n_alive, 1, 0)
+    infection_histories[i,years] <- rbinom(length(years), 1, prob=titre_prob_default*exposure_histories[i,])
+  }
+  return(list(exposure_histories, infection_histories))
+}
+

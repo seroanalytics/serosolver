@@ -544,3 +544,5 @@ generate_antigenic_map_flexible <- function(antigenic_distances, buckets = 1, cl
 
   return(fit_dat)
 }
+
+

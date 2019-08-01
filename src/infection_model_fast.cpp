@@ -20,6 +20,7 @@
 //' @param antigenic_distances NumericVector, the collapsed cross reactivity map giving euclidean antigenic distances, see \code{\link{create_cross_reactivity_vector}}
 //' @param mus NumericVector, if length is greater than one, assumes that strain-specific boosting is used rather than a single boosting parameter
 //' @param boosting_vec_indices IntegerVector, same length as circulation_times, giving the index in the vector \code{mus} that each entry should use as its boosting parameter.
+//' @param birth_times NumericVector, dates of birth of all individuals
 //' @param boost_before_infection bool to indicate if calculated titre for that time should be before the infection has occurred, used to calculate titre-mediated immunity
 //' @return NumericVector of predicted titres for each entry in measurement_strain_indices
 //' @export
@@ -39,6 +40,7 @@ NumericVector titre_data_fast(const NumericVector &theta,
 			      const NumericVector &antigenic_distances,	// Currently not doing anything, but has uses for model extensions		      
 			      const NumericVector &mus,
 			      const IntegerVector &boosting_vec_indices,
+			      const NumericVector &birth_times,
 			      bool boost_before_infection = false
 			      ){
   // Dimensions of structures
@@ -62,6 +64,7 @@ NumericVector titre_data_fast(const NumericVector &theta,
   double sampling_time;
   double time;
   double n_inf;
+  double age;
   
   // Only use the infections that actually happened
   IntegerVector infection_history(number_strains);
@@ -109,10 +112,39 @@ NumericVector titre_data_fast(const NumericVector &theta,
     strain_dep_boost = true;    
   }
   
+  // Back boosting model
+  double nu_long_recall;
+  double nu_short_recall;
+  double max_interference;
+  double interference_gradient;
+  double affinity_maturation;
+  int back_boosting_type = theta["back_boosting"];
+  bool back_boosting = back_boosting_type == 1;
+  //Rcpp::Rcout << "Back boosting: " << back_boosting << std::endl;
+  if(back_boosting){
+    nu_long_recall = theta["nu_long"];
+    nu_short_recall = theta["nu_short"];
+    max_interference = theta["max_interference"];
+    interference_gradient = theta["interference_gradient"];
+    affinity_maturation = theta["affinity_maturation"];
+  }
+
+
+  // Age model
+  double age_gradient;
+  double age_min_boost_propn;
+  int age_boosting_type = theta["use_age"];
+  bool age_boosting = age_boosting_type == 1;
+  if (age_boosting) {
+    age_gradient = theta["age_gradient"];
+    age_min_boost_propn = theta["age_min_boost_propn"];
+  }
   // 3. If not using one of the specific mechanism functions, set the base_function flag to TRUE
   bool base_function = !(alternative_wane_func ||
 			 titre_dependent_boosting ||
-			 strain_dep_boost);
+			 strain_dep_boost ||
+			 back_boosting ||
+			 age_boosting);
 
   // To store calculated titres
   NumericVector predicted_titres(total_titres, min_titre);
@@ -199,6 +231,43 @@ NumericVector titre_data_fast(const NumericVector &theta,
 					 antigenic_map_short,
 					 antigenic_map_long,
 					 boost_before_infection);
+      } else if( back_boosting) {
+	titre_model_backboost_cpp(predicted_titres,
+				  mu, mu_short,
+				  wane, tau,
+				  affinity_maturation,
+				  nu_long_recall, nu_short_recall,
+				  max_interference, interference_gradient,
+				  infection_times,
+				  infection_strain_indices_tmp,
+				  measurement_strain_indices,
+				  sample_times,
+				  index_in_samples,
+				  end_index_in_samples,
+				  start_index_in_data,
+				  nrows_per_blood_sample,
+				  number_strains,
+				  antigenic_map_short,
+				  antigenic_map_long,
+				  antigenic_distances,
+				  boost_before_infection);
+      } else if (age_boosting) {
+	titre_data_fast_individual_age(predicted_titres, mu, mu_short,
+				       age_gradient, age_min_boost_propn,
+				       wane, tau,
+				       age,
+				       infection_times,
+				       infection_strain_indices_tmp,
+				       measurement_strain_indices,
+				       sample_times,
+				       index_in_samples,
+				       end_index_in_samples,
+				       start_index_in_data,
+				       nrows_per_blood_sample,
+				       number_strains,
+				       antigenic_map_short,
+				       antigenic_map_long,
+				       boost_before_infection);	
       } else {
 	titre_data_fast_individual_base(predicted_titres, mu, mu_short,
 					wane, tau,

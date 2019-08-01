@@ -237,3 +237,32 @@ find_beta_prior_mode <- function(mode1, k) {
   b <- calc_b(mode1, k)
   return(list(alpha = a, beta = b))
 }
+
+
+
+
+#' Calculate titre protection
+#'
+#' Calculates the reduced risk of infection for a given HI titre at the time of exposure as per Coudeville et al. 2010
+#' @inheritParams p_infection
+#' @return a single probability of infection
+#' @export
+titre_protection <- function(titre, alpha1, beta1){
+    risk <- 1 - 1/(1 + exp(beta1*(titre - alpha1)))
+    risk
+}
+
+
+#' Calculate prob of infection
+#'
+#' Calculates the probability of infection given a baseline risk and the individual's titre
+#' @param phi the baseline risk of infection to an individual with no titre
+#' @param titre the log HI titre of the individual (base 2)
+#' @param alpha parameter 1
+#' @param beta parameter 2
+#' @return a single probability of infection
+#' @export
+p_infection <- function(phi, titre, alpha1, beta1){
+    p <- phi*(1-titre_protection(titre, alpha1 , beta1))
+    p
+}
