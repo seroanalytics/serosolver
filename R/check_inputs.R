@@ -1,3 +1,37 @@
+#' Check infection history matrix
+#'
+#' Checks that the infection history matrix is allowable given the birth dates and sampling times of the data
+#' @param titre_dat the data frame of titre data
+#' @param strain_isolation_times the circulation times of possible infecting strains eg. 1968:2015
+#' @param inf_hist the infection history matrix, with nrows = number indivs and ncols = length(strain_isolation_times)
+#' @return a single boolean value, FALSE if the check passes, otherwise throws an error
+#' @family check_inputs
+#' data(example_titre_dat)
+#' data(example_inf_hist)
+#' times <- 1968:2015
+#' check_inf_hist(example_titre_dat, times, example_inf_hist)
+#' @export
+check_inf_hist <- function(titre_dat, strain_isolation_times, inf_hist){
+  DOBs <- get_DOBs(titre_dat)
+  age_mask <- create_age_mask(DOBs[,2],strain_isolation_times)
+  strain_mask <- create_strain_mask(titre_dat, strain_isolation_times)
+  res <- logical(length(age_mask))
+  for(i in seq_along(age_mask)){
+      if(!(sum(inf_hist[i,] == 0))){
+          first_inf <- (min(which(inf_hist[i,] == 1)))
+          last_inf <- max(which(inf_hist[i,] == 1))
+          res[i] <- (first_inf < age_mask[i] | last_inf > strain_mask[i])
+      } else {
+          res[i] <- FALSE
+      }
+  }
+  if (any(res)) {
+      stop("Error in inf hist - infections occuring before individuals are born of after their latest sample")
+  }
+  return(any(res))
+}
+
+
 #' Check par_tab for simulate_data
 #'
 #' Checks the entries of par_tab used in simulate_data

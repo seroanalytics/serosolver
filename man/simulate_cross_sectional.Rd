@@ -14,7 +14,7 @@ simulate_cross_sectional(parTab, n_indiv, buckets = 12,
 
 \item{n_indiv}{number of individuals to simulate}
 
-\item{strainIsolationTimes}{vector of strain ciruclation times}
+\item{strainIsolationTimes}{vector of strain circulation times}
 
 \item{samplingTimes}{possible sampling times for the individuals}
 

@@ -26,7 +26,7 @@ titre_data_fast(theta, infection_history_mat, circulation_times,
 
 \item{cum_nrows_per_individual_in_data}{IntegerVector, How many cumulative rows in the titre data correspond to each individual?}
 
-\item{nrows_per_blood_sample}{IntegerVector, one entry per sample taken. Dicates how many entries to iterate through cum_nrows_per_individual_in_data for each sampling time considered}
+\item{nrows_per_blood_sample}{IntegerVector, one entry per sample taken. Dictates how many entries to iterate through cum_nrows_per_individual_in_data for each sampling time considered}
 
 \item{measurement_strain_indices}{IntegerVector, the indices of all measured strains in the melted antigenic map, with one entry per measured titre}
 
@@ -40,7 +40,7 @@ titre_data_fast(theta, infection_history_mat, circulation_times,
 
 \item{boosting_vec_indices}{IntegerVector, same length as circulation_times, giving the index in the vector \code{mus} that each entry should use as its boosting parameter.}
 
-\item{boost_before_infection}{bool to indicate if calculated titre for that time should be before the infection has occured, used to calculate titre-mediated immunity}
+\item{boost_before_infection}{bool to indicate if calculated titre for that time should be before the infection has occurred, used to calculate titre-mediated immunity}
 }
 \value{
 NumericVector of predicted titres for each entry in measurement_strain_indices

@@ -19,34 +19,34 @@
 #' new_inf_hist <- inf_hist_swap(example_inf_hist, age_mask,strain_mask, 1,3)[[1]]
 #' @export
 inf_hist_swap <- function(infection_history, age_mask, strain_mask, swap_propn, move_size) {
-  ## Choose a column
-  y1 <- sample(1:ncol(infection_history), 1)
+    ## Choose a column
+    y1 <- sample(1:ncol(infection_history), 1)
 
-  ## Propose another column some random distance, but not 0, away
-  move <- 0
-  while (move == 0) move <- sample((-move_size):move_size, 1)
+    ## Propose another column some random distance, but not 0, away
+    move <- 0
+    while (move == 0) move <- sample((-move_size):move_size, 1)
 
-  ## Need to adjust if we've proposed too far away
-  y2 <- y1 + move
-  while (y2 < 1) y2 <- y2 + ncol(infection_history)
-  if (y2 > ncol(infection_history)) y2 <- y2 - floor(y2 / ncol(infection_history)) * ncol(infection_history)
+    ## Need to adjust if we've proposed too far away
+    y2 <- y1 + move
+    while (y2 < 1) y2 <- y2 + ncol(infection_history)
+    while(y2 > ncol(infection_history)) y2 <- y2 - ncol(infection_history)
 
-  ## Get the first and last year chronologically
-  small_year <- min(y1, y2)
-  big_year <- max(y1, y2)
+    ## Get the first and last year chronologically
+    small_year <- min(y1, y2)
+    big_year <- max(y1, y2)
 
-  ## Find individuals that are alive/sampled in both years and choose the lesser of swap_propn*n_indivs and
-  ## the number that are actually able to be infected in both years
-  indivs <- 1:nrow(infection_history)
-  alive_indivs <- indivs[intersect(which(age_mask <= small_year), which(strain_mask >= big_year))]
-  samp_indivs <- sample(alive_indivs, floor(length(alive_indivs) * swap_propn))
+    ## Find individuals that are alive/sampled in both years and choose the lesser of swap_propn*n_indivs and
+    ## the number that are actually able to be infected in both years
+    indivs <- 1:nrow(infection_history)
+    alive_indivs <- indivs[intersect(which(age_mask <= small_year), which(strain_mask >= big_year))]
+    samp_indivs <- sample(alive_indivs, floor(length(alive_indivs) * swap_propn))
 
-  ## Swap contents
-  tmp <- infection_history[samp_indivs, y1]
-  infection_history[samp_indivs, y1] <- infection_history[samp_indivs, y2]
-  infection_history[samp_indivs, y2] <- tmp
+    ## Swap contents
+    tmp <- infection_history[samp_indivs, y1]
+    infection_history[samp_indivs, y1] <- infection_history[samp_indivs, y2]
+    infection_history[samp_indivs, y2] <- tmp
 
-  return(list(infection_history))
+    return(list(infection_history))
 }
 #' Swap infection history years with phi term
 #'

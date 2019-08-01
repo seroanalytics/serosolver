@@ -297,7 +297,6 @@ create_posterior_func <- function(par_tab,
         titre_dat[, c("individual", "samples", "virus")],
         titre_dat_unique[, c("individual", "samples", "virus")]
     )
-    print("Setup titre data...")
     ## Setup data vectors and extract
     setup_dat <- setup_titredat_for_posterior_func(
         titre_dat_unique, antigenic_map,
@@ -381,6 +380,7 @@ create_posterior_func <- function(par_tab,
     }
 
     if (function_type == 1) {
+        message("Creating posterior solving function...")
         f <- function(pars, infection_history_mat) {
             theta <- pars[theta_indices]
             names(theta) <- par_names_theta
@@ -411,7 +411,6 @@ create_posterior_func <- function(par_tab,
             if (use_measurement_bias) {
                 measurement_bias <- pars[measurement_indices_par_tab]
                 titre_shifts <- measurement_bias[expected_indices]
-                                        # print(titre_shifts)
                 y_new <- y_new + titre_shifts
             }
             ## Transmission prob is the part of the likelihood function corresponding to each individual
@@ -449,14 +448,19 @@ create_posterior_func <- function(par_tab,
             return(list(liks, transmission_prob))
         }
     } else if (function_type == 2) {
+        
+        message("Creating infection history proposal function")
         if (version == 4) {
             n_alive_total <- rowSums(n_alive)
         } else {
             n_alive_total <- c(-1, -1)
         }
+        alpha <- par_tab[par_tab$names == "alpha","values"]
+        beta <- par_tab[par_tab$names == "beta","values"]
         n_infected_group <- c(0, 0)
+        ## Generate prior lookup table
+        lookup_tab <- create_prior_lookup(titre_dat, strain_isolation_times, alpha, beta)
         ## Use the original gibbs proposal function if no titre immunity
-        message("Generating infection history proposal function")
         f <- function(pars, infection_history_mat,
                       probs, sampled_indivs,
                       alpha, beta,
@@ -466,7 +470,8 @@ create_posterior_func <- function(par_tab,
                       accepted_iter,
                       proposal_swap,
                       accepted_swap,
-                      temp) {
+                      temp=1,
+                      propose_from_prior=TRUE) {
             theta <- pars[theta_indices]
             names(theta) <- par_names_theta
 
@@ -496,8 +501,10 @@ create_posterior_func <- function(par_tab,
                 n_alive,
                 n_infections,
                 n_infected_group,
+                lookup_tab,
                 swap_propn,
                 swap_dist,
+                propose_from_prior,
                 alpha,
                 beta,
                 strain_isolation_times,
@@ -529,6 +536,7 @@ create_posterior_func <- function(par_tab,
             return(res)
         }
     } else {
+        message("Creating model solving function...")
         ## Final version is just the model solving function
         f <- function(pars, infection_history_mat) {
             theta <- pars[theta_indices]

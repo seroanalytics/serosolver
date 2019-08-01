@@ -126,6 +126,7 @@ arma::mat inf_hist_prop_prior_v3(arma::mat infection_history_mat,
 //' @param n_alive IntegerMatrix, number of columns is the number of time periods that an individual could be infected, giving the number of individual alive in each time period. Number of rows is the number of distinct groups.
 //' @param n_infections IntegerMatrix, the number of infections in each year (columns) for each group (rows)
 //' @param n_infected_group IntegerVector, the total number of infections across all times in each group
+//' @param prior_lookup NumericMatrix, the pre-computed lookup table for the beta prior on infection histories
 //' @param swap_propn double, gives the proportion of proposals that will be swap steps (ie. swap contents of two cells in infection_history rather than adding/removing infections)
 //' @param swap_distance int, in a swap step, how many time steps either side of the chosen time period to swap with
 //' @param alpha double, alpha parameter for beta prior on infection probability
@@ -169,8 +170,10 @@ List inf_hist_prop_prior_v2_and_v4(const NumericVector &theta, // Model paramete
 				   const IntegerMatrix &n_alive, // No. of individuals alive each year/group
 				   IntegerMatrix &n_infections, // No. of infections in each year/group
 				   IntegerVector &n_infected_group,
+				   const NumericMatrix &prior_lookup,
 				   const double &swap_propn,
 				   const int &swap_distance,
+				   const bool &propose_from_prior,
 				   const double &alpha, // Alpha for prior
 				   const double &beta, // Beta for prior
 				   const NumericVector &circulation_times,
@@ -283,7 +286,7 @@ List inf_hist_prop_prior_v2_and_v4(const NumericVector &theta, // Model paramete
   double new_prob; // Likelihood of new number
   double log_prob; // Likelihood ratio
 
-  double lbeta_const = R::lbeta(alpha, beta);
+  //double lbeta_const = R::lbeta(alpha, beta);
 
   // For likelihood
   const double sd = theta["error"];
@@ -348,6 +351,9 @@ List inf_hist_prop_prior_v2_and_v4(const NumericVector &theta, // Model paramete
     
     // Get index, group and current likelihood of individual under consideration
     indiv = sampled_indivs[i]-1;
+    //Rcpp::Rcout << "Indiv: " << indiv << std::endl;
+    //Rcpp::Rcout << "Age mask: " << age_mask[indiv]-1 << std::endl;
+    //Rcpp::Rcout << "Strain mask: " << strain_mask[indiv]-1 << std::endl;
     group_id = group_id_vec[indiv];
     old_prob = old_probs_1[indiv];
     // Indexing for data upkeep
@@ -386,6 +392,7 @@ List inf_hist_prop_prior_v2_and_v4(const NumericVector &theta, // Model paramete
     }
     // For each selected infection history entry
     for(int j = 0; j < n_samp_max; ++j){
+      //Rcpp::Rcout << "j: " << j << std::endl;
       // Assume that proposal hasn't changed likelihood until shown otherwise
       lik_changed = false;
       // Infection history to update
@@ -394,14 +401,14 @@ List inf_hist_prop_prior_v2_and_v4(const NumericVector &theta, // Model paramete
       ///////////////////////////////////////////////////////
       // OPTION 1: Swap contents of a year for an individual
       ///////////////////////////////////////////////////////
-      // If swap step      
+      // If swap step
+      prior_old = prior_new = 0;
       if(swap_step_option){
-	prior_old = prior_new = 0;
+	//Rcpp::Rcout << "Swap step" << std::endl;
 	if(samps.size() > 0){	  
-	  proposal_swap[indiv] += 1;
-
 	  loc1 = locs[j]; // Choose a location from age_mask to strain_mask
 	  loc2 = loc1 + floor(R::runif(-swap_distance,swap_distance));
+
 
 	  // If we have gone too far left or right, reflect at the boundaries
 	  while(loc2 < 0){
@@ -415,16 +422,21 @@ List inf_hist_prop_prior_v2_and_v4(const NumericVector &theta, // Model paramete
 	  // Get onto right scale (starting at age mask)
 	  loc1 += age_mask[indiv] - 1;
 	  loc2 += age_mask[indiv] - 1;
-	 
+	  //Rcpp::Rcout << "Location chosen 1: " << loc1 << std::endl;
+	  //Rcpp::Rcout << "Location chosen 2: " << loc2 << std::endl;	 
 	  
 	  loc1_val_old = new_infection_history(loc1);
 	  loc2_val_old = new_infection_history(loc2);
+
+	  //Rcpp::Rcout << "Location value 1: " << loc1_val_old << std::endl;
+	  //Rcpp::Rcout << "Location value 2: " << loc2_val_old << std::endl;	 
 	  
 	  // Only proceed if we've actually made a change
 	  // If prior version 4, then prior doesn't change by swapping
 	  if(loc1_val_old != loc2_val_old){
+	    //Rcpp::Rcout << "Changed" << std::endl;
 	    lik_changed = true;
-	  
+	    proposal_swap[indiv] += 1;
 	    if(!prior_on_total){
 	      // Number of infections in that group in that time
 	      m_1_old = n_infections(group_id,loc1);      
@@ -442,28 +454,39 @@ List inf_hist_prop_prior_v2_and_v4(const NumericVector &theta, // Model paramete
 	      m_1_new = m_1_old - loc1_val_old + loc2_val_old;
 	      m_2_new = m_2_old - loc2_val_old + loc1_val_old;
 
-	      // Pre-compute these? 
-	      prior_1_old = R::lbeta(m_1_old + alpha, n_1 - m_1_old + beta)-lbeta_const;
-	      prior_2_old = R::lbeta(m_2_old + alpha, n_2 - m_2_old + beta)-lbeta_const;
+
+	      prior_1_old = prior_lookup(m_1_old, loc1);
+	      prior_2_old = prior_lookup(m_2_old, loc2);
+
+	      // Pre-compute these?
+	      //prior_1_old = R::lbeta(m_1_old + alpha, n_1 - m_1_old + beta)-lbeta_const;
+	      //prior_2_old = R::lbeta(m_2_old + alpha, n_2 - m_2_old + beta)-lbeta_const;
 	      prior_old = prior_1_old + prior_2_old;
-	    
-	      prior_1_new = R::lbeta(m_1_new + alpha, n_1 - m_1_new + beta)-lbeta_const;
-	      prior_2_new = R::lbeta(m_2_new + alpha, n_2 - m_2_new + beta)-lbeta_const;
+	      
+	      prior_1_new = prior_lookup(m_1_new, loc1);
+	      prior_2_new = prior_lookup(m_2_new, loc2);
+	      
+	      //prior_1_new = R::lbeta(m_1_new + alpha, n_1 - m_1_new + beta)-lbeta_const;
+	      //prior_2_new = R::lbeta(m_2_new + alpha, n_2 - m_2_new + beta)-lbeta_const;
 	      prior_new = prior_1_new + prior_2_new;
 	    } else {
 	      // Prior version 4
 	      prior_old = prior_new = 0;
 	    }
 	  }
-	} 
+	} else {
+	  //Rcpp::Rcout << "No infections to swap" << std::endl;
+	}
+	
 	///////////////////////////////////////////////////////
 	// OPTION 2: Add/remove infection
 	///////////////////////////////////////////////////////
-      } else {	
-	proposal_iter[indiv] += 1;
-
+      } else {
+	//Rcpp::Rcout << "Add/remove" << std::endl;
 	year = locs[j] + age_mask[indiv] - 1;
 	old_entry = new_infection_history(year);
+	//Rcpp::Rcout << "Year: " << year << std::endl;
+	//Rcpp::Rcout << "Old entry: " << old_entry << std::endl;
 	if(!prior_on_total){	
 	  // Get number of individuals that were alive and/or infected in that year,
 	  // less the current individual
@@ -474,20 +497,43 @@ List inf_hist_prop_prior_v2_and_v4(const NumericVector &theta, // Model paramete
 	  m = n_infected_group(group_id) - old_entry;
 	  n = total_alive(group_id) - 1;
 	}
-	// Work out proposal ratio - prior from alpha, beta and number of other infections
-	ratio = (m + alpha)/(n + alpha + beta);
-	// Propose 1 or 0 based on this ratio
-	rand1 = R::runif(0,1);	
-	if(rand1 < ratio){
-	  new_entry = 1;
-	  new_infection_history(year) = 1;
+
+	if(propose_from_prior){
+	  // Work out proposal ratio - prior from alpha, beta and number of other infections
+	  ratio = (m + alpha)/(n + alpha + beta);
+	  // Propose 1 or 0 based on this ratio
+	  rand1 = R::runif(0,1);	
+	  if(rand1 < ratio){
+	    new_entry = 1;
+	    new_infection_history(year) = 1;
+	  } else {
+	    new_entry = 0;
+	    new_infection_history(year) = 0;
+	  }
 	} else {
-	  new_entry = 0;
-	  new_infection_history(year) = 0;
+	  if(old_entry == 0) {
+	    new_entry = 1;
+	    new_infection_history(year) = 1;
+	    //prior_new = ratio;
+	    //prior_old = 1-ratio;
+	  } else {
+	    new_entry = 0;
+	    new_infection_history(year) = 0;
+	    //prior_new = 1-ratio;
+	    //prior_old = ratio;
+	  }
+	  m_1_old = m + old_entry;
+	  m_1_new = m + new_entry;
+	  prior_old = prior_lookup(m_1_old, year);
+	  prior_new = prior_lookup(m_1_new, year);
 	}
+	//prior_old = R::lbeta(m_1_old + alpha, n + 1 - m_1_old + beta) - lbeta_const;
+	//prior_new = R::lbeta(m_1_new + alpha, n + 1 - m_1_new + beta) - lbeta_const;
 	if(new_entry != old_entry){
 	  lik_changed = true;
+	  proposal_iter[indiv] += 1;		
 	}
+	//Rcpp::Rcout << "New entry: " << new_entry << std::endl;
       }
       ////////////////////////
       // If a change was made to the infection history,
@@ -609,8 +655,11 @@ List inf_hist_prop_prior_v2_and_v4(const NumericVector &theta, // Model paramete
       if(swap_step_option){ 
 	log_prob = std::min<double>(0.0, (new_prob+prior_new) - (old_prob+prior_old));
       } else {
-	log_prob = std::min<double>(0.0, new_prob - old_prob);
+	log_prob = std::min<double>(0.0, (new_prob+prior_new) - (old_prob+prior_old));
       }
+      //Rcpp::Rcout << "Unmodified log prob: " << (new_prob+prior_new) - (old_prob+prior_old) << std::endl;
+      //Rcpp::Rcout << "log prob: " << log_prob << std::endl << std::endl;
+      
       rand1 = R::runif(0,1);
       if(lik_changed && log(rand1) < log_prob/temp){
 	// Update the entry in the new matrix Z1

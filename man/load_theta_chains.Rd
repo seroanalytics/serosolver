@@ -21,7 +21,7 @@ load_theta_chains(location = getwd(), par_tab = NULL, unfixed = TRUE,
 \item{convert_mcmc}{if TRUE, converts everything to MCMC objects (from the `coda` R package)}
 }
 \value{
-a list with a) a list of each chain seperately; b) a combined data frame, indexing each iteration by which chain it comes from
+a list with a) a list of each chain separately; b) a combined data frame, indexing each iteration by which chain it comes from
 }
 \description{
 Searches the given working directory for MCMC outputs from \code{\link{run_MCMC}}, loads these in, subsets for burn in and thinning, and formats as both lists and a combined data frame.

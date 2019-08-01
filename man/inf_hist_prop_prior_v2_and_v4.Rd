@@ -6,8 +6,8 @@
 \usage{
 inf_hist_prop_prior_v2_and_v4(theta, infection_history_mat, old_probs_1,
   sampled_indivs, n_years_samp_vec, age_mask, strain_mask, n_alive,
-  n_infections, n_infected_group, swap_propn, swap_distance, alpha, beta,
-  circulation_times, circulation_times_indices, sample_times,
+  n_infections, n_infected_group, prior_lookup, swap_propn, swap_distance,
+  alpha, beta, circulation_times, circulation_times_indices, sample_times,
   rows_per_indiv_in_samples, cum_nrows_per_individual_in_data,
   cum_nrows_per_individual_in_repeat_data, nrows_per_blood_sample,
   group_id_vec, measurement_strain_indices, antigenic_map_long,
@@ -36,6 +36,8 @@ inf_hist_prop_prior_v2_and_v4(theta, infection_history_mat, old_probs_1,
 \item{n_infections}{IntegerMatrix, the number of infections in each year (columns) for each group (rows)}
 
 \item{n_infected_group}{IntegerVector, the total number of infections across all times in each group}
+
+\item{prior_lookup}{NumericMatrix, the pre-computed lookup table for the beta prior on infection histories}
 
 \item{swap_propn}{double, gives the proportion of proposals that will be swap steps (ie. swap contents of two cells in infection_history rather than adding/removing infections)}
 

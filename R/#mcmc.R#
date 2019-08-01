@@ -114,7 +114,6 @@ run_MCMC <- function(par_tab,
     hist_switch_prob <- mcmc_pars_used["hist_switch_prob"] # If using gibbs, what proportion of iterations should be swapping contents of two time periods?
     year_swap_propn <- mcmc_pars_used["year_swap_propn"] # If gibbs and swapping contents, what proportion of these time periods should be swapped?
     propose_from_prior <- mcmc_pars["propose_from_prior"]
-    message(cat("Propose from prior: ", propose_from_prior))
   ###################################################################
 
   ## Sort out which version to run --------------------------------------

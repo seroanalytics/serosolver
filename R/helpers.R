@@ -20,6 +20,20 @@ get_n_alive <- function(titre_dat, times) {
     nrow(masks[masks$age_mask <= x & masks$strain_mask >= x, ]))
 }
 
+#' Get DOBs
+#'
+#' Gets the dates of birth for each individual in titre_dat
+#' @param titre_dat the data frame of titre data. See \code{\link{example_titre_dat}}
+#' @return a data frame with individual ID and DOB
+#' @family get_summary
+#' @examples
+#' data(example_titre_dat)
+#' get_DOBs(titre_dat)
+#' @export
+get_DOBs <- function(titre_dat){
+    DOBs <- unique(titre_dat[,c("individual","DOB")])
+}
+
 #' Get number alive bylocation
 #'
 #' Given the titre_dat data frame with entries for location, calculates the number that are alive (alive to be infected, that is) for each time in times by location
@@ -55,6 +69,19 @@ get_n_alive_group <- function(titre_dat, times, melt_dat = FALSE) {
   n_alive
 }
 
+#' @export
+create_prior_lookup <- function(titre_dat, strain_isolation_times, alpha1, beta1){
+    n_alive <- get_n_alive(titre_dat, strain_isolation_times)
+    lookup_tab <- matrix(nrow=max(n_alive)+1,ncol=length(strain_isolation_times))
+    max_alive <- max(n_alive)
+    for(i in seq_along(strain_isolation_times)){
+        results <- rep(-Inf, max_alive+1)
+        m <- seq_len(n_alive[i]+1)-1
+        results[1:(n_alive[i]+1)] <- lbeta(alpha1 + m, n_alive[i] - m + beta1) + lbeta(alpha1, beta1)
+        lookup_tab[,i] <- results        
+    }
+    lookup_tab
+}
 
 
 #' Create age mask

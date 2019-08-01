@@ -17,7 +17,7 @@ load_infection_chains(location = getwd(), thin = 1, burnin = 0,
 \item{chain_subset}{if not NULL, a vector of indices to only load and store a subset of the chains detected. eg. chain_subset = 1:3 means that only the first 3 detected files will be processed.}
 }
 \value{
-a list with a) a list of each chain as a data table seperately; b) a combined data table, indexing each iteration by which chain it comes from
+a list with a) a list of each chain as a data table separately; b) a combined data table, indexing each iteration by which chain it comes from
 }
 \description{
 Searches the given working directory for MCMC outputs from \code{\link{run_MCMC}}, loads these in, subsets for burn in and thinning, and formats as both lists and a combined data table.
