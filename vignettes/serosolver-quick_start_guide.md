@@ -416,12 +416,6 @@ antigenically similar these viruses are. Viruses that are further apart
 in this 2-dimensional space are expected to cross react less than
 viruses that are close together.
 
-<img src="/Library/Frameworks/R.framework/Versions/3.6/Resources/library/serosolver/extdata/antigenic_map.tiff" alt="Assumed antigenic locations of historical strains in model between 1968 and 2012 (from Kucharski *et al.* @kucharski2018)." width="75%" />
-<p class="caption">
-Assumed antigenic locations of historical strains in model between 1968
-and 2012 (from Kucharski *et al.* \[20\]).
-</p>
-
 An antigenic map can be created using `generate_antigenic_map()` and
 input by the user depending on the source of their data. We use the
 antigenic map created by Fonville *et al.* \[17\] in our analyses.

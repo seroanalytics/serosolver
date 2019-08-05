@@ -111,11 +111,6 @@ In the parameter file, the column 'fixed' indicates if each parameter value is f
 ### Antigenic Map
 The antigenic map specifies the coordinates of different circulating viruses in antigenic space [@smith2004], informing the model about how antigenically similar these viruses are. Viruses that are further apart in this 2-dimensional space are expected to cross react less than viruses that are close together.
 
-```{r antigenic_map, echo=FALSE, fig.cap="Assumed antigenic locations of historical strains in model between 1968 and 2012 (from Kucharski *et al.* @kucharski2018).", out.width = '75%'}
-fig_path <- system.file("extdata", "antigenic_map.tiff", package = "serosolver")
-knitr::include_graphics(fig_path)
-```
-
 An antigenic map can be created using `generate_antigenic_map()` and input by the user depending on the source of their data. We use the antigenic map created by Fonville *et al.* [@fonville2014] in our analyses.
 
 ```{r, eval=FALSE}
