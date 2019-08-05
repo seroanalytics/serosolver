@@ -2,7 +2,7 @@
 title: "Serosolver: Quick Start Guide"
 author: "Kylie Ainslie and James Hay"
 date: "`r Sys.Date()`"
-output: rmarkdown::html_vignette # rmarkdown::md_document - need for GitHub
+output: rmarkdown::md_document # - need for GitHub rmarkdown::html_vignette # 
 vignette: >
   %\VignetteIndexEntry{Serosolver Quick Start Guide}
   %\VignetteEngine{knitr::rmarkdown}
