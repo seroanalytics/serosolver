@@ -28,11 +28,18 @@ devtools::install_github("seroanalytics/serosolver")
 library(serosolver)
 ```
 
-## Quick start
+## Quick start and vignettes
 
 Read the [quick start
 vignette](https://github.com/seroanalytics/serosolver/blob/master/vignettes/serosolver-quick_start_guide.md)
 to set up and run a simple implementation with a simulation model.
+
+There are additional Rmarkdown vignettes for [Case
+Study 1](https://github.com/seroanalytics/serosolver/blob/master/vignettes/cs1_vignette.Rmd)
+(longitudinal analysis of influenza A/H1N1p in Hong Kong) and [Case
+Study 2](https://github.com/seroanalytics/serosolver/blob/master/vignettes/cs2_vignette.Rmd)
+(cross-sectional analysis of influenza A/H3N2 in Guangzhou Province,
+China), to accompany the analysis in the serosolver paper.
 
 ## Example
 
