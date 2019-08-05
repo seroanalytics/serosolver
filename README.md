@@ -1,37 +1,48 @@
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
-serosolver
-==========
 
-[![Project Status: Active – The project has reached a stable, usable state and is being actively developed.](https://www.repostatus.org/badges/latest/active.svg)](https://www.repostatus.org/#active)
+# serosolver
 
-`serosolver` is a modelling and inference package that uses a dynamic model to infer antibody dynamics and infection histories from cross-sectional or longitudinal serological data. The model infers individual-level infection histories, historical attack rates, and patterns of antibody dynamics by accounting for cross-reactive antibody responses and measurement error.
+[![Project Status: Active – The project has reached a stable, usable
+state and is being actively
+developed.](https://www.repostatus.org/badges/latest/active.svg)](https://www.repostatus.org/#active)
 
-Installation
-------------
+`serosolver` is a modelling and inference package that uses a dynamic
+model to infer antibody dynamics and infection histories from
+cross-sectional or longitudinal serological data. The model infers
+individual-level infection histories, historical attack rates, and
+patterns of antibody dynamics by accounting for cross-reactive antibody
+responses and measurement error.
+
+## Installation
 
 1.  Install [R](http://cran.r-project.org)
 
-2.  Install the development version of serosolver from [GitHub](https://github.com/seroanalytics/serosolver):
+2.  Install the development version of serosolver from
+    [GitHub](https://github.com/seroanalytics/serosolver):
+
+<!-- end list -->
 
 ``` r
 devtools::install_github("seroanalytics/serosolver")
 library(serosolver)
 ```
 
-Quick start
------------
+## Quick start
 
-Read the [quick start vignette](https://github.com/seroanalytics/serosolver/blob/master/vignettes/serosolver-quick_start_guide.md) to set up and run a simple implementation with a simulation model.
+Read the [quick start
+vignette](https://github.com/seroanalytics/serosolver/blob/master/vignettes/serosolver-quick_start_guide.md)
+to set up and run a simple implementation with a simulation model.
 
-Example
--------
+## Example
 
-This is a basic example of simulating some serological data and fitting the model using the MCMC framework.
+This is a basic example of simulating some serological data and fitting
+the model using the MCMC framework.
 
 ``` r
 library(serosolver)
 library(plyr)
+
 ## Load in example parameter values and antigenic map
 data(example_par_tab)
 data(example_antigenic_map)
@@ -66,15 +77,20 @@ ages <- all_simulated_data$ages
 example_inf_hist <- all_simulated_data$infection_histories
 example_titre_dat <- merge(titre_dat, ages)
 
-## Run the MCMC. We have to remove phi, as running prior version 2.
+## Run the MCMC
+# This example uses prior version 2 (i.e. beta prior on phi with parameters alpha, beta)
+# We have to remove the explicit specification of phi in the parameter table
 par_tab <- example_par_tab[example_par_tab$names != "phi",]
 res <- run_MCMC(par_tab, example_titre_dat, example_antigenic_map, 
                 filename="test", version=2,
-                mcmc_pars=c(save_block=10000,thin=10,thin_hist=100,
+                mcmc_pars=c(iterations=50000, save_block=10000,thin=10,thin_hist=100,
                             move_sizes=3,swap_propn=0.5,inf_propn=0.5))
 
-## Read in the MCMC chains and plot!
+## Read in the MCMC chains and plot posteriors
 chain <- read.csv(res$chain_file)
 inf_chain <- data.table::fread(res$history_file)
 plot(coda::as.mcmc(chain[chain$sampno > 10000,c("mu","mu_short","wane")]))
+
+# Plot model predicted titres for a subset of individuals
+plot_infection_histories(chain = chain,infection_histories = inf_chain,titre_dat = example_titre_dat,individuals=c(1:4),antigenic_map=example_antigenic_map,par_tab=par_tab)
 ```
