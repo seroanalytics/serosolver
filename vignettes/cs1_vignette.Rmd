@@ -181,7 +181,7 @@ res <- foreach(x = filenames, .packages = c('serosolver','data.table','plyr')) %
                   titre_dat = titre_dat,
                   antigenic_map = antigenic_map,
                   start_inf_hist = start_inf, 
-                  mcmc_pars = c("iterations"=50000,"adaptive_period"=10000,
+                  mcmc_pars = c("iterations"=500000,"adaptive_period"=100000,
                                 "thin"=10,"thin_hist"=1000,
                                 "save_block"=1000,"inf_propn"=1, 
                                 "hist_sample_prob"=1,"hist_switch_prob"=0.8,
@@ -197,8 +197,9 @@ Once the MCMC chains are run, `serosolver` provides a number of simple functions
 
 ```{r message=FALSE, warning=FALSE}
 ## Read in the MCMC chains
-## Note that `thin` here is in addition to any thinning done during the fitting
-all_chains <- load_mcmc_chains(location=chain_path_real,thin=1,burnin=10000,
+# Note that `thin` here is in addition to any thinning done during the fitting
+# Chain length values in load function need to be consistent with MCMC run
+all_chains <- load_mcmc_chains(location=chain_path_real,thin=1,burnin=100000,
                              par_tab=par_tab,unfixed=FALSE,convert_mcmc=TRUE)
 print(summary(all_chains))
 ```
@@ -248,7 +249,7 @@ n_alive <- get_n_alive_group(titre_dat, strain_isolation_times,melt=TRUE)
 ## This function generates a number of MCMC outputs
 ps_infhist <- plot_posteriors_infhist(inf_chain=inf_chain, 
                                       years=strain_isolation_times, 
-                                      samples = 10,
+                                      samples = 100,  # Needs to be smaller than length of sampled chain 
                                       n_alive=n_alive)
 
 
@@ -263,9 +264,9 @@ print(head(ps_infhist[["estimates"]]$by_indiv))
 ## Check for agreement between inferred cumulative infection histories 
 ## for some individuals
 p_indiv_inf_hists <- generate_cumulative_inf_plots(inf_chain, indivs=1:9, pad_chain=FALSE,
-                                                  strain_isolation_times = strain_isolation_times,
-                                                  #nsamp = 50, 
-                                                  number_col=3)
+                                                   nsamp = 100, # Needs to be smaller than length of sampled chain 
+                                                   strain_isolation_times = strain_isolation_times,
+                                                   number_col=3)
 print(p_indiv_inf_hists[[1]])
 
 ## Posterior probability that infections occured at given times per individual
@@ -285,7 +286,7 @@ titre_preds <- get_titre_predictions(chain = chain1,
                                      infection_histories = inf_chain1, 
                                      titre_dat = titre_dat, 
                                      individuals = unique(titre_dat$individual),
-                                     #nsamp = 50,
+                                     nsamp = 100, # Needs to be smaller than length of sampled chain 
                                      antigenic_map = antigenic_map, 
                                      par_tab = par_tab,expand_titredat=FALSE)
 to_use <- titre_preds$predictions
