@@ -134,6 +134,9 @@ load_theta_chains <- function(location = getwd(), par_tab = NULL, unfixed = TRUE
   ## Read in the MCMC chains with fread for speed
   read_chains <- lapply(chains, read.csv)
 
+  message(cat("Highest MCMC sample interation: "))
+  lapply(read_chains, function(x) message(max(x$sampno)))
+  
   ## Thin and remove burn in
   read_chains <- lapply(read_chains, function(x) x[seq(1, nrow(x), by = thin), ])
   read_chains <- lapply(read_chains, function(x) x[x$sampno > burnin, ])
@@ -143,8 +146,6 @@ load_theta_chains <- function(location = getwd(), par_tab = NULL, unfixed = TRUE
   unique_sampnos <- Reduce(intersect, unique_sampnos)
   read_chains <- lapply(read_chains, function(x) x[x$sampno %in% unique_sampnos, ])
 
-  message("Number of rows: ")
-  message(lapply(read_chains, nrow))
 
   for (i in 1:length(read_chains)) read_chains[[i]]$chain_no <- i
 
