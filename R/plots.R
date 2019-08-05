@@ -1173,7 +1173,7 @@ generate_cumulative_inf_plots <- function(inf_chain, burnin = 0, indivs, real_in
   }
   if (pad_chain) inf_chain <- pad_inf_chain(inf_chain)
 
-  samps <- sample(unique(inf_chain$sampno), nsamp)
+  samps <- sample(unique(inf_chain$sampno), nsamp, replace=T)
   inf_chain <- inf_chain[inf_chain$sampno %in% samps, ]
 
   ## Get number of probability that infected in a given time point per individual and year

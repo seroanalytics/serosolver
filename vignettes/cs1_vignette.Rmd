@@ -2,10 +2,7 @@
 title: 'Serosolver: paper case study 1'
 csl: plos.csl
 date: "`r Sys.Date()`"
-output:
-  html_document:
-    df_print: paged
-  pdf_document: default
+output: github_document
 editor_options:
   chunk_output_type: console
 subttitle: Inferring pandemic A/H1N1 attack rates using longitudinal serology
@@ -50,14 +47,18 @@ library(viridis)
 # set up cluster
 set.seed(1234)
 cl <- makeCluster(5)
-registerDoParallel(cl)
 
 ## Note that this vignette was generated on a Windows machine,
-## and the setup for parallelisation is different on a Linux machine
-## for Linux machine:
-#  library(doMC)
-#  library(doRNG)
-#  registerDoMC(cores=5)
+## and the setup for parallelisation is different on a Linux or Mac:
+
+if(Sys.info()[["sysname"]]=="Darwin" | Sys.info()[["sysname"]]=="Linux"){
+  library(doMC)
+  library(doRNG)
+  registerDoMC(cores=5)
+}else{
+  registerDoParallel(cl)
+}
+
 ```
 
 ## Assumptions
@@ -180,7 +181,7 @@ res <- foreach(x = filenames, .packages = c('serosolver','data.table','plyr')) %
                   titre_dat = titre_dat,
                   antigenic_map = antigenic_map,
                   start_inf_hist = start_inf, 
-                  mcmc_pars = c("iterations"=500000,"adaptive_period"=100000,
+                  mcmc_pars = c("iterations"=50000,"adaptive_period"=10000,
                                 "thin"=10,"thin_hist"=1000,
                                 "save_block"=1000,"inf_propn"=1, 
                                 "hist_sample_prob"=1,"hist_switch_prob"=0.8,
@@ -197,7 +198,7 @@ Once the MCMC chains are run, `serosolver` provides a number of simple functions
 ```{r message=FALSE, warning=FALSE}
 ## Read in the MCMC chains
 ## Note that `thin` here is in addition to any thinning done during the fitting
-all_chains <- load_mcmc_chains(location=chain_path_real,thin=1,burnin=100000,
+all_chains <- load_mcmc_chains(location=chain_path_real,thin=1,burnin=10000,
                              par_tab=par_tab,unfixed=FALSE,convert_mcmc=TRUE)
 print(summary(all_chains))
 ```
@@ -247,6 +248,7 @@ n_alive <- get_n_alive_group(titre_dat, strain_isolation_times,melt=TRUE)
 ## This function generates a number of MCMC outputs
 ps_infhist <- plot_posteriors_infhist(inf_chain=inf_chain, 
                                       years=strain_isolation_times, 
+                                      samples = 10,
                                       n_alive=n_alive)
 
 
