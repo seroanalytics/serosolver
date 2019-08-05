@@ -28,12 +28,16 @@ knitr::opts_chunk$set(
 devtools::install_github("seroanalytics/serosolver")
 library(serosolver)
 ```
-## Quick start
+## Quick start and vignettes
 
 Read the [quick start vignette][vignette-doc] to set up and run a simple implementation with a simulation model.
 
+There are additional Rmarkdown vignettes for [Case Study 1][c1-vignette-doc] (longitudinal analysis of influenza A/H1N1p in Hong Kong) and [Case Study 2][c2-vignette-doc] (cross-sectional analysis of influenza A/H3N2 in Guangzhou Province, China), to accompany the analysis in the serosolver paper.
+
 [r-project]: http://cran.r-project.org
 [vignette-doc]: https://github.com/seroanalytics/serosolver/blob/master/vignettes/serosolver-quick_start_guide.md
+[c1-vignette-doc]: https://github.com/seroanalytics/serosolver/blob/master/vignettes/cs1_vignette.Rmd
+[c2-vignette-doc]: https://github.com/seroanalytics/serosolver/blob/master/vignettes/cs2_vignette.Rmd
 
 ## Example
 

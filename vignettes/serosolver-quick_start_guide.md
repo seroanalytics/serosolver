@@ -68,7 +68,7 @@ use the `devtools` package:
     library(data.table)
     library(ggplot2)
 
-1. Data Format
+1: Data Format
 --------------
 
 `serosolver` expects a data frame as input in long format with the
@@ -120,7 +120,7 @@ following columns:
 For the remainder of this quick start guide we refer to the input data
 set as `titre_dat`.
 
-2. Specifying inputs
+2: Specifying inputs
 --------------------
 
 Along with a data file, serosolver expects several additional inputs
@@ -458,7 +458,7 @@ histories from which to begin MCMC sampling.
 
       start_inf <- setup_infection_histories_new_2(titre_dat, strains_isolation_times)
 
-3. Run MCMC
+3: Run MCMC
 -----------
 
 `seroslver` uses an Adaptive Metropolis-within-Gibbs algorithm. Given a
@@ -489,7 +489,7 @@ a vector of function argument values to `run_MCMC()`.
                     mcmc_pars = mcmc_pars, start_inf_hist = start_inf,
                     CREATE_POSTERIOR_FUNC = create_posterior_func, version = 2)
 
-4. Processing Outputs
+4: Processing Outputs
 ---------------------
 
 `serosolver` contains numerous plotting functions for visualising

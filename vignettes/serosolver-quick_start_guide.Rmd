@@ -50,7 +50,7 @@ library(data.table)
 library(ggplot2)
 ```
 
-## 1. Data Format
+## 1: Data Format
 
 `serosolver` expects a data frame as input in long format with the following columns: 
 
@@ -79,7 +79,7 @@ library(ggplot2)
 
 For the remainder of this quick start guide we refer to the input data set as `titre_dat`.
 
-## 2. Specifying inputs
+## 2: Specifying inputs
 Along with a data file, serosolver expects several additional inputs namely, a parameter input file for starting values of antibody kinetics parameters, an antigenic map, an age mask, and starting infection histories. The following section will walk the users through creating each of these inputs. 
 
 ### Parameter values
@@ -143,7 +143,7 @@ The final inputs required by `serosolver` are starting infection histories for e
   start_inf <- setup_infection_histories_new_2(titre_dat, strains_isolation_times)
 ```
 
-## 3. Run MCMC
+## 3: Run MCMC
 `seroslver` uses an Adaptive Metropolis-within-Gibbs algorithm. Given a starting point and the necessary MCMC parameters, `run_MCMC()` performs a random-walk of the posterior space to produce an MCMC chain that can be used to generate MCMC density and iteration plots (see section 4). 
 
 Using the default options, the MCMC can be run using the following.
@@ -169,7 +169,7 @@ If you want to change any default options, such as increasing or decreasing the 
                 CREATE_POSTERIOR_FUNC = create_posterior_func, version = 2)
 ```
 
-## 4. Processing Outputs
+## 4: Processing Outputs
 `serosolver` contains numerous plotting functions for visualising results and evaluating model performance. Below are examples of several useful plotting functions.
 
 ### Diagnostic plots
