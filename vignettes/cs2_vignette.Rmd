@@ -206,7 +206,7 @@ res <- foreach(x = filenames, .packages = c('serosolver','data.table','plyr')) %
                   titre_dat = titre_dat,
                   antigenic_map = antigenic_map,
                   start_inf_hist = start_inf, 
-                  mcmc_pars = c("iterations"=500000,"adaptive_period"=100000,"thin"=100,
+                  mcmc_pars = c("iterations"=50000,"adaptive_period"=10000,"thin"=100,
                                 "thin_hist"=500,"save_block"=1000,
                                 "inf_propn"=1, "hist_sample_prob"=1,
                                 "hist_switch_prob"=0.8, "year_swap_propn"=1),
@@ -222,7 +222,7 @@ Once the MCMC chains are run, `serosolver` provides a number of simple functions
 ```{r message=FALSE, warning=FALSE}
 ## Read in the MCMC chains
 ## Note that `thin` here is in addition to any thinning done during the fitting
-all_chains <- load_mcmc_chains(location=chain_path_real,thin=1,burnin=100000,
+all_chains <- load_mcmc_chains(location=chain_path_real,thin=1,burnin=10000,
                                par_tab=par_tab,unfixed=FALSE,convert_mcmc=TRUE)
 
 ## Alternative, load the included MCMC chains rather than re-running
@@ -233,7 +233,7 @@ print(summary(all_chains))
 ```
 
 Chains should then be checked for the usual MCMC diagnostics: $\hat{R}$ and effective sample size. First, looking at the antibody kinetics process parameters:
-```{r}
+```{r fig.height=8, fig.width=11}
 ## Get the MCMC chains as a list
 list_chains <- all_chains$theta_list_chains
 ## Look at diagnostics for the free parameters
@@ -313,7 +313,7 @@ Mixing can sometimes be very poor for per-time attack rates when adjacent times 
 
 Users may also easily check the inferred antibody landscapes at the time each sample was taken. Black dots show observations, shaded regions and black line show 95%, 50% credible intervals and posterior median.
 
-```{r}
+```{r fig.height=8, fig.width=11}
 ## get_titre_predictions expects only a single MCMC chain, so
 ## subset for only one chain
 chain <- as.data.frame(all_chains$theta_chain)
@@ -542,7 +542,7 @@ We finish the vignette by presenting a simulation-recovery experiment to test th
 We simulate infection histories and antibody titre data based on the "real" parameters inferred from fitting the model above. First, we extract the maximum posterior probability antibody kinetics parameters and attack rates.
 ```{r message=FALSE, warning=FALSE}
 ## Read in MCMC chains from fitting
-all_chains <- load_mcmc_chains(location=chain_path_real,thin=10,burnin=100000,
+all_chains <- load_mcmc_chains(location=chain_path_real,thin=10,burnin=10000,
                                par_tab=par_tab,unfixed=FALSE,convert_mcmc=FALSE)
 
 ## Alternative, load the included MCMC chains rather than re-running
@@ -653,7 +653,7 @@ res <- foreach(x = filenames) %dopar% {
                   titre_dat = sim_titre_dat,
                   antigenic_map = antigenic_map,
                   start_inf_hist = start_inf, 
-                  mcmc_pars = c("iterations"=500000,"adaptive_period"=100000,"thin"=100,
+                  mcmc_pars = c("iterations"=50000,"adaptive_period"=10000,"thin"=100,
                                 "thin_hist"=500,"save_block"=1000,
                                 "hist_switch_prob"=0.8, "hist_sample_prob"=1),
                   filename = paste0(chain_path_sim,x), 
@@ -668,7 +668,7 @@ MCMC chains should be checked for convergence under the usual diagnostics. We al
 ```{r message=FALSE, warning=FALSE}
 ## Read in the MCMC chains
 ## Note that `thin` here is in addition to any thinning done during the fitting
-sim_all_chains <- load_mcmc_chains(location=chain_path_sim,thin=1,burnin=100000,
+sim_all_chains <- load_mcmc_chains(location=chain_path_sim,thin=1,burnin=10000,
                                par_tab=par_tab,unfixed=FALSE,convert_mcmc=TRUE)
 
 ## Alternative, load the included MCMC chains rather than re-running
