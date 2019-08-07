@@ -122,3 +122,57 @@ par_tab <- par_tab[par_tab$names != "phi",]
 par_tab[par_tab$names %in% c("mu_short","sigma2","wane"),"fixed"] <- 1 # mu_short, waning and sigma2 are fixed
 par_tab[par_tab$names %in% c("mu_short","sigma2","wane"),"values"] <- 0 # set these values to 0
 
+## ----Run mcmc 1, eval=TRUE, include=TRUE---------------------------------
+## Distinct filename for each chain
+no_chains <- 5
+filenames <- paste0(filename, "_",1:no_chains)
+chain_path <- sub("par_tab_base.csv","",par_tab_path)
+chain_path_real <- paste0(chain_path, "cs2_real/")
+chain_path_sim <- paste0(chain_path, "cs2_sim/")
+
+## Create the posterior solving function that will be used in the MCMC framework 
+model_func <- create_posterior_func(par_tab=par_tab,
+                                titre_dat=titre_dat,
+                                antigenic_map=antigenic_map,
+                                version=prior_version) # function in posteriors.R
+
+## Generate results in parallel
+res <- foreach(x = filenames, .packages = c('serosolver','data.table','plyr')) %dopar% {
+  ## Not all random starting conditions return finite likelihood, so for each chain generate random
+  ## conditions until we get one with a finite likelihood
+  start_prob <- -Inf
+  while(!is.finite(start_prob)){
+    ## Generating starting antibody kinetics parameters
+    start_tab <- generate_start_tab(par_tab)
+    
+    ## Generate starting infection history
+    start_inf <- setup_infection_histories_new_2(titre_dat, strain_isolation_times, space=3,titre_cutoff=4)
+    start_prob <- sum(model_func(start_tab$values, start_inf)[[1]])
+  }
+  
+  
+  res <- run_MCMC(par_tab = start_tab, 
+                  titre_dat = titre_dat,
+                  antigenic_map = antigenic_map,
+                  start_inf_hist = start_inf, 
+                  mcmc_pars = c("iterations"=500000,"adaptive_period"=100000,"thin"=100,
+                                "thin_hist"=500,"save_block"=1000,
+                                "inf_propn"=1, "hist_sample_prob"=1,
+                                "hist_switch_prob"=0.8, "year_swap_propn"=1),
+                  filename = paste0(chain_path_real,x), 
+                  CREATE_POSTERIOR_FUNC = create_posterior_func, 
+                  version = prior_version)
+}
+
+## ----message=FALSE, warning=FALSE----------------------------------------
+## Read in the MCMC chains
+## Note that `thin` here is in addition to any thinning done during the fitting
+all_chains <- load_mcmc_chains(location=chain_path_real,thin=1,burnin=100000,
+                               par_tab=par_tab,unfixed=FALSE,convert_mcmc=TRUE)
+
+## Alternative, load the included MCMC chains rather than re-running
+## load(cs2_chains_real)
+## all_chains <- cs2_chains_real
+
+print(summary(all_chains))
+

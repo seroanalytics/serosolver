@@ -2,11 +2,7 @@
 title: 'Serosolver: Quick Start Guide'
 author: "Kylie Ainslie and James Hay"
 date: "7th August 2019"
-output:
-  html_document:
-    df_print: paged
-  pdf_document: default
-  rmarkdown::md_document # - need for GitHub rmarkdown::html_vignette #': default
+output: rmarkdown::html_vignette
 csl: plos.csl
 bibliography: vignette_references.bib
 vignette: |
@@ -217,7 +213,7 @@ Plot inferred antibody titres.
 Generate cumulative incidence plots.
 ```{r,eval=FALSE}
   y <- generate_cumulative_inf_plots(inf_chain,burnin = 0,1:5,nsamp=100,
-                                   strain_isolation_times = strains_isolation_times,
+                                   strain_isolation_times = strain_isolation_times,
                                    pad_chain=FALSE,number_col = 2,subset_years = NULL)
 ```
 

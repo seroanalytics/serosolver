@@ -2,7 +2,7 @@
 title: 'Serosolver: paper case study 1'
 csl: plos.csl
 date: "7th August 2019"
-output: github_document
+output: rmarkdown::html_vignette
 editor_options:
   chunk_output_type: console
 subttitle: Inferring pandemic A/H1N1 attack rates using longitudinal serology
@@ -182,7 +182,7 @@ res <- foreach(x = filenames, .packages = c('serosolver','data.table','plyr')) %
                   antigenic_map = antigenic_map,
                   start_inf_hist = start_inf, 
                   mcmc_pars = c("iterations"=500000,"adaptive_period"=100000,
-                                "thin"=10,"thin_hist"=1000,
+                                "thin"=500,"thin_hist"=5000,
                                 "save_block"=1000,"inf_propn"=1, 
                                 "hist_sample_prob"=1,"hist_switch_prob"=0.8,
                                 "year_swap_propn"=1),
@@ -203,6 +203,7 @@ all_chains <- load_mcmc_chains(location=chain_path_real,thin=1,burnin=100000,
                              par_tab=par_tab,unfixed=FALSE,convert_mcmc=TRUE)
 ## Alternative, load the included MCMC chains rather than re-running
 ## load(cs1_chains_real)
+## all_chains <- cs1_chains_real
 
 print(summary(all_chains))
 ```
@@ -316,11 +317,12 @@ We finish the vignette by presenting a simulation-recovery experiment to test th
 We simulate infection histories and antibody titre data based on the "real" parameters inferred from fitting the model above. First, we extract the maximum posterior probability antibody kinetics parameters and attack rates.
 ```{r message=FALSE, warning=FALSE}
 ## Read in MCMC chains from fitting
-all_chains <- load_mcmc_chains(location=chain_path_real,thin=10,burnin=100000,
+all_chains <- load_mcmc_chains(location=chain_path_real,thin=1,burnin=100000,
                                par_tab=par_tab,unfixed=FALSE,convert_mcmc=FALSE)
 
 ## Alternative, load the included MCMC chains rather than re-running
-## load(cs1_chains_real)
+## load(cs1_chains_real_b)
+## all_chains <- cs1_chains_real_b
 
 ## Find samples that were in both theta and inf hist chains
 chain <- all_chains$theta_chain
@@ -434,8 +436,8 @@ res <- foreach(x = filenames, .packages = c('serosolver','data.table','plyr')) %
                   titre_dat = sim_titre_dat,
                   antigenic_map = antigenic_map,
                   start_inf_hist = start_inf, 
-                  mcmc_pars = c("iterations"=500000,"adaptive_period"=100000,"thin"=10,
-                                "thin_hist"=1000,"save_block"=1000,
+                  mcmc_pars = c("iterations"=500000,"adaptive_period"=100000,"thin"=500,
+                                "thin_hist"=5000,"save_block"=1000,
                                 "hist_switch_prob"=0.8, "hist_sample_prob"=1),
                   filename = paste0(chain_path_sim,x), 
                   CREATE_POSTERIOR_FUNC = create_posterior_func, 
@@ -454,6 +456,7 @@ sim_all_chains <- load_mcmc_chains(location=chain_path_sim,thin=1,burnin=100000,
 
 ## Alternative, load the included MCMC chains rather than re-running
 ## load(cs1_chains_sim)
+## sim_all_chains <- cs1_chains_sim
 
 theta_chain <- sim_all_chains$theta_chain
 ## Get the MCMC chains as a list

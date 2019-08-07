@@ -75,7 +75,7 @@ The \code{mcmc_pars} argument has the following options:
 \item switch_sample (ratio of infection history samples to theta samples ie. switch_sample = 2 means sample inf hist twice for every theta sample, switch_sample = 0.5 means sample theta twice for every inf hist sample)
 \item inf_propn (proportion of infection times to resample for each individual at each iteration)
 \item move_size (number of infection years/months to move when performing infection history swap step)
-\item hist_opt (if 1, performs adaptive infection history proposals. If 0, retains the starting infection history proposal parameters
+\item hist_opt (if 1, performs adaptive infection history proposals. If 0, retains the starting infection history proposal parameters. This should ONLY be turned on for prior version 2)
 \item swap_propn (if using gibbs sampling of infection histories, what proportion of proposals should be swap steps)
 \item hist_switch_prob (proportion of infection history proposal steps to swap year_swap_propn of two time periods' contents)
 \item year_swap_propn (when swapping contents of two time points, what proportion of individuals should have their contents swapped)

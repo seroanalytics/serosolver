@@ -2,10 +2,7 @@
 title: 'Serosolver: paper case study 2'
 csl: plos.csl
 date: "7th August 2019"
-output:
-  html_document:
-    df_print: paged
-  pdf_document: default
+output: rmarkdown::html_vignette
 editor_options:
   chunk_output_type: console
 subttitle: Inferring historical A/H3N2 attack rates using cross sectional serology
@@ -209,8 +206,8 @@ res <- foreach(x = filenames, .packages = c('serosolver','data.table','plyr')) %
                   titre_dat = titre_dat,
                   antigenic_map = antigenic_map,
                   start_inf_hist = start_inf, 
-                  mcmc_pars = c("iterations"=500000,"adaptive_period"=100000,"thin"=1000,
-                                "thin_hist"=5000,"save_block"=1000,
+                  mcmc_pars = c("iterations"=500000,"adaptive_period"=100000,"thin"=100,
+                                "thin_hist"=500,"save_block"=1000,
                                 "inf_propn"=1, "hist_sample_prob"=1,
                                 "hist_switch_prob"=0.8, "year_swap_propn"=1),
                   filename = paste0(chain_path_real,x), 
@@ -230,6 +227,7 @@ all_chains <- load_mcmc_chains(location=chain_path_real,thin=1,burnin=100000,
 
 ## Alternative, load the included MCMC chains rather than re-running
 ## load(cs2_chains_real)
+## all_chains <- cs2_chains_real
 
 print(summary(all_chains))
 ```
@@ -548,7 +546,8 @@ all_chains <- load_mcmc_chains(location=chain_path_real,thin=10,burnin=100000,
                                par_tab=par_tab,unfixed=FALSE,convert_mcmc=FALSE)
 
 ## Alternative, load the included MCMC chains rather than re-running
-## load(cs2_chains_real)
+## load(cs2_chains_real_b)
+## all_chains <- cs2_chains_real_b
 
 ## Find samples that were in both theta and inf hist chains
 chain <- all_chains$theta_chain
@@ -654,8 +653,8 @@ res <- foreach(x = filenames) %dopar% {
                   titre_dat = sim_titre_dat,
                   antigenic_map = antigenic_map,
                   start_inf_hist = start_inf, 
-                  mcmc_pars = c("iterations"=500000,"adaptive_period"=100000,"thin"=1000,
-                                "thin_hist"=5000,"save_block"=1000,
+                  mcmc_pars = c("iterations"=500000,"adaptive_period"=100000,"thin"=100,
+                                "thin_hist"=500,"save_block"=1000,
                                 "hist_switch_prob"=0.8, "hist_sample_prob"=1),
                   filename = paste0(chain_path_sim,x), 
                   CREATE_POSTERIOR_FUNC = create_posterior_func, 
@@ -674,6 +673,7 @@ sim_all_chains <- load_mcmc_chains(location=chain_path_sim,thin=1,burnin=100000,
 
 ## Alternative, load the included MCMC chains rather than re-running
 ## load(cs2_chains_sim)
+## sim_all_chains <- cs2_chains_sim
 
 theta_chain <- sim_all_chains$theta_chain
 ## Get the MCMC chains as a list
