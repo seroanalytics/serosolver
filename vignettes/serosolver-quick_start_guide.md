@@ -11,7 +11,7 @@ raised antibody titres against a pathogen with a single circulating
 phenotype are indicative of infection, cross-reactive antibodies from
 antigenically similar influenza viruses results in a measurable antibody
 response against strains that an individual may not have seen \[5–7\].
-Understanding the immunological processes which build an individual’s
+Understanding the immunological processes which build an individual's
 antibody repertoire is further complicated by the interference of a
 pre-existing memory B cell response on the production of new B cell
 populations against the infecting strain \[8,9\].
@@ -83,16 +83,15 @@ following columns:
     -   For semi-annual samples, the sample time is the year the sample
         was collected multiplied by 2 (since there are two semesters in
         every year). For example, data collected between 2009 and 2011
-        would have values of (2009 × 2) + 1 = 4019,
-        (2009.5 × 2) + 1 = 4020, (2010 × 2) + 1 = 4021,
-        (2010.5 × 2) + 1 = 4022, (2011 × 2) + 1 = 4023,
-        (2011.5 × 2) + 1 = 4024.
+        would have values of (2009 × 2)+1 = 4019, (2009.5 × 2)+1 = 4020,
+        (2010 × 2)+1 = 4021, (2010.5 × 2)+1 = 4022, (2011 × 2)+1 = 4023,
+        (2011.5 × 2)+1 = 4024.
     -   Similarly, for quarterly or monthly samples, the sample time
         follows the same pattern. For example for a sample collected in
         July of 2009, the quarterly sample time would be
-        (2009.75 × 4) + 1 = 8040 (because July is in the third quarter
-        of the year) and the monthly sample time would be
-        (2009.5833 × 12) + 1 = 24116 (because July is the seventh month
+        (2009.75 × 4)+1 = 8040 (because July is in the third quarter of
+        the year) and the monthly sample time would be
+        (2009.5833 × 12)+1 = 24116 (because July is the seventh month
         and 7/12 = 0.5833).  
 3.  virus: numeric time of when the virus was circulating (should be in
     the same format as samples)
@@ -132,269 +131,269 @@ each of these inputs.
 ### Parameter values
 
 Several input files are stored within the `serosolver` package in the
-‘inputs’ directory, however users can create their own. The default
-parameter file ‘parTab\_base.csv’ is shown below:
+'inputs' directory, however users can create their own. The default
+parameter file 'parTab\_base.csv' is shown below:
 
 <table>
 <thead>
 <tr class="header">
 <th></th>
-<th style="text-align: left;">names</th>
-<th style="text-align: right;">values</th>
-<th style="text-align: right;">fixed</th>
-<th style="text-align: right;">steps</th>
-<th style="text-align: right;">lower_bound</th>
-<th style="text-align: right;">upper_bound</th>
-<th style="text-align: right;">lower_start</th>
-<th style="text-align: right;">upper_start</th>
-<th style="text-align: right;">type</th>
+<th align="left">names</th>
+<th align="right">values</th>
+<th align="right">fixed</th>
+<th align="right">steps</th>
+<th align="right">lower_bound</th>
+<th align="right">upper_bound</th>
+<th align="right">lower_start</th>
+<th align="right">upper_start</th>
+<th align="right">type</th>
 </tr>
 </thead>
 <tbody>
 <tr class="odd">
 <td>1</td>
-<td style="text-align: left;">mu</td>
-<td style="text-align: right;">1.80</td>
-<td style="text-align: right;">0</td>
-<td style="text-align: right;">0.1</td>
-<td style="text-align: right;">0</td>
-<td style="text-align: right;">8</td>
-<td style="text-align: right;">1.00</td>
-<td style="text-align: right;">3.0</td>
-<td style="text-align: right;">1</td>
+<td align="left">mu</td>
+<td align="right">1.80</td>
+<td align="right">0</td>
+<td align="right">0.1</td>
+<td align="right">0</td>
+<td align="right">8</td>
+<td align="right">1.00</td>
+<td align="right">3.0</td>
+<td align="right">1</td>
 </tr>
 <tr class="even">
 <td>2</td>
-<td style="text-align: left;">mu_short</td>
-<td style="text-align: right;">2.70</td>
-<td style="text-align: right;">0</td>
-<td style="text-align: right;">0.1</td>
-<td style="text-align: right;">0</td>
-<td style="text-align: right;">8</td>
-<td style="text-align: right;">2.00</td>
-<td style="text-align: right;">3.0</td>
-<td style="text-align: right;">1</td>
+<td align="left">mu_short</td>
+<td align="right">2.70</td>
+<td align="right">0</td>
+<td align="right">0.1</td>
+<td align="right">0</td>
+<td align="right">8</td>
+<td align="right">2.00</td>
+<td align="right">3.0</td>
+<td align="right">1</td>
 </tr>
 <tr class="odd">
 <td>3</td>
-<td style="text-align: left;">tau</td>
-<td style="text-align: right;">0.05</td>
-<td style="text-align: right;">0</td>
-<td style="text-align: right;">0.1</td>
-<td style="text-align: right;">0</td>
-<td style="text-align: right;">1</td>
-<td style="text-align: right;">0.01</td>
-<td style="text-align: right;">0.1</td>
-<td style="text-align: right;">1</td>
+<td align="left">tau</td>
+<td align="right">0.05</td>
+<td align="right">0</td>
+<td align="right">0.1</td>
+<td align="right">0</td>
+<td align="right">1</td>
+<td align="right">0.01</td>
+<td align="right">0.1</td>
+<td align="right">1</td>
 </tr>
 <tr class="even">
 <td>4</td>
-<td style="text-align: left;">wane</td>
-<td style="text-align: right;">0.20</td>
-<td style="text-align: right;">0</td>
-<td style="text-align: right;">0.1</td>
-<td style="text-align: right;">0</td>
-<td style="text-align: right;">1</td>
-<td style="text-align: right;">0.01</td>
-<td style="text-align: right;">0.1</td>
-<td style="text-align: right;">1</td>
+<td align="left">wane</td>
+<td align="right">0.20</td>
+<td align="right">0</td>
+<td align="right">0.1</td>
+<td align="right">0</td>
+<td align="right">1</td>
+<td align="right">0.01</td>
+<td align="right">0.1</td>
+<td align="right">1</td>
 </tr>
 <tr class="odd">
 <td>5</td>
-<td style="text-align: left;">sigma1</td>
-<td style="text-align: right;">0.10</td>
-<td style="text-align: right;">0</td>
-<td style="text-align: right;">0.1</td>
-<td style="text-align: right;">0</td>
-<td style="text-align: right;">1</td>
-<td style="text-align: right;">0.10</td>
-<td style="text-align: right;">0.2</td>
-<td style="text-align: right;">1</td>
+<td align="left">sigma1</td>
+<td align="right">0.10</td>
+<td align="right">0</td>
+<td align="right">0.1</td>
+<td align="right">0</td>
+<td align="right">1</td>
+<td align="right">0.10</td>
+<td align="right">0.2</td>
+<td align="right">1</td>
 </tr>
 <tr class="even">
 <td>6</td>
-<td style="text-align: left;">sigma2</td>
-<td style="text-align: right;">0.03</td>
-<td style="text-align: right;">0</td>
-<td style="text-align: right;">0.1</td>
-<td style="text-align: right;">0</td>
-<td style="text-align: right;">1</td>
-<td style="text-align: right;">0.01</td>
-<td style="text-align: right;">0.1</td>
-<td style="text-align: right;">1</td>
+<td align="left">sigma2</td>
+<td align="right">0.03</td>
+<td align="right">0</td>
+<td align="right">0.1</td>
+<td align="right">0</td>
+<td align="right">1</td>
+<td align="right">0.01</td>
+<td align="right">0.1</td>
+<td align="right">1</td>
 </tr>
 <tr class="odd">
 <td>7</td>
-<td style="text-align: left;">MAX_TITRE</td>
-<td style="text-align: right;">8.00</td>
-<td style="text-align: right;">1</td>
-<td style="text-align: right;">0.1</td>
-<td style="text-align: right;">8</td>
-<td style="text-align: right;">8</td>
-<td style="text-align: right;">8.00</td>
-<td style="text-align: right;">8.0</td>
-<td style="text-align: right;">1</td>
+<td align="left">MAX_TITRE</td>
+<td align="right">8.00</td>
+<td align="right">1</td>
+<td align="right">0.1</td>
+<td align="right">8</td>
+<td align="right">8</td>
+<td align="right">8.00</td>
+<td align="right">8.0</td>
+<td align="right">1</td>
 </tr>
 <tr class="even">
 <td>8</td>
-<td style="text-align: left;">error</td>
-<td style="text-align: right;">1.00</td>
-<td style="text-align: right;">0</td>
-<td style="text-align: right;">0.1</td>
-<td style="text-align: right;">0</td>
-<td style="text-align: right;">25</td>
-<td style="text-align: right;">0.50</td>
-<td style="text-align: right;">2.0</td>
-<td style="text-align: right;">1</td>
+<td align="left">error</td>
+<td align="right">1.00</td>
+<td align="right">0</td>
+<td align="right">0.1</td>
+<td align="right">0</td>
+<td align="right">25</td>
+<td align="right">0.50</td>
+<td align="right">2.0</td>
+<td align="right">1</td>
 </tr>
 <tr class="odd">
 <td>9</td>
-<td style="text-align: left;">alpha</td>
-<td style="text-align: right;">1.00</td>
-<td style="text-align: right;">1</td>
-<td style="text-align: right;">0.1</td>
-<td style="text-align: right;">0</td>
-<td style="text-align: right;">1000</td>
-<td style="text-align: right;">0.00</td>
-<td style="text-align: right;">1000.0</td>
-<td style="text-align: right;">1</td>
+<td align="left">alpha</td>
+<td align="right">1.00</td>
+<td align="right">1</td>
+<td align="right">0.1</td>
+<td align="right">0</td>
+<td align="right">1000</td>
+<td align="right">0.00</td>
+<td align="right">1000.0</td>
+<td align="right">1</td>
 </tr>
 <tr class="even">
 <td>10</td>
-<td style="text-align: left;">beta</td>
-<td style="text-align: right;">1.00</td>
-<td style="text-align: right;">1</td>
-<td style="text-align: right;">0.1</td>
-<td style="text-align: right;">0</td>
-<td style="text-align: right;">1000</td>
-<td style="text-align: right;">0.00</td>
-<td style="text-align: right;">1000.0</td>
-<td style="text-align: right;">1</td>
+<td align="left">beta</td>
+<td align="right">1.00</td>
+<td align="right">1</td>
+<td align="right">0.1</td>
+<td align="right">0</td>
+<td align="right">1000</td>
+<td align="right">0.00</td>
+<td align="right">1000.0</td>
+<td align="right">1</td>
 </tr>
 <tr class="odd">
 <td>11</td>
-<td style="text-align: left;">kappa</td>
-<td style="text-align: right;">0.90</td>
-<td style="text-align: right;">1</td>
-<td style="text-align: right;">0.1</td>
-<td style="text-align: right;">0</td>
-<td style="text-align: right;">1</td>
-<td style="text-align: right;">0.80</td>
-<td style="text-align: right;">1.0</td>
-<td style="text-align: right;">1</td>
+<td align="left">kappa</td>
+<td align="right">0.90</td>
+<td align="right">1</td>
+<td align="right">0.1</td>
+<td align="right">0</td>
+<td align="right">1</td>
+<td align="right">0.80</td>
+<td align="right">1.0</td>
+<td align="right">1</td>
 </tr>
 <tr class="even">
 <td>12</td>
-<td style="text-align: left;">t_change</td>
-<td style="text-align: right;">6.00</td>
-<td style="text-align: right;">1</td>
-<td style="text-align: right;">0.1</td>
-<td style="text-align: right;">0</td>
-<td style="text-align: right;">12</td>
-<td style="text-align: right;">0.40</td>
-<td style="text-align: right;">12.0</td>
-<td style="text-align: right;">1</td>
+<td align="left">t_change</td>
+<td align="right">6.00</td>
+<td align="right">1</td>
+<td align="right">0.1</td>
+<td align="right">0</td>
+<td align="right">12</td>
+<td align="right">0.40</td>
+<td align="right">12.0</td>
+<td align="right">1</td>
 </tr>
 <tr class="odd">
 <td>13</td>
-<td style="text-align: left;">boost_limit</td>
-<td style="text-align: right;">6.00</td>
-<td style="text-align: right;">1</td>
-<td style="text-align: right;">0.1</td>
-<td style="text-align: right;">0</td>
-<td style="text-align: right;">8</td>
-<td style="text-align: right;">0.00</td>
-<td style="text-align: right;">8.0</td>
-<td style="text-align: right;">1</td>
+<td align="left">boost_limit</td>
+<td align="right">6.00</td>
+<td align="right">1</td>
+<td align="right">0.1</td>
+<td align="right">0</td>
+<td align="right">8</td>
+<td align="right">0.00</td>
+<td align="right">8.0</td>
+<td align="right">1</td>
 </tr>
 <tr class="even">
 <td>14</td>
-<td style="text-align: left;">gradient</td>
-<td style="text-align: right;">0.20</td>
-<td style="text-align: right;">1</td>
-<td style="text-align: right;">0.1</td>
-<td style="text-align: right;">0</td>
-<td style="text-align: right;">1</td>
-<td style="text-align: right;">0.00</td>
-<td style="text-align: right;">1.0</td>
-<td style="text-align: right;">1</td>
+<td align="left">gradient</td>
+<td align="right">0.20</td>
+<td align="right">1</td>
+<td align="right">0.1</td>
+<td align="right">0</td>
+<td align="right">1</td>
+<td align="right">0.00</td>
+<td align="right">1.0</td>
+<td align="right">1</td>
 </tr>
 <tr class="odd">
 <td>15</td>
-<td style="text-align: left;">titre_dependent</td>
-<td style="text-align: right;">0.00</td>
-<td style="text-align: right;">1</td>
-<td style="text-align: right;">0.1</td>
-<td style="text-align: right;">0</td>
-<td style="text-align: right;">1</td>
-<td style="text-align: right;">0.00</td>
-<td style="text-align: right;">1.0</td>
-<td style="text-align: right;">0</td>
+<td align="left">titre_dependent</td>
+<td align="right">0.00</td>
+<td align="right">1</td>
+<td align="right">0.1</td>
+<td align="right">0</td>
+<td align="right">1</td>
+<td align="right">0.00</td>
+<td align="right">1.0</td>
+<td align="right">0</td>
 </tr>
 <tr class="even">
 <td>16</td>
-<td style="text-align: left;">wane_type</td>
-<td style="text-align: right;">0.00</td>
-<td style="text-align: right;">1</td>
-<td style="text-align: right;">0.1</td>
-<td style="text-align: right;">1</td>
-<td style="text-align: right;">1</td>
-<td style="text-align: right;">1.00</td>
-<td style="text-align: right;">1.0</td>
-<td style="text-align: right;">0</td>
+<td align="left">wane_type</td>
+<td align="right">0.00</td>
+<td align="right">1</td>
+<td align="right">0.1</td>
+<td align="right">1</td>
+<td align="right">1</td>
+<td align="right">1.00</td>
+<td align="right">1.0</td>
+<td align="right">0</td>
 </tr>
 <tr class="odd">
 <td>18</td>
-<td style="text-align: left;">mu_mean</td>
-<td style="text-align: right;">2.00</td>
-<td style="text-align: right;">1</td>
-<td style="text-align: right;">0.1</td>
-<td style="text-align: right;">-100</td>
-<td style="text-align: right;">100</td>
-<td style="text-align: right;">1.00</td>
-<td style="text-align: right;">3.0</td>
-<td style="text-align: right;">1</td>
+<td align="left">mu_mean</td>
+<td align="right">2.00</td>
+<td align="right">1</td>
+<td align="right">0.1</td>
+<td align="right">-100</td>
+<td align="right">100</td>
+<td align="right">1.00</td>
+<td align="right">3.0</td>
+<td align="right">1</td>
 </tr>
 <tr class="even">
 <td>19</td>
-<td style="text-align: left;">mu_sd</td>
-<td style="text-align: right;">0.50</td>
-<td style="text-align: right;">1</td>
-<td style="text-align: right;">0.1</td>
-<td style="text-align: right;">0</td>
-<td style="text-align: right;">1000</td>
-<td style="text-align: right;">0.10</td>
-<td style="text-align: right;">1.0</td>
-<td style="text-align: right;">1</td>
+<td align="left">mu_sd</td>
+<td align="right">0.50</td>
+<td align="right">1</td>
+<td align="right">0.1</td>
+<td align="right">0</td>
+<td align="right">1000</td>
+<td align="right">0.10</td>
+<td align="right">1.0</td>
+<td align="right">1</td>
 </tr>
 <tr class="odd">
 <td>20</td>
-<td style="text-align: left;">rho_mean</td>
-<td style="text-align: right;">0.00</td>
-<td style="text-align: right;">1</td>
-<td style="text-align: right;">0.1</td>
-<td style="text-align: right;">-10</td>
-<td style="text-align: right;">10</td>
-<td style="text-align: right;">-2.00</td>
-<td style="text-align: right;">2.0</td>
-<td style="text-align: right;">1</td>
+<td align="left">rho_mean</td>
+<td align="right">0.00</td>
+<td align="right">1</td>
+<td align="right">0.1</td>
+<td align="right">-10</td>
+<td align="right">10</td>
+<td align="right">-2.00</td>
+<td align="right">2.0</td>
+<td align="right">1</td>
 </tr>
 <tr class="even">
 <td>21</td>
-<td style="text-align: left;">rho_sd</td>
-<td style="text-align: right;">1.00</td>
-<td style="text-align: right;">1</td>
-<td style="text-align: right;">0.1</td>
-<td style="text-align: right;">0</td>
-<td style="text-align: right;">10</td>
-<td style="text-align: right;">1.00</td>
-<td style="text-align: right;">2.0</td>
-<td style="text-align: right;">1</td>
+<td align="left">rho_sd</td>
+<td align="right">1.00</td>
+<td align="right">1</td>
+<td align="right">0.1</td>
+<td align="right">0</td>
+<td align="right">10</td>
+<td align="right">1.00</td>
+<td align="right">2.0</td>
+<td align="right">1</td>
 </tr>
 </tbody>
 </table>
 
-In the parameter file, the column ‘fixed’ indicates if each parameter
+In the parameter file, the column 'fixed' indicates if each parameter
 value is fixed or should be estimated. For values that are not fixed,
 starting values need to be generated. The below code generates a random
 starting value for unfixed parameter values.
@@ -445,7 +444,7 @@ with.
 The final inputs required by `serosolver` are starting infection
 histories for each individual. The function
 `setup_infection_histories_new_2()` creates a matrix of infection
-histories given a matrix of titre data by looking at an individual’s
+histories given a matrix of titre data by looking at an individual's
 titre against each strain. Where titres are raised, it suggests an
 infection. In this way, it can propose plausible initial infection
 histories from which to begin MCMC sampling.
@@ -562,6 +561,7 @@ References
 1. White MT, Griffin JT, Akpogheneta O, Conway DJ, Koram KA, Riley EM,
 et al. Dynamics of the antibody response to Plasmodium falciparum
 infection in African children. J Infect Dis. 2014;210: 1115–1122.
+doi:[10.1093/infdis/jiu219](https://doi.org/10.1093/infdis/jiu219)
 
 2. Metcalf CJE, Farrar J, Cutts FT, Basta NE, Graham AL, Lessler J, et
 al. Use of serological surveys to generate key insights into the
@@ -612,15 +612,18 @@ doi:[10.1371/journal.ppat.1005692](https://doi.org/10.1371/journal.ppat.1005692)
 10. Li Y, Myers JL, Bostick DL, Sullivan CB, Madara J, Linderman SL, et
 al. Immune history shapes specificity of pandemic H1N1 influenza
 antibody responses. J Exp Med. 2013;210.
+doi:[10.1084/jem.20130212](https://doi.org/10.1084/jem.20130212)
 
 11. Linderman SL, Chambers BS, Zost SJ, Parkhouse K, Li Y, Herrmann C,
 et al. Potential antigenic explanation for atypical H1N1 infections
 among middle-aged adults during the 2013-2014 influenza season. Proc
 Natl Acad Sci U S A. 2014;111: 15798–15803.
+doi:[10.1073/pnas.1409171111](https://doi.org/10.1073/pnas.1409171111)
 
 12. Gostic KM, Ambrose M, Worobey M, Lloyd-Smith JO. Potent protection
 against H5N1 and H7N9 influenza via childhood hemagglutinin imprinting.
-Science (80- ). 2016;354.
+Science. 2016;354: 722–726.
+doi:[10.1126/science.aag1322](https://doi.org/10.1126/science.aag1322)
 
 13. Cobey S, Hensley SE. Immune history and influenza virus
 susceptibility. Curr Opin Virol. 2017;
@@ -629,6 +632,7 @@ doi:[10.1016/j.coviro.2016.12.004](https://doi.org/10.1016/j.coviro.2016.12.004)
 14. Monto AS, Malosh RE, Petrie JG, Martin ET. The Doctrine of Original
 Antigenic Sin: Separating Good From Evil. J Infect Dis. 2017;215:
 1782–1788.
+doi:[10.1093/infdis/jix173](https://doi.org/10.1093/infdis/jix173)
 
 15. Kim JH, Skountzou I, Compans R, Jacob J. Original Antigenic Sin
 Responses to Influenza Viruses. J Immunol. 2009;183: 3294–3301.
@@ -642,7 +646,8 @@ doi:[10.1371/journal.ppat.1002802](https://doi.org/10.1371/journal.ppat.1002802)
 
 17. Fonville JM, Wilks SH, James SL, Fox A, Ventresca M, Aban M, et al.
 Antibody landscapes after influenza virus infection or vaccination.
-Science (80- ). 2014;346: 7–9.
+Science. 2014;346: 996–1000.
+doi:[10.1126/science.1256427](https://doi.org/10.1126/science.1256427)
 
 18. Mosterín Höpping A, McElhaney J, Fonville JM, Powers DC, Beyer WEP,
 Smith DJ, et al. The confounded effects of age and exposure history in

@@ -1,7 +1,7 @@
 ---
 title: 'Serosolver: paper case study 2'
 csl: plos.csl
-date: "`r Sys.Date()`"
+date: "7th August 2019"
 output:
   html_document:
     df_print: paged
@@ -187,7 +187,8 @@ chain_path_sim <- paste0(chain_path, "cs2_sim/")
 ## Create the posterior solving function that will be used in the MCMC framework 
 model_func <- create_posterior_func(par_tab=par_tab,
                                 titre_dat=titre_dat,
-                                antigenic_map=antigenic_map) # function in posteriors.R
+                                antigenic_map=antigenic_map,
+                                version=prior_version) # function in posteriors.R
 
 ## Generate results in parallel
 res <- foreach(x = filenames, .packages = c('serosolver','data.table','plyr')) %dopar% {
@@ -208,7 +209,8 @@ res <- foreach(x = filenames, .packages = c('serosolver','data.table','plyr')) %
                   titre_dat = titre_dat,
                   antigenic_map = antigenic_map,
                   start_inf_hist = start_inf, 
-                  mcmc_pars = c("iterations"=50000,"adaptive_period"=10000,"thin"=10,"thin_hist"=100,"save_block"=1000,
+                  mcmc_pars = c("iterations"=500000,"adaptive_period"=100000,"thin"=1000,
+                                "thin_hist"=5000,"save_block"=1000,
                                 "inf_propn"=1, "hist_sample_prob"=1,
                                 "hist_switch_prob"=0.8, "year_swap_propn"=1),
                   filename = paste0(chain_path_real,x), 
@@ -223,8 +225,12 @@ Once the MCMC chains are run, `serosolver` provides a number of simple functions
 ```{r message=FALSE, warning=FALSE}
 ## Read in the MCMC chains
 ## Note that `thin` here is in addition to any thinning done during the fitting
-all_chains <- load_mcmc_chains(location=chain_path_real,thin=1,burnin=10000,
+all_chains <- load_mcmc_chains(location=chain_path_real,thin=1,burnin=100000,
                                par_tab=par_tab,unfixed=FALSE,convert_mcmc=TRUE)
+
+## Alternative, load the included MCMC chains rather than re-running
+## load(cs2_chains_real)
+
 print(summary(all_chains))
 ```
 
@@ -393,7 +399,7 @@ which_mle <- chain[which.max(chain$lnlike),c("sampno","chain_no")]
 
 ## Take subset of chain for computational speed, as do not need all samples
 samps <- unique(inf_chain[,c("sampno","chain_no")])
-n_samps <- sample(1:nrow(samps), 1000)
+n_samps <- sample(1:nrow(samps), 100)
 samps <- samps[n_samps,]
 samps <- rbind(samps, which_mle) ## Plus MLE estimate
 ## Append the MLE estimate, note that this is max(sampno)
@@ -538,8 +544,11 @@ We finish the vignette by presenting a simulation-recovery experiment to test th
 We simulate infection histories and antibody titre data based on the "real" parameters inferred from fitting the model above. First, we extract the maximum posterior probability antibody kinetics parameters and attack rates.
 ```{r message=FALSE, warning=FALSE}
 ## Read in MCMC chains from fitting
-all_chains <- load_mcmc_chains(location=chain_path_real,thin=10,burnin=10000,
+all_chains <- load_mcmc_chains(location=chain_path_real,thin=10,burnin=100000,
                                par_tab=par_tab,unfixed=FALSE,convert_mcmc=FALSE)
+
+## Alternative, load the included MCMC chains rather than re-running
+## load(cs2_chains_real)
 
 ## Find samples that were in both theta and inf hist chains
 chain <- all_chains$theta_chain
@@ -625,7 +634,8 @@ filenames <- paste0(filename, "_",1:no_chains)
 ## Create the posterior solving function that will be used in the MCMC framework 
 model_func <- create_posterior_func(par_tab=sim_par_tab,
                                 titre_dat=sim_titre_dat,
-                                antigenic_map=antigenic_map) # function in posteriors.R
+                                antigenic_map=antigenic_map,
+                                version=prior_version) # function in posteriors.R
 
 ## Generate results in parallel
 res <- foreach(x = filenames) %dopar% {
@@ -644,8 +654,8 @@ res <- foreach(x = filenames) %dopar% {
                   titre_dat = sim_titre_dat,
                   antigenic_map = antigenic_map,
                   start_inf_hist = start_inf, 
-                  mcmc_pars = c("iterations"=50000,"adaptive_period"=10000,"thin"=10,
-                                "thin_hist"=100,"save_block"=1000,
+                  mcmc_pars = c("iterations"=500000,"adaptive_period"=100000,"thin"=1000,
+                                "thin_hist"=5000,"save_block"=1000,
                                 "hist_switch_prob"=0.8, "hist_sample_prob"=1),
                   filename = paste0(chain_path_sim,x), 
                   CREATE_POSTERIOR_FUNC = create_posterior_func, 
@@ -659,8 +669,12 @@ MCMC chains should be checked for convergence under the usual diagnostics. We al
 ```{r message=FALSE, warning=FALSE}
 ## Read in the MCMC chains
 ## Note that `thin` here is in addition to any thinning done during the fitting
-sim_all_chains <- load_mcmc_chains(location=chain_path,thin=1,burnin=10000,
+sim_all_chains <- load_mcmc_chains(location=chain_path_sim,thin=1,burnin=100000,
                                par_tab=par_tab,unfixed=FALSE,convert_mcmc=TRUE)
+
+## Alternative, load the included MCMC chains rather than re-running
+## load(cs2_chains_sim)
+
 theta_chain <- sim_all_chains$theta_chain
 ## Get the MCMC chains as a list
 list_chains <- sim_all_chains$theta_list_chains
@@ -706,7 +720,7 @@ print(p_ar)
 
 ## Calculate convergence diagnostics and summary statistics on infection histories
 ## Important to scale all infection estimates by number alive from titre_dat
-sim_n_alive <- get_n_alive(sim_titre_dat, strain_isolation_times)
+sim_n_alive <- get_n_alive_group(sim_titre_dat, strain_isolation_times,melt=TRUE)
 
 ## This function generates a number of MCMC outputs
 ps_infhist <- plot_posteriors_infhist(inf_chain=inf_chain, 

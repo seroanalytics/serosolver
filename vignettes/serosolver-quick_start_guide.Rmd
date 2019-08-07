@@ -1,14 +1,16 @@
 ---
-title: "Serosolver: Quick Start Guide"
+title: 'Serosolver: Quick Start Guide'
 author: "Kylie Ainslie and James Hay"
-date: "`r Sys.Date()`"
-output: rmarkdown::md_document # - need for GitHub rmarkdown::html_vignette # 
-vignette: >
-  %\VignetteIndexEntry{Serosolver Quick Start Guide}
-  %\VignetteEngine{knitr::rmarkdown}
-  %\VignetteEncoding{UTF-8}
-bibliography: vignette_references.bib
+date: "7th August 2019"
+output:
+  html_document:
+    df_print: paged
+  pdf_document: default
+  rmarkdown::md_document # - need for GitHub rmarkdown::html_vignette #': default
 csl: plos.csl
+bibliography: vignette_references.bib
+vignette: |
+  %\VignetteIndexEntry{Serosolver Quick Start Guide} %\VignetteEngine{knitr::rmarkdown} %\VignetteEncoding{UTF-8}
 ---
 
 ```{r setup, include = FALSE}
@@ -156,7 +158,7 @@ If you want to change any default options, such as increasing or decreasing the 
                 "adaptive_period"=10000, "save_block"=1000, 
                 "thin_hist"=10, "hist_sample_prob"=0.5,
                 "switch_sample"=2, "inf_propn"=0.5, 
-                "move_size"=5, "hist_opt"=1,
+                "move_size"=5, "hist_opt"=0,
                 "swap_propn"=0.5,"hist_switch_prob"=0.5,
                 "year_swap_propn"=0.5)
   res <- run_MCMC(par_tab = start_tab, titre_dat = titre_dat, antigenic_map = antigenic_map, 

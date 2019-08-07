@@ -1,7 +1,7 @@
 ---
 title: 'Serosolver: paper case study 1'
 csl: plos.csl
-date: "`r Sys.Date()`"
+date: "7th August 2019"
 output: github_document
 editor_options:
   chunk_output_type: console
@@ -201,6 +201,9 @@ Once the MCMC chains are run, `serosolver` provides a number of simple functions
 # Chain length values in load function need to be consistent with MCMC run
 all_chains <- load_mcmc_chains(location=chain_path_real,thin=1,burnin=100000,
                              par_tab=par_tab,unfixed=FALSE,convert_mcmc=TRUE)
+## Alternative, load the included MCMC chains rather than re-running
+## load(cs1_chains_real)
+
 print(summary(all_chains))
 ```
 
@@ -315,6 +318,9 @@ We simulate infection histories and antibody titre data based on the "real" para
 ## Read in MCMC chains from fitting
 all_chains <- load_mcmc_chains(location=chain_path_real,thin=10,burnin=100000,
                                par_tab=par_tab,unfixed=FALSE,convert_mcmc=FALSE)
+
+## Alternative, load the included MCMC chains rather than re-running
+## load(cs1_chains_real)
 
 ## Find samples that were in both theta and inf hist chains
 chain <- all_chains$theta_chain
@@ -445,6 +451,10 @@ MCMC chains should be checked for convergence under the usual diagnostics. We al
 ## Note that `thin` here is in addition to any thinning done during the fitting
 sim_all_chains <- load_mcmc_chains(location=chain_path_sim,thin=1,burnin=100000,
                                    par_tab=par_tab,unfixed=FALSE,convert_mcmc=TRUE)
+
+## Alternative, load the included MCMC chains rather than re-running
+## load(cs1_chains_sim)
+
 theta_chain <- sim_all_chains$theta_chain
 ## Get the MCMC chains as a list
 list_chains <- sim_all_chains$theta_list_chains

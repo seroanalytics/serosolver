@@ -78,16 +78,16 @@ load_mcmc_chains <- function(location = getwd(), par_tab = NULL, unfixed = TRUE,
     ## Load in theta chains
     theta_chains <- load_theta_chains(location, par_tab, unfixed, thin, burnin)
     ## Load in infection history chains
-  inf_chains <- load_infection_chains(location, thin, burnin)
+    inf_chains <- load_infection_chains(location, thin, burnin)
 
-  chain <- theta_chains$chain
-  inf_chain <- inf_chains$chain
-  theta_list_chains <- theta_chains$list
-  inf_list_chains <- inf_chains$list
+    chain <- theta_chains$chain
+    inf_chain <- inf_chains$chain
+    theta_list_chains <- theta_chains$list
+    inf_list_chains <- inf_chains$list
 
     ## Concatenate total number of infections per MCMC sample
-  total_inf_chain <- get_total_number_infections(inf_chain, FALSE)
-  chain <- merge(chain, total_inf_chain)
+    total_inf_chain <- get_total_number_infections(inf_chain, FALSE)
+    chain <- merge(chain, total_inf_chain)
 
     ## Combine total number of infections with theta chain
   list_total_inf_chains <- lapply(inf_list_chains, function(x) get_total_number_infections(x, FALSE))
@@ -127,14 +127,14 @@ load_theta_chains <- function(location = getwd(), par_tab = NULL, unfixed = TRUE
   chains <- Sys.glob(file.path(location, "*_chain.csv"))
   message(cat("Chains detected: ", length(chains), sep = "\t"))
   if (length(chains) < 1) {
-    message("Error - no chains found")
-    return(NULL)
+      message("Error - no chains found")
+      return(NULL)
   }
 
   ## Read in the MCMC chains with fread for speed
   read_chains <- lapply(chains, read.csv)
 
-  message(cat("Highest MCMC sample interation: "))
+  message(cat("Highest MCMC sample interations: \n"))
   lapply(read_chains, function(x) message(max(x$sampno)))
   
   ## Thin and remove burn in
@@ -145,9 +145,6 @@ load_theta_chains <- function(location = getwd(), par_tab = NULL, unfixed = TRUE
   unique_sampnos <- lapply(read_chains, function(x) unique(x[, "sampno"]))
   unique_sampnos <- Reduce(intersect, unique_sampnos)
   read_chains <- lapply(read_chains, function(x) x[x$sampno %in% unique_sampnos, ])
-
-  message("Number of rows: ")
-  message(lapply(read_chains, nrow))
 
   for (i in 1:length(read_chains)) read_chains[[i]]$chain_no <- i
 
