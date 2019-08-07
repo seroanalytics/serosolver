@@ -1,12 +1,13 @@
 ---
 title: 'Serosolver: Quick Start Guide'
-author: "Kylie Ainslie and James Hay"
 date: "7th August 2019"
 output: rmarkdown::html_vignette
 csl: plos.csl
 bibliography: vignette_references.bib
 vignette: |
-  %\VignetteIndexEntry{Serosolver Quick Start Guide} %\VignetteEngine{knitr::rmarkdown} %\VignetteEncoding{UTF-8}
+  %\VignetteIndexEntry{Serosolver Quick Start Guide} 
+  %\VignetteEngine{knitr::rmarkdown} 
+  %\VignetteEncoding{UTF-8}
 ---
 
 ```{r setup, include = FALSE}
