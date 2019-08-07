@@ -96,7 +96,7 @@ get_titre_predictions <- function(chain, infection_histories, titre_dat,
 
   model_func <- create_posterior_func(par_tab, titre_dat1, antigenic_map, 100,
     mu_indices = mu_indices,
-    measurement_indices_by_time = measurement_indices_by_time, function_type = 3
+    measurement_indices_by_time = measurement_indices_by_time, function_type = 4
   )
 
   predicted_titres <- residuals <- matrix(nrow = nrow(titre_dat1), ncol = nsamp)
@@ -228,7 +228,8 @@ plot_infection_histories <- function(chain, infection_histories, titre_dat,
     scale_alpha(limits = c(0, 1), range = c(0, 1)) +
     xlab("Year") +
     ylab("Titre") +
-    scale_y_continuous(limits = c(0, 8), breaks = seq(0, 8, by = 2))
+      scale_y_continuous(breaks = seq(0, 8, by = 2))+
+      coord_cartesian(ylim=c(0,8))
   p
 }
 
@@ -492,9 +493,9 @@ calculate_infection_history_statistics <- function(inf_chain, burnin = 0, years 
     inf_chain$chain_no <- 1
   }
   if (pad_chain) {
-    message("Padding inf chain...")
+    message("Padding inf chain...\n")
     inf_chain <- pad_inf_chain(inf_chain)
-    message("Done")
+    message("Done\n")
   }
 
   if (!is.null(group_ids)) {
@@ -503,7 +504,7 @@ calculate_infection_history_statistics <- function(inf_chain, burnin = 0, years 
     inf_chain$group <- 1
   }
 
-  message("Calculating by time summaries...")
+  message("Calculating by time summaries...\n")
   data.table::setkey(inf_chain, "group", "j", "sampno", "chain_no")
   n_inf_chain <- inf_chain[, list(total_infs = sum(x)), by = key(inf_chain)]
 
@@ -547,61 +548,61 @@ calculate_infection_history_statistics <- function(inf_chain, burnin = 0, years 
   ),
   by = key(n_inf_chain)
   ]
-  message("Done")
+  message("Done\n")
   if (!is.null(known_ar)) {
-    n_inf_chain_summaries <- merge(n_inf_chain_summaries, known_ar, by = c("j","group"))
-    n_inf_chain_summaries$correct <- (n_inf_chain_summaries$AR >=
-      n_inf_chain_summaries$lower_quantile) & (n_inf_chain_summaries$AR <=
-      n_inf_chain_summaries$upper_quantile)
+      n_inf_chain_summaries <- merge(n_inf_chain_summaries, known_ar, by = c("j","group"))
+      n_inf_chain_summaries$correct <- (n_inf_chain_summaries$AR >=
+                                        n_inf_chain_summaries$lower_quantile) & (n_inf_chain_summaries$AR <=
+                                                                                 n_inf_chain_summaries$upper_quantile)
   }
-
-  message("Calculating by individual summaries...")
+  message("Calculating by individual summaries...\n")
   data.table::setkey(inf_chain, "i", "sampno", "chain_no")
   n_inf_chain_i <- inf_chain[, list(total_infs = sum(x)), by = key(inf_chain)]
 
-  data.table::setkey(n_inf_chain_i, "sampno", "chain_no")
-  n_inf_chain_i[, cumu_infs := cumsum(total_infs), by = key(n_inf_chain_i)]
+  data.table::setkey(inf_chain,"i", "sampno", "chain_no")
+  n_inf_chain_i_cumu <- inf_chain[, cumu_infs := cumsum(x), by = key(inf_chain)]
 
   data.table::setkey(n_inf_chain_i, "i")
   n_inf_chain_i_summaries <- n_inf_chain_i[, list(
-    mean = mean(total_infs),
-    median = as.integer(median(total_infs)),
-    lower_quantile = quantile(total_infs, 0.025),
-    upper_quantile = quantile(total_infs, 0.975),
-    effective_size = tryCatch({
-      coda::effectiveSize(total_infs)
-    }, error = function(e) {
-      0
-    })
+      mean = mean(total_infs),
+      median = as.integer(median(total_infs)),
+      lower_quantile = quantile(total_infs, 0.025),
+      upper_quantile = quantile(total_infs, 0.975),
+      effective_size = tryCatch({
+          coda::effectiveSize(total_infs)
+      }, error = function(e) {
+          0
+      })
   ),
   by = key(n_inf_chain_i)
   ]
-
-  n_inf_chain_i_summaries_cumu <- n_inf_chain_i[, list(
-    mean = mean(cumu_infs),
-    median = as.integer(median(cumu_infs)),
-    lower_quantile = quantile(cumu_infs, 0.025),
-    upper_quantile = quantile(cumu_infs, 0.975),
-    effective_size = tryCatch({
-      coda::effectiveSize(cumu_infs)
-    }, error = function(e) {
-      0
-    })
+  
+  data.table::setkey(n_inf_chain_i_cumu, "i","j")
+  n_inf_chain_i_summaries_cumu <- n_inf_chain_i_cumu[, list(
+      mean = mean(cumu_infs),
+      median = as.integer(median(cumu_infs)),
+      lower_quantile = quantile(cumu_infs, 0.025),
+      upper_quantile = quantile(cumu_infs, 0.975),
+      effective_size = tryCatch({
+          coda::effectiveSize(cumu_infs)
+      }, error = function(e) {
+          0
+      })
   ),
-  by = key(n_inf_chain_i)
+  by = key(n_inf_chain_i_cumu)
   ]
-  message("Done")
+  message("Done\n")
   if (!is.null(known_infection_history)) {
-    true_n_infs <- rowSums(known_infection_history)
-    true_n_infs <- data.frame(i = 1:length(true_n_infs), true_infs = true_n_infs)
-    n_inf_chain_i_summaries <- merge(n_inf_chain_i_summaries, true_n_infs, by = "i")
-    n_inf_chain_i_summaries$correct <- (n_inf_chain_i_summaries$true_inf >=
-      n_inf_chain_i_summaries$lower_quantile) & (n_inf_chain_i_summaries$true_inf <=
-      n_inf_chain_i_summaries$upper_quantile)
+      true_n_infs <- rowSums(known_infection_history)
+      true_n_infs <- data.frame(i = 1:length(true_n_infs), true_infs = true_n_infs)
+      n_inf_chain_i_summaries <- merge(n_inf_chain_i_summaries, true_n_infs, by = "i")
+      n_inf_chain_i_summaries$correct <- (n_inf_chain_i_summaries$true_inf >=
+                                          n_inf_chain_i_summaries$lower_quantile) & (n_inf_chain_i_summaries$true_inf <=
+                                                                                     n_inf_chain_i_summaries$upper_quantile)
   }
 
   return(list(
-    "by_year" = n_inf_chain_summaries, "by_indiv" = n_inf_chain_i_summaries,
+      "by_year" = n_inf_chain_summaries, "by_indiv" = n_inf_chain_i_summaries,
     "by_year_cumu" = n_inf_chain_summaries_cumu, "by_indiv_cumu" = n_inf_chain_i_summaries_cumu
   ))
 }
@@ -658,7 +659,7 @@ plot_attack_rates_monthly <- function(infection_histories, titre_dat, strain_iso
   data.table::setkey(infection_histories, "sampno", "j", "group", "chain_no")
   tmp <- infection_histories[, list(V1 = sum(x)), by = key(infection_histories)]
 
-  if (cumulative & !pad_chain) message("Error - cannot calculate cumulative incidence without pad_chain = TRUE")
+  if (cumulative & !pad_chain) message("Error - cannot calculate cumulative incidence without pad_chain = TRUE\n")
 
   tmp <- merge(tmp, data.table(n_alive_tmp), by = c("group", "j"))
   tmp$time <- strain_isolation_times[tmp$j]

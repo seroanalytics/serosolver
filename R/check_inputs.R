@@ -12,23 +12,30 @@
 #' check_inf_hist(example_titre_dat, times, example_inf_hist)
 #' @export
 check_inf_hist <- function(titre_dat, strain_isolation_times, inf_hist){
-  DOBs <- get_DOBs(titre_dat)
-  age_mask <- create_age_mask(DOBs[,2],strain_isolation_times)
-  strain_mask <- create_strain_mask(titre_dat, strain_isolation_times)
-  res <- logical(length(age_mask))
-  for(i in seq_along(age_mask)){
-      if(!(sum(inf_hist[i,] == 0))){
-          first_inf <- (min(which(inf_hist[i,] == 1)))
-          last_inf <- max(which(inf_hist[i,] == 1))
-          res[i] <- (first_inf < age_mask[i] | last_inf > strain_mask[i])
-      } else {
-          res[i] <- FALSE
-      }
-  }
-  if (any(res)) {
-      stop("Error in inf hist - infections occuring before individuals are born of after their latest sample")
-  }
-  return(any(res))
+    DOBs <- get_DOBs(titre_dat)
+    age_mask <- create_age_mask(DOBs[,2],strain_isolation_times)
+    strain_mask <- create_strain_mask(titre_dat, strain_isolation_times)
+    before_born <- logical(length(age_mask))
+    after_sample <- logical(length(strain_mask))
+    res <- logical(length(age_mask))
+    for(i in seq_along(age_mask)){
+        if(sum(inf_hist[i,] != 0)){
+            first_inf <- min(which(inf_hist[i,] == 1))
+            last_inf <- max(which(inf_hist[i,] == 1))
+            
+            before_born[i] <- first_inf < age_mask[i]
+            after_sample[i] <- last_inf > strain_mask[i]
+            res[i] <- before_born[i] | after_sample[i]
+        } else {
+            res[i] <- FALSE
+        }
+    }
+    if (any(res)) {
+        message(cat("Which infections before birth: ", which(before_born), "\n"))
+        message(cat("Which infections after last sample: ", which(after_sample), "\n"))
+        stop("Error in inf hist - infections occuring before individuals are born of after their latest sample\n")
+    }
+    return(any(res))
 }
 
 

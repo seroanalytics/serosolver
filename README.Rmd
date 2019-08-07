@@ -46,6 +46,8 @@ This is a basic example of simulating some serological data and fitting the mode
 ```{r example, message=FALSE,warning=FALSE,eval=FALSE}
 library(serosolver)
 library(plyr)
+library(data.table)
+library(ggplot2)
 
 ## Load in example parameter values and antigenic map
 data(example_par_tab)
@@ -87,13 +89,14 @@ example_titre_dat <- merge(titre_dat, ages)
 par_tab <- example_par_tab[example_par_tab$names != "phi",]
 res <- run_MCMC(par_tab, example_titre_dat, example_antigenic_map, 
                 filename="test", version=2,
-                mcmc_pars=c(iterations=50000, save_block=10000,thin=10,thin_hist=100,
-                            move_sizes=3,swap_propn=0.5,inf_propn=0.5))
+                mcmc_pars=c(adaptive_period=20000, iterations=80000, 
+                            inf_propn=0.5,hist_sample_prob=0.5,
+                            save_block=10000,thin=10,thin_hist=100))
 
 ## Read in the MCMC chains and plot posteriors
 chain <- read.csv(res$chain_file)
 inf_chain <- data.table::fread(res$history_file)
-plot(coda::as.mcmc(chain[chain$sampno > 10000,c("mu","mu_short","wane")]))
+plot(coda::as.mcmc(chain[chain$sampno > 20000,c("mu","wane","lnlike")]))
 
 # Plot model predicted titres for a subset of individuals
 plot_infection_histories(chain = chain,infection_histories = inf_chain,

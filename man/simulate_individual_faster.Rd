@@ -9,7 +9,7 @@ simulate_individual_faster(theta, infection_history, antigenic_map_long,
   strain_isolation_times, measured_strains, mus = NULL,
   mu_indices = NULL, measurement_bias = NULL,
   measurement_indices = NULL, add_noise = TRUE, repeats = 1,
-  age = NULL)
+  DOB = NULL)
 }
 \arguments{
 \item{theta}{the named parameter vector}

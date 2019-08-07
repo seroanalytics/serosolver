@@ -338,7 +338,8 @@ create_posterior_func <- function(par_tab,
 
     ## Some additional setup for the repeat data
     nrows_per_individual_in_data_repeats <- NULL
-    nrows_per_individual_in_data_repeats <- plyr::ddply(titre_dat_repeats, .(individual), nrow)$V1
+    nrows_per_individual_in_data_repeats <- plyr::ddply(titre_dat, .(individual),
+                                                        function(x) nrow(x[x$run != 1,]))$V1
     cum_nrows_per_individual_in_data_repeats <- cumsum(c(0, nrows_per_individual_in_data_repeats))
 
     titres_unique <- titre_dat_unique$titre
@@ -362,7 +363,7 @@ create_posterior_func <- function(par_tab,
     repeat_data_exist <- nrow(titre_dat_repeats) > 0
 
     if (use_measurement_bias) {
-        message(cat("Using measurement bias"))
+        message(cat("Using measurement bias\n"))
         expected_indices <- measurement_indices_by_time[match(titre_dat_unique$virus, strain_isolation_times)]
     } else {
         expected_indices <- c(-1)
@@ -380,7 +381,7 @@ create_posterior_func <- function(par_tab,
     }
 
     if (function_type == 1) {
-        message("Creating posterior solving function...")
+        message(cat("Creating posterior solving function...\n"))
         f <- function(pars, infection_history_mat) {
             theta <- pars[theta_indices]
             names(theta) <- par_names_theta
@@ -449,7 +450,7 @@ create_posterior_func <- function(par_tab,
         }
     } else if (function_type == 2) {
         
-        message("Creating infection history proposal function")
+        message(cat("Creating infection history proposal function\n"))
         if (version == 4) {
             n_alive_total <- rowSums(n_alive)
         } else {
@@ -536,7 +537,7 @@ create_posterior_func <- function(par_tab,
             return(res)
         }
     } else {
-        message("Creating model solving function...")
+        message(cat("Creating model solving function...\n"))
         ## Final version is just the model solving function
         f <- function(pars, infection_history_mat) {
             theta <- pars[theta_indices]

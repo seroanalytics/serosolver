@@ -36,7 +36,7 @@
 #'  * switch_sample (ratio of infection history samples to theta samples ie. switch_sample = 2 means sample inf hist twice for every theta sample, switch_sample = 0.5 means sample theta twice for every inf hist sample)
 #'  * inf_propn (proportion of infection times to resample for each individual at each iteration)
 #'  * move_size (number of infection years/months to move when performing infection history swap step)
-#'  * hist_opt (if 1, performs adaptive infection history proposals. If 0, retains the starting infection history proposal parameters
+#'  * hist_opt (if 1, performs adaptive infection history proposals. If 0, retains the starting infection history proposal parameters. This should ONLY be turned on for prior version 2)
 #'  * swap_propn (if using gibbs sampling of infection histories, what proportion of proposals should be swap steps)
 #'  * hist_switch_prob (proportion of infection history proposal steps to swap year_swap_propn of two time periods' contents)
 #'  * year_swap_propn (when swapping contents of two time points, what proportion of individuals should have their contents swapped)
@@ -88,8 +88,8 @@ run_MCMC <- function(par_tab,
   mcmc_pars_used <- c(
     "iterations" = 50000, "popt" = 0.44, "popt_hist" = 0.44, "opt_freq" = 2000, "thin" = 1,
     "adaptive_period" = 10000,
-    "save_block" = 100, "thin_hist" = 10, "hist_sample_prob" = 1, "switch_sample" = 2, "burnin" = 0,
-    "inf_propn" = 1, "move_size" = 5, "hist_opt" = 1, "swap_propn" = 0.5,
+    "save_block" = 100, "thin_hist" = 10, "hist_sample_prob" = 0.5, "switch_sample" = 2, "burnin" = 0,
+    "inf_propn" = 0.5, "move_size" = 3, "hist_opt" = 0, "swap_propn" = 0.5,
     "hist_switch_prob" = 0, "year_swap_propn" = 1, "propose_from_prior"=TRUE
   )
     mcmc_pars_used[names(mcmc_pars)] <- mcmc_pars
@@ -113,8 +113,7 @@ run_MCMC <- function(par_tab,
     swap_propn <- mcmc_pars_used["swap_propn"] # If using gibbs, what proportion of proposals should be swap steps?
     hist_switch_prob <- mcmc_pars_used["hist_switch_prob"] # If using gibbs, what proportion of iterations should be swapping contents of two time periods?
     year_swap_propn <- mcmc_pars_used["year_swap_propn"] # If gibbs and swapping contents, what proportion of these time periods should be swapped?
-    propose_from_prior <- mcmc_pars["propose_from_prior"]
-    message(cat("Propose from prior: ", propose_from_prior))
+    propose_from_prior <- mcmc_pars_used["propose_from_prior"]
   ###################################################################
 
   ## Sort out which version to run --------------------------------------
@@ -136,7 +135,7 @@ run_MCMC <- function(par_tab,
   } else { ## By default, use phi version
     stop("Invalid version specified - must be 1 (phi), 2 (beta on times), 3 (beta on individual) or 4 (beta on overall)")
   }
-  message(cat(prop_print))
+  message(cat(prop_print, "\n"))
 
   ## Extract parameter settings
   par_names <- as.character(par_tab$names) # Parameter names
@@ -330,9 +329,9 @@ run_MCMC <- function(par_tab,
     ## Initial posterior prob
     total_posterior <- total_likelihood + total_prior_prob
 
-    message(cat("Starting posterior probability: ", total_posterior, sep = "\t"))
-    message(cat("Starting likelihood : ", total_likelihood, sep = "\t"))
-    message(cat("Starting prior prob: ", total_prior_prob, sep = "\t"))
+    message(cat("Starting posterior probability: ", total_posterior, "\n", sep = "\t"))
+    message(cat("Starting likelihood : ", total_likelihood, "\n", sep = "\t"))
+    message(cat("Starting prior prob: ", total_prior_prob, "\n", sep = "\t"))
 ###############
 
   ####################
@@ -385,7 +384,7 @@ run_MCMC <- function(par_tab,
   for (i in 1:(iterations + adaptive_period + burnin)) {
     ## Whether to swap entire year contents or not - only applies to gibbs sampling
     inf_swap_prob <- runif(1)
-    if (i %% save_block == 0) message(cat("Current iteration: ", i, sep = "\t"))
+    if (i %% save_block == 0) message(cat("Current iteration: ", i, "\n", sep = "\t"))
     if (message_slack && i %% message_slack_pars$message_freq == 0) {
       text_slackr(paste0(message_slack_pars$username, " iteration ", i),
         channel = message_slack_pars$channel,
@@ -683,10 +682,10 @@ run_MCMC <- function(par_tab,
     ## If within adaptive period, need to do some adapting!
     if (i > (adaptive_period + burnin) & i %% opt_freq == 0) {
       pcur <- tempaccepted / tempiter ## get current acceptance rate
-      message(cat("Pcur: ", signif(pcur, 3), sep = "\t"))
-      message(cat("Step sizes: ", signif(steps, 3), sep = "\t"))
-      message(cat("Inf hist swap pcur: ",
-        signif(infection_history_swap_accept / infection_history_swap_n, 3),
+      message(cat("Pcur: ", signif(pcur, 3), "\n", sep = "\t"))
+      message(cat("Step sizes: ", signif(steps, 3), "\n", sep = "\t"))
+      message(cat("Group inf hist swap pcur: ",
+        signif(infection_history_swap_accept / infection_history_swap_n, 3),"\n", 
         sep = "\t"
       ))
       infection_history_swap_accept <- infection_history_swap_n <- 0
@@ -697,8 +696,8 @@ run_MCMC <- function(par_tab,
       pcur_hist_add <- histaccepted_add / histiter_add ## For adding
       pcur_hist_move <- histaccepted_move / histiter_move ## For adding
 
-      message(cat("Pcur hist add: ", head(signif(pcur_hist_add, 3)), sep = "\t"))
-      message(cat("Pcur hist move: ", head(signif(pcur_hist_move, 3)), sep = "\t"))
+      message(cat("Pcur hist add: ", head(signif(pcur_hist_add, 3)),"\n",  sep = "\t"))
+      message(cat("Pcur hist move: ", head(signif(pcur_hist_move, 3)), "\n", sep = "\t"))
 
       ##histadd_overall <- histadd_overall + histiter_add
       ##histmove_overall <- histmove_overall + histiter_move
@@ -774,22 +773,22 @@ run_MCMC <- function(par_tab,
               }
           }
           ## Look at infection history proposal sizes
-          message(cat("Pcur hist add: ", head(signif(pcur_hist_add, 3)), sep = "\t"))
-          message(cat("No. infections sampled: ", head(n_infs_vec), sep = "\t"))
-          message(cat("Pcur hist move: ", head(signif(pcur_hist_move, 3)), sep = "\t"))
-          message(cat("Move sizes: ", head(move_sizes), sep = "\t"))
-          message(cat("Pcur theta: ", signif(pcur, 3), sep = "\t"))
-          message(cat("Step sizes: ", signif(steps, 3), sep = "\t"))
-          message(cat("Pcur inf hist swap: ", signif(pcur_hist_swap, 3), sep = "\t"))
-          message(cat("inf hist swap propn: ", year_swap_propn, sep = "\t"))
+          message(cat("Pcur hist add: ", head(signif(pcur_hist_add, 3)), "\n", sep = "\t"))
+          message(cat("No. infections sampled: ", head(n_infs_vec), "\n", sep = "\t"))
+          message(cat("Pcur hist move: ", head(signif(pcur_hist_move, 3)), "\n", sep = "\t"))
+          message(cat("Move sizes: ", head(move_sizes), "\n", sep = "\t"))
+          message(cat("Pcur theta: ", signif(pcur, 3), "\n", sep = "\t"))
+          message(cat("Step sizes: ", signif(steps, 3), "\n", sep = "\t"))
+          message(cat("Pcur group inf hist swap: ", signif(pcur_hist_swap, 3), "\n", sep = "\t"))
+          message(cat("Group inf hist swap propn: ", year_swap_propn, "\n", sep = "\t"))
           pcur_hist <- histaccepted / histiter ## Overall
           ## If not accepting, send a warning
           if (all(pcur[!is.nan(pcur)] == 0)) {
-              message("Warning: acceptance rates are 0. Might be an error with the theta proposal?")
+              message("Warning: acceptance rates are 0. Might be an error with the theta proposal?\n")
               if (message_slack) {
                   text_slackr(paste0(
                       "Warning in ", message_slack_pars$username,
-                      ": acceptance rates are 0. Might be an error with the theta proposal?"
+                      ": acceptance rates are 0. Might be an error with the theta proposal?\n"
                   ),
                   channel = message_slack_pars$channel,
                   username = message_slack_pars$username

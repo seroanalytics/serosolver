@@ -60,7 +60,7 @@ simulate_data <- function(par_tab,
     check_attack_rates(attack_rates, strain_isolation_times)
     ## Check the inputs of par_tab
     check_par_tab(par_tab)
-    message("Simulating data with:")    
+    message("Simulating data\n")    
 
     ## Extract parameter type indices from par_tab, to split up
     ## similar parameters in model solving functions
@@ -74,17 +74,16 @@ simulate_data <- function(par_tab,
     pars <- par_tab$values
     theta <- pars[theta_indices]
     names(theta) <- par_names_theta
-    message(cat("Model parameter names:   ", par_names_theta, sep=" "))
-    message(cat("Model parameters values: ",theta,sep=" "))
+
     mus <- NULL
     if (!is.null(mu_indices)) {
-        message(cat("Strain specific boosting"))
+        message(cat("Strain specific boosting\n"))
         mus <- pars[mu_indices_par_tab]
     }
     
     measurement_bias <- NULL
     if (!is.null(measurement_indices)) {
-        message(cat("Measurement bias"))
+        message(cat("Measurement bias\n"))
         measurement_bias <- pars[measurement_indices_par_tab]
     }
     
@@ -236,7 +235,7 @@ simulate_individual_faster <- function(theta,
                                        mus = NULL, mu_indices = NULL,
                                        measurement_bias = NULL, measurement_indices = NULL,
                                        add_noise = TRUE, repeats = 1,
-                                       age = NULL) {
+                                       DOB = NULL) {
   if (is.null(mus)) {
     mus <- c(-1)
     mu_indices <- c(-1)
@@ -326,7 +325,7 @@ simulate_individual <- function(theta,
                                 mus = NULL, mu_indices = NULL,
                                 measurement_bias = NULL, measurement_indices = NULL,
                                 add_noise = TRUE, repeats = 1,
-                                age = NULL) {
+                                DOB = NULL) {
   if (is.null(mus)) {
     mus <- c(-1)
     mu_indices <- c(-1)

@@ -211,7 +211,7 @@ List inf_hist_prop_prior_v2_and_v4(const NumericVector &theta, // Model paramete
   
   // Variables related to solving likelihood and model as little as possible
   bool swap_step_option = true;
-  bool lik_changed = true;
+  bool lik_changed = false;
   
   // These quantities can be pre-computed
   int n_indivs = infection_history_mat.nrow();  // How many individuals are there in total?
@@ -373,17 +373,9 @@ List inf_hist_prop_prior_v2_and_v4(const NumericVector &theta, // Model paramete
       n_samp_max = 1;
       // Get this individual's infection history
       new_infection_history = new_infection_history_mat(indiv,_);
-
       // For the swap step, start by generating a vector from 0 to max     
-      samps = seq(0, number_strains-1);    // Create vector across all potential infection times
-      // Subset by entries that have an infection in them
-      samps = samps[new_infection_history == 1];
-      // Check if there were any infections. If not, we will skip
-      if(samps.size() > 0){
-	// If infections, start the samps vector such that 0 = age_mask
-	samps = samps - age_mask[indiv] + 1;
-	locs = RcppArmadillo::sample(samps, n_samp_max, FALSE, NumericVector::create());
-      }
+      samps = seq(0, n_samp_length-1);    // Create vector across all potential infection times
+      locs = RcppArmadillo::sample(samps, n_samp_max, FALSE, NumericVector::create());
     } else {
       // Sample n_samp_length. Ths will be used to pull years from sample_years
       n_samp_max = std::min(n_years_samp, n_samp_length); // Use the smaller of these two numbers
@@ -404,41 +396,32 @@ List inf_hist_prop_prior_v2_and_v4(const NumericVector &theta, // Model paramete
       // If swap step
       prior_old = prior_new = 0;
       if(swap_step_option){
-	//Rcpp::Rcout << "Swap step" << std::endl;
-	if(samps.size() > 0){	  
-	  loc1 = locs[j]; // Choose a location from age_mask to strain_mask
-	  loc2 = loc1 + floor(R::runif(-swap_distance,swap_distance));
+	loc1 = locs[j]; // Choose a location from age_mask to strain_mask
+	loc2 = loc1 + floor(R::runif(-swap_distance,swap_distance));
 
-
-	  // If we have gone too far left or right, reflect at the boundaries
-	  while(loc2 < 0){
-	    // If gone negative, then reflect to the other side.
-	    // ie. -1 becomes the last entry, -2 becomes the second last entry etc.
-	    loc2 += n_samp_length;
-	  }
-	  while(loc2 >= n_samp_length){
-	    loc2 -= n_samp_length;
-	  }
-	  // Get onto right scale (starting at age mask)
-	  loc1 += age_mask[indiv] - 1;
-	  loc2 += age_mask[indiv] - 1;
-	  //Rcpp::Rcout << "Location chosen 1: " << loc1 << std::endl;
-	  //Rcpp::Rcout << "Location chosen 2: " << loc2 << std::endl;	 
+	// If we have gone too far left or right, reflect at the boundaries
+	while(loc2 < 0){
+	  // If gone negative, then reflect to the other side.
+	  // ie. -1 becomes the last entry, -2 becomes the second last entry etc.
+	  loc2 += n_samp_length;
+	}
+	while(loc2 >= n_samp_length){
+	  loc2 -= n_samp_length;
+	}
+	// Get onto right scale (starting at age mask)
+	loc1 += age_mask[indiv] - 1;
+	loc2 += age_mask[indiv] - 1;
 	  
-	  loc1_val_old = new_infection_history(loc1);
-	  loc2_val_old = new_infection_history(loc2);
-
-	  //Rcpp::Rcout << "Location value 1: " << loc1_val_old << std::endl;
-	  //Rcpp::Rcout << "Location value 2: " << loc2_val_old << std::endl;	 
+	loc1_val_old = new_infection_history(loc1);
+	loc2_val_old = new_infection_history(loc2);
 	  
-	  // Only proceed if we've actually made a change
-	  // If prior version 4, then prior doesn't change by swapping
-	  if(loc1_val_old != loc2_val_old){
-	    //Rcpp::Rcout << "Changed" << std::endl;
-	    lik_changed = true;
-	    proposal_swap[indiv] += 1;
-	    if(!prior_on_total){
-	      // Number of infections in that group in that time
+	// Only proceed if we've actually made a change
+	// If prior version 4, then prior doesn't change by swapping
+	if(loc1_val_old != loc2_val_old){
+	  lik_changed = true;
+	  proposal_swap[indiv] += 1;
+	  if(!prior_on_total){
+	    // Number of infections in that group in that time
 	      m_1_old = n_infections(group_id,loc1);      
 	      m_2_old = n_infections(group_id,loc2);
 	  
@@ -454,29 +437,18 @@ List inf_hist_prop_prior_v2_and_v4(const NumericVector &theta, // Model paramete
 	      m_1_new = m_1_old - loc1_val_old + loc2_val_old;
 	      m_2_new = m_2_old - loc2_val_old + loc1_val_old;
 
-
 	      prior_1_old = prior_lookup(m_1_old, loc1);
 	      prior_2_old = prior_lookup(m_2_old, loc2);
-
-	      // Pre-compute these?
-	      //prior_1_old = R::lbeta(m_1_old + alpha, n_1 - m_1_old + beta)-lbeta_const;
-	      //prior_2_old = R::lbeta(m_2_old + alpha, n_2 - m_2_old + beta)-lbeta_const;
 	      prior_old = prior_1_old + prior_2_old;
 	      
 	      prior_1_new = prior_lookup(m_1_new, loc1);
 	      prior_2_new = prior_lookup(m_2_new, loc2);
-	      
-	      //prior_1_new = R::lbeta(m_1_new + alpha, n_1 - m_1_new + beta)-lbeta_const;
-	      //prior_2_new = R::lbeta(m_2_new + alpha, n_2 - m_2_new + beta)-lbeta_const;
 	      prior_new = prior_1_new + prior_2_new;
 	    } else {
 	      // Prior version 4
 	      prior_old = prior_new = 0;
 	    }
 	  }
-	} else {
-	  //Rcpp::Rcout << "No infections to swap" << std::endl;
-	}
 	
 	///////////////////////////////////////////////////////
 	// OPTION 2: Add/remove infection
