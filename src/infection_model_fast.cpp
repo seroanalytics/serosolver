@@ -161,7 +161,7 @@ NumericVector titre_data_fast(const NumericVector &theta,
       end_index_in_samples = rows_per_indiv_in_samples[i] - 1;
       number_samples = end_index_in_samples - index_in_samples;      
       start_index_in_data = cum_nrows_per_individual_in_data[i-1];
-
+		
       // ====================================================== //
       // =============== CHOOSE MODEL TO SOLVE =============== //
       // ====================================================== //
@@ -284,7 +284,6 @@ NumericVector titre_data_fast(const NumericVector &theta,
 					antigenic_map_long,
 					boost_before_infection);
       }
-     
     }
   }
   return(predicted_titres);

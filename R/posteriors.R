@@ -361,10 +361,10 @@ create_posterior_func <- function(par_tab,
 #########################################################
 
     ## Some additional setup for the repeat data
-    nrows_per_individual_in_data_repeats <- NULL
-    nrows_per_individual_in_data_repeats <- plyr::ddply(titre_dat_repeats, .(individual), nrow)$V1
+    nrows_per_individual_in_data_repeats <- plyr::ddply(titre_dat, .(individual),
+                                                        function(x) nrow(x[x$run != 1,]))$V1
     cum_nrows_per_individual_in_data_repeats <- cumsum(c(0, nrows_per_individual_in_data_repeats))
-
+    
     titres_unique <- titre_dat_unique$titre
     titres_repeats <- titre_dat_repeats$titre
     repeat_indices <- titre_dat_repeats$index
@@ -430,13 +430,10 @@ create_posterior_func <- function(par_tab,
                                                        titre_dat_immunity$samples, titre_dat_immunity$virus),]
         ## Extract the indexing vectors as in the normal titre_dat
         setup_dat_immunity <- setup_titredat_for_posterior_func(titre_dat_immunity, antigenic_map,
-                                                                age_mask, n_alive)
-        
-        
+                                                                age_mask, n_alive)      
 #########################################################
     }
 
-    
     if (function_type == 1) {
         message(cat("Creating posterior solving function..."))
         f <- function(pars, infection_history_mat, exposure_history_mat=NULL) {
@@ -465,7 +462,8 @@ create_posterior_func <- function(par_tab,
                 antigenic_map_short,
                 antigenic_distances,
                 mus, boosting_vec_indices,
-                DOBs
+                DOBs,
+                FALSE
             )
             if(titre_immunity){
                 ## Calculate titres against viruses at the times they circulated
@@ -570,65 +568,65 @@ create_posterior_func <- function(par_tab,
                 theta <- pars[theta_indices]
                 names(theta) <- par_names_theta
 
-            ## Pass strain-dependent boosting down
-            if (use_strain_dependent) {
-                mus <- pars[mu_indices_par_tab]
-            }
-            if (use_measurement_bias) {
-                measurement_bias <- pars[measurement_indices_par_tab]
-                titre_shifts <- measurement_bias[expected_indices]
-            }
-            ## Work out short and long term boosting cross reactivity - C++ function
-            antigenic_map_long <- create_cross_reactivity_vector(antigenic_map_melted, theta["sigma1"])
-            antigenic_map_short <- create_cross_reactivity_vector(antigenic_map_melted, theta["sigma2"])
+                ## Pass strain-dependent boosting down
+                if (use_strain_dependent) {
+                    mus <- pars[mu_indices_par_tab]
+                }
+                if (use_measurement_bias) {
+                    measurement_bias <- pars[measurement_indices_par_tab]
+                    titre_shifts <- measurement_bias[expected_indices]
+                }
+                ## Work out short and long term boosting cross reactivity - C++ function
+                antigenic_map_long <- create_cross_reactivity_vector(antigenic_map_melted, theta["sigma1"])
+                antigenic_map_short <- create_cross_reactivity_vector(antigenic_map_melted, theta["sigma2"])
 
-            n_infections <- sum_infections_by_group(infection_history_mat, group_id_vec, n_groups)
-            if (version == 4) n_infected_group <- rowSums(n_infections)
-            ## Now pass to the C++ function
-            res <- inf_hist_prop_prior_v2_and_v4(
-                theta,
-                infection_history_mat,
-                probs,
-                sampled_indivs,
-                n_infs,
-                age_mask,
-                strain_mask,
-                n_alive,
-                n_infections,
-                n_infected_group,
-                lookup_tab,
-                swap_propn,
-                swap_dist,
-                propose_from_prior,
-                alpha,
-                beta,
-                strain_isolation_times,
-                infection_strain_indices,
-                sample_times,
-                rows_per_indiv_in_samples,
-                cum_nrows_per_individual_in_data,
-                cum_nrows_per_individual_in_data_repeats,
-                nrows_per_blood_sample,
-                group_id_vec,
-                measured_strain_indices,
-                antigenic_map_long,
-                antigenic_map_short,
-                antigenic_distances,
-                titres_unique,
-                titres_repeats,
-                repeat_indices_cpp,
-                titre_shifts,                
-                DOBs,
-                proposal_iter = proposal_iter,
-                accepted_iter = accepted_iter,
-                proposal_swap = proposal_swap,
-                accepted_swap = accepted_swap,
-                mus,
-                boosting_vec_indices,
-                n_alive_total,
-                temp,
-                solve_likelihood
-            )
+                n_infections <- sum_infections_by_group(infection_history_mat, group_id_vec, n_groups)
+                if (version == 4) n_infected_group <- rowSums(n_infections)
+                ## Now pass to the C++ function
+                res <- inf_hist_prop_prior_v2_and_v4(
+                    theta,
+                    infection_history_mat,
+                    probs,
+                    sampled_indivs,
+                    n_infs,
+                    age_mask,
+                    strain_mask,
+                    n_alive,
+                    n_infections,
+                    n_infected_group,
+                    lookup_tab,
+                    swap_propn,
+                    swap_dist,
+                    propose_from_prior,
+                    alpha,
+                    beta,
+                    strain_isolation_times,
+                    infection_strain_indices,
+                    sample_times,
+                    rows_per_indiv_in_samples,
+                    cum_nrows_per_individual_in_data,
+                    cum_nrows_per_individual_in_data_repeats,
+                    nrows_per_blood_sample,
+                    group_id_vec,
+                    measured_strain_indices,
+                    antigenic_map_long,
+                    antigenic_map_short,
+                    antigenic_distances,
+                    titres_unique,
+                    titres_repeats,
+                    repeat_indices_cpp,
+                    titre_shifts,                
+                    DOBs,
+                    proposal_iter = proposal_iter,
+                    accepted_iter = accepted_iter,
+                    proposal_swap = proposal_swap,
+                    accepted_swap = accepted_swap,
+                    mus,
+                    boosting_vec_indices,
+                    n_alive_total,
+                    temp,
+                    solve_likelihood
+                )
                 return(res)
             }
         } else {

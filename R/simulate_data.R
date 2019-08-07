@@ -62,7 +62,7 @@ simulate_data <- function(par_tab,
     check_attack_rates(attack_rates, strain_isolation_times)
     ## Check the inputs of par_tab
     check_par_tab(par_tab)
-    message("Simulating data with:")    
+    message("Simulating data")    
 
     ## Extract parameter type indices from par_tab, to split up
     ## similar parameters in model solving functions
@@ -76,13 +76,12 @@ simulate_data <- function(par_tab,
     pars <- par_tab$values
     theta <- pars[theta_indices]
     names(theta) <- par_names_theta
-    message(cat("Model parameter names:   ", par_names_theta, sep=" "))
-    message(cat("Model parameters values: ",theta,sep=" "))
+   
     mus <- NULL
     if (!is.null(mu_indices)) {
         message(cat("Strain specific boosting"))
         mus <- pars[mu_indices_par_tab]
-    }
+    }         
     
     measurement_bias <- NULL
     if (!is.null(measurement_indices)) {

@@ -96,7 +96,7 @@ get_titre_predictions <- function(chain, infection_histories, titre_dat,
 
   model_func <- create_posterior_func(par_tab, titre_dat1, antigenic_map, 100,
     mu_indices = mu_indices,
-    measurement_indices_by_time = measurement_indices_by_time, function_type = 3
+    measurement_indices_by_time = measurement_indices_by_time, function_type = 4
   )
 
   predicted_titres <- residuals <- matrix(nrow = nrow(titre_dat1), ncol = nsamp)
@@ -126,8 +126,6 @@ get_titre_predictions <- function(chain, infection_histories, titre_dat,
   if (for_res_plot) {
     return(list(residuals, samp_record, titre_dat1, predicted_titres))
   }
-
-  residuals <- cbind(titre_dat1, residuals)
 
   ## Get 95% credible interval and means
   dat2 <- t(apply(predicted_titres, 1, function(x) quantile(x, c(0.025, 0.25, 0.5, 0.75, 0.975))))
@@ -228,7 +226,8 @@ plot_infection_histories <- function(chain, infection_histories, titre_dat,
     scale_alpha(limits = c(0, 1), range = c(0, 1)) +
     xlab("Year") +
     ylab("Titre") +
-    scale_y_continuous(limits = c(0, 8), breaks = seq(0, 8, by = 2))
+      scale_y_continuous(breaks = seq(0, 8, by = 2))+
+  coord_cartesian(ylim=c(0,8))
   p
 }
 
@@ -559,8 +558,8 @@ calculate_infection_history_statistics <- function(inf_chain, burnin = 0, years 
   data.table::setkey(inf_chain, "i", "sampno", "chain_no")
   n_inf_chain_i <- inf_chain[, list(total_infs = sum(x)), by = key(inf_chain)]
 
-  data.table::setkey(n_inf_chain_i, "sampno", "chain_no")
-  n_inf_chain_i[, cumu_infs := cumsum(total_infs), by = key(n_inf_chain_i)]
+  data.table::setkey(inf_chain,"i", "sampno", "chain_no")
+  n_inf_chain_i_cumu <- inf_chain[, cumu_infs := cumsum(x), by = key(inf_chain)]
 
   data.table::setkey(n_inf_chain_i, "i")
   n_inf_chain_i_summaries <- n_inf_chain_i[, list(
@@ -576,8 +575,9 @@ calculate_infection_history_statistics <- function(inf_chain, burnin = 0, years 
   ),
   by = key(n_inf_chain_i)
   ]
-
-  n_inf_chain_i_summaries_cumu <- n_inf_chain_i[, list(
+  
+  data.table::setkey(n_inf_chain_i_cumu, "i","j")
+  n_inf_chain_i_summaries_cumu <- n_inf_chain_i_cumu[, list(
     mean = mean(cumu_infs),
     median = as.integer(median(cumu_infs)),
     lower_quantile = quantile(cumu_infs, 0.025),
@@ -588,7 +588,7 @@ calculate_infection_history_statistics <- function(inf_chain, burnin = 0, years 
       0
     })
   ),
-  by = key(n_inf_chain_i)
+  by = key(n_inf_chain_i_cumu)
   ]
   message("Done")
   if (!is.null(known_infection_history)) {
