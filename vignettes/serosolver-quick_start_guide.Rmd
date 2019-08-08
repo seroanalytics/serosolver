@@ -1,6 +1,5 @@
 ---
 title: 'Serosolver: Quick Start Guide'
-date: "7th August 2019"
 output: rmarkdown::html_vignette
 csl: plos.csl
 bibliography: vignette_references.bib

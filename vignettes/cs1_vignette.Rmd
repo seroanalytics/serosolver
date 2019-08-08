@@ -1,7 +1,6 @@
 ---
 title: 'Serosolver: paper case study 1'
 csl: plos.csl
-date: "7th August 2019"
 output: rmarkdown::html_vignette
 editor_options:
   chunk_output_type: console
@@ -209,7 +208,7 @@ print(summary(all_chains))
 ```
 
 Chains should then be checked for the usual MCMC diagnostics: $\hat{R}$ and effective sample size. First, looking at the antibody kinetics process parameters:
-```{r fig.height=8, fig.width=11}
+```{r fig.height=6, fig.width=8}
 ## Get the MCMC chains as a list
 list_chains <- all_chains$theta_list_chains
 ## Look at diagnostics for the free parameters
@@ -235,7 +234,7 @@ print(p_theta_trace)
 ```
 
 and at the infection histories:
-```{r fig.height=8, fig.width=11}
+```{r fig.height=5, fig.width=7}
 ## Extract infection history chain
 inf_chain <- all_chains$inf_chain
 
@@ -279,7 +278,7 @@ print(p_indiv_inf_hists[[2]])
 
 Users may also easily check the inferred antibody landscapes at the time each sample was taken. Black dots show observations, shaded regions and black line show 95%, 50% credible intervals and posterior median.
 
-```{r fig.height=8, fig.width=11}
+```{r fig.height=5, fig.width=7}
 ## get_titre_predictions expects only a single MCMC chain, so
 ## subset for only one chain
 chain <- as.data.frame(all_chains$theta_chain)
@@ -355,7 +354,7 @@ n_alive <- get_n_alive(titre_dat, strain_isolation_times)
 attack_rates <- no_infs/n_alive
 ```
 Functions are provided to simulate antibody titre data under a given serosurvey design. The antibody kinetics parameters and attack rates estimated above are used to simulate titres from the model. The `simulate_data` function is well documented, and users should refer to the help file to customise the simulated serosurvey design.
-```{r fig.height=8, fig.width=11}
+```{r fig.height=6, fig.width=8}
 set.seed(1234)
 
 sim_par_tab <- par_tab
@@ -448,7 +447,7 @@ res <- foreach(x = filenames, .packages = c('serosolver','data.table','plyr')) %
 ## Simulation analysis
 MCMC chains should be checked for convergence under the usual diagnostics. We also compare the inferred posterior distributions to the known true parameter values. We see that convergence and between-chain agreement is good and that the model recovers reasonably unbiased estimates for some parameters. However, under this sampling strategy the model slightly underestimates the amount of long term antibody boosting elicited by a single infection and overestimates the total number of infections. This is driven by the contribution of the attack rate prior relative to the contribution of the likelihood (the data). Increasing the number of measured titres (for example, measure titres against 40 viruses rather than 9) or using a more informative attack rate prior would help reduce this bias.
 
-```{r message=FALSE, warning=FALSE}
+```{r message=FALSE, warning=FALSE, fig.height=4, fig.width=6}
 ## Read in the MCMC chains
 ## Note that `thin` here is in addition to any thinning done during the fitting
 sim_all_chains <- load_mcmc_chains(location=chain_path_sim,thin=1,burnin=100000,
@@ -488,7 +487,7 @@ ggplot(melted_theta_chain) +
 ```
 
 Recovery of known attack rates is also reasonably accurate, though the constraint of the posterior distibution is quite low for many years where identifiability is poor. Again, more titre data or more individuals would improve inferential power. One particularly reassuring plot is the comparison of known individual cumulative infection histories (the cumulative sum of infections over time for an individual) against the estimated posterior distribution of cumulative infection histories. We see that the 95% credible intervals capture the true cumulative infection histories in almost all cases.
-```{r}
+```{r fig.height=5, fig.width=8}
 ## Extract infection history chain
 inf_chain <- sim_all_chains$inf_chain
 

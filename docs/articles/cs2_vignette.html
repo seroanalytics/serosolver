@@ -85,7 +85,6 @@
     <div class="page-header toc-ignore">
       <h1>Serosolver: paper case study 2</h1>
             
-            <h4 class="date">7th August 2019</h4>
       
       <small class="dont-index">Source: <a href="https://github.com/seroanalytics/serosolver/blob/master/vignettes/cs2_vignette.Rmd"><code>vignettes/cs2_vignette.Rmd</code></a></small>
       <div class="hidden name"><code>cs2_vignette.Rmd</code></div>
@@ -108,36 +107,6 @@
 <p><code>serosolver</code> may be installed from github using the <code>devtools</code> package. There are a number of additional packages that we need for this analysis.</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="co"># Required to run serosolver</span>
 devtools<span class="op">::</span><span class="kw"><a href="https://www.rdocumentation.org/packages/devtools/topics/reexports">install_github</a></span>(<span class="st">"seroanalytics/serosolver"</span>)
-<span class="co">#&gt; </span>
-<span class="co">#&gt;   </span>
-   checking <span class="cf">for</span> file ‘<span class="op">/</span>tmp<span class="op">/</span>RtmpoNRR6W<span class="op">/</span>remotes21514154e72e<span class="op">/</span>seroanalytics<span class="op">-</span>serosolver<span class="op">-</span>68b9892<span class="op">/</span>DESCRIPTION’ ...
-  
-✔  checking <span class="cf">for</span> file ‘<span class="op">/</span>tmp<span class="op">/</span>RtmpoNRR6W<span class="op">/</span>remotes21514154e72e<span class="op">/</span>seroanalytics<span class="op">-</span>serosolver<span class="op">-</span>68b9892<span class="op">/</span>DESCRIPTION’
-<span class="co">#&gt; </span>
-  
-─  preparing ‘serosolver’<span class="op">:</span>
-<span class="co">#&gt;    checking DESCRIPTION meta-information ...</span>
-<span class="st">  </span>
-✔  checking DESCRIPTION meta<span class="op">-</span>information
-<span class="co">#&gt; </span>
-  
-─  cleaning src
-<span class="co">#&gt; </span>
-  
-─  checking <span class="cf">for</span> LF line<span class="op">-</span>endings <span class="cf">in</span> source and make files and shell scripts
-<span class="co">#&gt; </span>
-  
-─  checking <span class="cf">for</span> empty or unneeded directories
-<span class="co">#&gt; </span>
-  
-─  looking to see <span class="cf">if</span> a ‘data<span class="op">/</span>datalist’ file should be added
-<span class="co">#&gt; </span>
-  
-─  building ‘serosolver_<span class="fl">1.0</span>.<span class="fl">0.</span>tar.gz’
-<span class="co">#&gt; </span>
-  
-   
-<span class="co">#&gt; </span>
 <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/library">library</a></span>(serosolver)
 <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/library">library</a></span>(plyr)
 <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/library">library</a></span>(data.table)
@@ -154,7 +123,7 @@ devtools<span class="op">::</span><span class="kw"><a href="https://www.rdocumen
 <span class="co"># set up cluster</span>
 <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/Random">set.seed</a></span>(<span class="dv">1234</span>)
 cl &lt;-<span class="st"> </span><span class="kw">makeCluster</span>(<span class="dv">5</span>)
-<span class="kw">registerDoParallel</span>(cl)
+<span class="kw"><a href="https://www.rdocumentation.org/packages/doParallel/topics/registerDoParallel">registerDoParallel</a></span>(cl)
 
 ## Note that this vignette was generated on a Windows machine,
 ## and the setup for parallelisation is different on a Linux machine
@@ -214,7 +183,7 @@ melted_dat<span class="op">$</span>virus &lt;-<span class="st"> </span><span cla
 
 ## Extract circulation years for each virus code, which will be used 
 ## by serosolver as the circulation time
-melted_dat<span class="op">$</span>virus &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/numeric">as.numeric</a></span>(<span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/lapply">sapply</a></span>(melted_dat<span class="op">$</span>virus, <span class="cf">function</span>(x) <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/strsplit">strsplit</a></span>(x,<span class="dt">split =</span> <span class="st">"HI.H3N2."</span>)[[<span class="dv">1</span>]][<span class="dv">2</span>]))
+melted_dat<span class="op">$</span>virus &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/numeric">as.numeric</a></span>(<span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/lapply">sapply</a></span>(melted_dat<span class="op">$</span>virus, <span class="cf">function</span>(x) <span class="kw"><a href="https://www.rdocumentation.org/packages/data.table/topics/tstrsplit">strsplit</a></span>(x,<span class="dt">split =</span> <span class="st">"HI.H3N2."</span>)[[<span class="dv">1</span>]][<span class="dv">2</span>]))
 
 ## Clean and log transform the data
 melted_dat &lt;-<span class="st"> </span>melted_dat[<span class="kw"><a href="https://www.rdocumentation.org/packages/stats/topics/complete.cases">complete.cases</a></span>(melted_dat),]
@@ -276,7 +245,7 @@ antigenic_map &lt;-<span class="st"> </span><span class="kw"><a href="../referen
 ## the times that individual can be infected ie. the dimensions of the infection
 ## history matrix.
 antigenic_map &lt;-<span class="st"> </span>antigenic_map[antigenic_map<span class="op">$</span>inf_years <span class="op">&gt;=</span><span class="st"> </span><span class="dv">1968</span> <span class="op">&amp;</span><span class="st"> </span>antigenic_map<span class="op">$</span>inf_years <span class="op">&lt;=</span><span class="st"> </span>sample_year,]
-strain_isolation_times &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/unique">unique</a></span>(antigenic_map<span class="op">$</span>inf_years)</code></pre></div>
+strain_isolation_times &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/data.table/topics/duplicated">unique</a></span>(antigenic_map<span class="op">$</span>inf_years)</code></pre></div>
 <p>NOTE: <code>generate_antigenic_map</code> expects the provided file <code>fonville_map_approx.csv</code>. Users should refer to <code>generate_antigenic_map_flexible</code> for more generic antigenic map generation.</p>
 <p>Finally, we must specify the <code>par_tab</code> data frame, which controls which parameters are included in the model, which are fixed, and their uniform prior ranges. Given that we are integrating out the probability of infection terms under prior version 2, we must remove these parameters from <code>par_tab</code>. Furthermore, given that we are interested in long-term dynamics with relatively sparse data, we remove parameters relating to the short-term antibody kinetics phase to avoid identifiability issues. We set alpha and beta of the Beta prior to give a mode of 0.15 assuming that our prior belief has the equivalent weighting to 4 observed individuals.</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">par_tab_path &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/system.file">system.file</a></span>(<span class="st">"extdata"</span>, <span class="st">"par_tab_base.csv"</span>, <span class="dt">package =</span> <span class="st">"serosolver"</span>)
@@ -323,7 +292,7 @@ model_func &lt;-<span class="st"> </span><span class="kw"><a href="../reference/
 <span class="co">#&gt; </span>
 
 ## Generate results in parallel
-res &lt;-<span class="st"> </span><span class="kw">foreach</span>(<span class="dt">x =</span> filenames, <span class="dt">.packages =</span> <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/c">c</a></span>(<span class="st">'serosolver'</span>,<span class="st">'data.table'</span>,<span class="st">'plyr'</span>)) <span class="op">%dopar%</span><span class="st"> </span>{
+res &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/foreach/topics/foreach">foreach</a></span>(<span class="dt">x =</span> filenames, <span class="dt">.packages =</span> <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/c">c</a></span>(<span class="st">'serosolver'</span>,<span class="st">'data.table'</span>,<span class="st">'plyr'</span>)) <span class="op">%dopar%</span><span class="st"> </span>{
   ## Not all random starting conditions return finite likelihood, so for each chain generate random
   ## conditions until we get one with a finite likelihood
   start_prob &lt;-<span class="st"> </span><span class="op">-</span><span class="ot">Inf</span>
@@ -341,8 +310,8 @@ res &lt;-<span class="st"> </span><span class="kw">foreach</span>(<span class="d
                   <span class="dt">titre_dat =</span> titre_dat,
                   <span class="dt">antigenic_map =</span> antigenic_map,
                   <span class="dt">start_inf_hist =</span> start_inf, 
-                  <span class="dt">mcmc_pars =</span> <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/c">c</a></span>(<span class="st">"iterations"</span>=<span class="dv">500000</span>,<span class="st">"adaptive_period"</span>=<span class="dv">100000</span>,<span class="st">"thin"</span>=<span class="dv">100</span>,
-                                <span class="st">"thin_hist"</span>=<span class="dv">500</span>,<span class="st">"save_block"</span>=<span class="dv">1000</span>,
+                  <span class="dt">mcmc_pars =</span> <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/c">c</a></span>(<span class="st">"iterations"</span>=<span class="dv">500000</span>,<span class="st">"adaptive_period"</span>=<span class="dv">100000</span>,<span class="st">"thin"</span>=<span class="dv">1000</span>,
+                                <span class="st">"thin_hist"</span>=<span class="dv">1000</span>,<span class="st">"save_block"</span>=<span class="dv">1000</span>,
                                 <span class="st">"inf_propn"</span>=<span class="dv">1</span>, <span class="st">"hist_sample_prob"</span>=<span class="dv">1</span>,
                                 <span class="st">"hist_switch_prob"</span>=<span class="fl">0.8</span>, <span class="st">"year_swap_propn"</span>=<span class="dv">1</span>),
                   <span class="dt">filename =</span> <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/paste">paste0</a></span>(chain_path_real,x), 
@@ -366,19 +335,19 @@ all_chains &lt;-<span class="st"> </span><span class="kw"><a href="../reference/
 <span class="co">#&gt; /home/james/R/x86_64-pc-linux-gnu-library/3.6/serosolver/extdata/cs2_real//case_study_2_4_infection_histories.csv</span>
 <span class="co">#&gt; /home/james/R/x86_64-pc-linux-gnu-library/3.6/serosolver/extdata/cs2_real//case_study_2_5_infection_histories.csv</span>
 <span class="co">#&gt; [[1]]</span>
-<span class="co">#&gt; [1] 1278460</span>
+<span class="co">#&gt; [1] 651204</span>
 <span class="co">#&gt; </span>
 <span class="co">#&gt; [[2]]</span>
-<span class="co">#&gt; [1] 1280968</span>
+<span class="co">#&gt; [1] 639244</span>
 <span class="co">#&gt; </span>
 <span class="co">#&gt; [[3]]</span>
-<span class="co">#&gt; [1] 1294846</span>
+<span class="co">#&gt; [1] 639317</span>
 <span class="co">#&gt; </span>
 <span class="co">#&gt; [[4]]</span>
-<span class="co">#&gt; [1] 1290342</span>
+<span class="co">#&gt; [1] 638240</span>
 <span class="co">#&gt; </span>
 <span class="co">#&gt; [[5]]</span>
-<span class="co">#&gt; [1] 1280162</span>
+<span class="co">#&gt; [1] 642137</span>
 
 ## Alternative, load the included MCMC chains rather than re-running
 ## load(cs2_chains_real)
@@ -386,10 +355,10 @@ all_chains &lt;-<span class="st"> </span><span class="kw"><a href="../reference/
 
 <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/print">print</a></span>(<span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/summary">summary</a></span>(all_chains))
 <span class="co">#&gt;                   Length Class      Mode   </span>
-<span class="co">#&gt; theta_chain       130130 mcmc       numeric</span>
-<span class="co">#&gt; inf_chain              5 data.table list   </span>
-<span class="co">#&gt; theta_list_chains      5 -none-     list   </span>
-<span class="co">#&gt; inf_list_chains        5 -none-     list</span></code></pre></div>
+<span class="co">#&gt; theta_chain       65130  mcmc       numeric</span>
+<span class="co">#&gt; inf_chain             5  data.table list   </span>
+<span class="co">#&gt; theta_list_chains     5  -none-     list   </span>
+<span class="co">#&gt; inf_list_chains       5  -none-     list</span></code></pre></div>
 <p>Chains should then be checked for the usual MCMC diagnostics: <span class="math inline">\(\hat{R}\)</span> and effective sample size. First, looking at the antibody kinetics process parameters:</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">## Get the MCMC chains as a list
 list_chains &lt;-<span class="st"> </span>all_chains<span class="op">$</span>theta_list_chains
@@ -399,68 +368,68 @@ list_chains1 &lt;-<span class="st"> </span><span class="kw"><a href="https://www
                                                      <span class="st">"lnlike"</span>,<span class="st">"prior_prob"</span>)])
 
 ## Gelman-Rubin diagnostics to assess between-chain convergence for each parameter
-<span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/print">print</a></span>(<span class="kw">gelman.diag</span>(<span class="kw">as.mcmc.list</span>(list_chains1)))
+<span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/print">print</a></span>(<span class="kw"><a href="https://www.rdocumentation.org/packages/coda/topics/gelman.diag">gelman.diag</a></span>(<span class="kw"><a href="https://www.rdocumentation.org/packages/coda/topics/mcmc.list">as.mcmc.list</a></span>(list_chains1)))
 <span class="co">#&gt; Potential scale reduction factors:</span>
 <span class="co">#&gt; </span>
 <span class="co">#&gt;                  Point est. Upper C.I.</span>
-<span class="co">#&gt; mu                     1.01       1.03</span>
-<span class="co">#&gt; sigma1                 1.01       1.02</span>
-<span class="co">#&gt; error                  1.00       1.00</span>
-<span class="co">#&gt; tau                    1.00       1.01</span>
-<span class="co">#&gt; total_infections       1.01       1.03</span>
+<span class="co">#&gt; mu                     1.02       1.04</span>
+<span class="co">#&gt; sigma1                 1.01       1.03</span>
+<span class="co">#&gt; error                  1.00       1.01</span>
+<span class="co">#&gt; tau                    1.01       1.03</span>
+<span class="co">#&gt; total_infections       1.02       1.06</span>
 <span class="co">#&gt; lnlike                 1.01       1.04</span>
 <span class="co">#&gt; prior_prob             1.01       1.04</span>
 <span class="co">#&gt; </span>
 <span class="co">#&gt; Multivariate psrf</span>
 <span class="co">#&gt; </span>
 <span class="co">#&gt; 1.02</span>
-<span class="kw">gelman.plot</span>(<span class="kw">as.mcmc.list</span>(list_chains1))</code></pre></div>
-<p><img src="cs2_vignette_files/figure-html/unnamed-chunk-6-1.png" width="700"></p>
+<span class="kw"><a href="https://www.rdocumentation.org/packages/coda/topics/gelman.plot">gelman.plot</a></span>(<span class="kw"><a href="https://www.rdocumentation.org/packages/coda/topics/mcmc.list">as.mcmc.list</a></span>(list_chains1))</code></pre></div>
+<p><img src="cs2_vignette_files/figure-html/unnamed-chunk-6-1.png" width="768"></p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">
 ## Effective sample size for each parameter
-<span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/print">print</a></span>(<span class="kw">effectiveSize</span>(<span class="kw">as.mcmc.list</span>(list_chains1)))
+<span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/print">print</a></span>(<span class="kw"><a href="https://www.rdocumentation.org/packages/coda/topics/effectiveSize">effectiveSize</a></span>(<span class="kw"><a href="https://www.rdocumentation.org/packages/coda/topics/mcmc.list">as.mcmc.list</a></span>(list_chains1)))
 <span class="co">#&gt;               mu           sigma1            error              tau </span>
-<span class="co">#&gt;         428.3254         926.2838        3783.6699        1152.1302 </span>
+<span class="co">#&gt;         431.5492         561.3017        2040.5391        1158.9018 </span>
 <span class="co">#&gt; total_infections           lnlike       prior_prob </span>
-<span class="co">#&gt;         660.9800         651.3250         651.0512</span>
+<span class="co">#&gt;         474.5060         538.9873         549.4204</span>
 
 ## Posterior estimates for each parameter
-<span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/print">print</a></span>(<span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/summary">summary</a></span>(<span class="kw">as.mcmc.list</span>(list_chains1)))
+<span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/print">print</a></span>(<span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/summary">summary</a></span>(<span class="kw"><a href="https://www.rdocumentation.org/packages/coda/topics/mcmc.list">as.mcmc.list</a></span>(list_chains1)))
 <span class="co">#&gt; </span>
-<span class="co">#&gt; Iterations = 1:1001</span>
+<span class="co">#&gt; Iterations = 1:501</span>
 <span class="co">#&gt; Thinning interval = 1 </span>
 <span class="co">#&gt; Number of chains = 5 </span>
-<span class="co">#&gt; Sample size per chain = 1001 </span>
+<span class="co">#&gt; Sample size per chain = 501 </span>
 <span class="co">#&gt; </span>
 <span class="co">#&gt; 1. Empirical mean and standard deviation for each variable,</span>
 <span class="co">#&gt;    plus standard error of the mean:</span>
 <span class="co">#&gt; </span>
 <span class="co">#&gt;                        Mean        SD  Naive SE Time-series SE</span>
-<span class="co">#&gt; mu                2.220e+00 1.410e-01 1.994e-03      0.0068342</span>
-<span class="co">#&gt; sigma1            1.042e-01 4.275e-03 6.043e-05      0.0001415</span>
-<span class="co">#&gt; error             1.163e+00 3.775e-02 5.335e-04      0.0006194</span>
-<span class="co">#&gt; tau               3.062e-02 5.154e-03 7.285e-05      0.0001582</span>
-<span class="co">#&gt; total_infections  1.284e+03 8.872e+01 1.254e+00      3.5840040</span>
-<span class="co">#&gt; lnlike           -3.989e+03 1.502e+02 2.122e+00      5.9309694</span>
-<span class="co">#&gt; prior_prob       -2.079e+03 1.428e+02 2.019e+00      5.7076866</span>
+<span class="co">#&gt; mu                2.228e+00 1.403e-01 2.803e-03      0.0069691</span>
+<span class="co">#&gt; sigma1            1.043e-01 4.250e-03 8.491e-05      0.0001802</span>
+<span class="co">#&gt; error             1.163e+00 3.714e-02 7.421e-04      0.0008406</span>
+<span class="co">#&gt; tau               3.076e-02 5.105e-03 1.020e-04      0.0001656</span>
+<span class="co">#&gt; total_infections  1.281e+03 9.032e+01 1.805e+00      4.3092044</span>
+<span class="co">#&gt; lnlike           -3.981e+03 1.529e+02 3.055e+00      6.7573852</span>
+<span class="co">#&gt; prior_prob       -2.072e+03 1.445e+02 2.886e+00      6.3435477</span>
 <span class="co">#&gt; </span>
 <span class="co">#&gt; 2. Quantiles for each variable:</span>
 <span class="co">#&gt; </span>
 <span class="co">#&gt;                        2.5%        25%        50%        75%      97.5%</span>
-<span class="co">#&gt; mu                1.948e+00     2.1259  2.226e+00  2.315e+00  2.491e+00</span>
-<span class="co">#&gt; sigma1            9.594e-02     0.1011  1.044e-01  1.072e-01  1.121e-01</span>
-<span class="co">#&gt; error             1.091e+00     1.1371  1.162e+00  1.188e+00  1.239e+00</span>
-<span class="co">#&gt; tau               2.053e-02     0.0272  3.062e-02  3.397e-02  4.112e-02</span>
-<span class="co">#&gt; total_infections  1.123e+03  1222.0000  1.280e+03  1.342e+03  1.467e+03</span>
-<span class="co">#&gt; lnlike           -4.282e+03 -4090.4239 -3.989e+03 -3.883e+03 -3.695e+03</span>
-<span class="co">#&gt; prior_prob       -2.356e+03 -2176.6308 -2.081e+03 -1.982e+03 -1.795e+03</span>
+<span class="co">#&gt; mu                1.951e+00  2.138e+00  2.233e+00  2.320e+00  2.495e+00</span>
+<span class="co">#&gt; sigma1            9.603e-02  1.011e-01  1.046e-01  1.072e-01  1.121e-01</span>
+<span class="co">#&gt; error             1.093e+00  1.137e+00  1.162e+00  1.187e+00  1.238e+00</span>
+<span class="co">#&gt; tau               2.101e-02  2.732e-02  3.063e-02  3.427e-02  4.089e-02</span>
+<span class="co">#&gt; total_infections  1.117e+03  1.220e+03  1.276e+03  1.340e+03  1.470e+03</span>
+<span class="co">#&gt; lnlike           -4.290e+03 -4.085e+03 -3.977e+03 -3.878e+03 -3.687e+03</span>
+<span class="co">#&gt; prior_prob       -2.362e+03 -2.167e+03 -2.067e+03 -1.974e+03 -1.788e+03</span>
 
 
 ## Plot the MCMC trace using the `bayesplot` package
-<span class="kw">color_scheme_set</span>(<span class="st">"viridis"</span>)
-p_theta_trace &lt;-<span class="st"> </span><span class="kw">mcmc_trace</span>(list_chains1)
+<span class="kw"><a href="https://mc-stan.org/bayesplot/reference/bayesplot-colors.html">color_scheme_set</a></span>(<span class="st">"viridis"</span>)
+p_theta_trace &lt;-<span class="st"> </span><span class="kw"><a href="https://mc-stan.org/bayesplot/reference/MCMC-traces.html">mcmc_trace</a></span>(list_chains1)
 <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/print">print</a></span>(p_theta_trace)</code></pre></div>
-<p><img src="cs2_vignette_files/figure-html/unnamed-chunk-6-2.png" width="700"></p>
+<p><img src="cs2_vignette_files/figure-html/unnamed-chunk-6-2.png" width="768"></p>
 <p>and at the infection histories:</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">## Extract infection history chain
 inf_chain &lt;-<span class="st"> </span>all_chains<span class="op">$</span>inf_chain
@@ -481,8 +450,11 @@ p_ar &lt;-<span class="st"> </span><span class="kw"><a href="../reference/plot_a
 <span class="co">#&gt; unique 'x' values</span>
 
 <span class="co">#&gt; Warning in regularize.values(x, y, ties, missing(ties)): collapsing to</span>
+<span class="co">#&gt; unique 'x' values</span>
+
+<span class="co">#&gt; Warning in regularize.values(x, y, ties, missing(ties)): collapsing to</span>
 <span class="co">#&gt; unique 'x' values</span></code></pre></div>
-<p><img src="cs2_vignette_files/figure-html/unnamed-chunk-7-1.png" width="768"></p>
+<p><img src="cs2_vignette_files/figure-html/unnamed-chunk-7-1.png" width="672"></p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">
 ## Calculate convergence diagnostics and summary statistics on infection histories
 ## Important to scale all infection estimates by number alive from titre_dat
@@ -507,25 +479,25 @@ ps_infhist &lt;-<span class="st"> </span><span class="kw"><a href="../reference/
 ## on per individual total number of infections
 <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/print">print</a></span>(<span class="kw"><a href="https://www.rdocumentation.org/packages/utils/topics/head">head</a></span>(ps_infhist[[<span class="st">"estimates"</span>]]<span class="op">$</span>by_indiv))
 <span class="co">#&gt;    i      mean median lower_quantile upper_quantile effective_size</span>
-<span class="co">#&gt; 1: 1 12.305495     12             10             16       2118.005</span>
-<span class="co">#&gt; 2: 2  7.742657      8              6             10       2784.582</span>
-<span class="co">#&gt; 3: 3  9.243556      9              7             12       2432.094</span>
-<span class="co">#&gt; 4: 4  8.454346      8              6             11       2887.888</span>
-<span class="co">#&gt; 5: 5  9.665534     10              7             13       2578.515</span>
-<span class="co">#&gt; 6: 6  9.174825      9              7             12       2700.841</span>
+<span class="co">#&gt; 1: 1 12.296607     12             10             15       1455.410</span>
+<span class="co">#&gt; 2: 2  7.747705      8              6             10       1758.027</span>
+<span class="co">#&gt; 3: 3  9.285828      9              7             12       1386.198</span>
+<span class="co">#&gt; 4: 4  8.407186      8              6             11       1948.365</span>
+<span class="co">#&gt; 5: 5  9.661876     10              7             13       1492.070</span>
+<span class="co">#&gt; 6: 6  9.169261      9              7             12       1236.908</span>
 
 ## Check convergence of infection history summary statistics
 ## MCMC trace plots of attack rates
 <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/print">print</a></span>(ps_infhist[[<span class="st">"by_time_trace"</span>]][[<span class="dv">1</span>]])</code></pre></div>
-<p><img src="cs2_vignette_files/figure-html/unnamed-chunk-7-2.png" width="768"></p>
+<p><img src="cs2_vignette_files/figure-html/unnamed-chunk-7-2.png" width="672"></p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">
 ## MCMC trace plots of total number of infections per individual
 <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/print">print</a></span>(ps_infhist[[<span class="st">"by_indiv_trace"</span>]][[<span class="dv">1</span>]])</code></pre></div>
-<p><img src="cs2_vignette_files/figure-html/unnamed-chunk-7-3.png" width="768"></p>
+<p><img src="cs2_vignette_files/figure-html/unnamed-chunk-7-3.png" width="672"></p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">
 ## Distribution of total number of infections
 <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/print">print</a></span>(ps_infhist[[<span class="st">"indiv_infections"</span>]])</code></pre></div>
-<p><img src="cs2_vignette_files/figure-html/unnamed-chunk-7-4.png" width="768"></p>
+<p><img src="cs2_vignette_files/figure-html/unnamed-chunk-7-4.png" width="672"></p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">
 ## Check for agreement between inferred cumulative infection histories 
 ## for some individuals
@@ -533,11 +505,11 @@ p_indiv_inf_hists &lt;-<span class="st"> </span><span class="kw"><a href="../ref
                                                   <span class="dt">strain_isolation_times =</span> strain_isolation_times,
                                                   <span class="dt">number_col=</span><span class="dv">3</span>)
 <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/print">print</a></span>(p_indiv_inf_hists[[<span class="dv">1</span>]])</code></pre></div>
-<p><img src="cs2_vignette_files/figure-html/unnamed-chunk-7-5.png" width="768"></p>
+<p><img src="cs2_vignette_files/figure-html/unnamed-chunk-7-5.png" width="672"></p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">
 ## Posterior probability that infections occured at given times per individual
 <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/print">print</a></span>(p_indiv_inf_hists[[<span class="dv">2</span>]])</code></pre></div>
-<p><img src="cs2_vignette_files/figure-html/unnamed-chunk-7-6.png" width="768"></p>
+<p><img src="cs2_vignette_files/figure-html/unnamed-chunk-7-6.png" width="672"></p>
 <p>Mixing can sometimes be very poor for per-time attack rates when adjacent times are highly correlated. This is often the case when the amount of data relatively poor. A cruder time resolution (eg. per two years) may be advisable, and mixing may benefit from increasing the <code>hist_switch_prob</code> and <code>hist_sample_prob</code> parameters in the <code>mcmc_pars</code> list in <code>run_MCMC</code>. <code>hist_sample_prob</code> determines how frequently the MCMC sampler uses a proposal step that swaps the a proportion <code>hist_switch_prob</code> of individual’s infection states between two time points.</p>
 <p>Users may also easily check the inferred antibody landscapes at the time each sample was taken. Black dots show observations, shaded regions and black line show 95%, 50% credible intervals and posterior median.</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">## get_titre_predictions expects only a single MCMC chain, so
@@ -549,7 +521,7 @@ inf_chain1 &lt;-<span class="st"> </span>inf_chain[inf_chain<span class="op">$</
 titre_preds &lt;-<span class="st"> </span><span class="kw"><a href="../reference/get_titre_predictions.html">get_titre_predictions</a></span>(<span class="dt">chain =</span> chain1, 
                                      <span class="dt">infection_histories =</span> inf_chain1, 
                                      <span class="dt">titre_dat =</span> titre_dat, 
-                                     <span class="dt">individuals =</span> <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/unique">unique</a></span>(titre_dat<span class="op">$</span>individual),
+                                     <span class="dt">individuals =</span> <span class="kw"><a href="https://www.rdocumentation.org/packages/data.table/topics/duplicated">unique</a></span>(titre_dat<span class="op">$</span>individual),
                                      <span class="dt">antigenic_map =</span> antigenic_map, 
                                      <span class="dt">par_tab =</span> par_tab,<span class="dt">expand_titredat=</span><span class="ot">FALSE</span>)
 <span class="co">#&gt; Creating model solving function...</span>
@@ -557,52 +529,52 @@ titre_preds &lt;-<span class="st"> </span><span class="kw"><a href="../reference
 to_use &lt;-<span class="st"> </span>titre_preds<span class="op">$</span>predictions
 <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/print">print</a></span>(<span class="kw"><a href="https://www.rdocumentation.org/packages/utils/topics/head">head</a></span>(to_use))
 <span class="co">#&gt;   individual  DOB virus titre samples run group    lower lower_50   median</span>
-<span class="co">#&gt; 1          1 1934  1968     4    2009   1     1 3.058541 3.812135 4.288672</span>
-<span class="co">#&gt; 2          1 1934  1975     3    2009   1     1 1.912395 2.728584 3.206921</span>
-<span class="co">#&gt; 3          1 1934  1979     3    2009   1     1 2.142388 3.192233 3.709098</span>
-<span class="co">#&gt; 4          1 1934  1989     4    2009   1     1 2.236023 3.333765 3.762489</span>
-<span class="co">#&gt; 5          1 1934  1995     5    2009   1     1 3.114216 4.358006 5.065386</span>
-<span class="co">#&gt; 6          1 1934  2002     5    2009   1     1 4.141802 5.002520 5.306878</span>
+<span class="co">#&gt; 1          1 1934  1968     4    2009   1     1 3.329457 3.838055 4.329101</span>
+<span class="co">#&gt; 2          1 1934  1975     3    2009   1     1 1.543275 2.573738 3.254607</span>
+<span class="co">#&gt; 3          1 1934  1979     3    2009   1     1 2.002456 3.043491 3.498310</span>
+<span class="co">#&gt; 4          1 1934  1989     4    2009   1     1 2.204599 3.415761 3.897949</span>
+<span class="co">#&gt; 5          1 1934  1995     5    2009   1     1 3.568160 4.443770 5.077242</span>
+<span class="co">#&gt; 6          1 1934  2002     5    2009   1     1 4.077774 4.846251 5.376689</span>
 <span class="co">#&gt;   upper_50    upper      max</span>
-<span class="co">#&gt; 1 4.774958 5.884381 4.328951</span>
-<span class="co">#&gt; 2 3.843260 4.584759 2.979992</span>
-<span class="co">#&gt; 3 4.223866 5.064205 4.504108</span>
-<span class="co">#&gt; 4 4.352264 5.482826 4.542693</span>
-<span class="co">#&gt; 5 5.621463 6.511123 5.557565</span>
-<span class="co">#&gt; 6 5.714210 6.468079 5.868666</span>
+<span class="co">#&gt; 1 4.698039 6.032400 4.154085</span>
+<span class="co">#&gt; 2 3.840784 5.024086 2.396539</span>
+<span class="co">#&gt; 3 4.012174 4.729427 2.990015</span>
+<span class="co">#&gt; 4 4.673852 5.426573 2.568736</span>
+<span class="co">#&gt; 5 5.612904 6.561417 5.233627</span>
+<span class="co">#&gt; 6 5.802788 6.561429 5.260952</span>
 
 ## Using ggplot
-titre_pred_p &lt;-<span class="st"> </span><span class="kw">ggplot</span>(to_use[to_use<span class="op">$</span>individual <span class="op">%in%</span><span class="st"> </span><span class="dv">1</span><span class="op">:</span><span class="dv">9</span>,])<span class="op">+</span>
-<span class="st">  </span><span class="kw">geom_ribbon</span>(<span class="kw">aes</span>(<span class="dt">x=</span>virus,<span class="dt">ymin=</span>lower, <span class="dt">ymax=</span>upper),<span class="dt">fill=</span><span class="st">"gray90"</span>)<span class="op">+</span>
-<span class="st">  </span><span class="kw">geom_ribbon</span>(<span class="kw">aes</span>(<span class="dt">x=</span>virus,<span class="dt">ymin=</span>lower_<span class="dv">50</span>, <span class="dt">ymax=</span>upper_<span class="dv">50</span>),<span class="dt">fill=</span><span class="st">"gray70"</span>)<span class="op">+</span>
-<span class="st">  </span><span class="kw">geom_line</span>(<span class="kw">aes</span>(<span class="dt">x=</span>virus, <span class="dt">y=</span>median))<span class="op">+</span>
-<span class="st">  </span><span class="kw">geom_point</span>(<span class="kw">aes</span>(<span class="dt">x=</span>virus, <span class="dt">y=</span>titre))<span class="op">+</span>
-<span class="st">  </span><span class="kw">coord_cartesian</span>(<span class="dt">ylim=</span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/c">c</a></span>(<span class="dv">0</span>,<span class="dv">8</span>))<span class="op">+</span>
-<span class="st">  </span><span class="kw">ylab</span>(<span class="st">"log titre"</span>) <span class="op">+</span>
-<span class="st">  </span><span class="kw">xlab</span>(<span class="st">"Time of virus circulation"</span>) <span class="op">+</span>
-<span class="st">  </span><span class="kw">theme_classic</span>() <span class="op">+</span>
-<span class="st">  </span><span class="kw">facet_wrap</span>(<span class="op">~</span>individual)
+titre_pred_p &lt;-<span class="st"> </span><span class="kw"><a href="https://ggplot2.tidyverse.org/reference/ggplot.html">ggplot</a></span>(to_use[to_use<span class="op">$</span>individual <span class="op">%in%</span><span class="st"> </span><span class="dv">1</span><span class="op">:</span><span class="dv">9</span>,])<span class="op">+</span>
+<span class="st">  </span><span class="kw"><a href="https://ggplot2.tidyverse.org/reference/geom_ribbon.html">geom_ribbon</a></span>(<span class="kw"><a href="https://ggplot2.tidyverse.org/reference/aes.html">aes</a></span>(<span class="dt">x=</span>virus,<span class="dt">ymin=</span>lower, <span class="dt">ymax=</span>upper),<span class="dt">fill=</span><span class="st">"gray90"</span>)<span class="op">+</span>
+<span class="st">  </span><span class="kw"><a href="https://ggplot2.tidyverse.org/reference/geom_ribbon.html">geom_ribbon</a></span>(<span class="kw"><a href="https://ggplot2.tidyverse.org/reference/aes.html">aes</a></span>(<span class="dt">x=</span>virus,<span class="dt">ymin=</span>lower_<span class="dv">50</span>, <span class="dt">ymax=</span>upper_<span class="dv">50</span>),<span class="dt">fill=</span><span class="st">"gray70"</span>)<span class="op">+</span>
+<span class="st">  </span><span class="kw"><a href="https://ggplot2.tidyverse.org/reference/geom_path.html">geom_line</a></span>(<span class="kw"><a href="https://ggplot2.tidyverse.org/reference/aes.html">aes</a></span>(<span class="dt">x=</span>virus, <span class="dt">y=</span>median))<span class="op">+</span>
+<span class="st">  </span><span class="kw"><a href="https://ggplot2.tidyverse.org/reference/geom_point.html">geom_point</a></span>(<span class="kw"><a href="https://ggplot2.tidyverse.org/reference/aes.html">aes</a></span>(<span class="dt">x=</span>virus, <span class="dt">y=</span>titre))<span class="op">+</span>
+<span class="st">  </span><span class="kw"><a href="https://ggplot2.tidyverse.org/reference/coord_cartesian.html">coord_cartesian</a></span>(<span class="dt">ylim=</span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/c">c</a></span>(<span class="dv">0</span>,<span class="dv">8</span>))<span class="op">+</span>
+<span class="st">  </span><span class="kw"><a href="https://ggplot2.tidyverse.org/reference/labs.html">ylab</a></span>(<span class="st">"log titre"</span>) <span class="op">+</span>
+<span class="st">  </span><span class="kw"><a href="https://ggplot2.tidyverse.org/reference/labs.html">xlab</a></span>(<span class="st">"Time of virus circulation"</span>) <span class="op">+</span>
+<span class="st">  </span><span class="kw"><a href="https://ggplot2.tidyverse.org/reference/ggtheme.html">theme_classic</a></span>() <span class="op">+</span>
+<span class="st">  </span><span class="kw"><a href="https://ggplot2.tidyverse.org/reference/facet_wrap.html">facet_wrap</a></span>(<span class="op">~</span>individual)
 titre_pred_p</code></pre></div>
-<p><img src="cs2_vignette_files/figure-html/unnamed-chunk-8-1.png" width="700"></p>
+<p><img src="cs2_vignette_files/figure-html/unnamed-chunk-8-1.png" width="672"></p>
 <div id="further-analyses" class="section level2">
 <h2 class="hasAnchor">
 <a href="#further-analyses" class="anchor"></a>Further analyses</h2>
 <p>Figures in the main text can be readily generated from the MCMC output from above. The source code to generate these figures has been hidden, but can be found in the original .Rmd file for this vignette.</p>
-<p>First, we are interested in calculating the number of infections experienced by individuals over time as a function of their age. We see that individuals are infected less frequently as they become older. <img src="cs2_vignette_files/figure-html/age_distribution-1.png" width="768"></p>
+<p>First, we are interested in calculating the number of infections experienced by individuals over time as a function of their age. We see that individuals are infected less frequently as they become older. <img src="cs2_vignette_files/figure-html/age_distribution-1.png" width="576"></p>
 <p>Given the sparsity of data here, the default attack rate plot is difficult to interpret. Below is an alternative visualisation of the attack rate, with the 95% and 50% credible intervals shown in red, the posterior median shown in black and the posterior maximum likelihood estimate shown as a dashed green line.</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">## Find samples that were in both theta and inf hist chains
 chain &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/as.data.frame">as.data.frame</a></span>(all_chains<span class="op">$</span>theta_chain)
-intersect_samps &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/sets">intersect</a></span>(<span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/unique">unique</a></span>(inf_chain<span class="op">$</span>sampno), <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/unique">unique</a></span>(chain<span class="op">$</span>sampno))
+intersect_samps &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/data.table/topics/setops">intersect</a></span>(<span class="kw"><a href="https://www.rdocumentation.org/packages/data.table/topics/duplicated">unique</a></span>(inf_chain<span class="op">$</span>sampno), <span class="kw"><a href="https://www.rdocumentation.org/packages/data.table/topics/duplicated">unique</a></span>(chain<span class="op">$</span>sampno))
 chain &lt;-<span class="st"> </span>chain[chain<span class="op">$</span>sampno <span class="op">%in%</span><span class="st"> </span>intersect_samps,]
 
 ## Find the parameter values that gave the highest posterior probability
 which_mle &lt;-<span class="st"> </span>chain[<span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/which.min">which.max</a></span>(chain<span class="op">$</span>lnlike),<span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/c">c</a></span>(<span class="st">"sampno"</span>,<span class="st">"chain_no"</span>)]
 
 ## Take subset of chain for computational speed, as do not need all samples
-samps &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/unique">unique</a></span>(inf_chain[,<span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/c">c</a></span>(<span class="st">"sampno"</span>,<span class="st">"chain_no"</span>)])
+samps &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/data.table/topics/duplicated">unique</a></span>(inf_chain[,<span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/c">c</a></span>(<span class="st">"sampno"</span>,<span class="st">"chain_no"</span>)])
 n_samps &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/sample">sample</a></span>(<span class="dv">1</span><span class="op">:</span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/nrow">nrow</a></span>(samps), <span class="dv">100</span>)
 samps &lt;-<span class="st"> </span>samps[n_samps,]
-samps &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/cbind">rbind</a></span>(samps, which_mle) ## Plus MLE estimate
+samps &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/data.table/topics/rbindlist">rbind</a></span>(samps, which_mle) ## Plus MLE estimate
 ## Append the MLE estimate, note that this is max(sampno)
 
 ## Create new index variables for simplicity
@@ -612,7 +584,7 @@ samps<span class="op">$</span>chain_no1 &lt;-<span class="st"> </span><span clas
 ## Inner join to return only our subset of samples
 ## Reformat sampno and chain_no identifiers so that code
 ## sees samples as coming from one chain
-inf_chain &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/merge">merge</a></span>(inf_chain, samps, <span class="dt">by=</span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/c">c</a></span>(<span class="st">"sampno"</span>,<span class="st">"chain_no"</span>))
+inf_chain &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/data.table/topics/merge">merge</a></span>(inf_chain, samps, <span class="dt">by=</span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/c">c</a></span>(<span class="st">"sampno"</span>,<span class="st">"chain_no"</span>))
 inf_chain &lt;-<span class="st"> </span>inf_chain[,<span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/c">c</a></span>(<span class="st">"sampno1"</span>,<span class="st">"chain_no1"</span>,<span class="st">"i"</span>,<span class="st">"j"</span>,<span class="st">"x"</span>)]
 <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/colnames">colnames</a></span>(inf_chain)[<span class="dv">1</span><span class="op">:</span><span class="dv">2</span>] &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/c">c</a></span>(<span class="st">"sampno"</span>,<span class="st">"chain_no"</span>)
 inf_chain &lt;-<span class="st"> </span><span class="kw"><a href="../reference/pad_inf_chain.html">pad_inf_chain</a></span>(inf_chain)
@@ -630,15 +602,15 @@ clusters &lt;-<span class="st"> </span>clusters[clusters<span class="op">$</span
 inf_chain<span class="op">$</span>year &lt;-<span class="st"> </span>inf_chain<span class="op">$</span>year <span class="op">+</span><span class="st"> </span><span class="dv">1967</span>
 
 ## Merge cluster data and infection history data
-inf_chain &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/merge">merge</a></span>(inf_chain, clusters[,<span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/c">c</a></span>(<span class="st">"year"</span>,<span class="st">"cluster1"</span>)],<span class="dt">by=</span><span class="st">"year"</span>)
+inf_chain &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/data.table/topics/merge">merge</a></span>(inf_chain, clusters[,<span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/c">c</a></span>(<span class="st">"year"</span>,<span class="st">"cluster1"</span>)],<span class="dt">by=</span><span class="st">"year"</span>)
 
 ## Calculate ages and age groups of all individuals
 titre_dat<span class="op">$</span>age &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/Extremes">max</a></span>(strain_isolation_times) <span class="op">-</span><span class="st"> </span>titre_dat<span class="op">$</span>DOB
 titre_dat<span class="op">$</span>age_group &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/cut">cut</a></span>(titre_dat<span class="op">$</span>age,<span class="dt">breaks=</span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/c">c</a></span>(<span class="dv">0</span>,<span class="dv">20</span>,<span class="dv">100</span>),<span class="dt">include.lowest=</span><span class="ot">TRUE</span>)
-ages &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/unique">unique</a></span>(titre_dat[,<span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/c">c</a></span>(<span class="st">"individual"</span>,<span class="st">"age_group"</span>,<span class="st">"DOB"</span>,<span class="st">"age"</span>)])
+ages &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/data.table/topics/duplicated">unique</a></span>(titre_dat[,<span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/c">c</a></span>(<span class="st">"individual"</span>,<span class="st">"age_group"</span>,<span class="st">"DOB"</span>,<span class="st">"age"</span>)])
 
 ## Merge infection histories with individual data
-inf_chain&lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/merge">merge</a></span>(inf_chain, <span class="kw">data.table</span>(ages), <span class="dt">by=</span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/c">c</a></span>(<span class="st">"individual"</span>))
+inf_chain&lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/data.table/topics/merge">merge</a></span>(inf_chain, <span class="kw"><a href="https://www.rdocumentation.org/packages/data.table/topics/data.table">data.table</a></span>(ages), <span class="dt">by=</span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/c">c</a></span>(<span class="st">"individual"</span>))
 
 ## Alive status for each individual for each time,
 ## only interested in individuals that were alive 
@@ -646,7 +618,7 @@ inf_chain&lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdo
 inf_chain<span class="op">$</span>alive &lt;-<span class="st"> </span>inf_chain<span class="op">$</span>DOB <span class="op">&lt;=</span><span class="st"> </span>inf_chain<span class="op">$</span>year
 inf_chain &lt;-<span class="st"> </span>inf_chain[inf_chain<span class="op">$</span>alive,]</code></pre></div>
 <p><img src="cs2_vignette_files/figure-html/attack_rate_plot-1.png" width="768"></p>
-<p>Finally, inferring individual infection histories allows us to investigate age-specific patterns of incidence. Here, we show the proportion of individuals that were infected at least once within a single antigenic cluster, finding that clusters that circulate for longer tend to infect a far higher proportion of the population. Furthermore, we see that a far higher proportion of the younger age group is infected in more recent years. <img src="cs2_vignette_files/figure-html/age_clusters_plot-1.png" width="700"></p>
+<p>Finally, inferring individual infection histories allows us to investigate age-specific patterns of incidence. Here, we show the proportion of individuals that were infected at least once within a single antigenic cluster, finding that clusters that circulate for longer tend to infect a far higher proportion of the population. Furthermore, we see that a far higher proportion of the younger age group is infected in more recent years. <img src="cs2_vignette_files/figure-html/age_clusters_plot-1.png" width="480"></p>
 </div>
 </div>
 <div id="simulation-recovery" class="section level1">
@@ -658,7 +630,7 @@ inf_chain &lt;-<span class="st"> </span>inf_chain[inf_chain<span class="op">$</s
 <a href="#extract-mle-parameters-from-fits" class="anchor"></a>Extract MLE parameters from fits</h2>
 <p>We simulate infection histories and antibody titre data based on the “real” parameters inferred from fitting the model above. First, we extract the maximum posterior probability antibody kinetics parameters and attack rates.</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">## Read in MCMC chains from fitting
-all_chains &lt;-<span class="st"> </span><span class="kw"><a href="../reference/load_mcmc_chains.html">load_mcmc_chains</a></span>(<span class="dt">location=</span>chain_path_real,<span class="dt">thin=</span><span class="dv">10</span>,<span class="dt">burnin=</span><span class="dv">100000</span>,
+all_chains &lt;-<span class="st"> </span><span class="kw"><a href="../reference/load_mcmc_chains.html">load_mcmc_chains</a></span>(<span class="dt">location=</span>chain_path_real,<span class="dt">thin=</span><span class="dv">1</span>,<span class="dt">burnin=</span><span class="dv">100000</span>,
                                <span class="dt">par_tab=</span>par_tab,<span class="dt">unfixed=</span><span class="ot">FALSE</span>,<span class="dt">convert_mcmc=</span><span class="ot">FALSE</span>)
 <span class="co">#&gt; Chains detected:     5Highest MCMC sample interations: </span>
 <span class="co">#&gt; Chains detected: </span>
@@ -668,19 +640,19 @@ all_chains &lt;-<span class="st"> </span><span class="kw"><a href="../reference/
 <span class="co">#&gt; /home/james/R/x86_64-pc-linux-gnu-library/3.6/serosolver/extdata/cs2_real//case_study_2_4_infection_histories.csv</span>
 <span class="co">#&gt; /home/james/R/x86_64-pc-linux-gnu-library/3.6/serosolver/extdata/cs2_real//case_study_2_5_infection_histories.csv</span>
 <span class="co">#&gt; [[1]]</span>
-<span class="co">#&gt; [1] 128140</span>
+<span class="co">#&gt; [1] 651204</span>
 <span class="co">#&gt; </span>
 <span class="co">#&gt; [[2]]</span>
-<span class="co">#&gt; [1] 128436</span>
+<span class="co">#&gt; [1] 639244</span>
 <span class="co">#&gt; </span>
 <span class="co">#&gt; [[3]]</span>
-<span class="co">#&gt; [1] 129873</span>
+<span class="co">#&gt; [1] 639317</span>
 <span class="co">#&gt; </span>
 <span class="co">#&gt; [[4]]</span>
-<span class="co">#&gt; [1] 129787</span>
+<span class="co">#&gt; [1] 638240</span>
 <span class="co">#&gt; </span>
 <span class="co">#&gt; [[5]]</span>
-<span class="co">#&gt; [1] 129211</span>
+<span class="co">#&gt; [1] 642137</span>
 
 ## Alternative, load the included MCMC chains rather than re-running
 ## load(cs2_chains_real_b)
@@ -689,7 +661,7 @@ all_chains &lt;-<span class="st"> </span><span class="kw"><a href="../reference/
 ## Find samples that were in both theta and inf hist chains
 chain &lt;-<span class="st"> </span>all_chains<span class="op">$</span>theta_chain
 inf_chain &lt;-<span class="st"> </span>all_chains<span class="op">$</span>inf_chain
-intersect_samps &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/sets">intersect</a></span>(<span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/unique">unique</a></span>(inf_chain<span class="op">$</span>sampno), <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/unique">unique</a></span>(chain<span class="op">$</span>sampno))
+intersect_samps &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/data.table/topics/setops">intersect</a></span>(<span class="kw"><a href="https://www.rdocumentation.org/packages/data.table/topics/duplicated">unique</a></span>(inf_chain<span class="op">$</span>sampno), <span class="kw"><a href="https://www.rdocumentation.org/packages/data.table/topics/duplicated">unique</a></span>(chain<span class="op">$</span>sampno))
 chain &lt;-<span class="st"> </span>chain[chain<span class="op">$</span>sampno <span class="op">%in%</span><span class="st"> </span>intersect_samps,]
 
 ## Find the parameter values that gave the highest posterior probability
@@ -724,7 +696,7 @@ sim_par_tab[sim_par_tab<span class="op">$</span>names <span class="op">%in%</spa
 
 age_min &lt;-<span class="st"> </span><span class="dv">2009</span> <span class="op">-</span><span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/Extremes">max</a></span>(titre_dat<span class="op">$</span>DOB)
 age_max &lt;-<span class="st"> </span><span class="dv">2009</span> <span class="op">-</span><span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/Extremes">min</a></span>(titre_dat<span class="op">$</span>DOB)
-n_indiv &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/length">length</a></span>(<span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/unique">unique</a></span>(titre_dat<span class="op">$</span>individual))
+n_indiv &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/length">length</a></span>(<span class="kw"><a href="https://www.rdocumentation.org/packages/data.table/topics/duplicated">unique</a></span>(titre_dat<span class="op">$</span>individual))
 dat &lt;-<span class="st"> </span><span class="kw"><a href="../reference/simulate_data.html">simulate_data</a></span>(<span class="dt">par_tab=</span>sim_par_tab,
                      <span class="dt">n_indiv=</span>n_indiv, 
                      <span class="dt">buckets=</span>resolution, 
@@ -747,13 +719,13 @@ sim_infection_histories &lt;-<span class="st"> </span>dat[[<span class="st">"inf
 actual_total_infections &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/sum">sum</a></span>(sim_infection_histories)
 
 <span class="kw"><a href="../reference/plot_data.html">plot_data</a></span>(sim_titre_dat, sim_infection_histories, strain_isolation_times,<span class="dt">n_samps =</span> <span class="dv">5</span>)</code></pre></div>
-<p><img src="cs2_vignette_files/figure-html/unnamed-chunk-10-1.png" width="700"></p>
+<p><img src="cs2_vignette_files/figure-html/unnamed-chunk-10-1.png" width="672"></p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">
 ## Use titres only against same viruses tested in real data
-viruses &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/unique">unique</a></span>(titre_dat<span class="op">$</span>virus)
+viruses &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/data.table/topics/duplicated">unique</a></span>(titre_dat<span class="op">$</span>virus)
 sim_titre_dat &lt;-<span class="st"> </span>sim_titre_dat[sim_titre_dat<span class="op">$</span>virus <span class="op">%in%</span><span class="st"> </span>viruses, ]
 sim_ages &lt;-<span class="st"> </span>dat[[<span class="st">"ages"</span>]]
-sim_titre_dat &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/merge">merge</a></span>(sim_titre_dat, sim_ages)
+sim_titre_dat &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/data.table/topics/merge">merge</a></span>(sim_titre_dat, sim_ages)
 sim_ar &lt;-<span class="st"> </span>dat[[<span class="st">"attack_rates"</span>]]</code></pre></div>
 </div>
 <div id="simulation-fitting" class="section level2">
@@ -775,7 +747,7 @@ model_func &lt;-<span class="st"> </span><span class="kw"><a href="../reference/
 <span class="co">#&gt; </span>
 
 ## Generate results in parallel
-res &lt;-<span class="st"> </span><span class="kw">foreach</span>(<span class="dt">x =</span> filenames) <span class="op">%dopar%</span><span class="st"> </span>{
+res &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/foreach/topics/foreach">foreach</a></span>(<span class="dt">x =</span> filenames) <span class="op">%dopar%</span><span class="st"> </span>{
   ## Not all random starting conditions return finite likelihood, so for each chain generate random
   ## conditions until we get one with a finite likelihood
   start_prob &lt;-<span class="st"> </span><span class="op">-</span><span class="ot">Inf</span>
@@ -791,8 +763,8 @@ res &lt;-<span class="st"> </span><span class="kw">foreach</span>(<span class="d
                   <span class="dt">titre_dat =</span> sim_titre_dat,
                   <span class="dt">antigenic_map =</span> antigenic_map,
                   <span class="dt">start_inf_hist =</span> start_inf, 
-                  <span class="dt">mcmc_pars =</span> <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/c">c</a></span>(<span class="st">"iterations"</span>=<span class="dv">500000</span>,<span class="st">"adaptive_period"</span>=<span class="dv">100000</span>,<span class="st">"thin"</span>=<span class="dv">100</span>,
-                                <span class="st">"thin_hist"</span>=<span class="dv">500</span>,<span class="st">"save_block"</span>=<span class="dv">1000</span>,
+                  <span class="dt">mcmc_pars =</span> <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/c">c</a></span>(<span class="st">"iterations"</span>=<span class="dv">500000</span>,<span class="st">"adaptive_period"</span>=<span class="dv">100000</span>,<span class="st">"thin"</span>=<span class="dv">1000</span>,
+                                <span class="st">"thin_hist"</span>=<span class="dv">1000</span>,<span class="st">"save_block"</span>=<span class="dv">1000</span>,
                                 <span class="st">"hist_switch_prob"</span>=<span class="fl">0.8</span>, <span class="st">"hist_sample_prob"</span>=<span class="dv">1</span>),
                   <span class="dt">filename =</span> <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/paste">paste0</a></span>(chain_path_sim,x), 
                   <span class="dt">CREATE_POSTERIOR_FUNC =</span> create_posterior_func, 
@@ -815,19 +787,19 @@ sim_all_chains &lt;-<span class="st"> </span><span class="kw"><a href="../refere
 <span class="co">#&gt; /home/james/R/x86_64-pc-linux-gnu-library/3.6/serosolver/extdata/cs2_sim//case_study_2_sim_4_infection_histories.csv</span>
 <span class="co">#&gt; /home/james/R/x86_64-pc-linux-gnu-library/3.6/serosolver/extdata/cs2_sim//case_study_2_sim_5_infection_histories.csv</span>
 <span class="co">#&gt; [[1]]</span>
-<span class="co">#&gt; [1] 1399646</span>
+<span class="co">#&gt; [1] 627516</span>
 <span class="co">#&gt; </span>
 <span class="co">#&gt; [[2]]</span>
-<span class="co">#&gt; [1] 1389419</span>
+<span class="co">#&gt; [1] 626665</span>
 <span class="co">#&gt; </span>
 <span class="co">#&gt; [[3]]</span>
-<span class="co">#&gt; [1] 1385636</span>
+<span class="co">#&gt; [1] 626015</span>
 <span class="co">#&gt; </span>
 <span class="co">#&gt; [[4]]</span>
-<span class="co">#&gt; [1] 1374175</span>
+<span class="co">#&gt; [1] 625833</span>
 <span class="co">#&gt; </span>
 <span class="co">#&gt; [[5]]</span>
-<span class="co">#&gt; [1] 1397017</span>
+<span class="co">#&gt; [1] 619760</span>
 
 ## Alternative, load the included MCMC chains rather than re-running
 ## load(cs2_chains_sim)
@@ -842,26 +814,26 @@ list_chains1 &lt;-<span class="st"> </span><span class="kw"><a href="https://www
                                                      <span class="st">"lnlike"</span>,<span class="st">"prior_prob"</span>)])
 
 ## Gelman-Rubin diagnostics and effective sample size
-<span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/print">print</a></span>(<span class="kw">gelman.diag</span>(<span class="kw">as.mcmc.list</span>(list_chains1)))
+<span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/print">print</a></span>(<span class="kw"><a href="https://www.rdocumentation.org/packages/coda/topics/gelman.diag">gelman.diag</a></span>(<span class="kw"><a href="https://www.rdocumentation.org/packages/coda/topics/mcmc.list">as.mcmc.list</a></span>(list_chains1)))
 <span class="co">#&gt; Potential scale reduction factors:</span>
 <span class="co">#&gt; </span>
 <span class="co">#&gt;                  Point est. Upper C.I.</span>
-<span class="co">#&gt; mu                     1.01       1.02</span>
-<span class="co">#&gt; sigma1                 1.01       1.02</span>
+<span class="co">#&gt; mu                     1.03       1.07</span>
+<span class="co">#&gt; sigma1                 1.00       1.01</span>
 <span class="co">#&gt; error                  1.00       1.00</span>
-<span class="co">#&gt; tau                    1.00       1.01</span>
-<span class="co">#&gt; total_infections       1.02       1.04</span>
-<span class="co">#&gt; lnlike                 1.01       1.03</span>
-<span class="co">#&gt; prior_prob             1.01       1.03</span>
+<span class="co">#&gt; tau                    1.02       1.05</span>
+<span class="co">#&gt; total_infections       1.02       1.06</span>
+<span class="co">#&gt; lnlike                 1.02       1.05</span>
+<span class="co">#&gt; prior_prob             1.02       1.05</span>
 <span class="co">#&gt; </span>
 <span class="co">#&gt; Multivariate psrf</span>
 <span class="co">#&gt; </span>
-<span class="co">#&gt; 1.02</span>
-<span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/print">print</a></span>(<span class="kw">effectiveSize</span>(<span class="kw">as.mcmc.list</span>(list_chains1)))
+<span class="co">#&gt; 1.03</span>
+<span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/print">print</a></span>(<span class="kw"><a href="https://www.rdocumentation.org/packages/coda/topics/effectiveSize">effectiveSize</a></span>(<span class="kw"><a href="https://www.rdocumentation.org/packages/coda/topics/mcmc.list">as.mcmc.list</a></span>(list_chains1)))
 <span class="co">#&gt;               mu           sigma1            error              tau </span>
-<span class="co">#&gt;         844.6148        1969.2372        2789.0257        1205.7645 </span>
+<span class="co">#&gt;         806.2317        1393.8893        2505.0000         988.9198 </span>
 <span class="co">#&gt; total_infections           lnlike       prior_prob </span>
-<span class="co">#&gt;         789.2340         796.9127         790.1952</span>
+<span class="co">#&gt;         665.8102         646.6068         637.6354</span>
 
 melted_theta_chain &lt;-<span class="st"> </span>reshape2<span class="op">::</span><span class="kw"><a href="https://www.rdocumentation.org/packages/reshape2/topics/melt">melt</a></span>(<span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/as.data.frame">as.data.frame</a></span>(theta_chain), <span class="dt">id.vars=</span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/c">c</a></span>(<span class="st">"sampno"</span>,<span class="st">"chain_no"</span>))
 estimated_pars &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/c">c</a></span>(sim_par_tab[sim_par_tab<span class="op">$</span>fixed <span class="op">==</span><span class="st"> </span><span class="dv">0</span>,<span class="st">"names"</span>],<span class="st">"total_infections"</span>)
@@ -870,15 +842,15 @@ melted_theta_chain &lt;-<span class="st"> </span>melted_theta_chain[melted_theta
 
 add_row &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/data.frame">data.frame</a></span>(<span class="st">"total_infections"</span>,actual_total_infections,<span class="dv">0</span>,<span class="fl">0.1</span>,<span class="dv">0</span>,<span class="dv">10000</span>,<span class="dv">0</span>,<span class="dv">0</span>,<span class="dv">1</span>)
 <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/colnames">colnames</a></span>(add_row) &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/colnames">colnames</a></span>(sim_par_tab)
-sim_par_tab1 &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/cbind">rbind</a></span>(sim_par_tab, add_row)
+sim_par_tab1 &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/data.table/topics/rbindlist">rbind</a></span>(sim_par_tab, add_row)
 
-<span class="kw">ggplot</span>(melted_theta_chain) <span class="op">+</span><span class="st"> </span>
-<span class="st">  </span><span class="kw">geom_density</span>(<span class="kw">aes</span>(<span class="dt">x=</span>value,<span class="dt">fill=</span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/factor">as.factor</a></span>(chain_no)),<span class="dt">alpha=</span><span class="fl">0.5</span>) <span class="op">+</span>
-<span class="st">  </span><span class="kw">geom_vline</span>(<span class="dt">data=</span>sim_par_tab1[sim_par_tab1<span class="op">$</span>fixed <span class="op">==</span><span class="st"> </span><span class="dv">0</span>,],<span class="kw">aes</span>(<span class="dt">xintercept=</span>values),<span class="dt">linetype=</span><span class="st">"dashed"</span>) <span class="op">+</span>
-<span class="st">  </span><span class="kw">facet_wrap</span>(<span class="op">~</span>names,<span class="dt">scales=</span><span class="st">"free"</span>) <span class="op">+</span><span class="st"> </span>
-<span class="st">  </span><span class="kw">theme_classic</span>() <span class="op">+</span>
-<span class="st">  </span><span class="kw">theme</span>(<span class="dt">legend.position=</span><span class="st">"bottom"</span>)</code></pre></div>
-<p><img src="cs2_vignette_files/figure-html/unnamed-chunk-11-1.png" width="700"></p>
+<span class="kw"><a href="https://ggplot2.tidyverse.org/reference/ggplot.html">ggplot</a></span>(melted_theta_chain) <span class="op">+</span><span class="st"> </span>
+<span class="st">  </span><span class="kw"><a href="https://ggplot2.tidyverse.org/reference/geom_density.html">geom_density</a></span>(<span class="kw"><a href="https://ggplot2.tidyverse.org/reference/aes.html">aes</a></span>(<span class="dt">x=</span>value,<span class="dt">fill=</span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/factor">as.factor</a></span>(chain_no)),<span class="dt">alpha=</span><span class="fl">0.5</span>) <span class="op">+</span>
+<span class="st">  </span><span class="kw"><a href="https://ggplot2.tidyverse.org/reference/geom_abline.html">geom_vline</a></span>(<span class="dt">data=</span>sim_par_tab1[sim_par_tab1<span class="op">$</span>fixed <span class="op">==</span><span class="st"> </span><span class="dv">0</span>,],<span class="kw"><a href="https://ggplot2.tidyverse.org/reference/aes.html">aes</a></span>(<span class="dt">xintercept=</span>values),<span class="dt">linetype=</span><span class="st">"dashed"</span>) <span class="op">+</span>
+<span class="st">  </span><span class="kw"><a href="https://ggplot2.tidyverse.org/reference/facet_wrap.html">facet_wrap</a></span>(<span class="op">~</span>names,<span class="dt">scales=</span><span class="st">"free"</span>) <span class="op">+</span><span class="st"> </span>
+<span class="st">  </span><span class="kw"><a href="https://ggplot2.tidyverse.org/reference/ggtheme.html">theme_classic</a></span>() <span class="op">+</span>
+<span class="st">  </span><span class="kw"><a href="https://ggplot2.tidyverse.org/reference/theme.html">theme</a></span>(<span class="dt">legend.position=</span><span class="st">"bottom"</span>)</code></pre></div>
+<p><img src="cs2_vignette_files/figure-html/unnamed-chunk-11-1.png" width="672"></p>
 <p>Recovery of known attack rates is also reasonably accurate, though the constraint of the posterior distibution is quite low for many years where identifiability is poor. Again, more titre data or more individuals would improve inferential power. One particularly reassuring plot is the comparison of known individual cumulative infection histories (the cumulative sum of infections over time for an individual) against the estimated posterior distribution of cumulative infection histories. We see that the 95% credible intervals capture the true cumulative infection histories in almost all cases.</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">## Extract infection history chain
 inf_chain &lt;-<span class="st"> </span>sim_all_chains<span class="op">$</span>inf_chain
@@ -888,8 +860,10 @@ p_ar &lt;-<span class="st"> </span><span class="kw"><a href="../reference/plot_a
                             <span class="dt">plot_den =</span> <span class="ot">TRUE</span>,<span class="dt">prior_pars=</span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/list">list</a></span>(<span class="dt">prior_version=</span>prior_version, 
                                                           <span class="dt">alpha=</span>par_tab[par_tab<span class="op">$</span>names<span class="op">==</span><span class="st">"alpha"</span>,<span class="st">"values"</span>],
                                                           <span class="dt">beta=</span>par_tab[par_tab<span class="op">$</span>names<span class="op">==</span><span class="st">"beta"</span>,<span class="st">"values"</span>]))  <span class="op">+</span>
-<span class="st">  </span><span class="kw">geom_point</span>(<span class="dt">data=</span>sim_ar,<span class="kw">aes</span>(<span class="dt">x=</span>year,<span class="dt">y=</span>AR),<span class="dt">col=</span><span class="st">"purple"</span>)
-<span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/print">print</a></span>(p_ar)</code></pre></div>
+<span class="st">  </span><span class="kw"><a href="https://ggplot2.tidyverse.org/reference/geom_point.html">geom_point</a></span>(<span class="dt">data=</span>sim_ar,<span class="kw"><a href="https://ggplot2.tidyverse.org/reference/aes.html">aes</a></span>(<span class="dt">x=</span>year,<span class="dt">y=</span>AR),<span class="dt">col=</span><span class="st">"purple"</span>)
+<span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/print">print</a></span>(p_ar)
+<span class="co">#&gt; Warning in regularize.values(x, y, ties, missing(ties)): collapsing to</span>
+<span class="co">#&gt; unique 'x' values</span></code></pre></div>
 <p><img src="cs2_vignette_files/figure-html/unnamed-chunk-12-1.png" width="768"></p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">
 ## Calculate convergence diagnostics and summary statistics on infection histories

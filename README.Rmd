@@ -35,9 +35,9 @@ Read the [quick start vignette][vignette-doc] to set up and run a simple impleme
 There are additional Rmarkdown vignettes for [Case Study 1][c1-vignette-doc] (longitudinal analysis of influenza A/H1N1p in Hong Kong) and [Case Study 2][c2-vignette-doc] (cross-sectional analysis of influenza A/H3N2 in Guangzhou Province, China), to accompany the analysis in the serosolver paper.
 
 [r-project]: http://cran.r-project.org
-[vignette-doc]: https://github.com/seroanalytics/serosolver/blob/master/vignettes/serosolver-quick_start_guide.md
-[c1-vignette-doc]: https://github.com/seroanalytics/serosolver/blob/master/vignettes/cs1_vignette.Rmd
-[c2-vignette-doc]: https://github.com/seroanalytics/serosolver/blob/master/vignettes/cs2_vignette.Rmd
+[vignette-doc]: https://seroanalytics.github.io/serosolver/articles/serosolver-quick_start_guide.html
+[c1-vignette-doc]: https://seroanalytics.github.io/serosolver/articles/cs1_vignette.html
+[c2-vignette-doc]: https://seroanalytics.github.io/serosolver/articles/cs2_vignette.html
 
 ## Example
 
