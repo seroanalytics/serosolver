@@ -30,7 +30,6 @@ cl<-makeCluster(4)
 #register cluster
 registerDoParallel(cl)
 
-
 ###mcmc chains
 for(f in 1:3){
   foreach(i=1:3)%do%{
@@ -421,9 +420,9 @@ legend("top", c("1 strain/year", "2 strain/year","4 strain/year","Cross-sectiona
 par(mar = c(3, 4, 4, 2) + 0.1)
 
 titles <- c( expression(paste('long boost (',mu[1],'), ages 2 - 4')),
-             expression(expression(paste('error (',epsilon,'), ages 2 - 4'))),
+             expression(paste('error (',epsilon,'), ages 2 - 4')),
              expression(paste('long boost (',mu[1],'), ages 40 - 75')),
-             expression(expression(paste('error (',epsilon,'), ages 40 - 75'))))
+             expression((paste('error (',epsilon,'), ages 40 - 75'))))
 k <- 1
 for(f in 1:2){
   res <- res_master[[f]]
