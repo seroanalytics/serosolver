@@ -28,8 +28,11 @@ inf_hist_swap <- function(infection_history, age_mask, strain_mask, swap_propn, 
 
     ## Need to adjust if we've proposed too far away
     y2 <- y1 + move
-    while (y2 < 1) y2 <- y2 + ncol(infection_history)
-    while(y2 > ncol(infection_history)) y2 <- y2 - ncol(infection_history)
+    if(y2 < 1) y2 = -y2 + 2
+    if(y2 > ncol(infection_history)) y2 = ncol(infection_history) - y2 + ncol(infection_history)
+    
+    ##while (y2 < 1) y2 <- y2 + ncol(infection_history)
+    ##while(y2 > ncol(infection_history)) y2 <- y2 - ncol(infection_history)
 
     ## Get the first and last year chronologically
     small_year <- min(y1, y2)

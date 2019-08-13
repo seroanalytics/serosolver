@@ -58,8 +58,9 @@ void titre_data_fast_individual_base(NumericVector &predicted_titres,
     // Sum all infections that would contribute towards observed titres at this time
     for(int x = 0; x < max_infections; ++x){
       // Only go further if this sample happened after the infection
-      if((boost_before_infection && sampling_time > infection_times[x]) ||
-	 (!boost_before_infection && sampling_time >= infection_times[x])){
+      if(sampling_time >= infection_times[x]){
+	//      if((boost_before_infection && sampling_time > infection_times[x]) ||
+	// (!boost_before_infection && sampling_time >= infection_times[x])){
 	time = sampling_time - infection_times[x]; // Time between sample and infection
 	wane_amount= MAX(0, 1.0 - (wane*time)); // Basic waning function
 	seniority = MAX(0, 1.0 - tau*(n_inf - 1.0)); // Antigenic seniority

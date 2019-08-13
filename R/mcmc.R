@@ -199,6 +199,9 @@ run_MCMC <- function(par_tab,
     histaccepted_add <- integer(n_indiv)
     histiter_move <- integer(n_indiv)
     histaccepted_move <- integer(n_indiv)
+
+    overall_swap_proposals <- matrix(0,nrow=n_indiv,ncol=length(strain_isolation_times))
+    overall_add_proposals <- matrix(0,nrow=n_indiv,ncol=length(strain_isolation_times))
     
     ##histadd_overall <- integer(n_indiv)
     ##histmove_overall <- integer(n_indiv)
@@ -485,15 +488,19 @@ run_MCMC <- function(par_tab,
                     histaccepted_add,
                     histiter_move,
                     histaccepted_move,
+                    overall_swap_proposals,
+                    overall_add_proposals,
                     temp,
                     propose_from_prior
                 )
                 histiter <- prop_gibbs$proposal_iter
                 histaccepted <- prop_gibbs$accepted_iter
                 new_indiv_likelihoods <- prop_gibbs$old_probs
-                tmp_indiv_likelihoods <- prop_gibbs$old_probs
                 new_infection_histories <- prop_gibbs$new_infection_history
                 new_likelihoods_calculated <- TRUE
+
+                overall_swap_proposals <- prop_gibbs$overall_swap_proposals
+                overall_add_proposals <- prop_gibbs$overall_add_proposals
             } else {
                 tmp <- inf_hist_swap(
                     infection_histories,
@@ -535,7 +542,7 @@ run_MCMC <- function(par_tab,
         if (!new_likelihoods_calculated) {
             new_post <- posterior_simp(proposal, new_infection_histories)
             new_indiv_likelihoods <- new_post[[1]] / temp
-            new_indiv_priors <- new_post[[2]]            
+            new_indiv_priors <- new_post[[2]]
         }
         new_indiv_posteriors <- new_indiv_likelihoods + new_indiv_priors
         new_total_likelihood <- sum(new_indiv_likelihoods)
@@ -833,6 +840,9 @@ run_MCMC <- function(par_tab,
     }
     return(list(
         "chain_file" = mcmc_chain_file, "history_file" = infection_history_file,
-        "cov_mat" = cov_mat, "step_scale" = steps
+        "cov_mat" = cov_mat, "step_scale" = steps,
+        "overall_swap_proposals"=overall_swap_proposals,
+        "overall_add_proposals"=overall_add_proposals
+        
     ))
 }

@@ -455,6 +455,7 @@ plot_posteriors_theta <- function(chain,
 #' Get posterior information infection histories
 #'
 #' Finds the median, mean and 95% credible intervals for the attack rates and total number of infections per individual
+#' @param solve_cumulative if TRUE, finds the cumulative infection histories for each individual. This takes a while, so is left FALSE by default.
 #' @inheritParams plot_posteriors_infhist
 #' @return a list of data frames with summary statistics
 #' @family infection_history_plots
@@ -487,7 +488,8 @@ calculate_infection_history_statistics <- function(inf_chain, burnin = 0, years 
                                                    n_alive = NULL, known_ar = NULL,
                                                    group_ids = NULL,
                                                    known_infection_history = NULL,
-                                                   pad_chain = TRUE) {
+                                                   pad_chain = TRUE,
+                                                   solve_cumulative=FALSE) {
   inf_chain <- inf_chain[inf_chain$sampno > burnin, ]
   if (is.null(inf_chain$chain_no)) {
     inf_chain$chain_no <- 1
@@ -559,9 +561,6 @@ calculate_infection_history_statistics <- function(inf_chain, burnin = 0, years 
   data.table::setkey(inf_chain, "i", "sampno", "chain_no")
   n_inf_chain_i <- inf_chain[, list(total_infs = sum(x)), by = key(inf_chain)]
 
-  data.table::setkey(inf_chain,"i", "sampno", "chain_no")
-  n_inf_chain_i_cumu <- inf_chain[, cumu_infs := cumsum(x), by = key(inf_chain)]
-
   data.table::setkey(n_inf_chain_i, "i")
   n_inf_chain_i_summaries <- n_inf_chain_i[, list(
       mean = mean(total_infs),
@@ -576,21 +575,28 @@ calculate_infection_history_statistics <- function(inf_chain, burnin = 0, years 
   ),
   by = key(n_inf_chain_i)
   ]
-  
-  data.table::setkey(n_inf_chain_i_cumu, "i","j")
-  n_inf_chain_i_summaries_cumu <- n_inf_chain_i_cumu[, list(
-      mean = mean(cumu_infs),
-      median = as.integer(median(cumu_infs)),
-      lower_quantile = quantile(cumu_infs, 0.025),
-      upper_quantile = quantile(cumu_infs, 0.975),
-      effective_size = tryCatch({
-          coda::effectiveSize(cumu_infs)
-      }, error = function(e) {
-          0
-      })
-  ),
-  by = key(n_inf_chain_i_cumu)
-  ]
+
+  if(solve_cumulative){
+      data.table::setkey(inf_chain,"i", "sampno", "chain_no")
+      n_inf_chain_i_cumu <- inf_chain[, cumu_infs := cumsum(x), by = key(inf_chain)]
+
+      data.table::setkey(n_inf_chain_i_cumu, "i","j")
+      n_inf_chain_i_summaries_cumu <- n_inf_chain_i_cumu[, list(
+          mean = mean(cumu_infs),
+          median = as.integer(median(cumu_infs)),
+          lower_quantile = quantile(cumu_infs, 0.025),
+          upper_quantile = quantile(cumu_infs, 0.975),
+          effective_size = tryCatch({
+              coda::effectiveSize(cumu_infs)
+          }, error = function(e) {
+              0
+          })
+      ),
+      by = key(n_inf_chain_i_cumu)
+      ]
+  } else {
+      n_inf_chain_i_summaries_cumu <- NULL
+  }
   message("Done\n")
   if (!is.null(known_infection_history)) {
       true_n_infs <- rowSums(known_infection_history)
@@ -603,7 +609,7 @@ calculate_infection_history_statistics <- function(inf_chain, burnin = 0, years 
 
   return(list(
       "by_year" = n_inf_chain_summaries, "by_indiv" = n_inf_chain_i_summaries,
-    "by_year_cumu" = n_inf_chain_summaries_cumu, "by_indiv_cumu" = n_inf_chain_i_summaries_cumu
+      "by_year_cumu" = n_inf_chain_summaries_cumu, "by_indiv_cumu" = n_inf_chain_i_summaries_cumu
   ))
 }
 
@@ -956,7 +962,7 @@ plot_infection_history_chains_time <- function(inf_chain, burnin = 0, years = NU
   n_inf_chain <- inf_chain[, list(V1 = sum(x)), by = key(inf_chain)]
 
   if (!is.null(n_alive)) {
-    n_inf_chain$V1 <- n_inf_chain$V1 / n_alive[n_inf_chain$j]
+    n_inf_chain$V1 <- n_inf_chain$V1 / n_alive[match(n_inf_chain$j, n_alive$j),"n_alive"]
   }
 
   if (!is.null(years)) {

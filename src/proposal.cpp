@@ -196,6 +196,8 @@ List inf_hist_prop_prior_v2_and_v4(const NumericVector &theta, // Model paramete
 				   IntegerVector accepted_iter,
 				   IntegerVector proposal_swap,
 				   IntegerVector accepted_swap,
+				   IntegerMatrix overall_swap_proposals,
+				   IntegerMatrix overall_add_proposals,				   
 				   const NumericVector &mus,
 				   const IntegerVector &boosting_vec_indices,
 				   const IntegerVector &total_alive,
@@ -397,9 +399,10 @@ List inf_hist_prop_prior_v2_and_v4(const NumericVector &theta, // Model paramete
       prior_old = prior_new = 0;
       if(swap_step_option){
 	loc1 = locs[j]; // Choose a location from age_mask to strain_mask
-	loc2 = loc1 + floor(R::runif(-swap_distance,swap_distance));
+	loc2 = loc1 + floor(R::runif(-swap_distance,swap_distance+1));
 
 	// If we have gone too far left or right, reflect at the boundaries
+	/*
 	while(loc2 < 0){
 	  // If gone negative, then reflect to the other side.
 	  // ie. -1 becomes the last entry, -2 becomes the second last entry etc.
@@ -408,13 +411,22 @@ List inf_hist_prop_prior_v2_and_v4(const NumericVector &theta, // Model paramete
 	while(loc2 >= n_samp_length){
 	  loc2 -= n_samp_length;
 	}
+	*/
+	// Try bounce rather than reflect to other side
+	if(loc2 < 0) loc2 = -loc2;
+	if(loc2 >= n_samp_length) loc2 = n_samp_length - loc2 + n_samp_length - 2;
+
+	
 	// Get onto right scale (starting at age mask)
 	loc1 += age_mask[indiv] - 1;
 	loc2 += age_mask[indiv] - 1;
 	  
 	loc1_val_old = new_infection_history(loc1);
 	loc2_val_old = new_infection_history(loc2);
-	  
+
+	overall_swap_proposals(indiv,loc1)++;
+	overall_swap_proposals(indiv,loc2)++;
+	
 	// Only proceed if we've actually made a change
 	// If prior version 4, then prior doesn't change by swapping
 	if(loc1_val_old != loc2_val_old){
@@ -457,6 +469,7 @@ List inf_hist_prop_prior_v2_and_v4(const NumericVector &theta, // Model paramete
 	//Rcpp::Rcout << "Add/remove" << std::endl;
 	year = locs[j] + age_mask[indiv] - 1;
 	old_entry = new_infection_history(year);
+	overall_add_proposals(indiv,year)++;
 	//Rcpp::Rcout << "Year: " << year << std::endl;
 	//Rcpp::Rcout << "Old entry: " << old_entry << std::endl;
 	if(!prior_on_total){	
@@ -673,5 +686,7 @@ List inf_hist_prop_prior_v2_and_v4(const NumericVector &theta, // Model paramete
   ret["accepted_iter"] = accepted_iter;
   ret["proposal_swap"] = proposal_swap;
   ret["accepted_swap"] = accepted_swap;
+  ret["overall_swap_proposals"] = overall_swap_proposals;
+  ret["overall_add_proposals"] = overall_add_proposals;
   return(ret);
 }
