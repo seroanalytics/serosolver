@@ -5,7 +5,7 @@
 \title{Swap infection history years}
 \usage{
 inf_hist_swap(infection_history, age_mask, strain_mask, swap_propn,
-  move_size)
+  move_size, proposal_ratios = NULL)
 }
 \arguments{
 \item{infection_history}{matrix of 1s and 0s to swap around representing the infection history}
@@ -17,6 +17,8 @@ inf_hist_swap(infection_history, age_mask, strain_mask, swap_propn,
 \item{swap_propn}{what proportion of infections should be swapped?}
 
 \item{move_size}{How many time points away should be chosen as candidate swaps?}
+
+\item{proposal_ratios}{optional NULL. Can set the relative sampling weights of the infection state times. Should be an integer vector of length matching nrow(antigenic_map). Otherwise, leave as NULL for uniform sampling.}
 }
 \value{
 the same infection_history matrix, but with two columns swapped

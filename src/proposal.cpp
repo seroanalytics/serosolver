@@ -197,7 +197,8 @@ List inf_hist_prop_prior_v2_and_v4(const NumericVector &theta, // Model paramete
 				   IntegerVector proposal_swap,
 				   IntegerVector accepted_swap,
 				   IntegerMatrix overall_swap_proposals,
-				   IntegerMatrix overall_add_proposals,				   
+				   IntegerMatrix overall_add_proposals,
+				   const NumericVector time_sample_probs,
 				   const NumericVector &mus,
 				   const IntegerVector &boosting_vec_indices,
 				   const IntegerVector &total_alive,
@@ -252,7 +253,6 @@ List inf_hist_prop_prior_v2_and_v4(const NumericVector &theta, // Model paramete
   IntegerVector new_infection_history(number_strains); // New proposed infection history
   IntegerVector infection_history(number_strains); // Old infection history
   LogicalVector indices;
-
   NumericVector infection_times; // Tmp store infection times for this infection history, combined with indices
   IntegerVector infection_strain_indices_tmp; // Tmp store which index in antigenic map these infection times relate to
 
@@ -261,7 +261,11 @@ List inf_hist_prop_prior_v2_and_v4(const NumericVector &theta, // Model paramete
   // Parameters related to infection history sampling
   int indiv; // Index of the individual under consideration
   IntegerVector samps; // Variable vector to sample from
+  IntegerVector samps_shifted;
   IntegerVector locs; // Vector of locations that were sampled
+  // As each individual has a different number of years to sample from,
+  // need to extract relative proportions and re-weight
+  NumericVector tmp_loc_sample_probs;
   int year; // Index of year being updated
   int n_samp_max; // Maximum number of years to sample for individual
   int n_samp_length; // Number of years that COULD be sampled for this individual
@@ -375,15 +379,27 @@ List inf_hist_prop_prior_v2_and_v4(const NumericVector &theta, // Model paramete
       n_samp_max = 1;
       // Get this individual's infection history
       new_infection_history = new_infection_history_mat(indiv,_);
-      // For the swap step, start by generating a vector from 0 to max     
-      samps = seq(0, n_samp_length-1);    // Create vector across all potential infection times
-      locs = RcppArmadillo::sample(samps, n_samp_max, FALSE, NumericVector::create());
     } else {
       // Sample n_samp_length. Ths will be used to pull years from sample_years
       n_samp_max = std::min(n_years_samp, n_samp_length); // Use the smaller of these two numbers
-      samps = seq(0, n_samp_length-1);    // Create vector from 0:length of alive years
-      locs = RcppArmadillo::sample(samps, n_samp_max, FALSE, NumericVector::create());
     }
+    samps = seq(0, n_samp_length-1);    // Create vector from 0:length of alive years
+
+    // Extract time sampling probabilities and re-normalise
+    samps_shifted = samps + age_mask[indiv] - 1;
+    tmp_loc_sample_probs = time_sample_probs[samps_shifted];
+    // Re-normalise
+    tmp_loc_sample_probs = tmp_loc_sample_probs/sum(tmp_loc_sample_probs);
+    /*        Rcpp::Rcout << "Indiv: " << indiv << std::endl;
+    Rcpp::Rcout << "Age mask: " << age_mask[indiv] << std::endl;
+    Rcpp::Rcout << "n_samp_length: " << n_samp_length << std::endl;
+    Rcpp::Rcout << "Samps: " << samps << std::endl;
+    Rcpp::Rcout << "Samps shifted: " << samps_shifted << std::endl;
+    Rcpp::Rcout << "Loc sample prob length: " << tmp_loc_sample_probs.size() << std::endl;
+    Rcpp::Rcout << "Tmp loc samples: " << tmp_loc_sample_probs << std::endl;
+    Rcpp::Rcout << "Scaled samps: " << sum(tmp_loc_sample_probs) << std::endl;
+    */
+    locs = RcppArmadillo::sample(samps, n_samp_max, FALSE, tmp_loc_sample_probs);
     // For each selected infection history entry
     for(int j = 0; j < n_samp_max; ++j){
       //Rcpp::Rcout << "j: " << j << std::endl;

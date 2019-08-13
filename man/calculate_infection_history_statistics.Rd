@@ -6,7 +6,8 @@
 \usage{
 calculate_infection_history_statistics(inf_chain, burnin = 0,
   years = NULL, n_alive = NULL, known_ar = NULL, group_ids = NULL,
-  known_infection_history = NULL, pad_chain = TRUE)
+  known_infection_history = NULL, pad_chain = TRUE,
+  solve_cumulative = FALSE)
 }
 \arguments{
 \item{inf_chain}{the data table with infection history samples from \code{\link{run_MCMC}}}
@@ -20,6 +21,8 @@ calculate_infection_history_statistics(inf_chain, burnin = 0,
 \item{known_infection_history}{data frame of known infection histories.}
 
 \item{pad_chain}{if TRUE, pads the infection history MCMC chain with non-infection events}
+
+\item{solve_cumulative}{if TRUE, finds the cumulative infection histories for each individual. This takes a while, so is left FALSE by default.}
 }
 \value{
 a list of data frames with summary statistics

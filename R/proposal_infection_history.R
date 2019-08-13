@@ -6,6 +6,7 @@
 #' @param strain_mask the last index in infection_history that each individual (row) could be infected in ie. the time of the latest blood sample
 #' @param swap_propn what proportion of infections should be swapped?
 #' @param move_size How many time points away should be chosen as candidate swaps?
+#' @param proposal_ratios optional NULL. Can set the relative sampling weights of the infection state times. Should be an integer vector of length matching nrow(antigenic_map). Otherwise, leave as NULL for uniform sampling.
 #' @return the same infection_history matrix, but with two columns swapped
 #' @family proposals
 #' @examples
@@ -18,9 +19,14 @@
 #' strain_mask <- create_strain_mask(example_titre_dat, times)
 #' new_inf_hist <- inf_hist_swap(example_inf_hist, age_mask,strain_mask, 1,3)[[1]]
 #' @export
-inf_hist_swap <- function(infection_history, age_mask, strain_mask, swap_propn, move_size) {
+inf_hist_swap <- function(infection_history, age_mask, strain_mask, swap_propn, move_size, proposal_ratios=NULL) {
+    use_ratios <- NULL
+    if(!is.null(proposal_ratios)){
+        use_ratios <- proposal_ratios/sum(proposal_ratios)
+    }
+        
     ## Choose a column
-    y1 <- sample(1:ncol(infection_history), 1)
+    y1 <- sample(1:ncol(infection_history), 1, prob=use_ratios)
 
     ## Propose another column some random distance, but not 0, away
     move <- 0

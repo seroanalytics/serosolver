@@ -14,6 +14,7 @@
 #' @param mu_indices optional NULL. For random effects on boosting parameter, mu. Vector of indices of length equal to number of circulation times. If random mus are included in the parameter table, this vector specifies which mu to use for each circulation year. For example, if years 1970-1976 have unique boosting, then mu_indices should be c(1,2,3,4,5,6). If every 3 year block shares has a unique boosting parameter, then this should be c(1,1,1,2,2,2)
 #' @param measurement_indices optional NULL. For measurement bias function. Vector of indices of length equal to number of circulation times. For each year, gives the index of parameters named "rho" that correspond to each time period
 #' @param measurement_random_effects optional FALSE. Boolean indicating if measurement bias is a random effects term. If TRUE adds a component to the posterior calculation that calculates the probability of a set of measurement shifts "rho", given a mean and standard deviation
+#' @param proposal_ratios optional NULL. Can set the relative sampling weights of the infection state times. Should be an integer vector of length matching nrow(antigenic_map). Otherwise, leave as NULL for uniform sampling.
 #' @param OPT_TUNING Constant describing the amount of leeway when adapting the proposals steps to reach a desired acceptance rate (ie. does not change step size if within OPT_TUNING of the specified acceptance rate)
 #' @param temp Temperature term for parallel tempering, raises likelihood to this value. Just used for testing at this point
 #' @param solve_likelihood if FALSE, returns only the prior and does not solve the likelihood. Use this if you wish to sample directly from the prior
@@ -64,6 +65,7 @@ run_MCMC <- function(par_tab,
                      mu_indices = NULL,
                      measurement_indices = NULL,
                      measurement_random_effects = FALSE,
+                     proposal_ratios = NULL,
                      OPT_TUNING = 0.1,
                      temp = 1,
                      solve_likelihood = TRUE,
@@ -190,6 +192,7 @@ run_MCMC <- function(par_tab,
   strain_isolation_times <- unique(antigenic_map$inf_years) # How many strains are we testing against and what time did they circulate
   n_indiv <- length(unique(titre_dat$individual)) # How many individuals in the titre_dat?
 
+   
 ###################
     ## Housekeeping for infection history chain
 ###################
@@ -202,7 +205,12 @@ run_MCMC <- function(par_tab,
 
     overall_swap_proposals <- matrix(0,nrow=n_indiv,ncol=length(strain_isolation_times))
     overall_add_proposals <- matrix(0,nrow=n_indiv,ncol=length(strain_isolation_times))
-    
+
+    ## Scaling of infection history time proposal sample probs    
+    if(is.null(proposal_ratios)){
+        proposal_ratios <- rep(1, length(strain_isolation_times))
+    }
+        
     ##histadd_overall <- integer(n_indiv)
     ##histmove_overall <- integer(n_indiv)
 
@@ -490,6 +498,7 @@ run_MCMC <- function(par_tab,
                     histaccepted_move,
                     overall_swap_proposals,
                     overall_add_proposals,
+                    proposal_ratios,
                     temp,
                     propose_from_prior
                 )

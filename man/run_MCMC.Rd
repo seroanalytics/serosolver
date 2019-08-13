@@ -9,9 +9,9 @@ run_MCMC(par_tab, titre_dat, antigenic_map, mcmc_pars = c(),
   CREATE_POSTERIOR_FUNC = create_posterior_func,
   CREATE_PRIOR_FUNC = NULL, version = 1, mu_indices = NULL,
   measurement_indices = NULL, measurement_random_effects = FALSE,
-  OPT_TUNING = 0.1, temp = 1, solve_likelihood = TRUE,
-  n_alive = NULL, message_slack = FALSE, message_slack_pars = NULL,
-  ...)
+  proposal_ratios = NULL, OPT_TUNING = 0.1, temp = 1,
+  solve_likelihood = TRUE, n_alive = NULL, message_slack = FALSE,
+  message_slack_pars = NULL, ...)
 }
 \arguments{
 \item{par_tab}{The parameter table controlling information such as bounds, initial values etc. See \code{\link{example_par_tab}}}
@@ -39,6 +39,8 @@ run_MCMC(par_tab, titre_dat, antigenic_map, mcmc_pars = c(),
 \item{measurement_indices}{optional NULL. For measurement bias function. Vector of indices of length equal to number of circulation times. For each year, gives the index of parameters named "rho" that correspond to each time period}
 
 \item{measurement_random_effects}{optional FALSE. Boolean indicating if measurement bias is a random effects term. If TRUE adds a component to the posterior calculation that calculates the probability of a set of measurement shifts "rho", given a mean and standard deviation}
+
+\item{proposal_ratios}{optional NULL. Can set the relative sampling weights of the infection state times. Should be an integer vector of length matching nrow(antigenic_map). Otherwise, leave as NULL for uniform sampling.}
 
 \item{OPT_TUNING}{Constant describing the amount of leeway when adapting the proposals steps to reach a desired acceptance rate (ie. does not change step size if within OPT_TUNING of the specified acceptance rate)}
 

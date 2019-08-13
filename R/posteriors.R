@@ -461,6 +461,7 @@ create_posterior_func <- function(par_tab,
         n_infected_group <- c(0, 0)
         ## Generate prior lookup table
         lookup_tab <- create_prior_lookup(titre_dat, strain_isolation_times, alpha, beta)
+
         ## Use the original gibbs proposal function if no titre immunity
         f <- function(pars, infection_history_mat,
                       probs, sampled_indivs,
@@ -473,6 +474,7 @@ create_posterior_func <- function(par_tab,
                       accepted_swap,
                       overall_swap_proposals,
                       overall_add_proposals,
+                      proposal_ratios,
                       temp=1,
                       propose_from_prior=TRUE) {
             theta <- pars[theta_indices]
@@ -532,6 +534,7 @@ create_posterior_func <- function(par_tab,
                 accepted_swap = accepted_swap,
                 overall_swap_proposals,
                 overall_add_proposals,
+                proposal_ratios,
                 mus,
                 boosting_vec_indices,
                 n_alive_total,
