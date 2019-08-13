@@ -23,6 +23,8 @@ par_tab <- read.csv(file.path(code.dir,"inputs/par_tab_study_design.csv"))
 filename_vec <- c('all_ages_historic','seasonal_all_ages_historic',
                   'aged_75_historic', 'seasonal_aged_75_historic')
 
+filename_vec <- 'seasonal_aged_75_historic'
+
 #Run the MCMC 
 for(filename in filename_vec){
   ## Read in ages
@@ -40,6 +42,18 @@ for(filename in filename_vec){
                     fast_version = TRUE),
              error = function(e) write.table(paste(filename,"_",h,sep=""), paste(filename,"_",h,".txt",sep="")))
   }
+  
+}
+
+
+# Check chain dimensions
+for(filename in filename_vec){
+  ages <- read.csv(paste("data/study_design/",filename,"_8_ages.csv",sep=""), stringsAsFactors=FALSE)
+  p <- list()
+  for(h in 1:8){
+    chain <- read.csv(paste("~/Documents/GitHub/serosolver/chains/",filename,"_",h,"_chain.csv",sep=""))
+    print(paste(dim(chain), filename, "_", h))
+  } 
   
 }
 
