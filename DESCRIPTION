@@ -30,7 +30,7 @@ License: GPL-3
 LazyData: TRUE
 URL: https://github.com/seroanalytics/serosolver
 BugReports: https://github.com/seroanalytics/serosolver/issues
-Depends: R (>= 3.5.0)
+Depends: R (>= 3.4.0)
 Imports:
     data.table,
     ggplot2,
