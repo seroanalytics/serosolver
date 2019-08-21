@@ -19,11 +19,6 @@ strain_isolation_times <- unique(fit_dat$inf_years)
 ## Read in parameter table
 par_tab <- read.csv(file.path(code.dir,"inputs/par_tab_study_design.csv"))
 
-## What filename 
-filename_vec <- c('all_ages_historic','seasonal_all_ages_historic',
-                  'aged_75_historic', 'seasonal_aged_75_historic')
-
-filename_vec <- 'seasonal_aged_75_historic'
 
 #Run the MCMC 
 for(filename in filename_vec){
@@ -45,6 +40,7 @@ for(filename in filename_vec){
   
 }
 
+filename_vec <- c('all_ages_historic', 'aged_75_historic')
 
 # Check chain dimensions
 for(filename in filename_vec){
@@ -57,6 +53,7 @@ for(filename in filename_vec){
   
 }
 
+filename_vec <- c('all_ages_historic', 'aged_75_historic')
 
 
 # Plot attack rates 
@@ -67,7 +64,10 @@ for(filename in filename_vec){
     titre_dat <- read.csv(paste("data/study_design/", filename,"_", h,"_dat.csv", sep=""), stringsAsFactors=FALSE)
     titre_dat <- merge(titre_dat, ages)
     inf_chain <- data.table::fread(paste("chains/", filename,"_", h,"_infection_histories.csv",sep=""))
-    p[[h]] <- plot_attack_rates(infection_histories = inf_chain, titre_dat, strain_isolation_times, colour_by_taken = FALSE, by_val = 10)
+    inf_chain <- inf_chain[inf_chain$sampno >= (mcmc_pars["adaptive_period"] + mcmc_pars["burnin"]),]
+    
+    p[[h]] <- plot_attack_rates(infection_histories = inf_chain, titre_dat, strain_isolation_times, colour_by_taken = FALSE, by_val = 10) +
+          geom_hline(yintercept=0.15, linetype="dashed", color = "gray")
   } 
   
   p_all <- do.call(grid.arrange,c(p, nrow =2))
@@ -91,7 +91,7 @@ for(filename in filename_vec){
 
 
 #Plot antibody parameters
-png("boxplot_all_ages.png",width=5000,height=2000,res=300,units='px')
+png("boxplot_constant.png",width=5000,height=2000,res=300,units='px')
 par(mfrow=c(2,4))
 for(h in 1:8){
   chain1 <-  read.csv(paste("~/Documents/GitHub/serosolver/chains/",filename_vec[1],"_",h,"_chain.csv",sep=""))

@@ -21,6 +21,19 @@ strain_isolation_times <- unique(fit_dat$inf_years)
 par_tab <- read.csv(file.path(code.dir,"inputs/par_tab_study_design.csv"))
 
 
+filename <- paste0(2,"study",2, "_L", sep="")
+
+titre_dat <- read.csv(paste("data/study_design/",filename,"dat.csv",sep = ""))
+ages <- read.csv(paste("data/study_design/",filename,"ages.csv",sep = ""))
+
+tryCatch( res <- run_MCMC(par_tab = par_tab, titre_dat = merge(titre_dat,ages, by = "individual"), 
+                          antigenic_map = fit_dat, mcmc_pars = mcmc_pars,
+                          mvr_pars = NULL, start_inf_hist = NULL, filename=paste("chains/", filename,sep=""),
+                          CREATE_POSTERIOR_FUNC = create_posterior_func_fast, CREATE_PRIOR_FUNC = NULL,
+                          version = 2,  
+                          fast_version = TRUE),
+          error = function(e) write.table(filename, paste(filename,".txt",sep="")))
+
 library(doParallel)
 library(foreach)
 
@@ -30,25 +43,25 @@ cl<-makeCluster(4)
 #register cluster
 registerDoParallel(cl)
 
-###mcmc chains
-for(f in 1:3){
-  foreach(i=1:3)%do%{
-    for(type in c("L","CS")){
-      filename <- paste0(i,"study",f,"_", type, sep="")
-      
-      titre_dat <- read.csv(paste("data/study_design/",filename,"dat.csv",sep = ""))
-      ages <- read.csv(paste("data/study_design/",filename,"ages.csv",sep = ""))
-      
-     tryCatch( res <- run_MCMC(par_tab = par_tab, titre_dat = merge(titre_dat,ages, by = "individual"), 
-                      antigenic_map = fit_dat, mcmc_pars = mcmc_pars,
-                      mvr_pars = NULL, start_inf_hist = NULL, filename=paste("chains/", filename,sep=""),
-                      CREATE_POSTERIOR_FUNC = create_posterior_func_fast, CREATE_PRIOR_FUNC = NULL,
-                      version = 2,  
-                      fast_version = TRUE),
-      error = function(e) write.table(filename, paste(filename,".txt",sep="")))
-    }
-  }
-}
+# ###mcmc chains
+# for(f in 1:3){
+#   foreach(i=1:3)%do%{
+#     for(type in c("L","CS")){
+#       filename <- paste0(i,"study",f,"_b_", type, sep="")
+#       
+#       titre_dat <- read.csv(paste("data/study_design/",filename,"dat.csv",sep = ""))
+#       ages <- read.csv(paste("data/study_design/",filename,"ages.csv",sep = ""))
+#       
+#      tryCatch( res <- run_MCMC(par_tab = par_tab, titre_dat = merge(titre_dat,ages, by = "individual"), 
+#                       antigenic_map = fit_dat, mcmc_pars = mcmc_pars,
+#                       mvr_pars = NULL, start_inf_hist = NULL, filename=paste("chains/", filename,sep=""),
+#                       CREATE_POSTERIOR_FUNC = create_posterior_func_fast, CREATE_PRIOR_FUNC = NULL,
+#                       version = 2,  
+#                       fast_version = TRUE),
+#       error = function(e) write.table(filename, paste(filename,".txt",sep="")))
+#     }
+#   }
+# }
 
 
 
@@ -82,6 +95,7 @@ for(f in 1:3){
   for(type in c("CS", "L")){
     for(i in 1:3){
       filename <- paste0(i, "study", f, "_", type, sep="")
+      print(filename)
       
       res_list[[k]] <- vector("list", 3)
       titre_dat <- read.csv(paste("data/study_design/",filename,"dat.csv",sep = ""))
@@ -221,7 +235,7 @@ for(f in 1:2){
     }
     
     plotCI(tmp_mat[, 2],ui = tmp_mat[, 3],li = tmp_mat[, 1],
-           ylab="(Estimated - True) / True",xlab = "", xaxt = "n", col = col_vec,
+           ylab="Relative error",xlab = "", xaxt = "n", col = col_vec,
            pch = pch_vec, main = titles[k])
     abline(h=0, col = "gray")
     k <- k +1
@@ -252,13 +266,13 @@ for(f in 1:2){
   tmp_list[[f]] <- tmp_mat
   
   plotCI(tmp_mat[2,short_indicies ],ui = tmp_mat[3,short_indicies],li = tmp_mat[1, short_indicies],
-         ylab="(Estimated - True) / True",xlab = "Parameter", col = "red",
+         ylab="Relative error",xlab = "Parameter", col = "red",
          pch = 17, xaxt="n", main = titles[f], xlim = c(0, 4))
   axis(1,seq(1, length(short_indicies),by = 1),labels = labels_vec[short_indicies])
   abline(h=0, col = "gray")
   
   plotCI(c(1, 2.5), tmp_mat[2,long_indicies ],ui = tmp_mat[3,long_indicies],li = tmp_mat[1, long_indicies],
-         ylab="(Estimated - True) / True",xlab = "Parameter", col = "red",
+         ylab="Relative error",xlab = "Parameter", col = "red",
          pch = 17, xaxt="n", main = titles[f], xlim = c(0, 3))
   axis(1,seq(1, length(long_indicies),by = 1),labels = labels_vec[long_indicies])
   abline(h=0, col = "gray")
@@ -276,13 +290,13 @@ for(f in 1:2){
   tmp_list[[f]] <- tmp_mat
   
   plotCI(tmp_mat[2,short_indicies ],ui = tmp_mat[3,short_indicies],li = tmp_mat[1, short_indicies],
-         ylab="(Estimated - True) / True",xlab = "Parameter", col = "red",
+         ylab="Relative error",xlab = "Parameter", col = "red",
          pch = 19, xaxt="n", main = titles[f], xlim = c(0, 4))
   axis(1,seq(1, length(short_indicies),by = 1),labels = labels_vec[short_indicies])
   abline(h=0, col = "gray")
   
   plotCI(c(1, 2.5), tmp_mat[2,long_indicies ],ui = tmp_mat[3,long_indicies],li = tmp_mat[1, long_indicies],
-         ylab="(Estimated - True) / True",xlab = "Parameter", col = "red",
+         ylab="Relative error",xlab = "Parameter", col = "red",
          pch = 19, xaxt="n", main = titles[f], xlim = c(0,3))
   axis(1,seq(1, length(long_indicies),by = 1),labels = labels_vec[long_indicies])
   abline(h=0, col = "gray")
@@ -365,6 +379,7 @@ plotCI(AR_variable$x, AR_variable$y, ui=AR_variable$ymax ,li=AR_variable$ymin,
        ylab = "Attack rate", xlab = "Virus year" , ylim = c(0, 0.6),
        main="Variable attack rate", xaxt = "n", pch = 19, xlim = c(2012, 2015), col = "black")
 points(c(2014, 2015), prev_variable, col = "red", pch = 15)
+attack_rates_variable <- rep(c(0,0.15),length(strain_isolation_times) / 2)
 lines(seq(2012, 2015, by =1 ), tail(attack_rates_variable, n = 4), pch = 17, col = "gray", type = "b")
 axis(1, at = seq(2012 ,2015, by = 1),labels = c("t-3", "t-2","t-1", "t"))
 legend('topright',c('True attack rate','Model attack rate','Titre based attack rate'),pch=c(17,19,15),col=c('gray',1,2),bty='n')
@@ -400,7 +415,7 @@ for(f in 1:2){
     }
     
     plotCI(tmp_mat[, 2],ui = tmp_mat[, 3],li = tmp_mat[, 1],
-           ylab="(Estimated - True) / True",xlab = "", xaxt = "n", col = col_vec,
+           ylab="Relative error",xlab = "", xaxt = "n", col = col_vec,
            pch = pch_vec, main = titles[k])
     abline(h=0, col = "gray")
     k <- k +1
@@ -422,7 +437,7 @@ par(mar = c(3, 4, 4, 2) + 0.1)
 titles <- c( expression(paste('long boost (',mu[1],'), ages 2 - 4')),
              expression(paste('error (',epsilon,'), ages 2 - 4')),
              expression(paste('long boost (',mu[1],'), ages 40 - 75')),
-             expression((paste('error (',epsilon,'), ages 40 - 75'))))
+             expression(paste('error (',epsilon,'), ages 40 - 75')))
 k <- 1
 for(f in 1:2){
   res <- res_master[[f]]
@@ -435,7 +450,7 @@ for(f in 1:2){
     }
     
     plotCI(tmp_mat[, 2],ui = tmp_mat[, 3],li = tmp_mat[, 1],
-           ylab="(Estimated - True) / True",xlab = "", xaxt = "n", col = col_vec,
+           ylab="Relative error",xlab = "", xaxt = "n", col = col_vec,
            pch = pch_vec, main = titles[k])
     abline(h=0, col = "gray")
     k <- k +1
