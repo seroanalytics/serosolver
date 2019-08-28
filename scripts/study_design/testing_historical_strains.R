@@ -20,6 +20,7 @@ strain_isolation_times <- unique(fit_dat$inf_years)
 par_tab <- read.csv(file.path(code.dir,"inputs/par_tab_study_design.csv"))
 
 
+  
 #Run the MCMC 
 for(filename in filename_vec){
   ## Read in ages
@@ -40,7 +41,7 @@ for(filename in filename_vec){
   
 }
 
-filename_vec <- c('all_ages_historic', 'aged_75_historic')
+
 
 # Check chain dimensions
 for(filename in filename_vec){
@@ -50,21 +51,25 @@ for(filename in filename_vec){
     chain <- read.csv(paste("~/Documents/GitHub/serosolver/chains/",filename,"_",h,"_chain.csv",sep=""))
     print(paste(dim(chain), filename, "_", h))
   } 
-  
 }
 
-filename_vec <- c('all_ages_historic', 'aged_75_historic')
 
+filename <- c('all_ages_historic')
 
 # Plot attack rates 
-for(filename in filename_vec){
+#for(filename in filename_vec){
   ages <- read.csv(paste("data/study_design/",filename,"_8_ages.csv",sep=""), stringsAsFactors=FALSE)
   p <- list()
   for(h in 1:8){
     titre_dat <- read.csv(paste("data/study_design/", filename,"_", h,"_dat.csv", sep=""), stringsAsFactors=FALSE)
     titre_dat <- merge(titre_dat, ages)
     inf_chain <- data.table::fread(paste("chains/", filename,"_", h,"_infection_histories.csv",sep=""))
-    inf_chain <- inf_chain[inf_chain$sampno >= (mcmc_pars["adaptive_period"] + mcmc_pars["burnin"]),]
+    if( h==8) {
+      inf_chain <- inf_chain[inf_chain$sampno >= (mcmc_pars["adaptive_period"] + mcmc_pars["burnin"] + 500000),]
+    }else{
+      inf_chain <- inf_chain[inf_chain$sampno >= (mcmc_pars["adaptive_period"] + mcmc_pars["burnin"]),]
+      
+    }
     
     p[[h]] <- plot_attack_rates(infection_histories = inf_chain, titre_dat, strain_isolation_times, colour_by_taken = FALSE, by_val = 10) +
           geom_hline(yintercept=0.15, linetype="dashed", color = "gray")
@@ -73,7 +78,32 @@ for(filename in filename_vec){
   p_all <- do.call(grid.arrange,c(p, nrow =2))
   
   ggsave(paste(filename,".png",sep=""),p_all, width = 20, height = 6)
-}
+#}
+
+
+# Plot attack rates 
+h_vec <- 1:8
+  ages <- read.csv(paste("data/study_design/",filename,"_8_ages.csv",sep=""), stringsAsFactors=FALSE)
+  p <- list()
+  for(k in 1:4){
+    h <- h_vec[k]
+    titre_dat <- read.csv(paste("data/study_design/", filename,"_", h,"_dat.csv", sep=""), stringsAsFactors=FALSE)
+    titre_dat <- merge(titre_dat, ages)
+    inf_chain <- data.table::fread(paste("chains/", filename,"_", h,"_infection_histories.csv",sep=""))
+    if( h==8) {
+      inf_chain <- inf_chain[inf_chain$sampno >= (mcmc_pars["adaptive_period"] + mcmc_pars["burnin"] + 500000),]
+    }else{
+      inf_chain <- inf_chain[inf_chain$sampno >= (mcmc_pars["adaptive_period"] + mcmc_pars["burnin"]),]
+      
+    }
+    
+    p[[k]] <- plot_attack_rates(infection_histories = inf_chain, titre_dat, strain_isolation_times, colour_by_taken = FALSE, by_val = 10) +
+      geom_hline(yintercept=0.15, linetype="dashed", color = "gray")
+  } 
+  
+  p_all <- do.call(grid.arrange,c(p, nrow =2))
+  
+  ggsave(paste(filename,".png",sep=""),p_all, width = 20, height = 6)
 
 
 # Plot likelihood
@@ -82,7 +112,12 @@ for(filename in filename_vec){
   par(mfrow=c(2,4))
   for(h in 1:8){
     chain <- read.csv(paste("~/Documents/GitHub/serosolver/chains/",filename,"_",h,"_chain.csv",sep=""))
-    chain <- chain[chain$sampno >= (mcmc_pars["adaptive_period"]+mcmc_pars["burnin"]),]
+    
+    if( h==8) {
+      chain <- chain[chain$sampno >= (mcmc_pars["adaptive_period"] + mcmc_pars["burnin"] + 500000),]
+    }else{
+      chain <- chain[chain$sampno >= (mcmc_pars["adaptive_period"] + mcmc_pars["burnin"]),]
+    }
     try(plot(chain$likelihood,type='l',main=paste("Scenario ",h),ylab='likelihood'))
   }
   dev.off()
@@ -90,17 +125,16 @@ for(filename in filename_vec){
 
 
 
-#Plot antibody parameters
-png("boxplot_constant.png",width=5000,height=2000,res=300,units='px')
+
+
+png("boxplot.png",width=5000,height=2000,res=300,units='px')
+filename <- "all_ages_historic"
 par(mfrow=c(2,4))
 for(h in 1:8){
-  chain1 <-  read.csv(paste("~/Documents/GitHub/serosolver/chains/",filename_vec[1],"_",h,"_chain.csv",sep=""))
+  chain1 <-  read.csv(paste("~/Documents/GitHub/serosolver/chains/",filename,"_",h,"_chain.csv",sep=""))
   chain1 <- chain1[chain1$sampno >= (mcmc_pars["adaptive_period"]+mcmc_pars["burnin"]),]
   chain1 <- chain1[,c('mu', 'mu_short','wane','sigma1','sigma2','error')]
   
-  chain2 <- read.csv(paste("~/Documents/GitHub/serosolver/chains/",filename_vec[2],"_",h,"_chain.csv",sep=""))
-  chain2 <- chain2[chain2$sampno >= (mcmc_pars["adaptive_period"]+mcmc_pars["burnin"]),]
-  chain2 <- chain2[,c('mu', 'mu_short','wane','sigma1','sigma2','error')]
   
   which_pars<-c('mu', 'mu_short','wane','sigma1','sigma2','error')
   true.val<-par_tab$values[par_tab$names%in%which_pars]
@@ -110,57 +144,9 @@ for(h in 1:8){
     mat[,j]<-chain.adj
   }
   
-  #second matrix
-  mat2<-matrix(nrow=dim(chain2)[1],ncol=6)
-  for(j in 1:6){
-    chain2.adj<-(chain2[,j]-true.val[j])/true.val[j]
-    mat2[,j]<-chain2.adj
-  }
-  
   #boxplot of parameters
   names<-c(expression(mu[1]),expression(mu[2]),expression(omega),expression(sigma[1]),expression(sigma[2]),expression(epsilon))
-  boxplot(mat,ylab='(Estimated - True) / True',col='gray',xaxt='n',main=paste("Scenario ",h),ylim=c(min(mat,mat2),max(mat,mat2)))
-  boxplot(mat2,add=T,names=names)
-  abline(h=0,col='gray')
-  legend('topright',c('All aged 75', 'Ages 2 - 75'),fill=c('gray','white'),bty='n')
-  
+  boxplot(mat,ylab="(Estimated - True) / True",col='gray',main=paste("Scenario ",h),ylim=c(min(mat,mat2),max(mat,mat2)),names=names)
+  abline(h=0,col="gray")
 }
-
-dev.off()
-
-png("boxplot_75s.png",width=5000,height=2000,res=300,units='px')
-par(mfrow=c(2,4))
-for(h in 1:8){
-  chain1 <-  read.csv(paste("~/Documents/GitHub/serosolver/chains/",filename_vec[3],"_",h,"_chain.csv",sep=""))
-  chain1 <- chain1[chain1$sampno >= (mcmc_pars["adaptive_period"]+mcmc_pars["burnin"]),]
-  chain1 <- chain1[,c('mu', 'mu_short','wane','sigma1','sigma2','error')]
-  
-  chain2 <- read.csv(paste("~/Documents/GitHub/serosolver/chains/",filename_vec[4],"_",h,"_chain.csv",sep=""))
-  chain2 <- chain2[chain2$sampno >= (mcmc_pars["adaptive_period"]+mcmc_pars["burnin"]),]
-  chain2 <- chain2[,c('mu', 'mu_short','wane','sigma1','sigma2','error')]
-  
-  which_pars<-c('mu', 'mu_short','wane','sigma1','sigma2','error')
-  true.val<-par_tab$values[par_tab$names%in%which_pars]
-  mat<-matrix(nrow=dim(chain1)[1],ncol=6)
-  for(j in 1:6){
-    chain.adj<-(chain1[,j]-true.val[j])/true.val[j]
-    mat[,j]<-chain.adj
-  }
-  
-  #second matrix
-  mat2<-matrix(nrow=dim(chain2)[1],ncol=6)
-  for(j in 1:6){
-    chain2.adj<-(chain2[,j]-true.val[j])/true.val[j]
-    mat2[,j]<-chain2.adj
-  }
-  
-  #boxplot of parameters
-  names<-c(expression(mu[1]),expression(mu[2]),expression(omega),expression(sigma[1]),expression(sigma[2]),expression(epsilon))
-  boxplot(mat,ylab='(Estimated - True) / True',col='gray',xaxt='n',main=paste("Scenario ",h),ylim=c(min(mat,mat2),max(mat,mat2)))
-  boxplot(mat2,add=T,names=names)
-  abline(h=0,col='gray')
-  legend('topright',c('All aged 75', 'Ages 2 - 75'),fill=c('gray','white'),bty='n')
-  
-}
-
 dev.off()

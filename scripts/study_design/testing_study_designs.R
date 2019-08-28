@@ -21,19 +21,6 @@ strain_isolation_times <- unique(fit_dat$inf_years)
 par_tab <- read.csv(file.path(code.dir,"inputs/par_tab_study_design.csv"))
 
 
-filename <- paste0(2,"study",2, "_L", sep="")
-
-titre_dat <- read.csv(paste("data/study_design/",filename,"dat.csv",sep = ""))
-ages <- read.csv(paste("data/study_design/",filename,"ages.csv",sep = ""))
-
-tryCatch( res <- run_MCMC(par_tab = par_tab, titre_dat = merge(titre_dat,ages, by = "individual"), 
-                          antigenic_map = fit_dat, mcmc_pars = mcmc_pars,
-                          mvr_pars = NULL, start_inf_hist = NULL, filename=paste("chains/", filename,sep=""),
-                          CREATE_POSTERIOR_FUNC = create_posterior_func_fast, CREATE_PRIOR_FUNC = NULL,
-                          version = 2,  
-                          fast_version = TRUE),
-          error = function(e) write.table(filename, paste(filename,".txt",sep="")))
-
 library(doParallel)
 library(foreach)
 
@@ -139,7 +126,7 @@ for(f in 1:3){
   res_master[[f]] <- res_list
 }
 
-png("Figure2.png", width = 3000, height = 1600, res = 300, units = "px")
+png("Figure2.png", width = 3300, height = 2000, res = 300, units = "px")
 age_names <- c("ages 2 - 4", "ages 40 - 75", "ages 2 - 75")
 m <- matrix(c(1, 1, 1, 2,3,4,5,6,7),nrow = 3,ncol = 3,byrow = TRUE)
 layout(mat = m,heights = c(0.1,0.4,0.4))
@@ -155,29 +142,30 @@ for(f in 1:3){
   
   x_lim <- c(2011.5, 2015.5)
   
+  adj <- 0.2
+  increment <- 0.05
   current_res <- res[[1]][[1]]
-  plotCI(current_res$x-0.12, current_res$y, ui=current_res$ymax ,li=current_res$ymin, 
+  plotCI(current_res$x - adj - increment, current_res$y, ui=current_res$ymax ,li=current_res$ymin, 
          ylab = "Attack rate", xlab = "Virus year" , ylim = c(0, 1),
          main=paste(age_names[f]), xaxt = "n", pch = 19, xlim = x_lim, col = "black")
   current_res<-res[[2]][[1]]
-  plotCI(current_res$x-0.12, current_res$y, ui=current_res$ymax ,li=current_res$ymin, 
+  plotCI(current_res$x - adj, current_res$y, ui=current_res$ymax ,li=current_res$ymin, 
        pch = 19, add = T, col="orange")
   current_res<-res[[3]][[1]]
-  plotCI(current_res$x-0.12, current_res$y, ui=current_res$ymax ,li=current_res$ymin, 
+  plotCI(current_res$x -  adj + increment, current_res$y, ui=current_res$ymax ,li=current_res$ymin, 
          pch = 19, add = T, col="red")
-  abline(h = 0.15, col = "gray")
   axis(1, at = seq(2012, 2015, by = 1), labels = c("t-3", "t-2","t-1", "t"))
   
   current_res<-res[[4]][[1]]
-  plotCI(current_res$x + 0.12, current_res$y, ui=current_res$ymax ,li=current_res$ymin, 
+  plotCI(current_res$x  + increment*2 , current_res$y, ui=current_res$ymax ,li=current_res$ymin, 
          pch = 17, add = T, col="black")
   current_res<-res[[5]][[1]]
-  plotCI(current_res$x + 0.12, current_res$y, ui=current_res$ymax ,li=current_res$ymin, 
+  plotCI(current_res$x  + increment*3, current_res$y, ui=current_res$ymax ,li=current_res$ymin, 
          pch = 17, add = T, col="orange")
   current_res<-res[[6]][[1]]
-  plotCI(current_res$x + 0.12, current_res$y, ui=current_res$ymax ,li=current_res$ymin, 
+  plotCI(current_res$x  + increment*4, current_res$y, ui=current_res$ymax ,li=current_res$ymin, 
          pch = 17, add = T, col="red")
-  abline(h = 0.15, col = "gray")
+  abline(h = 0.15, col = "gray", lty = "dashed")
   axis(1, at = seq(2012, 2015, by = 1), labels = c("t-3", "t-2","t-1", "t"))
 }
 
@@ -198,7 +186,7 @@ for(f in 2:3){
          main = paste("Longitudinal, ", age_names[f]), xaxt = "n", 
          pch=17, xlim = x_lim, col = "red")
   
-  abline(h = 0.15, col = "gray")
+  abline(h = 0.15, col = "gray", lty = "dashed")
   axis(1, at = seq(2012 ,2015, by = 1),labels = c("t-3", "t-2","t-1", "t")) 
 }
 dev.off()
@@ -237,7 +225,9 @@ for(f in 1:2){
     plotCI(tmp_mat[, 2],ui = tmp_mat[, 3],li = tmp_mat[, 1],
            ylab="Relative error",xlab = "", xaxt = "n", col = col_vec,
            pch = pch_vec, main = titles[k])
-    abline(h=0, col = "gray")
+    abline(h=0, col = "gray", lty = "dashed")
+    
+    abline(v = 3.5)
     k <- k +1
   }
 }
@@ -256,8 +246,8 @@ labels_vec <- c(expression(paste('long boost, ',mu[1])),
 short_indicies <- c(2, 3, 5)
 long_indicies <- c(1, 4)
 
-png("Figure4a.png", width = 3000, height = 1600, res = 300, units = "px")
-par(mfrow = c(2, 2), mar = c(3, 4, 4, 2) + 0.1)
+png("Figure4a.png", width = 3000, height = 3000, res = 300, units = "px")
+par(mfrow = c(2, 2), cex = 1.1,mar = c(5, 4, 4, 2) + 0.1)
 tmp_list <- vector("list", 2)
 for(f in 1:2){
   res <- res_master[[f]]
@@ -266,22 +256,22 @@ for(f in 1:2){
   tmp_list[[f]] <- tmp_mat
   
   plotCI(tmp_mat[2,short_indicies ],ui = tmp_mat[3,short_indicies],li = tmp_mat[1, short_indicies],
-         ylab="Relative error",xlab = "Parameter", col = "red",
+         ylab="Relative error",xlab = "", col = "red",
          pch = 17, xaxt="n", main = titles[f], xlim = c(0, 4))
-  axis(1,seq(1, length(short_indicies),by = 1),labels = labels_vec[short_indicies])
-  abline(h=0, col = "gray")
+  text(seq(1, length(short_indicies),by = 1),  par("usr")[3] - 0.15, srt = 30, adj = 1,labels = labels_vec[short_indicies], xpd = TRUE)
+  abline(h=0, col = "gray",lty = "dashed")
   
-  plotCI(c(1, 2.5), tmp_mat[2,long_indicies ],ui = tmp_mat[3,long_indicies],li = tmp_mat[1, long_indicies],
-         ylab="Relative error",xlab = "Parameter", col = "red",
+  plotCI(c(1, 2), tmp_mat[2,long_indicies ],ui = tmp_mat[3,long_indicies],li = tmp_mat[1, long_indicies],
+         ylab="Relative error",xlab = "", col = "red",
          pch = 17, xaxt="n", main = titles[f], xlim = c(0, 3))
-  axis(1,seq(1, length(long_indicies),by = 1),labels = labels_vec[long_indicies])
-  abline(h=0, col = "gray")
+  text(seq(1, length(long_indicies),by = 1),  par("usr")[3] - 0.05, srt = 30, adj = 1,labels = labels_vec[long_indicies], xpd = TRUE)
+  abline(h=0, col = "gray", lty = "dashed")
   
 }
 dev.off()
 
-png("Figure4b.png", width = 3000, height = 1600, res = 300, units = "px")
-par(mfrow = c(2, 2), mar = c(3, 4, 4, 2) + 0.1)
+png("Figure4b.png", width = 3000, height = 3000, res = 300, units = "px")
+par(mfrow = c(2, 2), cex = 1.1,mar = c(5, 4, 4, 2) + 0.1)
 tmp_list <- vector("list", 2)
 for(f in 1:2){
   res <- res_master[[f]]
@@ -290,16 +280,16 @@ for(f in 1:2){
   tmp_list[[f]] <- tmp_mat
   
   plotCI(tmp_mat[2,short_indicies ],ui = tmp_mat[3,short_indicies],li = tmp_mat[1, short_indicies],
-         ylab="Relative error",xlab = "Parameter", col = "red",
+         ylab="Relative error",xlab = "", col = "red",
          pch = 19, xaxt="n", main = titles[f], xlim = c(0, 4))
-  axis(1,seq(1, length(short_indicies),by = 1),labels = labels_vec[short_indicies])
-  abline(h=0, col = "gray")
+  text(seq(1, length(short_indicies),by = 1),  par("usr")[3] - 0.15, srt = 30, adj = 1,labels = labels_vec[short_indicies], xpd = TRUE)
+  abline(h=0, col = "gray",lty = "dashed")
   
-  plotCI(c(1, 2.5), tmp_mat[2,long_indicies ],ui = tmp_mat[3,long_indicies],li = tmp_mat[1, long_indicies],
-         ylab="Relative error",xlab = "Parameter", col = "red",
+  plotCI(c(1, 2), tmp_mat[2,long_indicies ],ui = tmp_mat[3,long_indicies],li = tmp_mat[1, long_indicies],
+         ylab="Relative error",xlab = "", col = "red",
          pch = 19, xaxt="n", main = titles[f], xlim = c(0,3))
-  axis(1,seq(1, length(long_indicies),by = 1),labels = labels_vec[long_indicies])
-  abline(h=0, col = "gray")
+  text(seq(1, length(long_indicies),by = 1),  par("usr")[3] - 0.2, srt = 30, adj = 1,labels = labels_vec[long_indicies], xpd = TRUE)
+  abline(h=0, col = "gray",lty = "dashed")
   
 }
 dev.off()
@@ -307,8 +297,8 @@ dev.off()
 # Figure 5
 filename_variable <- "AR_change_L"
 
-titre_dat <- read.csv(paste("data/study_design/",filename,"dat.csv",sep = ""))
-ages <- read.csv(paste("data/study_design/",filename,"ages.csv",sep = ""))
+titre_dat <- read.csv(paste("data/study_design/",filename_variable,"dat.csv",sep = ""))
+ages <- read.csv(paste("data/study_design/",filename_variable,"ages.csv",sep = ""))
 
 n_indiv <- dim(ages)[1]
 
@@ -372,7 +362,7 @@ plotCI(AR_constant$x, AR_constant$y, ui=AR_constant$ymax ,li=AR_constant$ymin,
        ylab = "Attack rate", xlab = "Virus year" , ylim = c(0, 0.6),
        main="Constant attack rate", xaxt = "n", pch = 19, xlim = c(2012, 2015), col = "black")
 points(c(2014, 2015), prev_constant, col = "red", pch = 15)
-lines(seq(2012, 2015, by =1 ), rep(0.15, 4), pch = 17, col = "gray", type = "b")
+lines(seq(2012, 2015, by =1 ), rep(0.15, 4), pch = 17, col = "gray", lty = "dashed")
 axis(1, at = seq(2012 ,2015, by = 1),labels = c("t-3", "t-2","t-1", "t"))
 
 plotCI(AR_variable$x, AR_variable$y, ui=AR_variable$ymax ,li=AR_variable$ymin, 
@@ -380,9 +370,11 @@ plotCI(AR_variable$x, AR_variable$y, ui=AR_variable$ymax ,li=AR_variable$ymin,
        main="Variable attack rate", xaxt = "n", pch = 19, xlim = c(2012, 2015), col = "black")
 points(c(2014, 2015), prev_variable, col = "red", pch = 15)
 attack_rates_variable <- rep(c(0,0.15),length(strain_isolation_times) / 2)
-lines(seq(2012, 2015, by =1 ), tail(attack_rates_variable, n = 4), pch = 17, col = "gray", type = "b")
+lines(seq(2012, 2015, by =1 ), tail(attack_rates_variable, n = 4), pch = 17, col = "gray", lty = "dashed")
 axis(1, at = seq(2012 ,2015, by = 1),labels = c("t-3", "t-2","t-1", "t"))
-legend('topright',c('True attack rate','Model attack rate','Titre based attack rate'),pch=c(17,19,15),col=c('gray',1,2),bty='n')
+legend('topright',c('True attack rate','Model attack rate','Titre based attack rate'),
+       pch=c(NA,19,15),col=c('gray',1,2),bty='n',
+       lty = c("dashed", NA, NA))
 dev.off()
 
 ## Supp figures
@@ -417,7 +409,7 @@ for(f in 1:2){
     plotCI(tmp_mat[, 2],ui = tmp_mat[, 3],li = tmp_mat[, 1],
            ylab="Relative error",xlab = "", xaxt = "n", col = col_vec,
            pch = pch_vec, main = titles[k])
-    abline(h=0, col = "gray")
+    abline(h=0, col = "gray", lty = "dashed")
     k <- k +1
   }
 }
@@ -452,7 +444,9 @@ for(f in 1:2){
     plotCI(tmp_mat[, 2],ui = tmp_mat[, 3],li = tmp_mat[, 1],
            ylab="Relative error",xlab = "", xaxt = "n", col = col_vec,
            pch = pch_vec, main = titles[k])
-    abline(h=0, col = "gray")
+    abline(h=0, col = "gray", lty = "dashed")
+    abline(v = 3.5)
+    
     k <- k +1
   }
 }
