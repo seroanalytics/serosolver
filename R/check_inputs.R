@@ -31,7 +31,7 @@ check_par_tab <- function(par_tab, mcmc = FALSE, version = NULL) {
 
     if (version == 1) {
       ## Check that the correct number of phis are present
-      # if( no_phi!=length(strain_isolation_times)) stop(paste('Incorrect number of phis in par_tab,', no_phi,'passed but was expecting',length(strain_isolation_times))) #Should we add the correct number?
+       if( no_phi!=length(strain_isolation_times)) stop(paste('Incorrect number of phis in par_tab,', no_phi,'passed but was expecting',length(strain_isolation_times)))
     }
 
     if (version %in% c(2, 3, 4)) {
