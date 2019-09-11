@@ -321,12 +321,17 @@ simulate_data <- function(par_tab, group = 1, n_indiv, buckets = 12,
 
     ## Check the inputs of par_tab
     check_par_tab(par_tab)
-
+    
+    ## Work out short and long term boosting cross reactivity - C++ function
+    sigma1 <- theta["sigma1"]
+    sigma2 <- sigma1*theta["b"]
+   
+    
     ## Create antigenic map for short and long term boosting
     antigenic_map1 <- melt_antigenic_coords(antigenic_map[, c("x_coord", "y_coord")])
 
-    antigenic_map_long <- 1 - theta["sigma1"] * c(antigenic_map1)
-    antigenic_map_short <- 1 - theta["sigma2"] * c(antigenic_map1)
+    antigenic_map_long <- 1 - sigma1 * c(antigenic_map1)
+    antigenic_map_short <- 1 - sigma2 * c(antigenic_map1)
 
     antigenic_map_long[antigenic_map_long < 0] <- 0
     antigenic_map_short[antigenic_map_short < 0] <- 0
