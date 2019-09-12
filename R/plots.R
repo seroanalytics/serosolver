@@ -127,7 +127,7 @@ get_titre_predictions <- function(chain, infection_histories, titre_dat,
     return(list(residuals, samp_record, titre_dat1, predicted_titres))
   }
 
-  residuals <- cbind(titre_dat1, residuals)
+  #residuals <- cbind(titre_dat1, residuals)
 
   ## Get 95% credible interval and means
   dat2 <- t(apply(predicted_titres, 1, function(x) quantile(x, c(0.025, 0.25, 0.5, 0.75, 0.975))))
