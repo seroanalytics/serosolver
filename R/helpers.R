@@ -454,7 +454,7 @@ generate_antigenic_map <- function(antigenic_distances, buckets = 1, spar = 0.3)
   ## 2. PE2009 is like the strain circulating in 2010
   virus_key <- c(
     "HK68" = 1968, "EN72" = 1972, "VI75" = 1975, "TX77" = 1977, "BK79" = 1979, "SI87" = 1987, "BE89" = 1989, "BJ89" = 1989,
-    "BE92" = 1992, "WU95" = 1995, "SY97" = 1997, "FU02" = 2002, "CA04" = 2004, "WI05" = 2005, "PE06" = 2006
+    "BE92" = 1992, "WU95" = 1995, "SY97" = 1997, "FU02" = 2002, "CA04" = 2004, "WI05" = 2005, "PE06" = 2009
   ) * buckets
   antigenic_distances$Strain <- virus_key[antigenic_distances$Strain]
   fit <- smooth.spline(antigenic_distances$X, antigenic_distances$Y, spar = spar)
