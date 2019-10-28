@@ -35,6 +35,7 @@ generate_quantiles <- function(x, sig_f = 3, qs = c(0.025, 0.5, 0.975), as_text 
 #' @param measurement_indices_by_time default NULL, optional vector giving the index of `measurement_bias` that each strain uses the measurement shift from from. eg. if there's 6 circulation years and 3 strain clusters
 #' @param for_res_plot TRUE/FALSE value. If using the output of this for plotting of residuals, returns the actual data points rather than summary statistics
 #' @param expand_titredat TRUE/FALSE value. If TRUE, solves titre predictions for all possible infection times. If left FALSE, then only solves for the infections times at which a titre against the circulating virus was measured in titre_dat.
+#' @param titre_before_infection TRUE/FALSE value. If TRUE, solves titre predictions, but gives the predicted titre at a given time point BEFORE any infection during that time occurs.
 #' @return a list with the titre predictions (95% credible intervals, median and multivariate posterior mode) and the probabilities of infection for each individual in each epoch
 #' @examples
 #' \dontrun{
@@ -55,7 +56,8 @@ get_titre_predictions <- function(chain, infection_histories, titre_dat,
                                   nsamp = 100, add_residuals = FALSE,
                                   mu_indices = NULL,
                                   measurement_indices_by_time = NULL,
-                                  for_res_plot = FALSE, expand_titredat = FALSE) {
+                                  for_res_plot = FALSE, expand_titredat = FALSE,
+                                  titre_before_infection=FALSE, titres_for_regression=FALSE){
   ## Need to align the iterations of the two MCMC chains
   ## and choose some random samples
   samps <- intersect(unique(infection_histories$sampno), unique(chain$sampno))
@@ -93,17 +95,19 @@ get_titre_predictions <- function(chain, infection_histories, titre_dat,
       c("individual", "samples", "virus", "titre", "run", "group", "DOB")
     ]
   }
-
   model_func <- create_posterior_func(par_tab, titre_dat1, antigenic_map, 100,
     mu_indices = mu_indices,
-    measurement_indices_by_time = measurement_indices_by_time, function_type = 4
+    measurement_indices_by_time = measurement_indices_by_time, function_type = 4,
+    titre_before_infection=titre_before_infection
   )
 
-  predicted_titres <- residuals <- matrix(nrow = nrow(titre_dat1), ncol = nsamp)
+    predicted_titres <- residuals <- residuals_floor <- 
+        observed_predicted_titres <- matrix(nrow = nrow(titre_dat1), ncol = nsamp)
   samp_record <- numeric(nsamp)
 
 
   ## For each sample, take values for theta and infection histories and simulate titres
+  inf_hist_all <- list(nsamp)
   for (i in 1:nsamp) {
     index <- tmp_samp[i]
     pars <- get_index_pars(chain, index)
@@ -115,28 +119,38 @@ get_titre_predictions <- function(chain, infection_histories, titre_dat,
     tmp_inf_hist <- infection_histories[infection_histories$sampno == index, ]
     tmp_inf_hist <- as.matrix(Matrix::sparseMatrix(i = tmp_inf_hist$i, j = tmp_inf_hist$j, x = tmp_inf_hist$x, dims = c(n_indiv, nstrain)))
     predicted_titres[, i] <- model_func(pars, tmp_inf_hist)
-
+    observed_predicted_titres[,i] <- add_noise(predicted_titres[,i], pars, NULL, NULL)
+    inf_hist_all[[i]] <- tmp_inf_hist
     ## Get residuals between observations and predictions
     residuals[, i] <- titre_dat1$titre - floor(predicted_titres[, i])
+    residuals_floor[,i] <- titre_dat1$titre - observed_predicted_titres[,i]
     samp_record[i] <- index
   }
-  colnames(predicted_titres) <- tmp_samp
+    colnames(predicted_titres) <- tmp_samp
 
-  ## If generating for residual plot, can return now
-  if (for_res_plot) {
-    return(list(residuals, samp_record, titre_dat1, predicted_titres))
-  }
+    ## If generating for residual plot, can return now
+    if (for_res_plot) {
+        
+        return(list(residuals, samp_record, titre_dat1,
+                    predicted_titres,
+                    observed_predicted_titres,
+                    residuals_floor))
+    }
 
-  #residuals <- cbind(titre_dat1, residuals)
+                                        #residuals <- cbind(titre_dat1, residuals)
 
-  ## Get 95% credible interval and means
-  dat2 <- t(apply(predicted_titres, 1, function(x) quantile(x, c(0.025, 0.25, 0.5, 0.75, 0.975))))
-  residuals <- t(apply(residuals, 1, function(x) quantile(x, c(0.025, 0.5, 0.975))))
-  residuals <- cbind(titre_dat1, residuals)
+    ## Get 95% credible interval and means
+    dat2 <- t(apply(predicted_titres, 1, function(x) quantile(x, c(0.025, 0.25, 0.5, 0.75, 0.975))))
+    residuals <- t(apply(residuals, 1, function(x) quantile(x, c(0.025, 0.5, 0.975))))
+    residuals <- cbind(titre_dat1, residuals)
 
   ## Find multivariate posterior mode estimate from the chain
   best_pars <- get_best_pars(chain)
-  best_pars <- best_pars[names(best_pars) %in% par_tab$names]
+  best_pars <- best_pars[!(names(best_pars) %in% c(
+    "lnlike", "likelihood", "prior_prob",
+    "sampno", "total_infections", "chain_no"
+  ))]
+  #best_pars <- best_pars[names(best_pars) %in% par_tab$names]
   best_I <- chain$sampno[which.max(chain$lnlike)]
   best_inf <- infection_histories[infection_histories$sampno == best_I, ]
   best_inf <- as.matrix(Matrix::sparseMatrix(i = best_inf$i, j = best_inf$j, x = best_inf$x, dims = c(n_indiv, nstrain)))
@@ -156,28 +170,36 @@ get_titre_predictions <- function(chain, infection_histories, titre_dat,
   infection_history_dens <- tmp_inf_chain[, list(V1 = sum(x) / length(tmp_samp)), by = key(tmp_inf_chain)]
   infection_history_dens$j <- strain_isolation_times[infection_history_dens$j]
   colnames(infection_history_dens) <- c("individual", "variable", "value")
-  infection_history_final <- NULL
-
+  infection_history_final <- infection_history_dens
+  best_inf <- data.frame(best_inf)
+  best_inf$individual <- 1:nrow(best_inf)
+  best_inf$individual <- individuals[best_inf$individual]
   ## For each individual, get density for the probability that an epoch was an infection time
   ## The point of the following loop is to mask the densities where infection epochs were either
   ## before an individual was born or after the time that a blood sample was taken
-  for (indiv in unique(infection_history_dens$individual)) {
-    sample_times <- unique(titre_dat1[titre_dat1$individual == indiv, "samples"])
-    tmp <- NULL
-    for (samp in sample_times) {
-      indiv_inf_hist <- infection_history_dens[infection_history_dens$individual == indiv, ]
-      indiv_inf_hist[indiv_inf_hist$variable > samp, "value"] <- 0
-      indiv_inf_hist <- cbind(indiv_inf_hist, "samples" = samp)
-      tmp <- rbind(tmp, indiv_inf_hist)
-    }
-    infection_history_final <- rbind(infection_history_final, tmp)
-  }
+  #for (indiv in unique(infection_history_dens$individual)) {
+  #  sample_times <- unique(titre_dat1[titre_dat1$individual == indiv, "samples"])
+  #  tmp <- NULL
+  #  for (samp in sample_times) {
+  #    indiv_inf_hist <- infection_history_dens[infection_history_dens$individual == indiv, ]
+  #    indiv_inf_hist[indiv_inf_hist$variable > samp, "value"] <- 0
+  #    indiv_inf_hist <- cbind(indiv_inf_hist, "samples" = samp)
+  #    tmp <- rbind(tmp, indiv_inf_hist)
+  #  }
+  #  infection_history_final <- rbind(infection_history_final, tmp)
+  #}
   dat2$individual <- individuals[dat2$individual]
   infection_history_final$individual <- individuals[infection_history_final$individual]
+  if(titres_for_regression){
+    return(list("all_predictions"=predicted_titres, "all_inf_hist"=inf_hist_all,
+                "summary_titres"=dat2,"best_inf_hist"=best_inf)) 
+  }
+  
   if (add_residuals) {
-    result <- list("predictions" = dat2, "histories" = infection_history_final, "residuals" = residuals, "bestRes" = best_residuals)
+    result <- list("predictions" = dat2, "histories" = infection_history_final, 
+                   "residuals" = residuals, "bestRes" = best_residuals,"best_infhist"=best_inf)
   } else {
-    result <- list("predictions" = dat2, "histories" = infection_history_final)
+    result <- list("predictions" = dat2, "histories" = infection_history_final,"best_infhist"=best_inf)
   }
   return(result)
 }
@@ -523,6 +545,15 @@ calculate_infection_history_statistics <- function(inf_chain, burnin = 0, years 
   data.table::setkey(n_inf_chain, "group", "sampno", "chain_no")
   n_inf_chain[, cumu_infs := cumsum(total_infs), by = key(n_inf_chain)]
 
+  
+  gelman_res_j <- ddply(n_inf_chain, .(group,j), function(tmp_chain){
+    tmp_chain_mcmc <- split(as.data.table(tmp_chain), by=c("chain_no"))
+    tmp_chain_mcmc <- lapply(tmp_chain_mcmc, function(x) as.mcmc(x[,c("total_infs")]))
+    tmp_chain_mcmc <- as.mcmc.list(tmp_chain_mcmc)
+    gelman.diag(tmp_chain_mcmc)[[1]][1,]
+  })
+  colnames(gelman_res_j) <- c("group","j","gelman_point","gelman_upper")
+  
 
   data.table::setkey(n_inf_chain, "j", "group")
   n_inf_chain_summaries <- n_inf_chain[, list(
@@ -537,7 +568,8 @@ calculate_infection_history_statistics <- function(inf_chain, burnin = 0, years 
   ),
   by = key(n_inf_chain)
   ]
-
+  n_inf_chain_summaries <- merge(n_inf_chain_summaries, gelman_res_j, by=c("j","group"))
+  
   n_inf_chain_summaries_cumu <- n_inf_chain[, list(
     mean = mean(as.double(cumu_infs)), median = median(as.double(cumu_infs)),
     lower_quantile = quantile(as.double(cumu_infs), c(0.025)),

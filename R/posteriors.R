@@ -243,6 +243,7 @@ prob_mus <- function(mus, pars) {
 #' @param mu_indices if not NULL, then use these indices to specify which boosting parameter index corresponds to which time
 #' @param n_alive if not NULL, uses this as the number alive in a given year rather than calculating from the ages. This is needed if the number of alive individuals is known, but individual birth dates are not
 #' @param function_type integer specifying which version of this function to use. Specify 1 to give a posterior solving function; 2 to give the gibbs sampler for infection history proposals; otherwise just solves the titre model and returns predicted titres. NOTE that this is not the same as the attack rate prior argument, \code{version}!
+#' @param titre_before_infection TRUE/FALSE value. If TRUE, solves titre predictions, but gives the predicted titre at a given time point BEFORE any infection during that time occurs.
 #' @param ... other arguments to pass to the posterior solving function
 #' @return a single function pointer that takes only pars and infection_histories as unnamed arguments. This function goes on to return a vector of posterior values for each individual
 #' @examples
@@ -272,6 +273,7 @@ create_posterior_func <- function(par_tab,
                                   mu_indices = NULL,
                                   n_alive = NULL,
                                   function_type = 1,
+                                  titre_before_infection=FALSE,
                                   ...) {
     check_par_tab(par_tab, TRUE, version)
     if (!("group" %in% colnames(titre_dat))) {
@@ -564,7 +566,8 @@ create_posterior_func <- function(par_tab,
                 nrows_per_blood_sample, measured_strain_indices, antigenic_map_long,
                 antigenic_map_short,
                 antigenic_distances,
-                mus, boosting_vec_indices
+                mus, boosting_vec_indices,
+                titre_before_infection
             )
             if (use_measurement_bias) {
                 measurement_bias <- pars[measurement_indices_par_tab]
