@@ -34,7 +34,7 @@ get_DOBs <- function(titre_dat){
     DOBs <- unique(titre_dat[,c("individual","DOB")])
 }
 
-#' Get number alive bylocation
+#' Get number alive by location
 #'
 #' Given the titre_dat data frame with entries for location, calculates the number that are alive (alive to be infected, that is) for each time in times by location
 #' @param titre_dat the data frame of titre data. See \code{\link{example_titre_dat}}

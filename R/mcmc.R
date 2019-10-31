@@ -300,15 +300,15 @@ run_MCMC <- function(par_tab,
     ## Initial total likelihoods
     indiv_posteriors <- indiv_likelihoods + indiv_priors
 
-  ## If needed for some proposal types per individual
-  proposal_ratio <- rep(0, n_indiv)
-  n_alive_tot <- rowSums(n_alive)
-  ## Create closure to add extra prior probabilities, to avoid re-typing later
-  extra_probabilities <- function(prior_pars, prior_infection_history) {
-    names(prior_pars) <- par_names
-    beta <- prior_pars["beta"]
-    alpha <- prior_pars["alpha"]
-    prior_probab <- 0
+    ## If needed for some proposal types per individual
+    proposal_ratio <- rep(0, n_indiv)
+    n_alive_tot <- rowSums(n_alive)
+    ## Create closure to add extra prior probabilities, to avoid re-typing later
+    extra_probabilities <- function(prior_pars, prior_infection_history) {
+        names(prior_pars) <- par_names
+        beta <- prior_pars["beta"]
+        alpha <- prior_pars["alpha"]
+        prior_probab <- 0
 
     ## If prior version 2 or 4
     if (hist_proposal == 2) {
