@@ -156,11 +156,18 @@ run_MCMC <- function(par_tab,
   alpha <- par_tab[par_tab$names == "alpha", "values"]
   beta <- par_tab[par_tab$names == "beta", "values"]
 
-  ## If there is infection data, extract the sensitivity parameter indicies
-  delta_indicies <- which(par_tab$names == "delta")
-  ## Check whether delta is fixed
-  delta_fixed <- par_tab[par_tab$names == "delta", "fixed"] == 1
-  
+  if(!is.null(inf_dat)){
+    ## If there is infection data, extract the sensitivity parameter indicies
+    delta_indicies <- which(par_tab$names == "delta")
+    ## Check whether delta is fixed
+    delta_fixed <- par_tab[par_tab$names == "delta", "fixed"] == 1
+  }else{ #if there is no infection data, then delta is "fixed"
+    if(par_tab[par_tab$names == "delta", "fixed"] == 0){
+      stop("delta should be fixed if there is no infection data")
+    }
+    delta_fixed <-TRUE
+  }
+
   ## Update length of unfixed pars so it only loops through antibody pars
   if(delta_fixed){
     unfixed_par_length_antibody <- unfixed_par_length
@@ -485,6 +492,7 @@ run_MCMC <- function(par_tab,
               n_infs_vec, swap_propn, move_size,
               temp
             )
+            
             new_likelihoods <- prop_gibbs$old_probs
             new_infection_histories <- prop_gibbs$new_infection_history
             new_likelihoods_calculated <- TRUE
@@ -558,6 +566,8 @@ run_MCMC <- function(par_tab,
       new_posterior <- new_total_likelihood + new_prior_prob
 
     }
+    n_alive <- get_n_alive(titre_dat, strain_isolation_times)
+    browser(expr = any(colSums(new_infection_histories)/n_alive >1, na.rm = T))
     #############################
     ## METROPOLIS HASTINGS STEP
     #############################
@@ -738,7 +748,7 @@ run_MCMC <- function(par_tab,
         message(cat("Pcur: ", signif(pcur, 3), sep = "\t"))
         message(cat("Step sizes: ", signif(steps, 3), sep = "\t"))
         ## If not accepting, send a warning
-        if (all(pcur == 0)) {
+        if (all(pcur == 0, na.rm = T)) {
           message("Warning: acceptance rates are 0. Might be an error with the theta proposal?")
           if (message_slack) {
             text_slackr(paste0("Warning in ", message_slack_pars$username, ": acceptance rates are 0. Might be an error with the theta proposal?"),
