@@ -82,6 +82,7 @@ run_MCMC <- function(par_tab,
     message("Warning: fast mode set, but provided CREATE_POSTERIOR_FUNC is not the fast version. Results may be unexpected, or at least slow!")
   }
 
+  if(version != 1 & !is.null(inf_dat)) stop("infection data extension only working for version 1 at the moment")
   ## Sort out MCMC parameters --------------------------------------
   ###################################################################
   mcmc_pars_used <- c(
