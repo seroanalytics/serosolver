@@ -20,3 +20,5 @@ binaries
 *~
 *.o
 *.so
+data/south_africa/titre_dat_full.csv
+data/south_africa/infection_data_2016.csv
