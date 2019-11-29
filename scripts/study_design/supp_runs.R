@@ -40,7 +40,7 @@ chain <- chain[chain$sampno >= (mcmc_pars["adaptive_period"] + mcmc_pars["burnin
 min_mu_short <- par_tab$values[which(par_tab$names == "mu_short")]
 max_mu_short <- par_tab$values[which(par_tab$names == "mu_short")] * 2
 
-png("mu_short_supp.png",width=5000,height=2000,res=300,units='px')
+png("mu_short_supp.png",width=3000,height=2000,res=300,units='px')
 hist(chain$mu_short, xlab =  expression(paste("short boost, ",mu[2])), freq = F,
      main = "", xlim = c(min(min_mu_short, min(chain$mu_short)), max(max_mu_short, max(chain$mu_short))))
 abline(v = min_mu_short, lwd = 2, col = "gray", lty = 2)
@@ -59,5 +59,5 @@ p <- plot_attack_rates(infection_histories = inf_chain, titre_dat_AR, strain_iso
  geom_hline(yintercept = 0.15, linetype="dashed", color = "gray") +
   geom_hline(yintercept = 0.3, linetype="dashed", color = "gray")
 
-ggsave("AR_supp.png",p, width = 20, height = 6)
+ggsave("AR_supp.png",p, width = 10, height = 6)
 
