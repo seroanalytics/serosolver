@@ -1,9 +1,9 @@
-Sero <- read.csv("PHIRST_Serology_2016/PHIRST_2016_hai_res_long_20Jun19.csv")
+Sero <- read.csv("~/Dropbox/PHIRST_Serology_2016/PHIRST_2016_hai_res_long_20Jun19.csv")
 
-PCR_add_dates <- read.csv("PHIRST_Serology_2016/PHIRST_2016_PCR_26Feb19_add_dates.csv")
+PCR_add_dates <- read.csv("~/Dropbox/PHIRST_Serology_2016/PHIRST_2016_PCR_26Feb19_add_dates.csv")
 PCR_add_dates$ind_id <- as.character(PCR_add_dates$ind_id)
 
-Demog <- read.csv("PHIRST_Serology_2016/PHIRST Demog 5Jul2019.csv")
+Demog <- read.csv("~/Dropbox/PHIRST_Serology_2016/PHIRST Demog 5Jul2019.csv")
 
 
 ###############################################################
@@ -121,7 +121,7 @@ library(reshape)
 infection_data <- cast(PCR_2016, ind_id ~ infection_time)
 #ensure wd is serosolver here
 #save csv
-write.csv(infection_data, file = "data/south_africa/infection_data_2016.csv", row.names = FALSE)
+#write.csv(infection_data, file = "data/south_africa/infection_data_2016.csv", row.names = FALSE)
 
 ##########################################################
 ################Formatting titre data#####################
@@ -174,7 +174,7 @@ titre_dat_1 <- data.frame(individual = Sero$ind_id, samples = collection_time,
 
 titre_dat_2 <- data.frame(individual = Sero$ind_id, samples = collection_time, 
                         virus = virus, titre = Sero$flua_h1n1pdm_2_log , 
-                        run = 1 , group = 1, 
+                        run = 2 , group = 1, 
                         DOB = DOB_time)
 
 titre_dat <- rbind(titre_dat_1, titre_dat_2)
@@ -183,5 +183,5 @@ titre_dat <- rbind(titre_dat_1, titre_dat_2)
 titre_dat <- titre_dat[which(!is.na(titre_dat$samples)),]
 
 #ensure wd is serosolver here
-write.csv(titre_dat, file = "data/south_africa/titre_dat_full.csv", row.names = FALSE)
+#write.csv(titre_dat, file = "data/south_africa/titre_dat_full.csv", row.names = FALSE)
 
