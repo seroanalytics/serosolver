@@ -789,15 +789,15 @@ inf_likelihood <- function(inf_dat, infection_histories, pars, par_tab){
 inf_point_likelihood <- function(inf_dat_NA, infection_histories_NA, delta){
   
   #of the infected and susceptible in infection histories
-  n_1 <- inf_vec <- length(which(infection_histories_NA == 1))
-  n_2 <- sus_vec <- length(which(infection_histories_NA == 0))
+  n_1  <- length(which(infection_histories_NA == 1))
+  n_2  <- length(which(infection_histories_NA == 0))
   
   #how do the results match with the observation 
   obs_vec_inf <- inf_dat_NA[which(infection_histories_NA == 1)]
-  x_1 <- length(which(obs_vec_inf == 1)) #true positives in a 
+  x_1 <- length(which(obs_vec_inf == 1)) #true positives in n_1
   
   obs_vec_sus <- inf_dat_NA[which(infection_histories_NA == 0)]
-  x_2 <- length(which(obs_vec_sus == 0))
+  x_2 <- length(which(obs_vec_sus == 0)) #true negatives in n_2
   
   #calculate LOG likleihood
   spec <- 0.999
