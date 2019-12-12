@@ -24,9 +24,10 @@ Marginal prior probability (p(Z)) of infection history matrix with groups
  Prior is independent contribution from each year and group
 }
 \seealso{
-Other inf_mat_prior: \code{\link{inf_mat_prior_cpp_vector}},
-  \code{\link{inf_mat_prior_cpp}},
-  \code{\link{inf_mat_prior_group_cpp_vector}},
-  \code{\link{inf_mat_prior_total_group_cpp}}
+Other inf_mat_prior: 
+\code{\link{inf_mat_prior_cpp_vector}()},
+\code{\link{inf_mat_prior_cpp}()},
+\code{\link{inf_mat_prior_group_cpp_vector}()},
+\code{\link{inf_mat_prior_total_group_cpp}()}
 }
 \concept{inf_mat_prior}

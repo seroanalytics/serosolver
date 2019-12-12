@@ -4,10 +4,19 @@
 \alias{plot_attack_rates_monthly}
 \title{Plot historical attack rates monthly}
 \usage{
-plot_attack_rates_monthly(infection_histories, titre_dat,
-  strain_isolation_times, n_alive = NULL, ymax = 1, buckets = 1,
-  pad_chain = TRUE, true_ar = NULL, by_group = FALSE,
-  group_subset = NULL, cumulative = FALSE)
+plot_attack_rates_monthly(
+  infection_histories,
+  titre_dat,
+  strain_isolation_times,
+  n_alive = NULL,
+  ymax = 1,
+  buckets = 1,
+  pad_chain = TRUE,
+  true_ar = NULL,
+  by_group = FALSE,
+  group_subset = NULL,
+  cumulative = FALSE
+)
 }
 \arguments{
 \item{infection_histories}{the MCMC chain for infection histories}

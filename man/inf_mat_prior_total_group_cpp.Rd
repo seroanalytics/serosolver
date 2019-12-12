@@ -5,8 +5,7 @@
 \title{Marginal prior probability (p(Z)) of a particular infection history matrix total prior
  Prior here is on the total number of infections across all individuals and times}
 \usage{
-inf_mat_prior_total_group_cpp(n_infections_group, n_alive_group, alpha,
-  beta)
+inf_mat_prior_total_group_cpp(n_infections_group, n_alive_group, alpha, beta)
 }
 \arguments{
 \item{n_infections_group}{IntegerVector, the total number of infections in each group}
@@ -25,9 +24,10 @@ Marginal prior probability (p(Z)) of a particular infection history matrix total
  Prior here is on the total number of infections across all individuals and times
 }
 \seealso{
-Other inf_mat_prior: \code{\link{inf_mat_prior_cpp_vector}},
-  \code{\link{inf_mat_prior_cpp}},
-  \code{\link{inf_mat_prior_group_cpp_vector}},
-  \code{\link{inf_mat_prior_group_cpp}}
+Other inf_mat_prior: 
+\code{\link{inf_mat_prior_cpp_vector}()},
+\code{\link{inf_mat_prior_cpp}()},
+\code{\link{inf_mat_prior_group_cpp_vector}()},
+\code{\link{inf_mat_prior_group_cpp}()}
 }
 \concept{inf_mat_prior}

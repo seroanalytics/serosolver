@@ -4,8 +4,16 @@
 \alias{infection_history_symmetric}
 \title{Brute force infection history proposal}
 \usage{
-infection_history_symmetric(new_inf_hist, sampled_indivs, age_mask,
-  strain_mask, move_sizes, n_infs, rand_ns, swap_propn = 0.5)
+infection_history_symmetric(
+  new_inf_hist,
+  sampled_indivs,
+  age_mask,
+  strain_mask,
+  move_sizes,
+  n_infs,
+  rand_ns,
+  swap_propn = 0.5
+)
 }
 \arguments{
 \item{new_inf_hist}{a matrix of infection histories - rows for individuals, columns for infection epochs. Contents should be 1s and 0s}
@@ -56,8 +64,10 @@ rand_ns <- runif(n_indiv)
 new_inf_hist <- infection_history_symmetric(example_inf_hist, indivs,age_mask ,strain_mask, move_sizes, n_infs, rand_ns, 0.5)
 }
 \seealso{
-Other proposals: \code{\link{inf_hist_swap_phi}},
-  \code{\link{inf_hist_swap}}, \code{\link{mvr_proposal}},
-  \code{\link{univ_proposal}}
+Other proposals: 
+\code{\link{inf_hist_swap_phi}()},
+\code{\link{inf_hist_swap}()},
+\code{\link{mvr_proposal}()},
+\code{\link{univ_proposal}()}
 }
 \concept{proposals}

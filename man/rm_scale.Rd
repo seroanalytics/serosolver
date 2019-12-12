@@ -10,9 +10,10 @@ rm_scale(step_scale, mc, popt, log_prob, N_adapt)
 Robins and Monro scaler, thanks to Michael White
 }
 \seealso{
-Other mcmc: \code{\link{generate_start_tab}},
-  \code{\link{run_MCMC}},
-  \code{\link{save_infection_history_to_disk}},
-  \code{\link{scaletuning}}
+Other mcmc: 
+\code{\link{generate_start_tab}()},
+\code{\link{run_MCMC}()},
+\code{\link{save_infection_history_to_disk}()},
+\code{\link{scaletuning}()}
 }
 \concept{mcmc}

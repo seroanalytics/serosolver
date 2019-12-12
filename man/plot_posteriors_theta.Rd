@@ -4,9 +4,17 @@
 \alias{plot_posteriors_theta}
 \title{Plot inferred posteriors theta}
 \usage{
-plot_posteriors_theta(chain, par_tab, burnin = 0, samples = 100,
-  calculate_ess = TRUE, plot_corr = TRUE, save_plots = FALSE,
-  plot_mcmc = TRUE, save_loc = "")
+plot_posteriors_theta(
+  chain,
+  par_tab,
+  burnin = 0,
+  samples = 100,
+  calculate_ess = TRUE,
+  plot_corr = TRUE,
+  save_plots = FALSE,
+  plot_mcmc = TRUE,
+  save_loc = ""
+)
 }
 \arguments{
 \item{chain}{the full MCMC chain to generate titre trajectories from}
@@ -41,6 +49,7 @@ plot_posteriors_theta(example_theta_chain,example_par_tab,samples=100)
 }
 }
 \seealso{
-Other theta_plots: \code{\link{plot_samples_distances}}
+Other theta_plots: 
+\code{\link{plot_samples_distances}()}
 }
 \concept{theta_plots}

@@ -4,8 +4,12 @@
 \alias{setup_titredat_for_posterior_func}
 \title{Setup titre data indices}
 \usage{
-setup_titredat_for_posterior_func(titre_dat, antigenic_map,
-  age_mask = NULL, n_alive = NULL)
+setup_titredat_for_posterior_func(
+  titre_dat,
+  antigenic_map,
+  age_mask = NULL,
+  n_alive = NULL
+)
 }
 \arguments{
 \item{titre_dat}{the data frame of data to be fitted. Must have columns: group (index of group); individual (integer ID of individual); samples (numeric time of sample taken); virus (numeric time of when the virus was circulating); titre (integer of titre value against the given virus at that sampling time). See \code{\link{example_titre_dat}}}

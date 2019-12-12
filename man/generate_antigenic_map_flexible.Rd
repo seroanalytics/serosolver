@@ -4,9 +4,15 @@
 \alias{generate_antigenic_map_flexible}
 \title{Generate antigenic map, flexible}
 \usage{
-generate_antigenic_map_flexible(antigenic_distances, buckets = 1,
-  clusters = NULL, use_clusters = FALSE, spar = 0.3,
-  year_min = 1968, year_max = 2016)
+generate_antigenic_map_flexible(
+  antigenic_distances,
+  buckets = 1,
+  clusters = NULL,
+  use_clusters = FALSE,
+  spar = 0.3,
+  year_min = 1968,
+  year_max = 2016
+)
 }
 \arguments{
 \item{antigenic_distances}{a data frame of antigenic coordinates, with columns labelled X, Y and Strain for x coord, y coord and Strain label respectively. "Strain" should be a single number giving the year of circulation of that strain. See \code{\link{example_antigenic_map}}}
@@ -49,6 +55,7 @@ antigenic_map <- generate_antigenic_map_flexible(antigenic_coords, buckets=1,
 \seealso{
 \code{\link{generate_antigenic_map}}
 
-Other antigenic_maps: \code{\link{generate_antigenic_map}}
+Other antigenic_maps: 
+\code{\link{generate_antigenic_map}()}
 }
 \concept{antigenic_maps}

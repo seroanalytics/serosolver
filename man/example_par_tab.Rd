@@ -23,9 +23,10 @@ data(example_par_tab)
 Example of the parameter table used through \code{serosolver}. This data frame is used to control everything related to the model parameters, including values, names, fixed/estimates, and uniform prior bounds.
 }
 \seealso{
-Other example_data: \code{\link{example_antigenic_map}},
-  \code{\link{example_inf_chain}},
-  \code{\link{example_theta_chain}}
+Other example_data: 
+\code{\link{example_antigenic_map}},
+\code{\link{example_inf_chain}},
+\code{\link{example_theta_chain}}
 }
 \concept{example_data}
 \keyword{datasets}

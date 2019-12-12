@@ -15,7 +15,8 @@ to.pdf(expr, filename, ..., verbose = TRUE)
 Prints to pdf, but turns dev off if fails
 }
 \seealso{
-Other safe_plot_saving: \code{\link{to.png}},
-  \code{\link{to.svg}}
+Other safe_plot_saving: 
+\code{\link{to.png}()},
+\code{\link{to.svg}()}
 }
 \concept{safe_plot_saving}

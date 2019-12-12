@@ -24,7 +24,9 @@ data(example_par_tab)
 check_par_tab(example_par_tab, FALSE, version=1)
 }
 \seealso{
-Other check_inputs: \code{\link{check_attack_rates}},
-  \code{\link{check_data}}, \code{\link{check_proposals}}
+Other check_inputs: 
+\code{\link{check_attack_rates}()},
+\code{\link{check_data}()},
+\code{\link{check_proposals}()}
 }
 \concept{check_inputs}

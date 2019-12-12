@@ -4,11 +4,21 @@
 \alias{simulate_individual}
 \title{Simulate individual data}
 \usage{
-simulate_individual(theta, infection_history, antigenic_map,
-  sampling_times, strain_isolation_times, measured_strains, mus = NULL,
-  mu_indices = NULL, measurement_bias = NULL,
-  measurement_indices = NULL, add_noise = TRUE, repeats = 1,
-  DOB = NULL)
+simulate_individual(
+  theta,
+  infection_history,
+  antigenic_map,
+  sampling_times,
+  strain_isolation_times,
+  measured_strains,
+  mus = NULL,
+  mu_indices = NULL,
+  measurement_bias = NULL,
+  measurement_indices = NULL,
+  add_noise = TRUE,
+  repeats = 1,
+  DOB = NULL
+)
 }
 \arguments{
 \item{theta}{the named parameter vector}
@@ -50,10 +60,11 @@ y <- simulate_individual(pars, infection_history, example_antigenic_map, 2009,
                          strain_isolation_times,strain_isolation_times,add_noise=FALSE)
 }
 \seealso{
-Other simulation_functions: \code{\link{simulate_attack_rates}},
-  \code{\link{simulate_data}},
-  \code{\link{simulate_group}},
-  \code{\link{simulate_individual_faster}},
-  \code{\link{simulate_infection_histories}}
+Other simulation_functions: 
+\code{\link{simulate_attack_rates}()},
+\code{\link{simulate_data}()},
+\code{\link{simulate_group}()},
+\code{\link{simulate_individual_faster}()},
+\code{\link{simulate_infection_histories}()}
 }
 \concept{simulation_functions}

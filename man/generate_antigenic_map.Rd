@@ -29,6 +29,7 @@ antigenic_map <- generate_antigenic_map(antigenic_coords, 1)
 \seealso{
 \code{\link{generate_antigenic_map_flexible}}
 
-Other antigenic_maps: \code{\link{generate_antigenic_map_flexible}}
+Other antigenic_maps: 
+\code{\link{generate_antigenic_map_flexible}()}
 }
 \concept{antigenic_maps}

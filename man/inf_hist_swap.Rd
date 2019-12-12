@@ -4,8 +4,14 @@
 \alias{inf_hist_swap}
 \title{Swap infection history years}
 \usage{
-inf_hist_swap(infection_history, age_mask, strain_mask, swap_propn,
-  move_size, proposal_ratios = NULL)
+inf_hist_swap(
+  infection_history,
+  age_mask,
+  strain_mask,
+  swap_propn,
+  move_size,
+  proposal_ratios = NULL
+)
 }
 \arguments{
 \item{infection_history}{matrix of 1s and 0s to swap around representing the infection history}
@@ -37,8 +43,10 @@ strain_mask <- create_strain_mask(example_titre_dat, times)
 new_inf_hist <- inf_hist_swap(example_inf_hist, age_mask,strain_mask, 1,3)[[1]]
 }
 \seealso{
-Other proposals: \code{\link{inf_hist_swap_phi}},
-  \code{\link{infection_history_symmetric}},
-  \code{\link{mvr_proposal}}, \code{\link{univ_proposal}}
+Other proposals: 
+\code{\link{inf_hist_swap_phi}()},
+\code{\link{infection_history_symmetric}()},
+\code{\link{mvr_proposal}()},
+\code{\link{univ_proposal}()}
 }
 \concept{proposals}

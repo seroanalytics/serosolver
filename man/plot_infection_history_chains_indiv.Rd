@@ -4,8 +4,12 @@
 \alias{plot_infection_history_chains_indiv}
 \title{Plot MCMC trace for infections per individual}
 \usage{
-plot_infection_history_chains_indiv(inf_chain, burnin = 0,
-  indivs = NULL, pad_chain = TRUE)
+plot_infection_history_chains_indiv(
+  inf_chain,
+  burnin = 0,
+  indivs = NULL,
+  pad_chain = TRUE
+)
 }
 \arguments{
 \item{inf_chain}{the data table with infection history samples from \code{\link{run_MCMC}}}
@@ -31,13 +35,14 @@ plot_infection_history_chains_indiv(example_inf_chain, 0, 1:10, FALSE)
 \seealso{
 \code{\link{plot_infection_history_chains_indiv}}
 
-Other infection_history_plots: \code{\link{calculate_infection_history_statistics}},
-  \code{\link{generate_cumulative_inf_plots}},
-  \code{\link{plot_data}},
-  \code{\link{plot_infection_histories}},
-  \code{\link{plot_infection_history_chains_time}},
-  \code{\link{plot_number_infections}},
-  \code{\link{plot_posteriors_infhist}},
-  \code{\link{plot_total_number_infections}}
+Other infection_history_plots: 
+\code{\link{calculate_infection_history_statistics}()},
+\code{\link{generate_cumulative_inf_plots}()},
+\code{\link{plot_data}()},
+\code{\link{plot_infection_histories}()},
+\code{\link{plot_infection_history_chains_time}()},
+\code{\link{plot_number_infections}()},
+\code{\link{plot_posteriors_infhist}()},
+\code{\link{plot_total_number_infections}()}
 }
 \concept{infection_history_plots}

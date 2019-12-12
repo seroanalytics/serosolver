@@ -4,10 +4,22 @@
 \alias{simulate_group}
 \title{Simulate group data}
 \usage{
-simulate_group(n_indiv, theta, infection_histories, strain_isolation_times,
-  measured_strains, sample_times, nsamps, antigenic_map, repeats = 1,
-  mus = NULL, mu_indices = NULL, measurement_bias = NULL,
-  measurement_indices = NULL, add_noise = TRUE)
+simulate_group(
+  n_indiv,
+  theta,
+  infection_histories,
+  strain_isolation_times,
+  measured_strains,
+  sample_times,
+  nsamps,
+  antigenic_map,
+  repeats = 1,
+  mus = NULL,
+  mu_indices = NULL,
+  measurement_bias = NULL,
+  measurement_indices = NULL,
+  add_noise = TRUE
+)
 }
 \arguments{
 \item{n_indiv}{number of individuals to simulate}
@@ -43,10 +55,11 @@ Simulates a full set of titre data for n_indiv individuals with known theta and 
 \seealso{
 \code{\link{simulate_individual}}, \code{\link{simulate_individual_faster}}
 
-Other simulation_functions: \code{\link{simulate_attack_rates}},
-  \code{\link{simulate_data}},
-  \code{\link{simulate_individual_faster}},
-  \code{\link{simulate_individual}},
-  \code{\link{simulate_infection_histories}}
+Other simulation_functions: 
+\code{\link{simulate_attack_rates}()},
+\code{\link{simulate_data}()},
+\code{\link{simulate_individual_faster}()},
+\code{\link{simulate_individual}()},
+\code{\link{simulate_infection_histories}()}
 }
 \concept{simulation_functions}

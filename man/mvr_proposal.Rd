@@ -4,8 +4,14 @@
 \alias{mvr_proposal}
 \title{Multivariate proposal function}
 \usage{
-mvr_proposal(values, fixed, cov_mat, cov_mat0 = NULL, use_log = FALSE,
-  beta = 0.05)
+mvr_proposal(
+  values,
+  fixed,
+  cov_mat,
+  cov_mat0 = NULL,
+  use_log = FALSE,
+  beta = 0.05
+)
 }
 \arguments{
 \item{values}{the vector of current parameter values}
@@ -28,9 +34,10 @@ a parameter vector of a proposed move. Note that these may fall outside the allo
 Given the current parameters and a covariance matrix, returns a vector for a proposed jump from a multivariate normal distribution. Takes into account parameter covariance and ensures containment condition with beta, if cov_mat0 (the identity matrix) is specified.
 }
 \seealso{
-Other proposals: \code{\link{inf_hist_swap_phi}},
-  \code{\link{inf_hist_swap}},
-  \code{\link{infection_history_symmetric}},
-  \code{\link{univ_proposal}}
+Other proposals: 
+\code{\link{inf_hist_swap_phi}()},
+\code{\link{inf_hist_swap}()},
+\code{\link{infection_history_symmetric}()},
+\code{\link{univ_proposal}()}
 }
 \concept{proposals}

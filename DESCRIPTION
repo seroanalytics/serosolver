@@ -23,7 +23,7 @@ Authors@R:
              family="Riley",
              role="aut",
              email="s.riley@imperial.ac.uk"))
-Maintainer:  James Hay <jameshay218@gmail.com>
+Maintainer: James Hay <jameshay218@gmail.com>
 Description: Given a table of serological data for a population, infers the
     presence and timing of infections based on raised titres.
 License: GPL-3
@@ -47,6 +47,6 @@ LinkingTo:
     RcppArmadillo,
     RcppParallel
 SystemRequirements: C++11
-RoxygenNote: 6.1.1
+RoxygenNote: 7.0.2
 VignetteBuilder: knitr
 Encoding: UTF-8

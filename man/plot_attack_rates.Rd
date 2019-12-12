@@ -4,11 +4,23 @@
 \alias{plot_attack_rates}
 \title{Plot historical attack rates}
 \usage{
-plot_attack_rates(infection_histories, titre_dat, strain_isolation_times,
-  n_alive = NULL, pointsize = 1, fatten = 1, pad_chain = TRUE,
-  prior_pars = NULL, plot_den = FALSE, true_ar = NULL,
-  by_group = FALSE, group_subset = NULL, plot_residuals = FALSE,
-  colour_by_taken = TRUE, by_val = 5)
+plot_attack_rates(
+  infection_histories,
+  titre_dat,
+  strain_isolation_times,
+  n_alive = NULL,
+  pointsize = 1,
+  fatten = 1,
+  pad_chain = TRUE,
+  prior_pars = NULL,
+  plot_den = FALSE,
+  true_ar = NULL,
+  by_group = FALSE,
+  group_subset = NULL,
+  plot_residuals = FALSE,
+  colour_by_taken = TRUE,
+  by_val = 5
+)
 }
 \arguments{
 \item{infection_histories}{the MCMC chain for infection histories}

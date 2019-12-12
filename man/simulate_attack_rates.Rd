@@ -4,8 +4,13 @@
 \alias{simulate_attack_rates}
 \title{Simulate attack rates}
 \usage{
-simulate_attack_rates(infection_years, mean_par = 0.15, sd_par = 0.5,
-  large_first_year = FALSE, big_year_mean = 0.5)
+simulate_attack_rates(
+  infection_years,
+  mean_par = 0.15,
+  sd_par = 0.5,
+  large_first_year = FALSE,
+  big_year_mean = 0.5
+)
 }
 \arguments{
 \item{infection_years}{the number of infection years}
@@ -25,10 +30,11 @@ a vector of attack rates
 Given a number of possible infection years, simulates attack rates from a log normal distribution with specified mean and standard deviation.
 }
 \seealso{
-Other simulation_functions: \code{\link{simulate_data}},
-  \code{\link{simulate_group}},
-  \code{\link{simulate_individual_faster}},
-  \code{\link{simulate_individual}},
-  \code{\link{simulate_infection_histories}}
+Other simulation_functions: 
+\code{\link{simulate_data}()},
+\code{\link{simulate_group}()},
+\code{\link{simulate_individual_faster}()},
+\code{\link{simulate_individual}()},
+\code{\link{simulate_infection_histories}()}
 }
 \concept{simulation_functions}

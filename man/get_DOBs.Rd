@@ -20,7 +20,8 @@ data(example_titre_dat)
 get_DOBs(titre_dat)
 }
 \seealso{
-Other get_summary: \code{\link{get_n_alive_group}},
-  \code{\link{get_n_alive}}
+Other get_summary: 
+\code{\link{get_n_alive_group}()},
+\code{\link{get_n_alive}()}
 }
 \concept{get_summary}

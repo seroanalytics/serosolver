@@ -4,12 +4,23 @@
 \alias{simulate_individual_faster}
 \title{Simulate individual data quickly}
 \usage{
-simulate_individual_faster(theta, infection_history, antigenic_map_long,
-  antigenic_map_short, antigenic_distances, sampling_times,
-  strain_isolation_times, measured_strains, mus = NULL,
-  mu_indices = NULL, measurement_bias = NULL,
-  measurement_indices = NULL, add_noise = TRUE, repeats = 1,
-  DOB = NULL)
+simulate_individual_faster(
+  theta,
+  infection_history,
+  antigenic_map_long,
+  antigenic_map_short,
+  antigenic_distances,
+  sampling_times,
+  strain_isolation_times,
+  measured_strains,
+  mus = NULL,
+  mu_indices = NULL,
+  measurement_bias = NULL,
+  measurement_indices = NULL,
+  add_noise = TRUE,
+  repeats = 1,
+  DOB = NULL
+)
 }
 \arguments{
 \item{theta}{the named parameter vector}
@@ -45,10 +56,11 @@ a data frame with columns samples, virus and titre of simulated data
 FOR USERS: USE \code{\link{simulate_individual}}. This function does the same thing, but with a few short cuts for speed. Simulates a full set of titre data for an individual with known theta and infection_history.
 }
 \seealso{
-Other simulation_functions: \code{\link{simulate_attack_rates}},
-  \code{\link{simulate_data}},
-  \code{\link{simulate_group}},
-  \code{\link{simulate_individual}},
-  \code{\link{simulate_infection_histories}}
+Other simulation_functions: 
+\code{\link{simulate_attack_rates}()},
+\code{\link{simulate_data}()},
+\code{\link{simulate_group}()},
+\code{\link{simulate_individual}()},
+\code{\link{simulate_infection_histories}()}
 }
 \concept{simulation_functions}

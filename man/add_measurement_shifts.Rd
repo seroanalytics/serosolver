@@ -4,8 +4,12 @@
 \alias{add_measurement_shifts}
 \title{Add measurement shifts to predictions}
 \usage{
-add_measurement_shifts(predicted_titres, to_add, start_index_in_data,
-  end_index_in_data)
+add_measurement_shifts(
+  predicted_titres,
+  to_add,
+  start_index_in_data,
+  end_index_in_data
+)
 }
 \arguments{
 \item{to_add}{NumericVector the vector of all measurement shifts to apply}

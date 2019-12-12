@@ -4,8 +4,15 @@
 \alias{inf_hist_swap_phi}
 \title{Swap infection history years with phi term}
 \usage{
-inf_hist_swap_phi(infection_history, phis, age_mask, strain_mask,
-  swap_propn, move_size, n_alive)
+inf_hist_swap_phi(
+  infection_history,
+  phis,
+  age_mask,
+  strain_mask,
+  swap_propn,
+  move_size,
+  n_alive
+)
 }
 \arguments{
 \item{infection_history}{matrix of 1s and 0s to swap around representing the infection history}
@@ -43,8 +50,10 @@ new_inf_hist <- inf_hist_swap_phi(example_inf_hist, phis, age_mask,strain_mask, 
 \seealso{
 \code{\link{inf_hist_swap}}
 
-Other proposals: \code{\link{inf_hist_swap}},
-  \code{\link{infection_history_symmetric}},
-  \code{\link{mvr_proposal}}, \code{\link{univ_proposal}}
+Other proposals: 
+\code{\link{inf_hist_swap}()},
+\code{\link{infection_history_symmetric}()},
+\code{\link{mvr_proposal}()},
+\code{\link{univ_proposal}()}
 }
 \concept{proposals}

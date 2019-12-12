@@ -24,13 +24,14 @@ plot_number_infections(example_inf_chain)
 }
 }
 \seealso{
-Other infection_history_plots: \code{\link{calculate_infection_history_statistics}},
-  \code{\link{generate_cumulative_inf_plots}},
-  \code{\link{plot_data}},
-  \code{\link{plot_infection_histories}},
-  \code{\link{plot_infection_history_chains_indiv}},
-  \code{\link{plot_infection_history_chains_time}},
-  \code{\link{plot_posteriors_infhist}},
-  \code{\link{plot_total_number_infections}}
+Other infection_history_plots: 
+\code{\link{calculate_infection_history_statistics}()},
+\code{\link{generate_cumulative_inf_plots}()},
+\code{\link{plot_data}()},
+\code{\link{plot_infection_histories}()},
+\code{\link{plot_infection_history_chains_indiv}()},
+\code{\link{plot_infection_history_chains_time}()},
+\code{\link{plot_posteriors_infhist}()},
+\code{\link{plot_total_number_infections}()}
 }
 \concept{infection_history_plots}

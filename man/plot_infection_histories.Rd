@@ -4,9 +4,17 @@
 \alias{plot_infection_histories}
 \title{Plots infection histories and titre model fits}
 \usage{
-plot_infection_histories(chain, infection_histories, titre_dat,
-  individuals, antigenic_map, par_tab, nsamp = 100, mu_indices = NULL,
-  measurement_indices_by_time = NULL)
+plot_infection_histories(
+  chain,
+  infection_histories,
+  titre_dat,
+  individuals,
+  antigenic_map,
+  par_tab,
+  nsamp = 100,
+  mu_indices = NULL,
+  measurement_indices_by_time = NULL
+)
 }
 \arguments{
 \item{chain}{the full MCMC chain to generate titre trajectories from}
@@ -46,13 +54,14 @@ model_fit_plot <- plot_infection_histories(example_theta_chain, example_inf_chai
 }
 }
 \seealso{
-Other infection_history_plots: \code{\link{calculate_infection_history_statistics}},
-  \code{\link{generate_cumulative_inf_plots}},
-  \code{\link{plot_data}},
-  \code{\link{plot_infection_history_chains_indiv}},
-  \code{\link{plot_infection_history_chains_time}},
-  \code{\link{plot_number_infections}},
-  \code{\link{plot_posteriors_infhist}},
-  \code{\link{plot_total_number_infections}}
+Other infection_history_plots: 
+\code{\link{calculate_infection_history_statistics}()},
+\code{\link{generate_cumulative_inf_plots}()},
+\code{\link{plot_data}()},
+\code{\link{plot_infection_history_chains_indiv}()},
+\code{\link{plot_infection_history_chains_time}()},
+\code{\link{plot_number_infections}()},
+\code{\link{plot_posteriors_infhist}()},
+\code{\link{plot_total_number_infections}()}
 }
 \concept{infection_history_plots}

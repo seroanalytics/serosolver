@@ -4,11 +4,25 @@
 \alias{simulate_data}
 \title{Simulate full data set}
 \usage{
-simulate_data(par_tab, group = 1, n_indiv = 100, buckets = 1,
-  strain_isolation_times, measured_strains = NULL, sampling_times,
-  nsamps = 2, antigenic_map, titre_sensoring = 0, age_min = 5,
-  age_max = 80, attack_rates, repeats = 1, mu_indices = NULL,
-  measurement_indices = NULL, add_noise = TRUE)
+simulate_data(
+  par_tab,
+  group = 1,
+  n_indiv = 100,
+  buckets = 1,
+  strain_isolation_times,
+  measured_strains = NULL,
+  sampling_times,
+  nsamps = 2,
+  antigenic_map,
+  titre_sensoring = 0,
+  age_min = 5,
+  age_max = 80,
+  attack_rates,
+  repeats = 1,
+  mu_indices = NULL,
+  measurement_indices = NULL,
+  add_noise = TRUE
+)
 }
 \arguments{
 \item{par_tab}{the full parameter table controlling parameter ranges and values}
@@ -71,10 +85,11 @@ titre_dat <- all_simulated_data$data
 titre_dat <- merge(titre_dat, all_simulated_data$ages)
 }
 \seealso{
-Other simulation_functions: \code{\link{simulate_attack_rates}},
-  \code{\link{simulate_group}},
-  \code{\link{simulate_individual_faster}},
-  \code{\link{simulate_individual}},
-  \code{\link{simulate_infection_histories}}
+Other simulation_functions: 
+\code{\link{simulate_attack_rates}()},
+\code{\link{simulate_group}()},
+\code{\link{simulate_individual_faster}()},
+\code{\link{simulate_individual}()},
+\code{\link{simulate_infection_histories}()}
 }
 \concept{simulation_functions}

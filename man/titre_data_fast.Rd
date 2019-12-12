@@ -4,12 +4,23 @@
 \alias{titre_data_fast}
 \title{Overall model function, fast implementation}
 \usage{
-titre_data_fast(theta, infection_history_mat, circulation_times,
-  circulation_times_indices, sample_times, rows_per_indiv_in_samples,
-  cum_nrows_per_individual_in_data, nrows_per_blood_sample,
-  measurement_strain_indices, antigenic_map_long, antigenic_map_short,
-  antigenic_distances, mus, boosting_vec_indices,
-  boost_before_infection = FALSE)
+titre_data_fast(
+  theta,
+  infection_history_mat,
+  circulation_times,
+  circulation_times_indices,
+  sample_times,
+  rows_per_indiv_in_samples,
+  cum_nrows_per_individual_in_data,
+  nrows_per_blood_sample,
+  measurement_strain_indices,
+  antigenic_map_long,
+  antigenic_map_short,
+  antigenic_distances,
+  mus,
+  boosting_vec_indices,
+  boost_before_infection = FALSE
+)
 }
 \arguments{
 \item{theta}{NumericVector, the named vector of model parameters}

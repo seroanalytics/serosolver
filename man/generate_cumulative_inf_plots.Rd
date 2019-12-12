@@ -4,10 +4,20 @@
 \alias{generate_cumulative_inf_plots}
 \title{Plot cumulative and per time posterior infection probability densities}
 \usage{
-generate_cumulative_inf_plots(inf_chain, burnin = 0, indivs,
-  real_inf_hist = NULL, start_inf = NULL, strain_isolation_times,
-  nsamp = 100, ages = NULL, number_col = 1, pad_chain = TRUE,
-  subset_years = NULL, return_data = FALSE)
+generate_cumulative_inf_plots(
+  inf_chain,
+  burnin = 0,
+  indivs,
+  real_inf_hist = NULL,
+  start_inf = NULL,
+  strain_isolation_times,
+  nsamp = 100,
+  ages = NULL,
+  number_col = 1,
+  pad_chain = TRUE,
+  subset_years = NULL,
+  return_data = FALSE
+)
 }
 \arguments{
 \item{inf_chain}{the infection history chain}
@@ -55,13 +65,14 @@ generate_cumulative_inf_plots(example_inf_chain, 0, indivs, example_inf_hist, NU
 }
 }
 \seealso{
-Other infection_history_plots: \code{\link{calculate_infection_history_statistics}},
-  \code{\link{plot_data}},
-  \code{\link{plot_infection_histories}},
-  \code{\link{plot_infection_history_chains_indiv}},
-  \code{\link{plot_infection_history_chains_time}},
-  \code{\link{plot_number_infections}},
-  \code{\link{plot_posteriors_infhist}},
-  \code{\link{plot_total_number_infections}}
+Other infection_history_plots: 
+\code{\link{calculate_infection_history_statistics}()},
+\code{\link{plot_data}()},
+\code{\link{plot_infection_histories}()},
+\code{\link{plot_infection_history_chains_indiv}()},
+\code{\link{plot_infection_history_chains_time}()},
+\code{\link{plot_number_infections}()},
+\code{\link{plot_posteriors_infhist}()},
+\code{\link{plot_total_number_infections}()}
 }
 \concept{infection_history_plots}

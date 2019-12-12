@@ -22,6 +22,7 @@ plot_samples_distances(example_titre_dat)
 }
 }
 \seealso{
-Other theta_plots: \code{\link{plot_posteriors_theta}}
+Other theta_plots: 
+\code{\link{plot_posteriors_theta}()}
 }
 \concept{theta_plots}

@@ -4,8 +4,12 @@
 \alias{load_infection_chains}
 \title{Load MCMC chains for infection histories}
 \usage{
-load_infection_chains(location = getwd(), thin = 1, burnin = 0,
-  chain_subset = NULL)
+load_infection_chains(
+  location = getwd(),
+  thin = 1,
+  burnin = 0,
+  chain_subset = NULL
+)
 }
 \arguments{
 \item{location}{defaults to current working directory. Where to look for MCMC chains? These are files ending in "_infection_histories.csv"}
@@ -26,10 +30,11 @@ Searches the given working directory for MCMC outputs from \code{\link{run_MCMC}
 \dontrun{load_infection_chains(thin=10,burnin=5000,chain_subset=1:3)}
 }
 \seealso{
-Other load_data_functions: \code{\link{load_antigenic_map_file}},
-  \code{\link{load_mcmc_chains}},
-  \code{\link{load_start_tab}},
-  \code{\link{load_theta_chains}},
-  \code{\link{load_titre_dat}}
+Other load_data_functions: 
+\code{\link{load_antigenic_map_file}()},
+\code{\link{load_mcmc_chains}()},
+\code{\link{load_start_tab}()},
+\code{\link{load_theta_chains}()},
+\code{\link{load_titre_dat}()}
 }
 \concept{load_data_functions}

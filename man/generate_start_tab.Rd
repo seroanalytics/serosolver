@@ -20,8 +20,10 @@ data(example_par_tab)
 start_tab <- generate_start_tab(example_par_tab)
 }
 \seealso{
-Other mcmc: \code{\link{rm_scale}}, \code{\link{run_MCMC}},
-  \code{\link{save_infection_history_to_disk}},
-  \code{\link{scaletuning}}
+Other mcmc: 
+\code{\link{rm_scale}()},
+\code{\link{run_MCMC}()},
+\code{\link{save_infection_history_to_disk}()},
+\code{\link{scaletuning}()}
 }
 \concept{mcmc}

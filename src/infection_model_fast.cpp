@@ -95,7 +95,9 @@ NumericVector titre_data_fast(const NumericVector &theta,
   }
  
   // Titre dependent boosting
-  bool titre_dependent_boosting = theta["titre_dependent"] == 1;
+  bool titre_dependent_boosting = theta["titre_dependent"] > 0;
+//bool titre_dep_new = theta["titre_dependent"] == 2;
+  
   double gradient;
   double boost_limit;
   if (titre_dependent_boosting) {
@@ -166,7 +168,24 @@ NumericVector titre_data_fast(const NumericVector &theta,
 					    antigenic_map_short,
 					    antigenic_map_long,
 					    boost_before_infection);	
-      } else if (strain_dep_boost) {
+    /*  } else if (titre_dep_new) {
+        titre_data_fast_individual_titredep_new(predicted_titres, mu, mu_short,
+                                            wane, tau,
+                                            gradient, boost_limit,
+                                            infection_times,
+                                            infection_strain_indices_tmp,
+                                            measurement_strain_indices,
+                                            sample_times,
+                                            index_in_samples,
+                                            end_index_in_samples,
+                                            start_index_in_data,
+                                            nrows_per_blood_sample,
+                                            number_strains,
+                                            antigenic_map_short,
+                                            antigenic_map_long,
+                                            boost_before_infection);	
+     */
+    } else if (strain_dep_boost) {
 	titre_data_fast_individual_strain_dependent(predicted_titres, 
 						    mus, boosting_vec_indices, 
 						    mu_short,

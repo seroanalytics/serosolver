@@ -23,8 +23,9 @@ strain_isolation_times <- seq_len(40)
 check_attack_rates(attack_rates, strain_isolation_times)
 }
 \seealso{
-Other check_inputs: \code{\link{check_data}},
-  \code{\link{check_par_tab}},
-  \code{\link{check_proposals}}
+Other check_inputs: 
+\code{\link{check_data}()},
+\code{\link{check_par_tab}()},
+\code{\link{check_proposals}()}
 }
 \concept{check_inputs}

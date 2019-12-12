@@ -4,8 +4,14 @@
 \alias{load_theta_chains}
 \title{Load MCMC chains for theta}
 \usage{
-load_theta_chains(location = getwd(), par_tab = NULL, unfixed = TRUE,
-  thin = 1, burnin = 0, convert_mcmc = TRUE)
+load_theta_chains(
+  location = getwd(),
+  par_tab = NULL,
+  unfixed = TRUE,
+  thin = 1,
+  burnin = 0,
+  convert_mcmc = TRUE
+)
 }
 \arguments{
 \item{location}{defaults to current working directory. Gives relative file path to look for files ending in "_chain.csv"}
@@ -30,10 +36,11 @@ Searches the given working directory for MCMC outputs from \code{\link{run_MCMC}
 \dontrun{load_theta_chains(par_tab=par_tab, unfixed=TRUE,thin=10,burnin=5000,convert_mcmc=TRUE)}
 }
 \seealso{
-Other load_data_functions: \code{\link{load_antigenic_map_file}},
-  \code{\link{load_infection_chains}},
-  \code{\link{load_mcmc_chains}},
-  \code{\link{load_start_tab}},
-  \code{\link{load_titre_dat}}
+Other load_data_functions: 
+\code{\link{load_antigenic_map_file}()},
+\code{\link{load_infection_chains}()},
+\code{\link{load_mcmc_chains}()},
+\code{\link{load_start_tab}()},
+\code{\link{load_titre_dat}()}
 }
 \concept{load_data_functions}

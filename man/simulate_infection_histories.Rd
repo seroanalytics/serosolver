@@ -4,8 +4,12 @@
 \alias{simulate_infection_histories}
 \title{Simulate infection histories}
 \usage{
-simulate_infection_histories(p_inf, strain_isolation_times, sampling_times,
-  DOBs)
+simulate_infection_histories(
+  p_inf,
+  strain_isolation_times,
+  sampling_times,
+  DOBs
+)
 }
 \arguments{
 \item{p_inf}{a vector of attack rates (infection probabilities) for each year}
@@ -31,10 +35,11 @@ DOBs <- rep(min(strain_isolation_times), n_indivs)
 inf_hist <- simulate_infection_histories(p_inf, strain_isolation_times, sampling_times, DOBs)
 }
 \seealso{
-Other simulation_functions: \code{\link{simulate_attack_rates}},
-  \code{\link{simulate_data}},
-  \code{\link{simulate_group}},
-  \code{\link{simulate_individual_faster}},
-  \code{\link{simulate_individual}}
+Other simulation_functions: 
+\code{\link{simulate_attack_rates}()},
+\code{\link{simulate_data}()},
+\code{\link{simulate_group}()},
+\code{\link{simulate_individual_faster}()},
+\code{\link{simulate_individual}()}
 }
 \concept{simulation_functions}

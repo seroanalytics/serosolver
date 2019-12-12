@@ -20,9 +20,13 @@ Plots a histogram of the beta binomial function with given mean and variance
 hist_rbb(100, 0.15, 0.1)
 }
 \seealso{
-Other beta_binomial_functions: \code{\link{bb_mean}},
-  \code{\link{dbb}}, \code{\link{find_bb_2}},
-  \code{\link{find_prior_alpha_beta}}, \code{\link{pbb}},
-  \code{\link{qbb}}, \code{\link{rbb}}
+Other beta_binomial_functions: 
+\code{\link{bb_mean}()},
+\code{\link{dbb}()},
+\code{\link{find_bb_2}()},
+\code{\link{find_prior_alpha_beta}()},
+\code{\link{pbb}()},
+\code{\link{qbb}()},
+\code{\link{rbb}()}
 }
 \concept{beta_binomial_functions}

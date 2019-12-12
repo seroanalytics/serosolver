@@ -4,8 +4,13 @@
 \alias{fit_normal_prior}
 \title{Fit normal distribution to MCMC output}
 \usage{
-fit_normal_prior(chain_samples, par_name = "", error_tol = 999999999,
-  try_attempts = 10, plot_fit = TRUE)
+fit_normal_prior(
+  chain_samples,
+  par_name = "",
+  error_tol = 999999999,
+  try_attempts = 10,
+  plot_fit = TRUE
+)
 }
 \arguments{
 \item{chain_samples}{the MCMC chain data frame to be fit to}
@@ -33,17 +38,19 @@ chain <- read.csv("madeup_chain.csv")
 results <- fit_normal_prior(chain, par_name="mu",plot_fit=FALSE)
 }
 
-Other priors: \code{\link{calc_phi_probs_indiv}},
-  \code{\link{calc_phi_probs_spline}},
-  \code{\link{calc_phi_probs}},
-  \code{\link{create_prior_mu}},
-  \code{\link{create_prob_shifts}},
-  \code{\link{find_beta_prior_mode}},
-  \code{\link{find_beta_prior_with_mean_var}},
-  \code{\link{find_beta_prior_with_mean}},
-  \code{\link{fit_beta_prior}},
-  \code{\link{inf_mat_prior}},
-  \code{\link{infection_history_prior}},
-  \code{\link{prob_mus}}, \code{\link{prob_shifts}}
+Other priors: 
+\code{\link{calc_phi_probs_indiv}()},
+\code{\link{calc_phi_probs_spline}()},
+\code{\link{calc_phi_probs}()},
+\code{\link{create_prior_mu}()},
+\code{\link{create_prob_shifts}()},
+\code{\link{find_beta_prior_mode}()},
+\code{\link{find_beta_prior_with_mean_var}()},
+\code{\link{find_beta_prior_with_mean}()},
+\code{\link{fit_beta_prior}()},
+\code{\link{inf_mat_prior}()},
+\code{\link{infection_history_prior}()},
+\code{\link{prob_mus}()},
+\code{\link{prob_shifts}()}
 }
 \concept{priors}

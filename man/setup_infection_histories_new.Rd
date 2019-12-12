@@ -4,8 +4,13 @@
 \alias{setup_infection_histories_new}
 \title{Propose initial infection histories}
 \usage{
-setup_infection_histories_new(titre_dat, strain_isolation_times,
-  space = 5, titre_cutoff = 2, sample_prob = 0.9)
+setup_infection_histories_new(
+  titre_dat,
+  strain_isolation_times,
+  space = 5,
+  titre_cutoff = 2,
+  sample_prob = 0.9
+)
 }
 \arguments{
 \item{titre_dat}{the matrix of titres data with columns for individual, sample, and titre}
@@ -31,8 +36,9 @@ data(example_antigenic_map)
 start_inf <- setup_infection_histories_new(example_titre_dat, example_antigenic_map$inf_years)
 }
 \seealso{
-Other setup_infection_histories: \code{\link{setup_infection_histories_new_2}},
-  \code{\link{setup_infection_histories_old}},
-  \code{\link{setup_infection_histories_total}}
+Other setup_infection_histories: 
+\code{\link{setup_infection_histories_new_2}()},
+\code{\link{setup_infection_histories_old}()},
+\code{\link{setup_infection_histories_total}()}
 }
 \concept{setup_infection_histories}

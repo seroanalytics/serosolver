@@ -4,8 +4,13 @@
 \alias{save_infection_history_to_disk}
 \title{Write given infection history to disk}
 \usage{
-save_infection_history_to_disk(infection_history, file, sampno,
-  append = TRUE, col_names = FALSE)
+save_infection_history_to_disk(
+  infection_history,
+  file,
+  sampno,
+  append = TRUE,
+  col_names = FALSE
+)
 }
 \arguments{
 \item{infection_history}{the infection history matrix}
@@ -25,8 +30,10 @@ nothing
 Write given infection history to disk
 }
 \seealso{
-Other mcmc: \code{\link{generate_start_tab}},
-  \code{\link{rm_scale}}, \code{\link{run_MCMC}},
-  \code{\link{scaletuning}}
+Other mcmc: 
+\code{\link{generate_start_tab}()},
+\code{\link{rm_scale}()},
+\code{\link{run_MCMC}()},
+\code{\link{scaletuning}()}
 }
 \concept{mcmc}

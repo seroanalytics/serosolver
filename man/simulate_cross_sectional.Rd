@@ -4,10 +4,20 @@
 \alias{simulate_cross_sectional}
 \title{Simulates multiple cohorts in a cross-sectional framework.}
 \usage{
-simulate_cross_sectional(parTab, n_indiv, buckets = 12,
-  strainIsolationTimes, samplingTimes, antigenicMap, ageMin = 5,
-  ageMax = 80, attackRates, group = 1, sampleSensoring = 0,
-  titreSensoring = 0)
+simulate_cross_sectional(
+  parTab,
+  n_indiv,
+  buckets = 12,
+  strainIsolationTimes,
+  samplingTimes,
+  antigenicMap,
+  ageMin = 5,
+  ageMax = 80,
+  attackRates,
+  group = 1,
+  sampleSensoring = 0,
+  titreSensoring = 0
+)
 }
 \arguments{
 \item{parTab}{the full parameter table controlling parameter ranges and values}

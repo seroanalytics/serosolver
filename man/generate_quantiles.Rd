@@ -4,8 +4,7 @@
 \alias{generate_quantiles}
 \title{Formatted quantiles}
 \usage{
-generate_quantiles(x, sig_f = 3, qs = c(0.025, 0.5, 0.975),
-  as_text = TRUE)
+generate_quantiles(x, sig_f = 3, qs = c(0.025, 0.5, 0.975), as_text = TRUE)
 }
 \arguments{
 \item{x}{the vector to summarise}

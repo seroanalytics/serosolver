@@ -23,9 +23,13 @@ Finds the required alpha and beta to give a desired mean and variance of the bet
 find_prior_alpha_beta(n=100,mean=25,var=5)
 }
 \seealso{
-Other beta_binomial_functions: \code{\link{bb_mean}},
-  \code{\link{dbb}}, \code{\link{find_bb_2}},
-  \code{\link{hist_rbb}}, \code{\link{pbb}},
-  \code{\link{qbb}}, \code{\link{rbb}}
+Other beta_binomial_functions: 
+\code{\link{bb_mean}()},
+\code{\link{dbb}()},
+\code{\link{find_bb_2}()},
+\code{\link{hist_rbb}()},
+\code{\link{pbb}()},
+\code{\link{qbb}()},
+\code{\link{rbb}()}
 }
 \concept{beta_binomial_functions}

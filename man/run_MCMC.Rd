@@ -4,14 +4,29 @@
 \alias{run_MCMC}
 \title{Adaptive Metropolis-within-Gibbs/Metropolis Hastings Random Walk Algorithm.}
 \usage{
-run_MCMC(par_tab, titre_dat, antigenic_map, mcmc_pars = c(),
-  mvr_pars = NULL, start_inf_hist = NULL, filename = "test",
+run_MCMC(
+  par_tab,
+  titre_dat,
+  antigenic_map,
+  mcmc_pars = c(),
+  mvr_pars = NULL,
+  start_inf_hist = NULL,
+  filename = "test",
   CREATE_POSTERIOR_FUNC = create_posterior_func,
-  CREATE_PRIOR_FUNC = NULL, version = 1, mu_indices = NULL,
-  measurement_indices = NULL, measurement_random_effects = FALSE,
-  proposal_ratios = NULL, OPT_TUNING = 0.1, temp = 1,
-  solve_likelihood = TRUE, n_alive = NULL, message_slack = FALSE,
-  message_slack_pars = NULL, ...)
+  CREATE_PRIOR_FUNC = NULL,
+  version = 1,
+  mu_indices = NULL,
+  measurement_indices = NULL,
+  measurement_random_effects = FALSE,
+  proposal_ratios = NULL,
+  OPT_TUNING = 0.1,
+  temp = 1,
+  solve_likelihood = TRUE,
+  n_alive = NULL,
+  message_slack = FALSE,
+  message_slack_pars = NULL,
+  ...
+)
 }
 \arguments{
 \item{par_tab}{The parameter table controlling information such as bounds, initial values etc. See \code{\link{example_par_tab}}}
@@ -94,9 +109,10 @@ res <- run_MCMC(example_par_tab[example_par_tab$names != "phi",], example_titre_
 \seealso{
 \url{https://github.com/jameshay218/lazymcmc}
 
-Other mcmc: \code{\link{generate_start_tab}},
-  \code{\link{rm_scale}},
-  \code{\link{save_infection_history_to_disk}},
-  \code{\link{scaletuning}}
+Other mcmc: 
+\code{\link{generate_start_tab}()},
+\code{\link{rm_scale}()},
+\code{\link{save_infection_history_to_disk}()},
+\code{\link{scaletuning}()}
 }
 \concept{mcmc}

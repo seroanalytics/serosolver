@@ -12,9 +12,10 @@ data(example_theta_chain)
 Outputs of a quick MCMC run corresponding to the example data. See \code{\link{example_inf_chain}} for corresponding infection history chain output
 }
 \seealso{
-Other example_data: \code{\link{example_antigenic_map}},
-  \code{\link{example_inf_chain}},
-  \code{\link{example_par_tab}}
+Other example_data: 
+\code{\link{example_antigenic_map}},
+\code{\link{example_inf_chain}},
+\code{\link{example_par_tab}}
 }
 \concept{example_data}
 \keyword{datasets}

@@ -19,10 +19,11 @@ Searches the working directory for a file called "start_tab.csv" and reads in th
 \dontrun{load_start_tab()}
 }
 \seealso{
-Other load_data_functions: \code{\link{load_antigenic_map_file}},
-  \code{\link{load_infection_chains}},
-  \code{\link{load_mcmc_chains}},
-  \code{\link{load_theta_chains}},
-  \code{\link{load_titre_dat}}
+Other load_data_functions: 
+\code{\link{load_antigenic_map_file}()},
+\code{\link{load_infection_chains}()},
+\code{\link{load_mcmc_chains}()},
+\code{\link{load_theta_chains}()},
+\code{\link{load_titre_dat}()}
 }
 \concept{load_data_functions}

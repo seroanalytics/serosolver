@@ -4,8 +4,13 @@
 \alias{plot_data}
 \title{Useful plot for looking at simulated data}
 \usage{
-plot_data(titre_dat, infection_histories, strain_isolation_times, n_samps,
-  start_inf = NULL)
+plot_data(
+  titre_dat,
+  infection_histories,
+  strain_isolation_times,
+  n_samps,
+  start_inf = NULL
+)
 }
 \arguments{
 \item{titre_dat}{the data frame of titre data}
@@ -34,13 +39,14 @@ plot_data(example_titre_dat, example_inf_hist, strain_isolation_times, 5)
 }
 }
 \seealso{
-Other infection_history_plots: \code{\link{calculate_infection_history_statistics}},
-  \code{\link{generate_cumulative_inf_plots}},
-  \code{\link{plot_infection_histories}},
-  \code{\link{plot_infection_history_chains_indiv}},
-  \code{\link{plot_infection_history_chains_time}},
-  \code{\link{plot_number_infections}},
-  \code{\link{plot_posteriors_infhist}},
-  \code{\link{plot_total_number_infections}}
+Other infection_history_plots: 
+\code{\link{calculate_infection_history_statistics}()},
+\code{\link{generate_cumulative_inf_plots}()},
+\code{\link{plot_infection_histories}()},
+\code{\link{plot_infection_history_chains_indiv}()},
+\code{\link{plot_infection_history_chains_time}()},
+\code{\link{plot_number_infections}()},
+\code{\link{plot_posteriors_infhist}()},
+\code{\link{plot_total_number_infections}()}
 }
 \concept{infection_history_plots}

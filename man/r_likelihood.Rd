@@ -4,8 +4,13 @@
 \alias{r_likelihood}
 \title{Likelihood function given data}
 \usage{
-r_likelihood(expected, data, theta, expected_indices = NULL,
-  measurement_shifts = NULL)
+r_likelihood(
+  expected,
+  data,
+  theta,
+  expected_indices = NULL,
+  measurement_shifts = NULL
+)
 }
 \arguments{
 \item{expected}{vector of expected HI titres}

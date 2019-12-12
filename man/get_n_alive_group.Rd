@@ -2,7 +2,7 @@
 % Please edit documentation in R/helpers.R
 \name{get_n_alive_group}
 \alias{get_n_alive_group}
-\title{Get number alive bylocation}
+\title{Get number alive by location}
 \usage{
 get_n_alive_group(titre_dat, times, melt_dat = FALSE)
 }
@@ -26,7 +26,8 @@ times <- unique(example_antigenic_map$inf_years)
 get_n_alive_group(example_titre_dat, times)
 }
 \seealso{
-Other get_summary: \code{\link{get_DOBs}},
-  \code{\link{get_n_alive}}
+Other get_summary: 
+\code{\link{get_DOBs}()},
+\code{\link{get_n_alive}()}
 }
 \concept{get_summary}

@@ -20,8 +20,9 @@ data(example_titre_dat)
 check_data(example_titre_dat)
 }
 \seealso{
-Other check_inputs: \code{\link{check_attack_rates}},
-  \code{\link{check_par_tab}},
-  \code{\link{check_proposals}}
+Other check_inputs: 
+\code{\link{check_attack_rates}()},
+\code{\link{check_par_tab}()},
+\code{\link{check_proposals}()}
 }
 \concept{check_inputs}

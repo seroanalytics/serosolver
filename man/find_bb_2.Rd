@@ -22,9 +22,13 @@ alpha and beta for the second distribution
 Given a beta binomial function with known N, alpha and beta, finds the alpha and beta for a beta binomial with a different N that gives the same mean and variance
 }
 \seealso{
-Other beta_binomial_functions: \code{\link{bb_mean}},
-  \code{\link{dbb}}, \code{\link{find_prior_alpha_beta}},
-  \code{\link{hist_rbb}}, \code{\link{pbb}},
-  \code{\link{qbb}}, \code{\link{rbb}}
+Other beta_binomial_functions: 
+\code{\link{bb_mean}()},
+\code{\link{dbb}()},
+\code{\link{find_prior_alpha_beta}()},
+\code{\link{hist_rbb}()},
+\code{\link{pbb}()},
+\code{\link{qbb}()},
+\code{\link{rbb}()}
 }
 \concept{beta_binomial_functions}

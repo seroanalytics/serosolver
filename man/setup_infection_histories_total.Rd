@@ -4,8 +4,12 @@
 \alias{setup_infection_histories_total}
 \title{Initial infection history prior on total}
 \usage{
-setup_infection_histories_total(titre_dat, strain_isolation_times,
-  alpha = 1, beta = 1)
+setup_infection_histories_total(
+  titre_dat,
+  strain_isolation_times,
+  alpha = 1,
+  beta = 1
+)
 }
 \arguments{
 \item{titre_dat}{the matrix of titres data with columns for individual, sample, and titre}
@@ -28,8 +32,9 @@ data(example_antigenic_map)
 start_inf <- setup_infection_histories_total(example_titre_dat, example_antigenic_map$inf_years, 2,10)
 }
 \seealso{
-Other setup_infection_histories: \code{\link{setup_infection_histories_new_2}},
-  \code{\link{setup_infection_histories_new}},
-  \code{\link{setup_infection_histories_old}}
+Other setup_infection_histories: 
+\code{\link{setup_infection_histories_new_2}()},
+\code{\link{setup_infection_histories_new}()},
+\code{\link{setup_infection_histories_old}()}
 }
 \concept{setup_infection_histories}
