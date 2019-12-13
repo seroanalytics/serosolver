@@ -5,7 +5,6 @@ devtools::load_all()
 
 buckets <- 1
 
-source('~/Google Drive/Influenza study design/plotting_functions_fast.R')
 ## Antigenic map for cross reactivity parameters
 antigenic_map <- read.csv(file.path(code.dir,"data/fonville_map_approx.csv"),
                           stringsAsFactors=FALSE)
@@ -55,9 +54,19 @@ titre_dat <- read.csv(paste("~/Documents/Github/serosolver/data/study_design/",f
 inf_chain <- data.table::fread(paste("chains/",filename,"_infection_histories.csv",sep=""))
 inf_chain <- inf_chain[inf_chain$sampno >= (mcmc_pars["adaptive_period"] + mcmc_pars["burnin"]),]
 
+#the first 1 : 125 ids are the youngest age
+p_1 <- plot_attack_rates(infection_histories = inf_chain[which(inf_chain$i %in% 1:125), ], titre_dat_AR[which(titre_dat_AR$individual %in% 1:125),], strain_isolation_times, by_val = 10)+
+  geom_hline(yintercept = 0.3, linetype="dashed", color = "gray") +
+  ggtitle("Individuals aged 1 - 10 years")
+
+p_2 <- plot_attack_rates(infection_histories = inf_chain[which(inf_chain$i %in% 126:250), ], titre_dat_AR[which(titre_dat_AR$individual %in% 126:250),], strain_isolation_times, by_val = 10)+
+  geom_hline(yintercept = 0.15, linetype="dashed", color = "gray") +
+  ggtitle("Individuals aged 11 - 20 years")
+
 p <- plot_attack_rates(infection_histories = inf_chain, titre_dat_AR, strain_isolation_times, by_val = 10)+
- geom_hline(yintercept = 0.15, linetype="dashed", color = "gray") +
-  geom_hline(yintercept = 0.3, linetype="dashed", color = "gray")
+  geom_hline(yintercept = 0.225, linetype="dashed", color = "gray") +
+  ggtitle("All individuals")
 
-ggsave("AR_supp.png",p, width = 10, height = 6)
 
+p_all <- do.call(grid.arrange,c(list(p_1, p_2, p), nrow = 1))
+ggsave("AR_supp.png",p_all, width = 20, height = 6)
