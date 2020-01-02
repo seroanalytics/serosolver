@@ -3,7 +3,8 @@
 #' The Adaptive Metropolis-within-Gibbs algorithm. Given a starting point and the necessary MCMC parameters as set out below, performs a random-walk of the posterior space to produce an MCMC chain that can be used to generate MCMC density and iteration plots. The algorithm undergoes an adaptive period, where it changes the step size of the random walk for each parameter to approach the desired acceptance rate, popt. The algorithm then uses \code{\link{univ_proposal}} or \code{\link{mvr_proposal}} to explore parameter space, recording the value and posterior value at each step. The MCMC chain is saved in blocks as a .csv file at the location given by filename. This version of the algorithm is also designed to explore posterior densities for infection histories. See the package vignettes for examples. 
 #' @param par_tab The parameter table controlling information such as bounds, initial values etc. See \code{\link{example_par_tab}}
 #' @param titre_dat The data frame of titre data to be fitted. Must have columns: group (index of group); individual (integer ID of individual); samples (numeric time of sample taken); virus (numeric time of when the virus was circulating); titre (integer of titre value against the given virus at that sampling time); run (integer giving the repeated number of this titre); DOB (integer giving date of birth matching time units used in model). See \code{\link{example_titre_dat}}
-#' @param antigenic_map A data frame of antigenic x and y coordinates. Must have column names: x_coord; y_coord; inf_years. See \code{\link{example_antigenic_map}}
+#' @param antigenic_map (optional) A data frame of antigenic x and y coordinates. Must have column names: x_coord; y_coord; inf_years. See \code{\link{example_antigenic_map}}
+#' @param strain_isolation_times (optional) If no antigenic map is specified, this argument gives the vector of times at which individuals can be infected
 #' @param mcmc_pars Named vector named vector with parameters for the MCMC procedure. See details
 #' @param mvr_pars Leave NULL to use univariate proposals. Otherwise, a list of parameters if using a multivariate proposal. Must contain an initial covariance matrix, weighting for adapting cov matrix, and an initial scaling parameter (0-1)
 #' @param start_inf_hist Infection history matrix to start MCMC at. Can be left NULL. See \code{\link{example_inf_hist}}
@@ -19,8 +20,6 @@
 #' @param temp Temperature term for parallel tempering, raises likelihood to this value. Just used for testing at this point
 #' @param solve_likelihood if FALSE, returns only the prior and does not solve the likelihood. Use this if you wish to sample directly from the prior
 #' @param n_alive if not NULL, uses this as the number alive for the infection history prior, rather than calculating the number alive based on titre_dat
-#' @param message_slack if TRUE, attempts to send updates to slack rather than just locally
-#' @param message_slack_pars if not NULL, the list of parameters to communicate with slack
 #' @param ... Other arguments to pass to CREATE_POSTERIOR_FUNC
 #' @return A list with: 1) relative file path at which the MCMC chain is saved as a .csv file; 2) relative file path at which the infection history chain is saved as a .csv file; 3) the last used covariance matrix if mvr_pars != NULL; 4) the last used scale/step size (if multivariate proposals) or vector of step sizes (if univariate proposals)
 #' @details
@@ -54,7 +53,8 @@
 #' @export
 run_MCMC <- function(par_tab,
                      titre_dat,
-                     antigenic_map,
+                     antigenic_map=NULL,
+                     strain_isolation_times=NULL,
                      mcmc_pars = c(),
                      mvr_pars = NULL,
                      start_inf_hist = NULL,
@@ -70,18 +70,7 @@ run_MCMC <- function(par_tab,
                      temp = 1,
                      solve_likelihood = TRUE,
                      n_alive = NULL,
-                     message_slack = FALSE,
-                     message_slack_pars = NULL,
                      ...) {
-  ## If we want to message ourselves on slack with intermediate progress
-  if (message_slack && !is.null(message_slack_pars)) {
-    slackr::slackrSetup(
-      api_token = message_slack_pars$api_token,
-      channel = message_slack_pars$channel,
-      username = message_slack_pars$username
-    )
-  }
-
   ## Error checks --------------------------------------
   check_par_tab(par_tab, TRUE, version)
 
@@ -189,7 +178,12 @@ run_MCMC <- function(par_tab,
   ## Check the titre_dat input
   check_data(titre_dat)
 
-  strain_isolation_times <- unique(antigenic_map$inf_years) # How many strains are we testing against and what time did they circulate
+  if (!is.null(antigenic_map)) {
+    strain_isolation_times <- unique(antigenic_map$inf_years) # How many strains are we testing against and what time did they circulate
+  } else {
+    antigenic_map <- data.frame("x_coord"=1,"y_coord"=1,"inf_years"=strain_isolation_times)
+  }
+  
   n_indiv <- length(unique(titre_dat$individual)) # How many individuals in the titre_dat?
 
    
@@ -396,12 +390,7 @@ run_MCMC <- function(par_tab,
     ## Whether to swap entire year contents or not - only applies to gibbs sampling
     inf_swap_prob <- runif(1)
     if (i %% save_block == 0) message(cat("Current iteration: ", i, "\n", sep = "\t"))
-    if (message_slack && i %% message_slack_pars$message_freq == 0) {
-      text_slackr(paste0(message_slack_pars$username, " iteration ", i),
-        channel = message_slack_pars$channel,
-        username = message_slack_pars$username
-      )
-    }
+  
     ######################
     ## PROPOSALS
     ######################
@@ -801,15 +790,6 @@ run_MCMC <- function(par_tab,
           ## If not accepting, send a warning
           if (all(pcur[!is.nan(pcur)] == 0)) {
               message("Warning: acceptance rates are 0. Might be an error with the theta proposal?\n")
-              if (message_slack) {
-                  text_slackr(paste0(
-                      "Warning in ", message_slack_pars$username,
-                      ": acceptance rates are 0. Might be an error with the theta proposal?\n"
-                  ),
-                  channel = message_slack_pars$channel,
-                  username = message_slack_pars$username
-                  )
-              }
           }
 
           tempaccepted <- tempiter <- reset
@@ -843,9 +823,6 @@ run_MCMC <- function(par_tab,
 
     if (is.null(mvr_pars)) {
         cov_mat <- NULL
-    }
-    if (message_slack && !is.null(message_slack_pars)) {
-        slackr::text_slackr(paste0(message_slack_pars$username, " is done!"))
     }
     return(list(
         "chain_file" = mcmc_chain_file, "history_file" = infection_history_file,

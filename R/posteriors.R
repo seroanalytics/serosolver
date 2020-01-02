@@ -235,7 +235,8 @@ prob_mus <- function(mus, pars) {
 #' Takes all of the input data/parameters and returns a function pointer. This function finds the posterior for a given set of input parameters (theta) and infection histories without needing to pass the data set back and forth. No example is provided for function_type=2, as this should only be called within \code{\link{run_MCMC}}
 #' @param par_tab the parameter table controlling information such as bounds, initial values etc. See \code{\link{example_par_tab}}
 #' @param titre_dat the data frame of data to be fitted. Must have columns: group (index of group); individual (integer ID of individual); samples (numeric time of sample taken); virus (numeric time of when the virus was circulating); titre (integer of titre value against the given virus at that sampling time). See \code{\link{example_titre_dat}}
-#' @param antigenic_map a data frame of antigenic x and y coordinates. Must have column names: x_coord; y_coord; inf_years. See \code{\link{example_antigenic_map}}
+#' @param antigenic_map (optional) a data frame of antigenic x and y coordinates. Must have column names: x_coord; y_coord; inf_years. See \code{\link{example_antigenic_map}}
+#' @param strain_isolation_times (optional) if no antigenic map is specified, this argument gives the vector of times at which individuals can be infected
 #' @param version which version of the posterior function to solve (corresponds mainly to the infection history prior). Mostly just left to 1, but there is one special case where this should be set to 4 for the gibbs sampler. This is only really used by \code{\link{run_MCMC}} to place the infection history prior on the total number of infections across all years and individuals when version = 4
 #' @param solve_likelihood usually set to TRUE. If FALSE, does not solve the likelihood and instead just samples/solves based on the model prior
 #' @param age_mask see \code{\link{create_age_mask}} - a vector with one entry for each individual specifying the first epoch of circulation in which an individual could have been exposed
@@ -265,7 +266,8 @@ prob_mus <- function(mus, pars) {
 #' @export
 create_posterior_func <- function(par_tab,
                                   titre_dat,
-                                  antigenic_map,
+                                  antigenic_map=NULL,
+                                  strain_isolation_times=NULL,
                                   version = 1,
                                   solve_likelihood = TRUE,
                                   age_mask = NULL,
@@ -280,7 +282,7 @@ create_posterior_func <- function(par_tab,
         titre_dat$group <- 1
     }
     check_data(titre_dat)
-    
+   
     ## Seperate out initial readings and repeat readings - we only
     ## want to solve the model once for each unique indiv/sample/virus year tested
     titre_dat_unique <- titre_dat[titre_dat$run == 1, ]
@@ -301,7 +303,8 @@ create_posterior_func <- function(par_tab,
     )
     ## Setup data vectors and extract
     setup_dat <- setup_titredat_for_posterior_func(
-        titre_dat_unique, antigenic_map,
+        titre_dat_unique, antigenic_map, 
+        strain_isolation_times,
         age_mask, n_alive
     )
 

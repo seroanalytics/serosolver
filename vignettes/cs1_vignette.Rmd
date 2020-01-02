@@ -1,5 +1,5 @@
 ---
-title: 'Serosolver: paper case study 1'
+title: 'serosolver: paper case study 1'
 csl: plos.csl
 output: rmarkdown::html_vignette
 editor_options:
@@ -21,7 +21,7 @@ knitr::opts_chunk$set(
 )
 ```
 # Overview
-This vignette provides all of the analyses for case study 1 in the accompanying package and paper. Briefly, the first case study aims to 1) reconstruct the unobserved infection dynamics from measured titres collected several months apart, 2) examine these infection dynamics stratified by available demographic variables, such as vaccination status and age, and 3) estimate biological parameters shaping the short-term antibody response.All of the functions used here are well documented and have many tunable arguments, and we therefore encourage users to refer to the helps files.
+This vignette provides all of the analyses for case study 1 in the accompanying package and paper. Briefly, the first case study aims to 1) reconstruct the unobserved infection dynamics from measured titres collected several months apart, 2) examine these infection dynamics stratified by available demographic variables, such as vaccination status and age, and 3) estimate biological parameters shaping the short-term antibody response. All of the functions used here are well documented and have many tunable arguments, and we therefore encourage users to refer to the helps files.
 
 # Setup
 
@@ -29,8 +29,9 @@ This vignette provides all of the analyses for case study 1 in the accompanying 
 `serosolver` may be installed from github using the `devtools` package. There are a number of additional packages that we need for this analysis.
 ```{r message=FALSE, warning=FALSE, r,eval=TRUE}
 # Required to run serosolver
-#devtools::install_github("seroanalytics/serosolver")
-library(serosolver)
+# devtools::install_github("seroanalytics/serosolver")
+devtools::load_all("E:/James/Documents/Fluscape/serosolver")
+#library(serosolver)
 library(plyr)
 library(data.table)
 
@@ -44,7 +45,7 @@ library(ggplot2)
 library(viridis)
 
 # set up cluster
-set.seed(1234)
+set.seed(0)
 cl <- makeCluster(5)
 
 ## Note that this vignette was generated on a Windows machine,
@@ -61,7 +62,7 @@ if(Sys.info()[["sysname"]]=="Darwin" | Sys.info()[["sysname"]]=="Linux"){
 ```
 
 ## Assumptions
-In this analysis, serological samples were taken between 2009 and 2011 and therefore all time variables are relative to this time period. We are interested in inferring infections and attack rates at a quarterly resolution, and therefore set `resolution` to 4. Our primary outcome of interest is to infer unbiased attack rates, and we therefore use the version of the code with a Beta prior on per-time attack rates, `prior_version=2`. We set these parameters at the start of the analysis. Additionally, we assume that the samples are tested against the same virus, therefore, we set all antigenic coordinates (more information below) to those of the first time point.
+In this analysis, serological samples were taken between 2009 and 2012 and therefore all time variables are relative to this time period. We are interested in inferring infections and attack rates at a quarterly resolution, and therefore set `resolution` to 4. Our primary outcome of interest is to infer unbiased attack rates, and we therefore use the version of the code with a Beta prior on per-time attack rates, `prior_version=2`. We set these parameters at the start of the analysis. Additionally, we assume that the samples are tested against the same virus, therefore, we set all antigenic coordinates to those of the first time point. 
 ```{r, eval=TRUE,}
 filename <- "case_study_1"
 resolution <- 4 ## set to 4 for quarterly resolution
@@ -72,7 +73,7 @@ prior_version <- 2
 ```
 
 ## Preparing the data
-The data used in this analysis are haemagglutination inhibition (HI) titres against A/H1N1pdm09 that began circulating in 2009. The raw data have been pre-processed to both convert them into a form usable for `serosolver` and to separate the data into vaccinated and unvaccinated data sets. Details about the pre-processing can be found in the scripts folder of the `serosolver` package.
+The data used in this analysis are haemagglutination inhibition (HI) titres against A/H1N1pdm09 that began circulating in 2009. The raw data have been pre-processed to both convert them into a form usable for `serosolver` and to separate the data into vaccinated and unvaccinated data sets. Given that this analysis uses titres from a single virus it is not necessary to define an antigenic map.
 ```{r}
 ## Read in titre data
 # unvaccinated
@@ -91,32 +92,11 @@ titre_dat$individual <- match(titre_dat$individual, indivs)
 titre_dat <- unique(titre_dat)
 titre_dat <- plyr::ddply(titre_dat,.(individual,virus,samples),function(x) cbind(x,"run"=1:nrow(x),"group"=1))
 print(head(titre_dat))
+
+strain_isolation_times <- seq(sample_years[1]*resolution+1, sample_years[4]*resolution, by=1)
 ```
 
 NOTE: vaccinated and unvaccinated data must be run separately.
-
-Given that this analysis uses titres from a single virus it is necessary to define an antigenic map with matching antigenic distance for each time point. We use coordinates based on the antigenic map created by Fonville et al. Generating the antigenic map involves fitting a smoothing spline through provided coordinates to give a representative virus for each time point (in this case, each quarter) that an individual could be infected. This process also inputs antigenic coordinates for time points that we do not have a measured virus. We then overwrite the coordinates at every time point with those of the first time point.
-```{r}
-## Read in raw coordinates
-antigenic_coords_path <- system.file("extdata", "fonville_map_approx.csv", package = "serosolver")
-antigenic_coords <- read.csv(antigenic_coords_path, stringsAsFactors=FALSE)
-
-## Convert to form expected by serosolver
-antigenic_map <- generate_antigenic_map(antigenic_coords, resolution)
-
-## Restrict entries to years of interest. Entries in antigenic_map determine
-## the times that individual can be infected ie. the dimensions of the infection
-## history matrix.
-antigenic_map <- antigenic_map[antigenic_map$inf_years>=(sample_years[1]*resolution+1) & antigenic_map$inf_years<=sample_years[4]*resolution,]
-
-## Change all coordinates to the same as the first pair of coordinates (because we assume the virus is the same at every time point)
-antigenic_map[2:nrow(antigenic_map),c('x_coord','y_coord')] <- antigenic_map[1,c('x_coord','y_coord')]
-print(head(antigenic_map))
-
-strain_isolation_times <- unique(antigenic_map$inf_years)
-```
-
-NOTE: `generate_antigenic_map` expects the provided file `fonville_map_approx.csv`. Users should refer to `generate_antigenic_map_flexible` for more generic antigenic map generation.
 
 Finally, we must specify the `par_tab` data frame, which controls which parameters are included in the model, which are fixed, and their uniform prior ranges. Given that we are integrating out the probability of infection terms under prior version 2, we must remove these parameters from `par_tab`. Furthermore, given that we are interested in short-term dynamics with relatively sparse data, we remove parameters relating to the long-term antibody kinetics phase to avoid identifiability issues. We set alpha and beta to 1.
 
@@ -132,9 +112,9 @@ par_tab[par_tab$names == "MAX_TITRE","values"] <- 9
 ## Remove phi parameters, as these are integrated out under prior version 2
 par_tab <- par_tab[par_tab$names != "phi",]
 
-## Fix all long term parameters to 0
-par_tab[par_tab$names %in% c("mu","tau","sigma1","sigma2"),"fixed"] <- 1 #mu, tau, sigma1, and sigma2 are fixed
-par_tab[par_tab$names %in% c("mu","tau","sigma1","sigma2"),"values"] <- 0 # set these values to 0
+## Fix cross reactivity and antigenic seniority
+par_tab[par_tab$names %in% c("tau","sigma1","sigma2"),"fixed"] <- 1 #mu, tau, sigma1, and sigma2 are fixed
+par_tab[par_tab$names %in% c("tau","sigma1","sigma2"),"values"] <- 0 # set these values to 0
 ```
 ## Summary
 + Choose resolution, attack rate priors and reference time for "the present"
@@ -180,11 +160,12 @@ res <- foreach(x = filenames, .packages = c('serosolver','data.table','plyr')) %
                   titre_dat = titre_dat,
                   antigenic_map = antigenic_map,
                   start_inf_hist = start_inf, 
-                  mcmc_pars = c("iterations"=500000,"adaptive_period"=100000,
-                                "thin"=1000,"thin_hist"=1000,
-                                "save_block"=1000,"inf_propn"=1, 
-                                "hist_sample_prob"=1,"hist_switch_prob"=0.8,
-                                "year_swap_propn"=1),
+                  mcmc_pars = c("iterations"=200000,"popt"=0.44,"popt_hist"=0.44,
+                                "opt_freq"=1000,"thin"=1,"adaptive_period"=50000, 
+                                "save_block"=1000, "thin2"=10,"hist_sample_prob"=1,
+                                "switch_sample"=2, "burnin"=0, "inf_propn"=0.5, 
+                                "move_size"=3,"hist_opt"=1,"swap_propn"=0.5,
+                                "hist_switch_prob"=0.5,"year_swap_propn"=1),
                   filename = paste0(chain_path_real,x), 
                   CREATE_POSTERIOR_FUNC = create_posterior_func, 
                   version = prior_version)
@@ -198,7 +179,7 @@ Once the MCMC chains are run, `serosolver` provides a number of simple functions
 ## Read in the MCMC chains
 # Note that `thin` here is in addition to any thinning done during the fitting
 # Chain length values in load function need to be consistent with MCMC run
-all_chains <- load_mcmc_chains(location=chain_path_real,thin=1,burnin=100000,
+all_chains <- load_mcmc_chains(location=chain_path_real,thin=10,burnin=50000,
                              par_tab=par_tab,unfixed=FALSE,convert_mcmc=TRUE)
 ## Alternative, load the included MCMC chains rather than re-running
 ## load(cs1_chains_real)
@@ -212,9 +193,9 @@ Chains should then be checked for the usual MCMC diagnostics: $\hat{R}$ and effe
 ## Get the MCMC chains as a list
 list_chains <- all_chains$theta_list_chains
 ## Look at diagnostics for the free parameters
-list_chains1 <- lapply(list_chains, function(x) x[,c("mu_short","wane","error",
-                                                     "total_infections",
-                                                     "lnlike","prior_prob")])
+list_chains1 <- lapply(list_chains, function(x) x[,c("mu", "mu_short", "wane",
+                                                     "error", "total_infections",
+                                                     "lnlike", "prior_prob")])
 
 ## Gelman-Rubin diagnostics to assess between-chain convergence for each parameter
 print(gelman.diag(as.mcmc.list(list_chains1)))
@@ -289,9 +270,10 @@ titre_preds <- get_titre_predictions(chain = chain1,
                                      infection_histories = inf_chain1, 
                                      titre_dat = titre_dat, 
                                      individuals = unique(titre_dat$individual),
+                                     strain_isolation_times = strain_isolation_times,
                                      nsamp = 100, # Needs to be smaller than length of sampled chain 
-                                     antigenic_map = antigenic_map, 
-                                     par_tab = par_tab,expand_titredat=FALSE)
+                                     par_tab = par_tab,
+                                     expand_titredat=FALSE)
 to_use <- titre_preds$predictions
 print(head(to_use))
 
@@ -362,8 +344,8 @@ sim_par_tab$values <- as.numeric(mle_theta_pars)
 sim_par_tab[sim_par_tab$names %in% c("alpha","beta"),"values"] <- c(1/3,1/3)
 sim_par_tab[sim_par_tab$names == "wane","values"] <- 1
 sim_par_tab[sim_par_tab$names == "wane","values"] <- par_tab[par_tab$names == "wane","values"]/resolution
-sim_par_tab[sim_par_tab$names %in% c("mu","tau","sigma1","sigma2"),"fixed"] <- 1 
-sim_par_tab[sim_par_tab$names %in% c("mu","tau","sigma1","sigma2"),"values"] <- 0 
+sim_par_tab[sim_par_tab$names %in% c("tau","sigma1","sigma2"),"fixed"] <- 1 
+sim_par_tab[sim_par_tab$names %in% c("tau","sigma1","sigma2"),"values"] <- 0 
 sim_par_tab[sim_par_tab$names == "MAX_TITRE","values"] <- 9 
 
 sampling_times <- seq(2009*resolution + 1, 2012*resolution, by=1)
@@ -435,9 +417,12 @@ res <- foreach(x = filenames, .packages = c('serosolver','data.table','plyr')) %
                   titre_dat = sim_titre_dat,
                   antigenic_map = antigenic_map,
                   start_inf_hist = start_inf, 
-                  mcmc_pars = c("iterations"=500000,"adaptive_period"=100000,"thin"=1000,
-                                "thin_hist"=1000,"save_block"=1000,
-                                "hist_switch_prob"=0.8, "hist_sample_prob"=1),
+                  mcmc_pars = c("iterations"=2000000,"popt"=0.44,"popt_hist"=0.44,
+                                "opt_freq"=1000,"thin"=10,"adaptive_period"=500000, 
+                                "save_block"=1000, "thin2"=100,"hist_sample_prob"=1,
+                                "switch_sample"=2, "burnin"=0, "inf_propn"=0.5, 
+                                "move_size"=3,"hist_opt"=1,"swap_propn"=0.5,
+                                "hist_switch_prob"=0.5,"year_swap_propn"=1),
                   filename = paste0(chain_path_sim,x), 
                   CREATE_POSTERIOR_FUNC = create_posterior_func, 
                   version = prior_version)
@@ -461,8 +446,8 @@ theta_chain <- sim_all_chains$theta_chain
 ## Get the MCMC chains as a list
 list_chains <- sim_all_chains$theta_list_chains
 ## Look at diagnostics for the free parameters
-list_chains1 <- lapply(list_chains, function(x) x[,c("mu_short","wane","error",
-                                                     "total_infections",
+list_chains1 <- lapply(list_chains, function(x) x[,c("mu","mu_short","wane",
+                                                     "error","total_infections",
                                                      "lnlike","prior_prob")])
 
 ## Gelman-Rubin diagnostics and effective sample size

@@ -27,7 +27,8 @@ generate_quantiles <- function(x, sig_f = 3, qs = c(0.025, 0.5, 0.975), as_text 
 #' @param infection_histories the MCMC chain for infection histories
 #' @param titre_dat the data frame of titre data
 #' @param individuals the subset of individuals to generate credible intervals for
-#' @param antigenic_map the unmelted antigenic map
+#' @param antigenic_map (optional) a data frame of antigenic x and y coordinates. Must have column names: x_coord; y_coord; inf_years. See \code{\link{example_antigenic_map}}
+#' @param strain_isolation_times (optional) if no antigenic map is specified, this argument gives the vector of times at which individuals can be infected
 #' @param par_tab the table controlling the parameters in the MCMC chain
 #' @param nsamp number of samples to take from posterior
 #' @param add_residuals if true, returns an extra output summarising residuals between the model prediction and data
@@ -51,8 +52,8 @@ generate_quantiles <- function(x, sig_f = 3, qs = c(0.025, 0.5, 0.975), as_text 
 #' }
 #' @export
 get_titre_predictions <- function(chain, infection_histories, titre_dat,
-                                  individuals, antigenic_map,
-                                  par_tab,
+                                  individuals, antigenic_map=NULL,
+                                  strain_isolation_times=NULL, par_tab,
                                   nsamp = 100, add_residuals = FALSE,
                                   mu_indices = NULL,
                                   measurement_indices_by_time = NULL,
@@ -71,8 +72,12 @@ get_titre_predictions <- function(chain, infection_histories, titre_dat,
     titre_dat$individual <- match(titre_dat$individual, individuals)
     infection_histories$i <- match(infection_histories$i, individuals)
 
-    ## Format the antigenic map to solve the model
-    strain_isolation_times <- unique(antigenic_map$inf_years)
+    ## Format the antigenic map to solve the model 
+    if (!is.null(antigenic_map)) {
+        strain_isolation_times <- unique(antigenic_map$inf_years) # How many strains are we testing against and what time did they circulate
+    } else {
+        antigenic_map <- data.frame("x_coord"=1,"y_coord"=1,"inf_years"=strain_isolation_times)
+    }
     nstrain <- length(strain_isolation_times)
     n_indiv <- length(individuals)
 
@@ -97,7 +102,7 @@ get_titre_predictions <- function(chain, infection_histories, titre_dat,
         ]
     }
     model_func <- create_posterior_func(par_tab, titre_dat1, antigenic_map, 100,
-                                        mu_indices = mu_indices,
+                                        mu_indices = mu_indices,version=2,
                                         measurement_indices_by_time = measurement_indices_by_time, function_type = 4,
                                         titre_before_infection=titre_before_infection
                                         )
@@ -112,11 +117,10 @@ get_titre_predictions <- function(chain, infection_histories, titre_dat,
     for (i in 1:nsamp) {
         index <- tmp_samp[i]
         pars <- get_index_pars(chain, index)
-        pars <- pars[!(names(pars) %in% c(
-                                            "lnlike", "likelihood", "prior_prob",
+        pars <- pars[!(names(pars) %in% c("lnlike", "likelihood", "prior_prob",
                                             "sampno", "total_infections", "chain_no"
                                         ))]
-                                        # pars <- pars[names(pars) %in% par_tab$names]
+                                        ## pars <- pars[names(pars) %in% par_tab$names]
         tmp_inf_hist <- infection_histories[infection_histories$sampno == index, ]
         tmp_inf_hist <- as.matrix(Matrix::sparseMatrix(i = tmp_inf_hist$i, j = tmp_inf_hist$j, x = tmp_inf_hist$x, dims = c(n_indiv, nstrain)))
         predicted_titres[, i] <- model_func(pars, tmp_inf_hist)
@@ -181,20 +185,7 @@ get_titre_predictions <- function(chain, infection_histories, titre_dat,
     best_inf <- data.frame(best_inf)
     best_inf$individual <- 1:nrow(best_inf)
     best_inf$individual <- individuals[best_inf$individual]
-    ## For each individual, get density for the probability that an epoch was an infection time
-    ## The point of the following loop is to mask the densities where infection epochs were either
-    ## before an individual was born or after the time that a blood sample was taken
-                                        #for (indiv in unique(infection_history_dens$individual)) {
-                                        #  sample_times <- unique(titre_dat1[titre_dat1$individual == indiv, "samples"])
-                                        #  tmp <- NULL
-                                        #  for (samp in sample_times) {
-                                        #    indiv_inf_hist <- infection_history_dens[infection_history_dens$individual == indiv, ]
-                                        #    indiv_inf_hist[indiv_inf_hist$variable > samp, "value"] <- 0
-                                        #    indiv_inf_hist <- cbind(indiv_inf_hist, "samples" = samp)
-                                        #    tmp <- rbind(tmp, indiv_inf_hist)
-                                        #  }
-                                        #  infection_history_final <- rbind(infection_history_final, tmp)
-                                        #}
+
     dat2$individual <- individuals[dat2$individual]
     infection_history_final$individual <- individuals[infection_history_final$individual]
     if(titres_for_regression){
@@ -232,7 +223,8 @@ get_titre_predictions <- function(chain, infection_histories, titre_dat,
 #' }
 #' @export
 plot_infection_histories <- function(chain, infection_histories, titre_dat,
-                                     individuals, antigenic_map, par_tab,
+                                     individuals, antigenic_map=NULL, 
+                                     strain_isolation_times=NULL, par_tab,
                                      nsamp = 100,
                                      mu_indices = NULL,
                                      measurement_indices_by_time = NULL) {
@@ -241,7 +233,8 @@ plot_infection_histories <- function(chain, infection_histories, titre_dat,
     ## Generate titre predictions
     tmp <- get_titre_predictions(
         chain, infection_histories, titre_dat, individuals,
-        antigenic_map, par_tab, nsamp, FALSE, mu_indices,
+        antigenic_map, strain_isolation_times, 
+        par_tab, nsamp, FALSE, mu_indices,
         measurement_indices_by_time
     )
 
@@ -309,7 +302,7 @@ plot_posteriors_infhist <- function(inf_chain,
                                     known_infection_history = NULL,
                                     burnin = 0,
                                     samples = 100,
-                                    pad_chain = FALSE) {
+                                    pad_chain = TRUE) {
     ## Discard burn in period if necessary
     inf_chain <- inf_chain[inf_chain$sampno > burnin, ]
     if (is.null(inf_chain$chain_no)) {
@@ -339,8 +332,7 @@ plot_posteriors_infhist <- function(inf_chain,
     results <- calculate_infection_history_statistics(inf_chain, 0, years,
                                                       n_alive, 
                                                       known_ar=known_ar,
-                                                      known_infection_history=known_infection_history,
-                                                      pad_chain = FALSE
+                                                      known_infection_history=known_infection_history
                                                       )
     return(list(
         "by_time_trace" = time_plot, "by_indiv_trace" = indiv_plot,
@@ -512,24 +504,20 @@ plot_posteriors_theta <- function(chain,
 #' n_alive_group$j <- strain_isolation_times[n_alive_group$j]
 #' results <- calculate_infection_history_statistics(example_inf_chain, 0, strain_isolation_times,
 #'                                                   n_alive=n_alive_group, known_ar=known_ar,
-#'                                                   known_infection_history=known_inf_hist,
-#'                                                   pad_chain = FALSE)
+#'                                                   known_infection_history=known_inf_hist)
 #' @export
 calculate_infection_history_statistics <- function(inf_chain, burnin = 0, years = NULL,
                                                    n_alive = NULL, known_ar = NULL,
                                                    group_ids = NULL,
                                                    known_infection_history = NULL,
-                                                   pad_chain = TRUE,
                                                    solve_cumulative=FALSE) {
     inf_chain <- inf_chain[inf_chain$sampno > burnin, ]
     if (is.null(inf_chain$chain_no)) {
         inf_chain$chain_no <- 1
     }
-    if (pad_chain) {
-        message("Padding inf chain...\n")
-        inf_chain <- pad_inf_chain(inf_chain)
-        message("Done\n")
-    }
+    message("Padding inf chain...\n")
+    inf_chain <- pad_inf_chain(inf_chain)
+    message("Done\n")
 
     if (!is.null(group_ids)) {
         inf_chain <- merge(inf_chain, data.table(group_ids))
@@ -554,7 +542,6 @@ calculate_infection_history_statistics <- function(inf_chain, burnin = 0, years 
     data.table::setkey(n_inf_chain, "group", "sampno", "chain_no")
     n_inf_chain[, cumu_infs := cumsum(total_infs), by = key(n_inf_chain)]
 
-    
     gelman_res_j <- ddply(n_inf_chain, .(group,j), function(tmp_chain){
         tmp_chain_mcmc <- split(as.data.table(tmp_chain), by=c("chain_no"))
         tmp_chain_mcmc <- lapply(tmp_chain_mcmc, function(x) as.mcmc(x[,c("total_infs")]))
@@ -578,7 +565,7 @@ calculate_infection_history_statistics <- function(inf_chain, burnin = 0, years 
     by = key(n_inf_chain)
     ]
     n_inf_chain_summaries <- merge(n_inf_chain_summaries, gelman_res_j, by=c("j","group"))
-    
+ 
     n_inf_chain_summaries_cumu <- n_inf_chain[, list(
         mean = mean(as.double(cumu_infs)), median = median(as.double(cumu_infs)),
         lower_quantile = quantile(as.double(cumu_infs), c(0.025)),
@@ -954,18 +941,24 @@ pad_inf_chain <- function(inf_chain) {
     if (is.null(inf_chain$chain_no)) {
         inf_chain$chain_no <- 1
     }
+    if (is.null(inf_chain$group)) {
+        inf_chain$group <- 1
+    }
+    
     is <- unique(inf_chain$i)
     js <- unique(inf_chain$j)
 
     sampnos <- unique(inf_chain$sampno)
     chain_nos <- unique(inf_chain$chain_no)
+    groups <- unique(inf_chain$group)
     expanded_values <- data.table::CJ(
                                        i = is,
                                        j = js,
                                        sampno = sampnos,
-                                       chain_no = chain_nos
+                                       chain_no = chain_nos,
+                                       group = groups
                                    )
-    diff_infs <- fsetdiff(expanded_values, inf_chain[, c("i", "j", "sampno", "chain_no")])
+    diff_infs <- fsetdiff(expanded_values, inf_chain[, c("i", "j", "sampno", "chain_no", "group")])
     diff_infs$x <- 0
     inf_chain <- rbind(inf_chain, diff_infs)
     return(inf_chain)

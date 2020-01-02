@@ -63,7 +63,7 @@ get_n_alive_group <- function(titre_dat, times, melt_dat = FALSE) {
     n_alive$group <- 1:nrow(n_alive)
     n_alive <- melt(n_alive, id.vars = c("group"))
     colnames(n_alive)[2] <- "j"
-    n_alive$j <- as.numeric(as.factor(n_alive$j))
+    n_alive$j <- times[n_alive$j]
     colnames(n_alive)[3] <- "n_alive"
   }
   n_alive
@@ -325,9 +325,16 @@ row.match <- function(x, table, nomatch = NA) {
 #' @return a very long list. See source code directly.
 #' @seealso \code{\link{create_posterior_func}}
 #' @export
-setup_titredat_for_posterior_func <- function(titre_dat, antigenic_map, age_mask = NULL, n_alive = NULL) {
+setup_titredat_for_posterior_func <- function(titre_dat, antigenic_map=NULL, strain_isolation_times=NULL,
+                                              age_mask = NULL, n_alive = NULL) {
   essential_colnames <- c("individual", "samples", "titre", "virus", "run", "group")
 
+  if (!is.null(antigenic_map)) {
+    strain_isolation_times <- unique(antigenic_map$inf_years) # How many strains are we testing against and what time did they circulate
+  } else {
+    antigenic_map <- data.frame("x_coord"=1,"y_coord"=1,"inf_years"=strain_isolation_times)
+  }
+  
   strain_isolation_times <- antigenic_map$inf_years
   antigenic_map_melted <- c(melt_antigenic_coords(antigenic_map[, c("x_coord", "y_coord")]))
 
