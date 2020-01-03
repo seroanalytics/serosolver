@@ -87,7 +87,7 @@ get_titre_predictions <- function(chain, infection_histories, titre_dat,
     
     ## See the function in posteriors.R
     titre_dat1 <- titre_dat
-                                        #titre_dat1 <- titre_dat1[titre_dat1$run == 1,]
+    
     if (expand_titredat) {
         titre_dat1 <- expand.grid(
             individual = unique(titre_dat$individual),
@@ -231,30 +231,56 @@ plot_infection_histories <- function(chain, infection_histories, titre_dat,
     individuals <- individuals[order(individuals)]
 
     ## Generate titre predictions
-    tmp <- get_titre_predictions(
+    titre_preds <- get_titre_predictions(
         chain, infection_histories, titre_dat, individuals,
         antigenic_map, strain_isolation_times, 
         par_tab, nsamp, FALSE, mu_indices,
-        measurement_indices_by_time
+        measurement_indices_by_time,
+        expand_titredat=TRUE
     )
 
     ## Use these titre predictions and summary statistics on infection histories
-    dens <- tmp[[1]]
-    infection_history <- tmp[[2]]
-    p <- ggplot(dens) +
-        geom_line(aes(x = virus, y = median), col = "blue") +
-        geom_ribbon(aes(x = virus, ymin = lower, ymax = upper), alpha = 0.25, fill = "blue") +
-        geom_vline(data = infection_history, aes(xintercept = variable, alpha = value)) +
-        geom_point(data = dens, aes(x = virus, y = titre), col = "red", size = 0.5) +
-        facet_grid(individual ~ samples) +
-        theme_bw() +
-        theme(axis.text.x = element_text(angle = 45, hjust = 1, size = 8)) +
-        scale_alpha(limits = c(0, 1), range = c(0, 1)) +
-        xlab("Year") +
-        ylab("Titre") +
-        scale_y_continuous(breaks = seq(0, 8, by = 2))+
-        coord_cartesian(ylim=c(0,8))
-    p
+    to_use <- titre_preds$predicted_observations
+    model_preds <- titre_preds$predictions
+        to_use$individual <- rand_indivs[to_use$individual]
+    
+    inf_hist_densities <- titre_preds$histories
+    inf_hist_densities$xmin <- inf_hist_densities$variable-0.5
+    inf_hist_densities$xmax <- inf_hist_densities$variable+0.5
+    
+    max_titre <- max(titre_dat$titre)
+    min_titre <- min(titre_dat$titre)
+    max_x <- max(strain_isolation_times) + 5
+    
+    titre_pred_p <- ggplot(to_use) +
+        geom_rect(data=inf_hist_densities,
+                  aes(xmin=xmin,xmax=xmax,fill=value),ymin=min_titre-1,ymax=max_titre+2)+
+        geom_ribbon(aes(x=samples,ymin=lower, ymax=upper),alpha=0.4, fill="#009E73",size=0.2)+
+        geom_ribbon(data=model_preds[model_preds$individual %in% rand_indivs,], 
+                    aes(x=samples,ymin=lower,ymax=upper),alpha=0.7,fill="#009E73",size=0.2) + 
+        geom_line(data=model_preds, aes(x=samples, y=median),linetype="dotted",color="grey10")+
+        geom_rect(ymin=max_titre,ymax=max_titre+2,xmin=0,xmax=max_x,fill="grey70")+
+        geom_rect(ymin=min_titre-2,ymax=min_titre,xmin=0,xmax=max_x,fill="grey70")+
+        scale_x_continuous(expand=c(0,0)) +
+        scale_fill_gradient(low="white",high="#D55E00",limits=c(0,1),name="Posterior probability of infection")+
+        guides(fill=guide_colourbar(title.position="top",title.hjust=0.5,label.position = "bottom",
+                                    barwidth=10,barheight = 0.5, frame.colour="black",ticks=FALSE)) +
+        geom_point(data=titre_dat[titre_dat$individual %in% rand_indivs,], aes(x=samples, y=titre),shape=23, 
+                   col="black",size=1,fill=viridis(1)[1])+
+        ylab("log titre") +
+        xlab("Time of virus circulation") +
+        theme_pubr()+
+        theme(legend.title=element_text(size=7),
+              legend.text=element_text(size=7),
+              legend.margin = margin(-1,-1,-3,-1),
+              axis.title=element_text(size=10),
+              axis.text.x=element_text(angle=45,hjust=1,size=8),
+              axis.text.y=element_text(size=8),
+              plot.margin=margin(r=15,t=5,l=5))+
+        coord_cartesian(ylim=c(min_titre,max_titre+1),xlim=range(strain_isolation_times)) +
+        scale_y_continuous(breaks=seq(min_titre,max_titre+2,by=2)) +
+        facet_wrap(~individual,ncol=length(rand_indivs)/2)
+    titre_pred_p
 }
 
 #' Plot inferred posteriors infection histories
@@ -736,6 +762,7 @@ plot_attack_rates_monthly <- function(infection_histories, titre_dat, strain_iso
 #' @param titre_dat the data frame of titre data
 #' @param strain_isolation_times vector of the epochs of potential circulation
 #' @param n_alive vector with the number of people alive in each year of circulation. Can be left as NULL, and ages will be used to infer this
+#' @param resolution divides strain isolation times by this number for x axis labels
 #' @param pointsize Numeric - how big should each point be?
 #' @param fatten Numeric - fatten parameter for ggplot pointrange
 #' @param pad_chain if TRUE, fills the infection history data table with entries for non-infection events (ie. 0s). Can be switched to FALSE for speed to get a rough idea of what the attack rates look like.
@@ -749,7 +776,8 @@ plot_attack_rates_monthly <- function(infection_histories, titre_dat, strain_iso
 #' @param by_val frequency of x-axis labels
 #' @return a ggplot2 object with the inferred attack rates for each potential epoch of circulation
 #' @export
-plot_attack_rates <- function(infection_histories, titre_dat, strain_isolation_times, n_alive = NULL,
+plot_attack_rates <- function(infection_histories, titre_dat, strain_isolation_times, 
+                              n_alive = NULL,
                               pointsize = 1, fatten = 1,
                               pad_chain = TRUE, prior_pars = NULL,
                               plot_den = FALSE,
@@ -792,7 +820,6 @@ plot_attack_rates <- function(infection_histories, titre_dat, strain_isolation_t
     prior_dens <- NULL
     n_alive1 <- n_alive
     if (!is.null(prior_pars)) {
-                                        # n_alive1 <- c(n_alive, 1)
         n_alive$Prior <- 1
         prior_ver <- prior_pars[["prior_version"]]
         alpha1 <- prior_pars[["alpha"]]
@@ -892,7 +919,8 @@ plot_attack_rates <- function(infection_histories, titre_dat, strain_isolation_t
 
         p <- ggplot(tmp[tmp$group %in% group_subset, ]) +
             geom_violin(aes(x = j, y = V1, fill = taken, group = j),
-                        draw_quantiles = c(0.5), scale = "width"
+                        draw_quantiles = c(0.5), scale = "width",
+                        adjust=2
                         )
     }
     if (!is.null(true_ar) & !plot_residuals) {
@@ -1127,12 +1155,13 @@ plot_number_infections <- function(inf_chain, pad_chain = TRUE) {
 
 #' Useful plot for looking at simulated data
 #'
-#' Plots measured titres and known infection histories for all individuals, facetted by sample time
+#' Plots measured titres and known infection histories for all individuals, facetted by sample time (multi-strain panel) or virus variable (longitidunal single strain)
 #' @param titre_dat the data frame of titre data
 #' @param infection_histories the infection history matrix
 #' @param strain_isolation_times the vector of times at which individuals could be infected
-#' @param n_samps how many individuals to plot
+#' @param n_indivs how many individuals to plot
 #' @param start_inf if not NULL, plots the infection history matrix used as the starting point in the MCMC chain
+#' @param study_design default "multi-strain" facets by sample time. "single-strain" gives sample time on the x-axis and colours by virus
 #' @return a ggplot object
 #' @family infection_history_plots
 #' @examples
@@ -1144,7 +1173,10 @@ plot_number_infections <- function(inf_chain, pad_chain = TRUE) {
 #' plot_data(example_titre_dat, example_inf_hist, strain_isolation_times, 5)
 #' }
 #' @export
-plot_data <- function(titre_dat, infection_histories, strain_isolation_times, n_samps, start_inf = NULL) {
+plot_data <- function(titre_dat, infection_histories, 
+                      strain_isolation_times, 
+                      n_indivs, start_inf = NULL,
+                      study_design="multi-strain"){
     indivs <- unique(titre_dat$individual)
     infection_history <- as.data.frame(cbind(indivs, infection_histories))
     colnames(infection_history) <- c("individual", strain_isolation_times)
@@ -1154,13 +1186,25 @@ plot_data <- function(titre_dat, infection_histories, strain_isolation_times, n_
     tmp <- unique(titre_dat[, c("individual", "samples")])
     melted_inf_hist <- merge(melted_inf_hist, tmp)
     melted_inf_hist <- melted_inf_hist[melted_inf_hist$variable <= melted_inf_hist$samples, ]
-    samps <- sample(unique(titre_dat$individual), n_samps)
+    samps <- sample(unique(titre_dat$individual), n_indivs)
 
-    p1 <- ggplot(titre_dat[titre_dat$individual %in% samps, ]) +
-        geom_point(aes(x = as.integer(virus), y = titre)) +
-        geom_vline(data = melted_inf_hist[melted_inf_hist$individual %in% samps, ], aes(xintercept = variable), col = "red", linetype = "dashed") +
-        theme_bw()
-
+    if (study_design == "multi-strain") {
+        p1 <- ggplot(titre_dat[titre_dat$individual %in% samps, ]) +
+            geom_point(aes(x = as.integer(virus), y = titre)) +
+            geom_vline(data = melted_inf_hist[melted_inf_hist$individual %in% samps, ], aes(xintercept = variable), col = "red", linetype = "dashed") +
+            theme_bw() +
+            xlab("Strain") +
+            facet_grid(individual ~ samples)
+    } else {
+        p1 <- ggplot(titre_dat[titre_dat$individual %in% samps, ]) +
+            geom_point(aes(x = samples, y = titre, col=virus)) +
+            geom_vline(data = melted_inf_hist[melted_inf_hist$individual %in% samps, ], 
+                       aes(xintercept = variable), col = "red", linetype = "dashed") +
+            theme_bw() +
+            xlab("Strain circulation time") +
+            facet_wrap(~individual)
+    }
+    
     if (!is.null(start_inf)) {
         start_inf_hist <- as.data.frame(cbind(indivs, start_inf))
         colnames(start_inf_hist) <- c("individual", strain_isolation_times)
@@ -1169,8 +1213,7 @@ plot_data <- function(titre_dat, infection_histories, strain_isolation_times, n_
         melted_start_hist <- melted_start_hist[melted_start_hist$value > 0, ]
         p1 <- p1 + geom_vline(data = melted_start_hist[melted_start_hist$individual %in% samps, ], aes(xintercept = variable), col = "blue", linetype = "dashed")
     }
-    p1 <- p1 +
-        facet_grid(individual ~ samples)
+    p1 <- p1 + ylab("log titre")
     return(p1)
 }
 
