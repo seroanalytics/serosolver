@@ -7,7 +7,8 @@
 run_MCMC(
   par_tab,
   titre_dat,
-  antigenic_map,
+  antigenic_map = NULL,
+  strain_isolation_times = NULL,
   mcmc_pars = c(),
   mvr_pars = NULL,
   start_inf_hist = NULL,
@@ -23,8 +24,6 @@ run_MCMC(
   temp = 1,
   solve_likelihood = TRUE,
   n_alive = NULL,
-  message_slack = FALSE,
-  message_slack_pars = NULL,
   ...
 )
 }
@@ -33,7 +32,9 @@ run_MCMC(
 
 \item{titre_dat}{The data frame of titre data to be fitted. Must have columns: group (index of group); individual (integer ID of individual); samples (numeric time of sample taken); virus (numeric time of when the virus was circulating); titre (integer of titre value against the given virus at that sampling time); run (integer giving the repeated number of this titre); DOB (integer giving date of birth matching time units used in model). See \code{\link{example_titre_dat}}}
 
-\item{antigenic_map}{A data frame of antigenic x and y coordinates. Must have column names: x_coord; y_coord; inf_times. See \code{\link{example_antigenic_map}}}
+\item{antigenic_map}{(optional) A data frame of antigenic x and y coordinates. Must have column names: x_coord; y_coord; inf_times. See \code{\link{example_antigenic_map}}}
+
+\item{strain_isolation_times}{(optional) If no antigenic map is specified, this argument gives the vector of times at which individuals can be infected}
 
 \item{mcmc_pars}{Named vector named vector with parameters for the MCMC procedure. See details}
 
@@ -64,10 +65,6 @@ run_MCMC(
 \item{solve_likelihood}{if FALSE, returns only the prior and does not solve the likelihood. Use this if you wish to sample directly from the prior}
 
 \item{n_alive}{if not NULL, uses this as the number alive for the infection history prior, rather than calculating the number alive based on titre_dat}
-
-\item{message_slack}{if TRUE, attempts to send updates to slack rather than just locally}
-
-\item{message_slack_pars}{if not NULL, the list of parameters to communicate with slack}
 
 \item{...}{Other arguments to pass to CREATE_POSTERIOR_FUNC}
 }

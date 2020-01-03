@@ -7,7 +7,8 @@
 create_posterior_func(
   par_tab,
   titre_dat,
-  antigenic_map,
+  antigenic_map = NULL,
+  strain_isolation_times = NULL,
   version = 1,
   solve_likelihood = TRUE,
   age_mask = NULL,
@@ -24,7 +25,9 @@ create_posterior_func(
 
 \item{titre_dat}{the data frame of data to be fitted. Must have columns: group (index of group); individual (integer ID of individual); samples (numeric time of sample taken); virus (numeric time of when the virus was circulating); titre (integer of titre value against the given virus at that sampling time). See \code{\link{example_titre_dat}}}
 
-\item{antigenic_map}{a data frame of antigenic x and y coordinates. Must have column names: x_coord; y_coord; inf_times. See \code{\link{example_antigenic_map}}}
+\item{antigenic_map}{(optional) a data frame of antigenic x and y coordinates. Must have column names: x_coord; y_coord; inf_times. See \code{\link{example_antigenic_map}}}
+
+\item{strain_isolation_times}{(optional) if no antigenic map is specified, this argument gives the vector of times at which individuals can be infected}
 
 \item{version}{which version of the posterior function to solve (corresponds mainly to the infection history prior). Mostly just left to 1, but there is one special case where this should be set to 4 for the gibbs sampler. This is only really used by \code{\link{run_MCMC}} to place the infection history prior on the total number of infections across all years and individuals when version = 4}
 

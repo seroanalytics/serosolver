@@ -12,7 +12,6 @@ calculate_infection_history_statistics(
   known_ar = NULL,
   group_ids = NULL,
   known_infection_history = NULL,
-  pad_chain = TRUE,
   solve_cumulative = FALSE
 )
 }
@@ -26,8 +25,6 @@ calculate_infection_history_statistics(
 \item{known_ar}{data frame of known attack rates, if known.}
 
 \item{known_infection_history}{data frame of known infection histories.}
-
-\item{pad_chain}{if TRUE, pads the infection history MCMC chain with non-infection events}
 
 \item{solve_cumulative}{if TRUE, finds the cumulative infection histories for each individual. This takes a while, so is left FALSE by default.}
 }
@@ -59,8 +56,7 @@ n_alive_group <- get_n_alive_group(example_titre_dat, strain_isolation_times,mel
 n_alive_group$j <- strain_isolation_times[n_alive_group$j]
 results <- calculate_infection_history_statistics(example_inf_chain, 0, strain_isolation_times,
                                                   n_alive=n_alive_group, known_ar=known_ar,
-                                                  known_infection_history=known_inf_hist,
-                                                  pad_chain = FALSE)
+                                                  known_infection_history=known_inf_hist)
 }
 \seealso{
 Other infection_history_plots: 

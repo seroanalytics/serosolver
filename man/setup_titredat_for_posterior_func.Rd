@@ -6,7 +6,8 @@
 \usage{
 setup_titredat_for_posterior_func(
   titre_dat,
-  antigenic_map,
+  antigenic_map = NULL,
+  strain_isolation_times = NULL,
   age_mask = NULL,
   n_alive = NULL
 )
@@ -14,7 +15,9 @@ setup_titredat_for_posterior_func(
 \arguments{
 \item{titre_dat}{the data frame of data to be fitted. Must have columns: group (index of group); individual (integer ID of individual); samples (numeric time of sample taken); virus (numeric time of when the virus was circulating); titre (integer of titre value against the given virus at that sampling time). See \code{\link{example_titre_dat}}}
 
-\item{antigenic_map}{a data frame of antigenic x and y coordinates. Must have column names: x_coord; y_coord; inf_times. See \code{\link{example_antigenic_map}}}
+\item{antigenic_map}{(optional) a data frame of antigenic x and y coordinates. Must have column names: x_coord; y_coord; inf_times. See \code{\link{example_antigenic_map}}}
+
+\item{strain_isolation_times}{(optional) if no antigenic map is specified, this argument gives the vector of times at which individuals can be infected}
 
 \item{age_mask}{see \code{\link{create_age_mask}} - a vector with one entry for each individual specifying the first epoch of circulation in which an individual could have been exposed}
 

@@ -34,8 +34,8 @@ start_inf <- setup_infection_histories_old(example_titre_dat, example_antigenic_
 }
 \seealso{
 Other setup_infection_histories: 
-\code{\link{setup_infection_histories_new_2}()},
-\code{\link{setup_infection_histories_new}()},
-\code{\link{setup_infection_histories_total}()}
+\code{\link{setup_infection_histories_titre}()},
+\code{\link{setup_infection_histories_total}()},
+\code{\link{setup_infection_histories}()}
 }
 \concept{setup_infection_histories}

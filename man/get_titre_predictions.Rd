@@ -9,7 +9,8 @@ get_titre_predictions(
   infection_histories,
   titre_dat,
   individuals,
-  antigenic_map,
+  antigenic_map = NULL,
+  strain_isolation_times = NULL,
   par_tab,
   nsamp = 100,
   add_residuals = FALSE,
@@ -30,7 +31,9 @@ get_titre_predictions(
 
 \item{individuals}{the subset of individuals to generate credible intervals for}
 
-\item{antigenic_map}{the unmelted antigenic map}
+\item{antigenic_map}{(optional) a data frame of antigenic x and y coordinates. Must have column names: x_coord; y_coord; inf_times. See \code{\link{example_antigenic_map}}}
+
+\item{strain_isolation_times}{(optional) if no antigenic map is specified, this argument gives the vector of times at which individuals can be infected}
 
 \item{par_tab}{the table controlling the parameters in the MCMC chain}
 
