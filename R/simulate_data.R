@@ -5,11 +5,11 @@
 #' @param group which group index to give this simulated data
 #' @param n_indiv number of individuals to simulate
 #' @param buckets time resolution of the simulated data. buckets=1 indicates annual time resolution; buckets=4 indicates quarterly; buckets=12 monthly
-#' @param strain_isolation_times vector of contiguous strain circulation times
+#' @param antigenic_map (optional) A data frame of antigenic x and y coordinates. Must have column names: x_coord; y_coord; inf_times. See \code{\link{example_antigenic_map}}
+#' @param strain_isolation_times (optional) If no antigenic map is specified, this argument gives the vector of times at which individuals can be infected
 #' @param measured_strains vector of strains that have titres measured matching entries in strain_isolation_times
 #' @param sampling_times possible sampling times for the individuals, matching entries in strain_isolation_times
 #' @param nsamps the number of samples each individual has (eg. nsamps=2 gives each individual 2 random sampling times from sampling_times)
-#' @param antigenic_map the raw antigenic map with colnames x_coord, y_coord and inf_times, as returned from \code{\link{generate_antigenic_map_flexible}} or \code{\link{generate_antigenic_map}}
 #' @param titre_sensoring numeric between 0 and 1, used to censor a proportion of titre observations at random (MAR)
 #' @param age_min simulated age minimum
 #' @param age_max simulated age maximum
@@ -43,11 +43,11 @@ simulate_data <- function(par_tab,
                           group = 1,
                           n_indiv = 100,
                           buckets = 1,
-                          strain_isolation_times,
+                          antigenic_map = NULL,
+                          strain_isolation_times = NULL,
                           measured_strains = NULL,
                           sampling_times,
                           nsamps = 2,
-                          antigenic_map,
                           titre_sensoring = 0,
                           age_min = 5, age_max = 80,
                           attack_rates,
@@ -56,6 +56,12 @@ simulate_data <- function(par_tab,
                           measurement_indices = NULL,
                           add_noise = TRUE) {
 
+    if (!is.null(antigenic_map)) {
+      strain_isolation_times <- unique(antigenic_map$inf_times) # How many strains are we testing against and what time did they circulate
+    } else {
+      antigenic_map <- data.frame("x_coord"=1,"y_coord"=1,"inf_times"=strain_isolation_times)
+    }
+    
     ## Check attack_rates entry
     check_attack_rates(attack_rates, strain_isolation_times)
     ## Check the inputs of par_tab

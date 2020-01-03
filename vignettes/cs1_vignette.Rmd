@@ -195,7 +195,7 @@ Chains should then be checked for the usual MCMC diagnostics: $\hat{R}$ and effe
 ## Get the MCMC chains as a list
 list_chains <- all_chains$theta_list_chains
 ## Look at diagnostics for the free parameters
-list_chains1 <- lapply(list_chains, function(x) x[,c("mu", "mu_short", "wane",
+list_chains1 <- lapply(list_chains, function(x) x[,c("mu","mu_short", "wane",
                                                      "error", "total_infections",
                                                      "lnlike", "prior_prob")])
 
