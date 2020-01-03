@@ -266,8 +266,9 @@ fromUnitScale <- function(x, min, max) {
   return(min + (max - min) * x)
 }
 
+#' Describe infection history priors
 #' @export
-describe_proposals <- function() {
+describe_priors <- function() {
   message("Which version to use in run_MCMC? The following text describes the proposal step for updating infection histories.")
   message("Version 1: Beta prior on per time attack rates. Explicit FOI on each epoch using probability of infection term. Proposal performs N `flip` proposals at random locations in an individual's infection history, switching 1->0 or 0->1. Otherwise, swaps the contents of two random locations")
   message("Version 2: Beta prior on per time attack rates. Gibbs sampling of infection histories as in Indian Buffet Process papers, integrating out each probability of infection term.")

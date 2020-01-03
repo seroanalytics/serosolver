@@ -47,7 +47,7 @@
 #' @docType data
 #' @usage data(example_titre_data)
 #' @format A data frame with 4800 rows (each corresponding to a unique titre reading) and 6 variables:
-#' \describe {
+#' \describe{
 #'     \item{individual}{index starting from 1 for the individual ID}
 #'     \item{samples}{time of this serum sample, matching times in \code{\link{example_antigenic_map}}}
 #'     \item{virus}{circlation time of the strain being measured, matching times in \code{\link{example_antigenic_map}}}

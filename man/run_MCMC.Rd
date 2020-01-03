@@ -48,7 +48,7 @@ run_MCMC(
 
 \item{CREATE_PRIOR_FUNC}{User function of prior for model parameters. Should take parameter values only}
 
-\item{version}{which infection history assumption version to use? See \code{\link{describe_proposals}} for options. Can be 1, 2, 3 or 4}
+\item{version}{which infection history assumption version to use? See \code{\link{describe_priors}} for options. Can be 1, 2, 3 or 4}
 
 \item{mu_indices}{optional NULL. For random effects on boosting parameter, mu. Vector of indices of length equal to number of circulation times. If random mus are included in the parameter table, this vector specifies which mu to use for each circulation year. For example, if years 1970-1976 have unique boosting, then mu_indices should be c(1,2,3,4,5,6). If every 3 year block shares has a unique boosting parameter, then this should be c(1,1,1,2,2,2)}
 

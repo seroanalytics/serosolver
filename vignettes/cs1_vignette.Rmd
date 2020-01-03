@@ -67,7 +67,7 @@ filename <- "case_study_1"
 resolution <- 4 ## set to 4 for quarterly resolution
 sample_years <- 2009:2012
 
-serosolver::describe_proposals()
+serosolver::describe_priors()
 prior_version <- 2
 ```
 
