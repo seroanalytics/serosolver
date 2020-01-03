@@ -26,7 +26,9 @@ Example of the parameter table used through \code{serosolver}. This data frame i
 Other example_data: 
 \code{\link{example_antigenic_map}},
 \code{\link{example_inf_chain}},
-\code{\link{example_theta_chain}}
+\code{\link{example_inf_hist}},
+\code{\link{example_theta_chain}},
+\code{\link{example_titre_dat}}
 }
 \concept{example_data}
 \keyword{datasets}

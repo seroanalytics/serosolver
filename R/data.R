@@ -39,7 +39,7 @@
 #' @usage data(example_inf_hist)
 #' @format A matrix with 50 rows (individuals) and 48 columns. Each entry can only be 1 (presence of infection) or a 0 (absence of infection)
 #' @family example_data
-"example_antigenic_map"
+"example_inf_hist"
 
 #' Example titre data
 #'
@@ -57,7 +57,7 @@
 #'     \item{DOB}{date of birth matching the time resolution of the model}
 #' }
 #' @family example_data
-"example_antigenic_map"
+"example_titre_dat"
 
 
 #' Example MCMC chain for kinetics parameters

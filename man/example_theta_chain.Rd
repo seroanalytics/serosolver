@@ -15,7 +15,9 @@ Outputs of a quick MCMC run corresponding to the example data. See \code{\link{e
 Other example_data: 
 \code{\link{example_antigenic_map}},
 \code{\link{example_inf_chain}},
-\code{\link{example_par_tab}}
+\code{\link{example_inf_hist}},
+\code{\link{example_par_tab}},
+\code{\link{example_titre_dat}}
 }
 \concept{example_data}
 \keyword{datasets}

@@ -7,7 +7,7 @@
 check_proposals(version, mvr_pars)
 }
 \arguments{
-\item{version}{Which version of the posterior function to use? See \code{\link{create_post_func}}}
+\item{version}{Which version of the posterior function to use? See \code{\link{create_posterior_func}}}
 
 \item{mvr_pars}{Leave NULL to use univariate proposals. Otherwise, a list of parameters if using a multivariate proposal. Must contain an initial covariance matrix, weighting for adapting cov matrix, and an initial scaling parameter (0-1)}
 }

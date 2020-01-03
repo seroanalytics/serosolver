@@ -5,7 +5,6 @@
 
 //' Overall model function, fast implementation
 //'
-//' See documentation for \code{\link{titre_data_group}}, as the interface is almost identical
 //' @param theta NumericVector, the named vector of model parameters
 //' @param infection_history_mat IntegerMatrix, the matrix of 1s and 0s showing presence/absence of infection for each possible time for each individual. 
 //' @param circulation_times NumericVector, the actual times of circulation that the infection history vector corresponds to

@@ -115,7 +115,7 @@ arma::mat inf_hist_prop_prior_v3(arma::mat infection_history_mat,
 
 //' Infection history gibbs proposal
 //'
-//' Generates a new infection history matrix and corresponding individual likelihoods, using a gibbs sampler from the infection history prior. See \code{\link{infection_history_proposal_gibbs}}, as inputs are very similar.
+//' Generates a new infection history matrix and corresponding individual likelihoods, using a gibbs sampler from the infection history prior. See \code{\link{inf_hist_prop_prior_v3}}, as inputs are very similar.
 //' @param theta NumericVector, the named model parameters used to solve the model
 //' @param infection_history_mat IntegerMatrix the matrix of 1s and 0s corresponding to individual infection histories
 //' @param old_probs_1 NumericVector, the current likelihoods for each individual
@@ -256,9 +256,11 @@ List inf_hist_prop_prior_v2_and_v4(const NumericVector &theta, // Model paramete
   int n_samp_max; // Maximum number of years to sample for individual
   int n_samp_length; // Number of years that COULD be sampled for this individual
 
-  int new_entry;
-  int old_entry;
-  int loc1, loc2, tmp; // Which indices are we looking at?
+  int new_entry = 0;
+  int old_entry = 0;
+  int loc1 = 0;
+  int loc2 = 0;
+  int tmp = 0; // Which indices are we looking at?
   int n_years_samp; // How many years to sample for this individual?
   int loc1_val_old, loc2_val_old;
   // ########################################################################

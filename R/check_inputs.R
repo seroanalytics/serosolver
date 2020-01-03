@@ -138,7 +138,7 @@ check_attack_rates <- function(attack_rates, strain_isolation_times) {
     if (any(attack_rates < 0) || any(attack_rates > 1)) stop("attack_rates must be between 0 and 1")
 }
 #' Checks if the multivarite proposal is being used with the FOI proposal
-#' @param version Which version of the posterior function to use? See \code{\link{create_post_func}}
+#' @param version Which version of the posterior function to use? See \code{\link{create_posterior_func}}
 #' @param mvr_pars Leave NULL to use univariate proposals. Otherwise, a list of parameters if using a multivariate proposal. Must contain an initial covariance matrix, weighting for adapting cov matrix, and an initial scaling parameter (0-1)
 #' @return nothing at the moment
 #' @family check_inputs

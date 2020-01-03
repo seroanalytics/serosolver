@@ -57,6 +57,6 @@ titre_data_fast(
 NumericVector of predicted titres for each entry in measurement_strain_indices
 }
 \description{
-See documentation for \code{\link{titre_data_group}}, as the interface is almost identical
+Overall model function, fast implementation
 }
 \concept{titre_model}

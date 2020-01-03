@@ -60,7 +60,6 @@ add_measurement_shifts <- function(predicted_titres, to_add, start_index_in_data
 
 #' Overall model function, fast implementation
 #'
-#' See documentation for \code{\link{titre_data_group}}, as the interface is almost identical
 #' @param theta NumericVector, the named vector of model parameters
 #' @param infection_history_mat IntegerMatrix, the matrix of 1s and 0s showing presence/absence of infection for each possible time for each individual. 
 #' @param circulation_times NumericVector, the actual times of circulation that the infection history vector corresponds to
@@ -181,7 +180,7 @@ inf_hist_prop_prior_v3 <- function(infection_history_mat, sampled_indivs, age_ma
 
 #' Infection history gibbs proposal
 #'
-#' Generates a new infection history matrix and corresponding individual likelihoods, using a gibbs sampler from the infection history prior. See \code{\link{infection_history_proposal_gibbs}}, as inputs are very similar.
+#' Generates a new infection history matrix and corresponding individual likelihoods, using a gibbs sampler from the infection history prior. See \code{\link{inf_hist_prop_prior_v3}}, as inputs are very similar.
 #' @param theta NumericVector, the named model parameters used to solve the model
 #' @param infection_history_mat IntegerMatrix the matrix of 1s and 0s corresponding to individual infection histories
 #' @param old_probs_1 NumericVector, the current likelihoods for each individual
