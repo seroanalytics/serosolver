@@ -233,12 +233,12 @@ run_MCMC <- function(par_tab,
   if (is.null(n_alive)) {
     n_alive <- get_n_alive_group(titre_dat, strain_isolation_times)
   }
-
   ## Create posterior calculating function
   posterior_simp <- protect(CREATE_POSTERIOR_FUNC(par_tab,
     titre_dat,
     antigenic_map,
-    version,
+    strain_isolation_times,
+    version=version,
     solve_likelihood,
     age_mask,
     measurement_indices_by_time = measurement_indices,
@@ -257,7 +257,8 @@ run_MCMC <- function(par_tab,
     proposal_gibbs <- protect(CREATE_POSTERIOR_FUNC(par_tab,
       titre_dat,
       antigenic_map,
-      version,
+      strain_isolation_times,
+      version=version,
       solve_likelihood,
       age_mask,
       measurement_indices_by_time = measurement_indices,
