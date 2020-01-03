@@ -52,6 +52,8 @@ plot_attack_rates(
 \item{colour_by_taken}{if TRUE, then colours the attack rates by whether or not titres against the circulating virus at that time were measured}
 
 \item{by_val}{frequency of x-axis labels}
+
+\item{resolution}{divides strain isolation times by this number for x axis labels}
 }
 \value{
 a ggplot2 object with the inferred attack rates for each potential epoch of circulation

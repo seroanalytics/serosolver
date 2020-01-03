@@ -8,8 +8,9 @@ plot_data(
   titre_dat,
   infection_histories,
   strain_isolation_times,
-  n_samps,
-  start_inf = NULL
+  n_indivs,
+  start_inf = NULL,
+  study_design = "multi-strain"
 )
 }
 \arguments{
@@ -19,15 +20,17 @@ plot_data(
 
 \item{strain_isolation_times}{the vector of times at which individuals could be infected}
 
-\item{n_samps}{how many individuals to plot}
+\item{n_indivs}{how many individuals to plot}
 
 \item{start_inf}{if not NULL, plots the infection history matrix used as the starting point in the MCMC chain}
+
+\item{study_design}{default "multi-strain" facets by sample time. "single-strain" gives sample time on the x-axis and colours by virus}
 }
 \value{
 a ggplot object
 }
 \description{
-Plots measured titres and known infection histories for all individuals, facetted by sample time
+Plots measured titres and known infection histories for all individuals, facetted by sample time (multi-strain panel) or virus variable (longitidunal single strain)
 }
 \examples{
 \dontrun{

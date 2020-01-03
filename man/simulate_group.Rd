@@ -28,13 +28,13 @@ simulate_group(
 
 \item{infection_histories}{the matrix of 1s and 0s giving presence/absence of infections for each individual}
 
-\item{strain_isolation_times}{vector of contiguous strain circulation times}
+\item{strain_isolation_times}{(optional) If no antigenic map is specified, this argument gives the vector of times at which individuals can be infected}
 
 \item{measured_strains}{vector of strains that have titres measured matching entries in strain_isolation_times}
 
 \item{nsamps}{the number of samples each individual has (eg. nsamps=2 gives each individual 2 random sampling times from sampling_times)}
 
-\item{antigenic_map}{the raw antigenic map with colnames x_coord, y_coord and inf_times, as returned from \code{\link{generate_antigenic_map_flexible}} or \code{\link{generate_antigenic_map}}}
+\item{antigenic_map}{(optional) A data frame of antigenic x and y coordinates. Must have column names: x_coord; y_coord; inf_times. See \code{\link{example_antigenic_map}}}
 
 \item{repeats}{number of repeat observations for each year}
 

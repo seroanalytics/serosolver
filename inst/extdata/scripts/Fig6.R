@@ -1,34 +1,34 @@
-library(serosolver)
 library(ggplot2)
 library(coda)
 library(plyr)
 library(reshape2)
 library(data.table)
 library(tidyr)
-library(doMC)
+library(doParallel)
 library(foreach)
-library(bayesplot)
-library(doRNG)
 library(ggpubr)
+library(bayesplot)
 library(viridis)
+library(ggthemes)
 library(cowplot)
-
+library(grid)
+library(gridExtra)
 RUN_MCMC <- FALSE
 
 ## doRNG handles seeding in foreach loop
 set.seed(1234)
 
-setwd("~/Drive/Influenza/serosolver/methods_paper/case_study_2/")
-
+setwd("E:/James/Google Drive/Influenza/serosolver/methods_paper/PLOS Comp Biol/Results/case_study_2/")
 ## We'll be parallelising a few chains
-registerDoMC(cores=5)
+cl <- makeCluster(detectCores(), type='PSOCK')
+registerDoParallel(cl)
 
 filename <- "case_study_2"
 filenames <- paste0(filename, "_",1:5)
 sample_year <- 2009
 buckets <- 1
-
-raw_dat <- read.csv("data/Fluscape_HI_data.csv",stringsAsFactors=FALSE)
+dat_file <- system.file("extdata", "Fluscape_HI_data.csv", package = "serosolver")
+raw_dat <- read.csv(dat_file,stringsAsFactors=FALSE)
 raw_dat$individual <- 1:nrow(raw_dat)
 melted_dat <- reshape2::melt(raw_dat,id.vars=c("individual","Age"))
 colnames(melted_dat) <- c("individual","DOB","virus","titre")
@@ -41,16 +41,19 @@ melted_dat$samples <- sample_year
 titre_dat <- melted_dat
 titre_dat <- plyr::ddply(titre_dat,.(individual,virus,samples),function(x) cbind(x,"run"=1:nrow(x)))
 
-antigenicMap <- read.csv("data/fonville_map_approx.csv",stringsAsFactors=FALSE)
+antigenic_map_file <- system.file("extdata", "fonville_map_approx.csv", package = "serosolver")
+antigenicMap <- read.csv(antigenic_map_file,stringsAsFactors=FALSE)
 fit_dat <- generate_antigenic_map(antigenicMap, buckets)
-fit_dat <- fit_dat[fit_dat$inf_years >= 1968 & fit_dat$inf_years <= sample_year,]
-strain_isolation_times <- unique(fit_dat$inf_years)
+fit_dat <- fit_dat[fit_dat$inf_times >= 1968 & fit_dat$inf_times <= sample_year,]
+strain_isolation_times <- unique(fit_dat$inf_times)
 
-par_tab <- read.csv("data/parTab_base.csv",stringsAsFactors=FALSE)
+par_tab_path <- system.file("extdata", "par_tab_base.csv", package = "serosolver")
+par_tab <- read.csv(par_tab_path, stringsAsFactors=FALSE)
 par_tab[par_tab$names %in% c("alpha","beta"),"values"] <- c(1.3,2.7)
-par_tab <- par_tab[par_tab$names != "lambda",]
+par_tab <- par_tab[par_tab$names != "phi",]
 par_tab[par_tab$names %in% c("mu_short","sigma2","wane"),"fixed"] <- 1 # mu, tau, and sigma are fixed
 par_tab[par_tab$names %in% c("mu_short","sigma2","wane"),"values"] <- 0 # set value of mu and tau to 0
+par_tab[par_tab$names == "MAX_TITRE","values"] <- 8 # set max titre to 8
 
 mcmc_pars <- c("iterations"=500000,"popt"=0.44,"popt_hist"=0.44,"opt_freq"=1000,"thin"=100,"adaptive_period"=100000, 
                "save_block"=1000, "thin2"=1000,"hist_sample_prob"=0.5,"switch_sample"=2, "burnin"=0, "inf_propn"=1, 
@@ -71,25 +74,21 @@ if(RUN_MCMC) {
                                          start_tab[i,"upper_start"])
         }
       }
-      start_inf <- setup_infection_histories_new_2(titre_dat, strain_isolation_times, space=3,titre_cutoff=4)
-      start_tab <- start_tab[start_tab$names != "lambda",] # remove lambda row of parameter table
-      start_tab[start_tab$names %in% c("mu_short","sigma2","wane"),"fixed"] <- 1 # mu, tau, and sigma are fixed
-      start_tab[start_tab$names %in% c("mu_short","sigma2","wane"),"values"] <- 0 # set value of mu and tau to 0
-      start_tab[start_tab$names == "MAX_TITRE","values"] <- 8 # set max titre to 9
+      start_inf <- setup_infection_histories_titre(titre_dat, strain_isolation_times, space=3,titre_cutoff=4)
       f <- create_posterior_func_fast(start_tab,titre_dat,fit_dat,version=2) # function in posteriors.R
       start_prob <- sum(f(start_tab$values, start_inf))
     }
     
     res <- run_MCMC(par_tab = start_tab, titre_dat = titre_dat,antigenic_map = fit_dat,start_inf_hist=start_inf, 
                     mcmc_pars = mcmc_pars,
-                    filename = paste0("chains_measbias/",x), CREATE_POSTERIOR_FUNC = create_posterior_func, version = 2, temp=1,
+                    filename = paste0("chains_main/",x), CREATE_POSTERIOR_FUNC = create_posterior_func, version = 2, temp=1,
                     fast_version=TRUE)
   }
   beepr::beep(4)
 }
 
 ## Read in the MCMC chains automatically
-all_chains <- load_mcmc_chains(location="vignette/chains_main",thin=1,burnin=100000,
+all_chains <- load_mcmc_chains(location="chains_main",thin=1,burnin=100000,
                                par_tab=par_tab,unfixed=FALSE,convert_mcmc=TRUE)
 
 
@@ -130,13 +129,13 @@ colnames(n_inf_chain)[1] <- "individual"
 setkey(n_inf_chain, "individual")
 inputDat <- data.table(titre_dat)
 setkey(inputDat, "individual")
-wow <- merge(n_inf_chain, unique(inputDat[,c("individual","DOB")]))
+age_dat <- merge(n_inf_chain, unique(inputDat[,c("individual","DOB")]))
 
-wow$age <- 2009 - wow$DOB
-wow$infs_per_life <- wow$median_infs/wow$age
-wow$age_group <- cut(wow$age, breaks = c(0,19,40,65,90))
+age_dat$age <- 2009 - age_dat$DOB
+age_dat$infs_per_life <- age_dat$median_infs/age_dat$age
+age_dat$age_group <- cut(age_dat$age, breaks = c(0,19,40,65,90))
 
-age_dist <- ggplot(wow) + 
+age_dist <- ggplot(age_dat) + 
   geom_boxplot(aes(group=age_group,y=infs_per_life*10,x=age_group),fill="grey80") +
   scale_y_continuous(breaks=0:7,lim=c(0,7),expand=c(0,0))+
   theme_pubr() +
@@ -173,10 +172,11 @@ inf_chain <- inf_chain[,c("sampno1","chain_no1","i","j","x")]
 colnames(inf_chain)[1:2] <- c("sampno","chain_no")
 inf_chain <- pad_inf_chain(inf_chain)
 ## Rename columns to be more informative
-colnames(inf_chain) <- c("sampno","chain_no","individual","year","infected")
+colnames(inf_chain) <- c("sampno","chain_no","individual","year","infected","group")
 
 ## Data on which strains belong to which cluster
-clusters <- read.csv("data/fonville_clusters.csv", stringsAsFactors=FALSE)
+cluster_file <- system.file("extdata", "fonville_clusters.csv", package = "serosolver")
+clusters <- read.csv(cluster_file, stringsAsFactors=FALSE)
 clusters <- clusters[clusters$year <= sample_year,]
 
 ## j=1 corresponds to the year 1968
@@ -331,7 +331,6 @@ y <- inf_chain_cluster_once
 y <- merge(y, year_ranges,by="cluster1")
 y$cluster1 <- as.factor(y$cluster1)
 colnames(y)[which(colnames(y)=="width")] <- "Years of circulation"
-colnames(y_multiple)[which(colnames(y_multiple)=="width")] <- "Years of circulation"
 y$ar <- y$total_infected/y$total_potential_infection
 y_summaries <- ddply(y, .(cluster1,age_group_at_inf,`Years of circulation`), 
                      function(x) quantile(x$ar, c(0.025,0.5,0.975)))
@@ -432,8 +431,8 @@ theta_chain$variable <- as.character(theta_chain$variable)
 
 #ranges <- data.frame("variable"=c("mu","tau","sigma1"),"lower"=c(1.5,0,0.06),"upper"=c(3,0.1,0.13))
 
-par_key <- c("mu"="μ[l]","tau"="τ","sigma1"="σ[l]",
-             "error"="ε","total_infections"="ΣZ[i]")
+par_key <- c("mu"="mu[l]","tau"="tau","sigma1"="sigma[l]",
+             "error"="epsilon","total_infections"="sum(Z[i])")
 #par_key <- c("mu_short","wane","error")
 
 theta_chain$variable <- par_key[theta_chain$variable]
@@ -453,11 +452,11 @@ densities <- ddply(theta_chain,~variable, function(x) {
   ret <- data.frame(tmp$x,tmp$y)
 })
 
-densities <- densities[densities$variable != "ΣZ[i]",]
-tmp_theta_chain <- theta_chain[theta_chain$variable == "ΣZ[i]",]
+densities <- densities[densities$variable != "sum(Z[i])",]
+tmp_theta_chain <- theta_chain[theta_chain$variable == "sum(Z[i])",]
 tmp_theta_chain$bucket <- cut(tmp_theta_chain$value, breaks=seq(0,2000,by=50))
 sum_inf_table <- table(tmp_theta_chain[,"bucket"])
-densities_sum_inf <- data.frame("variable"="ΣZ[i]","tmp.x"=as.character(names(sum_inf_table)),"tmp.y"=as.numeric(sum_inf_table)/sum(sum_inf_table))
+densities_sum_inf <- data.frame("variable"="sum(Z[i])","tmp.x"=as.character(names(sum_inf_table)),"tmp.y"=as.numeric(sum_inf_table)/sum(sum_inf_table))
 densities_sum_inf$x_min <- seq(0,1950,by=50)
 densities_sum_inf$x_max <- seq(50,2000,by=50)
 
@@ -479,7 +478,7 @@ densities$quant <- factorised
 median_segments <- data.frame(variable=par_key,x=median_bits_x,y=median_bits_y)
 
 hacked_plots <- NULL
-for(par in par_key[par_key != "ΣZ[i]"]){
+for(par in par_key[par_key != "sum(Z[i])"]){
   hacked_plots[[par]] <-  ggplot() + 
     #geom_blank(data=ranges,aes(xmin=lower,xmax=upper)) +
     geom_ribbon(data=densities[densities$variable == par,], aes(ymin=0,ymax=tmp.y,x=tmp.x),fill="grey80",col="black") +
@@ -502,9 +501,9 @@ for(par in par_key[par_key != "ΣZ[i]"]){
     ) 
 }
 
-par <- "ΣZ[i]"
-hacked_plots[["μ[s]"]] <- hacked_plots[["μ[s]"]] + theme(plot.margin=margin(l=-5))
-hacked_plots[["ΣZ[i]"]] <-  ggplot() + 
+par <- "sum(Z[i])"
+hacked_plots[["mu[s]"]] <- hacked_plots[["mu[s]"]] + theme(plot.margin=margin(l=-5))
+hacked_plots[["sum(Z[i])"]] <-  ggplot() + 
   #geom_blank(data=ranges,aes(xmin=lower,xmax=upper)) +
   geom_rect(data=densities_sum_inf, aes(ymin=0,ymax=tmp.y,xmin=x_min,xmax=x_max),fill="grey80",col="black",stat="identity") +
   geom_vline(data=median_segments[median_segments$variable == par,],aes(xintercept=x)) +
@@ -527,8 +526,6 @@ hacked_plots[["ΣZ[i]"]] <-  ggplot() +
 p3 <- plot_grid(hacked_plots[[1]],hacked_plots[[2]],hacked_plots[[3]],align="hv",axis="tlbr",ncol=1)
 p3
 
-library(grid)
-library(gridExtra)
 y.grob <- textGrob("Posterior density", 
                    gp=gpar(fontsize=10), rot=90)
 
@@ -540,11 +537,11 @@ p3 <- grid.arrange(arrangeGrob(p3, left = y.grob, bottom = x.grob))
 #bot_row <- plot_grid(titre_pred_p, p3, p_once,nrow=1,rel_widths=c(2,1.2,3),labels=c("C","D","E"))
 top_row <- plot_grid(p_ar,labels=c("A"),label_x = 0,label_y=1)
 bot_row <- plot_grid(age_dist, titre_pred_p, labels=c("B","C"),label_x = 0)
-fig5 <- plot_grid(top_row,bot_row,nrow=2,rel_heights = c(1.2,1))
+fig6 <- plot_grid(top_row,bot_row,nrow=2,rel_heights = c(1.2,1))
 
-svg("Fig5.svg",width=6.5,height=5.5)
-plot(fig5)
+svg("Fig6.svg",width=6.5,height=5.5)
+plot(fig6)
 dev.off()
-cairo_pdf("Fig5.pdf",width=6.5,height=5.5)
-plot(fig5)
+cairo_pdf("Fig6.pdf",width=6.5,height=5.5)
+plot(fig6)
 dev.off()

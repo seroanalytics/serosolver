@@ -35,7 +35,7 @@ simulate_individual_faster(
 
 \item{sampling_times}{vector of times at which blood samples were taken}
 
-\item{strain_isolation_times}{vector of contiguous strain circulation times}
+\item{strain_isolation_times}{(optional) If no antigenic map is specified, this argument gives the vector of times at which individuals can be infected}
 
 \item{measured_strains}{vector of which strains had titres measured in `strain_isolation_times`}
 

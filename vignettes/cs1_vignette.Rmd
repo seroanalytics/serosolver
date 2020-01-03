@@ -1,5 +1,5 @@
 ---
-title: 'serosolver: paper case study 1'
+title: 'Paper case study 1: serosolver'
 csl: plos.csl
 output: rmarkdown::html_vignette
 editor_options:
@@ -31,7 +31,7 @@ This vignette demonstrates only how to reproduce the MCMC chains, simulate data,
 `serosolver` may be installed from github using the `devtools` package. There are a number of additional packages that we need for this analysis.
 ```{r message=FALSE, warning=FALSE, r,eval=TRUE}
 # Required to run serosolver
-# devtools::install_github("seroanalytics/serosolver")
+devtools::install_github("seroanalytics/serosolver")
 library(serosolver)
 library(plyr)
 library(data.table)
@@ -193,7 +193,7 @@ First, read in the MCMC chains. The below function distinguishes between posteri
 all_chains <- load_mcmc_chains(location=chain_path_real,thin=100,burnin=500000,
                              par_tab=par_tab,unfixed=FALSE,convert_mcmc=TRUE)
 ## Alternative, load the included MCMC chains rather than re-running
-## load(cs1_chains_real)
+## data(cs1_chains_real)
 ## all_chains <- cs1_chains_real
 
 print(summary(all_chains))
@@ -243,7 +243,7 @@ inf_chain <- all_chains$inf_chain
 
 ## Look at inferred attack rates
 ## Green shows times that serum samples were taken
-p_ar <- plot_attack_rates(inf_chain, titre_dat, strain_isolation_times, pad_chain=FALSE,
+p_ar <- plot_attack_rates(inf_chain, titre_dat, strain_isolation_times, pad_chain=TRUE,
                           plot_den = TRUE,prior_pars=list(prior_version=prior_version, 
                                   alpha=par_tab[par_tab$names=="alpha","values"],
                                   beta=par_tab[par_tab$names=="beta","values"])) + x_axis
@@ -330,7 +330,7 @@ all_chains <- load_mcmc_chains(location=chain_path_real,thin=100,burnin=500000,
                                par_tab=par_tab,unfixed=FALSE,convert_mcmc=FALSE)
 
 ## Alternative, load the included MCMC chains rather than re-running
-## load(cs1_chains_real_b)
+## data(cs1_chains_real_b)
 ## all_chains <- cs1_chains_real_b
 
 ## Find samples that were in both theta and inf hist chains
@@ -404,6 +404,7 @@ sim_infection_histories <- dat[["infection_histories"]]
 actual_total_infections <- sum(sim_infection_histories)
 
 ## Red lines show times of infection
+## Note that x-axis shows quarters (ie. year*4)
 plot_data(sim_titre_dat, sim_infection_histories, strain_isolation_times,
           n_indivs = 16,study_design="single_strain")
 
@@ -428,7 +429,7 @@ model_func <- create_posterior_func(par_tab=sim_par_tab,
                                 strain_isolation_times = strain_isolation_times,
                                 version=prior_version) # function in posteriors.R
 ```
-```{r Run mcmc sim, eval=TRUE, include=TRUE}
+```{r Run mcmc sim, eval=FALSE, include=TRUE}
 ## Generate results in parallel
 res <- foreach(x = filenames, .packages = c('serosolver','data.table','plyr')) %dopar% {
   ## Not all random starting conditions return finite likelihood, so for each chain generate random
@@ -448,9 +449,9 @@ res <- foreach(x = filenames, .packages = c('serosolver','data.table','plyr')) %
                   antigenic_map = NULL,
                   strain_isolation_times = strain_isolation_times,
                   start_inf_hist = start_inf, 
-                  mcmc_pars = c("iterations"=100000,"popt"=0.44,"popt_hist"=0.44,
-                                "opt_freq"=1000,"thin"=10,"adaptive_period"=20000, 
-                                "save_block"=1000, "thin_hist"=100,"hist_sample_prob"=0.5,
+                  mcmc_pars = c("iterations"=1000000,"popt"=0.44,"popt_hist"=0.44,
+                                "opt_freq"=1000,"thin"=100,"adaptive_period"=200000, 
+                                "save_block"=1000, "thin_hist"=1000,"hist_sample_prob"=0.5,
                                 "switch_sample"=2, "burnin"=0, "inf_propn"=1, 
                                 "move_size"=3,"hist_opt"=1,"swap_propn"=0.5,
                                 "hist_switch_prob"=0.5,"year_swap_propn"=1),
@@ -466,11 +467,11 @@ MCMC chains should be checked for convergence under the usual diagnostics. We al
 ```{r message=FALSE, warning=FALSE, fig.height=4, fig.width=6}
 ## Read in the MCMC chains
 ## Note that `thin` here is in addition to any thinning done during the fitting
-sim_all_chains <- load_mcmc_chains(location=chain_path_sim,thin=10,burnin=20000,
+sim_all_chains <- load_mcmc_chains(location=chain_path_sim,thin=10,burnin=200000,
                                    par_tab=par_tab,unfixed=FALSE,convert_mcmc=TRUE)
 
 ## Alternative, load the included MCMC chains rather than re-running
-## load(cs1_chains_sim)
+## data(cs1_chains_sim)
 ## sim_all_chains <- cs1_chains_sim
 
 theta_chain <- sim_all_chains$theta_chain
@@ -509,7 +510,7 @@ inf_chain <- sim_all_chains$inf_chain
 
 ## Look at inferred attack rates
 ## Green shows times that serum samples were taken
-p_ar <- plot_attack_rates(inf_chain, sim_titre_dat, strain_isolation_times, pad_chain=FALSE,
+p_ar <- plot_attack_rates(inf_chain, sim_titre_dat, strain_isolation_times, pad_chain=TRUE,
                             plot_den = TRUE,prior_pars=list(prior_version=prior_version, 
                                                           alpha=par_tab[par_tab$names=="alpha","values"],
                                                           beta=par_tab[par_tab$names=="beta","values"]))  +

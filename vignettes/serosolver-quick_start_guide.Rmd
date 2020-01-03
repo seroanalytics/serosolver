@@ -1,5 +1,5 @@
 ---
-title: 'Serosolver: Quick Start Guide'
+title: 'Quick start guide for serosolver'
 output: rmarkdown::html_vignette
 csl: plos.csl
 bibliography: vignette_references.bib
@@ -41,7 +41,7 @@ This quick start guide is designed to provide the basic instructions to use `ser
 The easiest way to install the development version of `serosolver` is to use the `devtools` package:
 
 ```{r,eval=FALSE}
-#devtools::install_github("seroanalytics/serosolver")
+devtools::install_github("seroanalytics/serosolver")
 library(serosolver)
 library(plyr)
 library(data.table)
@@ -131,9 +131,9 @@ An age mask is required to indicate when each individual could have had their fi
   ageMask <- create_age_mask(unique_indiv$DOB, strains_isolation_times)
 ```
 
-The final inputs required by `serosolver` are starting infection histories for each individual. The function `setup_infection_histories_new_2()` creates a matrix of infection histories given a matrix of titre data by looking at an individual's titre against each strain. Where titres are raised, it suggests an infection. In this way, it can propose plausible initial infection histories from which to begin MCMC sampling.
+The final inputs required by `serosolver` are starting infection histories for each individual. The function `setup_infection_histories_titre()` creates a matrix of infection histories given a matrix of titre data by looking at an individual's titre against each strain. Where titres are raised, it suggests an infection. In this way, it can propose plausible initial infection histories from which to begin MCMC sampling.
 ```{r, eval=FALSE}
-  start_inf <- setup_infection_histories_new_2(titre_dat, strains_isolation_times)
+  start_inf <- setup_infection_histories_titre(titre_dat, strains_isolation_times)
 ```
 
 ## 3: Run MCMC

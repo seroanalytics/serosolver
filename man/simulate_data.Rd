@@ -9,11 +9,11 @@ simulate_data(
   group = 1,
   n_indiv = 100,
   buckets = 1,
-  strain_isolation_times,
+  antigenic_map = NULL,
+  strain_isolation_times = NULL,
   measured_strains = NULL,
   sampling_times,
   nsamps = 2,
-  antigenic_map,
   titre_sensoring = 0,
   age_min = 5,
   age_max = 80,
@@ -33,15 +33,15 @@ simulate_data(
 
 \item{buckets}{time resolution of the simulated data. buckets=1 indicates annual time resolution; buckets=4 indicates quarterly; buckets=12 monthly}
 
-\item{strain_isolation_times}{vector of contiguous strain circulation times}
+\item{antigenic_map}{(optional) A data frame of antigenic x and y coordinates. Must have column names: x_coord; y_coord; inf_times. See \code{\link{example_antigenic_map}}}
+
+\item{strain_isolation_times}{(optional) If no antigenic map is specified, this argument gives the vector of times at which individuals can be infected}
 
 \item{measured_strains}{vector of strains that have titres measured matching entries in strain_isolation_times}
 
 \item{sampling_times}{possible sampling times for the individuals, matching entries in strain_isolation_times}
 
 \item{nsamps}{the number of samples each individual has (eg. nsamps=2 gives each individual 2 random sampling times from sampling_times)}
-
-\item{antigenic_map}{the raw antigenic map with colnames x_coord, y_coord and inf_times, as returned from \code{\link{generate_antigenic_map_flexible}} or \code{\link{generate_antigenic_map}}}
 
 \item{titre_sensoring}{numeric between 0 and 1, used to censor a proportion of titre observations at random (MAR)}
 

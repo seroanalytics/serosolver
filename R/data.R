@@ -97,7 +97,6 @@
 #' @family case_study_data
 "cs2_chains_real_b"
 
-
 #' MCMC chains case study 2, sim
 #'
 #' MCMC outputs from case study 2 analysis on simulated data. This example data object contains 3 MCMC chains thinned down to 100 samples from the posterior for each chain. The structure of the data is as returned from \code{\link{load_mcmc_chains}}.

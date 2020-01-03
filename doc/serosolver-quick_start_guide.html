@@ -1,11 +1,10 @@
 <!DOCTYPE html>
 
-<html xmlns="http://www.w3.org/1999/xhtml">
+<html>
 
 <head>
 
 <meta charset="utf-8" />
-<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 <meta name="generator" content="pandoc" />
 <meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
 
@@ -13,47 +12,73 @@
 
 
 
-<title>Serosolver: Quick Start Guide</title>
+<title>Quick start guide for serosolver</title>
 
 
 
 <style type="text/css">code{white-space: pre;}</style>
 <style type="text/css" data-origin="pandoc">
-div.sourceCode { overflow-x: auto; }
-table.sourceCode, tr.sourceCode, td.lineNumbers, td.sourceCode {
-  margin: 0; padding: 0; vertical-align: baseline; border: none; }
-table.sourceCode { width: 100%; line-height: 100%; }
-td.lineNumbers { text-align: right; padding-right: 4px; padding-left: 4px; color: #aaaaaa; border-right: 1px solid #aaaaaa; }
-td.sourceCode { padding-left: 5px; }
-code > span.kw { color: #007020; font-weight: bold; } /* Keyword */
-code > span.dt { color: #902000; } /* DataType */
-code > span.dv { color: #40a070; } /* DecVal */
-code > span.bn { color: #40a070; } /* BaseN */
-code > span.fl { color: #40a070; } /* Float */
-code > span.ch { color: #4070a0; } /* Char */
-code > span.st { color: #4070a0; } /* String */
-code > span.co { color: #60a0b0; font-style: italic; } /* Comment */
-code > span.ot { color: #007020; } /* Other */
-code > span.al { color: #ff0000; font-weight: bold; } /* Alert */
-code > span.fu { color: #06287e; } /* Function */
-code > span.er { color: #ff0000; font-weight: bold; } /* Error */
-code > span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
-code > span.cn { color: #880000; } /* Constant */
-code > span.sc { color: #4070a0; } /* SpecialChar */
-code > span.vs { color: #4070a0; } /* VerbatimString */
-code > span.ss { color: #bb6688; } /* SpecialString */
-code > span.im { } /* Import */
-code > span.va { color: #19177c; } /* Variable */
-code > span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
-code > span.op { color: #666666; } /* Operator */
-code > span.bu { } /* BuiltIn */
-code > span.ex { } /* Extension */
-code > span.pp { color: #bc7a00; } /* Preprocessor */
-code > span.at { color: #7d9029; } /* Attribute */
-code > span.do { color: #ba2121; font-style: italic; } /* Documentation */
-code > span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
-code > span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
-code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+a.sourceLine { display: inline-block; line-height: 1.25; }
+a.sourceLine { pointer-events: none; color: inherit; text-decoration: inherit; }
+a.sourceLine:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode { white-space: pre; position: relative; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+code.sourceCode { white-space: pre-wrap; }
+a.sourceLine { text-indent: -1em; padding-left: 1em; }
+}
+pre.numberSource a.sourceLine
+  { position: relative; left: -4em; }
+pre.numberSource a.sourceLine::before
+  { content: attr(title);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; pointer-events: all; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+    color: #aaaaaa;
+  }
+pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+div.sourceCode
+  {  }
+@media screen {
+a.sourceLine::before { text-decoration: underline; }
+}
+code span.al { color: #ff0000; font-weight: bold; } /* Alert */
+code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+code span.at { color: #7d9029; } /* Attribute */
+code span.bn { color: #40a070; } /* BaseN */
+code span.bu { } /* BuiltIn */
+code span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+code span.ch { color: #4070a0; } /* Char */
+code span.cn { color: #880000; } /* Constant */
+code span.co { color: #60a0b0; font-style: italic; } /* Comment */
+code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+code span.do { color: #ba2121; font-style: italic; } /* Documentation */
+code span.dt { color: #902000; } /* DataType */
+code span.dv { color: #40a070; } /* DecVal */
+code span.er { color: #ff0000; font-weight: bold; } /* Error */
+code span.ex { } /* Extension */
+code span.fl { color: #40a070; } /* Float */
+code span.fu { color: #06287e; } /* Function */
+code span.im { } /* Import */
+code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+code span.kw { color: #007020; font-weight: bold; } /* Keyword */
+code span.op { color: #666666; } /* Operator */
+code span.ot { color: #007020; } /* Other */
+code span.pp { color: #bc7a00; } /* Preprocessor */
+code span.sc { color: #4070a0; } /* SpecialChar */
+code span.ss { color: #bb6688; } /* SpecialString */
+code span.st { color: #4070a0; } /* String */
+code span.va { color: #19177c; } /* Variable */
+code span.vs { color: #4070a0; } /* VerbatimString */
+code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
 
 </style>
 <script>
@@ -80,7 +105,189 @@ code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Inf
 
 
 
-<link href="data:text/css;charset=utf-8,body%20%7B%0Abackground%2Dcolor%3A%20%23fff%3B%0Amargin%3A%201em%20auto%3B%0Amax%2Dwidth%3A%20700px%3B%0Aoverflow%3A%20visible%3B%0Apadding%2Dleft%3A%202em%3B%0Apadding%2Dright%3A%202em%3B%0Afont%2Dfamily%3A%20%22Open%20Sans%22%2C%20%22Helvetica%20Neue%22%2C%20Helvetica%2C%20Arial%2C%20sans%2Dserif%3B%0Afont%2Dsize%3A%2014px%3B%0Aline%2Dheight%3A%201%2E35%3B%0A%7D%0A%23header%20%7B%0Atext%2Dalign%3A%20center%3B%0A%7D%0A%23TOC%20%7B%0Aclear%3A%20both%3B%0Amargin%3A%200%200%2010px%2010px%3B%0Apadding%3A%204px%3B%0Awidth%3A%20400px%3B%0Aborder%3A%201px%20solid%20%23CCCCCC%3B%0Aborder%2Dradius%3A%205px%3B%0Abackground%2Dcolor%3A%20%23f6f6f6%3B%0Afont%2Dsize%3A%2013px%3B%0Aline%2Dheight%3A%201%2E3%3B%0A%7D%0A%23TOC%20%2Etoctitle%20%7B%0Afont%2Dweight%3A%20bold%3B%0Afont%2Dsize%3A%2015px%3B%0Amargin%2Dleft%3A%205px%3B%0A%7D%0A%23TOC%20ul%20%7B%0Apadding%2Dleft%3A%2040px%3B%0Amargin%2Dleft%3A%20%2D1%2E5em%3B%0Amargin%2Dtop%3A%205px%3B%0Amargin%2Dbottom%3A%205px%3B%0A%7D%0A%23TOC%20ul%20ul%20%7B%0Amargin%2Dleft%3A%20%2D2em%3B%0A%7D%0A%23TOC%20li%20%7B%0Aline%2Dheight%3A%2016px%3B%0A%7D%0Atable%20%7B%0Amargin%3A%201em%20auto%3B%0Aborder%2Dwidth%3A%201px%3B%0Aborder%2Dcolor%3A%20%23DDDDDD%3B%0Aborder%2Dstyle%3A%20outset%3B%0Aborder%2Dcollapse%3A%20collapse%3B%0A%7D%0Atable%20th%20%7B%0Aborder%2Dwidth%3A%202px%3B%0Apadding%3A%205px%3B%0Aborder%2Dstyle%3A%20inset%3B%0A%7D%0Atable%20td%20%7B%0Aborder%2Dwidth%3A%201px%3B%0Aborder%2Dstyle%3A%20inset%3B%0Aline%2Dheight%3A%2018px%3B%0Apadding%3A%205px%205px%3B%0A%7D%0Atable%2C%20table%20th%2C%20table%20td%20%7B%0Aborder%2Dleft%2Dstyle%3A%20none%3B%0Aborder%2Dright%2Dstyle%3A%20none%3B%0A%7D%0Atable%20thead%2C%20table%20tr%2Eeven%20%7B%0Abackground%2Dcolor%3A%20%23f7f7f7%3B%0A%7D%0Ap%20%7B%0Amargin%3A%200%2E5em%200%3B%0A%7D%0Ablockquote%20%7B%0Abackground%2Dcolor%3A%20%23f6f6f6%3B%0Apadding%3A%200%2E25em%200%2E75em%3B%0A%7D%0Ahr%20%7B%0Aborder%2Dstyle%3A%20solid%3B%0Aborder%3A%20none%3B%0Aborder%2Dtop%3A%201px%20solid%20%23777%3B%0Amargin%3A%2028px%200%3B%0A%7D%0Adl%20%7B%0Amargin%2Dleft%3A%200%3B%0A%7D%0Adl%20dd%20%7B%0Amargin%2Dbottom%3A%2013px%3B%0Amargin%2Dleft%3A%2013px%3B%0A%7D%0Adl%20dt%20%7B%0Afont%2Dweight%3A%20bold%3B%0A%7D%0Aul%20%7B%0Amargin%2Dtop%3A%200%3B%0A%7D%0Aul%20li%20%7B%0Alist%2Dstyle%3A%20circle%20outside%3B%0A%7D%0Aul%20ul%20%7B%0Amargin%2Dbottom%3A%200%3B%0A%7D%0Apre%2C%20code%20%7B%0Abackground%2Dcolor%3A%20%23f7f7f7%3B%0Aborder%2Dradius%3A%203px%3B%0Acolor%3A%20%23333%3B%0Awhite%2Dspace%3A%20pre%2Dwrap%3B%20%0A%7D%0Apre%20%7B%0Aborder%2Dradius%3A%203px%3B%0Amargin%3A%205px%200px%2010px%200px%3B%0Apadding%3A%2010px%3B%0A%7D%0Apre%3Anot%28%5Bclass%5D%29%20%7B%0Abackground%2Dcolor%3A%20%23f7f7f7%3B%0A%7D%0Acode%20%7B%0Afont%2Dfamily%3A%20Consolas%2C%20Monaco%2C%20%27Courier%20New%27%2C%20monospace%3B%0Afont%2Dsize%3A%2085%25%3B%0A%7D%0Ap%20%3E%20code%2C%20li%20%3E%20code%20%7B%0Apadding%3A%202px%200px%3B%0A%7D%0Adiv%2Efigure%20%7B%0Atext%2Dalign%3A%20center%3B%0A%7D%0Aimg%20%7B%0Abackground%2Dcolor%3A%20%23FFFFFF%3B%0Apadding%3A%202px%3B%0Aborder%3A%201px%20solid%20%23DDDDDD%3B%0Aborder%2Dradius%3A%203px%3B%0Aborder%3A%201px%20solid%20%23CCCCCC%3B%0Amargin%3A%200%205px%3B%0A%7D%0Ah1%20%7B%0Amargin%2Dtop%3A%200%3B%0Afont%2Dsize%3A%2035px%3B%0Aline%2Dheight%3A%2040px%3B%0A%7D%0Ah2%20%7B%0Aborder%2Dbottom%3A%204px%20solid%20%23f7f7f7%3B%0Apadding%2Dtop%3A%2010px%3B%0Apadding%2Dbottom%3A%202px%3B%0Afont%2Dsize%3A%20145%25%3B%0A%7D%0Ah3%20%7B%0Aborder%2Dbottom%3A%202px%20solid%20%23f7f7f7%3B%0Apadding%2Dtop%3A%2010px%3B%0Afont%2Dsize%3A%20120%25%3B%0A%7D%0Ah4%20%7B%0Aborder%2Dbottom%3A%201px%20solid%20%23f7f7f7%3B%0Amargin%2Dleft%3A%208px%3B%0Afont%2Dsize%3A%20105%25%3B%0A%7D%0Ah5%2C%20h6%20%7B%0Aborder%2Dbottom%3A%201px%20solid%20%23ccc%3B%0Afont%2Dsize%3A%20105%25%3B%0A%7D%0Aa%20%7B%0Acolor%3A%20%230033dd%3B%0Atext%2Ddecoration%3A%20none%3B%0A%7D%0Aa%3Ahover%20%7B%0Acolor%3A%20%236666ff%3B%20%7D%0Aa%3Avisited%20%7B%0Acolor%3A%20%23800080%3B%20%7D%0Aa%3Avisited%3Ahover%20%7B%0Acolor%3A%20%23BB00BB%3B%20%7D%0Aa%5Bhref%5E%3D%22http%3A%22%5D%20%7B%0Atext%2Ddecoration%3A%20underline%3B%20%7D%0Aa%5Bhref%5E%3D%22https%3A%22%5D%20%7B%0Atext%2Ddecoration%3A%20underline%3B%20%7D%0A%0Acode%20%3E%20span%2Ekw%20%7B%20color%3A%20%23555%3B%20font%2Dweight%3A%20bold%3B%20%7D%20%0Acode%20%3E%20span%2Edt%20%7B%20color%3A%20%23902000%3B%20%7D%20%0Acode%20%3E%20span%2Edv%20%7B%20color%3A%20%2340a070%3B%20%7D%20%0Acode%20%3E%20span%2Ebn%20%7B%20color%3A%20%23d14%3B%20%7D%20%0Acode%20%3E%20span%2Efl%20%7B%20color%3A%20%23d14%3B%20%7D%20%0Acode%20%3E%20span%2Ech%20%7B%20color%3A%20%23d14%3B%20%7D%20%0Acode%20%3E%20span%2Est%20%7B%20color%3A%20%23d14%3B%20%7D%20%0Acode%20%3E%20span%2Eco%20%7B%20color%3A%20%23888888%3B%20font%2Dstyle%3A%20italic%3B%20%7D%20%0Acode%20%3E%20span%2Eot%20%7B%20color%3A%20%23007020%3B%20%7D%20%0Acode%20%3E%20span%2Eal%20%7B%20color%3A%20%23ff0000%3B%20font%2Dweight%3A%20bold%3B%20%7D%20%0Acode%20%3E%20span%2Efu%20%7B%20color%3A%20%23900%3B%20font%2Dweight%3A%20bold%3B%20%7D%20%20code%20%3E%20span%2Eer%20%7B%20color%3A%20%23a61717%3B%20background%2Dcolor%3A%20%23e3d2d2%3B%20%7D%20%0A" rel="stylesheet" type="text/css" />
+<style type="text/css">body {
+background-color: #fff;
+margin: 1em auto;
+max-width: 700px;
+overflow: visible;
+padding-left: 2em;
+padding-right: 2em;
+font-family: "Open Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
+font-size: 14px;
+line-height: 1.35;
+}
+#header {
+text-align: center;
+}
+#TOC {
+clear: both;
+margin: 0 0 10px 10px;
+padding: 4px;
+width: 400px;
+border: 1px solid #CCCCCC;
+border-radius: 5px;
+background-color: #f6f6f6;
+font-size: 13px;
+line-height: 1.3;
+}
+#TOC .toctitle {
+font-weight: bold;
+font-size: 15px;
+margin-left: 5px;
+}
+#TOC ul {
+padding-left: 40px;
+margin-left: -1.5em;
+margin-top: 5px;
+margin-bottom: 5px;
+}
+#TOC ul ul {
+margin-left: -2em;
+}
+#TOC li {
+line-height: 16px;
+}
+table {
+margin: 1em auto;
+border-width: 1px;
+border-color: #DDDDDD;
+border-style: outset;
+border-collapse: collapse;
+}
+table th {
+border-width: 2px;
+padding: 5px;
+border-style: inset;
+}
+table td {
+border-width: 1px;
+border-style: inset;
+line-height: 18px;
+padding: 5px 5px;
+}
+table, table th, table td {
+border-left-style: none;
+border-right-style: none;
+}
+table thead, table tr.even {
+background-color: #f7f7f7;
+}
+p {
+margin: 0.5em 0;
+}
+blockquote {
+background-color: #f6f6f6;
+padding: 0.25em 0.75em;
+}
+hr {
+border-style: solid;
+border: none;
+border-top: 1px solid #777;
+margin: 28px 0;
+}
+dl {
+margin-left: 0;
+}
+dl dd {
+margin-bottom: 13px;
+margin-left: 13px;
+}
+dl dt {
+font-weight: bold;
+}
+ul {
+margin-top: 0;
+}
+ul li {
+list-style: circle outside;
+}
+ul ul {
+margin-bottom: 0;
+}
+pre, code {
+background-color: #f7f7f7;
+border-radius: 3px;
+color: #333;
+white-space: pre-wrap; 
+}
+pre {
+border-radius: 3px;
+margin: 5px 0px 10px 0px;
+padding: 10px;
+}
+pre:not([class]) {
+background-color: #f7f7f7;
+}
+code {
+font-family: Consolas, Monaco, 'Courier New', monospace;
+font-size: 85%;
+}
+p > code, li > code {
+padding: 2px 0px;
+}
+div.figure {
+text-align: center;
+}
+img {
+background-color: #FFFFFF;
+padding: 2px;
+border: 1px solid #DDDDDD;
+border-radius: 3px;
+border: 1px solid #CCCCCC;
+margin: 0 5px;
+}
+h1 {
+margin-top: 0;
+font-size: 35px;
+line-height: 40px;
+}
+h2 {
+border-bottom: 4px solid #f7f7f7;
+padding-top: 10px;
+padding-bottom: 2px;
+font-size: 145%;
+}
+h3 {
+border-bottom: 2px solid #f7f7f7;
+padding-top: 10px;
+font-size: 120%;
+}
+h4 {
+border-bottom: 1px solid #f7f7f7;
+margin-left: 8px;
+font-size: 105%;
+}
+h5, h6 {
+border-bottom: 1px solid #ccc;
+font-size: 105%;
+}
+a {
+color: #0033dd;
+text-decoration: none;
+}
+a:hover {
+color: #6666ff; }
+a:visited {
+color: #800080; }
+a:visited:hover {
+color: #BB00BB; }
+a[href^="http:"] {
+text-decoration: underline; }
+a[href^="https:"] {
+text-decoration: underline; }
+
+code > span.kw { color: #555; font-weight: bold; } 
+code > span.dt { color: #902000; } 
+code > span.dv { color: #40a070; } 
+code > span.bn { color: #d14; } 
+code > span.fl { color: #d14; } 
+code > span.ch { color: #d14; } 
+code > span.st { color: #d14; } 
+code > span.co { color: #888888; font-style: italic; } 
+code > span.ot { color: #007020; } 
+code > span.al { color: #ff0000; font-weight: bold; } 
+code > span.fu { color: #900; font-weight: bold; }  code > span.er { color: #a61717; background-color: #e3d2d2; } 
+</style>
 
 
 
@@ -92,7 +299,7 @@ code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Inf
 
 
 
-<h1 class="title toc-ignore">Serosolver: Quick Start Guide</h1>
+<h1 class="title toc-ignore">Quick start guide for serosolver</h1>
 
 
 
@@ -124,11 +331,11 @@ code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Inf
 <div id="install-serosolver" class="section level2">
 <h2>Install serosolver</h2>
 <p>The easiest way to install the development version of <code>serosolver</code> is to use the <code>devtools</code> package:</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="co">#devtools::install_github(&quot;seroanalytics/serosolver&quot;)</span>
-<span class="kw">library</span>(serosolver)
-<span class="kw">library</span>(plyr)
-<span class="kw">library</span>(data.table)
-<span class="kw">library</span>(ggplot2)</code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb1-1" title="1">devtools<span class="op">::</span><span class="kw">install_github</span>(<span class="st">&quot;seroanalytics/serosolver&quot;</span>)</a>
+<a class="sourceLine" id="cb1-2" title="2"><span class="kw">library</span>(serosolver)</a>
+<a class="sourceLine" id="cb1-3" title="3"><span class="kw">library</span>(plyr)</a>
+<a class="sourceLine" id="cb1-4" title="4"><span class="kw">library</span>(data.table)</a>
+<a class="sourceLine" id="cb1-5" title="5"><span class="kw">library</span>(ggplot2)</a></code></pre></div>
 </div>
 <div id="data-format" class="section level2">
 <h2>1: Data Format</h2>
@@ -148,15 +355,15 @@ code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Inf
 <li>DOB: integer value of date of birth (should be in the same format as samples)</li>
 <li>group: integer value giving the population membership of the individual</li>
 </ol>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">  titre_dat &lt;-<span class="st"> </span><span class="kw">data.frame</span>(<span class="dt">individual=</span><span class="kw">c</span>(<span class="kw">rep</span>(<span class="dv">1</span>,<span class="dv">4</span>),<span class="kw">rep</span>(<span class="dv">2</span>,<span class="dv">4</span>)),
-                          <span class="dt">samples=</span><span class="kw">c</span>(<span class="dv">8039</span>,<span class="dv">8040</span>,<span class="dv">8044</span>,<span class="dv">8047</span>,<span class="dv">8039</span>,<span class="dv">8041</span>,<span class="dv">8045</span>,<span class="dv">8048</span>),
-                          <span class="dt">virus=</span><span class="kw">c</span>(<span class="kw">rep</span>(<span class="dv">8036</span>,<span class="dv">8</span>)),
-                          <span class="dt">titre=</span><span class="kw">c</span>(<span class="dv">0</span>,<span class="dv">0</span>,<span class="dv">7</span>,<span class="dv">7</span>,<span class="dv">0</span>,<span class="dv">5</span>,<span class="dv">6</span>,<span class="dv">5</span>),
-                          <span class="dt">run=</span><span class="kw">c</span>(<span class="kw">rep</span>(<span class="dv">1</span>,<span class="dv">8</span>)),
-                          <span class="dt">DOB=</span><span class="kw">c</span>(<span class="kw">rep</span>(<span class="dv">8036</span>,<span class="dv">8</span>)),
-                          <span class="dt">group=</span><span class="kw">c</span>(<span class="kw">rep</span>(<span class="dv">1</span>,<span class="dv">8</span>))
-                         )
-  knitr<span class="op">::</span><span class="kw">kable</span>(<span class="kw">head</span>(titre_dat))</code></pre></div>
+<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb2-1" title="1">  titre_dat &lt;-<span class="st"> </span><span class="kw">data.frame</span>(<span class="dt">individual=</span><span class="kw">c</span>(<span class="kw">rep</span>(<span class="dv">1</span>,<span class="dv">4</span>),<span class="kw">rep</span>(<span class="dv">2</span>,<span class="dv">4</span>)),</a>
+<a class="sourceLine" id="cb2-2" title="2">                          <span class="dt">samples=</span><span class="kw">c</span>(<span class="dv">8039</span>,<span class="dv">8040</span>,<span class="dv">8044</span>,<span class="dv">8047</span>,<span class="dv">8039</span>,<span class="dv">8041</span>,<span class="dv">8045</span>,<span class="dv">8048</span>),</a>
+<a class="sourceLine" id="cb2-3" title="3">                          <span class="dt">virus=</span><span class="kw">c</span>(<span class="kw">rep</span>(<span class="dv">8036</span>,<span class="dv">8</span>)),</a>
+<a class="sourceLine" id="cb2-4" title="4">                          <span class="dt">titre=</span><span class="kw">c</span>(<span class="dv">0</span>,<span class="dv">0</span>,<span class="dv">7</span>,<span class="dv">7</span>,<span class="dv">0</span>,<span class="dv">5</span>,<span class="dv">6</span>,<span class="dv">5</span>),</a>
+<a class="sourceLine" id="cb2-5" title="5">                          <span class="dt">run=</span><span class="kw">c</span>(<span class="kw">rep</span>(<span class="dv">1</span>,<span class="dv">8</span>)),</a>
+<a class="sourceLine" id="cb2-6" title="6">                          <span class="dt">DOB=</span><span class="kw">c</span>(<span class="kw">rep</span>(<span class="dv">8036</span>,<span class="dv">8</span>)),</a>
+<a class="sourceLine" id="cb2-7" title="7">                          <span class="dt">group=</span><span class="kw">c</span>(<span class="kw">rep</span>(<span class="dv">1</span>,<span class="dv">8</span>))</a>
+<a class="sourceLine" id="cb2-8" title="8">                         )</a>
+<a class="sourceLine" id="cb2-9" title="9">  knitr<span class="op">::</span><span class="kw">kable</span>(<span class="kw">head</span>(titre_dat))</a></code></pre></div>
 <p>For the remainder of this quick start guide we refer to the input data set as <code>titre_dat</code>.</p>
 </div>
 <div id="specifying-inputs" class="section level2">
@@ -424,58 +631,58 @@ code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Inf
 </tbody>
 </table>
 <p>In the parameter file, the column ‘fixed’ indicates if each parameter value is fixed or should be estimated. For values that are not fixed, starting values need to be generated. The below code generates a random starting value for unfixed parameter values.</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="co"># generate starting parameter values</span>
-  start_tab &lt;-<span class="st"> </span>par_tab
-    <span class="cf">for</span>(i <span class="cf">in</span> <span class="dv">1</span><span class="op">:</span><span class="kw">nrow</span>(start_tab)){
-      <span class="cf">if</span>(start_tab[i,<span class="st">&quot;fixed&quot;</span>] <span class="op">==</span><span class="st"> </span><span class="dv">0</span>){
-        start_tab[i,<span class="st">&quot;values&quot;</span>] &lt;-<span class="st"> </span><span class="kw">runif</span>(<span class="dv">1</span>,start_tab[i,<span class="st">&quot;lower_start&quot;</span>], 
-                                  start_tab[i,<span class="st">&quot;upper_start&quot;</span>])
-      }
-    }</code></pre></div>
+<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb3-1" title="1"><span class="co"># generate starting parameter values</span></a>
+<a class="sourceLine" id="cb3-2" title="2">  start_tab &lt;-<span class="st"> </span>par_tab</a>
+<a class="sourceLine" id="cb3-3" title="3">    <span class="cf">for</span>(i <span class="cf">in</span> <span class="dv">1</span><span class="op">:</span><span class="kw">nrow</span>(start_tab)){</a>
+<a class="sourceLine" id="cb3-4" title="4">      <span class="cf">if</span>(start_tab[i,<span class="st">&quot;fixed&quot;</span>] <span class="op">==</span><span class="st"> </span><span class="dv">0</span>){</a>
+<a class="sourceLine" id="cb3-5" title="5">        start_tab[i,<span class="st">&quot;values&quot;</span>] &lt;-<span class="st"> </span><span class="kw">runif</span>(<span class="dv">1</span>,start_tab[i,<span class="st">&quot;lower_start&quot;</span>], </a>
+<a class="sourceLine" id="cb3-6" title="6">                                  start_tab[i,<span class="st">&quot;upper_start&quot;</span>])</a>
+<a class="sourceLine" id="cb3-7" title="7">      }</a>
+<a class="sourceLine" id="cb3-8" title="8">    }</a></code></pre></div>
 </div>
 <div id="antigenic-map" class="section level3">
 <h3>Antigenic Map</h3>
 <p>The antigenic map specifies the coordinates of different circulating viruses in antigenic space <span class="citation">[21]</span>, informing the model about how antigenically similar these viruses are. Viruses that are further apart in this 2-dimensional space are expected to cross react less than viruses that are close together.</p>
 <p>An antigenic map can be created using <code>generate_antigenic_map()</code> and input by the user depending on the source of their data. We use the antigenic map created by Fonville <em>et al.</em> <span class="citation">[17]</span> in our analyses.</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">## Read in raw coordinates
-  antigenic_coords_path &lt;-<span class="st"> </span><span class="kw">system.file</span>(<span class="st">&quot;extdata&quot;</span>, <span class="st">&quot;fonville_map_approx.csv&quot;</span>, <span class="dt">package =</span> <span class="st">&quot;serosolver&quot;</span>)
-  antigenic_coords &lt;-<span class="st"> </span><span class="kw">read.csv</span>(antigenic_coords_path, <span class="dt">stringsAsFactors=</span><span class="ot">FALSE</span>)
-
-## Convert to form expected by serosolver
-  antigenic_map &lt;-<span class="st"> </span><span class="kw">generate_antigenic_map</span>(antigenic_coords, <span class="dt">buckets =</span> <span class="dv">4</span>)
-
-<span class="co"># unique strain circulation times</span>
-  strains_isolation_times &lt;-<span class="st"> </span><span class="kw">unique</span>(antigenic_map<span class="op">$</span>inf_times)</code></pre></div>
+<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb4-1" title="1"><span class="co">## Read in raw coordinates</span></a>
+<a class="sourceLine" id="cb4-2" title="2">  antigenic_coords_path &lt;-<span class="st"> </span><span class="kw">system.file</span>(<span class="st">&quot;extdata&quot;</span>, <span class="st">&quot;fonville_map_approx.csv&quot;</span>, <span class="dt">package =</span> <span class="st">&quot;serosolver&quot;</span>)</a>
+<a class="sourceLine" id="cb4-3" title="3">  antigenic_coords &lt;-<span class="st"> </span><span class="kw">read.csv</span>(antigenic_coords_path, <span class="dt">stringsAsFactors=</span><span class="ot">FALSE</span>)</a>
+<a class="sourceLine" id="cb4-4" title="4"></a>
+<a class="sourceLine" id="cb4-5" title="5"><span class="co">## Convert to form expected by serosolver</span></a>
+<a class="sourceLine" id="cb4-6" title="6">  antigenic_map &lt;-<span class="st"> </span><span class="kw">generate_antigenic_map</span>(antigenic_coords, <span class="dt">buckets =</span> <span class="dv">4</span>)</a>
+<a class="sourceLine" id="cb4-7" title="7"></a>
+<a class="sourceLine" id="cb4-8" title="8"><span class="co"># unique strain circulation times</span></a>
+<a class="sourceLine" id="cb4-9" title="9">  strains_isolation_times &lt;-<span class="st"> </span><span class="kw">unique</span>(antigenic_map<span class="op">$</span>inf_times)</a></code></pre></div>
 </div>
 <div id="age-mask" class="section level3">
 <h3>Age Mask</h3>
 <p>An age mask is required to indicate when each individual could have had their first infection. For example an individual born in 1997 could not have been infected with a strain that circulated in 1990. The function <code>create_age_mask()</code> outputs a vector of indices of the first <code>strains_isolation_times</code> that an individual could have been infected with.</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">  unique_indiv &lt;-<span class="st"> </span>titre_dat[<span class="op">!</span><span class="kw">duplicated</span>(titre_dat<span class="op">$</span>individual),]
-  ageMask &lt;-<span class="st"> </span><span class="kw">create_age_mask</span>(unique_indiv<span class="op">$</span>DOB, strains_isolation_times)</code></pre></div>
-<p>The final inputs required by <code>serosolver</code> are starting infection histories for each individual. The function <code>setup_infection_histories_new_2()</code> creates a matrix of infection histories given a matrix of titre data by looking at an individual’s titre against each strain. Where titres are raised, it suggests an infection. In this way, it can propose plausible initial infection histories from which to begin MCMC sampling.</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">  start_inf &lt;-<span class="st"> </span><span class="kw">setup_infection_histories_new_2</span>(titre_dat, strains_isolation_times)</code></pre></div>
+<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb5-1" title="1">  unique_indiv &lt;-<span class="st"> </span>titre_dat[<span class="op">!</span><span class="kw">duplicated</span>(titre_dat<span class="op">$</span>individual),]</a>
+<a class="sourceLine" id="cb5-2" title="2">  ageMask &lt;-<span class="st"> </span><span class="kw">create_age_mask</span>(unique_indiv<span class="op">$</span>DOB, strains_isolation_times)</a></code></pre></div>
+<p>The final inputs required by <code>serosolver</code> are starting infection histories for each individual. The function <code>setup_infection_histories_titre()</code> creates a matrix of infection histories given a matrix of titre data by looking at an individual’s titre against each strain. Where titres are raised, it suggests an infection. In this way, it can propose plausible initial infection histories from which to begin MCMC sampling.</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb6-1" title="1">  start_inf &lt;-<span class="st"> </span><span class="kw">setup_infection_histories_titre</span>(titre_dat, strains_isolation_times)</a></code></pre></div>
 </div>
 </div>
 <div id="run-mcmc" class="section level2">
 <h2>3: Run MCMC</h2>
 <p><code>seroslver</code> uses an Adaptive Metropolis-within-Gibbs algorithm. Given a starting point and the necessary MCMC parameters, <code>run_MCMC()</code> performs a random-walk of the posterior space to produce an MCMC chain that can be used to generate MCMC density and iteration plots (see section 4).</p>
 <p>Using the default options, the MCMC can be run using the following.</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="co"># run MCMC  </span>
-  res &lt;-<span class="st"> </span><span class="kw">run_MCMC</span>(<span class="dt">par_tab =</span> start_tab, <span class="dt">titre_dat =</span> titre_dat, <span class="dt">antigenic_map =</span> antigenic_map, 
-                  <span class="dt">start_inf_hist =</span> start_inf, <span class="dt">CREATE_POSTERIOR_FUNC =</span> create_posterior_func,
-                  <span class="dt">version =</span> <span class="dv">2</span>)</code></pre></div>
+<div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb7-1" title="1"><span class="co"># run MCMC  </span></a>
+<a class="sourceLine" id="cb7-2" title="2">  res &lt;-<span class="st"> </span><span class="kw">run_MCMC</span>(<span class="dt">par_tab =</span> start_tab, <span class="dt">titre_dat =</span> titre_dat, <span class="dt">antigenic_map =</span> antigenic_map, </a>
+<a class="sourceLine" id="cb7-3" title="3">                  <span class="dt">start_inf_hist =</span> start_inf, <span class="dt">CREATE_POSTERIOR_FUNC =</span> create_posterior_func,</a>
+<a class="sourceLine" id="cb7-4" title="4">                  <span class="dt">version =</span> <span class="dv">2</span>)</a></code></pre></div>
 <p>If you want to change any default options, such as increasing or decreasing the number of iterations and the adaptive period you can pass a vector of function argument values to <code>run_MCMC()</code>.</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">  mcmc_pars &lt;-<span class="st"> </span><span class="kw">c</span>(<span class="st">&quot;iterations&quot;</span>=<span class="dv">50000</span>,<span class="st">&quot;popt&quot;</span>=<span class="fl">0.44</span>,<span class="st">&quot;popt_hist&quot;</span>=<span class="fl">0.44</span>,
-                <span class="st">&quot;opt_freq&quot;</span>=<span class="dv">1000</span>,<span class="st">&quot;thin&quot;</span>=<span class="dv">1</span>,
-                <span class="st">&quot;adaptive_period&quot;</span>=<span class="dv">10000</span>, <span class="st">&quot;save_block&quot;</span>=<span class="dv">1000</span>, 
-                <span class="st">&quot;thin_hist&quot;</span>=<span class="dv">10</span>, <span class="st">&quot;hist_sample_prob&quot;</span>=<span class="fl">0.5</span>,
-                <span class="st">&quot;switch_sample&quot;</span>=<span class="dv">2</span>, <span class="st">&quot;inf_propn&quot;</span>=<span class="fl">0.5</span>, 
-                <span class="st">&quot;move_size&quot;</span>=<span class="dv">5</span>, <span class="st">&quot;hist_opt&quot;</span>=<span class="dv">0</span>,
-                <span class="st">&quot;swap_propn&quot;</span>=<span class="fl">0.5</span>,<span class="st">&quot;hist_switch_prob&quot;</span>=<span class="fl">0.5</span>,
-                <span class="st">&quot;year_swap_propn&quot;</span>=<span class="fl">0.5</span>)
-  res &lt;-<span class="st"> </span><span class="kw">run_MCMC</span>(<span class="dt">par_tab =</span> start_tab, <span class="dt">titre_dat =</span> titre_dat, <span class="dt">antigenic_map =</span> antigenic_map, 
-                <span class="dt">mcmc_pars =</span> mcmc_pars, <span class="dt">start_inf_hist =</span> start_inf,
-                <span class="dt">CREATE_POSTERIOR_FUNC =</span> create_posterior_func, <span class="dt">version =</span> <span class="dv">2</span>)</code></pre></div>
+<div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb8-1" title="1">  mcmc_pars &lt;-<span class="st"> </span><span class="kw">c</span>(<span class="st">&quot;iterations&quot;</span>=<span class="dv">50000</span>,<span class="st">&quot;popt&quot;</span>=<span class="fl">0.44</span>,<span class="st">&quot;popt_hist&quot;</span>=<span class="fl">0.44</span>,</a>
+<a class="sourceLine" id="cb8-2" title="2">                <span class="st">&quot;opt_freq&quot;</span>=<span class="dv">1000</span>,<span class="st">&quot;thin&quot;</span>=<span class="dv">1</span>,</a>
+<a class="sourceLine" id="cb8-3" title="3">                <span class="st">&quot;adaptive_period&quot;</span>=<span class="dv">10000</span>, <span class="st">&quot;save_block&quot;</span>=<span class="dv">1000</span>, </a>
+<a class="sourceLine" id="cb8-4" title="4">                <span class="st">&quot;thin_hist&quot;</span>=<span class="dv">10</span>, <span class="st">&quot;hist_sample_prob&quot;</span>=<span class="fl">0.5</span>,</a>
+<a class="sourceLine" id="cb8-5" title="5">                <span class="st">&quot;switch_sample&quot;</span>=<span class="dv">2</span>, <span class="st">&quot;inf_propn&quot;</span>=<span class="fl">0.5</span>, </a>
+<a class="sourceLine" id="cb8-6" title="6">                <span class="st">&quot;move_size&quot;</span>=<span class="dv">5</span>, <span class="st">&quot;hist_opt&quot;</span>=<span class="dv">0</span>,</a>
+<a class="sourceLine" id="cb8-7" title="7">                <span class="st">&quot;swap_propn&quot;</span>=<span class="fl">0.5</span>,<span class="st">&quot;hist_switch_prob&quot;</span>=<span class="fl">0.5</span>,</a>
+<a class="sourceLine" id="cb8-8" title="8">                <span class="st">&quot;year_swap_propn&quot;</span>=<span class="fl">0.5</span>)</a>
+<a class="sourceLine" id="cb8-9" title="9">  res &lt;-<span class="st"> </span><span class="kw">run_MCMC</span>(<span class="dt">par_tab =</span> start_tab, <span class="dt">titre_dat =</span> titre_dat, <span class="dt">antigenic_map =</span> antigenic_map, </a>
+<a class="sourceLine" id="cb8-10" title="10">                <span class="dt">mcmc_pars =</span> mcmc_pars, <span class="dt">start_inf_hist =</span> start_inf,</a>
+<a class="sourceLine" id="cb8-11" title="11">                <span class="dt">CREATE_POSTERIOR_FUNC =</span> create_posterior_func, <span class="dt">version =</span> <span class="dv">2</span>)</a></code></pre></div>
 </div>
 <div id="processing-outputs" class="section level2">
 <h2>4: Processing Outputs</h2>
@@ -483,57 +690,57 @@ code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Inf
 <div id="diagnostic-plots" class="section level3">
 <h3>Diagnostic plots</h3>
 <p>To evaluate model performance, trace and density plots can be produced by plotting the MCMC chains. In the below example the adaptive period and burn-in from the MCMC are excluded in the diagnostic plots.</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="co"># Density/trace plots</span>
-chain1 &lt;-<span class="st"> </span><span class="kw">read.csv</span>(res<span class="op">$</span>chain_file)
-chain1 &lt;-<span class="st"> </span>chain1[chain1<span class="op">$</span>sampno <span class="op">&gt;=</span><span class="st"> </span>(mcmc_pars[<span class="st">&quot;adaptive_period&quot;</span>]<span class="op">+</span>mcmc_pars[<span class="st">&quot;burnin&quot;</span>]),]
-<span class="kw">plot</span>(coda<span class="op">::</span><span class="kw">as.mcmc</span>(chain1[,<span class="kw">c</span>(<span class="st">&quot;mu&quot;</span>,<span class="st">&quot;mu_short&quot;</span>,<span class="st">&quot;wane&quot;</span>)]))</code></pre></div>
+<div class="sourceCode" id="cb9"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb9-1" title="1"><span class="co"># Density/trace plots</span></a>
+<a class="sourceLine" id="cb9-2" title="2">chain1 &lt;-<span class="st"> </span><span class="kw">read.csv</span>(res<span class="op">$</span>chain_file)</a>
+<a class="sourceLine" id="cb9-3" title="3">chain1 &lt;-<span class="st"> </span>chain1[chain1<span class="op">$</span>sampno <span class="op">&gt;=</span><span class="st"> </span>(mcmc_pars[<span class="st">&quot;adaptive_period&quot;</span>]<span class="op">+</span>mcmc_pars[<span class="st">&quot;burnin&quot;</span>]),]</a>
+<a class="sourceLine" id="cb9-4" title="4"><span class="kw">plot</span>(coda<span class="op">::</span><span class="kw">as.mcmc</span>(chain1[,<span class="kw">c</span>(<span class="st">&quot;mu&quot;</span>,<span class="st">&quot;mu_short&quot;</span>,<span class="st">&quot;wane&quot;</span>)]))</a></code></pre></div>
 </div>
 <div id="results-plots" class="section level3">
 <h3>Results plots</h3>
 <p>Plot inferred attack rates.</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="co"># Read in infection history file from MCMC output</span>
-  inf_chain &lt;-<span class="st"> </span>data.table<span class="op">::</span><span class="kw">fread</span>(res<span class="op">$</span>history_file,<span class="dt">data.table=</span><span class="ot">FALSE</span>)
-<span class="co"># Remove adaptive period and burn-in</span>
-  inf_chain &lt;-<span class="st"> </span>inf_chain[inf_chain<span class="op">$</span>sampno <span class="op">&gt;=</span><span class="st"> </span>(mcmc_pars[<span class="st">&quot;adaptive_period&quot;</span>]<span class="op">+</span>mcmc_pars[<span class="st">&quot;burnin&quot;</span>]),]
-  inf_chain1 &lt;-<span class="st"> </span><span class="kw">setDT</span>(inf_chain)
-<span class="co"># Define year range</span>
-  xs &lt;-<span class="st"> </span><span class="kw">min</span>(strains_isolation_times)<span class="op">:</span><span class="kw">max</span>(strains_isolation_times)
-<span class="co"># Plot inferred attack rates</span>
-  arP &lt;-<span class="st"> </span><span class="kw">plot_attack_rates</span>(<span class="dt">infection_histories =</span> inf_chain1, <span class="dt">titre_dat =</span> titre_dat, <span class="dt">strain_isolation_times=</span>xs)</code></pre></div>
+<div class="sourceCode" id="cb10"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb10-1" title="1"><span class="co"># Read in infection history file from MCMC output</span></a>
+<a class="sourceLine" id="cb10-2" title="2">  inf_chain &lt;-<span class="st"> </span>data.table<span class="op">::</span><span class="kw">fread</span>(res<span class="op">$</span>history_file,<span class="dt">data.table=</span><span class="ot">FALSE</span>)</a>
+<a class="sourceLine" id="cb10-3" title="3"><span class="co"># Remove adaptive period and burn-in</span></a>
+<a class="sourceLine" id="cb10-4" title="4">  inf_chain &lt;-<span class="st"> </span>inf_chain[inf_chain<span class="op">$</span>sampno <span class="op">&gt;=</span><span class="st"> </span>(mcmc_pars[<span class="st">&quot;adaptive_period&quot;</span>]<span class="op">+</span>mcmc_pars[<span class="st">&quot;burnin&quot;</span>]),]</a>
+<a class="sourceLine" id="cb10-5" title="5">  inf_chain1 &lt;-<span class="st"> </span><span class="kw">setDT</span>(inf_chain)</a>
+<a class="sourceLine" id="cb10-6" title="6"><span class="co"># Define year range</span></a>
+<a class="sourceLine" id="cb10-7" title="7">  xs &lt;-<span class="st"> </span><span class="kw">min</span>(strains_isolation_times)<span class="op">:</span><span class="kw">max</span>(strains_isolation_times)</a>
+<a class="sourceLine" id="cb10-8" title="8"><span class="co"># Plot inferred attack rates</span></a>
+<a class="sourceLine" id="cb10-9" title="9">  arP &lt;-<span class="st"> </span><span class="kw">plot_attack_rates</span>(<span class="dt">infection_histories =</span> inf_chain1, <span class="dt">titre_dat =</span> titre_dat, <span class="dt">strain_isolation_times=</span>xs)</a></code></pre></div>
 <p>Plot inferred infection histories.</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="co"># Plot infection histories</span>
-  IH_plot &lt;-<span class="st"> </span><span class="kw">plot_infection_histories</span>(<span class="dt">chain =</span> chain1, <span class="dt">infection_histories =</span> inf_chain, 
-                                      <span class="dt">titre_dat =</span> titre_dat, <span class="dt">individuals =</span> <span class="kw">c</span>(<span class="dv">1</span><span class="op">:</span><span class="dv">5</span>),
-                                      <span class="dt">antigenic_map =</span> antigenic_map, <span class="dt">par_tab =</span> start_tab1)</code></pre></div>
+<div class="sourceCode" id="cb11"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb11-1" title="1"><span class="co"># Plot infection histories</span></a>
+<a class="sourceLine" id="cb11-2" title="2">  IH_plot &lt;-<span class="st"> </span><span class="kw">plot_infection_histories</span>(<span class="dt">chain =</span> chain1, <span class="dt">infection_histories =</span> inf_chain, </a>
+<a class="sourceLine" id="cb11-3" title="3">                                      <span class="dt">titre_dat =</span> titre_dat, <span class="dt">individuals =</span> <span class="kw">c</span>(<span class="dv">1</span><span class="op">:</span><span class="dv">5</span>),</a>
+<a class="sourceLine" id="cb11-4" title="4">                                      <span class="dt">antigenic_map =</span> antigenic_map, <span class="dt">par_tab =</span> start_tab1)</a></code></pre></div>
 <p>Plot inferred antibody titres.</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="co"># Plot inferred antibody titres</span>
-  titre_preds &lt;-<span class="st"> </span><span class="kw">get_titre_predictions</span>(<span class="dt">chain =</span> chain1, <span class="dt">infection_histories =</span> inf_chain, 
-                                       <span class="dt">titre_dat =</span> titre_dat, <span class="dt">individuals =</span> <span class="kw">c</span>(<span class="dv">1</span><span class="op">:</span><span class="dv">5</span>),
-                                       <span class="dt">antigenic_map =</span> antigenic_map, <span class="dt">par_tab =</span> start_tab1)
-  to_use &lt;-<span class="st"> </span>titre_preds<span class="op">$</span>predictions
-  
-  titre_pred_p &lt;-<span class="st"> </span><span class="kw">ggplot</span>(to_use[to_use<span class="op">$</span>individual <span class="op">%in%</span><span class="st"> </span><span class="dv">1</span><span class="op">:</span><span class="dv">5</span>,])<span class="op">+</span>
-<span class="st">                  </span><span class="kw">geom_line</span>(<span class="kw">aes</span>(<span class="dt">x=</span>samples, <span class="dt">y=</span>median))<span class="op">+</span>
-<span class="st">                  </span><span class="kw">geom_point</span>(<span class="kw">aes</span>(<span class="dt">x=</span>samples, <span class="dt">y=</span>titre))<span class="op">+</span>
-<span class="st">                  </span><span class="kw">geom_ribbon</span>(<span class="kw">aes</span>(<span class="dt">x=</span>samples,<span class="dt">ymin=</span>lower, <span class="dt">ymax=</span>upper),<span class="dt">alpha=</span><span class="fl">0.2</span>,<span class="dt">col=</span><span class="st">'red'</span>)<span class="op">+</span>
-<span class="st">                  </span><span class="kw">facet_wrap</span>(<span class="op">~</span>individual)</code></pre></div>
+<div class="sourceCode" id="cb12"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb12-1" title="1"><span class="co"># Plot inferred antibody titres</span></a>
+<a class="sourceLine" id="cb12-2" title="2">  titre_preds &lt;-<span class="st"> </span><span class="kw">get_titre_predictions</span>(<span class="dt">chain =</span> chain1, <span class="dt">infection_histories =</span> inf_chain, </a>
+<a class="sourceLine" id="cb12-3" title="3">                                       <span class="dt">titre_dat =</span> titre_dat, <span class="dt">individuals =</span> <span class="kw">c</span>(<span class="dv">1</span><span class="op">:</span><span class="dv">5</span>),</a>
+<a class="sourceLine" id="cb12-4" title="4">                                       <span class="dt">antigenic_map =</span> antigenic_map, <span class="dt">par_tab =</span> start_tab1)</a>
+<a class="sourceLine" id="cb12-5" title="5">  to_use &lt;-<span class="st"> </span>titre_preds<span class="op">$</span>predictions</a>
+<a class="sourceLine" id="cb12-6" title="6">  </a>
+<a class="sourceLine" id="cb12-7" title="7">  titre_pred_p &lt;-<span class="st"> </span><span class="kw">ggplot</span>(to_use[to_use<span class="op">$</span>individual <span class="op">%in%</span><span class="st"> </span><span class="dv">1</span><span class="op">:</span><span class="dv">5</span>,])<span class="op">+</span></a>
+<a class="sourceLine" id="cb12-8" title="8"><span class="st">                  </span><span class="kw">geom_line</span>(<span class="kw">aes</span>(<span class="dt">x=</span>samples, <span class="dt">y=</span>median))<span class="op">+</span></a>
+<a class="sourceLine" id="cb12-9" title="9"><span class="st">                  </span><span class="kw">geom_point</span>(<span class="kw">aes</span>(<span class="dt">x=</span>samples, <span class="dt">y=</span>titre))<span class="op">+</span></a>
+<a class="sourceLine" id="cb12-10" title="10"><span class="st">                  </span><span class="kw">geom_ribbon</span>(<span class="kw">aes</span>(<span class="dt">x=</span>samples,<span class="dt">ymin=</span>lower, <span class="dt">ymax=</span>upper),<span class="dt">alpha=</span><span class="fl">0.2</span>,<span class="dt">col=</span><span class="st">&#39;red&#39;</span>)<span class="op">+</span></a>
+<a class="sourceLine" id="cb12-11" title="11"><span class="st">                  </span><span class="kw">facet_wrap</span>(<span class="op">~</span>individual)</a></code></pre></div>
 <p>Generate cumulative incidence plots.</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">  y &lt;-<span class="st"> </span><span class="kw">generate_cumulative_inf_plots</span>(inf_chain,<span class="dt">burnin =</span> <span class="dv">0</span>,<span class="dv">1</span><span class="op">:</span><span class="dv">5</span>,<span class="dt">nsamp=</span><span class="dv">100</span>,
-                                   <span class="dt">strain_isolation_times =</span> strain_isolation_times,
-                                   <span class="dt">pad_chain=</span><span class="ot">FALSE</span>,<span class="dt">number_col =</span> <span class="dv">2</span>,<span class="dt">subset_years =</span> <span class="ot">NULL</span>)</code></pre></div>
+<div class="sourceCode" id="cb13"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb13-1" title="1">  y &lt;-<span class="st"> </span><span class="kw">generate_cumulative_inf_plots</span>(inf_chain,<span class="dt">burnin =</span> <span class="dv">0</span>,<span class="dv">1</span><span class="op">:</span><span class="dv">5</span>,<span class="dt">nsamp=</span><span class="dv">100</span>,</a>
+<a class="sourceLine" id="cb13-2" title="2">                                   <span class="dt">strain_isolation_times =</span> strain_isolation_times,</a>
+<a class="sourceLine" id="cb13-3" title="3">                                   <span class="dt">pad_chain=</span><span class="ot">FALSE</span>,<span class="dt">number_col =</span> <span class="dv">2</span>,<span class="dt">subset_years =</span> <span class="ot">NULL</span>)</a></code></pre></div>
 </div>
 <div id="parameter-estimates" class="section level3">
 <h3>Parameter estimates</h3>
 <p>The following code produces a table of the parameter estimates.</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="co"># Table of antibody kinetics parameters</span>
-  myresults &lt;-<span class="st"> </span><span class="kw">matrix</span>(<span class="kw">c</span>(<span class="kw">rep</span>(<span class="dv">0</span>,<span class="dv">3</span><span class="op">*</span><span class="dv">7</span>)),<span class="dt">nrow=</span><span class="dv">3</span>)
-  <span class="kw">rownames</span>(myresults) &lt;-<span class="st"> </span><span class="kw">c</span>(<span class="st">&quot;mu_short&quot;</span>,<span class="st">&quot;wane&quot;</span>,<span class="st">&quot;error&quot;</span>)
-  <span class="kw">colnames</span>(myresults) &lt;-<span class="st"> </span><span class="kw">c</span>(<span class="st">&quot;mean&quot;</span>,<span class="st">&quot;sd&quot;</span>,<span class="st">&quot;2.5%&quot;</span>,<span class="st">&quot;25%&quot;</span>,<span class="st">&quot;50%&quot;</span>,<span class="st">&quot;75%&quot;</span>,<span class="st">&quot;97.5%&quot;</span>)
-  
-  myresults[,<span class="st">&quot;mean&quot;</span>] &lt;-<span class="st"> </span><span class="kw">round</span>(<span class="kw">apply</span>(chain1[,<span class="kw">c</span>(<span class="st">&quot;mu_short&quot;</span>,<span class="st">&quot;wane&quot;</span>,<span class="st">&quot;error&quot;</span>)],<span class="dv">2</span>,mean),<span class="dv">3</span>)
-  myresults[,<span class="st">&quot;sd&quot;</span>] &lt;-<span class="st"> </span><span class="kw">round</span>(<span class="kw">apply</span>(chain1[,<span class="kw">c</span>(<span class="st">&quot;mu_short&quot;</span>,<span class="st">&quot;wane&quot;</span>,<span class="st">&quot;error&quot;</span>)],<span class="dv">2</span>,sd),<span class="dv">3</span>)  
-  myresults[,<span class="dv">3</span><span class="op">:</span><span class="dv">7</span>] &lt;-<span class="st"> </span><span class="kw">t</span>(<span class="kw">round</span>(<span class="kw">apply</span>(chain1[,<span class="kw">c</span>(<span class="st">&quot;mu_short&quot;</span>,<span class="st">&quot;wane&quot;</span>,<span class="st">&quot;error&quot;</span>)],<span class="dv">2</span>,
-                                   quantile,<span class="dt">probs=</span><span class="kw">c</span>(<span class="fl">0.025</span>,<span class="fl">0.25</span>,<span class="fl">0.5</span>,<span class="fl">0.75</span>,<span class="fl">0.975</span>)),<span class="dv">3</span>))  </code></pre></div>
+<div class="sourceCode" id="cb14"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb14-1" title="1"><span class="co"># Table of antibody kinetics parameters</span></a>
+<a class="sourceLine" id="cb14-2" title="2">  myresults &lt;-<span class="st"> </span><span class="kw">matrix</span>(<span class="kw">c</span>(<span class="kw">rep</span>(<span class="dv">0</span>,<span class="dv">3</span><span class="op">*</span><span class="dv">7</span>)),<span class="dt">nrow=</span><span class="dv">3</span>)</a>
+<a class="sourceLine" id="cb14-3" title="3">  <span class="kw">rownames</span>(myresults) &lt;-<span class="st"> </span><span class="kw">c</span>(<span class="st">&quot;mu_short&quot;</span>,<span class="st">&quot;wane&quot;</span>,<span class="st">&quot;error&quot;</span>)</a>
+<a class="sourceLine" id="cb14-4" title="4">  <span class="kw">colnames</span>(myresults) &lt;-<span class="st"> </span><span class="kw">c</span>(<span class="st">&quot;mean&quot;</span>,<span class="st">&quot;sd&quot;</span>,<span class="st">&quot;2.5%&quot;</span>,<span class="st">&quot;25%&quot;</span>,<span class="st">&quot;50%&quot;</span>,<span class="st">&quot;75%&quot;</span>,<span class="st">&quot;97.5%&quot;</span>)</a>
+<a class="sourceLine" id="cb14-5" title="5">  </a>
+<a class="sourceLine" id="cb14-6" title="6">  myresults[,<span class="st">&quot;mean&quot;</span>] &lt;-<span class="st"> </span><span class="kw">round</span>(<span class="kw">apply</span>(chain1[,<span class="kw">c</span>(<span class="st">&quot;mu_short&quot;</span>,<span class="st">&quot;wane&quot;</span>,<span class="st">&quot;error&quot;</span>)],<span class="dv">2</span>,mean),<span class="dv">3</span>)</a>
+<a class="sourceLine" id="cb14-7" title="7">  myresults[,<span class="st">&quot;sd&quot;</span>] &lt;-<span class="st"> </span><span class="kw">round</span>(<span class="kw">apply</span>(chain1[,<span class="kw">c</span>(<span class="st">&quot;mu_short&quot;</span>,<span class="st">&quot;wane&quot;</span>,<span class="st">&quot;error&quot;</span>)],<span class="dv">2</span>,sd),<span class="dv">3</span>)  </a>
+<a class="sourceLine" id="cb14-8" title="8">  myresults[,<span class="dv">3</span><span class="op">:</span><span class="dv">7</span>] &lt;-<span class="st"> </span><span class="kw">t</span>(<span class="kw">round</span>(<span class="kw">apply</span>(chain1[,<span class="kw">c</span>(<span class="st">&quot;mu_short&quot;</span>,<span class="st">&quot;wane&quot;</span>,<span class="st">&quot;error&quot;</span>)],<span class="dv">2</span>,</a>
+<a class="sourceLine" id="cb14-9" title="9">                                   quantile,<span class="dt">probs=</span><span class="kw">c</span>(<span class="fl">0.025</span>,<span class="fl">0.25</span>,<span class="fl">0.5</span>,<span class="fl">0.75</span>,<span class="fl">0.975</span>)),<span class="dv">3</span>))  </a></code></pre></div>
 </div>
 </div>
 <div id="references" class="section level2 unnumbered">

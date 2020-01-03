@@ -1,5 +1,5 @@
 ---
-title: 'Serosolver: paper case study 2'
+title: 'Paper case study 2: serosolver'
 csl: plos.csl
 output: rmarkdown::html_vignette
 editor_options:
@@ -22,6 +22,8 @@ knitr::opts_chunk$set(
 ```
 # Overview
 This vignette provides all of the analysis for case study 2 in the accompanying package and paper. Briefly, the aim is to infer antibody kinetics and historical attack rates using cross-sectional haemagglutination inhibition titre data on a panel of recent and historical A/H3N2 strains. All of the functions used here are well documented and have many tunable arguments, and we therefore encourage users to refer to the helps files.
+
+This vignette demonstrates only how to reproduce the MCMC chains, simulate data, assess model fits and assess chain convergence. Code to reproduce figures from the main text in the accompanying paper can be found in the [`inst/extdata/scripts`](https://github.com/seroanalytics/serosolver/tree/master/inst/extdata/scripts) folder of the package.
 
 # Setup
 
@@ -57,13 +59,13 @@ registerDoParallel(cl)
 ```
 
 ## Assumptions
-In this analysis, all serological samples were taken in 2009 and therefore all time variables are relative to this year. We are interested in inferring infections and attack rates at an annual resolution, and therefore set `resolution` to 1. Our primary outcome of interest is to infer unbiased historical attack rates, and we therefore use the version of the code with a Beta prior on per-time attack rates, `prior_version=2`. Furthermore, we have found that in the situation where the number of possible infections to infer is large but the amount of data is relatively sparse, identifiability is poor when using reference priors (eg. uniform Beta or Jeffrey's prior). We instead opted to use a weakly informative prior for annual attack rates with mode = 0.15 but with high variance, corresponding to prior observations of annual influenza attack rates XX REF XX. We set these parameters at the start of the analysis.
+In this analysis, all serological samples were taken in 2009 and therefore all time variables are relative to this year. We are interested in inferring infections and attack rates at an annual resolution, and therefore set `resolution` to 1. Our primary outcome of interest is to infer unbiased historical attack rates, and we therefore use the version of the code with a Beta prior on per-time attack rates, `prior_version=2`. Furthermore, we have found that in the situation where the number of possible infections to infer is large but the amount of data is relatively sparse, identifiability is poor when using reference priors (eg. uniform Beta or Jeffrey's prior). We instead opted to use a weakly informative prior for annual attack rates with mode = 0.15 but with high variance, corresponding to prior observations of annual influenza attack rates. We set these parameters at the start of the analysis.
 ```{r, eval=TRUE,}
 filename <- "case_study_2"
 resolution <- 1 ## eg. this would be set to 12 for monthly resolution
 sample_year <- 2009
 
-serosolver::describe_proposals()
+serosolver::describe_priors()
 prior_version <- 2
 ```
 
@@ -123,8 +125,10 @@ print(head(antigenic_map))
 
 ## More flexible version of the above function
 virus_key <- c(
-    "HK68" = 1968, "EN72" = 1972, "VI75" = 1975, "TX77" = 1977, "BK79" = 1979, "SI87" = 1987, "BE89" = 1989, "BJ89" = 1989,
-    "BE92" = 1992, "WU95" = 1995, "SY97" = 1997, "FU02" = 2002, "CA04" = 2004, "WI05" = 2005, "PE06" = 2006
+    "HK68" = 1968, "EN72" = 1972, "VI75" = 1975, "TX77" = 1977, 
+    "BK79" = 1979, "SI87" = 1987, "BE89" = 1989, "BJ89" = 1989,
+    "BE92" = 1992, "WU95" = 1995, "SY97" = 1997, "FU02" = 2002, 
+    "CA04" = 2004, "WI05" = 2005, "PE06" = 2006
   )
 antigenic_coords$Strain <- virus_key[antigenic_coords$Strain]
 antigenic_map <- generate_antigenic_map_flexible(antigenic_coords)
@@ -138,7 +142,7 @@ strain_isolation_times <- unique(antigenic_map$inf_times)
 
 NOTE: `generate_antigenic_map` expects the provided file `fonville_map_approx.csv`. Users should refer to `generate_antigenic_map_flexible` for more generic antigenic map generation.
 
-Finally, we must specify the `par_tab` data frame, which controls which parameters are included in the model, which are fixed, and their uniform prior ranges. Given that we are integrating out the probability of infection terms under prior version 2, we must remove these parameters from `par_tab`. Furthermore, given that we are interested in long-term dynamics with relatively sparse data, we remove parameters relating to the short-term antibody kinetics phase to avoid identifiability issues. We set alpha and beta of the Beta prior to give a mode of 0.15 assuming that our prior belief has the equivalent weighting to 4 observed individuals.
+Finally, we must specify the `par_tab` data frame, which controls which parameters are included in the model, which are fixed, and their uniform prior ranges. Given that we are integrating out the probability of infection terms under prior version 2, we must remove these parameters from `par_tab`. Furthermore, given that we are interested in long-term dynamics with relatively sparse data, we remove parameters relating to the short-term antibody kinetics phase to avoid identifiability issues. We set alpha and beta of the beta prior to give a mode of 0.15 assuming that our prior belief has the equivalent weighting to 4 observed individuals.
 
 ```{r}
 par_tab_path <- system.file("extdata", "par_tab_base.csv", package = "serosolver")
@@ -172,7 +176,7 @@ We are now ready to fit our model. We will fit multiple chains in parallel, thou
 
 Changing the number of iterations and the length of the adaptive period are often desirable. More crucially, the amount of chain thinning should be specified to ensure that users are not saving a large number of MCMC iterations (as this will rapidly fill disk space!). Thinning should be set such that at least 1000 iterations are saved (ie. `iterations`/`thin` and `thin_hist`). Users are encouraged to pay extra attention to `thin_hist`, which dictates the thinning of the infection history chain, and can generate a very large file if left unchecked.
 
-```{r Run mcmc 1, eval=TRUE, include=TRUE}
+```{r Run mcmc setup real, eval=TRUE, include=TRUE}
 ## Distinct filename for each chain
 no_chains <- 5
 filenames <- paste0(filename, "_",1:no_chains)
@@ -185,7 +189,8 @@ model_func <- create_posterior_func(par_tab=par_tab,
                                 titre_dat=titre_dat,
                                 antigenic_map=antigenic_map,
                                 version=prior_version) # function in posteriors.R
-
+```
+```{r Run mcmc real, eval=FALSE, include=TRUE}
 ## Generate results in parallel
 res <- foreach(x = filenames, .packages = c('serosolver','data.table','plyr')) %dopar% {
   ## Not all random starting conditions return finite likelihood, so for each chain generate random
@@ -196,7 +201,8 @@ res <- foreach(x = filenames, .packages = c('serosolver','data.table','plyr')) %
     start_tab <- generate_start_tab(par_tab)
     
     ## Generate starting infection history
-    start_inf <- setup_infection_histories_new_2(titre_dat, strain_isolation_times, space=3,titre_cutoff=4)
+    start_inf <- setup_infection_histories_titre(titre_dat, strain_isolation_times, 
+                                                 space=3,titre_cutoff=4)
     start_prob <- sum(model_func(start_tab$values, start_inf)[[1]])
   }
   
@@ -225,7 +231,7 @@ all_chains <- load_mcmc_chains(location=chain_path_real,thin=1,burnin=100000,
                                par_tab=par_tab,unfixed=FALSE,convert_mcmc=TRUE)
 
 ## Alternative, load the included MCMC chains rather than re-running
-## load(cs2_chains_real)
+## data(cs2_chains_real)
 ## all_chains <- cs2_chains_real
 
 print(summary(all_chains))
@@ -263,10 +269,10 @@ and at the infection histories:
 inf_chain <- all_chains$inf_chain
 
 ## Look at inferred attack rates
-p_ar <- plot_attack_rates(inf_chain, titre_dat, strain_isolation_times, pad_chain=FALSE,
+p_ar <- plot_attack_rates(inf_chain, titre_dat, strain_isolation_times, pad_chain=TRUE,
                           plot_den = TRUE,prior_pars=list(prior_version=prior_version, 
-                                                          alpha=par_tab[par_tab$names=="alpha","values"],
-                                                          beta=par_tab[par_tab$names=="beta","values"])) 
+                                            alpha=par_tab[par_tab$names=="alpha","values"],
+                                            beta=par_tab[par_tab$names=="beta","values"])) 
 print(p_ar)
 
 ## Calculate convergence diagnostics and summary statistics on infection histories
@@ -289,9 +295,11 @@ print(head(ps_infhist[["estimates"]]$by_indiv))
 
 ## Check convergence of infection history summary statistics
 ## MCMC trace plots of attack rates
+## Each subplot shows one year
 print(ps_infhist[["by_time_trace"]][[1]])
 
 ## MCMC trace plots of total number of infections per individual
+## Each subplot shows one individual
 print(ps_infhist[["by_indiv_trace"]][[1]])
 
 ## Distribution of total number of infections
@@ -302,9 +310,11 @@ print(ps_infhist[["indiv_infections"]])
 p_indiv_inf_hists <- generate_cumulative_inf_plots(inf_chain,indivs=1:9,pad_chain=FALSE,
                                                   strain_isolation_times = strain_isolation_times,
                                                   number_col=3)
+## Each subplot shows one individual
 print(p_indiv_inf_hists[[1]])
 
 ## Posterior probability that infections occured at given times per individual
+## Each subplot shows one individual
 print(p_indiv_inf_hists[[2]])
 ```
 
@@ -329,6 +339,9 @@ to_use <- titre_preds$predictions
 print(head(to_use))
 
 ## Using ggplot
+## Shaded regions show 95% and 50% credible intervals, 
+## line shows posterior median.
+## Each suplot shows one individual
 titre_pred_p <- ggplot(to_use[to_use$individual %in% 1:9,])+
   geom_ribbon(aes(x=virus,ymin=lower, ymax=upper),fill="gray90")+
   geom_ribbon(aes(x=virus,ymin=lower_50, ymax=upper_50),fill="gray70")+
@@ -415,7 +428,7 @@ inf_chain <- pad_inf_chain(inf_chain)
 ## Rename columns to be more informative
 
 ## Column names expected by code below
-colnames(inf_chain) <- c("sampno","chain_no","individual","year","infected")
+colnames(inf_chain) <- c("sampno","chain_no","individual","year","infected","group")
 
 ## Data on which strains belong to which cluster
 cluster_path <- system.file("extdata", "fonville_clusters.csv", package = "serosolver")
@@ -545,7 +558,7 @@ all_chains <- load_mcmc_chains(location=chain_path_real,thin=1,burnin=100000,
                                par_tab=par_tab,unfixed=FALSE,convert_mcmc=FALSE)
 
 ## Alternative, load the included MCMC chains rather than re-running
-## load(cs2_chains_real_b)
+## data(cs2_chains_real_b)
 ## all_chains <- cs2_chains_real_b
 
 ## Find samples that were in both theta and inf hist chains
@@ -610,7 +623,8 @@ sim_infection_histories <- dat[["infection_histories"]]
 ## Store total infections to compare later
 actual_total_infections <- sum(sim_infection_histories)
 
-plot_data(sim_titre_dat, sim_infection_histories, strain_isolation_times,n_samps = 5)
+plot_data(sim_titre_dat, sim_infection_histories, 
+          strain_isolation_times,n_indivs = 5)
 
 ## Use titres only against same viruses tested in real data
 viruses <- unique(titre_dat$virus)
@@ -622,7 +636,7 @@ sim_ar <- dat[["attack_rates"]]
 
 ## Simulation fitting
 Once these simulated data have been generated, the work flow becomes exactly the same as with the real data above.
-```{r Run mcmc sim, eval=TRUE, include=TRUE}
+```{r Setup mcmc sim, eval=TRUE, include=TRUE}
 filename <- "case_study_2_sim"
 
 ## Distinct filename for each chain
@@ -634,9 +648,10 @@ model_func <- create_posterior_func(par_tab=sim_par_tab,
                                 titre_dat=sim_titre_dat,
                                 antigenic_map=antigenic_map,
                                 version=prior_version) # function in posteriors.R
-
+```
+```{r Run mcmc sim, eval=FALSE, include=TRUE}
 ## Generate results in parallel
-res <- foreach(x = filenames) %dopar% {
+res <- foreach(x = filenames, .packages = c('serosolver','data.table','plyr')) %dopar% {
   ## Not all random starting conditions return finite likelihood, so for each chain generate random
   ## conditions until we get one with a finite likelihood
   start_prob <- -Inf
@@ -644,7 +659,8 @@ res <- foreach(x = filenames) %dopar% {
     ## Generate starting values for theta
     start_tab <- generate_start_tab(par_tab)
     ## Generate starting infection history
-    start_inf <- setup_infection_histories_new_2(sim_titre_dat, strain_isolation_times, space=3,titre_cutoff=4)
+    start_inf <- setup_infection_histories_titre(sim_titre_dat, strain_isolation_times, 
+                                                 space=3,titre_cutoff=4)
     start_prob <- sum(model_func(start_tab$values, start_inf)[[1]])
   }
   
@@ -671,7 +687,7 @@ sim_all_chains <- load_mcmc_chains(location=chain_path_sim,thin=1,burnin=100000,
                                par_tab=par_tab,unfixed=FALSE,convert_mcmc=TRUE)
 
 ## Alternative, load the included MCMC chains rather than re-running
-## load(cs2_chains_sim)
+## data(cs2_chains_sim)
 ## sim_all_chains <- cs2_chains_sim
 
 theta_chain <- sim_all_chains$theta_chain
@@ -738,7 +754,9 @@ p_indiv_inf_hists <- generate_cumulative_inf_plots(inf_chain,indivs=1:9,pad_chai
                                                    real_inf_hist=sim_infection_histories,
                                                   strain_isolation_times = strain_isolation_times,
                                                   number_col=3)
+## Each subplot shows one individual
 print(p_indiv_inf_hists[[1]])
 ## Posterior probability that infections occured at given times per individual
+## Each subplot shows one individual
 print(p_indiv_inf_hists[[2]])
 ```

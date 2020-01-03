@@ -1,6 +1,6 @@
 Package: serosolver
 Title: Inference Framework for Serological Data
-Version: 1.0.0
+Version: 1.0.1
 Authors@R: 
     c(person(given = "James",
              family = "Hay",

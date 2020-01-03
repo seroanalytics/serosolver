@@ -28,6 +28,7 @@ library(grid)
 library(gridExtra)
 #library(doRNG)
 
+## Where to carry out analyses
 setwd("E:/James/Google Drive/Influenza/serosolver/methods_paper/PLOS Comp Biol/Results/case_study_1/")
 set.seed(0)
 
@@ -50,7 +51,8 @@ registerDoParallel(cl)
 buckets <- 4   
 
 ## Read in titre data (unvaccinated)
-input_dat_unvacc <- read.csv(file = "../../Data/HKdata_h1n1_unvac.csv",header = TRUE)
+input_dat_path_unvacc <- system.file("extdata", "HKdata_h1n1_unvac.csv", package = "serosolver")
+input_dat_unvacc <- read.csv(file = input_dat_path_unvacc,header = TRUE)
 indivs <- unique(input_dat_unvacc$individual) #all individuals
 
 ## Format data for serosolver: needs a column for group id (all just group 1 as same population) 
@@ -62,7 +64,8 @@ titre_dat_unvac <- unique(titre_dat_unvac)
 titre_dat_unvac <- plyr::ddply(titre_dat_unvac,.(individual,virus,samples),function(x) cbind(x,"run"=1:nrow(x)))
 
 ## Read in titre data (vaccinated)
-input_dat_vacc <- read.csv(file = "../../Data/HKdata_h1n1_vac.csv",header = TRUE)
+input_dat_path_vacc <- system.file("extdata", "HKdata_h1n1_vac.csv", package = "serosolver")
+input_dat_vacc <- read.csv(file = input_dat_path_vacc,header = TRUE)
 
 indivs_vacc <- unique(input_dat_vacc$individual) #all individuals
 # Subset data for indivs
@@ -75,7 +78,8 @@ titre_dat_vacc <- plyr::ddply(titre_dat_vacc,.(individual,virus,samples),functio
 
 # Setup input parameters --------------------------------------------------
 ## Read in parameter table and change alpha/beta if necessary
-par_tab <- read.csv("../../../case_study_1/data/parTab_base.csv",stringsAsFactors=FALSE)
+par_tab_path <- system.file("extdata", "par_tab_base.csv", package = "serosolver")
+par_tab <- read.csv(par_tab_path, stringsAsFactors=FALSE)
 par_tab[par_tab$names %in% c("alpha","beta"),"values"] <- c(1/3,1/3)
 par_tab <- par_tab[par_tab$names != "phi",] 
 par_tab[par_tab$names %in% c("tau","sigma1","sigma2"),"fixed"] <- 1 # tau, and sigma are fixed

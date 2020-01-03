@@ -285,7 +285,7 @@ run_MCMC <- function(par_tab,
     infection_histories <- start_inf_hist
 
     if (is.null(start_inf_hist)) {
-        infection_histories <- setup_infection_histories_new(titre_dat, strain_isolation_times, space = 5, titre_cutoff = 3)
+        infection_histories <- setup_infection_histories_titre(titre_dat, strain_isolation_times, space = 5, titre_cutoff = 3)
     }
     check_inf_hist(titre_dat, strain_isolation_times, infection_histories)
     ## Initial likelihoods and individual priors

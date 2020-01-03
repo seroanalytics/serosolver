@@ -30,7 +30,7 @@ RUN_MCMC <- FALSE
 
 ## We'll be parallelising a few chains
 cl <- makeCluster(detectCores(), type='PSOCK')
-registerDoMC(cores=5)
+registerDoParallel(cl)
 
 # set seed
 set.seed(0)
@@ -45,7 +45,8 @@ n_samp <- 4 ## Number of blood samples per individual
 buckets <- 4 ## Set to 1 for annual model. Greater than 1 gives subannual (eg. buckets = 2 is infection period every half year)
 repeats <- 1 ## Number of repeats measurements per titre
 # Read in parameter table to simulate from and change waning rate and alpha/beta if necessary
-par_tab <- read.csv("../../../case_study_1/data/parTab_base.csv",stringsAsFactors=FALSE)
+par_tab_path <- system.file("extdata", "par_tab_base.csv", package = "serosolver")
+par_tab <- read.csv(par_tab_path, stringsAsFactors=FALSE)
 
 par_tab[par_tab$names %in% c("alpha","beta"),"values"] <- c(1/3,1/3)
 par_tab[par_tab$names == "wane","values"] <- 1
@@ -109,19 +110,14 @@ if(RUN_MCMC) {
                                          start_tab[i,"upper_start"])
         }
       }
-      start_inf <- setup_infection_histories_new_2(titre_dat, strain_isolation_times, space=3,titre_cutoff=4)
-      start_tab <- start_tab[start_tab$names != "phi",] # remove lambda row of parameter table
-      start_tab[start_tab$names %in% c("tau","sigma1","sigma2"),"fixed"] <- 1 # mu, tau, and sigma are fixed
-      start_tab[start_tab$names %in% c("tau","sigma1","sigma2"),"values"] <- 0 # set value of mu and tau to 0
-      start_tab[start_tab$names == "MAX_TITRE","values"] <- 9 # set max titre to 9
+      start_inf <- setup_infection_histories_titre(titre_dat, strain_isolation_times, space=3,titre_cutoff=4)
       f <- create_posterior_func(start_tab,titre_dat,fit_dat,version=2) # function in posteriors.R
       start_prob <- sum(f(start_tab$values, start_inf)[[1]])
     }
     
     res <- run_MCMC(par_tab = start_tab, titre_dat = titre_dat,antigenic_map = fit_dat,start_inf_hist=start_inf, 
                     mcmc_pars = mcmc_pars,
-                    filename = paste0("chains_sim/",x), CREATE_POSTERIOR_FUNC = create_posterior_func, version = 2, temp=1,
-                    fast_version=TRUE)
+                    filename = paste0("chains_sim/",x), CREATE_POSTERIOR_FUNC = create_posterior_func, version = 2)
   }
 }
 beepr::beep(4)
