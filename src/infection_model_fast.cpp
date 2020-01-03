@@ -45,23 +45,11 @@ NumericVector titre_data_fast(const NumericVector &theta,
   int n = infection_history_mat.nrow();
   int number_strains = infection_history_mat.ncol();
   int total_titres = measurement_strain_indices.size();
-  int max_infections;
-  int n_titres;
   
   // To track how far through the larger vectors we move for each individual
   int index_in_samples;
   int end_index_in_samples;
-  int number_samples;
   int start_index_in_data;
-  int end_index_in_data;
-  int tmp_titre_index;
-  int inf_map_index;
-  int index;
-
-  // 
-  double sampling_time;
-  double time;
-  double n_inf;
   
   // Only use the infections that actually happened
   IntegerVector infection_history(number_strains);
@@ -127,7 +115,6 @@ NumericVector titre_data_fast(const NumericVector &theta,
     
       index_in_samples = rows_per_indiv_in_samples[i-1];
       end_index_in_samples = rows_per_indiv_in_samples[i] - 1;
-      number_samples = end_index_in_samples - index_in_samples;      
       start_index_in_data = cum_nrows_per_individual_in_data[i-1];
 
       // ====================================================== //

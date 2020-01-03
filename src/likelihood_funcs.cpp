@@ -110,7 +110,6 @@ double inf_mat_prior_group_cpp_vector(const IntegerMatrix& n_infections, const I
 //' @family inf_mat_prior
 // [[Rcpp::export]]
 double inf_mat_prior_total_group_cpp(const IntegerVector& n_infections_group, const IntegerVector& n_alive_group, double alpha, double beta){
-  double m, n;
   double lik=0;
   double beta_const = R::lbeta(alpha, beta);
   int n_infections =0;

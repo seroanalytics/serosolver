@@ -217,10 +217,8 @@ List inf_hist_prop_prior_v2_and_v4(const NumericVector &theta, // Model paramete
   bool lik_changed = false;
   
   // These quantities can be pre-computed
-  int n_indivs = infection_history_mat.nrow();  // How many individuals are there in total?
   int number_strains = infection_history_mat.ncol(); // How many possible years are we interested in?
   int n_sampled = sampled_indivs.size(); // How many individuals are we actually investigating?
-  int n_infected = 0; // How many individuals were infected?
   
   // Using prior version 2 or 4?
   bool prior_on_total = total_alive(0) > 0;
@@ -236,20 +234,8 @@ List inf_hist_prop_prior_v2_and_v4(const NumericVector &theta, // Model paramete
   int start_index_in_data; // Index in titre data to start at
   int end_index_in_data; // Index in titre data to end at
 
-  int start_index_in_repeat_data; // Index in repeat titre data to start at
-  int end_index_in_repeat_data; // Index in repeat titre data to end at
-
-  int tmp_titre_index; // Index in titre data that we are currently at
-  int inf_map_index; // Index in antigenic map of the infecting strain
-  int index; // 
-  int number_samples; // Tmp store number of blood samples for this individual
-  int n_titres; // Tmp store of number of titres to predict for this sample
-
   int group_id; // Vector of group IDs for each individual
-  
-  double sampling_time; // Tmp store time that blood sample taken
-  double time; // Tmp store time between sample and exposure
-
+ 
   IntegerVector new_infection_history(number_strains); // New proposed infection history
   IntegerVector infection_history(number_strains); // Old infection history
   LogicalVector indices;
@@ -282,7 +268,7 @@ List inf_hist_prop_prior_v2_and_v4(const NumericVector &theta, // Model paramete
   double n; // number alive in a particular year
 
   double m_1_new, m_1_old,m_2_new,m_2_old;
-  double n_1, n_2;
+  // double n_1, n_2;
   double prior_1_old, prior_2_old, prior_1_new,prior_2_new,prior_new,prior_old;
 
   double rand1; // Store a random number
@@ -309,8 +295,6 @@ List inf_hist_prop_prior_v2_and_v4(const NumericVector &theta, // Model paramete
   double mu_short = theta["mu_short"];
   double wane = theta["wane"];
   double tau = theta["tau"];
-  double seniority;
-  double n_inf;
 
   // 2. Extract model parameters that are for specific mechanisms
   //    set a boolean flag to choose between model versions
@@ -365,11 +349,9 @@ List inf_hist_prop_prior_v2_and_v4(const NumericVector &theta, // Model paramete
     // Indexing for data upkeep
     index_in_samples = rows_per_indiv_in_samples[indiv];
     end_index_in_samples = rows_per_indiv_in_samples[indiv+1] - 1;
-    number_samples = end_index_in_samples - index_in_samples;      
 
     start_index_in_data = cum_nrows_per_individual_in_data[indiv];
     end_index_in_data = cum_nrows_per_individual_in_data[indiv+1]-1;
-    start_index_in_repeat_data = cum_nrows_per_individual_in_repeat_data[indiv];
     
     // Time sampling control
     n_years_samp = n_years_samp_vec[indiv]; // How many times are we intending to resample for this individual?
@@ -458,8 +440,8 @@ List inf_hist_prop_prior_v2_and_v4(const NumericVector &theta, // Model paramete
 	      new_infection_history(loc2) = loc1_val_old;
 	  
 	      // Number alive is number alive overall in that time and group
-	      n_1 = n_alive(group_id, loc1);
-	      n_2 = n_alive(group_id, loc2);
+	      // n_1 = n_alive(group_id, loc1);
+	      // n_2 = n_alive(group_id, loc2);
 	    
 	      // Prior for new state
 	      m_1_new = m_1_old - loc1_val_old + loc2_val_old;
