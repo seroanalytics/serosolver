@@ -2,7 +2,7 @@
 .Rhistory
 .Rapp.history
 *.DS_Store
-
+.dll
 
 # Session Data files
 .RData
