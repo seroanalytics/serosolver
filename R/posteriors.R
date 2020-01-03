@@ -283,6 +283,12 @@ create_posterior_func <- function(par_tab,
     }
     check_data(titre_dat)
    
+    if (!is.null(antigenic_map)) {
+      strain_isolation_times <- unique(antigenic_map$inf_times) # How many strains are we testing against and what time did they circulate
+    } else {
+      antigenic_map <- data.frame("x_coord"=1,"y_coord"=1,"inf_times"=strain_isolation_times)
+    }
+    
     ## Seperate out initial readings and repeat readings - we only
     ## want to solve the model once for each unique indiv/sample/virus year tested
     titre_dat_unique <- titre_dat[titre_dat$run == 1, ]

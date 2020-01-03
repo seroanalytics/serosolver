@@ -307,6 +307,7 @@ pad_alphas_and_betas <- function(par_tab, n_times) {
 }
 
 ## From prodlim package - finds matching rows between two data frames. "Thus the function returns a vector with the row numbers of (first) matches of its first argument in its second.", https://www.rdocumentation.org/packages/prodlim/versions/2018.04.18/topics/row.match
+#' @export
 row.match <- function(x, table, nomatch = NA) {
   if (class(table) == "matrix") {
     table <- as.data.frame(table)
