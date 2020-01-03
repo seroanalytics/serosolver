@@ -30,7 +30,7 @@ NOTE - MIGHT NEED TO UPDATE THIS FOR GROUPS
 \examples{
 data(example_titre_dat)
 data(example_antigenic_map)
-start_inf <- setup_infection_histories_old(example_titre_dat, example_antigenic_map$inf_years, 0.2, 3)
+start_inf <- setup_infection_histories_old(example_titre_dat, example_antigenic_map$inf_times, 0.2, 3)
 }
 \seealso{
 Other setup_infection_histories: 

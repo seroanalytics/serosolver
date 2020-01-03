@@ -39,7 +39,7 @@ Swaps the entire contents of two columns of the infection history matrix, adheri
 data(example_inf_hist)
 data(example_titre_dat)
 data(example_antigenic_map)
-times <- example_antigenic_map$inf_years
+times <- example_antigenic_map$inf_times
 ages <- unique(example_titre_dat[,c("DOB","individual")])
 age_mask <- create_age_mask(ages$DOB, times)
 strain_mask <- create_strain_mask(example_titre_dat, times)

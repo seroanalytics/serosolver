@@ -25,7 +25,7 @@ simulate_individual(
 
 \item{infection_history}{the vector of 1s and 0s giving presence/absence of infections}
 
-\item{antigenic_map}{the raw antigenic map with colnames x_coord, y_coord and inf_years, as returned from \code{\link{generate_antigenic_map_flexible}} or \code{\link{generate_antigenic_map}}}
+\item{antigenic_map}{the raw antigenic map with colnames x_coord, y_coord and inf_times, as returned from \code{\link{generate_antigenic_map_flexible}} or \code{\link{generate_antigenic_map}}}
 
 \item{sampling_times}{vector of times at which blood samples were taken}
 
@@ -55,7 +55,7 @@ data(example_antigenic_map)
 infection_history <- sample(c(0,1),size=nrow(example_antigenic_map), replace=TRUE,prob=c(0.9,0.1))
 pars <- example_par_tab$values
 names(pars) <- example_par_tab$names
-strain_isolation_times <- example_antigenic_map$inf_years
+strain_isolation_times <- example_antigenic_map$inf_times
 y <- simulate_individual(pars, infection_history, example_antigenic_map, 2009, 
                          strain_isolation_times,strain_isolation_times,add_noise=FALSE)
 }

@@ -22,7 +22,7 @@ Given the titre_dat data frame with entries for location, calculates the number 
 \examples{
 data(example_titre_dat)
 data(example_antigenic_map)
-times <- unique(example_antigenic_map$inf_years)
+times <- unique(example_antigenic_map$inf_times)
 get_n_alive_group(example_titre_dat, times)
 }
 \seealso{

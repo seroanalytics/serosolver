@@ -34,7 +34,7 @@ Plot MCMC trace for infections per year
 data(example_inf_chain)
 data(example_titre_dat)
 data(example_antigenic_map)
-times <- example_antigenic_map$inf_years
+times <- example_antigenic_map$inf_times
 n_alive_group <- get_n_alive_group(example_titre_dat, strain_isolation_times,melt_dat = TRUE)
 n_alive_group$j <- strain_isolation_times[n_alive_group$j]
 plot_infection_history_chains_time(example_inf_chain, 0, sample(1:length(times),10),n_alive,FALSE)

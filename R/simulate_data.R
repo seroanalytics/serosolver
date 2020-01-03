@@ -9,7 +9,7 @@
 #' @param measured_strains vector of strains that have titres measured matching entries in strain_isolation_times
 #' @param sampling_times possible sampling times for the individuals, matching entries in strain_isolation_times
 #' @param nsamps the number of samples each individual has (eg. nsamps=2 gives each individual 2 random sampling times from sampling_times)
-#' @param antigenic_map the raw antigenic map with colnames x_coord, y_coord and inf_years, as returned from \code{\link{generate_antigenic_map_flexible}} or \code{\link{generate_antigenic_map}}
+#' @param antigenic_map the raw antigenic map with colnames x_coord, y_coord and inf_times, as returned from \code{\link{generate_antigenic_map_flexible}} or \code{\link{generate_antigenic_map}}
 #' @param titre_sensoring numeric between 0 and 1, used to censor a proportion of titre observations at random (MAR)
 #' @param age_min simulated age minimum
 #' @param age_max simulated age maximum
@@ -25,7 +25,7 @@
 #' data(example_antigenic_map)
 #'
 #' ## Times at which individuals can be infected
-#' strain_isolation_times <- example_antigenic_map$inf_years
+#' strain_isolation_times <- example_antigenic_map$inf_times
 #' ## Simulate some random attack rates between 0 and 0.2
 #' attack_rates <- runif(length(strain_isolation_times), 0, 0.2)
 #' ## Vector giving the circulation times of measured strains
@@ -313,7 +313,7 @@ simulate_individual_faster <- function(theta,
 #' infection_history <- sample(c(0,1),size=nrow(example_antigenic_map), replace=TRUE,prob=c(0.9,0.1))
 #' pars <- example_par_tab$values
 #' names(pars) <- example_par_tab$names
-#' strain_isolation_times <- example_antigenic_map$inf_years
+#' strain_isolation_times <- example_antigenic_map$inf_times
 #' y <- simulate_individual(pars, infection_history, example_antigenic_map, 2009, 
 #'                          strain_isolation_times,strain_isolation_times,add_noise=FALSE)
 simulate_individual <- function(theta,

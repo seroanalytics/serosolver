@@ -20,7 +20,7 @@ Converts a data frame of individual ages to give the index of the first infectio
 \examples{
 data(example_titre_dat)
 data(example_antigenic_map)
-times <- example_antigenic_map$inf_years
+times <- example_antigenic_map$inf_times
 DOBs <- unique(example_titre_dat[,c("individual","DOB")])
 age_mask <- create_age_mask(DOBs$DOB, times)
 }

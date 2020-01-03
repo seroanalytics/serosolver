@@ -42,7 +42,7 @@ data(example_inf_chain)
 data(example_antigenic_map)
 data(example_titre_dat)
 data(example_inf_hist)
-strain_isolation_times <- example_antigenic_map$inf_years
+strain_isolation_times <- example_antigenic_map$inf_times
 ## Find number alive in each time period
 n_alive <- get_n_alive(example_titre_dat, strain_isolation_times)
 ## Get actual number of infections per time

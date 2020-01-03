@@ -34,7 +34,7 @@ Plots measured titres and known infection histories for all individuals, facette
 data(example_titre_dat)
 data(example_inf_hist)
 data(example_antigenic_map)
-strain_isolation_times <- example_antigenic_map$inf_years
+strain_isolation_times <- example_antigenic_map$inf_times
 plot_data(example_titre_dat, example_inf_hist, strain_isolation_times, 5)
 }
 }

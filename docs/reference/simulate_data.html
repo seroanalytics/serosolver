@@ -171,7 +171,7 @@
     </tr>
     <tr>
       <th>antigenic_map</th>
-      <td><p>the raw antigenic map with colnames x_coord, y_coord and inf_years, as returned from <code><a href='generate_antigenic_map_flexible.html'>generate_antigenic_map_flexible</a></code> or <code><a href='generate_antigenic_map.html'>generate_antigenic_map</a></code></p></td>
+      <td><p>the raw antigenic map with colnames x_coord, y_coord and inf_times, as returned from <code><a href='generate_antigenic_map_flexible.html'>generate_antigenic_map_flexible</a></code> or <code><a href='generate_antigenic_map.html'>generate_antigenic_map</a></code></p></td>
     </tr>
     <tr>
       <th>titre_sensoring</th>
@@ -225,7 +225,7 @@
 <span class='fu'><a href='https://www.rdocumentation.org/packages/utils/topics/data'>data</a></span>(<span class='no'>example_antigenic_map</span>)
 
 <span class='co'>## Times at which individuals can be infected</span>
-<span class='no'>strain_isolation_times</span> <span class='kw'>&lt;-</span> <span class='no'>example_antigenic_map</span>$<span class='no'>inf_years</span>
+<span class='no'>strain_isolation_times</span> <span class='kw'>&lt;-</span> <span class='no'>example_antigenic_map</span>$<span class='no'>inf_times</span>
 <span class='co'>## Simulate some random attack rates between 0 and 0.2</span>
 <span class='no'>attack_rates</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='https://www.rdocumentation.org/packages/stats/topics/Uniform'>runif</a></span>(<span class='fu'><a href='https://www.rdocumentation.org/packages/base/topics/length'>length</a></span>(<span class='no'>strain_isolation_times</span>), <span class='fl'>0</span>, <span class='fl'>0.2</span>)
 <span class='co'>## Vector giving the circulation times of measured strains</span>

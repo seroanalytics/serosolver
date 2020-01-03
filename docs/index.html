@@ -123,7 +123,7 @@
 <span class="kw"><a href="https://www.rdocumentation.org/packages/utils/topics/data">data</a></span>(example_antigenic_map)
 
 ## Get all possible infection times
-strain_isolation_times &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/data.table/topics/duplicated">unique</a></span>(example_antigenic_map<span class="op">$</span>inf_years)
+strain_isolation_times &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/data.table/topics/duplicated">unique</a></span>(example_antigenic_map<span class="op">$</span>inf_times)
 
 ## Vector of strains that have titres (note only one representative strain per time)
 sampled_viruses &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/seq">seq</a></span>(<span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/Extremes">min</a></span>(strain_isolation_times), <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/Extremes">max</a></span>(strain_isolation_times), <span class="dt">by=</span><span class="dv">2</span>)

@@ -147,7 +147,7 @@
     </tr>
     <tr>
       <th>antigenic_map</th>
-      <td><p>the raw antigenic map with colnames x_coord, y_coord and inf_years, as returned from <code><a href='generate_antigenic_map_flexible.html'>generate_antigenic_map_flexible</a></code> or <code><a href='generate_antigenic_map.html'>generate_antigenic_map</a></code></p></td>
+      <td><p>the raw antigenic map with colnames x_coord, y_coord and inf_times, as returned from <code><a href='generate_antigenic_map_flexible.html'>generate_antigenic_map_flexible</a></code> or <code><a href='generate_antigenic_map.html'>generate_antigenic_map</a></code></p></td>
     </tr>
     <tr>
       <th>sampling_times</th>
@@ -202,7 +202,7 @@
 <span class='no'>infection_history</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='https://www.rdocumentation.org/packages/base/topics/sample'>sample</a></span>(<span class='fu'><a href='https://www.rdocumentation.org/packages/base/topics/c'>c</a></span>(<span class='fl'>0</span>,<span class='fl'>1</span>),<span class='kw'>size</span><span class='kw'>=</span><span class='fu'><a href='https://www.rdocumentation.org/packages/base/topics/nrow'>nrow</a></span>(<span class='no'>example_antigenic_map</span>), <span class='kw'>replace</span><span class='kw'>=</span><span class='fl'>TRUE</span>,<span class='kw'>prob</span><span class='kw'>=</span><span class='fu'><a href='https://www.rdocumentation.org/packages/base/topics/c'>c</a></span>(<span class='fl'>0.9</span>,<span class='fl'>0.1</span>))
 <span class='no'>pars</span> <span class='kw'>&lt;-</span> <span class='no'>example_par_tab</span>$<span class='no'>values</span>
 <span class='fu'><a href='https://www.rdocumentation.org/packages/base/topics/names'>names</a></span>(<span class='no'>pars</span>) <span class='kw'>&lt;-</span> <span class='no'>example_par_tab</span>$<span class='no'>names</span>
-<span class='no'>strain_isolation_times</span> <span class='kw'>&lt;-</span> <span class='no'>example_antigenic_map</span>$<span class='no'>inf_years</span>
+<span class='no'>strain_isolation_times</span> <span class='kw'>&lt;-</span> <span class='no'>example_antigenic_map</span>$<span class='no'>inf_times</span>
 <span class='no'>y</span> <span class='kw'>&lt;-</span> <span class='fu'>simulate_individual</span>(<span class='no'>pars</span>, <span class='no'>infection_history</span>, <span class='no'>example_antigenic_map</span>, <span class='fl'>2009</span>,
                          <span class='no'>strain_isolation_times</span>,<span class='no'>strain_isolation_times</span>,<span class='kw'>add_noise</span><span class='kw'>=</span><span class='fl'>FALSE</span>)</div></pre>
   </div>

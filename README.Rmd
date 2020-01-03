@@ -54,7 +54,7 @@ data(example_par_tab)
 data(example_antigenic_map)
 
 ## Get all possible infection times
-strain_isolation_times <- unique(example_antigenic_map$inf_years)
+strain_isolation_times <- unique(example_antigenic_map$inf_times)
 
 ## Vector of strains that have titres (note only one representative strain per time)
 sampled_viruses <- seq(min(strain_isolation_times), max(strain_isolation_times), by=2)

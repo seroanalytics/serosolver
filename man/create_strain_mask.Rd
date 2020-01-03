@@ -20,5 +20,5 @@ Converts a data frame of individual sampling times to give the index of the last
 \concept{create_masks
 data(example_titre_dat)
 data(example_antigenic_map)
-times <- example_antigenic_map$inf_years
+times <- example_antigenic_map$inf_times
 strain_mask <- create_strain_mask(example_titre_dat, times)}

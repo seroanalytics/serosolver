@@ -225,7 +225,7 @@ antigenic_coords &lt;-<span class="st"> </span><span class="kw"><a href="https:/
 ## Convert to form expected by serosolver
 antigenic_map &lt;-<span class="st"> </span><span class="kw"><a href="../reference/generate_antigenic_map.html">generate_antigenic_map</a></span>(antigenic_coords, resolution)
 <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/print">print</a></span>(<span class="kw"><a href="https://www.rdocumentation.org/packages/utils/topics/head">head</a></span>(antigenic_map))
-<span class="co">#&gt;      x_coord   y_coord inf_years</span>
+<span class="co">#&gt;      x_coord   y_coord inf_times</span>
 <span class="co">#&gt; 1 -0.3036008 0.2322615      1968</span>
 <span class="co">#&gt; 2  0.6175154 1.4365363      1969</span>
 <span class="co">#&gt; 3  1.5386317 2.6408110      1970</span>
@@ -244,8 +244,8 @@ antigenic_map &lt;-<span class="st"> </span><span class="kw"><a href="../referen
 ## Restrict entries to years of interest. Entries in antigenic_map determine
 ## the times that individual can be infected ie. the dimensions of the infection
 ## history matrix.
-antigenic_map &lt;-<span class="st"> </span>antigenic_map[antigenic_map<span class="op">$</span>inf_years <span class="op">&gt;=</span><span class="st"> </span><span class="dv">1968</span> <span class="op">&amp;</span><span class="st"> </span>antigenic_map<span class="op">$</span>inf_years <span class="op">&lt;=</span><span class="st"> </span>sample_year,]
-strain_isolation_times &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/data.table/topics/duplicated">unique</a></span>(antigenic_map<span class="op">$</span>inf_years)</code></pre></div>
+antigenic_map &lt;-<span class="st"> </span>antigenic_map[antigenic_map<span class="op">$</span>inf_times <span class="op">&gt;=</span><span class="st"> </span><span class="dv">1968</span> <span class="op">&amp;</span><span class="st"> </span>antigenic_map<span class="op">$</span>inf_times <span class="op">&lt;=</span><span class="st"> </span>sample_year,]
+strain_isolation_times &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/data.table/topics/duplicated">unique</a></span>(antigenic_map<span class="op">$</span>inf_times)</code></pre></div>
 <p>NOTE: <code>generate_antigenic_map</code> expects the provided file <code>fonville_map_approx.csv</code>. Users should refer to <code>generate_antigenic_map_flexible</code> for more generic antigenic map generation.</p>
 <p>Finally, we must specify the <code>par_tab</code> data frame, which controls which parameters are included in the model, which are fixed, and their uniform prior ranges. Given that we are integrating out the probability of infection terms under prior version 2, we must remove these parameters from <code>par_tab</code>. Furthermore, given that we are interested in long-term dynamics with relatively sparse data, we remove parameters relating to the short-term antibody kinetics phase to avoid identifiability issues. We set alpha and beta of the Beta prior to give a mode of 0.15 assuming that our prior belief has the equivalent weighting to 4 observed individuals.</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">par_tab_path &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/system.file">system.file</a></span>(<span class="st">"extdata"</span>, <span class="st">"par_tab_base.csv"</span>, <span class="dt">package =</span> <span class="st">"serosolver"</span>)

@@ -178,7 +178,7 @@
 <span class='fu'><a href='https://www.rdocumentation.org/packages/utils/topics/data'>data</a></span>(<span class='no'>example_inf_chain</span>)
 <span class='fu'><a href='https://www.rdocumentation.org/packages/utils/topics/data'>data</a></span>(<span class='no'>example_titre_dat</span>)
 <span class='fu'><a href='https://www.rdocumentation.org/packages/utils/topics/data'>data</a></span>(<span class='no'>example_antigenic_map</span>)
-<span class='no'>times</span> <span class='kw'>&lt;-</span> <span class='no'>example_antigenic_map</span>$<span class='no'>inf_years</span>
+<span class='no'>times</span> <span class='kw'>&lt;-</span> <span class='no'>example_antigenic_map</span>$<span class='no'>inf_times</span>
 <span class='no'>n_alive_group</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='get_n_alive_group.html'>get_n_alive_group</a></span>(<span class='no'>example_titre_dat</span>, <span class='no'>strain_isolation_times</span>,<span class='kw'>melt_dat</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>)
 <span class='no'>n_alive_group</span>$<span class='no'>j</span> <span class='kw'>&lt;-</span> <span class='no'>strain_isolation_times</span>[<span class='no'>n_alive_group</span>$<span class='no'>j</span>]
 <span class='fu'>plot_infection_history_chains_time</span>(<span class='no'>example_inf_chain</span>, <span class='fl'>0</span>, <span class='fu'><a href='https://www.rdocumentation.org/packages/base/topics/sample'>sample</a></span>(<span class='fl'>1</span>:<span class='fu'><a href='https://www.rdocumentation.org/packages/base/topics/length'>length</a></span>(<span class='no'>times</span>),<span class='fl'>10</span>),<span class='no'>n_alive</span>,<span class='fl'>FALSE</span>)

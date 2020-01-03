@@ -13,7 +13,7 @@
 #' data(example_inf_hist)
 #' data(example_titre_dat)
 #' data(example_antigenic_map)
-#' times <- example_antigenic_map$inf_years
+#' times <- example_antigenic_map$inf_times
 #' ages <- unique(example_titre_dat[,c("DOB","individual")])
 #' age_mask <- create_age_mask(ages$DOB, times)
 #' strain_mask <- create_strain_mask(example_titre_dat, times)
@@ -70,7 +70,7 @@ inf_hist_swap <- function(infection_history, age_mask, strain_mask, swap_propn, 
 #' data(example_inf_hist)
 #' data(example_titre_dat)
 #' data(example_antigenic_map)
-#' times <- example_antigenic_map$inf_years
+#' times <- example_antigenic_map$inf_times
 #' ages <- unique(example_titre_dat[,c("DOB","individual")])
 #' age_mask <- create_age_mask(ages$DOB, times)
 #' strain_mask <- create_strain_mask(example_titre_dat, times)
@@ -154,7 +154,7 @@ inf_hist_swap_phi <- function(infection_history, phis, age_mask, strain_mask, sw
 #' data(example_titre_dat)
 #' data(example_antigenic_map)
 #'
-#' times <- example_antigenic_map$inf_years
+#' times <- example_antigenic_map$inf_times
 #' ages <- unique(example_titre_dat[,c("DOB","individual")])
 #'
 #' ## Create age and strain mask

@@ -20,7 +20,7 @@ Given the titre_dat data frame, calculates the number that are alive (alive to b
 \examples{
 data(example_titre_dat)
 data(example_antigenic_map)
-times <- unique(example_antigenic_map$inf_years)
+times <- unique(example_antigenic_map$inf_times)
 get_n_alive(example_titre_dat, times)
 }
 \seealso{

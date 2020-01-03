@@ -28,7 +28,7 @@ simulate_cross_sectional(
 
 \item{samplingTimes}{possible sampling times for the individuals}
 
-\item{antigenicMap}{the raw antigenic map with colnames x_coord, y_coord and inf_years}
+\item{antigenicMap}{the raw antigenic map with colnames x_coord, y_coord and inf_times}
 
 \item{ageMin}{minimum age to simulate}
 

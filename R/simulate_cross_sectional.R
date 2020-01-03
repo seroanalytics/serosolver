@@ -5,7 +5,7 @@
 #' @param n_indiv number of individuals to simulate
 #' @param strainIsolationTimes vector of strain circulation times
 #' @param samplingTimes possible sampling times for the individuals
-#' @param antigenicMap the raw antigenic map with colnames x_coord, y_coord and inf_years
+#' @param antigenicMap the raw antigenic map with colnames x_coord, y_coord and inf_times
 #' @param titreSensoring what proportion of titres are randomly missing?
 #' @param ageMin minimum age to simulate
 #' @param ageMax maximum age to simulate

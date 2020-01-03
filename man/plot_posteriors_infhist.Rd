@@ -45,7 +45,7 @@ data(example_inf_chain)
 data(example_antigenic_map)
 data(example_titre_dat)
 
-strain_isolation_times <- example_antigenic_map$inf_years
+strain_isolation_times <- example_antigenic_map$inf_times
 ## Setup known attack rates
 n_alive <- get_n_alive(example_titre_dat, strain_isolation_times)
 n_infs <- colSums(example_inf_hist)

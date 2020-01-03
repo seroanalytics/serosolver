@@ -43,7 +43,7 @@ data(example_inf_hist)
 data(example_titre_dat)
 data(example_antigenic_map)
 
-times <- example_antigenic_map$inf_years
+times <- example_antigenic_map$inf_times
 ages <- unique(example_titre_dat[,c("DOB","individual")])
 
 ## Create age and strain mask

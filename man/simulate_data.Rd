@@ -41,7 +41,7 @@ simulate_data(
 
 \item{nsamps}{the number of samples each individual has (eg. nsamps=2 gives each individual 2 random sampling times from sampling_times)}
 
-\item{antigenic_map}{the raw antigenic map with colnames x_coord, y_coord and inf_years, as returned from \code{\link{generate_antigenic_map_flexible}} or \code{\link{generate_antigenic_map}}}
+\item{antigenic_map}{the raw antigenic map with colnames x_coord, y_coord and inf_times, as returned from \code{\link{generate_antigenic_map_flexible}} or \code{\link{generate_antigenic_map}}}
 
 \item{titre_sensoring}{numeric between 0 and 1, used to censor a proportion of titre observations at random (MAR)}
 
@@ -70,7 +70,7 @@ data(example_par_tab)
 data(example_antigenic_map)
 
 ## Times at which individuals can be infected
-strain_isolation_times <- example_antigenic_map$inf_years
+strain_isolation_times <- example_antigenic_map$inf_times
 ## Simulate some random attack rates between 0 and 0.2
 attack_rates <- runif(length(strain_isolation_times), 0, 0.2)
 ## Vector giving the circulation times of measured strains

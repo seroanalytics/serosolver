@@ -8,7 +8,7 @@
 #' @examples
 #' data(example_titre_dat)
 #' data(example_antigenic_map)
-#' times <- unique(example_antigenic_map$inf_years)
+#' times <- unique(example_antigenic_map$inf_times)
 #' get_n_alive(example_titre_dat, times)
 #' @export
 get_n_alive <- function(titre_dat, times) {
@@ -45,7 +45,7 @@ get_DOBs <- function(titre_dat){
 #' @examples
 #' data(example_titre_dat)
 #' data(example_antigenic_map)
-#' times <- unique(example_antigenic_map$inf_years)
+#' times <- unique(example_antigenic_map$inf_times)
 #' get_n_alive_group(example_titre_dat, times)
 #' @export
 get_n_alive_group <- function(titre_dat, times, melt_dat = FALSE) {
@@ -94,7 +94,7 @@ create_prior_lookup <- function(titre_dat, strain_isolation_times, alpha1, beta1
 #' @examples
 #' data(example_titre_dat)
 #' data(example_antigenic_map)
-#' times <- example_antigenic_map$inf_years
+#' times <- example_antigenic_map$inf_times
 #' DOBs <- unique(example_titre_dat[,c("individual","DOB")])
 #' age_mask <- create_age_mask(DOBs$DOB, times)
 #' @export
@@ -117,7 +117,7 @@ create_age_mask <- function(DOBs, strain_isolation_times) {
 #' @family create_masks
 #' data(example_titre_dat)
 #' data(example_antigenic_map)
-#' times <- example_antigenic_map$inf_years
+#' times <- example_antigenic_map$inf_times
 #' strain_mask <- create_strain_mask(example_titre_dat, times)
 #' @export
 create_strain_mask <- function(titre_dat, strain_isolation_times) {
@@ -330,15 +330,15 @@ setup_titredat_for_posterior_func <- function(titre_dat, antigenic_map=NULL, str
   essential_colnames <- c("individual", "samples", "titre", "virus", "run", "group")
 
   if (!is.null(antigenic_map)) {
-    strain_isolation_times <- unique(antigenic_map$inf_years) # How many strains are we testing against and what time did they circulate
+    strain_isolation_times <- unique(antigenic_map$inf_times) # How many strains are we testing against and what time did they circulate
   } else {
-    antigenic_map <- data.frame("x_coord"=1,"y_coord"=1,"inf_years"=strain_isolation_times)
+    antigenic_map <- data.frame("x_coord"=1,"y_coord"=1,"inf_times"=strain_isolation_times)
   }
   
-  strain_isolation_times <- antigenic_map$inf_years
+  strain_isolation_times <- antigenic_map$inf_times
   antigenic_map_melted <- c(melt_antigenic_coords(antigenic_map[, c("x_coord", "y_coord")]))
 
-  measured_strain_indices <- match(titre_dat$virus, antigenic_map$inf_years) - 1 ## For each virus tested, what is its index in the antigenic map?
+  measured_strain_indices <- match(titre_dat$virus, antigenic_map$inf_times) - 1 ## For each virus tested, what is its index in the antigenic map?
   infection_strain_indices <- match(strain_isolation_times, strain_isolation_times) - 1 ## For each virus that circulated, what is its index in the antigenic map?
 
   ## Get unique measurement sets for each individual at
@@ -418,7 +418,7 @@ euc_distance <- function(i1, i2, fit_dat) {
 #' @param anti.map.in can either be a 1D antigenic line to calculate distance from, or a two dimensional matrix with x and y coordinates on an antigenic map
 #' @return the euclidean antigenic distance between each pair of viruses in anti.map.in
 #' @export
-melt_antigenic_coords <- function(anti.map.in) { # anti.map.in can be vector or matrix - rows give inf_years, columns give location
+melt_antigenic_coords <- function(anti.map.in) { # anti.map.in can be vector or matrix - rows give inf_times, columns give location
   # Calculate antigenic distances
   if (is.null(dim(anti.map.in))) { # check if input map is one or 2 dimensions
     # If 1D antigenic 'line' defined, calculate distances directory from input
@@ -471,7 +471,7 @@ generate_antigenic_map <- function(antigenic_distances, buckets = 1, spar = 0.3)
   y_predict <- predict(fit, x = x_predict)
   fit_dat <- data.frame(x = y_predict$x, y = y_predict$y)
   fit_dat$strain <- Strain
-  colnames(fit_dat) <- c("x_coord", "y_coord", "inf_years")
+  colnames(fit_dat) <- c("x_coord", "y_coord", "inf_times")
   return(fit_dat)
 }
 #' Generate antigenic map, flexible
@@ -523,7 +523,7 @@ generate_antigenic_map_flexible <- function(antigenic_distances, buckets = 1, cl
 
   fit_dat <- data.frame(x = y_predict$x, y = y_predict$y)
   fit_dat$strain <- Strain
-  colnames(fit_dat) <- c("x_coord", "y_coord", "inf_years")
+  colnames(fit_dat) <- c("x_coord", "y_coord", "inf_times")
 
   ## If using clusters
   if (use_clusters) {
@@ -540,13 +540,13 @@ generate_antigenic_map_flexible <- function(antigenic_distances, buckets = 1, cl
     clusters1 <- clusters1[, c("cluster_used", "first_cluster_year", "year")]
     colnames(fit_dat)[3] <- "first_cluster_year"
 
-    ## Merge on "inf_years" with first_cluster_year, such that all viruses
+    ## Merge on "inf_times" with first_cluster_year, such that all viruses
     ## in a cluster have the same location as the first virus in that cluster
     fit_dat <- fit_dat[fit_dat$first_cluster_year %in% clusters1$first_cluster_year, ]
     fit_dat <- merge(clusters1, fit_dat, by = "first_cluster_year")
     fit_dat <- fit_dat[, c("x_coord", "y_coord", "year")]
-    colnames(fit_dat)[3] <- "inf_years"
-    fit_dat <- fit_dat[order(fit_dat$inf_years), ]
+    colnames(fit_dat)[3] <- "inf_times"
+    fit_dat <- fit_dat[order(fit_dat$inf_times), ]
   }
 
   return(fit_dat)

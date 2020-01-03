@@ -120,7 +120,7 @@ An antigenic map can be created using `generate_antigenic_map()` and input by th
   antigenic_map <- generate_antigenic_map(antigenic_coords, buckets = 4)
 
 # unique strain circulation times
-  strains_isolation_times <- unique(antigenic_map$inf_years)
+  strains_isolation_times <- unique(antigenic_map$inf_times)
 ```
 
 ### Age Mask

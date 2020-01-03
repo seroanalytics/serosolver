@@ -58,7 +58,7 @@ data(example_inf_hist)
 data(example_titre_dat)
 
 ages <- unique(example_titre_dat[,c("individual","DOB")])
-times <- example_antigenic_map$inf_years
+times <- example_antigenic_map$inf_times
 indivs <- 1:10
 generate_cumulative_inf_plots(example_inf_chain, 0, indivs, example_inf_hist, NULL, times,
                               ages=ages, number_col=2,pad_chain=FALSE, return_data=TRUE)

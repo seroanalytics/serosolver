@@ -189,12 +189,12 @@ antigenic_map &lt;-<span class="st"> </span><span class="kw">generate_antigenic_
 ## Restrict entries to years of interest. Entries in antigenic_map determine
 ## the times that individual can be infected ie. the dimensions of the infection
 ## history matrix.
-antigenic_map &lt;-<span class="st"> </span>antigenic_map[antigenic_map<span class="op">$</span>inf_years<span class="op">&gt;=</span>(sample_years[<span class="dv">1</span>]<span class="op">*</span>resolution<span class="op">+</span><span class="dv">1</span>) <span class="op">&amp;</span><span class="st"> </span>antigenic_map<span class="op">$</span>inf_years<span class="op">&lt;=</span>sample_years[<span class="dv">4</span>]<span class="op">*</span>resolution,]
+antigenic_map &lt;-<span class="st"> </span>antigenic_map[antigenic_map<span class="op">$</span>inf_times<span class="op">&gt;=</span>(sample_years[<span class="dv">1</span>]<span class="op">*</span>resolution<span class="op">+</span><span class="dv">1</span>) <span class="op">&amp;</span><span class="st"> </span>antigenic_map<span class="op">$</span>inf_times<span class="op">&lt;=</span>sample_years[<span class="dv">4</span>]<span class="op">*</span>resolution,]
 
 ## Change all coordinates to the same as the first pair of coordinates (because we assume the virus is the same at every time point)
 antigenic_map[<span class="dv">2</span><span class="op">:</span><span class="kw">nrow</span>(antigenic_map),<span class="kw">c</span>(<span class="st">'x_coord'</span>,<span class="st">'y_coord'</span>)] &lt;-<span class="st"> </span>antigenic_map[<span class="dv">1</span>,<span class="kw">c</span>(<span class="st">'x_coord'</span>,<span class="st">'y_coord'</span>)]
 <span class="kw">print</span>(<span class="kw">head</span>(antigenic_map))
-<span class="co">#&gt;      x_coord  y_coord inf_years</span>
+<span class="co">#&gt;      x_coord  y_coord inf_times</span>
 <span class="co">#&gt; 166 37.69244 8.233511      8037</span>
 <span class="co">#&gt; 167 37.69244 8.233511      8038</span>
 <span class="co">#&gt; 168 37.69244 8.233511      8039</span>
@@ -202,7 +202,7 @@ antigenic_map[<span class="dv">2</span><span class="op">:</span><span class="kw"
 <span class="co">#&gt; 170 37.69244 8.233511      8041</span>
 <span class="co">#&gt; 171 37.69244 8.233511      8042</span>
 
-strain_isolation_times &lt;-<span class="st"> </span><span class="kw">unique</span>(antigenic_map<span class="op">$</span>inf_years)</code></pre></div>
+strain_isolation_times &lt;-<span class="st"> </span><span class="kw">unique</span>(antigenic_map<span class="op">$</span>inf_times)</code></pre></div>
 <p>NOTE: <code>generate_antigenic_map</code> expects the provided file <code>fonville_map_approx.csv</code>. Users should refer to <code>generate_antigenic_map_flexible</code> for more generic antigenic map generation.</p>
 <p>Finally, we must specify the <code>par_tab</code> data frame, which controls which parameters are included in the model, which are fixed, and their uniform prior ranges. Given that we are integrating out the probability of infection terms under prior version 2, we must remove these parameters from <code>par_tab</code>. Furthermore, given that we are interested in short-term dynamics with relatively sparse data, we remove parameters relating to the long-term antibody kinetics phase to avoid identifiability issues. We set alpha and beta to 1.</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">par_tab_path &lt;-<span class="st"> </span><span class="kw">system.file</span>(<span class="st">&quot;extdata&quot;</span>, <span class="st">&quot;par_tab_base.csv&quot;</span>, <span class="dt">package =</span> <span class="st">&quot;serosolver&quot;</span>)

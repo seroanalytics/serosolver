@@ -27,7 +27,7 @@
 #' \describe{
 #'     \item{x_coord}{x-coordinate for this entry in the 2D map}
 #'     \item{y_coord}{y-coordinate for this entry in the 2D map}
-#'     \item{inf_years}{circulation time of this entry. By default, this can be considered as the circulation year, though the logic extends to quarters, months etc}
+#'     \item{inf_times}{circulation time of this entry. By default, this can be considered as the circulation year, though the logic extends to quarters, months etc}
 #' }
 #' @family example_data
 "example_antigenic_map"

@@ -33,7 +33,7 @@ The idea is to move along time in the context of antigenic drift and look at an 
 \examples{
 data(example_titre_dat)
 data(example_antigenic_map)
-start_inf <- setup_infection_histories_new_2(example_titre_dat, example_antigenic_map$inf_years)
+start_inf <- setup_infection_histories_new_2(example_titre_dat, example_antigenic_map$inf_times)
 }
 \seealso{
 Other setup_infection_histories: 

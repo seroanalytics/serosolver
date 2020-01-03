@@ -27,7 +27,7 @@ generate_quantiles <- function(x, sig_f = 3, qs = c(0.025, 0.5, 0.975), as_text 
 #' @param infection_histories the MCMC chain for infection histories
 #' @param titre_dat the data frame of titre data
 #' @param individuals the subset of individuals to generate credible intervals for
-#' @param antigenic_map (optional) a data frame of antigenic x and y coordinates. Must have column names: x_coord; y_coord; inf_years. See \code{\link{example_antigenic_map}}
+#' @param antigenic_map (optional) a data frame of antigenic x and y coordinates. Must have column names: x_coord; y_coord; inf_times. See \code{\link{example_antigenic_map}}
 #' @param strain_isolation_times (optional) if no antigenic map is specified, this argument gives the vector of times at which individuals can be infected
 #' @param par_tab the table controlling the parameters in the MCMC chain
 #' @param nsamp number of samples to take from posterior
@@ -74,9 +74,9 @@ get_titre_predictions <- function(chain, infection_histories, titre_dat,
 
     ## Format the antigenic map to solve the model 
     if (!is.null(antigenic_map)) {
-        strain_isolation_times <- unique(antigenic_map$inf_years) # How many strains are we testing against and what time did they circulate
+        strain_isolation_times <- unique(antigenic_map$inf_times) # How many strains are we testing against and what time did they circulate
     } else {
-        antigenic_map <- data.frame("x_coord"=1,"y_coord"=1,"inf_years"=strain_isolation_times)
+        antigenic_map <- data.frame("x_coord"=1,"y_coord"=1,"inf_times"=strain_isolation_times)
     }
     nstrain <- length(strain_isolation_times)
     n_indiv <- length(individuals)
@@ -91,7 +91,7 @@ get_titre_predictions <- function(chain, infection_histories, titre_dat,
     if (expand_titredat) {
         titre_dat1 <- expand.grid(
             individual = unique(titre_dat$individual),
-            samples = unique(antigenic_map$inf_years),
+            samples = unique(antigenic_map$inf_times),
             titre = 0, run = 1
         )
         titre_dat2 <- unique(titre_dat[, c("individual", "virus", "group", "DOB")])
@@ -277,7 +277,7 @@ plot_infection_histories <- function(chain, infection_histories, titre_dat,
 #' data(example_antigenic_map)
 #' data(example_titre_dat)
 #'
-#' strain_isolation_times <- example_antigenic_map$inf_years
+#' strain_isolation_times <- example_antigenic_map$inf_times
 #' ## Setup known attack rates
 #' n_alive <- get_n_alive(example_titre_dat, strain_isolation_times)
 #' n_infs <- colSums(example_inf_hist)
@@ -487,7 +487,7 @@ plot_posteriors_theta <- function(chain,
 #' data(example_antigenic_map)
 #' data(example_titre_dat)
 #' data(example_inf_hist)
-#' strain_isolation_times <- example_antigenic_map$inf_years
+#' strain_isolation_times <- example_antigenic_map$inf_times
 #' ## Find number alive in each time period
 #' n_alive <- get_n_alive(example_titre_dat, strain_isolation_times)
 #' ## Get actual number of infections per time
@@ -979,7 +979,7 @@ pad_inf_chain <- function(inf_chain) {
 #' data(example_inf_chain)
 #' data(example_titre_dat)
 #' data(example_antigenic_map)
-#' times <- example_antigenic_map$inf_years
+#' times <- example_antigenic_map$inf_times
 #' n_alive_group <- get_n_alive_group(example_titre_dat, strain_isolation_times,melt_dat = TRUE)
 #' n_alive_group$j <- strain_isolation_times[n_alive_group$j]
 #' plot_infection_history_chains_time(example_inf_chain, 0, sample(1:length(times),10),n_alive,FALSE)
@@ -1140,7 +1140,7 @@ plot_number_infections <- function(inf_chain, pad_chain = TRUE) {
 #' data(example_titre_dat)
 #' data(example_inf_hist)
 #' data(example_antigenic_map)
-#' strain_isolation_times <- example_antigenic_map$inf_years
+#' strain_isolation_times <- example_antigenic_map$inf_times
 #' plot_data(example_titre_dat, example_inf_hist, strain_isolation_times, 5)
 #' }
 #' @export
@@ -1199,7 +1199,7 @@ plot_data <- function(titre_dat, infection_histories, strain_isolation_times, n_
 #' data(example_titre_dat)
 #' 
 #' ages <- unique(example_titre_dat[,c("individual","DOB")])
-#' times <- example_antigenic_map$inf_years
+#' times <- example_antigenic_map$inf_times
 #' indivs <- 1:10
 #' generate_cumulative_inf_plots(example_inf_chain, 0, indivs, example_inf_hist, NULL, times,
 #'                               ages=ages, number_col=2,pad_chain=FALSE, return_data=TRUE)

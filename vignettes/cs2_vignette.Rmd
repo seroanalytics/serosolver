@@ -132,8 +132,8 @@ antigenic_map <- generate_antigenic_map_flexible(antigenic_coords)
 ## Restrict entries to years of interest. Entries in antigenic_map determine
 ## the times that individual can be infected ie. the dimensions of the infection
 ## history matrix.
-antigenic_map <- antigenic_map[antigenic_map$inf_years >= 1968 & antigenic_map$inf_years <= sample_year,]
-strain_isolation_times <- unique(antigenic_map$inf_years)
+antigenic_map <- antigenic_map[antigenic_map$inf_times >= 1968 & antigenic_map$inf_times <= sample_year,]
+strain_isolation_times <- unique(antigenic_map$inf_times)
 ```
 
 NOTE: `generate_antigenic_map` expects the provided file `fonville_map_approx.csv`. Users should refer to `generate_antigenic_map_flexible` for more generic antigenic map generation.
