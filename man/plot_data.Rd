@@ -45,6 +45,7 @@ plot_data(example_titre_dat, example_inf_hist, strain_isolation_times, 5)
 Other infection_history_plots: 
 \code{\link{calculate_infection_history_statistics}()},
 \code{\link{generate_cumulative_inf_plots}()},
+\code{\link{plot_infection_histories_long}()},
 \code{\link{plot_infection_histories}()},
 \code{\link{plot_infection_history_chains_indiv}()},
 \code{\link{plot_infection_history_chains_time}()},
