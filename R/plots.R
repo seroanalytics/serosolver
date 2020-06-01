@@ -91,7 +91,7 @@ get_titre_predictions <- function(chain, infection_histories, titre_dat,
     if (expand_titredat) {
         titre_dat1 <- expand.grid(
             individual = unique(titre_dat$individual),
-            samples = unique(antigenic_map$inf_times),
+            samples = unique(titre_dat$samples),
             titre = 0, run = 1
         )
         titre_dat2 <- unique(titre_dat[, c("individual", "virus", "group", "DOB")])
@@ -229,7 +229,6 @@ plot_infection_histories <- function(chain, infection_histories, titre_dat,
                                      mu_indices = NULL,
                                      measurement_indices_by_time = NULL) {
     individuals <- individuals[order(individuals)]
-
     ## Generate titre predictions
     titre_preds <- get_titre_predictions(
         chain, infection_histories, titre_dat, individuals,
@@ -242,7 +241,7 @@ plot_infection_histories <- function(chain, infection_histories, titre_dat,
     ## Use these titre predictions and summary statistics on infection histories
     to_use <- titre_preds$predicted_observations
     model_preds <- titre_preds$predictions
-        to_use$individual <- rand_indivs[to_use$individual]
+        to_use$individual <- individuals[to_use$individual]
     
     inf_hist_densities <- titre_preds$histories
     inf_hist_densities$xmin <- inf_hist_densities$variable-0.5
@@ -250,23 +249,24 @@ plot_infection_histories <- function(chain, infection_histories, titre_dat,
     
     max_titre <- max(titre_dat$titre)
     min_titre <- min(titre_dat$titre)
-    max_x <- max(strain_isolation_times) + 5
     
+    max_x <- max(inf_hist_densities$variable) + 5
+    time_range <- range(inf_hist_densities$variable)
     titre_pred_p <- ggplot(to_use) +
         geom_rect(data=inf_hist_densities,
                   aes(xmin=xmin,xmax=xmax,fill=value),ymin=min_titre-1,ymax=max_titre+2)+
-        geom_ribbon(aes(x=samples,ymin=lower, ymax=upper),alpha=0.4, fill="#009E73",size=0.2)+
-        geom_ribbon(data=model_preds[model_preds$individual %in% rand_indivs,], 
-                    aes(x=samples,ymin=lower,ymax=upper),alpha=0.7,fill="#009E73",size=0.2) + 
-        geom_line(data=model_preds, aes(x=samples, y=median),linetype="dotted",color="grey10")+
+        geom_ribbon(aes(x=virus,ymin=lower, ymax=upper),alpha=0.4, fill="#009E73",size=0.2)+
+        geom_ribbon(data=model_preds[model_preds$individual %in% individuals,], 
+                    aes(x=virus,ymin=lower,ymax=upper),alpha=0.7,fill="#009E73",size=0.2) + 
+        geom_line(data=model_preds, aes(x=virus, y=median),linetype="dotted",color="grey10")+
         geom_rect(ymin=max_titre,ymax=max_titre+2,xmin=0,xmax=max_x,fill="grey70")+
         geom_rect(ymin=min_titre-2,ymax=min_titre,xmin=0,xmax=max_x,fill="grey70")+
         scale_x_continuous(expand=c(0,0)) +
         scale_fill_gradient(low="white",high="#D55E00",limits=c(0,1),name="Posterior probability of infection")+
         guides(fill=guide_colourbar(title.position="top",title.hjust=0.5,label.position = "bottom",
                                     barwidth=10,barheight = 0.5, frame.colour="black",ticks=FALSE)) +
-        geom_point(data=titre_dat[titre_dat$individual %in% rand_indivs,], aes(x=samples, y=titre),shape=23, 
-                   col="black",size=1,fill=viridis(1)[1])+
+        geom_point(data=titre_dat[titre_dat$individual %in% individuals,], aes(x=virus, y=titre),shape=23, 
+                   col="black",size=1)+
         ylab("log titre") +
         xlab("Time of virus circulation") +
         theme_pubr()+
@@ -277,9 +277,9 @@ plot_infection_histories <- function(chain, infection_histories, titre_dat,
               axis.text.x=element_text(angle=45,hjust=1,size=8),
               axis.text.y=element_text(size=8),
               plot.margin=margin(r=15,t=5,l=5))+
-        coord_cartesian(ylim=c(min_titre,max_titre+1),xlim=range(strain_isolation_times)) +
+        coord_cartesian(ylim=c(min_titre,max_titre+1),xlim=time_range) +
         scale_y_continuous(breaks=seq(min_titre,max_titre+2,by=2)) +
-        facet_wrap(~individual,ncol=length(rand_indivs)/2)
+    facet_grid(individual~samples)
     titre_pred_p
 }
 
