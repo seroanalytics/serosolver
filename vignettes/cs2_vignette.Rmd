@@ -242,9 +242,9 @@ Chains should then be checked for the usual MCMC diagnostics: $\hat{R}$ and effe
 ## Get the MCMC chains as a list
 list_chains <- all_chains$theta_list_chains
 ## Look at diagnostics for the free parameters
-list_chains1 <- lapply(list_chains, function(x) x[,c("mu","sigma1","error",
+list_chains1 <- lapply(list_chains, function(x) as.mcmc(x[,c("mu","sigma1","error",
                                                      "tau","total_infections",
-                                                     "lnlike","prior_prob")])
+                                                     "lnlike","prior_prob")]))
 
 ## Gelman-Rubin diagnostics to assess between-chain convergence for each parameter
 print(gelman.diag(as.mcmc.list(list_chains1)))
@@ -694,9 +694,9 @@ theta_chain <- sim_all_chains$theta_chain
 ## Get the MCMC chains as a list
 list_chains <- sim_all_chains$theta_list_chains
 ## Look at diagnostics for the free parameters
-list_chains1 <- lapply(list_chains, function(x) x[,c("mu","sigma1","error",
+list_chains1 <- lapply(list_chains, function(x) as.mcmc(x[,c("mu","sigma1","error",
                                                      "tau","total_infections",
-                                                     "lnlike","prior_prob")])
+                                                     "lnlike","prior_prob")]))
 
 ## Gelman-Rubin diagnostics and effective sample size
 print(gelman.diag(as.mcmc.list(list_chains1)))
