@@ -87,7 +87,7 @@ inf_chain <- data.table::fread(res$history_file)
 plot(coda::as.mcmc(chain[chain$sampno > 20000,c("mu","wane","lnlike")]))
 
 # Plot model predicted titres for a subset of individuals
-plot_infection_histories(chain = chain,infection_histories = inf_chain,
+plot_infection_histories_long(chain = chain,infection_histories = inf_chain,
                          titre_dat = example_titre_dat,individuals=c(1:4),
                          antigenic_map=example_antigenic_map,par_tab=par_tab)
 ```
