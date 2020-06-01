@@ -227,12 +227,12 @@ Once the MCMC chains are run, `serosolver` provides a number of simple functions
 ```{r message=FALSE, warning=FALSE}
 ## Read in the MCMC chains
 ## Note that `thin` here is in addition to any thinning done during the fitting
-all_chains <- load_mcmc_chains(location=chain_path_real,thin=1,burnin=100000,
-                               par_tab=par_tab,unfixed=FALSE,convert_mcmc=TRUE)
+#all_chains <- load_mcmc_chains(location=chain_path_real,thin=1,burnin=100000,
+#                               par_tab=par_tab,unfixed=FALSE,convert_mcmc=TRUE)
 
 ## Alternative, load the included MCMC chains rather than re-running
-## data(cs2_chains_real)
-## all_chains <- cs2_chains_real
+data(cs2_chains_real)
+all_chains <- cs2_chains_real
 
 print(summary(all_chains))
 ```
@@ -554,12 +554,12 @@ We finish the vignette by presenting a simulation-recovery experiment to test th
 We simulate infection histories and antibody titre data based on the "real" parameters inferred from fitting the model above. First, we extract the maximum posterior probability antibody kinetics parameters and attack rates.
 ```{r message=FALSE, warning=FALSE}
 ## Read in MCMC chains from fitting
-all_chains <- load_mcmc_chains(location=chain_path_real,thin=1,burnin=100000,
-                               par_tab=par_tab,unfixed=FALSE,convert_mcmc=FALSE)
+#all_chains <- load_mcmc_chains(location=chain_path_real,thin=1,burnin=100000,
+#                               par_tab=par_tab,unfixed=FALSE,convert_mcmc=FALSE)
 
 ## Alternative, load the included MCMC chains rather than re-running
-## data(cs2_chains_real_b)
-## all_chains <- cs2_chains_real_b
+data(cs2_chains_real_b)
+all_chains <- cs2_chains_real_b
 
 ## Find samples that were in both theta and inf hist chains
 chain <- all_chains$theta_chain
@@ -683,12 +683,12 @@ MCMC chains should be checked for convergence under the usual diagnostics. We al
 ```{r message=FALSE, warning=FALSE, fig.height=5, fig.width=7}
 ## Read in the MCMC chains
 ## Note that `thin` here is in addition to any thinning done during the fitting
-sim_all_chains <- load_mcmc_chains(location=chain_path_sim,thin=1,burnin=100000,
-                               par_tab=par_tab,unfixed=FALSE,convert_mcmc=TRUE)
+#sim_all_chains <- load_mcmc_chains(location=chain_path_sim,thin=1,burnin=100000,
+#                               par_tab=par_tab,unfixed=FALSE,convert_mcmc=TRUE)
 
 ## Alternative, load the included MCMC chains rather than re-running
-## data(cs2_chains_sim)
-## sim_all_chains <- cs2_chains_sim
+data(cs2_chains_sim)
+sim_all_chains <- cs2_chains_sim
 
 theta_chain <- sim_all_chains$theta_chain
 ## Get the MCMC chains as a list
