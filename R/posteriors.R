@@ -266,6 +266,7 @@ prob_mus <- function(mus, pars) {
 #' @export
 create_posterior_func <- function(par_tab,
                                   titre_dat,
+                                  vac cal,
                                   antigenic_map=NULL,
                                   strain_isolation_times=NULL,
                                   version = 1,
@@ -310,7 +311,7 @@ create_posterior_func <- function(par_tab,
     ## Setup data vectors and extract
     setup_dat <- setup_titredat_for_posterior_func(
         titre_dat_unique, antigenic_map, 
-        strain_isolation_times,
+        strain_isolation_times, # when the tested strains were isolated
         age_mask, n_alive
     )
 

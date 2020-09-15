@@ -17,6 +17,7 @@ void titre_data_fast_individual_base(NumericVector &predicted_titres,
 				     const double &mu,
 				     const double &mu_short,
 				     const double &wane,
+// vac parameters and calendar
 				     const double &tau,
 				     const NumericVector &infection_times,
 				     const IntegerVector &infection_strain_indices_tmp,

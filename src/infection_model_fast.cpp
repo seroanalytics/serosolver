@@ -11,7 +11,7 @@
 //' @param circulation_times_indices IntegerVector, which entry in the melted antigenic map that these infection times correspond to
 //' @param sample_times NumericVector, the times that each blood sample was taken
 //' @param rows_per_indiv_in_samples IntegerVector, one entry for each individual. Each entry dictates how many indices through sample_times to iterate per individual (ie. how many sample times does each individual have?)
-//' @param cum_nrows_per_individual_in_data IntegerVector, How many cumulative rows in the titre data correspond to each individual? 
+//' @param cum_nrows_per_individual_in_data IntegerVector, How many cumulative rows in the titre data correspond to each individual?
 //' @param nrows_per_blood_sample IntegerVector, one entry per sample taken. Dictates how many entries to iterate through cum_nrows_per_individual_in_data for each sampling time considered
 //' @param measurement_strain_indices IntegerVector, the indices of all measured strains in the melted antigenic map, with one entry per measured titre
 //' @param antigenic_map_long NumericVector, the collapsed cross reactivity map for long term boosting, after multiplying by sigma1 see \code{\link{create_cross_reactivity_vector}}
@@ -24,7 +24,8 @@
 //' @export
 //' @family titre_model
 // [[Rcpp::export(rng = false)]]
-NumericVector titre_data_fast(const NumericVector &theta, 
+NumericVector titre_data_fast(const NumericVector &theta,
+// vac_cal
 			      const IntegerMatrix &infection_history_mat, 
 			      const NumericVector &circulation_times,
 			      const IntegerVector &circulation_times_indices,
@@ -112,7 +113,7 @@ NumericVector titre_data_fast(const NumericVector &theta,
     if (infection_times.size() > 0) {
       infection_strain_indices_tmp = circulation_times_indices[indices];
     
-      index_in_samples = rows_per_indiv_in_samples[i-1];
+      index_in_samples = rows_per_indiv_in_samples[i-1]; // count number of samples taken per individual including runs
       end_index_in_samples = rows_per_indiv_in_samples[i] - 1;
       start_index_in_data = cum_nrows_per_individual_in_data[i-1];
 

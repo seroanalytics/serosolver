@@ -424,6 +424,7 @@ run_MCMC <- function(par_tab,
           tempiter <- tempiter + 1
         }
       }
+      
       ## Calculate new likelihood for these parameters
       tmp_new_posteriors <- posterior_simp(proposal, infection_histories)
       new_indiv_likelihoods <- tmp_new_posteriors[[1]] / temp # For each individual
