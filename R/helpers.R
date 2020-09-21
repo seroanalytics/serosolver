@@ -346,7 +346,7 @@ setup_titredat_for_posterior_func <- function(titre_dat, antigenic_map=NULL, str
   ## Get unique measurement sets for each individual at
   ## each sampling time for each repeat
   ## ie. each row of this is a unique blood sample taken
-  samples <- unique(titre_dat[, c("individual", "samples", "run")]), # just the sample no the titres
+  samples <- unique(titre_dat[, c("individual", "samples", "run")]) # just the sample no the titres
   sample_times <- samples$samples ## What were the times that these samples were taken? list of years
   individuals <- samples$individual ## Who are the individuals that these samples correspond to? list of indentifying individuals
   n_indiv <- length(unique(individuals))
@@ -386,7 +386,6 @@ setup_titredat_for_posterior_func <- function(titre_dat, antigenic_map=NULL, str
   if (is.null(n_alive)) {
     n_alive <- get_n_alive_group(titre_dat, strain_isolation_times)
   }
-
   return(list(
     "individuals" = individuals, # list of integers for each individual and their sample (per sample year and per run)
     "antigenic_map_melted" = antigenic_map_melted,
@@ -405,6 +404,14 @@ setup_titredat_for_posterior_func <- function(titre_dat, antigenic_map=NULL, str
     "n_alive" = n_alive,
     "DOBs" = DOBs
   ))
+}
+
+setup_vaccdat_for_posterior_func <- function(vaccination_histories, antigenic_map=NULL, strain_isolation_times=NULL,
+age_mask = NULL, n_alive = NUL){
+    
+    return(list(
+
+    ))
 }
 
 
