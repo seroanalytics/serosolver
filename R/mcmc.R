@@ -53,6 +53,7 @@
 #' @export
 run_MCMC <- function(par_tab,
                      titre_dat,
+                     vaccination_histories=NULL,
                      antigenic_map=NULL,
                      strain_isolation_times=NULL,
                      mcmc_pars = c(),
@@ -236,6 +237,7 @@ run_MCMC <- function(par_tab,
   ## Create posterior calculating function
   posterior_simp <- protect(CREATE_POSTERIOR_FUNC(par_tab,
     titre_dat,
+    vaccination_histories,
     antigenic_map,
     strain_isolation_times,
     version=version,
@@ -256,6 +258,7 @@ run_MCMC <- function(par_tab,
   if (hist_proposal == 2) {
     proposal_gibbs <- protect(CREATE_POSTERIOR_FUNC(par_tab,
       titre_dat,
+      vaccination_histories,
       antigenic_map,
       strain_isolation_times,
       version=version,
@@ -424,6 +427,7 @@ run_MCMC <- function(par_tab,
           tempiter <- tempiter + 1
         }
       }
+      
       ## Calculate new likelihood for these parameters
       tmp_new_posteriors <- posterior_simp(proposal, infection_histories)
       new_indiv_likelihoods <- tmp_new_posteriors[[1]] / temp # For each individual

@@ -346,9 +346,9 @@ setup_titredat_for_posterior_func <- function(titre_dat, antigenic_map=NULL, str
   ## Get unique measurement sets for each individual at
   ## each sampling time for each repeat
   ## ie. each row of this is a unique blood sample taken
-  samples <- unique(titre_dat[, c("individual", "samples", "run")])
-  sample_times <- samples$samples ## What were the times that these samples were taken?
-  individuals <- samples$individual ## Who are the individuals that these samples correspond to?
+  samples <- unique(titre_dat[, c("individual", "samples", "run")]) # just the sample no the titres
+  sample_times <- samples$samples ## What were the times that these samples were taken? list of years
+  individuals <- samples$individual ## Who are the individuals that these samples correspond to? list of indentifying individuals
   n_indiv <- length(unique(individuals))
 
   groups <- unique(titre_dat$group)
@@ -358,7 +358,7 @@ setup_titredat_for_posterior_func <- function(titre_dat, antigenic_map=NULL, str
   ## Firstly, how many rows in the titre data correspond to each unique individual, sample and titre repeat?
   ## ie. each element of this vector corresponds to one set of titres that need to be predicted
   # nrows_per_blood_sample <- NULL
-  nrows_per_blood_sample <- plyr::ddply(titre_dat, .(individual, samples, run), nrow)$V1
+  nrows_per_blood_sample <- plyr::ddply(titre_dat, .(individual, samples, run), nrow)$V1 # NUMBER OF STRAINS EACH SAMPLE IS TESTED AGAISNT, TO BE PREDICTED
 
   ## Which indices in the sampling times vector correspond to each individual?
   ## ie. each contiguous pair of entries in this vector corresponds to the
@@ -367,13 +367,13 @@ setup_titredat_for_posterior_func <- function(titre_dat, antigenic_map=NULL, str
   for (individual in unique(individuals)) {
     rows_per_indiv_in_samples <- c(rows_per_indiv_in_samples, length(individuals[individuals == individual]))
   }
-  rows_per_indiv_in_samples <- cumsum(rows_per_indiv_in_samples)
+  rows_per_indiv_in_samples <- cumsum(rows_per_indiv_in_samples) # NUMBER OF DIFFERENT SAMPLES (YEARS AND RUNS) PER INDIVIDUAL
 
   ## Which indices in the titre data matrix correspond to each individual?
   ## And, how many rows match each individual?
-  nrows_per_individual_in_data <- plyr::ddply(titre_dat, .(individual), nrow)$V1
-  cum_nrows_per_individual_in_data <- cumsum(c(0, nrows_per_individual_in_data))
-
+  nrows_per_individual_in_data <- plyr::ddply(titre_dat, .(individual), nrow)$V1 # NUMBER OF ROW FOR EACH INDIVIDUAL (MULTIPLY ABOVE)
+  cum_nrows_per_individual_in_data <- cumsum(c(0, nrows_per_individual_in_data)) # index of where each person starts
+  
   if (!is.null(titre_dat$DOB)) {
     DOBs <- unique(titre_dat[, c("individual", "DOB")])[, 2]
   } else {
@@ -386,25 +386,32 @@ setup_titredat_for_posterior_func <- function(titre_dat, antigenic_map=NULL, str
   if (is.null(n_alive)) {
     n_alive <- get_n_alive_group(titre_dat, strain_isolation_times)
   }
-
   return(list(
-    "individuals" = individuals,
+    "individuals" = individuals, # list of integers for each individual and their sample (per sample year and per run)
     "antigenic_map_melted" = antigenic_map_melted,
     "strain_isolation_times" = strain_isolation_times,
     "infection_strain_indices" = infection_strain_indices,
-    "sample_times" = sample_times,
-    "rows_per_indiv_in_samples" = rows_per_indiv_in_samples,
-    "nrows_per_individual_in_data" = nrows_per_individual_in_data,
-    "cum_nrows_per_individual_in_data" = cum_nrows_per_individual_in_data,
+    "sample_times" = sample_times, # years when samples are taken corresponds to individuals (per sample per run)
+    "rows_per_indiv_in_samples" = rows_per_indiv_in_samples, # number of samples (years and runs) per individual
+    "nrows_per_individual_in_data" = nrows_per_individual_in_data, # number of rows per individual (number of strains times sample times)
+    "cum_nrows_per_individual_in_data" = cum_nrows_per_individual_in_data, # indicies where each individual starts
     "group_id_vec" = group_id_vec,
-    "nrows_per_blood_sample" = nrows_per_blood_sample,
+    "nrows_per_blood_sample" = nrows_per_blood_sample, # number of viral strains each sample in tested agaisnt
     "measured_strain_indices" = measured_strain_indices,
-    "n_indiv" = n_indiv,
+    "n_indiv" = n_indiv, # number of individuals
     "age_mask" = age_mask,
     "strain_mask" = strain_mask,
     "n_alive" = n_alive,
     "DOBs" = DOBs
   ))
+}
+
+setup_vaccdat_for_posterior_func <- function(vaccination_histories, antigenic_map=NULL, strain_isolation_times=NULL,
+age_mask = NULL, n_alive = NUL){
+    
+    return(list(
+
+    ))
 }
 
 

@@ -11,7 +11,7 @@
 //' @param circulation_times_indices IntegerVector, which entry in the melted antigenic map that these infection times correspond to
 //' @param sample_times NumericVector, the times that each blood sample was taken
 //' @param rows_per_indiv_in_samples IntegerVector, one entry for each individual. Each entry dictates how many indices through sample_times to iterate per individual (ie. how many sample times does each individual have?)
-//' @param cum_nrows_per_individual_in_data IntegerVector, How many cumulative rows in the titre data correspond to each individual? 
+//' @param cum_nrows_per_individual_in_data IntegerVector, How many cumulative rows in the titre data correspond to each individual?
 //' @param nrows_per_blood_sample IntegerVector, one entry per sample taken. Dictates how many entries to iterate through cum_nrows_per_individual_in_data for each sampling time considered
 //' @param measurement_strain_indices IntegerVector, the indices of all measured strains in the melted antigenic map, with one entry per measured titre
 //' @param antigenic_map_long NumericVector, the collapsed cross reactivity map for long term boosting, after multiplying by sigma1 see \code{\link{create_cross_reactivity_vector}}
@@ -24,8 +24,9 @@
 //' @export
 //' @family titre_model
 // [[Rcpp::export(rng = false)]]
-NumericVector titre_data_fast(const NumericVector &theta, 
-			      const IntegerMatrix &infection_history_mat, 
+NumericVector titre_data_fast(const NumericVector &theta,
+			      const IntegerMatrix &infection_history_mat,
+                  const DataFrame &vaccination_histories,
 			      const NumericVector &circulation_times,
 			      const IntegerVector &circulation_times_indices,
 			      const NumericVector &sample_times,
@@ -56,6 +57,8 @@ NumericVector titre_data_fast(const NumericVector &theta,
   
   NumericVector infection_times;
   IntegerVector infection_strain_indices_tmp;
+  IntegerVector vaccination_strain_indices_tmp;
+
 
   // ====================================================== //
   // =============== SETUP MODEL PARAMETERS =============== //
@@ -95,24 +98,63 @@ NumericVector titre_data_fast(const NumericVector &theta,
   if (mus.size() > 1) {
     strain_dep_boost = true;    
   }
-  
+    
+  int vac_flag_int = theta["vac_flag"];
+  bool vac_flag = vac_flag_int == 1;
+  double mu_vac = 0;
+  double mu_short_vac = 0;
+  double wane_vac = 0;
+  if (vac_flag) {
+        mu_vac = theta["mu_vac"];
+        mu_short_vac = theta["mu_short_vac"];
+        wane_vac = theta["wane_vac"];
+  }
+
+
   // 3. If not using one of the specific mechanism functions, set the base_function flag to TRUE
   bool base_function = !(alternative_wane_func ||
 			 titre_dependent_boosting ||
 			 strain_dep_boost);
+    
+ //IntegerVector infection_history(number_strains);
+
+
+  IntegerVector individuals_vacc_vec = vaccination_histories[0];
+  IntegerVector vac_flag_vec = vaccination_histories[1];
+  IntegerVector vac_virus_vec = vaccination_histories[2];
+  IntegerVector vac_time_vec = vaccination_histories[3];
 
   // To store calculated titres
   NumericVector predicted_titres(total_titres, min_titre);
   // For each individual
   for (int i = 1; i <= n; ++i) {
     infection_history = infection_history_mat(i-1,_);
+//  vaccination_history = vaccination_history_mat(i-1,_);
+
     indices = infection_history > 0;
     infection_times = circulation_times[indices];
-    // Only solve is this individual has had infections
-    if (infection_times.size() > 0) {
+      
+    LogicalVector indices_vac_individ = individuals_vacc_vec == i;
+    NumericVector vaccination_strains;
+    NumericVector vaccination_times;
+
+    vaccination_strains = vac_virus_vec[indices_vac_individ]; // strain of vaccine
+    vaccination_times = vac_time_vec[indices_vac_individ];     // time vaccine is given
+      
+    // Only solve is this individual has had infections or vaccinations
+    if (infection_times.size() > 0 || vaccination_times.size() > 0) {
+        
+      bool vac_flag_ind = vac_flag_vec[i] == 1;
+      LogicalVector vaccination_strain_indices(number_strains);
+      for (int i = 0; i < number_strains; i++){
+          for (int j = 0; j < vaccination_times.size(); j++){
+              vaccination_strain_indices(i) = circulation_times(i) == vaccination_times[j];
+          }
+      }
       infection_strain_indices_tmp = circulation_times_indices[indices];
+      vaccination_strain_indices_tmp = circulation_times_indices[vaccination_strain_indices];
     
-      index_in_samples = rows_per_indiv_in_samples[i-1];
+      index_in_samples = rows_per_indiv_in_samples[i-1]; // count number of samples taken per individual including runs
       end_index_in_samples = rows_per_indiv_in_samples[i] - 1;
       start_index_in_data = cum_nrows_per_individual_in_data[i-1];
 
@@ -121,11 +163,17 @@ NumericVector titre_data_fast(const NumericVector &theta,
       // ====================================================== //
       // Go to sub function - this is where we have options for different models
       // Note, these are in "boosting_functions.cpp"
+// vac_strain, vac_times, vaccination_strain_indices_tmp
       if (base_function) {
 	titre_data_fast_individual_base(predicted_titres, mu, mu_short,
 					wane, tau,
+                    vac_flag,
+                    vac_flag_ind,
+                    mu_vac, mu_short_vac, wane_vac,
 					infection_times,
 					infection_strain_indices_tmp,
+                    vaccination_times,
+                    vaccination_strain_indices_tmp,
 					measurement_strain_indices,
 					sample_times,
 					index_in_samples,
@@ -188,8 +236,13 @@ NumericVector titre_data_fast(const NumericVector &theta,
       } else {
 	titre_data_fast_individual_base(predicted_titres, mu, mu_short,
 					wane, tau,
+                    vac_flag,
+                    vac_flag_ind,
+                    mu_vac, mu_short_vac, wane_vac,
 					infection_times,
 					infection_strain_indices_tmp,
+                    vaccination_times,
+                    vaccination_strain_indices_tmp,
 					measurement_strain_indices,
 					sample_times,
 					index_in_samples,

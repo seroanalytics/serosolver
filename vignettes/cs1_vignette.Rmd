@@ -31,7 +31,7 @@ This vignette demonstrates only how to reproduce the MCMC chains, simulate data,
 `serosolver` may be installed from github using the `devtools` package. There are a number of additional packages that we need for this analysis.
 ```{r message=FALSE, warning=FALSE, r,eval=TRUE}
 # Required to run serosolver
-devtools::install_github("seroanalytics/serosolver")
+#devtools::install_github("seroanalytics/serosolver")
 library(serosolver)
 library(plyr)
 library(data.table)
@@ -82,12 +82,12 @@ The data used in this analysis are haemagglutination inhibition (HI) titres agai
 input_dat_path <- system.file("extdata", "HKdata_h1n1_unvac.csv", package = "serosolver")
 input_dat <- read.csv(file = input_dat_path, header = TRUE)
 # vaccinated
-# input_dat_path2 <- system.file("extdata", "HKdata_h1n1_vac.csv", package = "serosolver")
-# input_dat_vac <- read.csv(file = input_dat_path2, header = TRUE)
+input_dat_path2 <- system.file("extdata", "HKdata_h1n1_vac.csv", package = "serosolver")
+input_dat_vac <- read.csv(file = input_dat_path2, header = TRUE)
 
 indivs <- unique(input_dat$individual) #all individuals
 
-# Subset data for indivs
+# Subset data for indivss
 titre_dat <- input_dat[input_dat$individual %in% indivs,
                        c("individual","virus","titre","samples","DOB")]
 titre_dat$individual <- match(titre_dat$individual, indivs)
@@ -148,6 +148,7 @@ model_func <- create_posterior_func(par_tab=par_tab,
                             strain_isolation_times = strain_isolation_times,
                             version=prior_version) # function in posteriors.R
 ```
+
 ```{r Run mcmc real, eval=FALSE, include=TRUE}
 ## Generate results in parallel
 res <- foreach(x = filenames, .packages = c('serosolver','data.table','plyr')) %dopar% {
@@ -166,11 +167,12 @@ res <- foreach(x = filenames, .packages = c('serosolver','data.table','plyr')) %
   
   res <- run_MCMC(par_tab = start_tab, 
                   titre_dat = titre_dat,
+                  vac_cal = vac_cal,
                   antigenic_map = NULL,
                   strain_isolation_times = strain_isolation_times,
                   start_inf_hist = start_inf, 
-                  mcmc_pars = c("iterations"=2000000,"popt"=0.44,"popt_hist"=0.44,
-                                "opt_freq"=1000,"thin"=1,"adaptive_period"=500000, 
+                  mcmc_pars = c("iterations"=200000,"popt"=0.44,"popt_hist"=0.44,
+                                "opt_freq"=1000,"thin"=1,"adaptive_period"=50000, 
                                 "save_block"=1000, "thin_hist"=100,"hist_sample_prob"=1,
                                 "switch_sample"=2, "burnin"=0, "inf_propn"=0.5, 
                                 "move_size"=3,"hist_opt"=1,"swap_propn"=0.5,
