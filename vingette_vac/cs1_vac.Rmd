@@ -83,7 +83,7 @@ n_ind <- unique(input_dat$individual) %>% tail(1)
 vaccination_histories <- data.frame("individual" = c(1:n_ind),
                       "vac_flag" = c(rep(0, n_ind_novac), rep(1, n_ind-n_ind_novac)),
                       "virus" = rep(8037, n_ind),
-                      "time" = rep(8042, n_ind)
+                      "time" = rep(8041, n_ind)
 )
 
 vaccination_histories <- vaccination_histories[308:nrow(vaccination_histories),]

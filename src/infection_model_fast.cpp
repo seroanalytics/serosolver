@@ -129,6 +129,8 @@ NumericVector titre_data_fast(const NumericVector &theta,
   // For each individual
   for (int i = 1; i <= n; ++i) {
     infection_history = infection_history_mat(i-1,_);
+//  vaccination_history = vaccination_history_mat(i-1,_);
+
     indices = infection_history > 0;
     infection_times = circulation_times[indices];
       
