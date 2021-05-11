@@ -7,7 +7,6 @@ output: github_document
 ```{r, include = FALSE}
 knitr::opts_chunk$set(
   collapse = TRUE,
-
   comment = "#>",
   fig.path = "man/figures/README-",
   out.width = "100%"
@@ -26,9 +25,8 @@ knitr::opts_chunk$set(
 2. Install the development version of serosolver from [GitHub](https://github.com/seroanalytics/serosolver):
 
 ```{r installation,eval=FALSE}
-#devtools::install_github("seroanalytics/serosolver")
-#install.packages("ggpubr")
-#library(serosolver)
+devtools::install_github("seroanalytics/serosolver")
+library(serosolver)
 ```
 ## Quick start and vignettes
 
@@ -50,30 +48,27 @@ library(serosolver)
 library(plyr)
 library(data.table)
 library(ggplot2)
-library(ggpubr)
-
 
 ## Load in example parameter values and antigenic map
-data(example_par_tab)       # list of parameter values in model
-data(example_antigenic_map) # antigenic map for each strain each year (bedford version?)
+data(example_par_tab)
+data(example_antigenic_map)
 
 ## Get all possible infection times
-strain_isolation_times <- unique(example_antigenic_map$inf_times) # bunch of years
+strain_isolation_times <- unique(example_antigenic_map$inf_times)
 
 ## Vector of strains that have titres (note only one representative strain per time)
-sampled_viruses <- seq(min(strain_isolation_times), max(strain_isolation_times), by=2) # every two years?
+sampled_viruses <- seq(min(strain_isolation_times), max(strain_isolation_times), by=2)
 
 ## Times at which serum samples can be taken
-sampling_times <- 2010:2015 # sampling times when the samples were taken 
+sampling_times <- 2010:2015
 
 ## Number of serum samples taken
-n_samps <- 2 
+n_samps <- 2
 
 ## Simulate some random attack rates
-attack_rates <- runif(length(strain_isolation_times), 0.05, 0.15) # random attack rates
+attack_rates <- runif(length(strain_isolation_times), 0.05, 0.15)
 
 ## Simulate a full serosurvey with these parameters
-## That is simulate infection history, titre, and attack rates using the imported data 
 all_simulated_data <- simulate_data(par_tab=example_par_tab, group=1, n_indiv=50,
                                   strain_isolation_times=strain_isolation_times,
                                   measured_strains=sampled_viruses,
@@ -81,7 +76,6 @@ all_simulated_data <- simulate_data(par_tab=example_par_tab, group=1, n_indiv=50
                                   antigenic_map=example_antigenic_map,
                                   age_min=10,age_max=75,
                                   attack_rates=attack_rates, repeats=2)
-
 
 ## Pull out the simulated titre data and infection histories
 titre_dat <- all_simulated_data$data
@@ -100,9 +94,9 @@ res <- run_MCMC(par_tab, example_titre_dat, example_antigenic_map,
                             save_block=10000,thin=10,thin_hist=100))
 
 ## Read in the MCMC chains and plot posteriors
-chain <- read.csv(res$chain_file) # test_chain.csv in folder
-inf_chain <- data.table::fread(res$history_file) # test_infection_histories.csv in folder
-plot(coda::as.mcmc(chain[chain$sampno > 20000, c("mu","wane","lnlike")]))
+chain <- read.csv(res$chain_file)
+inf_chain <- data.table::fread(res$history_file)
+plot(coda::as.mcmc(chain[chain$sampno > 20000,c("mu","wane","lnlike")]))
 
 # Plot model predicted titres for a subset of individuals
 plot_infection_histories_long(chain = chain,infection_histories = inf_chain,

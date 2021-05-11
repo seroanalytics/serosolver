@@ -237,7 +237,7 @@ prob_mus <- function(mus, pars) {
 #' @param titre_dat the data frame of data to be fitted. Must have columns: group (index of group); individual (integer ID of individual); samples (numeric time of sample taken); virus (numeric time of when the virus was circulating); titre (integer of titre value against the given virus at that sampling time). See \code{\link{example_titre_dat}}
 #' @param antigenic_map (optional) a data frame of antigenic x and y coordinates. Must have column names: x_coord; y_coord; inf_times. See \code{\link{example_antigenic_map}}
 #' @param strain_isolation_times (optional) if no antigenic map is specified, this argument gives the vector of times at which individuals can be infected
-#' @param version which version of the posterior function to solve (corresponds mainly to the infection history prior). Mostly just left to 1, but there is one special case where this should be set to 4 for the gibbs sampler. This is only really used by \code{\link{run_MCMC}} to place the infection history prior on the total number of infections across all years and individuals when version = 4
+#' @param version which infection history assumption version to use? See \code{\link{describe_priors}} for options. Can be 1, 2, 3 or 4
 #' @param solve_likelihood usually set to TRUE. If FALSE, does not solve the likelihood and instead just samples/solves based on the model prior
 #' @param age_mask see \code{\link{create_age_mask}} - a vector with one entry for each individual specifying the first epoch of circulation in which an individual could have been exposed
 #' @param measurement_indices_by_time if not NULL, then use these indices to specify which measurement bias parameter index corresponds to which time
@@ -266,7 +266,6 @@ prob_mus <- function(mus, pars) {
 #' @export
 create_posterior_func <- function(par_tab,
                                   titre_dat,
-                                  vaccination_histories=NULL,
                                   antigenic_map=NULL,
                                   strain_isolation_times=NULL,
                                   version = 1,
@@ -311,7 +310,7 @@ create_posterior_func <- function(par_tab,
     ## Setup data vectors and extract
     setup_dat <- setup_titredat_for_posterior_func(
         titre_dat_unique, antigenic_map, 
-        strain_isolation_times, # when the tested strains were isolated
+        strain_isolation_times,
         age_mask, n_alive
     )
 
@@ -334,13 +333,7 @@ create_posterior_func <- function(par_tab,
     strain_mask <- setup_dat$strain_mask
     n_indiv <- setup_dat$n_indiv
     DOBs <- setup_dat$DOBs
-    
-    vaccination_histories <- vaccination_histories
-    # setup_dat_vac <- setup_vaccdat_for_posterior_func(
-    #     vaccination_histories, antigenic_map,
-    #      strain_isolation_times, # when the tested strains were isolated
-    #      age_mask, n_alive
-    #  )
+
 
 #########################################################
     ## Extract parameter type indices from par_tab, to split up
@@ -419,7 +412,7 @@ create_posterior_func <- function(par_tab,
 
             ## Calculate titres for measured data
             y_new <- titre_data_fast(
-            theta, infection_history_mat, vaccination_histories, strain_isolation_times, infection_strain_indices,
+                theta, infection_history_mat, strain_isolation_times, infection_strain_indices,
                 sample_times, rows_per_indiv_in_samples, cum_nrows_per_individual_in_data,
                 nrows_per_blood_sample, measured_strain_indices,
                 antigenic_map_long,
@@ -479,7 +472,7 @@ create_posterior_func <- function(par_tab,
         n_infected_group <- c(0, 0)
         ## Generate prior lookup table
         lookup_tab <- create_prior_lookup(titre_dat, strain_isolation_times, alpha, beta)
-        
+
         ## Use the original gibbs proposal function if no titre immunity
         f <- function(pars, infection_history_mat,
                       probs, sampled_indivs,
@@ -513,12 +506,9 @@ create_posterior_func <- function(par_tab,
             n_infections <- sum_infections_by_group(infection_history_mat, group_id_vec, n_groups)
             if (version == 4) n_infected_group <- rowSums(n_infections)
             ## Now pass to the C++ function
-            
-            
             res <- inf_hist_prop_prior_v2_and_v4(
                 theta,
                 infection_history_mat,
-                vaccination_histories,
                 probs,
                 sampled_indivs,
                 n_infs,
@@ -580,7 +570,7 @@ create_posterior_func <- function(par_tab,
             antigenic_map_short <- create_cross_reactivity_vector(antigenic_map_melted, theta["sigma2"])
 
             y_new <- titre_data_fast(
-                theta, infection_history_mat, vaccination_histories, strain_isolation_times, infection_strain_indices,
+                theta, infection_history_mat, strain_isolation_times, infection_strain_indices,
                 sample_times, rows_per_indiv_in_samples, cum_nrows_per_individual_in_data,
                 nrows_per_blood_sample, measured_strain_indices, antigenic_map_long,
                 antigenic_map_short,

@@ -162,7 +162,6 @@ arma::mat inf_hist_prop_prior_v3(arma::mat infection_history_mat,
 // [[Rcpp::export]]
 List inf_hist_prop_prior_v2_and_v4(const NumericVector &theta, // Model parameters
 				   const IntegerMatrix &infection_history_mat,  // Current infection history
-                   const DataFrame &vaccination_histories,  // Current infection history
 				   const NumericVector &old_probs_1,
 				   const IntegerVector &sampled_indivs,
 				   const IntegerVector &n_years_samp_vec,
@@ -206,7 +205,6 @@ List inf_hist_prop_prior_v2_and_v4(const NumericVector &theta, // Model paramete
 				   const double temp=1,
 				   bool solve_likelihood=true				   
 				   ){
-
   // ########################################################################
   // Parameters to control indexing of data
   IntegerMatrix new_infection_history_mat(infection_history_mat); // Can this be avoided? Create a copy of the inf hist matrix
@@ -326,22 +324,6 @@ List inf_hist_prop_prior_v2_and_v4(const NumericVector &theta, // Model paramete
   bool strain_dep_boost = false;
   if (mus.size() > 1) {
     strain_dep_boost = true;    
-  }
-    
-  int vac_flag_int = theta["vac_flag"];
-  bool vac_flag = vac_flag_int == 1;
-  double mu_vac;
-  double mu_short_vac;
-  double wane_vac;
-  if (vac_flag) {
-        mu_vac = theta["mu_vac"];
-        mu_short_vac = theta["mu_short_vac"];
-        wane_vac = theta["wane_vac"];
-  }
-  else{
-      mu_vac = 0;
-      mu_short_vac =  0;
-      wane_vac = 0;
   }
 
  
@@ -546,47 +528,16 @@ List inf_hist_prop_prior_v2_and_v4(const NumericVector &theta, // Model paramete
 	// Calculate likelihood!
 	indices = new_infection_history > 0;
 	infection_times = circulation_times[indices];
-    IntegerVector vaccination_strain_indices_tmp;
-          
-    IntegerVector individuals_vacc_vec = vaccination_histories[0];
-    IntegerVector vac_flag_vec = vaccination_histories[1];
-    IntegerVector vac_virus_vec = vaccination_histories[2];
-    IntegerVector vac_time_vec = vaccination_histories[3];
-     
-    LogicalVector indices_vac_individ = individuals_vacc_vec == i;
-    NumericVector vaccination_strains;
-    NumericVector vaccination_times;
-          
-    bool vac_flag_ind = vac_flag_vec[i] == 1;
 
-    vaccination_strains = vac_virus_vec[indices_vac_individ]; // strain of vaccine
-    vaccination_times = vac_time_vec[indices_vac_individ];     // time vaccine is given
-    
-    LogicalVector vaccination_strain_indices(number_strains);
-    for (int ii = 0; ii < number_strains; ii++){
-        for (int jj = 0; jj < vaccination_strains.size(); jj++){
-            vaccination_strain_indices(ii) = circulation_times(ii) == vaccination_strains[jj];
-        }
-    }
-
-	infection_strain_indices_tmp = circulation_times_indices[indices];
-    vaccination_strain_indices_tmp = circulation_times_indices[vaccination_strain_indices];
-
-
-
+	infection_strain_indices_tmp = circulation_times_indices[indices];	  
 	// ====================================================== //
 	// =============== CHOOSE MODEL TO SOLVE =============== //
 	// ====================================================== //
 	if (base_function) {
 	  titre_data_fast_individual_base(predicted_titres, mu, mu_short,
 					  wane, tau,
-                      vac_flag,
-                      vac_flag_ind,
-                      mu_vac, mu_short_vac, wane_vac,
 					  infection_times,
 					  infection_strain_indices_tmp,
-                      vaccination_times,
-                      vaccination_strain_indices_tmp,
 					  measurement_strain_indices,
 					  sample_times,
 					  index_in_samples,
@@ -649,13 +600,8 @@ List inf_hist_prop_prior_v2_and_v4(const NumericVector &theta, // Model paramete
 	} else {
 	  titre_data_fast_individual_base(predicted_titres, mu, mu_short,
 					  wane, tau,
-                      vac_flag,
-                      vac_flag_ind,
-                      mu_vac, mu_short_vac, wane_vac,
 					  infection_times,
 					  infection_strain_indices_tmp,
-                      vaccination_times,
-                      vaccination_strain_indices_tmp,
 					  measurement_strain_indices,
 					  sample_times,
 					  index_in_samples,
