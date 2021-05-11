@@ -335,8 +335,9 @@ create_posterior_func <- function(par_tab,
     n_indiv <- setup_dat$n_indiv
     DOBs <- setup_dat$DOBs
     
-    if(is.null(vaccination_histories))
+    if(is.null(vaccination_histories)){
       vaccination_histories <- data.frame()
+    }
 
   #  vaccination_histories <- vaccination_histories
     # setup_dat_vac <- setup_vaccdat_for_posterior_func(
