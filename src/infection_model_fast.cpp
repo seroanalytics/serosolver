@@ -26,7 +26,7 @@
 // [[Rcpp::export(rng = false)]]
 NumericVector titre_data_fast(const NumericVector &theta,
 			      const IntegerMatrix &infection_history_mat,
-                  const DataFrame &vaccination_histories,
+            const DataFrame &vaccination_histories,
 			      const NumericVector &circulation_times,
 			      const IntegerVector &circulation_times_indices,
 			      const NumericVector &sample_times,
