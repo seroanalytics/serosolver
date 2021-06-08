@@ -34,8 +34,10 @@ NumericVector titre_data_fast(const NumericVector &theta,
 			      const IntegerVector &cum_nrows_per_individual_in_data, // How many rows in the titre data correspond to each individual?
 			      const IntegerVector &nrows_per_blood_sample, // Split the sample times and runs for each individual
 			      const IntegerVector &measurement_strain_indices, // For each titre measurement, corresponding entry in antigenic map
-			      const NumericVector &antigenic_map_long,
+			      const NumericVector &antigenic_map_long, // add in antigenic_map_long_vac ?
 			      const NumericVector &antigenic_map_short,
+            const NumericVector &antigenic_map_long_vac, 
+			      const NumericVector &antigenic_map_short_vac,
 			      const NumericVector &antigenic_distances,	// Currently not doing anything, but has uses for model extensions		      
 			      const NumericVector &mus,
 			      const IntegerVector &boosting_vec_indices,
@@ -57,8 +59,10 @@ NumericVector titre_data_fast(const NumericVector &theta,
   
   NumericVector infection_times;
   IntegerVector infection_strain_indices_tmp;
+  LogicalVector vac_flag_ind;
+  NumericVector vaccination_times;
   IntegerVector vaccination_strain_indices_tmp;
-
+  NumericVector vaccinations_previous;
 
   // ====================================================== //
   // =============== SETUP MODEL PARAMETERS =============== //
@@ -104,10 +108,12 @@ NumericVector titre_data_fast(const NumericVector &theta,
   double mu_vac = 0;
   double mu_short_vac = 0;
   double wane_vac = 0;
+  double tau_prev_vac = 0;
   if (vac_flag) {
         mu_vac = theta["mu_vac"];
         mu_short_vac = theta["mu_short_vac"];
         wane_vac = theta["wane_vac"];
+        tau_prev_vac = theta["tau_prev_vac"];
   }
 
 
@@ -117,43 +123,71 @@ NumericVector titre_data_fast(const NumericVector &theta,
 			 strain_dep_boost);
     
  //IntegerVector infection_history(number_strains);
+    IntegerVector individuals_vacc_vec;
+    IntegerVector vac_virus_vec;
+    IntegerVector vac_time_vec;
+    IntegerVector vac_flag_vec;
+    IntegerVector prev_vac_vec;
 
+    if (vac_flag) { 
+      individuals_vacc_vec = vaccination_histories[0];
+      vac_virus_vec = vaccination_histories[1];
+      vac_time_vec = vaccination_histories[2];
+      vac_flag_vec = vaccination_histories[3];
+      prev_vac_vec = vaccination_histories[4];
+    } else {
+      individuals_vacc_vec = 0;
+      vac_virus_vec = 0;
+      vac_time_vec = 0;
+      vac_flag_vec = 0;
+      prev_vac_vec = 0;
+    }
 
-  IntegerVector individuals_vacc_vec = vaccination_histories[0];
-  IntegerVector vac_flag_vec = vaccination_histories[1];
-  IntegerVector vac_virus_vec = vaccination_histories[2];
-  IntegerVector vac_time_vec = vaccination_histories[3];
 
   // To store calculated titres
+  
   NumericVector predicted_titres(total_titres, min_titre);
-  // For each individual
+  // For each individual (n number of individuals)
   for (int i = 1; i <= n; ++i) {
     infection_history = infection_history_mat(i-1,_);
 //  vaccination_history = vaccination_history_mat(i-1,_);
 
     indices = infection_history > 0;
     infection_times = circulation_times[indices];
-      
-    LogicalVector indices_vac_individ = individuals_vacc_vec == i;
-    NumericVector vaccination_strains;
-    NumericVector vaccination_times;
+    
+  if (vac_flag) { 
+      LogicalVector indices_vac_individ = individuals_vacc_vec == i;
+      NumericVector vac_virus_vec_ind;
+      NumericVector vac_time_vec_ind;
+      NumericVector prev_vac_ind;
 
-    vaccination_strains = vac_virus_vec[indices_vac_individ]; // strain of vaccine
-    vaccination_times = vac_time_vec[indices_vac_individ];     // time vaccine is given
-      
+      NumericVector vaccination_strains;
+      LogicalVector indices_vac;
+
+
+      vac_virus_vec_ind = vac_virus_vec[indices_vac_individ]; // length of total ind
+      vac_time_vec_ind = vac_time_vec[indices_vac_individ];    // length of total ind
+      vac_flag_ind = vac_flag_vec[indices_vac_individ];     // length of total ind
+      prev_vac_ind = prev_vac_vec[indices_vac_individ];     // length of total ind
+
+
+      vaccination_strains = vac_virus_vec_ind[vac_flag_ind]; // just length of vac
+      vaccination_times = vac_time_vec_ind[vac_flag_ind];     // just length of vac
+      vaccinations_previous = prev_vac_ind[vac_flag_ind];
+      indices_vac = vac_flag_ind > 0;
+      vaccination_strain_indices_tmp = circulation_times_indices[vac_flag_ind];
+    } else { 
+      vac_flag_ind = 0;
+      vaccination_times = 0;
+      vaccination_strain_indices_tmp = 0;
+      vaccinations_previous = 0;
+    }
+  
+
     // Only solve is this individual has had infections or vaccinations
     if (infection_times.size() > 0 || vaccination_times.size() > 0) {
-        
-      bool vac_flag_ind = vac_flag_vec[i] == 1;
-      LogicalVector vaccination_strain_indices(number_strains);
-      for (int i = 0; i < number_strains; i++){
-          for (int j = 0; j < vaccination_times.size(); j++){
-              vaccination_strain_indices(i) = circulation_times(i) == vaccination_times[j];
-          }
-      }
       infection_strain_indices_tmp = circulation_times_indices[indices];
-      vaccination_strain_indices_tmp = circulation_times_indices[vaccination_strain_indices];
-    
+
       index_in_samples = rows_per_indiv_in_samples[i-1]; // count number of samples taken per individual including runs
       end_index_in_samples = rows_per_indiv_in_samples[i] - 1;
       start_index_in_data = cum_nrows_per_individual_in_data[i-1];
@@ -169,11 +203,12 @@ NumericVector titre_data_fast(const NumericVector &theta,
 					wane, tau,
                     vac_flag,
                     vac_flag_ind,
-                    mu_vac, mu_short_vac, wane_vac,
+                    mu_vac, mu_short_vac, wane_vac, tau_prev_vac,
 					infection_times,
 					infection_strain_indices_tmp,
                     vaccination_times,
                     vaccination_strain_indices_tmp,
+                    vaccinations_previous,
 					measurement_strain_indices,
 					sample_times,
 					index_in_samples,
@@ -183,6 +218,8 @@ NumericVector titre_data_fast(const NumericVector &theta,
 					number_strains,
 					antigenic_map_short,
 					antigenic_map_long,
+          antigenic_map_short_vac,
+					antigenic_map_long_vac,
 					boost_before_infection);
       } else if (titre_dependent_boosting) {
 	titre_data_fast_individual_titredep(predicted_titres, mu, mu_short,
@@ -238,11 +275,12 @@ NumericVector titre_data_fast(const NumericVector &theta,
 					wane, tau,
                     vac_flag,
                     vac_flag_ind,
-                    mu_vac, mu_short_vac, wane_vac,
+                    mu_vac, mu_short_vac, wane_vac, tau_prev_vac,
 					infection_times,
 					infection_strain_indices_tmp,
                     vaccination_times,
                     vaccination_strain_indices_tmp,
+                    vaccinations_previous,
 					measurement_strain_indices,
 					sample_times,
 					index_in_samples,
@@ -252,6 +290,8 @@ NumericVector titre_data_fast(const NumericVector &theta,
 					number_strains,
 					antigenic_map_short,
 					antigenic_map_long,
+          antigenic_map_short_vac,
+					antigenic_map_long_vac,
 					boost_before_infection);
       }
      

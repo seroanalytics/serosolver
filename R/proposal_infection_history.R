@@ -19,23 +19,23 @@
 #' strain_mask <- create_strain_mask(example_titre_dat, times)
 #' new_inf_hist <- inf_hist_swap(example_inf_hist, age_mask,strain_mask, 1,3)[[1]]
 #' @export
-inf_hist_swap <- function(infection_history, age_mask, strain_mask, swap_propn, move_size, proposal_ratios=NULL) {
+inf_hist_swap <- function(infection_history, vaccination_histories_mat, age_mask, strain_mask, swap_propn, move_size, proposal_ratios=NULL) {
     use_ratios <- NULL
     if(!is.null(proposal_ratios)){
-        use_ratios <- proposal_ratios/sum(proposal_ratios)
+        use_ratios <- proposal_ratios / sum(proposal_ratios)
     }
         
     ## Choose a column
-    y1 <- sample(1:ncol(infection_history), 1, prob=use_ratios)
+    y1 <- sample(1:ncol(infection_history), 1, prob = use_ratios) # this is a time point j
 
     ## Propose another column some random distance, but not 0, away
     move <- 0
-    while (move == 0) move <- sample((-move_size):move_size, 1)
+    while (move == 0) move <- sample((-move_size):move_size, 1) # propose a new point move away
 
     ## Need to adjust if we've proposed too far away
     y2 <- y1 + move
     if(y2 < 1) y2 = -y2 + 2
-    if(y2 > ncol(infection_history)) y2 = ncol(infection_history) - y2 + ncol(infection_history)
+    if(y2 > ncol(infection_history)) y2 = ncol(infection_history) - y2 + ncol(infection_history) # adjustements
     
     ##while (y2 < 1) y2 <- y2 + ncol(infection_history)
     ##while(y2 > ncol(infection_history)) y2 <- y2 - ncol(infection_history)
@@ -48,6 +48,9 @@ inf_hist_swap <- function(infection_history, age_mask, strain_mask, swap_propn, 
     ## the number that are actually able to be infected in both years
     indivs <- 1:nrow(infection_history)
     alive_indivs <- indivs[intersect(which(age_mask <= small_year), which(strain_mask >= big_year))]
+    # if either y1 or y2 for a person is a vaccination year then need to stop the swap happening, of those alive individuals
+    vac_times <- union(which(vaccination_histories_mat[, y1] == 1), which(vaccination_histories_mat[, y2] == 1))
+    alive_indivs <- setdiff(alive_indivs, vac_times)
     samp_indivs <- sample(alive_indivs, floor(length(alive_indivs) * swap_propn))
 
     ## Swap contents

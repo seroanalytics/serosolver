@@ -54,6 +54,7 @@
 run_MCMC <- function(par_tab,
                      titre_dat,
                      vaccination_histories=NULL,
+                     vaccination_histories_mat=NULL,
                      antigenic_map=NULL,
                      strain_isolation_times=NULL,
                      mcmc_pars = c(),
@@ -85,7 +86,8 @@ run_MCMC <- function(par_tab,
     "hist_switch_prob" = 0, "year_swap_propn" = 1, "propose_from_prior"=TRUE
   )
     mcmc_pars_used[names(mcmc_pars)] <- mcmc_pars
-
+    ##vaccination_histories_mat <- make_vac_matrix(vaccination_histories)
+    ##vaccination_histories_mat <- 1
     ## Extract MCMC parameters
     iterations <- mcmc_pars_used["iterations"] # How many iterations to run after adaptive period
     popt <- mcmc_pars_used["popt"] # Desired optimal acceptance rate
@@ -238,6 +240,7 @@ run_MCMC <- function(par_tab,
   posterior_simp <- protect(CREATE_POSTERIOR_FUNC(par_tab,
     titre_dat,
     vaccination_histories,
+    vaccination_histories_mat,
     antigenic_map,
     strain_isolation_times,
     version=version,
@@ -259,9 +262,10 @@ run_MCMC <- function(par_tab,
     proposal_gibbs <- protect(CREATE_POSTERIOR_FUNC(par_tab,
       titre_dat,
       vaccination_histories,
+      vaccination_histories_mat,
       antigenic_map,
       strain_isolation_times,
-      version=version,
+      version = version,
       solve_likelihood,
       age_mask,
       measurement_indices_by_time = measurement_indices,
@@ -430,6 +434,7 @@ run_MCMC <- function(par_tab,
       
       ## Calculate new likelihood for these parameters
       tmp_new_posteriors <- posterior_simp(proposal, infection_histories)
+
       new_indiv_likelihoods <- tmp_new_posteriors[[1]] / temp # For each individual
       new_indiv_priors <- tmp_new_posteriors[[2]]
       new_indiv_posteriors <- new_indiv_likelihoods + new_indiv_priors
@@ -477,6 +482,7 @@ run_MCMC <- function(par_tab,
             }
             ## Gibbs sampler version, integrate out phi
         } else if (hist_proposal == 2) {
+            # vaccination_histories_mat
             ## Swap entire contents or propose new
             if (inf_swap_prob > hist_switch_prob) {
                 prop_gibbs <- proposal_gibbs(
@@ -507,6 +513,7 @@ run_MCMC <- function(par_tab,
             } else {
                 tmp <- inf_hist_swap(
                     infection_histories,
+                    vaccination_histories_mat,
                     age_mask, strain_mask,
                     year_swap_propn, move_size
                 )

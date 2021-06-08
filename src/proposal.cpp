@@ -162,7 +162,8 @@ arma::mat inf_hist_prop_prior_v3(arma::mat infection_history_mat,
 // [[Rcpp::export]]
 List inf_hist_prop_prior_v2_and_v4(const NumericVector &theta, // Model parameters
 				   const IntegerMatrix &infection_history_mat,  // Current infection history
-                   const DataFrame &vaccination_histories,  // Current infection history
+           const DataFrame &vaccination_histories,  // Current vaccination history
+          IntegerMatrix vaccination_histories_mat,  // Current vaccination history
 				   const NumericVector &old_probs_1,
 				   const IntegerVector &sampled_indivs,
 				   const IntegerVector &n_years_samp_vec,
@@ -188,6 +189,8 @@ List inf_hist_prop_prior_v2_and_v4(const NumericVector &theta, // Model paramete
 				   const IntegerVector &measurement_strain_indices, // For each titre measurement, corresponding entry in antigenic map
 				   const NumericVector &antigenic_map_long, 
 				   const NumericVector &antigenic_map_short,
+           const NumericVector &antigenic_map_long_vac, 
+				   const NumericVector &antigenic_map_short_vac,
 				   const NumericVector &antigenic_distances,
 				   const NumericVector &data,
 				   const NumericVector &repeat_data,
@@ -333,15 +336,18 @@ List inf_hist_prop_prior_v2_and_v4(const NumericVector &theta, // Model paramete
   double mu_vac;
   double mu_short_vac;
   double wane_vac;
+  double tau_prev_vac;
   if (vac_flag) {
-        mu_vac = theta["mu_vac"];
-        mu_short_vac = theta["mu_short_vac"];
-        wane_vac = theta["wane_vac"];
+      mu_vac = theta["mu_vac"];
+      mu_short_vac = theta["mu_short_vac"];
+      wane_vac = theta["wane_vac"];
+      tau_prev_vac = theta["tau_prev_vac"];
   }
   else{
       mu_vac = 0;
       mu_short_vac =  0;
       wane_vac = 0;
+      tau_prev_vac = 0;
   }
 
  
@@ -355,17 +361,68 @@ List inf_hist_prop_prior_v2_and_v4(const NumericVector &theta, // Model paramete
   if(titre_shifts.size() == n_titres_total) use_titre_shifts = true;
   // ########################################################################
   // For each individual
+  LogicalVector vac_flag_ind;
+  NumericVector vaccination_times;
+  NumericVector vaccinations_previous;
+  IntegerVector vaccination_strain_indices_tmp;
+          
+  IntegerVector individuals_vacc_vec;
+  IntegerVector vac_virus_vec;
+  IntegerVector vac_time_vec;
+  IntegerVector vac_flag_vec;
+  IntegerVector prev_vac_vec;
+  NumericVector vac_virus_vec_ind;
+  NumericVector vac_time_vec_ind;
+  NumericVector vaccination_strains;
+  LogicalVector indices_vac;
+  NumericVector prev_vac_ind;
+
+  if (vac_flag) { 
+    individuals_vacc_vec = vaccination_histories[0];
+    vac_virus_vec = vaccination_histories[1];
+    vac_time_vec = vaccination_histories[2];
+    vac_flag_vec = vaccination_histories[3];
+    prev_vac_vec = vaccination_histories[4];
+    
+  } else {
+    individuals_vacc_vec = 0;
+    vac_virus_vec = 0;
+    vac_time_vec = 0;
+    vac_flag_vec = 0;
+    prev_vac_vec = 0;
+  }
+  
   for(int i = 0; i < n_sampled; ++i){
     // Which proposal step to take and do we need to calculate the likelihood    
     swap_step_option = R::runif(0,1) < swap_propn;
     
     // Get index, group and current likelihood of individual under consideration
     indiv = sampled_indivs[i]-1;
-    //Rcpp::Rcout << "Indiv: " << indiv << std::endl;
-    //Rcpp::Rcout << "Age mask: " << age_mask[indiv]-1 << std::endl;
-    //Rcpp::Rcout << "Strain mask: " << strain_mask[indiv]-1 << std::endl;
-    group_id = group_id_vec[indiv];
-    old_prob = old_probs_1[indiv];
+
+    if (vac_flag) { 
+      LogicalVector indices_vac_individ = individuals_vacc_vec == sampled_indivs[i];
+
+      vac_virus_vec_ind = vac_virus_vec[indices_vac_individ]; // length of total ind
+      vac_time_vec_ind = vac_time_vec[indices_vac_individ];    // length of total ind
+      vac_flag_ind = vac_flag_vec[indices_vac_individ];     // length of total ind
+      prev_vac_ind = prev_vac_vec[indices_vac_individ];     // length of total ind
+
+
+      vaccination_strains = vac_virus_vec_ind[vac_flag_ind]; // just length of vac
+      vaccination_times = vac_time_vec_ind[vac_flag_ind];     // just length of vac
+      vaccinations_previous = prev_vac_ind[vac_flag_ind];
+      indices_vac = vac_flag_ind > 0;
+      vaccination_strain_indices_tmp = circulation_times_indices[vac_flag_ind];
+    } else { 
+      vac_flag_ind = 0;
+      vaccination_times = 0;
+      vaccination_strain_indices_tmp = 0;
+      vaccinations_previous = 0;
+    }
+    // indiv <- individual number
+
+    group_id = group_id_vec[indiv]; //just 1
+    old_prob = old_probs_1[indiv]; // current likelihood for this individual
     // Indexing for data upkeep
     index_in_samples = rows_per_indiv_in_samples[indiv];
     end_index_in_samples = rows_per_indiv_in_samples[indiv+1] - 1;
@@ -374,33 +431,50 @@ List inf_hist_prop_prior_v2_and_v4(const NumericVector &theta, // Model paramete
     end_index_in_data = cum_nrows_per_individual_in_data[indiv+1]-1;
     
     // Time sampling control
-    n_years_samp = n_years_samp_vec[indiv]; // How many times are we intending to resample for this individual?
+    n_years_samp = n_years_samp_vec[indiv]; // How many times are we intending to resample for this individual? just 1?
     n_samp_length  = strain_mask[indiv] - age_mask[indiv] + 1; // How many times maximum can we sample from?
     // If swap step, only doing one proposal for this individual
     if(swap_step_option){
-      n_samp_max = 1;
+      n_samp_max = 1; // one swap here
       // Get this individual's infection history
       new_infection_history = new_infection_history_mat(indiv,_);
     } else {
       // Sample n_samp_length. Ths will be used to pull years from sample_years
-      n_samp_max = std::min(n_years_samp, n_samp_length); // Use the smaller of these two numbers
+      n_samp_max = std::min(n_years_samp, n_samp_length); // Use the smaller of these two numbers, potentially multiple swaps
     }
     samps = seq(0, n_samp_length-1);    // Create vector from 0:length of alive years
-
     // Extract time sampling probabilities and re-normalise
     samps_shifted = samps + age_mask[indiv] - 1;
+   // samps_shifted // guna be a load of numbers 
+    IntegerVector vac_times = vaccination_histories_mat(indiv, _);
+    IntegerVector samps_vec;
+    for (int k = 0; k < vac_times.size(); k++) {
+      if(vac_times[k] == 1) {
+        samps_vec.push_back(k);
+      }
+    }
+    //IntegerVector samps_vec = R::which(vac_times == 1);
+    samps_shifted = setdiff(samps_shifted, samps_vec); /// remove possibility of having an infection the same yr as vac
+    samps = samps_shifted - (age_mask[indiv] - 1);
     tmp_loc_sample_probs = time_sample_probs[samps_shifted];
     // Re-normalise
-    tmp_loc_sample_probs = tmp_loc_sample_probs/sum(tmp_loc_sample_probs);
-    /*        Rcpp::Rcout << "Indiv: " << indiv << std::endl;
-    Rcpp::Rcout << "Age mask: " << age_mask[indiv] << std::endl;
-    Rcpp::Rcout << "n_samp_length: " << n_samp_length << std::endl;
-    Rcpp::Rcout << "Samps: " << samps << std::endl;
-    Rcpp::Rcout << "Samps shifted: " << samps_shifted << std::endl;
-    Rcpp::Rcout << "Loc sample prob length: " << tmp_loc_sample_probs.size() << std::endl;
-    Rcpp::Rcout << "Tmp loc samples: " << tmp_loc_sample_probs << std::endl;
-    Rcpp::Rcout << "Scaled samps: " << sum(tmp_loc_sample_probs) << std::endl;
-    */
+    tmp_loc_sample_probs = tmp_loc_sample_probs / sum(tmp_loc_sample_probs);
+    //       Rcpp::Rcout << "Indiv: " << indiv << std::endl;
+   // Rcpp::Rcout << "n_samp_length: " << n_samp_length << std::endl;
+  //  Rcpp::Rcout << "Samps: " << samps << std::endl;
+//Rcpp::Rcout << "Samps shifted: " << samps_shifted << std::endl;
+  //  Rcpp::Rcout << "Loc sample prob length: " << tmp_loc_sample_probs.size() << std::endl;
+ //   Rcpp::Rcout << "Tmp loc samples: " << tmp_loc_sample_probs << std::endl;
+ //   Rcpp::Rcout << "Scaled samps: " << sum(tmp_loc_sample_probs) << std::endl;
+  
+    // think this is what needs to be changed 
+   // Rcpp::Rcout << samps.size() << std::endl;
+   // Rcpp::Rcout << tmp_loc_sample_probs.size() << std::endl;
+   // Rcpp::Rcout << n_samp_max << std::endl;
+    if (n_samp_max > samps.size()) { 
+      n_samp_max = samps.size() - 1;
+    }
+
     locs = RcppArmadillo::sample(samps, n_samp_max, FALSE, tmp_loc_sample_probs);
     // For each selected infection history entry
     for(int j = 0; j < n_samp_max; ++j){
@@ -417,7 +491,12 @@ List inf_hist_prop_prior_v2_and_v4(const NumericVector &theta, // Model paramete
       prior_old = prior_new = 0;
       if(swap_step_option){
 	loc1 = locs[j]; // Choose a location from age_mask to strain_mask
-	loc2 = loc1 + floor(R::runif(-swap_distance,swap_distance+1));
+  int loc2_inc = j + floor(R::runif(-swap_distance,swap_distance+1));
+	//if(loc2 < 0) loc2 = -loc2;
+	//if(loc2 >= n_samp_length) loc2 = n_samp_length - loc2 + n_samp_length - 2;
+	if(loc2_inc < 0) loc2_inc = -loc2_inc;
+	if(loc2_inc >= n_samp_max) loc2_inc = n_samp_max - loc2_inc + n_samp_max - 2;
+	loc2 = locs[loc2_inc];
 
 	// If we have gone too far left or right, reflect at the boundaries
 	/*
@@ -431,8 +510,7 @@ List inf_hist_prop_prior_v2_and_v4(const NumericVector &theta, // Model paramete
 	}
 	*/
 	// Try bounce rather than reflect to other side
-	if(loc2 < 0) loc2 = -loc2;
-	if(loc2 >= n_samp_length) loc2 = n_samp_length - loc2 + n_samp_length - 2;
+
 
 	
 	// Get onto right scale (starting at age mask)
@@ -487,7 +565,7 @@ List inf_hist_prop_prior_v2_and_v4(const NumericVector &theta, // Model paramete
 	//Rcpp::Rcout << "Add/remove" << std::endl;
 	year = locs[j] + age_mask[indiv] - 1;
 	old_entry = new_infection_history(year);
-	overall_add_proposals(indiv,year)++;
+	overall_add_proposals(indiv, year)++;
 	//Rcpp::Rcout << "Year: " << year << std::endl;
 	//Rcpp::Rcout << "Old entry: " << old_entry << std::endl;
 	if(!prior_on_total){	
@@ -544,35 +622,10 @@ List inf_hist_prop_prior_v2_and_v4(const NumericVector &theta, // Model paramete
       ////////////////////////
       if(solve_likelihood && lik_changed){
 	// Calculate likelihood!
-	indices = new_infection_history > 0;
-	infection_times = circulation_times[indices];
-    IntegerVector vaccination_strain_indices_tmp;
-          
-    IntegerVector individuals_vacc_vec = vaccination_histories[0];
-    IntegerVector vac_flag_vec = vaccination_histories[1];
-    IntegerVector vac_virus_vec = vaccination_histories[2];
-    IntegerVector vac_time_vec = vaccination_histories[3];
-     
-    LogicalVector indices_vac_individ = individuals_vacc_vec == i;
-    NumericVector vaccination_strains;
-    NumericVector vaccination_times;
-          
-    bool vac_flag_ind = vac_flag_vec[i] == 1;
-
-    vaccination_strains = vac_virus_vec[indices_vac_individ]; // strain of vaccine
-    vaccination_times = vac_time_vec[indices_vac_individ];     // time vaccine is given
-    
-    LogicalVector vaccination_strain_indices(number_strains);
-    for (int ii = 0; ii < number_strains; ii++){
-        for (int jj = 0; jj < vaccination_strains.size(); jj++){
-            vaccination_strain_indices(ii) = circulation_times(ii) == vaccination_strains[jj];
-        }
-    }
-
-	infection_strain_indices_tmp = circulation_times_indices[indices];
-    vaccination_strain_indices_tmp = circulation_times_indices[vaccination_strain_indices];
-
-
+	  indices = new_infection_history > 0;
+	  infection_times = circulation_times[indices];
+    infection_strain_indices_tmp = circulation_times_indices[indices];
+  
 
 	// ====================================================== //
 	// =============== CHOOSE MODEL TO SOLVE =============== //
@@ -582,11 +635,12 @@ List inf_hist_prop_prior_v2_and_v4(const NumericVector &theta, // Model paramete
 					  wane, tau,
                       vac_flag,
                       vac_flag_ind,
-                      mu_vac, mu_short_vac, wane_vac,
+                      mu_vac, mu_short_vac, wane_vac, tau_prev_vac,
 					  infection_times,
 					  infection_strain_indices_tmp,
                       vaccination_times,
                       vaccination_strain_indices_tmp,
+                       vaccinations_previous,
 					  measurement_strain_indices,
 					  sample_times,
 					  index_in_samples,
@@ -596,6 +650,8 @@ List inf_hist_prop_prior_v2_and_v4(const NumericVector &theta, // Model paramete
 					  number_strains,
 					  antigenic_map_short,
 					  antigenic_map_long,
+            antigenic_map_short_vac,
+					  antigenic_map_long_vac,
 					  false);	  
 	} else if (titre_dependent_boosting) {
 	  titre_data_fast_individual_titredep(predicted_titres, mu, mu_short,
@@ -651,11 +707,12 @@ List inf_hist_prop_prior_v2_and_v4(const NumericVector &theta, // Model paramete
 					  wane, tau,
                       vac_flag,
                       vac_flag_ind,
-                      mu_vac, mu_short_vac, wane_vac,
+                      mu_vac, mu_short_vac, wane_vac, tau_prev_vac,
 					  infection_times,
 					  infection_strain_indices_tmp,
                       vaccination_times,
                       vaccination_strain_indices_tmp,
+                      vaccinations_previous,
 					  measurement_strain_indices,
 					  sample_times,
 					  index_in_samples,
@@ -665,6 +722,8 @@ List inf_hist_prop_prior_v2_and_v4(const NumericVector &theta, // Model paramete
 					  number_strains,
 					  antigenic_map_short,
 					  antigenic_map_long,
+            antigenic_map_short_vac,
+					  antigenic_map_long_vac,
 					  false);
 	}
 	//}
