@@ -144,15 +144,16 @@ void titre_data_fast_individual_base(NumericVector &predicted_titres,
         ++n_vac;
         if((boost_before_infection && sampling_time > vaccination_times[x_vac]) ||
           (!boost_before_infection && sampling_time >= vaccination_times[x_vac])){
-
+            double mu_vac_t = 1.0 / (1.0 + exp(-mu_vac));
+            double tau_prev_vac_t = 3.0 / (1.0 + exp(-tau_prev_vac));
             time = sampling_time - vaccination_times[x_vac]; // Time er vaccination
             wane_amount_vac = MAX(0, 1.0 - (wane*time*wane_vac)); // Basic waning function
-            seniority = MAX(0, 1.0 - tau_prev_vac*tau*(n_inf + n_vac - 1.0)); // Antigenic seniority
+            seniority = MAX(0, 1.0 - tau_prev_vac_t*tau*(n_inf + n_vac - 1.0)); // Antigenic seniority
             vac_map_index = vaccination_strain_indices_tmp[x_vac]; // Index of this vaccinating strain in antigenic map
 
             for(int k = 0; k < n_titres; ++k){
               index = measurement_strain_indices[tmp_titre_index + k]*number_strains + vac_map_index;
-              predicted_titres[tmp_titre_index + k] += (seniority) * ((mu*mu_vac*antigenic_map_long_vac[index]) + (mu_short*mu_short_vac*antigenic_map_short_vac[index])*wane_amount_vac);
+              predicted_titres[tmp_titre_index + k] += (seniority) * ((mu*mu_vac_t*antigenic_map_long_vac[index]) + (mu_short*mu_short_vac*antigenic_map_short_vac[index])*wane_amount_vac);
             }
           }
           ++x_vac;

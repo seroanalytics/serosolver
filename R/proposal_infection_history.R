@@ -21,7 +21,7 @@
 #' @export
 inf_hist_swap <- function(infection_history, vaccination_histories_mat, age_mask, strain_mask, swap_propn, move_size, proposal_ratios=NULL) {
     use_ratios <- NULL
-    if(!is.null(proposal_ratios)){
+    if(!is.null(proposal_ratios)) {
         use_ratios <- proposal_ratios / sum(proposal_ratios)
     }
         
