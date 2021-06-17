@@ -145,7 +145,7 @@ void titre_data_fast_individual_base(NumericVector &predicted_titres,
         if((boost_before_infection && sampling_time > vaccination_times[x_vac]) ||
           (!boost_before_infection && sampling_time >= vaccination_times[x_vac])){
             double mu_vac_t = 1.0 / (1.0 + exp(-mu_vac));
-            double tau_prev_vac_t = 3.0 / (1.0 + exp(-tau_prev_vac));
+            double tau_prev_vac_t = 5.0 / (1.0 + exp(-tau_prev_vac));
             time = sampling_time - vaccination_times[x_vac]; // Time er vaccination
             wane_amount_vac = MAX(0, 1.0 - (wane*time*wane_vac)); // Basic waning function
             seniority = MAX(0, 1.0 - tau_prev_vac_t*tau*(n_inf + n_vac - 1.0)); // Antigenic seniority
