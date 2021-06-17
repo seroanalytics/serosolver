@@ -445,12 +445,12 @@ create_posterior_func <- function(par_tab,
             if (is.na(theta["sigma1_vac"])) {
               sigma1_vac <- 1
             } else  {
-              sigma1_vac <- 1 / (1 + exp(-theta["sigma1_vac"]))
+              sigma1_vac <- 10 / (1 + exp(-theta["sigma1_vac"]))
             }
             if (is.na(theta["sigma2_vac"])) {
               sigma2_vac <- 1
             } else {
-              sigma2_vac <- 1 / (1 + exp(-theta["sigma2_vac"]))
+              sigma2_vac <- 10 / (1 + exp(-theta["sigma2_vac"]))
             }
 
             if (use_strain_dependent) {
@@ -561,12 +561,12 @@ create_posterior_func <- function(par_tab,
             if (is.na(theta["sigma1_vac"])) {
               sigma1_vac <- 1
             } else  {
-              sigma1_vac <- 1 / (1 + exp(-theta["sigma1_vac"]))
+              sigma1_vac <- 10 / (1 + exp(-theta["sigma1_vac"]))
             }
             if (is.na(theta["sigma2_vac"])) {
               sigma2_vac <- 1
             } else {
-              sigma2_vac <- 1 / (1 + exp(-theta["sigma2_vac"]))
+              sigma2_vac <- 10 / (1 + exp(-theta["sigma2_vac"]))
             }
             ## Pass strain-dependent boosting down
             if (use_strain_dependent) {
@@ -647,12 +647,12 @@ create_posterior_func <- function(par_tab,
             if (is.na(theta["sigma1_vac"])) {
               sigma1_vac <- 1
             } else  {
-              sigma1_vac <- 1 / (1 + exp(-theta["sigma1_vac"]))
+              sigma1_vac <- 10 / (1 + exp(-theta["sigma1_vac"]))
             }
             if (is.na(theta["sigma2_vac"])) {
               sigma2_vac <- 1
             } else {
-              sigma2_vac <- 1 / (1 + exp(-theta["sigma2_vac"]))
+              sigma2_vac <- 10 / (1 + exp(-theta["sigma2_vac"]))
             }
             ## Pass strain-dependent boosting down
             if (use_strain_dependent) {
