@@ -40,7 +40,7 @@ NumericVector sum_likelihoods(NumericVector liks, IntegerVector indices, int n_i
 NumericVector create_cross_reactivity_vector(NumericVector x, double sigma) {
   NumericVector x2(x.size());
   for(int i = 0; i < x2.size(); ++i){
-    x2[i] = MAX(1 - x[i]*sigma,0);
+    x2[i] = MAX(1 - x[i]*sigma, 0);
   }
   return(x2);
 }

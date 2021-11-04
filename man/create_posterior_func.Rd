@@ -7,6 +7,8 @@
 create_posterior_func(
   par_tab,
   titre_dat,
+  vaccination_histories = NULL,
+  vaccination_histories_mat = NULL,
   antigenic_map = NULL,
   strain_isolation_times = NULL,
   version = 1,
@@ -29,7 +31,7 @@ create_posterior_func(
 
 \item{strain_isolation_times}{(optional) if no antigenic map is specified, this argument gives the vector of times at which individuals can be infected}
 
-\item{version}{which version of the posterior function to solve (corresponds mainly to the infection history prior). Mostly just left to 1, but there is one special case where this should be set to 4 for the gibbs sampler. This is only really used by \code{\link{run_MCMC}} to place the infection history prior on the total number of infections across all years and individuals when version = 4}
+\item{version}{which infection history assumption version to use? See \code{\link{describe_priors}} for options. Can be 1, 2, 3 or 4}
 
 \item{solve_likelihood}{usually set to TRUE. If FALSE, does not solve the likelihood and instead just samples/solves based on the model prior}
 

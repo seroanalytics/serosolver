@@ -19,7 +19,7 @@
 #' strain_mask <- create_strain_mask(example_titre_dat, times)
 #' new_inf_hist <- inf_hist_swap(example_inf_hist, age_mask,strain_mask, 1,3)[[1]]
 #' @export
-inf_hist_swap <- function(infection_history, vaccination_histories_mat, age_mask, strain_mask, swap_propn, move_size, proposal_ratios=NULL) {
+inf_hist_swap <- function(infection_history, vaccination_histories_mat, age_mask, strain_mask, swap_propn, move_size, proposal_ratios=NULL, output_list = TRUE) {
     use_ratios <- NULL
     if(!is.null(proposal_ratios)) {
         use_ratios <- proposal_ratios / sum(proposal_ratios)
@@ -49,7 +49,11 @@ inf_hist_swap <- function(infection_history, vaccination_histories_mat, age_mask
     indivs <- 1:nrow(infection_history)
     alive_indivs <- indivs[intersect(which(age_mask <= small_year), which(strain_mask >= big_year))]
     # if either y1 or y2 for a person is a vaccination year then need to stop the swap happening, of those alive individuals
-    vac_times <- union(which(vaccination_histories_mat[, y1] == 1), which(vaccination_histories_mat[, y2] == 1))
+    if (is.null(vaccination_histories_mat)) {
+      vac_times <- NULL
+    } else {
+      vac_times <- union(which(vaccination_histories_mat[, y1] > 0), which(vaccination_histories_mat[, y2] > 0))
+    }
     alive_indivs <- setdiff(alive_indivs, vac_times)
     samp_indivs <- sample(alive_indivs, floor(length(alive_indivs) * swap_propn))
 
@@ -58,7 +62,10 @@ inf_hist_swap <- function(infection_history, vaccination_histories_mat, age_mask
     infection_history[samp_indivs, y1] <- infection_history[samp_indivs, y2]
     infection_history[samp_indivs, y2] <- tmp
 
-    return(list(infection_history))
+    if(output_list)
+      return(list(infection_history))
+    else 
+      return(infection_history)
 }
 #' Swap infection history years with phi term
 #'

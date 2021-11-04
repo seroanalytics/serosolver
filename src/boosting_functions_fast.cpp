@@ -19,7 +19,7 @@ void titre_data_fast_individual_base(NumericVector &predicted_titres,
 				     const double &wane,
 				     const double &tau,
                     const bool &vac_flag,
-                     const LogicalVector &vac_flag_ind,
+               //     LogicalVector &vac_flag_ind,
                      const double &mu_vac,
                      const double &mu_short_vac,
                      const double &wane_vac,
@@ -46,11 +46,13 @@ void titre_data_fast_individual_base(NumericVector &predicted_titres,
   double time;
   double n_inf;
   double n_vac;
+  int x_inf;
+  int x_vac;
 
   double wane_amount, wane_amount_vac;
   double seniority;
   double vac_suppress;
-    // vaccination_strains, vaccination_times, vaccination_strain_indices_tmp
+  // vaccination_strains, vaccination_times, vaccination_strain_indices_tmp
 
   int n_titres;
 
@@ -60,12 +62,10 @@ void titre_data_fast_individual_base(NumericVector &predicted_titres,
   int inf_map_index;
   int vac_map_index;
   int index;
-  int x_vac = 0;
-  int x_inf = 0;
 
   int max_infections = infection_times.size();
   int max_vaccinations = vaccination_times.size();
-
+  
   NumericVector inf_vac_times;
   if (vac_flag){
     if (max_vaccinations > 0  & max_infections > 0) {
@@ -82,6 +82,7 @@ void titre_data_fast_individual_base(NumericVector &predicted_titres,
   std::sort(inf_vac_times.begin(), inf_vac_times.end());
 
   int max_inf_vac_times = inf_vac_times.size();
+
   LogicalVector indicatior_inf(max_inf_vac_times);
   LogicalVector indicatior_vac(max_inf_vac_times);
 
@@ -104,63 +105,94 @@ void titre_data_fast_individual_base(NumericVector &predicted_titres,
  // }
 
   // For each sample this individual has
+ // Rcpp::Rcout << "Section 2." << std::endl;
   for(int j = index_in_samples; j <= end_index_in_samples; ++j){
+
+ //   Rcpp::Rcout << "index_in_samples" << index_in_samples << std::endl;
+ //  Rcpp::Rcout << "end_index_in_samples" << end_index_in_samples << std::endl;
+
     sampling_time = sample_times[j];
     n_inf = 0.0;
     n_vac = 0.0;
-
+    x_inf = 0.0;
+    x_vac = 0.0;
     // Find number of titres in the predicted_titres vector that correspond to this sample
     n_titres = nrows_per_blood_sample[j];
     // Only iterate through indices for this sample
     end_index_in_data = start_index_in_data + n_titres;
     tmp_titre_index = start_index_in_data;
+
     // Sum all infections that would contribute towards observed titres at this time
     for (int x = 0; x < max_inf_vac_times; ++x){
+
     //for(int x = 0; x < max_infections; ++x){
       if (indicatior_inf[x]) {
+      //  Rcpp::Rcout << "Section 2 for infections." << std::endl;
 
         ++n_inf;
         // sampling through each predicted infection
         // Only go further if this sample happened after the infection
         if((boost_before_infection && sampling_time > infection_times[x_inf]) ||
           (!boost_before_infection && sampling_time >= infection_times[x_inf])){
-
+      //      Rcpp::Rcout << "x_inf: " << x_inf << std::endl;
+      //      Rcpp::Rcout << "Section 2 for infections, P1." << std::endl;
             time = sampling_time - infection_times[x_inf]; // Time between sample and infection
             wane_amount = MAX(0, 1.0 - (wane*time)); // Basic waning function
             seniority = MAX(0, 1.0 - tau*(n_inf + n_vac - 1.0)); // Antigenic seniority
+
+         //   Rcpp::Rcout << "infection_times[x_inf]: " << infection_times[x_inf] << std::endl;
+        //    Rcpp::Rcout << "infection_strain_indices_tmp[x_inf]: " << infection_strain_indices_tmp[x_inf] << std::endl;
+            
             inf_map_index = infection_strain_indices_tmp[x_inf]; // Index of this infecting strain in antigenic map
+         //   Rcpp::Rcout << "inf_map_index: " << inf_map_index << std::endl;
+            
+          //  Rcpp::Rcout << "wane_amount: " << wane_amount << std::endl;
+          //  Rcpp::Rcout << "time: " << time << std::endl;
 
-
+        //    Rcpp::Rcout << "Section 2 for infections, P2." << std::endl;
             for(int k = 0; k < n_titres; ++k){
+          //    Rcpp::Rcout << "inf_map_index: " << inf_map_index << std::endl;
+        //      Rcpp::Rcout << "number_strains: " << number_strains << std::endl;
+         //     Rcpp::Rcout << "tmp_titre_index: " << tmp_titre_index << std::endl;
+           //   Rcpp::Rcout << "measurement_strain_indices[tmp_titre_index + k]: " << measurement_strain_indices[tmp_titre_index + k] << std::endl;
+
               index = measurement_strain_indices[tmp_titre_index + k]*number_strains + inf_map_index;
+         //    Rcpp::Rcout << "index: " << index << std::endl;
               predicted_titres[tmp_titre_index + k] += seniority *
                 ((mu*antigenic_map_long[index]) + (mu_short*antigenic_map_short[index])*wane_amount);
+          //    Rcpp::Rcout << "predicted_titres[tmp_titre_index + k]: " << predicted_titres[tmp_titre_index + k] << std::endl;
             }
 
         }
         ++x_inf;
       }
-      if (indicatior_vac[x] & vac_flag) {
+
+      if (indicatior_vac[x] & (vac_flag)) {
+       // Rcpp::Rcout << "Section 2 for vacc." << std::endl;
         ++n_vac;
         if((boost_before_infection && sampling_time > vaccination_times[x_vac]) ||
           (!boost_before_infection && sampling_time >= vaccination_times[x_vac])){
+    //        Rcpp::Rcout << "Section 2 for vacc, P1." << std::endl;
+
             double mu_vac_t = 1.0 / (1.0 + exp(-mu_vac));
-            double tau_prev_vac_t = 5.0 / (1.0 + exp(-tau_prev_vac));
+            //double tau_prev_vac_t = 5.0 / (1.0 + exp(-tau_prev_vac));
+
             time = sampling_time - vaccination_times[x_vac]; // Time er vaccination
-            wane_amount_vac = MAX(0, 1.0 - (wane*time*wane_vac)); // Basic waning function
-            seniority = MAX(0, 1.0 - tau_prev_vac_t*tau*(n_inf + n_vac - 1.0)); // Antigenic seniority
+            wane_amount_vac = MAX(0, 1.0 - (wane_vac*time)); // Basic waning function
+            seniority = MAX(0, 1.0 - tau_prev_vac*tau*(n_inf + n_vac - 1.0)); // Antigenic seniority
             vac_map_index = vaccination_strain_indices_tmp[x_vac]; // Index of this vaccinating strain in antigenic map
 
+       //     Rcpp::Rcout << "Section 2 for vacc, P2." << std::endl;
             for(int k = 0; k < n_titres; ++k){
               index = measurement_strain_indices[tmp_titre_index + k]*number_strains + vac_map_index;
-              predicted_titres[tmp_titre_index + k] += (seniority) * ((mu*mu_vac_t*antigenic_map_long_vac[index]) + (mu_short*mu_short_vac*antigenic_map_short_vac[index])*wane_amount_vac);
+              predicted_titres[tmp_titre_index + k] += (seniority) * ((mu*mu_vac_t*antigenic_map_long_vac[index]) + (mu_short_vac*antigenic_map_short_vac[index])*wane_amount_vac);
             }
           }
           ++x_vac;
         }
     }
     start_index_in_data = end_index_in_data;
-   }
+  }
 }
 
 
