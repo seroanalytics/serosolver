@@ -4,7 +4,7 @@
 #'  swapping their states to improve mixing. NOTE that this can be quite slow!
 #' @param par_tab as in \code{\link{run_MCMC}}, but a list of such data structures, one for each temperature, rather than a single data frame
 #' @inheritParams run_MCMC
-=#' @details
+#' @details
 #' The `mcmc_pars` argument has the following options in addition to those in \code{\link{run_MCMC}}:
 #'  * temperature (a vector of temperatures to run the MCMC chains at)
 #'  * parallel_tempering_iter how many iterations to run before swapping MCMC chains
