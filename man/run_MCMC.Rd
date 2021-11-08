@@ -7,6 +7,8 @@
 run_MCMC(
   par_tab,
   titre_dat,
+  vaccination_histories = NULL,
+  vaccination_histories_mat = NULL,
   antigenic_map = NULL,
   strain_isolation_times = NULL,
   mcmc_pars = c(),
@@ -24,6 +26,7 @@ run_MCMC(
   temp = 1,
   solve_likelihood = TRUE,
   n_alive = NULL,
+  continue_run = FALSE,
   ...
 )
 }
@@ -65,6 +68,8 @@ run_MCMC(
 \item{solve_likelihood}{if FALSE, returns only the prior and does not solve the likelihood. Use this if you wish to sample directly from the prior}
 
 \item{n_alive}{if not NULL, uses this as the number alive for the infection history prior, rather than calculating the number alive based on titre_dat}
+
+\item{continue_run}{if TRUE, uploads a previous run and continues sampling process}
 
 \item{...}{Other arguments to pass to CREATE_POSTERIOR_FUNC}
 }

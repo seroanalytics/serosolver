@@ -7,6 +7,8 @@
 inf_hist_prop_prior_v2_and_v4(
   theta,
   infection_history_mat,
+  vaccination_histories,
+  vaccination_histories_mat,
   old_probs_1,
   sampled_indivs,
   n_years_samp_vec,
@@ -32,6 +34,8 @@ inf_hist_prop_prior_v2_and_v4(
   measurement_strain_indices,
   antigenic_map_long,
   antigenic_map_short,
+  antigenic_map_long_vac,
+  antigenic_map_short_vac,
   antigenic_distances,
   data,
   repeat_data,

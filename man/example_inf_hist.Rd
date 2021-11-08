@@ -4,7 +4,9 @@
 \name{example_inf_hist}
 \alias{example_inf_hist}
 \title{Example infection history matrix}
-\format{A matrix with 50 rows (individuals) and 48 columns. Each entry can only be 1 (presence of infection) or a 0 (absence of infection)}
+\format{
+A matrix with 50 rows (individuals) and 48 columns. Each entry can only be 1 (presence of infection) or a 0 (absence of infection)
+}
 \usage{
 data(example_inf_hist)
 }

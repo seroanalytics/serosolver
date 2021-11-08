@@ -4,7 +4,8 @@
 \name{example_titre_dat}
 \alias{example_titre_dat}
 \title{Example titre data}
-\format{A data frame with 4800 rows (each corresponding to a unique titre reading) and 6 variables:
+\format{
+A data frame with 4800 rows (each corresponding to a unique titre reading) and 6 variables:
 \describe{
     \item{individual}{index starting from 1 for the individual ID}
     \item{samples}{time of this serum sample, matching times in \code{\link{example_antigenic_map}}}
@@ -13,7 +14,8 @@
     \item{run}{where there are repeat measurements, gives the repeat number for this serum sample and strain measured}
     \item{group}{group index of this individual}
     \item{DOB}{date of birth matching the time resolution of the model}
-}}
+}
+}
 \usage{
 data(example_titre_data)
 }

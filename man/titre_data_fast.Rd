@@ -7,6 +7,7 @@
 titre_data_fast(
   theta,
   infection_history_mat,
+  vaccination_histories,
   circulation_times,
   circulation_times_indices,
   sample_times,
@@ -16,6 +17,8 @@ titre_data_fast(
   measurement_strain_indices,
   antigenic_map_long,
   antigenic_map_short,
+  antigenic_map_long_vac,
+  antigenic_map_short_vac,
   antigenic_distances,
   mus,
   boosting_vec_indices,

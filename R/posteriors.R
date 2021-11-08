@@ -197,6 +197,31 @@ create_prior_mu <- function(par_tab) {
   }
 }
 
+#' @family priors
+#' @export
+create_prior_mu_vac <- function(par_tab) {
+  ## Extract parameter type indices from par_tab, to split up
+  ## similar parameters in model solving functions
+  option_indices <- which(par_tab$type == 0)
+  theta_indices <- which(par_tab$type %in% c(0, 1))
+  phi_indices <- which(par_tab$type == 2)
+  measurement_indices_par_tab <- which(par_tab$type == 3)
+  weights_indices <- which(par_tab$type == 4) ## For functional form version
+  knot_indices <- which(par_tab$type == 5)
+  mu_indices_par_tab <- which(par_tab$type == 6)
+
+  par_names_theta <- par_tab[theta_indices, "names"]
+
+  ## Expect to only take the vector of parameters
+  f <- function(pars) {
+    mus <- pars[mu_indices_par_tab]
+    pars <- pars[theta_indices]
+    names(pars) <- par_names_theta
+    return(prob_mus_vac(mus, pars))
+  }
+}
+
+
 #' Prior probability of strain specific boosting
 #'
 #' Function find the prior probability of a set of boosting parameters assuming that boosting is drawn from a normal distribution (random effects)
@@ -229,6 +254,13 @@ prob_mus <- function(mus, pars) {
   ## return(sum(dlnorm(mus, mu_mean, mu_sd, log = TRUE)))
 }
 
+#' @family priors
+#' @export
+prob_mus_vac <- function(mus, pars) {
+  mu_mean <- pars["mu_vac_mean"]
+  mu_sd <- pars["mu_vac_sd"]
+  return(sum(dnorm(mus, mu_mean, mu_sd, log = TRUE)))
+}
 
 #' Posterior function pointer
 #'
@@ -266,6 +298,8 @@ prob_mus <- function(mus, pars) {
 #' @export
 create_posterior_func <- function(par_tab,
                                   titre_dat,
+                                  vaccination_histories=NULL,
+                                  vaccination_histories_mat=NULL,
                                   antigenic_map=NULL,
                                   strain_isolation_times=NULL,
                                   version = 1,
@@ -277,18 +311,17 @@ create_posterior_func <- function(par_tab,
                                   function_type = 1,
                                   titre_before_infection=FALSE,
                                   ...) {
+
     check_par_tab(par_tab, TRUE, version)
     if (!("group" %in% colnames(titre_dat))) {
         titre_dat$group <- 1
     }
     check_data(titre_dat)
-   
     if (!is.null(antigenic_map)) {
       strain_isolation_times <- unique(antigenic_map$inf_times) # How many strains are we testing against and what time did they circulate
     } else {
       antigenic_map <- data.frame("x_coord"=1,"y_coord"=1,"inf_times"=strain_isolation_times)
     }
-    
     ## Seperate out initial readings and repeat readings - we only
     ## want to solve the model once for each unique indiv/sample/virus year tested
     titre_dat_unique <- titre_dat[titre_dat$run == 1, ]
@@ -301,18 +334,19 @@ create_posterior_func <- function(par_tab,
     )
     titre_dat_repeats$index <- tmp
 
-
     ## Which entries in the overall titre_dat matrix does each entry in titre_dat_unique correspond to?
     overall_indices <- row.match(
         titre_dat[, c("individual", "samples", "virus")],
         titre_dat_unique[, c("individual", "samples", "virus")]
     )
+
     ## Setup data vectors and extract
     setup_dat <- setup_titredat_for_posterior_func(
         titre_dat_unique, antigenic_map, 
         strain_isolation_times,
         age_mask, n_alive
     )
+
 
     individuals <- setup_dat$individuals
     n_groups <- length(unique(titre_dat$group))
@@ -334,6 +368,20 @@ create_posterior_func <- function(par_tab,
     n_indiv <- setup_dat$n_indiv
     DOBs <- setup_dat$DOBs
 
+    if (is.null(vaccination_histories)) {
+      indi <- unique(titre_dat$individual)
+      vaccination_histories <- data.frame(individual = 0, virus = 0, time = 0, vac_flag = 0, prev_vac = 0)
+    }
+    if (is.null(vaccination_histories_mat)) {
+      vaccination_histories_mat <- matrix(0, n_indiv, length(sample_times))
+    }
+
+  #  vaccination_histories <- vaccination_histories
+    # setup_dat_vac <- setup_vaccdat_for_posterior_func(
+    #     vaccination_histories, antigenic_map,
+    #      strain_isolation_times, # when the tested strains were isolated
+    #      age_mask, n_alive
+    #  )
 
 #########################################################
     ## Extract parameter type indices from par_tab, to split up
@@ -390,16 +438,27 @@ create_posterior_func <- function(par_tab,
     if (!repeat_data_exist) {
         repeat_indices_cpp <- c(-1)
     }
-
     if (function_type == 1) {
         message(cat("Creating posterior solving function...\n"))
         f <- function(pars, infection_history_mat) {
+
             theta <- pars[theta_indices]
             names(theta) <- par_names_theta
+            if (is.na(theta["sigma1_vac"])) {
+              sigma1_vac <- 1
+            } else  {
+              sigma1_vac <- 10 / (1 + exp(-theta["sigma1_vac"]))
+            }
+            if (is.na(theta["sigma2_vac"])) {
+              sigma2_vac <- 1
+            } else {
+              sigma2_vac <- 1 / (1 + exp(-theta["sigma2_vac"]))
+            }
 
             if (use_strain_dependent) {
                 mus <- pars[mu_indices_par_tab]
             }
+            #cat("Start of post_simp (posterior.R). Pos 2", "\n")
 
             antigenic_map_long <- create_cross_reactivity_vector(
                 antigenic_map_melted,
@@ -410,16 +469,30 @@ create_posterior_func <- function(par_tab,
                 theta["sigma2"]
             )
 
+            antigenic_map_long_vac <- create_cross_reactivity_vector(
+                antigenic_map_melted,
+                theta["sigma1"] * sigma1_vac
+            )
+            antigenic_map_short_vac <- create_cross_reactivity_vector(
+                antigenic_map_melted,
+                sigma2_vac # use theta["sigma2_vac"] # for raw value
+            )
+
             ## Calculate titres for measured data
+           # cat("Before titre_data_fast B (posterior.R): ", "\n")
             y_new <- titre_data_fast(
                 theta, infection_history_mat, strain_isolation_times, infection_strain_indices,
                 sample_times, rows_per_indiv_in_samples, cum_nrows_per_individual_in_data,
                 nrows_per_blood_sample, measured_strain_indices,
                 antigenic_map_long,
                 antigenic_map_short,
+                antigenic_map_long_vac,
+                antigenic_map_short_vac,
                 antigenic_distances,
                 mus, boosting_vec_indices
             )
+            #cat("After titre_data_fast B (posterior.R): ", "\n")
+
             if (use_measurement_bias) {
                 measurement_bias <- pars[measurement_indices_par_tab]
                 titre_shifts <- measurement_bias[expected_indices]
@@ -457,6 +530,7 @@ create_posterior_func <- function(par_tab,
             } else {
                 liks <- rep(-100000, n_indiv)
             }
+
             return(list(liks, transmission_prob))
         }
     } else if (function_type == 2) {
@@ -467,14 +541,15 @@ create_posterior_func <- function(par_tab,
         } else {
             n_alive_total <- c(-1, -1)
         }
-        alpha <- par_tab[par_tab$names == "alpha","values"]
-        beta <- par_tab[par_tab$names == "beta","values"]
+        alpha <- par_tab[par_tab$names == "alpha", "values"]
+        beta <- par_tab[par_tab$names == "beta", "values"]
         n_infected_group <- c(0, 0)
         ## Generate prior lookup table
         lookup_tab <- create_prior_lookup(titre_dat, strain_isolation_times, alpha, beta)
 
         ## Use the original gibbs proposal function if no titre immunity
-        f <- function(pars, infection_history_mat,
+        f <- function(pars,
+                      infection_history_mat,
                       probs, sampled_indivs,
                       alpha, beta,
                       n_infs, swap_propn,
@@ -488,8 +563,21 @@ create_posterior_func <- function(par_tab,
                       proposal_ratios,
                       temp=1,
                       propose_from_prior=TRUE) {
+            
+            #cat("Start of function B (posterior.R)")
+
             theta <- pars[theta_indices]
             names(theta) <- par_names_theta
+            if (is.na(theta["sigma1_vac"])) {
+              sigma1_vac <- 1
+            } else  {
+              sigma1_vac <- 10 / (1 + exp(-theta["sigma1_vac"]))
+            }
+            if (is.na(theta["sigma2_vac"])) {
+              sigma2_vac <- 1
+            } else {
+              sigma2_vac <- 1 / (1 + exp(-theta["sigma2_vac"]))
+            }
 
             ## Pass strain-dependent boosting down
             if (use_strain_dependent) {
@@ -502,13 +590,19 @@ create_posterior_func <- function(par_tab,
             ## Work out short and long term boosting cross reactivity - C++ function
             antigenic_map_long <- create_cross_reactivity_vector(antigenic_map_melted, theta["sigma1"])
             antigenic_map_short <- create_cross_reactivity_vector(antigenic_map_melted, theta["sigma2"])
+            antigenic_map_long_vac <- create_cross_reactivity_vector(antigenic_map_melted, theta["sigma1"] * sigma1_vac)
+            antigenic_map_short_vac <- create_cross_reactivity_vector(antigenic_map_melted, sigma2_vac)
 
             n_infections <- sum_infections_by_group(infection_history_mat, group_id_vec, n_groups)
             if (version == 4) n_infected_group <- rowSums(n_infections)
+
             ## Now pass to the C++ function
+           
             res <- inf_hist_prop_prior_v2_and_v4(
                 theta,
                 infection_history_mat,
+                vaccination_histories,
+                vaccination_histories_mat,
                 probs,
                 sampled_indivs,
                 n_infs,
@@ -534,6 +628,8 @@ create_posterior_func <- function(par_tab,
                 measured_strain_indices,
                 antigenic_map_long,
                 antigenic_map_short,
+                antigenic_map_long_vac,
+                antigenic_map_short_vac,
                 antigenic_distances,
                 titres_unique,
                 titres_repeats,
@@ -552,15 +648,27 @@ create_posterior_func <- function(par_tab,
                 temp,
                 solve_likelihood
             )
+
             return(res)
         }
     } else {
         message(cat("Creating model solving function...\n"))
         ## Final version is just the model solving function
         f <- function(pars, infection_history_mat) {
+           # cat("Start of function A")
+
             theta <- pars[theta_indices]
             names(theta) <- par_names_theta
-
+            if (is.na(theta["sigma1_vac"])) {
+              sigma1_vac <- 1
+            } else  {
+              sigma1_vac <- 10 / (1 + exp(-theta["sigma1_vac"]))
+            }
+            if (is.na(theta["sigma2_vac"])) {
+              sigma2_vac <- 1
+            } else {
+              sigma2_vac <- 1 / (1 + exp(-theta["sigma2_vac"]))
+            }
             ## Pass strain-dependent boosting down
             if (use_strain_dependent) {
                 mus <- pars[mu_indices_par_tab]
@@ -568,23 +676,34 @@ create_posterior_func <- function(par_tab,
 
             antigenic_map_long <- create_cross_reactivity_vector(antigenic_map_melted, theta["sigma1"])
             antigenic_map_short <- create_cross_reactivity_vector(antigenic_map_melted, theta["sigma2"])
-
+            antigenic_map_long_vac <- create_cross_reactivity_vector(antigenic_map_melted, theta["sigma1"] * sigma1_vac)
+            antigenic_map_short_vac <- create_cross_reactivity_vector(antigenic_map_melted, sigma2_vac)
+            
+            #cat("Start of titre fast A (posterior.R)")
             y_new <- titre_data_fast(
                 theta, infection_history_mat, strain_isolation_times, infection_strain_indices,
                 sample_times, rows_per_indiv_in_samples, cum_nrows_per_individual_in_data,
-                nrows_per_blood_sample, measured_strain_indices, antigenic_map_long,
+                nrows_per_blood_sample, measured_strain_indices,
+                antigenic_map_long,
                 antigenic_map_short,
+                antigenic_map_long_vac,
+                antigenic_map_short_vac,
                 antigenic_distances,
                 mus, boosting_vec_indices,
                 titre_before_infection
             )
+           # cat("End of titre fast A (posterior.R)")
+
             if (use_measurement_bias) {
                 measurement_bias <- pars[measurement_indices_par_tab]
                 titre_shifts <- measurement_bias[expected_indices]
                 y_new <- y_new + titre_shifts
             }
+          #  cat("End of function A")
+
             y_new[overall_indices]
         }
     }
+
     f
 }

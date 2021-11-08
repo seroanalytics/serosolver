@@ -4,7 +4,9 @@
 \name{cs2_chains_sim}
 \alias{cs2_chains_sim}
 \title{MCMC chains case study 2, sim}
-\format{A list of length 4, as returned by \code{\link{load_mcmc_chains}}.}
+\format{
+A list of length 4, as returned by \code{\link{load_mcmc_chains}}.
+}
 \usage{
 data(cs2_chains_sim)
 }

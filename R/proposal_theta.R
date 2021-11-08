@@ -22,7 +22,6 @@ univ_proposal <- function(values, lower_bounds, upper_bounds, steps, index) {
   mx <- upper_bounds[index]
 
   rtn <- values
-
   x <- toUnitScale(values[index], mn, mx)
 
   stp <- steps[index]

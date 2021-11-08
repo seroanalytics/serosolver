@@ -4,7 +4,8 @@
 \name{example_par_tab}
 \alias{example_par_tab}
 \title{Example parameter table}
-\format{A data frame with 21 rows and 9 variables:
+\format{
+A data frame with 21 rows and 9 variables:
 \describe{
     \item{names}{string names of the model parameters}
     \item{values}{numeric values of the parameters}
@@ -15,7 +16,8 @@
     \item{lower_start}{can be used to set the lower allowable random starting value for the MCMC}
     \item{upper_start}{can be used to set the upper allowable random starting value for the MCMC}
     \item{type}{used for admin during MCMC, set to 1 for normal model parameters, 0 for model options (eg. see titre_dependent), or 2 for attack rate terms, phi}
-}}
+}
+}
 \usage{
 data(example_par_tab)
 }

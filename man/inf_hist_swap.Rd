@@ -6,11 +6,13 @@
 \usage{
 inf_hist_swap(
   infection_history,
+  vaccination_histories_mat,
   age_mask,
   strain_mask,
   swap_propn,
   move_size,
-  proposal_ratios = NULL
+  proposal_ratios = NULL,
+  output_list = TRUE
 )
 }
 \arguments{
