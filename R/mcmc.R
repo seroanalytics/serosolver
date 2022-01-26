@@ -317,7 +317,10 @@ run_MCMC <- function(par_tab,
         )
       } else {
           n_infections <- sum_infections_by_group(prior_infection_history, group_ids_vec, n_groups)
-          if (any(n_infections > n_alive)) print("error")
+          if (any(n_infections > n_alive)){
+            print("error")
+            browser() 
+          }
           prior_probab <- prior_probab + inf_mat_prior_group_cpp(n_infections, n_alive, alpha, beta)
       }
     }

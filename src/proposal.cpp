@@ -402,7 +402,7 @@ List inf_hist_prop_prior_v2_and_v4(const NumericVector &theta, // Model paramete
 	loc2 = loc1 + floor(R::runif(-swap_distance,swap_distance+1));
 
 	// If we have gone too far left or right, reflect at the boundaries
-	/*
+	
 	while(loc2 < 0){
 	  // If gone negative, then reflect to the other side.
 	  // ie. -1 becomes the last entry, -2 becomes the second last entry etc.
@@ -411,10 +411,10 @@ List inf_hist_prop_prior_v2_and_v4(const NumericVector &theta, // Model paramete
 	while(loc2 >= n_samp_length){
 	  loc2 -= n_samp_length;
 	}
-	*/
+	
 	// Try bounce rather than reflect to other side
-	if(loc2 < 0) loc2 = -loc2;
-	if(loc2 >= n_samp_length) loc2 = n_samp_length - loc2 + n_samp_length - 2;
+	//if(loc2 < 0) loc2 = -loc2;
+	//if(loc2 >= n_samp_length) loc2 = n_samp_length - loc2 + n_samp_length - 2;
 
 	
 	// Get onto right scale (starting at age mask)
