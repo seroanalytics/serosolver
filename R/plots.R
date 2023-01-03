@@ -647,7 +647,6 @@ calculate_infection_history_statistics <- function(inf_chain, burnin = 0, years 
     }
     data.table::setkey(n_inf_chain, "group", "sampno", "chain_no")
     n_inf_chain[, cumu_infs := cumsum(total_infs), by = key(n_inf_chain)]
-
     gelman_res_j <- ddply(n_inf_chain, .(group,j), function(tmp_chain){
         tmp_chain_mcmc <- split(as.data.table(tmp_chain), by=c("chain_no"))
         tmp_chain_mcmc <- lapply(tmp_chain_mcmc, function(x) as.mcmc(x[,c("total_infs")]))
@@ -759,11 +758,13 @@ calculate_infection_history_statistics <- function(inf_chain, burnin = 0, years 
 plot_attack_rates_monthly <- function(infection_histories, titre_dat, strain_isolation_times,
                                       n_alive = NULL, ymax = 1, buckets = 1,
                                       pad_chain = TRUE, true_ar = NULL, by_group = FALSE, group_subset = NULL,
-                                      cumulative = FALSE) {
+                                      cumulative = FALSE,add_box=FALSE) {
     if (is.null(infection_histories$chain_no)) {
         infection_histories$chain_no <- 1
     }
-
+    if (is.null(infection_histories$group)) {
+        infection_histories$group <- 1
+    }
     ## Some year/sample combinations might have no infections there.
     ## Need to make sure that these get considered
     if (pad_chain) infection_histories <- pad_inf_chain(infection_histories)
@@ -772,7 +773,6 @@ plot_attack_rates_monthly <- function(infection_histories, titre_dat, strain_iso
         group_subset <- unique(titre_dat$group)
     }
     if (!by_group) titre_dat$group <- 1
-
     ## Find inferred total number of infections from the MCMC output
     ## Scale by number of individuals that were alive in each epoch
     ## and generate quantiles
@@ -794,7 +794,7 @@ plot_attack_rates_monthly <- function(infection_histories, titre_dat, strain_iso
     colnames(n_alive_tmp) <- c("group", "j", "n_alive")
 
     colnames(infection_histories)[1] <- "individual"
-    infection_histories <- merge(infection_histories, data.table(unique(titre_dat[, c("individual", "group")])), by = "individual")
+    infection_histories <- merge(infection_histories, data.table(unique(titre_dat[, c("individual", "group")])), by = c("individual","group"))
     ## Sum infections per year for each MCMC sample
     data.table::setkey(infection_histories, "sampno", "j", "group", "chain_no")
     tmp <- infection_histories[, list(V1 = sum(x)), by = key(infection_histories)]
@@ -809,12 +809,19 @@ plot_attack_rates_monthly <- function(infection_histories, titre_dat, strain_iso
         data.table::setkey(tmp, "sampno", "group", "chain_no")
         tmp[, V1 := cumsum(V1), by = key(tmp)]
     }
-    quantiles <- ddply(tmp, .(time, group), function(x) quantile(x$V1, c(0.025, 0.5, 0.975)))
-    colnames(quantiles) <- c("time", "group", "lower", "median", "upper")
+    quantiles <- ddply(tmp, .(time, group), function(x) quantile(x$V1, c(0.025,0.25, 0.5,0.75, 0.975)))
+    colnames(quantiles) <- c("time", "group", "lower","lower2", "median", "upper2","upper")
+    
+    
 
-
-    p <- ggplot(quantiles[quantiles$group %in% group_subset, ]) +
+    p <- ggplot(quantiles[quantiles$group %in% group_subset, ])
+    if(add_box){
+        x_box_min <- min(titre_dat$samples)
+        p <- p +geom_rect(xmin=x_box_min, xmax=max(quantiles$time),ymin=-1,ymax=2,fill="gray90",alpha=0.1)
+    }
+    p <- p +
         geom_ribbon(aes(x = time, ymin = lower, ymax = upper), fill = "red", alpha = 0.2) +
+        geom_ribbon(aes(x = time, ymin = lower2, ymax = upper2), fill = "red", alpha = 0.4) +
         geom_line(aes(x = time, y = median), col = "red")
     if (!is.null(true_ar)) {
         p <- p +
@@ -1332,6 +1339,7 @@ generate_cumulative_inf_plots <- function(inf_chain, burnin = 0, indivs, real_in
                                           strain_isolation_times, nsamp = 100, ages = NULL, number_col = 1,
                                           pad_chain = TRUE, subset_years = NULL, return_data = FALSE) {
     inf_chain <- inf_chain[inf_chain$sampno > burnin, ]
+    inf_chain <- inf_chain[inf_chain$i %in% indivs,]
     if (is.null(inf_chain$chain_no)) {
         inf_chain$chain_no <- 1
     }

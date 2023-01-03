@@ -137,7 +137,7 @@ check_attack_rates <- function(attack_rates, strain_isolation_times) {
     if (length(attack_rates) != length(strain_isolation_times)) stop("attack_rates is not the same length as strain_isolation_times")
     if (any(attack_rates < 0) || any(attack_rates > 1)) stop("attack_rates must be between 0 and 1")
 }
-#' Checks if the multivarite proposal is being used with the FOI proposal
+#' Checks if the multivariate proposal is being used with the FOI proposal
 #' @param version Which version of the posterior function to use? See \code{\link{create_posterior_func}}
 #' @param mvr_pars Leave NULL to use univariate proposals. Otherwise, a list of parameters if using a multivariate proposal. Must contain an initial covariance matrix, weighting for adapting cov matrix, and an initial scaling parameter (0-1)
 #' @return nothing at the moment
@@ -145,4 +145,20 @@ check_attack_rates <- function(attack_rates, strain_isolation_times) {
 #' @export
 check_proposals <- function(version, mvr_pars) {
     if (all(version == 1, !is.null(mvr_pars))) warning("The multivariate proposal can be inefficient for version 1.")
+}
+
+#' Check if the starting infection history table and titre data are consistent
+#' @param titre_dat the data frame of titer data
+#' @param inf_hist the starting infection history matrix
+#' @return nothing, prints a warning
+#' @family check_inputs
+#' @export
+check_inf_hist <- function(titre_dat, inf_hist, strain_isolation_times){
+    DOBs <- create_age_mask(titre_dat %>% select(individual, DOB) %>% distinct() %>% pull(DOB),
+                            strain_isolation_times)
+    correct_dob <- rep(0,length(DOBs))
+    for(i in seq_along(DOBs)){
+        if(any(inf_hist[i,1:(DOBs[i]-1)] > 0)) correct_dob[i] <- 1
+    }
+    return(correct_dob)
 }

@@ -277,6 +277,7 @@ create_posterior_func <- function(par_tab,
                                   function_type = 1,
                                   titre_before_infection=FALSE,
                                   ...) {
+    #browser()
     check_par_tab(par_tab, TRUE, version)
     if (!("group" %in% colnames(titre_dat))) {
         titre_dat$group <- 1
@@ -394,6 +395,7 @@ create_posterior_func <- function(par_tab,
     if (function_type == 1) {
         message(cat("Creating posterior solving function...\n"))
         f <- function(pars, infection_history_mat) {
+            browser()
             theta <- pars[theta_indices]
             names(theta) <- par_names_theta
 
