@@ -149,11 +149,12 @@ check_proposals <- function(version, mvr_pars) {
 
 #' Check if the starting infection history table and titre data are consistent
 #' @param titre_dat the data frame of titer data
+#' @param strain_isolation_times the vector of times corresponding to entries in DOB
 #' @param inf_hist the starting infection history matrix
 #' @return nothing, prints a warning
 #' @family check_inputs
 #' @export
-check_inf_hist <- function(titre_dat, inf_hist, strain_isolation_times){
+check_inf_hist <- function(titre_dat,strain_isolation_times, inf_hist){
     DOBs <- create_age_mask(titre_dat %>% select(individual, DOB) %>% distinct() %>% pull(DOB),
                             strain_isolation_times)
     correct_dob <- rep(0,length(DOBs))

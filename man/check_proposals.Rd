@@ -2,7 +2,7 @@
 % Please edit documentation in R/check_inputs.R
 \name{check_proposals}
 \alias{check_proposals}
-\title{Checks if the multivarite proposal is being used with the FOI proposal}
+\title{Checks if the multivariate proposal is being used with the FOI proposal}
 \usage{
 check_proposals(version, mvr_pars)
 }
@@ -15,12 +15,13 @@ check_proposals(version, mvr_pars)
 nothing at the moment
 }
 \description{
-Checks if the multivarite proposal is being used with the FOI proposal
+Checks if the multivariate proposal is being used with the FOI proposal
 }
 \seealso{
 Other check_inputs: 
 \code{\link{check_attack_rates}()},
 \code{\link{check_data}()},
+\code{\link{check_inf_hist}()},
 \code{\link{check_par_tab}()}
 }
 \concept{check_inputs}

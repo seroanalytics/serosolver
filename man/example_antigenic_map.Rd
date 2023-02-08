@@ -4,12 +4,14 @@
 \name{example_antigenic_map}
 \alias{example_antigenic_map}
 \title{Example antigenic map}
-\format{A data frame with 48 rows and 3 variables:
+\format{
+A data frame with 48 rows and 3 variables:
 \describe{
     \item{x_coord}{x-coordinate for this entry in the 2D map}
     \item{y_coord}{y-coordinate for this entry in the 2D map}
     \item{inf_times}{circulation time of this entry. By default, this can be considered as the circulation year, though the logic extends to quarters, months etc}
-}}
+}
+}
 \usage{
 data(example_antigenic_map)
 }

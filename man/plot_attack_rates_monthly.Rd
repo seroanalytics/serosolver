@@ -15,7 +15,8 @@ plot_attack_rates_monthly(
   true_ar = NULL,
   by_group = FALSE,
   group_subset = NULL,
-  cumulative = FALSE
+  cumulative = FALSE,
+  add_box = FALSE
 )
 }
 \arguments{

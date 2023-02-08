@@ -47,6 +47,6 @@ LinkingTo:
     RcppArmadillo,
     RcppParallel
 SystemRequirements: C++11
-RoxygenNote: 7.0.2
+RoxygenNote: 7.1.2
 VignetteBuilder: knitr
 Encoding: UTF-8

@@ -4,7 +4,9 @@
 \name{example_theta_chain}
 \alias{example_theta_chain}
 \title{Example MCMC chain for kinetics parameters}
-\format{A data frame with 100 rows (each corresponding to a sample from the posterior), and each column corresponding to one variable in \code{\link{example_par_tab}}}
+\format{
+A data frame with 100 rows (each corresponding to a sample from the posterior), and each column corresponding to one variable in \code{\link{example_par_tab}}
+}
 \usage{
 data(example_theta_chain)
 }

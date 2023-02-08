@@ -895,6 +895,7 @@ plot_attack_rates <- function(infection_histories, titre_dat, strain_isolation_t
         n_alive <- as.data.frame(get_n_alive_group(titre_dat, strain_isolation_times))
         n_alive$group <- 1:nrow(n_alive)
     }
+
     n_groups <- length(unique(titre_dat$group))
     n_alive_tot <- get_n_alive(titre_dat, strain_isolation_times)
     colnames(infection_histories)[1] <- "individual"

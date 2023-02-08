@@ -5,20 +5,32 @@
 \title{Check infection history matrix}
 \usage{
 check_inf_hist(titre_dat, strain_isolation_times, inf_hist)
+
+check_inf_hist(titre_dat, strain_isolation_times, inf_hist)
 }
 \arguments{
-\item{titre_dat}{the data frame of titre data}
+\item{titre_dat}{the data frame of titer data}
 
-\item{strain_isolation_times}{the circulation times of possible infecting strains eg. 1968:2015}
+\item{strain_isolation_times}{the vector of times corresponding to entries in DOB}
 
-\item{inf_hist}{the infection history matrix, with nrows = number indivs and ncols = length(strain_isolation_times)}
+\item{inf_hist}{the starting infection history matrix}
 }
 \value{
 a single boolean value, FALSE if the check passes, otherwise throws an error
+
+nothing, prints a warning
 }
 \description{
 Checks that the infection history matrix is allowable given the birth dates and sampling times of the data
 }
+\seealso{
+Other check_inputs: 
+\code{\link{check_attack_rates}()},
+\code{\link{check_data}()},
+\code{\link{check_par_tab}()},
+\code{\link{check_proposals}()}
+}
+\concept{check_inputs}
 \concept{check_inputs
 data(example_titre_dat)
 data(example_inf_hist)
