@@ -159,7 +159,7 @@ check_inf_hist <- function(titre_dat,strain_isolation_times, inf_hist){
                             strain_isolation_times)
     correct_dob <- rep(0,length(DOBs))
     for(i in seq_along(DOBs)){
-        if(any(inf_hist[i,1:(DOBs[i]-1)] > 0)) correct_dob[i] <- 1
+        if(DOBs[i] > 1 & any(inf_hist[i,1:(DOBs[i]-1)] > 0)) correct_dob[i] <- 1
     }
     return(correct_dob)
 }
