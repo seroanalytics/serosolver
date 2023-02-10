@@ -191,7 +191,7 @@ inf_hist_prop_prior_v3 <- function(infection_history_mat, sampled_indivs, age_ma
 #' @param n_alive IntegerMatrix, number of columns is the number of time periods that an individual could be infected, giving the number of individual alive in each time period. Number of rows is the number of distinct groups.
 #' @param n_infections IntegerMatrix, the number of infections in each year (columns) for each group (rows)
 #' @param n_infected_group IntegerVector, the total number of infections across all times in each group
-#' @param prior_lookup NumericMatrix, the pre-computed lookup table for the beta prior on infection histories
+#' @param prior_lookup arma::cube, the pre-computed lookup table for the beta prior on infection histories, dimensions are number of infections, time, and group
 #' @param swap_propn double, gives the proportion of proposals that will be swap steps (ie. swap contents of two cells in infection_history rather than adding/removing infections)
 #' @param swap_distance int, in a swap step, how many time steps either side of the chosen time period to swap with
 #' @param alpha double, alpha parameter for beta prior on infection probability

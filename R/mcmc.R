@@ -318,10 +318,11 @@ run_MCMC <- function(par_tab,
       } else {
           n_infections <- sum_infections_by_group(prior_infection_history, group_ids_vec, n_groups)
           if (any(n_infections > n_alive)){
-            print("error")
-            browser() 
+             #message("error -- more infections than there are individuals alive")
+             prior_probab <- -Inf
+          } else {
+            prior_probab <- prior_probab + inf_mat_prior_group_cpp(n_infections, n_alive, alpha, beta)
           }
-          prior_probab <- prior_probab + inf_mat_prior_group_cpp(n_infections, n_alive, alpha, beta)
       }
     }
     if (!is.null(CREATE_PRIOR_FUNC)) prior_probab <- prior_probab + prior_func(prior_pars)
@@ -513,6 +514,7 @@ run_MCMC <- function(par_tab,
                 if (!identical(new_infection_histories, infection_histories)) {
                     infection_history_swap_n <- infection_history_swap_n + 1
                 }
+                new_likelihoods_calculated <- FALSE
             }
             ## Beta binomial on per individual total infections
         } else if (hist_proposal == 3) {
@@ -546,6 +548,13 @@ run_MCMC <- function(par_tab,
             new_indiv_likelihoods <- new_post[[1]] / temp
             new_indiv_priors <- new_post[[2]]
         }
+        #n_infections <- sum_infections_by_group(new_infection_histories, group_ids_vec, n_groups)
+        #if (any(n_infections > n_alive)){
+        #    print("error 2 -- more infections than there are individuals alive")
+         #   browser()
+         #   
+        #}
+        
         new_indiv_posteriors <- new_indiv_likelihoods + new_indiv_priors
         new_total_likelihood <- sum(new_indiv_likelihoods)
         new_total_prior_prob <- sum(new_indiv_priors) +
@@ -558,6 +567,7 @@ run_MCMC <- function(par_tab,
     ## Check that all proposed parameters are in allowable range
     ## Skip if any parameters are outside of the allowable range
     log_prob <- new_total_posterior - total_posterior
+    #if(!is.finite(new_total_prior_prob)) browser()
     if (theta_sample) {
       if (!is.na(log_prob) & !is.nan(log_prob) & is.finite(log_prob)) {
         log_prob <- min(log_prob, 0)

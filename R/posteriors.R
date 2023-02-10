@@ -472,8 +472,7 @@ create_posterior_func <- function(par_tab,
         beta <- par_tab[par_tab$names == "beta","values"]
         n_infected_group <- c(0, 0)
         ## Generate prior lookup table
-        lookup_tab <- create_prior_lookup(titre_dat, strain_isolation_times, alpha, beta)
-
+        lookup_tab <- create_prior_lookup_groups(titre_dat, strain_isolation_times, alpha, beta, n_alive)
         ## Use the original gibbs proposal function if no titre immunity
         f <- function(pars, infection_history_mat,
                       probs, sampled_indivs,
