@@ -71,6 +71,7 @@ run_MCMC <- function(par_tab,
                      solve_likelihood = TRUE,
                      n_alive = NULL,
                      ...) {
+#    browser()
   ## Error checks --------------------------------------
   check_par_tab(par_tab, TRUE, version)
 
@@ -479,6 +480,7 @@ run_MCMC <- function(par_tab,
         } else if (hist_proposal == 2) {
             ## Swap entire contents or propose new
             if (inf_swap_prob > hist_switch_prob) {
+                #print(paste0("Sum infection histories before: ", sum(infection_histories)))
                 prop_gibbs <- proposal_gibbs(
                     proposal,
                     infection_histories,
@@ -496,10 +498,14 @@ run_MCMC <- function(par_tab,
                     temp,
                     propose_from_prior
                 )
+                #print(paste0("Sum infection histories after: ", sum(infection_histories)))
+                      
                 histiter <- prop_gibbs$proposal_iter
                 histaccepted <- prop_gibbs$accepted_iter
                 new_indiv_likelihoods <- prop_gibbs$old_probs
                 new_infection_histories <- prop_gibbs$new_infection_history
+                #print(paste0("Sum new infection histories after: ", sum(new_infection_histories)))
+                
                 new_likelihoods_calculated <- TRUE
 
                 overall_swap_proposals <- prop_gibbs$overall_swap_proposals

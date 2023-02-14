@@ -207,7 +207,7 @@ List inf_hist_prop_prior_v2_and_v4(const NumericVector &theta, // Model paramete
 				   ){
   // ########################################################################
   // Parameters to control indexing of data
-  IntegerMatrix new_infection_history_mat(infection_history_mat); // Can this be avoided? Create a copy of the inf hist matrix
+  IntegerMatrix new_infection_history_mat(clone(infection_history_mat)); // Can this be avoided? Create a copy of the inf hist matrix
   int n_titres_total = data.size(); // How many titres are there in total?
   NumericVector predicted_titres(n_titres_total); // Vector to store predicted titres
   NumericVector old_probs = clone(old_probs_1); // Create a copy of the current old probs
@@ -266,12 +266,12 @@ List inf_hist_prop_prior_v2_and_v4(const NumericVector &theta, // Model paramete
   // ########################################################################
 
   // ########################################################################
-  int m; // number of infections in a given year
-  int n; // number alive in a particular year
-  int n_1; // Number alive in time period 1 
-  int n_2; // Number alive in time period 2
+  double m; // number of infections in a given year
+  double n; // number alive in a particular year
+  double n_1; // Number alive in time period 1 
+  double n_2; // Number alive in time period 2
   
-  int m_1_new, m_1_old,m_2_new,m_2_old;
+  double m_1_new, m_1_old,m_2_new,m_2_old;
   // double n_1, n_2;
   double prior_1_old, prior_2_old, prior_1_new,prior_2_new,prior_new,prior_old;
 
