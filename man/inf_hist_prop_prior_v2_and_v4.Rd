@@ -72,7 +72,7 @@ inf_hist_prop_prior_v2_and_v4(
 
 \item{n_infected_group}{IntegerVector, the total number of infections across all times in each group}
 
-\item{prior_lookup}{NumericMatrix, the pre-computed lookup table for the beta prior on infection histories}
+\item{prior_lookup}{arma::cube, the pre-computed lookup table for the beta prior on infection histories, dimensions are number of infections, time, and group}
 
 \item{swap_propn}{double, gives the proportion of proposals that will be swap steps (ie. swap contents of two cells in infection_history rather than adding/removing infections)}
 

@@ -77,11 +77,13 @@ create_prior_lookup <- function(titre_dat, strain_isolation_times, alpha1, beta1
     lookup_tab <- matrix(nrow=max(n_alive)+1,ncol=length(strain_isolation_times))
     max_alive <- max(n_alive)
     for(i in seq_along(strain_isolation_times)){
-        results <- rep(-Inf, max_alive+1)
+        results <- rep(-100000, max_alive+1)
         m <- seq_len(n_alive[i]+1)-1
         results[1:(n_alive[i]+1)] <- lbeta(alpha1 + m, n_alive[i] - m + beta1) + lbeta(alpha1, beta1)
         lookup_tab[,i] <- results        
     }
+    lookup_tab[!is.finite(lookup_tab)] <- -100000
+    lookup_tab[is.nan(lookup_tab)] <- -100000
     lookup_tab
 }
 
@@ -90,16 +92,19 @@ create_prior_lookup_groups <- function(titre_dat, strain_isolation_times, alpha1
     if(is.null(n_alive)){
         n_alive <- get_n_alive_group(titre_dat, strain_isolation_times)
     }
-    lookup_tab <- array(-Inf, dim=c(max(n_alive)+1,length(strain_isolation_times),nrow(n_alive)))
+    lookup_tab <- array(-100000, dim=c(max(n_alive)+1,length(strain_isolation_times),nrow(n_alive)))
     max_alive <- max(n_alive)
     for(g in 1:nrow(n_alive)){
         for(i in seq_along(strain_isolation_times)){
-            results <- rep(-Inf, max_alive+1)
+            results <- rep(-100000, max_alive+1)
             m <- seq_len(n_alive[g,i]+1)-1
             results[1:(n_alive[g,i]+1)] <- lbeta(alpha1 + m, n_alive[g,i] - m + beta1) + lbeta(alpha1, beta1)
             lookup_tab[,i,g] <- results        
         }
     }
+    
+    lookup_tab[!is.finite(lookup_tab)] <- -100000
+    lookup_tab[is.nan(lookup_tab)] <- -100000
     lookup_tab
 }
 
