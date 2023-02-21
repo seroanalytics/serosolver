@@ -74,7 +74,6 @@ run_MCMC <- function(par_tab,
 #    browser()
   ## Error checks --------------------------------------
   check_par_tab(par_tab, TRUE, version)
-
   ## Sort out MCMC parameters --------------------------------------
   ###################################################################
   mcmc_pars_used <- c(
@@ -269,7 +268,6 @@ run_MCMC <- function(par_tab,
       ...
     ))
   }
-
     ## If using random effects on mu, need to include hyperprior term on mu
     ## We can't do this in the main posterior function, because this term
     ## applies to the overall posterior whereas the main posterior function

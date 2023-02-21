@@ -892,10 +892,11 @@ plot_attack_rates <- function(infection_histories, titre_dat, strain_isolation_t
     ## Scale by number of individuals that were alive in each epoch
     ## and generate quantiles
     if (is.null(n_alive)) {
-        n_alive <- as.data.frame(get_n_alive_group(titre_dat, strain_isolation_times))
-        n_alive$group <- 1:nrow(n_alive)
+        n_alive <- get_n_alive_group(titre_dat, strain_isolation_times)
     }
-
+    n_alive <- as.data.frame(n_alive)
+    n_alive$group <- 1:nrow(n_alive)
+    
     n_groups <- length(unique(titre_dat$group))
     n_alive_tot <- get_n_alive(titre_dat, strain_isolation_times)
     colnames(infection_histories)[1] <- "individual"
@@ -938,10 +939,7 @@ plot_attack_rates <- function(infection_histories, titre_dat, strain_isolation_t
     max_year <- max(strain_isolation_times)
     year_breaks <- c(min_year, seq(5 * round(min_year / 5), max_year, by = 5))
     year_labels <- c(min_year, seq(5 * round(min_year / 5), max_year, by = 5))
-    if (!is.null(prior_dens)) {
-        year_breaks <- c(year_breaks, max_year + 3)
-        year_labels <- c(year_labels, "Prior")
-    }
+
     if (!plot_den) {
         quantiles <- ddply(tmp, .(j, group), function(x) quantile(x$V1, c(0.025, 0.5, 0.975)))
         colnames(quantiles) <- c("j", "group", "lower", "median", "upper")
@@ -960,13 +958,16 @@ plot_attack_rates <- function(infection_histories, titre_dat, strain_isolation_t
 
         if (!is.null(prior_dens)) {
             quantiles[quantiles$j == max(years), "taken"] <- "Prior"
+            year_breaks <- c(year_breaks, max_year + 3)
+            year_labels <- c(year_labels, "Prior")
         }
         colnames(quantiles)[which(colnames(quantiles) == "taken")] <- "Sample taken"
         colnames(quantiles)[which(colnames(quantiles) == "tested")]  <- "Virus tested"
 
         p <- ggplot(quantiles[quantiles$group %in% group_subset, ]) +
-            scale_y_continuous(limits = c(0, 1), expand = c(0, 0)) +
+            scale_y_continuous(expand = c(0, 0)) +
             scale_x_continuous(breaks = year_breaks, labels = year_labels) +
+            coord_cartesian(ylim=c(0,1)) +
             theme_classic() +
             ylab("Estimated attack rate") +
             xlab("Year")
@@ -1020,7 +1021,8 @@ plot_attack_rates <- function(infection_histories, titre_dat, strain_isolation_t
     }
     if (!plot_residuals) {
         p <- p +
-            scale_y_continuous(limits = c(0, 1), expand = c(0, 0))
+            scale_y_continuous(expand = c(0, 0)) +
+            coord_cartesian(ylim=c(0,1))
     }
 
     if (by_group) {

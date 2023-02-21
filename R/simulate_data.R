@@ -114,7 +114,7 @@ simulate_data <- function(par_tab,
         sampling_times,
         nsamps, antigenic_map, repeats,
         mus, mu_indices, measurement_bias,
-        measurement_indices, add_noise
+        measurement_indices, add_noise, DOBs
     )
     y <- sim_dat$titre_dat
     infection_history <- sim_dat$infection_history
@@ -154,6 +154,7 @@ simulate_data <- function(par_tab,
 #' @param theta the named parameter vector
 #' @param infection_histories the matrix of 1s and 0s giving presence/absence of infections for each individual
 #' @param mus default NULL, optional vector of boosting parameters for each strain
+#' @param DOBs vector giving the time period of birth (entries corresponding to `strain_isolation_times`)
 #' @return a data frame with columns individual, samples, virus and titre of simulated data
 #' @family simulation_functions
 #' @export
@@ -171,7 +172,8 @@ simulate_group <- function(n_indiv,
                            mu_indices = NULL,
                            measurement_bias = NULL,
                            measurement_indices = NULL,
-                           add_noise = TRUE) {
+                           add_noise = TRUE,
+                           DOBs=NULL) {
 
   ## Create antigenic map for short and long term boosting
   antigenic_map_melted <- melt_antigenic_coords(antigenic_map[, c("x_coord", "y_coord")])
@@ -181,12 +183,18 @@ simulate_group <- function(n_indiv,
   dat <- NULL
   ## For each individual
   for (i in 1:n_indiv) {
+      if(!is.null(DOBs)) DOB <- DOBs[i]
     ## Choose random sampling times
     ## If there is one sampling time, then repeat the same sampling time
-    if (length(sample_times) == 1) {
-      samps <- rep(sample_times, nsamps)
+      sample_times_tmp <- sample_times[sample_times >= DOB]
+      ## If all sample times are before birth, set to DOB
+      if(length(sample_times_tmp) == 0){
+          sample_times_tmp <- DOB
+      }
+    if (length(sample_times_tmp) == 1) {
+      samps <- rep(sample_times_tmp, nsamps)
     } else {
-      samps <- sample(sample_times, nsamps)
+      samps <- sample(sample_times_tmp, nsamps)
       samps <- samps[order(samps)]
     }
 
@@ -207,7 +215,7 @@ simulate_group <- function(n_indiv,
       mus, mu_indices,
       measurement_bias,
       measurement_indices,
-      add_noise, repeats
+      add_noise, repeats, DOB
     ))
     ## Record individual ID
     y$indiv <- i
