@@ -247,8 +247,8 @@ plot_infection_histories_long <- function(chain, infection_histories, titre_dat,
     inf_hist_densities$xmin <- inf_hist_densities$variable-0.5
     inf_hist_densities$xmax <- inf_hist_densities$variable+0.5
     
-    max_titre <- max(titre_dat$titre)
-    min_titre <- min(titre_dat$titre)
+    max_titre <- max(titre_dat$titre,na.rm=TRUE)
+    min_titre <- min(titre_dat$titre,na.rm=TRUE)
     
     max_x <- max(inf_hist_densities$variable) + 5
     time_range <- range(inf_hist_densities$variable)
@@ -258,7 +258,7 @@ plot_infection_histories_long <- function(chain, infection_histories, titre_dat,
         geom_ribbon(aes(x=virus,ymin=lower, ymax=upper),alpha=0.4, fill="#009E73",size=0.2)+
         geom_ribbon(data=model_preds[model_preds$individual %in% individuals,], 
                     aes(x=virus,ymin=lower,ymax=upper),alpha=0.7,fill="#009E73",size=0.2) + 
-        geom_line(data=model_preds, aes(x=virus, y=median),linetype="dotted",color="grey10")+
+        geom_line(data=model_preds, aes(x=virus, y=median),linewidth=0.75,color="#009E73")+
         geom_rect(ymin=max_titre,ymax=max_titre+2,xmin=0,xmax=max_x,fill="grey70")+
         geom_rect(ymin=min_titre-2,ymax=min_titre,xmin=0,xmax=max_x,fill="grey70")+
         scale_x_continuous(expand=c(0,0)) +
@@ -306,7 +306,8 @@ plot_infection_histories <- function(chain, infection_histories, titre_dat,
                                      strain_isolation_times=NULL, par_tab,
                                      nsamp = 100,
                                      mu_indices = NULL,
-                                     measurement_indices_by_time = NULL) {
+                                     measurement_indices_by_time = NULL,
+                                     p_ncol=length(individuals)/2) {
     individuals <- individuals[order(individuals)]
     ## Generate titre predictions
     titre_preds <- get_titre_predictions(
@@ -326,8 +327,8 @@ plot_infection_histories <- function(chain, infection_histories, titre_dat,
     inf_hist_densities$xmin <- inf_hist_densities$variable-0.5
     inf_hist_densities$xmax <- inf_hist_densities$variable+0.5
     
-    max_titre <- max(titre_dat$titre)
-    min_titre <- min(titre_dat$titre)
+    max_titre <- max(titre_dat$titre,na.rm=TRUE)
+    min_titre <- min(titre_dat$titre,na.rm=TRUE)
     
     max_x <- max(inf_hist_densities$variable) + 5
     time_range <- range(inf_hist_densities$variable)
@@ -335,10 +336,10 @@ plot_infection_histories <- function(chain, infection_histories, titre_dat,
     titre_pred_p <- ggplot(to_use) +
         geom_rect(data=inf_hist_densities,
                   aes(xmin=xmin,xmax=xmax,fill=value),ymin=min_titre-1,ymax=max_titre+2)+
-        geom_ribbon(aes(x=samples,ymin=lower, ymax=upper),alpha=0.4, fill="#009E73",size=0.2)+
+        geom_ribbon(aes(x=samples,ymin=lower, ymax=upper),alpha=0.25, fill="#009E73",size=0.2)+
         geom_ribbon(data=model_preds[model_preds$individual %in% individuals,], 
-                    aes(x=samples,ymin=lower,ymax=upper),alpha=0.7,fill="#009E73",size=0.2) + 
-        geom_line(data=model_preds, aes(x=samples, y=median),linetype="dotted",color="grey10")+
+                    aes(x=samples,ymin=lower,ymax=upper),alpha=0.5,fill="#009E73",size=0.2) + 
+        geom_line(data=model_preds, aes(x=samples, y=median),linewidth=0.75,color="#009E73")+
         geom_rect(ymin=max_titre,ymax=max_titre+2,xmin=0,xmax=max_x,fill="grey70")+
         geom_rect(ymin=min_titre-2,ymax=min_titre,xmin=0,xmax=max_x,fill="grey70")+
         scale_x_continuous(expand=c(0,0)) +
@@ -359,7 +360,7 @@ plot_infection_histories <- function(chain, infection_histories, titre_dat,
               plot.margin=margin(r=15,t=5,l=5))+
         coord_cartesian(ylim=c(min_titre,max_titre+1),xlim=range(strain_isolation_times)) +
         scale_y_continuous(breaks=seq(min_titre,max_titre+2,by=2)) +
-        facet_wrap(~individual,ncol=length(individuals)/2)
+        facet_wrap(~individual,ncol=p_ncol)
     titre_pred_p
 }
 
