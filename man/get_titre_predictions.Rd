@@ -19,7 +19,8 @@ get_titre_predictions(
   for_res_plot = FALSE,
   expand_titredat = FALSE,
   titre_before_infection = FALSE,
-  titres_for_regression = FALSE
+  titres_for_regression = FALSE,
+  data_type = 1
 )
 }
 \arguments{
@@ -50,6 +51,8 @@ get_titre_predictions(
 \item{expand_titredat}{TRUE/FALSE value. If TRUE, solves titre predictions for all possible infection times. If left FALSE, then only solves for the infections times at which a titre against the circulating virus was measured in titre_dat.}
 
 \item{titre_before_infection}{TRUE/FALSE value. If TRUE, solves titre predictions, but gives the predicted titre at a given time point BEFORE any infection during that time occurs.}
+
+\item{data_type}{integer, currently accepting 1 or 2. Set to 1 for discretized, bounded data, or 2 for continuous, bounded data. Note that with 2, MIN_TITRE must be set.}
 }
 \value{
 a list with the titre predictions (95% credible intervals, median and multivariate posterior mode) and the probabilities of infection for each individual in each epoch

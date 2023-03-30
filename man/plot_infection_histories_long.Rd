@@ -14,7 +14,8 @@ plot_infection_histories_long(
   par_tab,
   nsamp = 100,
   mu_indices = NULL,
-  measurement_indices_by_time = NULL
+  measurement_indices_by_time = NULL,
+  data_type = 1
 )
 }
 \arguments{
@@ -37,6 +38,8 @@ plot_infection_histories_long(
 \item{mu_indices}{vector of integers. for random effects on boosting parameter, mu. If random mus are included in the parameter table, this vector specifies which mu to use for each circulation year. For example, if years 1970-1976 have unique boosting, then mu_indices should be c(1,2,3,4,5,6). If every 3 year block shares has a unique boosting parameter, then this should be c(1,1,1,2,2,2)}
 
 \item{measurement_indices_by_time}{default NULL, optional vector giving the index of `measurement_bias` that each strain uses the measurement shift from from. eg. if there's 6 circulation years and 3 strain clusters}
+
+\item{data_type}{integer, currently accepting 1 or 2. Set to 1 for discretized, bounded data, or 2 for continuous, bounded data. Note that with 2, MIN_TITRE must be set.}
 }
 \value{
 a ggplot2 object
