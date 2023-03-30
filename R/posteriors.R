@@ -237,6 +237,7 @@ prob_mus <- function(mus, pars) {
   mu_mean <- pars["mu_mean"]
   mu_sd <- pars["mu_sd"]
   return(sum(dnorm(mus, mu_mean, mu_sd, log = TRUE)))
+  ## 
   ## location <- log(mu_mean^2 / sqrt(mu_sd^2 + mu_mean^2))
   ## shape <- sqrt(log(1 + (mu_sd^2/mu_mean^2)))
   ## l_mean <- log(mu_mean) - (mu_sd^2)/2
