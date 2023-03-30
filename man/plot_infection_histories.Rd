@@ -14,7 +14,8 @@ plot_infection_histories(
   par_tab,
   nsamp = 100,
   mu_indices = NULL,
-  measurement_indices_by_time = NULL
+  measurement_indices_by_time = NULL,
+  p_ncol = length(individuals)/2
 )
 }
 \arguments{

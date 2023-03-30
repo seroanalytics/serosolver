@@ -23,4 +23,8 @@ a likelihood for each observed titre
 Fast observation error function
  Calculate the probability of a set of observed titres given a corresponding set of predicted titres. FAST IMPLEMENTATION
 }
+\seealso{
+Other likelihood_functions: 
+\code{\link{Fast observation error function continuous}}
+}
 \concept{likelihood_functions}

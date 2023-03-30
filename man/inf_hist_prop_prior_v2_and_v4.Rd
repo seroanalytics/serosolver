@@ -48,7 +48,8 @@ inf_hist_prop_prior_v2_and_v4(
   boosting_vec_indices,
   total_alive,
   temp = 1,
-  solve_likelihood = TRUE
+  solve_likelihood = TRUE,
+  data_type = 1L
 )
 }
 \arguments{
@@ -131,6 +132,8 @@ inf_hist_prop_prior_v2_and_v4(
 \item{temp}{double, temperature for parallel tempering MCMC}
 
 \item{solve_likelihood}{bool, if FALSE does not solve likelihood when calculating acceptance probability}
+
+\item{data_type}{int, defaults to 1 for discretized, bounded data. Set to 2 for continuous, bounded data}
 }
 \value{
 an R list with 6 entries: 1) the vector replacing old_probs_1, corresponding to the new likelihoods per individual; 2) the matrix of 1s and 0s corresponding to the new infection histories for all individuals; 3-6) the updated entries for proposal_iter, accepted_iter, proposal_swap and accepted_swap.

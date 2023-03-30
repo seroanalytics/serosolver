@@ -156,38 +156,39 @@ NumericVector likelihood_func_fast(const NumericVector &theta, const NumericVect
 
 
 //' Fast observation error function continuous
- //'  Calculate the probability of a set of observed titres given a corresponding set of predicted titres assuming continuous, bounded observations. FAST IMPLEMENTATION
- //' @param theta NumericVector, a named parameter vector giving the normal distribution standard deviation and the max observable titre
- //' @param obs NumericVector, the vector of observed log titres
- //' @param predicted_titres NumericVector, the vector of predicted log titres
- //' @param a vector of same length as the input data giving the probability of observing each observation given the predictions
- //' @return a likelihood for each observed titre
- //' @export
- //' @family likelihood_functions
- // [[Rcpp::export(rng = false)]]
- NumericVector likelihood_func_fast_continuous(const NumericVector &theta, const NumericVector &obs, const NumericVector &predicted_titres){
-   int total_titres = predicted_titres.size();
-   NumericVector ret(total_titres);
-   const double sd = theta["error"];
-   const double den = sd*M_SQRT2;
-   const double den2 = log(sd*2.50662827463);
-   const double max_titre = theta["MAX_TITRE"];
-   const double min_titre = theta["MIN_TITRE"];
-   const double log_const = log(0.5);
-   
-   for(int i = 0; i < total_titres; ++i){
-     // Most titres are between 0 and max_titre, this is the difference in normal cdfs
-     if(obs[i] < max_titre && obs[i] > min_titre){
-       ret[i] = -0.5*(pow((obs[i]-predicted_titres[i])/sd, 2)) - den2;
-       // For titres above the maximum, 
-     } else if(obs[i] >= max_titre) {
-       ret[i] = log_const + log(erfc((max_titre - predicted_titres[i])/den));
-     } else {
-       ret[i] = log_const + log(1.0 + erf((theta["MIN_TITRE"] - predicted_titres[i])/den));
-     }
+//'  Calculate the probability of a set of observed titres given a corresponding set of predicted titres assuming continuous, bounded observations. FAST IMPLEMENTATION
+//' @name Fast observation error function continuous
+//' @param theta NumericVector, a named parameter vector giving the normal distribution standard deviation and the max observable titre
+//' @param obs NumericVector, the vector of observed log titres
+//' @param predicted_titres NumericVector, the vector of predicted log titres
+//' @param a vector of same length as the input data giving the probability of observing each observation given the predictions
+//' @return a likelihood for each observed titre
+//' @export
+//' @family likelihood_functions
+// [[Rcpp::export(rng = false)]]
+NumericVector likelihood_func_fast_continuous(const NumericVector &theta, const NumericVector &obs, const NumericVector &predicted_titres){
+ int total_titres = predicted_titres.size();
+ NumericVector ret(total_titres);
+ const double sd = theta["error"];
+ const double den = sd*M_SQRT2;
+ const double den2 = log(sd*2.50662827463);
+ const double max_titre = theta["MAX_TITRE"];
+ const double min_titre = theta["MIN_TITRE"];
+ const double log_const = log(0.5);
+ 
+ for(int i = 0; i < total_titres; ++i){
+   // Most titres are between 0 and max_titre, this is the difference in normal cdfs
+   if(obs[i] < max_titre && obs[i] > min_titre){
+     ret[i] = -0.5*(pow((obs[i]-predicted_titres[i])/sd, 2)) - den2;
+     // For titres above the maximum, 
+   } else if(obs[i] >= max_titre) {
+     ret[i] = log_const + log(erfc((max_titre - predicted_titres[i])/den));
+   } else {
+     ret[i] = log_const + log(1.0 + erf((theta["MIN_TITRE"] - predicted_titres[i])/den));
    }
-   return(ret);
- } 
+ }
+ return(ret);
+} 
 
 // Likelihood calculation for infection history proposal
 // Not really to be used elsewhere other than in \code{\link{inf_hist_prop_prior_v2_and_v4}}, as requires correct indexing for the predicted titres vector. Also, be very careful, as predicted_titres is set to 0 at the end!
@@ -247,8 +248,9 @@ void proposal_likelihood_func_continuous(double &new_prob,
                               const IntegerVector &cum_nrows_per_individual_in_data,
                               const IntegerVector &cum_nrows_per_individual_in_repeat_data,
                               const double &log_const,
+                              const double &sd,
                               const double &den,
-                              const double &den2;
+                              const double &den2,
                               const double &max_titre,
                               const double &min_titre,
                               const bool &repeat_data_exist){

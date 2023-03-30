@@ -156,6 +156,7 @@ arma::mat inf_hist_prop_prior_v3(arma::mat infection_history_mat,
 //' @param total_alive IntegerVector, giving the total number of potential infection events for each group. This only applies to prior version 4. If set to a vector of values -1, then this is ignored.
 //' @param temp double, temperature for parallel tempering MCMC
 //' @param solve_likelihood bool, if FALSE does not solve likelihood when calculating acceptance probability
+//' @param data_type int, defaults to 1 for discretized, bounded data. Set to 2 for continuous, bounded data
 //' @return an R list with 6 entries: 1) the vector replacing old_probs_1, corresponding to the new likelihoods per individual; 2) the matrix of 1s and 0s corresponding to the new infection histories for all individuals; 3-6) the updated entries for proposal_iter, accepted_iter, proposal_swap and accepted_swap.
 //' @export
 //' @family infection_history_proposal
@@ -203,7 +204,8 @@ List inf_hist_prop_prior_v2_and_v4(const NumericVector &theta, // Model paramete
 				   const IntegerVector &boosting_vec_indices,
 				   const IntegerVector &total_alive,
 				   const double temp=1,
-				   bool solve_likelihood=true				   
+				   bool solve_likelihood=true,
+				   const int data_type=1
 				   ){
   // ########################################################################
   // Parameters to control indexing of data
@@ -291,6 +293,12 @@ IntegerMatrix new_infection_history_mat(clone(infection_history_mat)); // Can th
   const double den = sd*M_SQRT2;
   const double max_titre = theta["MAX_TITRE"];
   const double log_const = log(0.5);
+  const double den2 = log(sd*2.50662827463);
+  double min_titre = 1.0;
+  
+  if(data_type==2){
+    min_titre = theta["MIN_TITRE"];
+  }
   
   // ====================================================== //
   // =============== SETUP MODEL PARAMETERS =============== //
@@ -612,13 +620,24 @@ IntegerMatrix new_infection_history_mat(clone(infection_history_mat)); // Can th
     	// Need to calculate likelihood of these titres... 
     	new_prob = 0;
     	
-    	// Go from first row in the data for this individual to up to the next one, accumlating
+    	// Go from first row in the data for this individual to up to the next one, accumulating
     	// likelihood for this individual
     	// For unique data
-    
-    	proposal_likelihood_func(new_prob, predicted_titres, indiv, data, repeat_data, repeat_indices,
-    				 cum_nrows_per_individual_in_data, cum_nrows_per_individual_in_repeat_data,
-    				 log_const, den, max_titre, repeat_data_exist);
+      // Data_type 1 is discretized, bounded data
+      if(data_type==1){
+    	  proposal_likelihood_func(new_prob, predicted_titres, indiv, data, repeat_data, repeat_indices,
+    		  		 cum_nrows_per_individual_in_data, cum_nrows_per_individual_in_repeat_data,
+    			  	 log_const, den, max_titre, repeat_data_exist);
+      // Data_type 2 is continuous, bounded data
+      } else if(data_type==2){
+        proposal_likelihood_func_continuous(new_prob, predicted_titres, indiv, data, repeat_data, repeat_indices,
+                                            cum_nrows_per_individual_in_data, cum_nrows_per_individual_in_repeat_data,
+                                            log_const, sd, den, den2, max_titre, min_titre, repeat_data_exist);
+      } else {
+        proposal_likelihood_func(new_prob, predicted_titres, indiv, data, repeat_data, repeat_indices,
+                                 cum_nrows_per_individual_in_data, cum_nrows_per_individual_in_repeat_data,
+                                 log_const, den, max_titre, repeat_data_exist);
+      }
 
       } else {
 	        old_prob = new_prob = old_probs[indiv];

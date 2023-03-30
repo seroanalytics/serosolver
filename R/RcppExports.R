@@ -82,9 +82,6 @@ titre_data_fast <- function(theta, infection_history_mat, circulation_times, cir
     .Call('_serosolver_titre_data_fast', PACKAGE = 'serosolver', theta, infection_history_mat, circulation_times, circulation_times_indices, sample_times, rows_per_indiv_in_samples, cum_nrows_per_individual_in_data, nrows_per_blood_sample, measurement_strain_indices, antigenic_map_long, antigenic_map_short, antigenic_distances, mus, boosting_vec_indices, boost_before_infection)
 }
 
-#' Fast observation error function continuous
-NULL
-
 #' Marginal prior probability (p(Z)) of a particular infection history matrix single prior
 #'  Prior is independent contribution from each year
 #' @param infection_history IntegerMatrix, the infection history matrix
@@ -163,6 +160,16 @@ likelihood_func_fast <- function(theta, obs, predicted_titres) {
     .Call('_serosolver_likelihood_func_fast', PACKAGE = 'serosolver', theta, obs, predicted_titres)
 }
 
+#' Fast observation error function continuous
+#'  Calculate the probability of a set of observed titres given a corresponding set of predicted titres assuming continuous, bounded observations. FAST IMPLEMENTATION
+#' @name Fast observation error function continuous
+#' @param theta NumericVector, a named parameter vector giving the normal distribution standard deviation and the max observable titre
+#' @param obs NumericVector, the vector of observed log titres
+#' @param predicted_titres NumericVector, the vector of predicted log titres
+#' @param a vector of same length as the input data giving the probability of observing each observation given the predictions
+#' @return a likelihood for each observed titre
+#' @export
+#' @family likelihood_functions
 likelihood_func_fast_continuous <- function(theta, obs, predicted_titres) {
     .Call('_serosolver_likelihood_func_fast_continuous', PACKAGE = 'serosolver', theta, obs, predicted_titres)
 }
@@ -228,11 +235,12 @@ inf_hist_prop_prior_v3 <- function(infection_history_mat, sampled_indivs, age_ma
 #' @param total_alive IntegerVector, giving the total number of potential infection events for each group. This only applies to prior version 4. If set to a vector of values -1, then this is ignored.
 #' @param temp double, temperature for parallel tempering MCMC
 #' @param solve_likelihood bool, if FALSE does not solve likelihood when calculating acceptance probability
+#' @param data_type int, defaults to 1 for discretized, bounded data. Set to 2 for continuous, bounded data
 #' @return an R list with 6 entries: 1) the vector replacing old_probs_1, corresponding to the new likelihoods per individual; 2) the matrix of 1s and 0s corresponding to the new infection histories for all individuals; 3-6) the updated entries for proposal_iter, accepted_iter, proposal_swap and accepted_swap.
 #' @export
 #' @family infection_history_proposal
-inf_hist_prop_prior_v2_and_v4 <- function(theta, infection_history_mat, old_probs_1, sampled_indivs, n_years_samp_vec, age_mask, strain_mask, n_alive, n_infections, n_infected_group, prior_lookup, swap_propn, swap_distance, propose_from_prior, alpha, beta, circulation_times, circulation_times_indices, sample_times, rows_per_indiv_in_samples, cum_nrows_per_individual_in_data, cum_nrows_per_individual_in_repeat_data, nrows_per_blood_sample, group_id_vec, measurement_strain_indices, antigenic_map_long, antigenic_map_short, antigenic_distances, data, repeat_data, repeat_indices, titre_shifts, proposal_iter, accepted_iter, proposal_swap, accepted_swap, overall_swap_proposals, overall_add_proposals, time_sample_probs, mus, boosting_vec_indices, total_alive, temp = 1, solve_likelihood = TRUE) {
-    .Call('_serosolver_inf_hist_prop_prior_v2_and_v4', PACKAGE = 'serosolver', theta, infection_history_mat, old_probs_1, sampled_indivs, n_years_samp_vec, age_mask, strain_mask, n_alive, n_infections, n_infected_group, prior_lookup, swap_propn, swap_distance, propose_from_prior, alpha, beta, circulation_times, circulation_times_indices, sample_times, rows_per_indiv_in_samples, cum_nrows_per_individual_in_data, cum_nrows_per_individual_in_repeat_data, nrows_per_blood_sample, group_id_vec, measurement_strain_indices, antigenic_map_long, antigenic_map_short, antigenic_distances, data, repeat_data, repeat_indices, titre_shifts, proposal_iter, accepted_iter, proposal_swap, accepted_swap, overall_swap_proposals, overall_add_proposals, time_sample_probs, mus, boosting_vec_indices, total_alive, temp, solve_likelihood)
+inf_hist_prop_prior_v2_and_v4 <- function(theta, infection_history_mat, old_probs_1, sampled_indivs, n_years_samp_vec, age_mask, strain_mask, n_alive, n_infections, n_infected_group, prior_lookup, swap_propn, swap_distance, propose_from_prior, alpha, beta, circulation_times, circulation_times_indices, sample_times, rows_per_indiv_in_samples, cum_nrows_per_individual_in_data, cum_nrows_per_individual_in_repeat_data, nrows_per_blood_sample, group_id_vec, measurement_strain_indices, antigenic_map_long, antigenic_map_short, antigenic_distances, data, repeat_data, repeat_indices, titre_shifts, proposal_iter, accepted_iter, proposal_swap, accepted_swap, overall_swap_proposals, overall_add_proposals, time_sample_probs, mus, boosting_vec_indices, total_alive, temp = 1, solve_likelihood = TRUE, data_type = 1L) {
+    .Call('_serosolver_inf_hist_prop_prior_v2_and_v4', PACKAGE = 'serosolver', theta, infection_history_mat, old_probs_1, sampled_indivs, n_years_samp_vec, age_mask, strain_mask, n_alive, n_infections, n_infected_group, prior_lookup, swap_propn, swap_distance, propose_from_prior, alpha, beta, circulation_times, circulation_times_indices, sample_times, rows_per_indiv_in_samples, cum_nrows_per_individual_in_data, cum_nrows_per_individual_in_repeat_data, nrows_per_blood_sample, group_id_vec, measurement_strain_indices, antigenic_map_long, antigenic_map_short, antigenic_distances, data, repeat_data, repeat_indices, titre_shifts, proposal_iter, accepted_iter, proposal_swap, accepted_swap, overall_swap_proposals, overall_add_proposals, time_sample_probs, mus, boosting_vec_indices, total_alive, temp, solve_likelihood, data_type)
 }
 
 #' Function to calculate non-linear waning

@@ -44,7 +44,7 @@ r_likelihood_continuous <- function(expected, data, theta, expected_indices = NU
   liks <- numeric(length(expected))
   large_i <- data >= theta["MAX_TITRE"]
   small_i <- data <= theta["MIN_TITRE"]
-  rest_i <- data >= theta["MIN_TITRE"] & data <= theta["MAX_TITRE"]
+  rest_i <- data > theta["MIN_TITRE"] & data < theta["MAX_TITRE"]
   
   liks[large_i] <- pnorm(theta["MAX_TITRE"], expected[large_i], theta["error"], lower.tail = FALSE, log.p = TRUE)
   liks[small_i] <- pnorm(theta["MIN_TITRE"], expected[small_i], theta["error"], lower.tail = TRUE, log.p = TRUE)

@@ -18,7 +18,8 @@ simulate_group(
   mu_indices = NULL,
   measurement_bias = NULL,
   measurement_indices = NULL,
-  add_noise = TRUE
+  add_noise = TRUE,
+  DOBs = NULL
 )
 }
 \arguments{
@@ -45,6 +46,8 @@ simulate_group(
 \item{measurement_indices}{default NULL, optional vector giving the index of `measurement_bias` that each strain uses the measurement shift from from. eg. if there's 6 circulation years and 3 strain clusters, then this might be c(1,1,2,2,3,3)}
 
 \item{add_noise}{if TRUE, adds observation noise to the simulated titres}
+
+\item{DOBs}{vector giving the time period of birth (entries corresponding to `strain_isolation_times`)}
 }
 \value{
 a data frame with columns individual, samples, virus and titre of simulated data
