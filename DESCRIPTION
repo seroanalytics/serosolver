@@ -42,7 +42,12 @@ Suggests:
     knitr,
     Matrix,
     rmarkdown,
-    testthat
+    testthat,
+    GGally,
+    MASS,
+    bayesplot,
+    deSolve,
+    reshape2
 LinkingTo: 
     Rcpp,
     RcppArmadillo,
