@@ -37,6 +37,7 @@ generate_quantiles <- function(x, sig_f = 3, qs = c(0.025, 0.5, 0.975), as_text 
 #' @param for_res_plot TRUE/FALSE value. If using the output of this for plotting of residuals, returns the actual data points rather than summary statistics
 #' @param expand_titredat TRUE/FALSE value. If TRUE, solves titre predictions for all possible infection times. If left FALSE, then only solves for the infections times at which a titre against the circulating virus was measured in titre_dat.
 #' @param titre_before_infection TRUE/FALSE value. If TRUE, solves titre predictions, but gives the predicted titre at a given time point BEFORE any infection during that time occurs.
+#' @param data_type integer, currently accepting 1 or 2. Set to 1 for discretized, bounded data, or 2 for continuous, bounded data. Note that with 2, MIN_TITRE must be set.
 #' @return a list with the titre predictions (95% credible intervals, median and multivariate posterior mode) and the probabilities of infection for each individual in each epoch
 #' @examples
 #' \dontrun{
@@ -58,7 +59,8 @@ get_titre_predictions <- function(chain, infection_histories, titre_dat,
                                   mu_indices = NULL,
                                   measurement_indices_by_time = NULL,
                                   for_res_plot = FALSE, expand_titredat = FALSE,
-                                  titre_before_infection=FALSE, titres_for_regression=FALSE){
+                                  titre_before_infection=FALSE, titres_for_regression=FALSE,
+                                  data_type=1){
     ## Need to align the iterations of the two MCMC chains
     ## and choose some random samples
     samps <- intersect(unique(infection_histories$sampno), unique(chain$sampno))
@@ -104,7 +106,8 @@ get_titre_predictions <- function(chain, infection_histories, titre_dat,
     model_func <- create_posterior_func(par_tab, titre_dat1, antigenic_map, 100,
                                         mu_indices = mu_indices,version=2,
                                         measurement_indices_by_time = measurement_indices_by_time, function_type = 4,
-                                        titre_before_infection=titre_before_infection
+                                        titre_before_infection=titre_before_infection,
+                                        data_type=data_type
                                         )
 
     predicted_titres <- residuals <- residuals_floor <- 
@@ -227,7 +230,8 @@ plot_infection_histories_long <- function(chain, infection_histories, titre_dat,
                                      strain_isolation_times=NULL, par_tab,
                                      nsamp = 100,
                                      mu_indices = NULL,
-                                     measurement_indices_by_time = NULL) {
+                                     measurement_indices_by_time = NULL,
+                                     data_type=1) {
     individuals <- individuals[order(individuals)]
     ## Generate titre predictions
     titre_preds <- get_titre_predictions(
@@ -235,7 +239,8 @@ plot_infection_histories_long <- function(chain, infection_histories, titre_dat,
         antigenic_map, strain_isolation_times, 
         par_tab, nsamp, FALSE, mu_indices,
         measurement_indices_by_time,
-        expand_titredat=TRUE
+        expand_titredat=TRUE,
+        data_type=data_type
     )
     
     ## Use these titre predictions and summary statistics on infection histories
@@ -307,7 +312,8 @@ plot_infection_histories <- function(chain, infection_histories, titre_dat,
                                      nsamp = 100,
                                      mu_indices = NULL,
                                      measurement_indices_by_time = NULL,
-                                     p_ncol=length(individuals)/2) {
+                                     p_ncol=length(individuals)/2,
+                                     data_type=1) {
     individuals <- individuals[order(individuals)]
     ## Generate titre predictions
     titre_preds <- get_titre_predictions(
@@ -315,7 +321,7 @@ plot_infection_histories <- function(chain, infection_histories, titre_dat,
         antigenic_map, strain_isolation_times, 
         par_tab, nsamp, FALSE, mu_indices,
         measurement_indices_by_time,
-        expand_titredat=TRUE
+        expand_titredat=TRUE,data_type=data_type
     )
 
     ## Use these titre predictions and summary statistics on infection histories
