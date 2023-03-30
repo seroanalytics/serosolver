@@ -407,6 +407,7 @@ simulate_individual <- function(theta,
 #' Adds truncated noise to titre data
 #' @param y the titre
 #' @param theta a vector with MAX_TITRE and error parameters
+#' @param data_type integer, currently accepting 1 or 2. Set to 1 for discretized, bounded data, or 2 for continuous, bounded data. Note that with 2, MIN_TITRE must be set.
 #' @return a noisy titre
 #' @export
 #' @examples
@@ -416,17 +417,29 @@ simulate_individual <- function(theta,
 #' y <- runif(100)
 #' noisy_y <- add_noise(y, pars)
 #' }
-add_noise <- function(y, theta, measurement_bias = NULL, indices = NULL) {
-  ## Draw from normal
-  if (!is.null(measurement_bias)) {
-    noise_y <- floor(rnorm(length(y), mean = y + measurement_bias[indices], sd = theta["error"]))
+add_noise <- function(y, theta, measurement_bias = NULL, indices = NULL,data_type=1) {
+  if(data_type ==2){
+    if (!is.null(measurement_bias)) {
+      noise_y <- rnorm(length(y), mean = y + measurement_bias[indices], sd = theta["error"])
+    } else {
+      noise_y <- rnorm(length(y), mean = y, sd = theta["error"])
+    }
+    
+    ## If outside of bounds, truncate
+    noise_y[noise_y < theta["MIN_TITRE"]] <- theta["MIN_TITRE"]
+    noise_y[noise_y > theta["MAX_TITRE"]] <- theta["MAX_TITRE"]
   } else {
-    noise_y <- floor(rnorm(length(y), mean = y, sd = theta["error"]))
+  ## Draw from normal
+    if (!is.null(measurement_bias)) {
+      noise_y <- floor(rnorm(length(y), mean = y + measurement_bias[indices], sd = theta["error"]))
+    } else {
+      noise_y <- floor(rnorm(length(y), mean = y, sd = theta["error"]))
+    }
+  
+    ## If outside of bounds, truncate
+    noise_y[noise_y < 0] <- 0
+    noise_y[noise_y > theta["MAX_TITRE"]] <- theta["MAX_TITRE"]
   }
-
-  ## If outside of bounds, truncate
-  noise_y[noise_y < 0] <- 0
-  noise_y[noise_y > theta["MAX_TITRE"]] <- theta["MAX_TITRE"]
   return(noise_y)
 }
 

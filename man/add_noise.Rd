@@ -4,12 +4,14 @@
 \alias{add_noise}
 \title{Add noise}
 \usage{
-add_noise(y, theta, measurement_bias = NULL, indices = NULL)
+add_noise(y, theta, measurement_bias = NULL, indices = NULL, data_type = 1)
 }
 \arguments{
 \item{y}{the titre}
 
 \item{theta}{a vector with MAX_TITRE and error parameters}
+
+\item{data_type}{integer, currently accepting 1 or 2. Set to 1 for discretized, bounded data, or 2 for continuous, bounded data. Note that with 2, MIN_TITRE must be set.}
 }
 \value{
 a noisy titre

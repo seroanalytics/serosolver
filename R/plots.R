@@ -127,7 +127,7 @@ get_titre_predictions <- function(chain, infection_histories, titre_dat,
         tmp_inf_hist <- infection_histories[infection_histories$sampno == index, ]
         tmp_inf_hist <- as.matrix(Matrix::sparseMatrix(i = tmp_inf_hist$i, j = tmp_inf_hist$j, x = tmp_inf_hist$x, dims = c(n_indiv, nstrain)))
         predicted_titres[, i] <- model_func(pars, tmp_inf_hist)
-        observed_predicted_titres[,i] <- add_noise(predicted_titres[,i], pars, NULL, NULL)
+        observed_predicted_titres[,i] <- add_noise(predicted_titres[,i], pars, NULL, NULL,data_type=data_type)
         inf_hist_all[[i]] <- tmp_inf_hist
         ## Get residuals between observations and predictions
         residuals[, i] <- titre_dat1$titre - floor(predicted_titres[, i])
