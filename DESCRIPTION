@@ -34,7 +34,8 @@ Depends: R (>= 3.5.0)
 Imports:
     data.table,
     ggplot2,
-    plyr
+    plyr,
+    Rcpp
 Suggests:
     coda,
     foreach,

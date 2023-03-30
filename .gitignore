@@ -31,3 +31,5 @@ inst/extdata/cs2_sim/*.csv
 
 doc
 Meta
+/doc/
+/Meta/
