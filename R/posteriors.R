@@ -1,4 +1,4 @@
-#' Likelihood function given data
+#' Likelihood function given discrete data (normal)
 #'
 #' Calculates the likelihood of observing a set of discrete HI titres given a corresponding set of predicted titres
 #' @param expected vector of expected HI titres
@@ -12,7 +12,7 @@ r_likelihood <- function(expected, data, theta, expected_indices = NULL, measure
     expected <- expected + measurement_shifts[expected_indices]
   }
 
-  ## Vectorise, calculate boundaries seperately
+  ## Vectorise, calculate boundaries separately
   liks <- numeric(length(expected))
   large_i <- data >= theta["MAX_TITRE"]
   small_i <- data < 1
@@ -24,6 +24,34 @@ r_likelihood <- function(expected, data, theta, expected_indices = NULL, measure
     pnorm(data[rest_i], expected[rest_i], theta["error"], lower.tail = TRUE, log.p = FALSE))
   return(liks)
 }
+
+
+#' Likelihood function given continuous data (normal)
+#'
+#' Calculates the likelihood of observing a set of continuous and bounded titres given a corresponding set of predicted titres
+#' @param expected vector of expected titres
+#' @param data vector of observed continuous titres
+#' @param expected_indices the indices of the measurement_shifts vector that each predicted titre needs adding to it
+#' @param measurement_shifts the vector of measurement shifts for each cluster to add to the predicted titres
+#' @return a vector with the likelihood of making each observation given the predictions
+#' @export
+r_likelihood_continuous <- function(expected, data, theta, expected_indices = NULL, measurement_shifts = NULL) {
+  if (!is.null(expected_indices) & !is.null(measurement_shifts)) {
+    expected <- expected + measurement_shifts[expected_indices]
+  }
+  
+  ## Vectorise, calculate boundaries separately
+  liks <- numeric(length(expected))
+  large_i <- data >= theta["MAX_TITRE"]
+  small_i <- data <= theta["MIN_TITRE"]
+  rest_i <- data >= theta["MIN_TITRE"] & data <= theta["MAX_TITRE"]
+  
+  liks[large_i] <- pnorm(theta["MAX_TITRE"], expected[large_i], theta["error"], lower.tail = FALSE, log.p = TRUE)
+  liks[small_i] <- pnorm(theta["MIN_TITRE"], expected[small_i], theta["error"], lower.tail = TRUE, log.p = TRUE)
+  liks[rest_i] <- dnorm(data[rest_i], expected[rest_i], theta["error"], log = TRUE)
+  return(liks)
+}
+
 
 
 #' Calculate FOI log probability

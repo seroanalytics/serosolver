@@ -82,6 +82,9 @@ titre_data_fast <- function(theta, infection_history_mat, circulation_times, cir
     .Call('_serosolver_titre_data_fast', PACKAGE = 'serosolver', theta, infection_history_mat, circulation_times, circulation_times_indices, sample_times, rows_per_indiv_in_samples, cum_nrows_per_individual_in_data, nrows_per_blood_sample, measurement_strain_indices, antigenic_map_long, antigenic_map_short, antigenic_distances, mus, boosting_vec_indices, boost_before_infection)
 }
 
+#' Fast observation error function continuous
+NULL
+
 #' Marginal prior probability (p(Z)) of a particular infection history matrix single prior
 #'  Prior is independent contribution from each year
 #' @param infection_history IntegerMatrix, the infection history matrix
@@ -158,6 +161,10 @@ inf_mat_prior_total_group_cpp <- function(n_infections_group, n_alive_group, alp
 #' @family likelihood_functions
 likelihood_func_fast <- function(theta, obs, predicted_titres) {
     .Call('_serosolver_likelihood_func_fast', PACKAGE = 'serosolver', theta, obs, predicted_titres)
+}
+
+likelihood_func_fast_continuous <- function(theta, obs, predicted_titres) {
+    .Call('_serosolver_likelihood_func_fast_continuous', PACKAGE = 'serosolver', theta, obs, predicted_titres)
 }
 
 #' Fast infection history proposal function

@@ -193,6 +193,18 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// likelihood_func_fast_continuous
+NumericVector likelihood_func_fast_continuous(const NumericVector& theta, const NumericVector& obs, const NumericVector& predicted_titres);
+RcppExport SEXP _serosolver_likelihood_func_fast_continuous(SEXP thetaSEXP, SEXP obsSEXP, SEXP predicted_titresSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::traits::input_parameter< const NumericVector& >::type theta(thetaSEXP);
+    Rcpp::traits::input_parameter< const NumericVector& >::type obs(obsSEXP);
+    Rcpp::traits::input_parameter< const NumericVector& >::type predicted_titres(predicted_titresSEXP);
+    rcpp_result_gen = Rcpp::wrap(likelihood_func_fast_continuous(theta, obs, predicted_titres));
+    return rcpp_result_gen;
+END_RCPP
+}
 // inf_hist_prop_prior_v3
 arma::mat inf_hist_prop_prior_v3(arma::mat infection_history_mat, const IntegerVector& sampled_indivs, const IntegerVector& age_mask, const IntegerVector& strain_mask, const IntegerVector& move_sizes, const IntegerVector& n_infs, double alpha, double beta, const NumericVector& rand_ns, const double& swap_propn);
 RcppExport SEXP _serosolver_inf_hist_prop_prior_v3(SEXP infection_history_matSEXP, SEXP sampled_indivsSEXP, SEXP age_maskSEXP, SEXP strain_maskSEXP, SEXP move_sizesSEXP, SEXP n_infsSEXP, SEXP alphaSEXP, SEXP betaSEXP, SEXP rand_nsSEXP, SEXP swap_propnSEXP) {
@@ -295,6 +307,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_serosolver_inf_mat_prior_group_cpp_vector", (DL_FUNC) &_serosolver_inf_mat_prior_group_cpp_vector, 4},
     {"_serosolver_inf_mat_prior_total_group_cpp", (DL_FUNC) &_serosolver_inf_mat_prior_total_group_cpp, 4},
     {"_serosolver_likelihood_func_fast", (DL_FUNC) &_serosolver_likelihood_func_fast, 3},
+    {"_serosolver_likelihood_func_fast_continuous", (DL_FUNC) &_serosolver_likelihood_func_fast_continuous, 3},
     {"_serosolver_inf_hist_prop_prior_v3", (DL_FUNC) &_serosolver_inf_hist_prop_prior_v3, 10},
     {"_serosolver_inf_hist_prop_prior_v2_and_v4", (DL_FUNC) &_serosolver_inf_hist_prop_prior_v2_and_v4, 44},
     {"_serosolver_wane_function", (DL_FUNC) &_serosolver_wane_function, 3},
