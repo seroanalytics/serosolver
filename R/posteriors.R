@@ -273,6 +273,7 @@ prob_mus <- function(mus, pars) {
 #' @param n_alive if not NULL, uses this as the number alive in a given year rather than calculating from the ages. This is needed if the number of alive individuals is known, but individual birth dates are not
 #' @param function_type integer specifying which version of this function to use. Specify 1 to give a posterior solving function; 2 to give the gibbs sampler for infection history proposals; otherwise just solves the titre model and returns predicted titres. NOTE that this is not the same as the attack rate prior argument, \code{version}!
 #' @param titre_before_infection TRUE/FALSE value. If TRUE, solves titre predictions, but gives the predicted titre at a given time point BEFORE any infection during that time occurs.
+#' @param data_type integer, currently accepting 1 or 2. Set to 1 for discretized, bounded data, or 2 for continuous, bounded data. Note that with 2, MIN_TITRE must be set.
 #' @param ... other arguments to pass to the posterior solving function
 #' @return a single function pointer that takes only pars and infection_histories as unnamed arguments. This function goes on to return a vector of posterior values for each individual
 #' @examples
@@ -304,6 +305,7 @@ create_posterior_func <- function(par_tab,
                                   n_alive = NULL,
                                   function_type = 1,
                                   titre_before_infection=FALSE,
+                                  data_type=1,
                                   ...) {
     #browser()
     check_par_tab(par_tab, TRUE, version)
@@ -420,6 +422,15 @@ create_posterior_func <- function(par_tab,
         repeat_indices_cpp <- c(-1)
     }
 
+    ## Set data type for likelihood function
+    if(data_type == 1){
+      likelihood_func_use <- likelihood_func_fast
+    } else if(data_type == 2){
+      likelihood_func_use <- likelihood_func_fast_continuous
+    } else {
+      likelihood_func_use <- likelihood_func_fast
+    }
+    
     if (function_type == 1) {
         message(cat("Creating posterior solving function...\n"))
         f <- function(pars, infection_history_mat) {
@@ -477,10 +488,10 @@ create_posterior_func <- function(par_tab,
             if (solve_likelihood) {
                 ## Calculate likelihood for unique titres and repeat data
                 ## Sum these for each individual
-                liks <- likelihood_func_fast(theta, titres_unique, y_new)
+                liks <- likelihood_func_use(theta, titres_unique, y_new)
                 liks <- sum_buckets(liks, nrows_per_individual_in_data)
                 if (repeat_data_exist) {
-                    liks_repeats <- likelihood_func_fast(theta, titres_repeats, y_new[repeat_indices])
+                    liks_repeats <- likelihood_func_use(theta, titres_repeats, y_new[repeat_indices])
                     liks <- liks + sum_buckets(liks_repeats, nrows_per_individual_in_data_repeats)
                 }
             } else {
@@ -578,7 +589,8 @@ create_posterior_func <- function(par_tab,
                 boosting_vec_indices,
                 n_alive_total,
                 temp,
-                solve_likelihood
+                solve_likelihood,
+                data_type
             )
             return(res)
         }
