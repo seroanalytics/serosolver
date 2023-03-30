@@ -425,9 +425,13 @@ create_posterior_func <- function(par_tab,
     ## Set data type for likelihood function
     if(data_type == 1){
       likelihood_func_use <- likelihood_func_fast
+      message(cat("Setting to discretized, bounded observations\n"))
+      
     } else if(data_type == 2){
+      message(cat("Setting to continuous, bounded observations\n"))
       likelihood_func_use <- likelihood_func_fast_continuous
     } else {
+      message(cat("Assuming discretized, bounded observations\n"))
       likelihood_func_use <- likelihood_func_fast
     }
     
