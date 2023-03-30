@@ -17,6 +17,7 @@ create_posterior_func(
   n_alive = NULL,
   function_type = 1,
   titre_before_infection = FALSE,
+  data_type = 1,
   ...
 )
 }
@@ -44,6 +45,8 @@ create_posterior_func(
 \item{function_type}{integer specifying which version of this function to use. Specify 1 to give a posterior solving function; 2 to give the gibbs sampler for infection history proposals; otherwise just solves the titre model and returns predicted titres. NOTE that this is not the same as the attack rate prior argument, \code{version}!}
 
 \item{titre_before_infection}{TRUE/FALSE value. If TRUE, solves titre predictions, but gives the predicted titre at a given time point BEFORE any infection during that time occurs.}
+
+\item{data_type}{integer, currently accepting 1 or 2. Set to 1 for discretized, bounded data, or 2 for continuous, bounded data. Note that with 2, MIN_TITRE must be set.}
 
 \item{...}{other arguments to pass to the posterior solving function}
 }
