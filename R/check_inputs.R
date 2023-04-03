@@ -53,7 +53,7 @@ check_inf_hist <- function(titre_dat, strain_isolation_times, inf_hist){
 #' @export
 check_par_tab <- function(par_tab, mcmc = FALSE, version = NULL) {
     ## Checks that should happen in simulate_data and run_MCMC
-    essential_names <- c("names","values","fixed","steps","lower_bound","upper_bound","lower_start","upper_start","type")
+    essential_names <- c("names","values","fixed","lower_bound","upper_bound","lower_start","upper_start","type")
     if (!all(essential_names %in% colnames(par_tab))) {
         stop(paste(c("Some column names missing from par_tab: ", setdiff(essential_names,colnames(par_tab))),collapse=" "))
     }
@@ -115,7 +115,7 @@ check_par_tab <- function(par_tab, mcmc = FALSE, version = NULL) {
 #' @export
 check_data <- function(data) {
     ## Check that all columns are present
-    col.names <- c("individual", "samples", "virus", "titre", "group")
+    col.names <- c("individual", "samples", "virus", "titre", "obs_group","group")
     ## If there are any missing columns (NOTE: not checking if group or run are present)
     if (all(col.names %in% colnames(data)) != TRUE) {
         missing.cols <- col.names[which(col.names %in% colnames(data) == FALSE)] ## Find the missing column names

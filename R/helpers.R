@@ -354,7 +354,7 @@ row.match <- function(x, table, nomatch = NA) {
 #' @export
 setup_titredat_for_posterior_func <- function(titre_dat, antigenic_map=NULL, strain_isolation_times=NULL,
                                               age_mask = NULL, n_alive = NULL) {
-  essential_colnames <- c("individual", "samples", "titre", "virus", "run", "group")
+  essential_colnames <- c("individual", "samples", "titre", "virus", "obs_group","run", "group")
 
   if (!is.null(antigenic_map)) {
     strain_isolation_times <- unique(antigenic_map$inf_times) # How many strains are we testing against and what time did they circulate
