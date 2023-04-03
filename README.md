@@ -5,6 +5,8 @@ serosolver
 
 [![Project Status: Active – The project has reached a stable, usable state and is being actively developed.](https://www.repostatus.org/badges/latest/active.svg)](https://www.repostatus.org/#active)
 
+NOTE 03/04/2023: I have merged the `published` branch back into the master branch, but have had to revert some commits which has created some git issues. I would recommend that you re-clone the `serosolver` repository if you are using a local version.
+
 `serosolver` is a modelling and inference package that uses a dynamic model to infer antibody dynamics and infection histories from cross-sectional or longitudinal serological data. The model infers individual-level infection histories, historical attack rates, and patterns of antibody dynamics by accounting for cross-reactive antibody responses and measurement error.
 
 Installation
