@@ -65,9 +65,11 @@ add_measurement_shifts <- function(predicted_titres, to_add, start_index_in_data
 #' @param circulation_times NumericVector, the actual times of circulation that the infection history vector corresponds to
 #' @param circulation_times_indices IntegerVector, which entry in the melted antigenic map that these infection times correspond to
 #' @param sample_times NumericVector, the times that each blood sample was taken
-#' @param rows_per_indiv_in_samples IntegerVector, one entry for each individual. Each entry dictates how many indices through sample_times to iterate per individual (ie. how many sample times does each individual have?)
-#' @param cum_nrows_per_individual_in_data IntegerVector, How many cumulative rows in the titre data correspond to each individual? 
-#' @param nrows_per_blood_sample IntegerVector, one entry per sample taken. Dictates how many entries to iterate through cum_nrows_per_individual_in_data for each sampling time considered
+#' @param type_data_start IntegerVector, one entry for each unique individual. Each entry gives the starting index for each individual of the data frame `unique(titre_dat[,c("individual","obs_type")])`.
+#' @param obs_types IntegerVector, result of `unique(titre_dat[,c("individual","obs_type")])$obs_type`
+#' @param sample_data_start IntegerVector, one entry for each unique individual and observation type combination. Each entry dictates how many indices through sample_times to iterate per individual and observation type (ie. how many sample times does each individual have?)
+#' @param titre_data_start IntegerVector, How many cumulative rows in the titre data correspond to each unique individual and observation type combination? 
+#' @param nrows_per_sample IntegerVector, one entry per sample taken. Dictates how many entries to iterate through cum_nrows_per_individual_in_data for each sampling time considered
 #' @param measurement_strain_indices IntegerVector, the indices of all measured strains in the melted antigenic map, with one entry per measured titre
 #' @param antigenic_map_long NumericVector, the collapsed cross reactivity map for long term boosting, after multiplying by sigma1 see \code{\link{create_cross_reactivity_vector}}
 #' @param antigenic_map_short NumericVector, the collapsed cross reactivity map for short term boosting, after multiplying by sigma2, see \code{\link{create_cross_reactivity_vector}}
@@ -78,8 +80,8 @@ add_measurement_shifts <- function(predicted_titres, to_add, start_index_in_data
 #' @return NumericVector of predicted titres for each entry in measurement_strain_indices
 #' @export
 #' @family titre_model
-titre_data_fast <- function(theta, infection_history_mat, circulation_times, circulation_times_indices, sample_times, rows_per_indiv_in_samples, cum_nrows_per_individual_in_data, nrows_per_blood_sample, measurement_strain_indices, antigenic_map_long, antigenic_map_short, antigenic_distances, mus, boosting_vec_indices, boost_before_infection = FALSE) {
-    .Call('_serosolver_titre_data_fast', PACKAGE = 'serosolver', theta, infection_history_mat, circulation_times, circulation_times_indices, sample_times, rows_per_indiv_in_samples, cum_nrows_per_individual_in_data, nrows_per_blood_sample, measurement_strain_indices, antigenic_map_long, antigenic_map_short, antigenic_distances, mus, boosting_vec_indices, boost_before_infection)
+titre_data_fast <- function(theta, infection_history_mat, circulation_times, circulation_times_indices, sample_times, type_data_start, obs_types, sample_data_start, titre_data_start, nrows_per_sample, measurement_strain_indices, antigenic_map_long, antigenic_map_short, antigenic_distances, mus, boosting_vec_indices, boost_before_infection = FALSE) {
+    .Call('_serosolver_titre_data_fast', PACKAGE = 'serosolver', theta, infection_history_mat, circulation_times, circulation_times_indices, sample_times, type_data_start, obs_types, sample_data_start, titre_data_start, nrows_per_sample, measurement_strain_indices, antigenic_map_long, antigenic_map_short, antigenic_distances, mus, boosting_vec_indices, boost_before_infection)
 }
 
 #' Marginal prior probability (p(Z)) of a particular infection history matrix single prior

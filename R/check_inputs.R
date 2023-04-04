@@ -115,7 +115,7 @@ check_par_tab <- function(par_tab, mcmc = FALSE, version = NULL) {
 #' @export
 check_data <- function(data) {
     ## Check that all columns are present
-    col.names <- c("individual", "samples", "virus", "titre", "obs_group","group")
+    col.names <- c("individual", "samples", "virus", "titre", "obs_type","group")
     ## If there are any missing columns (NOTE: not checking if group or run are present)
     if (all(col.names %in% colnames(data)) != TRUE) {
         missing.cols <- col.names[which(col.names %in% colnames(data) == FALSE)] ## Find the missing column names

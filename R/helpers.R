@@ -348,61 +348,80 @@ row.match <- function(x, table, nomatch = NA) {
 #' Setup titre data indices
 #'
 #' Sets up a large list of pre-indexing and pre-processing to speed up the model solving during MCMC fitting.
+#' Note that this should be `titre_dat` after subsetting to only `run==1`, as we will figure out elsewhere which solves to use as repeats
 #' @inheritParams create_posterior_func
 #' @return a very long list. See source code directly.
 #' @seealso \code{\link{create_posterior_func}}
 #' @export
 setup_titredat_for_posterior_func <- function(titre_dat, antigenic_map=NULL, strain_isolation_times=NULL,
                                               age_mask = NULL, n_alive = NULL) {
-  essential_colnames <- c("individual", "samples", "titre", "virus", "obs_group","run", "group")
-
+  essential_colnames <- c("individual", "samples", "titre", "virus", "obs_type","group")
+  ## How many observation types are there?
+  n_indiv <- length(unique(titre_dat$individual))
+  unique_obs_types <- unique(titre_dat$obs_type)
+  n_obs_types <- length(unique_obs_types)
+  
+  ## Check if an antigenic map is provided. If not, then create a dummy map where all pathogens have the same position on the map
   if (!is.null(antigenic_map)) {
-    strain_isolation_times <- unique(antigenic_map$inf_times) # How many strains are we testing against and what time did they circulate
+      strain_isolation_times_tmp <- unique(antigenic_map$inf_times) # How many strains are we testing against and what time did they circulate
+      if(!is.null(strain_isolation_times) & !identical(strain_isolation_times, strain_isolation_times_tmp)){
+          message(cat("Warning: provided strain_isolation_times argument does not match entries in the antigenic map. Please make sure that there is an entry in the antigenic map for each possible circulation time. Using the antigenic map times."))
+      }
+      strain_isolation_times <- strain_isolation_times_tmp
+      
+      ## If no observation types assumed, set all to 1.
+      if (!("obs_type" %in% colnames(antigenic_map)) | length(unique(antigenic_map$obs_type)) != n_obs_types) {
+          antigenic_map <- antigenic_map[,colnames(antigenic_map) != "obs_type"]
+          antigenic_map <- replicate(n_obs_types, expr=antigenic_map,simplify=FALSE)
+            for(index in 1:length(antigenic_map)){
+                antigenic_map[[index]]$obs_type <- index
+            }
+          antigenic_map <- do.call("rbind",antigenic_map)
+      }
+      
   } else {
-    antigenic_map <- data.frame("x_coord"=1,"y_coord"=1,"inf_times"=strain_isolation_times)
+      ## Create a dummy map with entries for each observation type
+      antigenic_map <- data.frame("x_coord"=1,"y_coord"=1,
+                                  "inf_times"=rep(strain_isolation_times, n_obs_types), 
+                                  "obs_type"=rep(unique_obs_types,each=length(strain_isolation_times)))
   }
-   
-  strain_isolation_times <- antigenic_map$inf_times
-  antigenic_map_melted <- c(melt_antigenic_coords(antigenic_map[, c("x_coord", "y_coord")]))
-
-  measured_strain_indices <- match(titre_dat$virus, antigenic_map$inf_times) - 1 ## For each virus tested, what is its index in the antigenic map?
+  strain_isolation_times <- unique(antigenic_map$inf_times)
+  
+  ## Create a melted antigenic map for each observation type
+  antigenic_maps_melted <- lapply(unique_obs_types, function(b){
+      tmp <- antigenic_map[antigenic_map$obs_type == b,]
+      c(melt_antigenic_coords(tmp[,c("x_coord","y_coord")]))
+    })
+  
+  measured_strain_indices <- match(titre_dat$virus, strain_isolation_times) - 1 ## For each virus tested, what is its index in the antigenic map?
   infection_strain_indices <- match(strain_isolation_times, strain_isolation_times) - 1 ## For each virus that circulated, what is its index in the antigenic map?
 
   ## Get unique measurement sets for each individual at
-  ## each sampling time for each repeat
-  ## ie. each row of this is a unique blood sample taken
-  samples <- unique(titre_dat[, c("individual", "samples", "run")])
-  sample_times <- samples$samples ## What were the times that these samples were taken?
-  individuals <- samples$individual ## Who are the individuals that these samples correspond to?
-  n_indiv <- length(unique(individuals))
+  ## each sampling time, for each observation type, for each repeat
+  ## ie. each row of this is a unique blood sample and observation type taken
+  sample_data <- unique(titre_dat[, c("individual", "samples", "obs_type")])
+  sample_data_start <- cumsum(c(0,plyr::ddply(sample_data, .(individual, obs_type), nrow)$V1))
+  sample_times <- sample_data$samples ## What were the times that these samples were taken?
+  
+  type_data <- unique(titre_dat[,c("individual","obs_type")])
+  type_data_start <- cumsum(c(0, plyr::ddply(type_data, .(individual), nrow)$V1))
+  obs_types <- type_data$obs_type
+  
+  ## How many rows in the titre data correspond to each unique individual, sample, observation type?
+  ## ie. each element of this vector corresponds to one set of titres that need to be predicted
+  nrows_per_sample <- plyr::ddply(titre_dat, .(individual, samples, obs_type), nrow)$V1
+  titre_data_start <- cumsum(c(0,nrows_per_sample))
 
+    ## Get unique groups
   groups <- unique(titre_dat$group)
   group_table <- unique(titre_dat[, c("individual", "group")])
   group_id_vec <- group_table$group - 1
-
-  ## Firstly, how many rows in the titre data correspond to each unique individual, sample and titre repeat?
-  ## ie. each element of this vector corresponds to one set of titres that need to be predicted
-  # nrows_per_blood_sample <- NULL
-  nrows_per_blood_sample <- plyr::ddply(titre_dat, .(individual, samples, run), nrow)$V1
-
-  ## Which indices in the sampling times vector correspond to each individual?
-  ## ie. each contiguous pair of entries in this vector corresponds to the
-  ## first and last entry in the samples matrix that correspond to each individual
-  rows_per_indiv_in_samples <- c(0)
-  for (individual in unique(individuals)) {
-    rows_per_indiv_in_samples <- c(rows_per_indiv_in_samples, length(individuals[individuals == individual]))
-  }
-  rows_per_indiv_in_samples <- cumsum(rows_per_indiv_in_samples)
-
-  ## Which indices in the titre data matrix correspond to each individual?
-  ## And, how many rows match each individual?
-  nrows_per_individual_in_data <- plyr::ddply(titre_dat, .(individual), nrow)$V1
-  cum_nrows_per_individual_in_data <- cumsum(c(0, nrows_per_individual_in_data))
 
   if (!is.null(titre_dat$DOB)) {
     DOBs <- unique(titre_dat[, c("individual", "DOB")])[, 2]
   } else {
     DOBs <- rep(min(strain_isolation_times), n_indiv)
+    titre_dat$DOB <- min(strain_isolation_times)
   }
   age_mask <- create_age_mask(DOBs, strain_isolation_times)
   strain_mask <- create_strain_mask(titre_dat, strain_isolation_times)
@@ -413,16 +432,21 @@ setup_titredat_for_posterior_func <- function(titre_dat, antigenic_map=NULL, str
   }
 
   return(list(
-    "individuals" = individuals,
-    "antigenic_map_melted" = antigenic_map_melted,
+    "obs_types"=obs_types,
+    "antigenic_map_melted" = antigenic_maps_melted,
     "strain_isolation_times" = strain_isolation_times,
     "infection_strain_indices" = infection_strain_indices,
+    
     "sample_times" = sample_times,
-    "rows_per_indiv_in_samples" = rows_per_indiv_in_samples,
-    "nrows_per_individual_in_data" = nrows_per_individual_in_data,
-    "cum_nrows_per_individual_in_data" = cum_nrows_per_individual_in_data,
+    
+    "titre_data_start"=titre_data_start,
+    "nrows_per_sample"=nrows_per_sample,
+    "sample_data_start"=sample_data_start,
+    "type_data_start"=type_data_start,
+    
     "group_id_vec" = group_id_vec,
-    "nrows_per_blood_sample" = nrows_per_blood_sample,
+    
+    ## This one I need to figure out -- does it need to have a different set of indices for each observation type? Probably not
     "measured_strain_indices" = measured_strain_indices,
     "n_indiv" = n_indiv,
     "age_mask" = age_mask,
