@@ -88,11 +88,13 @@ BEGIN_RCPP
 END_RCPP
 }
 // titre_data_fast
-NumericVector titre_data_fast(const NumericVector& theta, const IntegerMatrix& infection_history_mat, const NumericVector& circulation_times, const IntegerVector& circulation_times_indices, const NumericVector& sample_times, const IntegerVector& type_data_start, const IntegerVector& obs_types, const IntegerVector& sample_data_start, const IntegerVector& titre_data_start, const IntegerVector& nrows_per_sample, const IntegerVector& measurement_strain_indices, const NumericVector& antigenic_map_long, const NumericVector& antigenic_map_short, const NumericVector& antigenic_distances, const NumericVector& mus, const IntegerVector& boosting_vec_indices, bool boost_before_infection);
-RcppExport SEXP _serosolver_titre_data_fast(SEXP thetaSEXP, SEXP infection_history_matSEXP, SEXP circulation_timesSEXP, SEXP circulation_times_indicesSEXP, SEXP sample_timesSEXP, SEXP type_data_startSEXP, SEXP obs_typesSEXP, SEXP sample_data_startSEXP, SEXP titre_data_startSEXP, SEXP nrows_per_sampleSEXP, SEXP measurement_strain_indicesSEXP, SEXP antigenic_map_longSEXP, SEXP antigenic_map_shortSEXP, SEXP antigenic_distancesSEXP, SEXP musSEXP, SEXP boosting_vec_indicesSEXP, SEXP boost_before_infectionSEXP) {
+NumericVector titre_data_fast(const NumericVector& theta, const IntegerVector& unique_theta_indices, const IntegerVector& unique_obs_types, const IntegerMatrix& infection_history_mat, const NumericVector& circulation_times, const IntegerVector& circulation_times_indices, const NumericVector& sample_times, const IntegerVector& type_data_start, const IntegerVector& obs_types, const IntegerVector& sample_data_start, const IntegerVector& titre_data_start, const IntegerVector& nrows_per_sample, const IntegerVector& measurement_strain_indices, const NumericMatrix& antigenic_map_long, const NumericMatrix& antigenic_map_short, const NumericVector& antigenic_distances, const NumericVector& mus_strain_dep, const IntegerVector& boosting_vec_indices, bool boost_before_infection);
+RcppExport SEXP _serosolver_titre_data_fast(SEXP thetaSEXP, SEXP unique_theta_indicesSEXP, SEXP unique_obs_typesSEXP, SEXP infection_history_matSEXP, SEXP circulation_timesSEXP, SEXP circulation_times_indicesSEXP, SEXP sample_timesSEXP, SEXP type_data_startSEXP, SEXP obs_typesSEXP, SEXP sample_data_startSEXP, SEXP titre_data_startSEXP, SEXP nrows_per_sampleSEXP, SEXP measurement_strain_indicesSEXP, SEXP antigenic_map_longSEXP, SEXP antigenic_map_shortSEXP, SEXP antigenic_distancesSEXP, SEXP mus_strain_depSEXP, SEXP boosting_vec_indicesSEXP, SEXP boost_before_infectionSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::traits::input_parameter< const NumericVector& >::type theta(thetaSEXP);
+    Rcpp::traits::input_parameter< const IntegerVector& >::type unique_theta_indices(unique_theta_indicesSEXP);
+    Rcpp::traits::input_parameter< const IntegerVector& >::type unique_obs_types(unique_obs_typesSEXP);
     Rcpp::traits::input_parameter< const IntegerMatrix& >::type infection_history_mat(infection_history_matSEXP);
     Rcpp::traits::input_parameter< const NumericVector& >::type circulation_times(circulation_timesSEXP);
     Rcpp::traits::input_parameter< const IntegerVector& >::type circulation_times_indices(circulation_times_indicesSEXP);
@@ -103,13 +105,13 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< const IntegerVector& >::type titre_data_start(titre_data_startSEXP);
     Rcpp::traits::input_parameter< const IntegerVector& >::type nrows_per_sample(nrows_per_sampleSEXP);
     Rcpp::traits::input_parameter< const IntegerVector& >::type measurement_strain_indices(measurement_strain_indicesSEXP);
-    Rcpp::traits::input_parameter< const NumericVector& >::type antigenic_map_long(antigenic_map_longSEXP);
-    Rcpp::traits::input_parameter< const NumericVector& >::type antigenic_map_short(antigenic_map_shortSEXP);
+    Rcpp::traits::input_parameter< const NumericMatrix& >::type antigenic_map_long(antigenic_map_longSEXP);
+    Rcpp::traits::input_parameter< const NumericMatrix& >::type antigenic_map_short(antigenic_map_shortSEXP);
     Rcpp::traits::input_parameter< const NumericVector& >::type antigenic_distances(antigenic_distancesSEXP);
-    Rcpp::traits::input_parameter< const NumericVector& >::type mus(musSEXP);
+    Rcpp::traits::input_parameter< const NumericVector& >::type mus_strain_dep(mus_strain_depSEXP);
     Rcpp::traits::input_parameter< const IntegerVector& >::type boosting_vec_indices(boosting_vec_indicesSEXP);
     Rcpp::traits::input_parameter< bool >::type boost_before_infection(boost_before_infectionSEXP);
-    rcpp_result_gen = Rcpp::wrap(titre_data_fast(theta, infection_history_mat, circulation_times, circulation_times_indices, sample_times, type_data_start, obs_types, sample_data_start, titre_data_start, nrows_per_sample, measurement_strain_indices, antigenic_map_long, antigenic_map_short, antigenic_distances, mus, boosting_vec_indices, boost_before_infection));
+    rcpp_result_gen = Rcpp::wrap(titre_data_fast(theta, unique_theta_indices, unique_obs_types, infection_history_mat, circulation_times, circulation_times_indices, sample_times, type_data_start, obs_types, sample_data_start, titre_data_start, nrows_per_sample, measurement_strain_indices, antigenic_map_long, antigenic_map_short, antigenic_distances, mus_strain_dep, boosting_vec_indices, boost_before_infection));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -303,7 +305,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_serosolver_sum_buckets", (DL_FUNC) &_serosolver_sum_buckets, 2},
     {"_serosolver_sum_infections_by_group", (DL_FUNC) &_serosolver_sum_infections_by_group, 3},
     {"_serosolver_add_measurement_shifts", (DL_FUNC) &_serosolver_add_measurement_shifts, 4},
-    {"_serosolver_titre_data_fast", (DL_FUNC) &_serosolver_titre_data_fast, 17},
+    {"_serosolver_titre_data_fast", (DL_FUNC) &_serosolver_titre_data_fast, 19},
     {"_serosolver_inf_mat_prior_cpp", (DL_FUNC) &_serosolver_inf_mat_prior_cpp, 4},
     {"_serosolver_inf_mat_prior_cpp_vector", (DL_FUNC) &_serosolver_inf_mat_prior_cpp_vector, 4},
     {"_serosolver_inf_mat_prior_group_cpp", (DL_FUNC) &_serosolver_inf_mat_prior_group_cpp, 4},

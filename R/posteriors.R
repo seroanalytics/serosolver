@@ -451,14 +451,16 @@ create_posterior_func <- function(par_tab,
     par_names_theta <- par_tab_unique[theta_indices_unique, "names"]
     theta_indices_unique <- theta_indices_unique - 1
     names(theta_indices_unique) <- par_names_theta
-    browser()
+
     ## These will be different for each obs_type
     option_indices <- which(par_tab$type == 0)
     theta_indices <- which(par_tab$type %in% c(0, 1))
     measurement_indices_par_tab <- which(par_tab$type == 3)
     mu_indices_par_tab <- which(par_tab$type == 6)
     
-
+    par_names_theta_all <- par_tab[theta_indices,"names"]
+    
+    
     ## Sort out any assumptions for measurement bias
     use_measurement_bias <- (length(measurement_indices_par_tab) > 0) & !is.null(measurement_indices_by_time)
     
@@ -679,22 +681,31 @@ create_posterior_func <- function(par_tab,
         ## Final version is just the model solving function
         f <- function(pars, infection_history_mat) {
             theta <- pars[theta_indices]
-            names(theta) <- par_names_theta
+            names(theta) <- par_names_theta_all
 
             ## Pass strain-dependent boosting down
             if (use_strain_dependent) {
                 mus <- pars[mu_indices_par_tab]
             }
             
-            antigenic_map_long <- create_cross_reactivity_vector(antigenic_map_melted[[1]], theta["sigma1"])
-            antigenic_map_short <- create_cross_reactivity_vector(antigenic_map_melted[[1]], theta["sigma2"])
-
+            antigenic_map_long <- matrix(nrow=length(strain_isolation_times)^2, ncol=n_obs_types)
+            antigenic_map_short <- matrix(nrow=length(strain_isolation_times)^2, ncol=n_obs_types)
+            
+            sigma1s <- theta[which(par_names_theta_all=="sigma1")]
+            sigma2s <- theta[which(par_names_theta_all=="sigma2")]
+            
+            for(obs_type in unique_obs_types){
+                antigenic_map_long[,obs_type] <- create_cross_reactivity_vector(antigenic_map_melted[[obs_type]], sigma1s[obs_type])
+                antigenic_map_short[,obs_type] <- create_cross_reactivity_vector(antigenic_map_melted[[obs_type]], sigma2s[obs_type])
+            }
+            browser()
             y_new <- titre_data_fast(
-                theta, unique_theta_indices, unique_obs_types,
+                theta, theta_indices_unique, unique_obs_types,
                 infection_history_mat, strain_isolation_times, infection_strain_indices,
                 sample_times, type_data_start,obs_types,
                 sample_data_start, titre_data_start,
-                nrows_per_sample, measured_strain_indices, antigenic_map_long,
+                nrows_per_sample, measured_strain_indices, 
+                antigenic_map_long,
                 antigenic_map_short,
                 antigenic_distances,
                 mus, boosting_vec_indices,

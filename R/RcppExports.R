@@ -80,8 +80,8 @@ add_measurement_shifts <- function(predicted_titres, to_add, start_index_in_data
 #' @return NumericVector of predicted titres for each entry in measurement_strain_indices
 #' @export
 #' @family titre_model
-titre_data_fast <- function(theta, infection_history_mat, circulation_times, circulation_times_indices, sample_times, type_data_start, obs_types, sample_data_start, titre_data_start, nrows_per_sample, measurement_strain_indices, antigenic_map_long, antigenic_map_short, antigenic_distances, mus, boosting_vec_indices, boost_before_infection = FALSE) {
-    .Call('_serosolver_titre_data_fast', PACKAGE = 'serosolver', theta, infection_history_mat, circulation_times, circulation_times_indices, sample_times, type_data_start, obs_types, sample_data_start, titre_data_start, nrows_per_sample, measurement_strain_indices, antigenic_map_long, antigenic_map_short, antigenic_distances, mus, boosting_vec_indices, boost_before_infection)
+titre_data_fast <- function(theta, unique_theta_indices, unique_obs_types, infection_history_mat, circulation_times, circulation_times_indices, sample_times, type_data_start, obs_types, sample_data_start, titre_data_start, nrows_per_sample, measurement_strain_indices, antigenic_map_long, antigenic_map_short, antigenic_distances, mus_strain_dep, boosting_vec_indices, boost_before_infection = FALSE) {
+    .Call('_serosolver_titre_data_fast', PACKAGE = 'serosolver', theta, unique_theta_indices, unique_obs_types, infection_history_mat, circulation_times, circulation_times_indices, sample_times, type_data_start, obs_types, sample_data_start, titre_data_start, nrows_per_sample, measurement_strain_indices, antigenic_map_long, antigenic_map_short, antigenic_distances, mus_strain_dep, boosting_vec_indices, boost_before_infection)
 }
 
 #' Marginal prior probability (p(Z)) of a particular infection history matrix single prior
