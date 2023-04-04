@@ -263,7 +263,7 @@ prob_mus <- function(mus, pars) {
 #'
 #' Takes all of the input data/parameters and returns a function pointer. This function finds the posterior for a given set of input parameters (theta) and infection histories without needing to pass the data set back and forth. No example is provided for function_type=2, as this should only be called within \code{\link{run_MCMC}}
 #' @param par_tab the parameter table controlling information such as bounds, initial values etc. See \code{\link{example_par_tab}}
-#' @param titre_dat the data frame of data to be fitted. Must have columns: group (index of group); individual (integer ID of individual); samples (numeric time of sample taken); virus (numeric time of when the virus was circulating); obs_type (integer of the observation group type, using a unique value for each distinctive type of observation underpinned by the same generative model); titre (integer of titre value against the given virus at that sampling time). See \code{\link{example_titre_dat}}
+#' @param titre_dat the data frame of data to be fitted. Must have columns: group (index of group); individual (integer ID of individual); samples (numeric time of sample taken); virus (numeric time of when the virus was circulating); obs_group (integer of the observation group type, using a unique value for each distinctive type of observation underpinned by the same generative model); titre (integer of titre value against the given virus at that sampling time). See \code{\link{example_titre_dat}}
 #' @param antigenic_map (optional) a data frame of antigenic x and y coordinates. Must have column names: x_coord; y_coord; inf_times. See \code{\link{example_antigenic_map}}
 #' @param strain_isolation_times (optional) if no antigenic map is specified, this argument gives the vector of times at which individuals can be infected
 #' @param version which infection history assumption version to use? See \code{\link{describe_priors}} for options. Can be 1, 2, 3 or 4
@@ -308,48 +308,21 @@ create_posterior_func <- function(par_tab,
                                   titre_before_infection=FALSE,
                                   data_type=1,
                                   ...) {
+    #browser()
     check_par_tab(par_tab, TRUE, version)
     if (!("group" %in% colnames(titre_dat))) {
         titre_dat$group <- 1
     }
-   
-    ## Add a dummy observation type variable if not provided
-    if (!("obs_type" %in% colnames(titre_dat))) {
-        message(cat("Adding missing obs_type to titre_dat"))
-        titre_dat$obs_type <- 1
-    }
-    
-    if (!("obs_type" %in% colnames(par_tab))) {
-        message(cat("Adding missing obs_type to par_tab"))
-        par_tab$obs_type <- 1
-    }
-    
     check_data(titre_dat)
-    
-    titre_dat <- titre_dat %>% arrange(individual, obs_type, samples, virus, run)
-    
-    ## Get unique observation types
-    unique_obs_types <- unique(titre_dat$obs_type)
-    n_obs_types <- length(unique_obs_types)
-    
-    ## Check if an antigenic map is provided. If not, then create a dummy map where all pathogens have the same position on the map
+   
     if (!is.null(antigenic_map)) {
         strain_isolation_times_tmp <- unique(antigenic_map$inf_times) # How many strains are we testing against and what time did they circulate
         if(!is.null(strain_isolation_times) & !identical(strain_isolation_times, strain_isolation_times_tmp)){
             message(cat("Warning: provided strain_isolation_times argument does not match entries in the antigenic map. Please make sure that there is an entry in the antigenic map for each possible circulation time. Using the antigenic map times."))
         }
       strain_isolation_times <- strain_isolation_times_tmp
-      
-      ## If no observation types assumed, set all to 1.
-      if (!("obs_type" %in% colnames(antigenic_map))) {
-          antigenic_map$obs_type <- 1
-      }
-      
     } else {
-        ## Create a dummy map with entries for each observation type
-      antigenic_map <- data.frame("x_coord"=1,"y_coord"=1,
-                                  "inf_times"=rep(strain_isolation_times, n_obs_types), 
-                                  "obs_type"=rep(unique_obs_types,each=length(strain_isolation_times)))
+      antigenic_map <- data.frame("x_coord"=1,"y_coord"=1,"inf_times"=strain_isolation_times)
     }
     
     ## Separate out initial readings and repeat readings - we only
@@ -359,16 +332,16 @@ create_posterior_func <- function(par_tab,
     titre_dat_repeats <- titre_dat[titre_dat$run != 1, ]
     ## Find which entry in titre_dat_unique each titre_dat_repeats entry should correspond to
     tmp <- row.match(
-        titre_dat_repeats[, c("individual", "samples", "obs_type", "virus")],
-        titre_dat_unique[, c("individual", "samples", "obs_type", "virus")]
+        titre_dat_repeats[, c("individual", "samples", "virus")],
+        titre_dat_unique[, c("individual", "samples", "virus")]
     )
     titre_dat_repeats$index <- tmp
 
 
     ## Which entries in the overall titre_dat matrix does each entry in titre_dat_unique correspond to?
     overall_indices <- row.match(
-        titre_dat[, c("individual", "samples", "obs_type","virus")],
-        titre_dat_unique[, c("individual", "samples", "obs_type","virus")]
+        titre_dat[, c("individual", "samples", "virus")],
+        titre_dat_unique[, c("individual", "samples", "virus")]
     )
     ## Setup data vectors and extract
     setup_dat <- setup_titredat_for_posterior_func(
@@ -376,57 +349,28 @@ create_posterior_func <- function(par_tab,
         strain_isolation_times,
         age_mask, n_alive
     )
-    print(setup_dat)
-    ## Vector of observation types matching the unique samples
-    obs_types <- setup_dat$obs_types
-    
-    ## Number of unique groups
+
+    individuals <- setup_dat$individuals
     n_groups <- length(unique(titre_dat$group))
-    group_id_vec <- setup_dat$group_id_vec
-    
-    ## List of melted antigenic maps, one entry for each observation type
     antigenic_map_melted <- setup_dat$antigenic_map_melted
-    antigenic_distances <- antigenic_map_melted[[1]]
-    
+    antigenic_distances <- c(melt_antigenic_coords(antigenic_map[, c("x_coord", "y_coord")]))
     strain_isolation_times <- setup_dat$strain_isolation_times
     infection_strain_indices <- setup_dat$infection_strain_indices
-    
-    ## Sample collection times, entry for each unique individual, observation type and sample
     sample_times <- setup_dat$sample_times
-    ## Indices related to entries in sample_data
-    sample_data_start <- setup_dat$sample_data_start
-    
-    ## Indices related to entries in titre_dat
-    nrows_per_sample <- setup_dat$nrows_per_sample
-    titre_data_start <- setup_dat$titre_data_start
-    
-    ## Indices related to entries in type_data
-    type_data_start <- setup_dat$type_data_start
-    obs_types <- setup_dat$obs_types
-    
-    ## Indices related to entries in the antigenic map
+    rows_per_indiv_in_samples <- setup_dat$rows_per_indiv_in_samples
+    nrows_per_individual_in_data <- setup_dat$nrows_per_individual_in_data
+    cum_nrows_per_individual_in_data <- setup_dat$cum_nrows_per_individual_in_data
+    group_id_vec <- setup_dat$group_id_vec
+
+    nrows_per_blood_sample <- setup_dat$nrows_per_blood_sample
     measured_strain_indices <- setup_dat$measured_strain_indices
-    
     n_alive <- setup_dat$n_alive
     age_mask <- setup_dat$age_mask
     strain_mask <- setup_dat$strain_mask
     n_indiv <- setup_dat$n_indiv
     DOBs <- setup_dat$DOBs
 
-    ## Which entries of the unique titre data correspond to each individual? 
-    ## Used to summarize into per-individual likelihoods later
-    nrows_per_individual_in_data <- NULL
-    nrows_per_individual_in_data <- plyr::ddply(titre_dat_unique, .(individual),
-                                                        function(x) nrow(x[x$run != 1,]))$V1
-    cum_nrows_per_individual_in_data <- cumsum(c(0, nrows_per_individual_in_data))
-    
-    ## Some additional setup for the repeat data
-    ## Used to summarize into per-individual likelihoods later
-    nrows_per_individual_in_data_repeats <- NULL
-    nrows_per_individual_in_data_repeats <- plyr::ddply(titre_dat, .(individual),
-                                                        function(x) nrow(x[x$run != 1,]))$V1
-    cum_nrows_per_individual_in_data_repeats <- cumsum(c(0, nrows_per_individual_in_data_repeats))
-    
+
 #########################################################
     ## Extract parameter type indices from par_tab, to split up
     ## similar parameters in model solving functions
@@ -438,9 +382,13 @@ create_posterior_func <- function(par_tab,
     knot_indices <- which(par_tab$type == 5) ## For functional form version of FOI
     mu_indices_par_tab <- which(par_tab$type == 6)
 #########################################################
-  
 
-    ## Pull out unique and repeat titres for solving likelihood later
+    ## Some additional setup for the repeat data
+    nrows_per_individual_in_data_repeats <- NULL
+    nrows_per_individual_in_data_repeats <- plyr::ddply(titre_dat, .(individual),
+                                                        function(x) nrow(x[x$run != 1,]))$V1
+    cum_nrows_per_individual_in_data_repeats <- cumsum(c(0, nrows_per_individual_in_data_repeats))
+
     titres_unique <- titre_dat_unique$titre
     titres_repeats <- titre_dat_repeats$titre
     repeat_indices <- titre_dat_repeats$index
@@ -514,12 +462,12 @@ create_posterior_func <- function(par_tab,
             ## Calculate titres for measured data
             y_new <- titre_data_fast(
                 theta, infection_history_mat, strain_isolation_times, infection_strain_indices,
-                sample_times, type_data_start, obs_types, sample_data_start, titre_data_start,
-                nrows_per_sample, measured_strain_indices, antigenic_map_long,
+                sample_times, rows_per_indiv_in_samples, cum_nrows_per_individual_in_data,
+                nrows_per_blood_sample, measured_strain_indices,
+                antigenic_map_long,
                 antigenic_map_short,
                 antigenic_distances,
-                mus, boosting_vec_indices,
-                titre_before_infection
+                mus, boosting_vec_indices
             )
             if (use_measurement_bias) {
                 measurement_bias <- pars[measurement_indices_par_tab]
@@ -629,7 +577,7 @@ create_posterior_func <- function(par_tab,
                 rows_per_indiv_in_samples,
                 cum_nrows_per_individual_in_data,
                 cum_nrows_per_individual_in_data_repeats,
-                nrows_per_sample,
+                nrows_per_blood_sample,
                 group_id_vec,
                 measured_strain_indices,
                 antigenic_map_long,
@@ -666,15 +614,14 @@ create_posterior_func <- function(par_tab,
             if (use_strain_dependent) {
                 mus <- pars[mu_indices_par_tab]
             }
-            
-            antigenic_map_long <- create_cross_reactivity_vector(antigenic_map_melted[[1]], theta["sigma1"])
-            antigenic_map_short <- create_cross_reactivity_vector(antigenic_map_melted[[1]], theta["sigma2"])
+
+            antigenic_map_long <- create_cross_reactivity_vector(antigenic_map_melted, theta["sigma1"])
+            antigenic_map_short <- create_cross_reactivity_vector(antigenic_map_melted, theta["sigma2"])
 
             y_new <- titre_data_fast(
                 theta, infection_history_mat, strain_isolation_times, infection_strain_indices,
-                sample_times, type_data_start,obs_types,
-                sample_data_start, titre_data_start,
-                nrows_per_sample, measured_strain_indices, antigenic_map_long,
+                sample_times, rows_per_indiv_in_samples, cum_nrows_per_individual_in_data,
+                nrows_per_blood_sample, measured_strain_indices, antigenic_map_long,
                 antigenic_map_short,
                 antigenic_distances,
                 mus, boosting_vec_indices,
