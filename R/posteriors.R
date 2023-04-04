@@ -332,6 +332,9 @@ create_posterior_func <- function(par_tab,
     unique_obs_types <- unique(titre_dat$obs_type)
     n_obs_types <- length(unique_obs_types)
     
+    #########################################################
+    ## SETUP ANTIGENIC MAP
+    #########################################################
     ## Check if an antigenic map is provided. If not, then create a dummy map where all pathogens have the same position on the map
     if (!is.null(antigenic_map)) {
         strain_isolation_times_tmp <- unique(antigenic_map$inf_times) # How many strains are we testing against and what time did they circulate
@@ -352,6 +355,9 @@ create_posterior_func <- function(par_tab,
                                   "obs_type"=rep(unique_obs_types,each=length(strain_isolation_times)))
     }
     
+    #########################################################
+    ## SETUP DATA
+    #########################################################
     ## Separate out initial readings and repeat readings - we only
     ## want to solve the model once for each unique indiv/sample/virus year tested
     titre_dat_unique <- titre_dat[titre_dat$run == 1, ]
@@ -364,7 +370,6 @@ create_posterior_func <- function(par_tab,
     )
     titre_dat_repeats$index <- tmp
 
-
     ## Which entries in the overall titre_dat matrix does each entry in titre_dat_unique correspond to?
     overall_indices <- row.match(
         titre_dat[, c("individual", "samples", "obs_type","virus")],
@@ -376,7 +381,6 @@ create_posterior_func <- function(par_tab,
         strain_isolation_times,
         age_mask, n_alive
     )
-    print(setup_dat)
     ## Vector of observation types matching the unique samples
     obs_types <- setup_dat$obs_types
     
@@ -427,32 +431,37 @@ create_posterior_func <- function(par_tab,
                                                         function(x) nrow(x[x$run != 1,]))$V1
     cum_nrows_per_individual_in_data_repeats <- cumsum(c(0, nrows_per_individual_in_data_repeats))
     
-#########################################################
-    ## Extract parameter type indices from par_tab, to split up
-    ## similar parameters in model solving functions
-    option_indices <- which(par_tab$type == 0)
-    theta_indices <- which(par_tab$type %in% c(0, 1))
-    phi_indices <- which(par_tab$type == 2)
-    measurement_indices_par_tab <- which(par_tab$type == 3)
-    weights_indices <- which(par_tab$type == 4) ## For functional form version of FOI
-    knot_indices <- which(par_tab$type == 5) ## For functional form version of FOI
-    mu_indices_par_tab <- which(par_tab$type == 6)
-#########################################################
-  
-
+    
+    
     ## Pull out unique and repeat titres for solving likelihood later
     titres_unique <- titre_dat_unique$titre
     titres_repeats <- titre_dat_repeats$titre
     repeat_indices <- titre_dat_repeats$index
     repeat_indices_cpp <- repeat_indices - 1
-
-    par_names_theta <- par_tab[theta_indices, "names"]
-
-    ## Find which options are being used in advance for speed
-    explicit_phi <- (length(phi_indices) > 0) ## Explicit prob of infection term
-    spline_phi <- (length(knot_indices) > 0)
+    
+    #########################################################
+    ## PARAMETER TABLE
+    #########################################################
+    ## Extract parameter type indices from par_tab, to split up
+    ## similar parameters in model solving functions
+    
+    ## In general we are just going to use the indices for a single observation type
+    par_tab_unique <- par_tab[!is.na(par_tab$obs_type) & par_tab$obs_type == min(par_tab$obs_type),]
+    
+    ## These will be different for each obs_type
+    option_indices <- which(par_tab_unique$type == 0)
+    theta_indices <- which(par_tab_unique$type %in% c(0, 1))
+    measurement_indices_par_tab <- which(par_tab_unique$type == 3)
+    mu_indices_par_tab <- which(par_tab_unique$type == 6)
+    
+    ## Each obs_type must have the same vector of parameters in the same order
+    par_names_theta <- par_tab_unique[theta_indices, "names"]
+    theta_indices <- theta_indices
+    names(theta_indices) <- par_names_theta
+    
+    ## Sort out any assumptions for measurement bias
     use_measurement_bias <- (length(measurement_indices_par_tab) > 0) & !is.null(measurement_indices_by_time)
-
+    
     titre_shifts <- c(0)
     expected_indices <- NULL
     measurement_bias <- NULL
@@ -479,6 +488,16 @@ create_posterior_func <- function(par_tab,
         repeat_indices_cpp <- c(-1)
     }
 
+    ## These will be the same for each obs_type, as currently only one exposure type
+    phi_indices <- which(par_tab$type == 2)
+    weights_indices <- which(par_tab$type == 4) ## For functional form version of FOI
+    knot_indices <- which(par_tab$type == 5) ## For functional form version of FOI
+    
+    ## Find which options are being used in advance for speed
+    explicit_phi <- (length(phi_indices) > 0) ## Explicit prob of infection term
+    spline_phi <- (length(knot_indices) > 0)
+    
+    ## Allow different likelihood function for each observation type
     ## Set data type for likelihood function
     if(data_type == 1){
       likelihood_func_use <- likelihood_func_fast
