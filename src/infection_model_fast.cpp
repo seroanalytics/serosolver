@@ -27,6 +27,8 @@
 //' @family titre_model
 // [[Rcpp::export(rng = false)]]
 NumericVector titre_data_fast(const NumericVector &theta, 
+                              const IntegerVector &unique_theta_indices,
+                              const IntegerVector &unique_obs_types,
 			      const IntegerMatrix &infection_history_mat, 
 			      const NumericVector &circulation_times,
 			      const IntegerVector &circulation_times_indices,
@@ -70,25 +72,40 @@ NumericVector titre_data_fast(const NumericVector &theta,
   // ====================================================== //
   // 1. Extract general parameters that apply to all models
   // Pull out model parameters so only need to allocate once
-  double mu = theta["mu"];
-  double mu_short = theta["mu_short"];
-  double wane = theta["wane"];
-  double tau = theta["tau"];
-  double min_titre = 0; //theta["min_titre"];
+  int n_types = obs_types.size();
+  int n_theta = unique_theta_indices.size();
+  
+  NumericVector mus(n_types);
+  NumericVector mu_shorts(n_types);
+  NumericVector wanes(n_types);
+  NumericVector errors(n_types);
+  NumericVector min_titres(n_types);
+  
+  // Alternative boosting function
+  NumericVector gradients(n_types);  
+
+  
+  int mu_index = unique_theta_indices["mu"];
+  int mu_short_index = unique_theta_indices["mu_short"];
+  int wane_index = unique_theta_indices["wane"];
+  int error_index = unique_theta_indices["error"];
+  
+  for(int x = 0; x < n_types; ++x){
+      mus[x] = theta[mu_index + x*tmp];
+      mu_shorts[x] = theta[mu_short_index + x*n_theta];
+      wanes[x] = theta[wane_index + x*n_theta];
+      errors[x] = theta[error_index + x*n_theta];
+  }
+  
+  //double mu = theta["mu"];
+  //double mu_short = theta["mu_short"];
+  //double wane = theta["wane"];
+  //double tau = theta["tau"];
+  //double min_titre = 0; //theta["min_titre"];
 
   // 2. Extract model parameters that are for specific mechanisms
   //    set a boolean flag to choose between model versions
   
-  // Alternative waning function
-  int wane_type = theta["wane_type"]; 
-  bool alternative_wane_func = wane_type == 1;
-  double kappa;
-  double t_change;
- if (alternative_wane_func){
-    kappa = theta["kappa"];
-    t_change = theta["t_change"];
-  }
- 
   // Titre dependent boosting
   bool titre_dependent_boosting = theta["titre_dependent"] == 1;
   double gradient;

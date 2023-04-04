@@ -354,7 +354,6 @@ create_posterior_func <- function(par_tab,
                                   "inf_times"=rep(strain_isolation_times, n_obs_types), 
                                   "obs_type"=rep(unique_obs_types,each=length(strain_isolation_times)))
     }
-    
     #########################################################
     ## SETUP DATA
     #########################################################
@@ -375,6 +374,7 @@ create_posterior_func <- function(par_tab,
         titre_dat[, c("individual", "samples", "obs_type","virus")],
         titre_dat_unique[, c("individual", "samples", "obs_type","virus")]
     )
+
     ## Setup data vectors and extract
     setup_dat <- setup_titredat_for_posterior_func(
         titre_dat_unique, antigenic_map, 
@@ -431,8 +431,6 @@ create_posterior_func <- function(par_tab,
                                                         function(x) nrow(x[x$run != 1,]))$V1
     cum_nrows_per_individual_in_data_repeats <- cumsum(c(0, nrows_per_individual_in_data_repeats))
     
-    
-    
     ## Pull out unique and repeat titres for solving likelihood later
     titres_unique <- titre_dat_unique$titre
     titres_repeats <- titre_dat_repeats$titre
@@ -447,18 +445,20 @@ create_posterior_func <- function(par_tab,
     
     ## In general we are just going to use the indices for a single observation type
     par_tab_unique <- par_tab[!is.na(par_tab$obs_type) & par_tab$obs_type == min(par_tab$obs_type),]
-    
-    ## These will be different for each obs_type
-    option_indices <- which(par_tab_unique$type == 0)
-    theta_indices <- which(par_tab_unique$type %in% c(0, 1))
-    measurement_indices_par_tab <- which(par_tab_unique$type == 3)
-    mu_indices_par_tab <- which(par_tab_unique$type == 6)
+    theta_indices_unique <- which(par_tab_unique$type %in% c(0, 1))
     
     ## Each obs_type must have the same vector of parameters in the same order
-    par_names_theta <- par_tab_unique[theta_indices, "names"]
-    theta_indices <- theta_indices
-    names(theta_indices) <- par_names_theta
+    par_names_theta <- par_tab_unique[theta_indices_unique, "names"]
+    theta_indices_unique <- theta_indices_unique - 1
+    names(theta_indices_unique) <- par_names_theta
+    browser()
+    ## These will be different for each obs_type
+    option_indices <- which(par_tab$type == 0)
+    theta_indices <- which(par_tab$type %in% c(0, 1))
+    measurement_indices_par_tab <- which(par_tab$type == 3)
+    mu_indices_par_tab <- which(par_tab$type == 6)
     
+
     ## Sort out any assumptions for measurement bias
     use_measurement_bias <- (length(measurement_indices_par_tab) > 0) & !is.null(measurement_indices_by_time)
     
@@ -690,7 +690,8 @@ create_posterior_func <- function(par_tab,
             antigenic_map_short <- create_cross_reactivity_vector(antigenic_map_melted[[1]], theta["sigma2"])
 
             y_new <- titre_data_fast(
-                theta, infection_history_mat, strain_isolation_times, infection_strain_indices,
+                theta, unique_theta_indices, unique_obs_types,
+                infection_history_mat, strain_isolation_times, infection_strain_indices,
                 sample_times, type_data_start,obs_types,
                 sample_data_start, titre_data_start,
                 nrows_per_sample, measured_strain_indices, antigenic_map_long,
