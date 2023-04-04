@@ -316,16 +316,12 @@ create_posterior_func <- function(par_tab,
     check_data(titre_dat)
    
     if (!is.null(antigenic_map)) {
-        strain_isolation_times_tmp <- unique(antigenic_map$inf_times) # How many strains are we testing against and what time did they circulate
-        if(!is.null(strain_isolation_times) & !identical(strain_isolation_times, strain_isolation_times_tmp)){
-            message(cat("Warning: provided strain_isolation_times argument does not match entries in the antigenic map. Please make sure that there is an entry in the antigenic map for each possible circulation time. Using the antigenic map times."))
-        }
-      strain_isolation_times <- strain_isolation_times_tmp
+      strain_isolation_times <- unique(antigenic_map$inf_times) # How many strains are we testing against and what time did they circulate
     } else {
       antigenic_map <- data.frame("x_coord"=1,"y_coord"=1,"inf_times"=strain_isolation_times)
     }
     
-    ## Separate out initial readings and repeat readings - we only
+    ## Seperate out initial readings and repeat readings - we only
     ## want to solve the model once for each unique indiv/sample/virus year tested
     titre_dat_unique <- titre_dat[titre_dat$run == 1, ]
     ## Observations from repeats
