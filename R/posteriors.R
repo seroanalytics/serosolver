@@ -698,7 +698,6 @@ create_posterior_func <- function(par_tab,
                 antigenic_map_long[,obs_type] <- create_cross_reactivity_vector(antigenic_map_melted[[obs_type]], sigma1s[obs_type])
                 antigenic_map_short[,obs_type] <- create_cross_reactivity_vector(antigenic_map_melted[[obs_type]], sigma2s[obs_type])
             }
-            browser()
             y_new <- titre_data_fast(
                 theta, theta_indices_unique, unique_obs_types,
                 infection_history_mat, strain_isolation_times, infection_strain_indices,
