@@ -4,7 +4,6 @@
 #' @param par_tab the full parameter table controlling parameter ranges and values
 #' @param group which group index to give this simulated data
 #' @param n_indiv number of individuals to simulate
-#' @param buckets time resolution of the simulated data. buckets=1 indicates annual time resolution; buckets=4 indicates quarterly; buckets=12 monthly
 #' @param antigenic_map (optional) A data frame of antigenic x and y coordinates. Must have column names: x_coord; y_coord; inf_times. See \code{\link{example_antigenic_map}}
 #' @param strain_isolation_times (optional) If no antigenic map is specified, this argument gives the vector of times at which individuals can be infected
 #' @param measured_strains vector of strains that have titres measured matching entries in strain_isolation_times
@@ -42,7 +41,6 @@
 simulate_data <- function(par_tab,
                           group = 1,
                           n_indiv = 100,
-                          buckets = 1,
                           antigenic_map = NULL,
                           strain_isolation_times = NULL,
                           measured_strains = NULL,
@@ -56,30 +54,85 @@ simulate_data <- function(par_tab,
                           measurement_indices = NULL,
                           add_noise = TRUE) {
 
+    #########################################################
+    ## PARAMETER TABLE CHECKS
+    #########################################################
+    check_par_tab(par_tab)
+    if (!("group" %in% colnames(titre_dat))) {
+        titre_dat$group <- 1
+    }
+    
+    
+    if (!("obs_type" %in% colnames(par_tab))) {
+        message(cat("Note: no obs_type detection in par_tab Assuming all obs_type as 1."))
+        par_tab$obs_type <- 1
+    }
+    
+    ## Get unique observation types
+    unique_obs_types <- unique(par_tab$obs_type)
+    n_obs_types <- length(unique_obs_types)
+    
+    #########################################################
+    ## SETUP ANTIGENIC MAP
+    #########################################################
+    ## Check if an antigenic map is provided. If not, then create a dummy map where all pathogens have the same position on the map
     if (!is.null(antigenic_map)) {
-      strain_isolation_times <- unique(antigenic_map$inf_times) # How many strains are we testing against and what time did they circulate
+        strain_isolation_times_tmp <- unique(antigenic_map$inf_times) # How many strains are we testing against and what time did they circulate
+        if(!is.null(strain_isolation_times) & !identical(strain_isolation_times, strain_isolation_times_tmp)){
+            message(cat("Warning: provided strain_isolation_times argument does not match entries in the antigenic map. Please make sure that there is an entry in the antigenic map for each possible circulation time. Using the antigenic map times."))
+        }
+        strain_isolation_times <- strain_isolation_times_tmp
+        
+        ## If no observation types assumed, set all to 1.
+        if (!("obs_type" %in% colnames(antigenic_map))) {
+            message(cat("Note: no obs_type detection in antigenic_map. Aligning antigenic map with par_tab."))
+            antigenic_map_tmp <- replicate(n_obs_types,antigenic_map,simplify=FALSE)
+            for(obs_type in unique_obs_types){
+                antigenic_map_tmp[[obs_type]]$obs_type <- obs_type
+            }
+            antigenic_map <- do.call(rbind,antigenic_map_tmp)
+        }
+        
     } else {
-      antigenic_map <- data.frame("x_coord"=1,"y_coord"=1,"inf_times"=strain_isolation_times)
+        ## Create a dummy map with entries for each observation type
+        antigenic_map <- data.frame("x_coord"=1,"y_coord"=1,
+                                    "inf_times"=rep(strain_isolation_times, n_obs_types), 
+                                    "obs_type"=rep(unique_obs_types,each=length(strain_isolation_times)))
     }
     
     ## Check attack_rates entry
     check_attack_rates(attack_rates, strain_isolation_times)
-    ## Check the inputs of par_tab
-    check_par_tab(par_tab)
+
     message("Simulating data\n")    
 
+    
+    #########################################################
+    ## PARAMETER TABLE
+    #########################################################
     ## Extract parameter type indices from par_tab, to split up
     ## similar parameters in model solving functions
+    
+    ## In general we are just going to use the indices for a single observation type
+    par_tab_unique <- par_tab[!is.na(par_tab$obs_type) & par_tab$obs_type == min(par_tab$obs_type),]
+    theta_indices_unique <- which(par_tab_unique$type %in% c(0, 1))
+    
+    ## Each obs_type must have the same vector of parameters in the same order
+    par_names_theta <- par_tab_unique[theta_indices_unique, "names"]
+    theta_indices_unique <- theta_indices_unique - 1
+    names(theta_indices_unique) <- par_names_theta
+    
+    ## These will be different for each obs_type
     option_indices <- which(par_tab$type == 0)
     theta_indices <- which(par_tab$type %in% c(0, 1))
     measurement_indices_par_tab <- which(par_tab$type == 3)
     mu_indices_par_tab <- which(par_tab$type == 6)
     
+    par_names_theta_all <- par_tab[theta_indices,"names"]
+
     ## Extract parameters
-    par_names_theta <- par_tab[theta_indices, "names"]
     pars <- par_tab$values
     theta <- pars[theta_indices]
-    names(theta) <- par_names_theta
+    names(theta) <- par_names_theta_all
 
     mus <- NULL
     if (!is.null(mu_indices)) {
@@ -109,12 +162,25 @@ simulate_data <- function(par_tab,
     ARs <- tmp[[2]]
     ## Simulate titre data
     sim_dat <- simulate_group(
-        n_indiv, theta, infection_history,
-        strain_isolation_times, measured_strains,
+        n_indiv, 
+        
+        theta, 
+        theta_indices_unique,
+        unique_obs_types,
+        
+        infection_history,
+        strain_isolation_times, 
+        measured_strains,
         sampling_times,
-        nsamps, antigenic_map, repeats,
-        mus, mu_indices, measurement_bias,
-        measurement_indices, add_noise, DOBs
+        nsamps, 
+        antigenic_map, 
+        repeats,
+        mus, 
+        mu_indices, 
+        measurement_bias,
+        measurement_indices, 
+        add_noise, 
+        DOBs
     )
     y <- sim_dat$titre_dat
     infection_history <- sim_dat$infection_history
@@ -152,6 +218,8 @@ simulate_data <- function(par_tab,
 #' Simulates a full set of titre data for n_indiv individuals with known theta and infection_histories. Each individual gets nsamps random samples from sampleTimes, and infections can occur at any of strain_isolation_times
 #' @inheritParams simulate_data
 #' @param theta the named parameter vector
+#' @param theta_indices_unique
+#' @param unique_obs_types
 #' @param infection_histories the matrix of 1s and 0s giving presence/absence of infections for each individual
 #' @param mus default NULL, optional vector of boosting parameters for each strain
 #' @param DOBs vector giving the time period of birth (entries corresponding to `strain_isolation_times`)
@@ -161,6 +229,8 @@ simulate_data <- function(par_tab,
 #' @seealso \code{\link{simulate_individual}}, \code{\link{simulate_individual_faster}}
 simulate_group <- function(n_indiv,
                            theta,
+                           theta_indices_unique,
+                           unique_obs_types,
                            infection_histories,
                            strain_isolation_times,
                            measured_strains,
@@ -176,9 +246,17 @@ simulate_group <- function(n_indiv,
                            DOBs=NULL) {
 
   ## Create antigenic map for short and long term boosting
-  antigenic_map_melted <- melt_antigenic_coords(antigenic_map[, c("x_coord", "y_coord")])
-  antigenic_map_long <- create_cross_reactivity_vector(antigenic_map_melted, theta["sigma1"])
-  antigenic_map_short <- create_cross_reactivity_vector(antigenic_map_melted, theta["sigma2"])
+    antigenic_map_long <- matrix(nrow=length(strain_isolation_times)^2, ncol=n_obs_types)
+    antigenic_map_short <- matrix(nrow=length(strain_isolation_times)^2, ncol=n_obs_types)
+    
+    sigma1s <- theta[which(names(theta)=="sigma1")]
+    sigma2s <- theta[which(names(theta)=="sigma2")]
+    
+    for(obs_type in unique_obs_types){
+        antigenic_map_melted <- melt_antigenic_coords(antigenic_map[antigenic_map$obs_type == obs_type, c("x_coord", "y_coord")])
+        antigenic_map_long[,obs_type] <- create_cross_reactivity_vector(antigenic_map_melted, sigma1s[obs_type])
+        antigenic_map_short[,obs_type] <- create_cross_reactivity_vector(antigenic_map_melted, sigma2s[obs_type])
+    }
   antigenic_distances <- c(antigenic_map_melted)
   dat <- NULL
   ## For each individual
@@ -205,10 +283,12 @@ simulate_group <- function(n_indiv,
     }
     y <- as.data.frame(simulate_individual_faster(
       theta,
+      theta_indices_unique,
       infection_histories[i, ],
       antigenic_map_long,
       antigenic_map_short,
       antigenic_distances,
+      unique_obs_types,
       samps,
       strain_isolation_times,
       measured_strains,
@@ -219,9 +299,9 @@ simulate_group <- function(n_indiv,
     ))
     ## Record individual ID
     y$indiv <- i
-    colnames(y) <- c("samples", "virus", "titre", "run", "individual")
+    colnames(y) <- c("samples", "virus", "obs_type","titre", "run", "individual")
     ## Combine data
-    dat <- rbind(dat, y[, c("individual", "samples", "virus", "titre", "run")])
+    dat <- rbind(dat, y[, c("individual", "samples", "virus", "obs_type","titre", "run")])
   }
   return(list(titre_dat = dat, infection_history = infection_histories))
 }
@@ -232,17 +312,19 @@ simulate_group <- function(n_indiv,
 #' @param infection_history the vector of 1s and 0s giving presence/absence of infections
 #' @param antigenic_map_long the long term antigenic cross reactivity map generated from \code{\link{create_cross_reactivity_vector}}
 #' @param antigenic_map_short the short term antigenic cross reactivity map generated from \code{\link{create_cross_reactivity_vector}}
-#' @param antigenic_distances same dimensions as antigenic_map_long and antigenic_map_short, but gives the raw euclidean antigenic distances
+#' @param antigenic_distances (optional) same dimensions as antigenic_map_long and antigenic_map_short, but gives the raw euclidean antigenic distances
 #' @param sampling_times vector of times at which blood samples were taken
 #' @param measured_strains vector of which strains had titres measured in `strain_isolation_times`
 #' @return a data frame with columns samples, virus and titre of simulated data
 #' @family simulation_functions
 #' @export
 simulate_individual_faster <- function(theta,
+                                       unique_theta_indices=NULL,
                                        infection_history,
                                        antigenic_map_long,
                                        antigenic_map_short,
-                                       antigenic_distances,
+                                       antigenic_distances=NULL,
+                                       unique_obs_types=seq_len(ncol(antigenic_map_long)),
                                        sampling_times,
                                        strain_isolation_times,
                                        measured_strains,
@@ -254,59 +336,80 @@ simulate_individual_faster <- function(theta,
     mus <- c(-1)
     mu_indices <- c(-1)
   }
-
+    ## If have not passed the theta index vector, then create one based on unique parameter names
+    if(is.null(unique_theta_indices)){
+        unique_theta_names <- unique(names(thetas))
+        unique_theta_indices <- seq_along(unique_theta_names)-1
+        names(unique_theta_indices) <- unique_theta_names
+    }
+    
   inf_hist <- matrix(nrow = 1, ncol = length(infection_history))
   inf_hist[1, ] <- infection_history
 
   n_samps <- length(sampling_times)
-
-  ## length(measured_strains) observatios made per blood sample
-  rows_per_blood <- rep(length(measured_strains), n_samps)
+    n_obs_types <- length(unique_obs_types)
+  
+    sampling_times_long <- rep(sampling_times, n_obs_types)
+    
+    ## length(measured_strains) observations made per blood sample
+    nrows_per_sample <- rep(length(measured_strains), n_samps*n_obs_types)
 
   ## Cumulative of the above for the algorithm
-  cumu_rows <- c(0, sum(rows_per_blood))
+    titre_data_start <- cumsum(c(0, nrows_per_sample))
 
   ## Iterate through sample times sample_times[0:(n_samps-1)] to solve the model
-  rows_per_indiv <- c(0, n_samps)
+    sample_data_start <- cumsum(c(0, rep(n_samps,n_obs_types)))
 
   ## Entries in the antigenic map
   strain_indices <- match(strain_isolation_times, strain_isolation_times) - 1
 
+  ## Observation types to match sample times
+  type_data_start <- c(0,n_obs_types)
+  
   ## Entries in the antigenic map for each measured strain
-  measured_strain_indices <- match(rep(measured_strains, n_samps), strain_isolation_times) - 1
-  dat <- matrix(nrow = length(measured_strain_indices) * repeats, ncol = 4) ## To store simulated data
-
+  measured_strain_indices <- match(rep(rep(measured_strains, n_samps), n_obs_types), strain_isolation_times) - 1
+  dat <- matrix(nrow = length(measured_strain_indices) * repeats, ncol = 5) ## To store simulated data
   ## Go into C++ code to solve titre model
   titres <- titre_data_fast(
-    theta, inf_hist, strain_isolation_times, strain_indices,
-    sampling_times, rows_per_indiv, cumu_rows,
-    rows_per_blood, measured_strain_indices,
+    theta, 
+    unique_theta_indices,
+    unique_obs_types,
+    inf_hist, 
+    strain_isolation_times, 
+    strain_indices,
+    sampling_times_long, 
+    type_data_start=type_data_start,
+    obs_types=unique_obs_types,
+    sample_data_start, 
+    titre_data_start,
+    nrows_per_sample, 
+    measured_strain_indices,
     antigenic_map_long,
     antigenic_map_short,
     antigenic_distances,
     mus, mu_indices, FALSE
   )
-
   ## Repeated each simulated titre per observation repeat
   titres <- rep(titres, repeats)
   ## Housekeeping for return data
-  sampling_times <- rep(sampling_times, rows_per_blood)
+  sampling_times <- rep(rep(sampling_times, each=length(measured_strains)),n_obs_types)
   enum_repeats <- rep(1:repeats, each = length(sampling_times))
   sampling_times <- rep(sampling_times, repeats)
   dat[, 1] <- sampling_times
-  dat[, 2] <- rep(rep(measured_strains, n_samps), repeats)
+  dat[, 2] <- rep(rep(rep(measured_strains, n_samps), repeats),n_obs_types)
+  dat[, 3] <- rep(unique_obs_types,each=length(measured_strains)*n_samps*repeats)
 
   ## Add observation noise, including measurement bias if selected
   if (add_noise) {
     if (!is.null(measurement_indices)) {
-      dat[, 3] <- add_noise(titres, theta, measurement_bias, measurement_indices[match(dat[, 2], strain_isolation_times)])
+      dat[, 4] <- add_noise(titres, theta, measurement_bias, measurement_indices[match(dat[, 2], strain_isolation_times)])
     } else {
-      dat[, 3] <- add_noise(titres, theta, NULL, NULL)
+      dat[, 4] <- add_noise(titres, theta, NULL, NULL)
     }
   } else {
-    dat[, 3] <- titres
+    dat[, 4] <- titres
   }
-  dat[, 4] <- enum_repeats
+  dat[, 5] <- enum_repeats
   return(dat)
 }
 

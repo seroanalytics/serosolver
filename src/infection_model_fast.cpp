@@ -71,7 +71,7 @@ NumericVector titre_data_fast(const NumericVector &theta,
   // ====================================================== //
   // 1. Extract general parameters that apply to all models
   // Pull out model parameters so only need to allocate once
-  int n_types = obs_types.size();
+  int n_types = unique_obs_types.size();
   int n_theta = unique_theta_indices.size();
   
   // Base model parameters
@@ -129,7 +129,7 @@ NumericVector titre_data_fast(const NumericVector &theta,
       //Rcpp::Rcout << std::endl << "Individual: " << i << std::endl;
     infection_history = infection_history_mat(i-1,_);
     indices = infection_history > 0;
-   // Rcpp::Rcout << "Indices: " << indices << std::endl;
+    //Rcpp::Rcout << "Indices: " << indices << std::endl;
     
     infection_times = circulation_times[indices];
     // Only solve is this individual has had infections
@@ -148,7 +148,7 @@ NumericVector titre_data_fast(const NumericVector &theta,
     // For each observation type solved for this individual
         for(int index = type_start; index <= type_end; ++index){
             obs_type = obs_types[index]-1;
-            //Rcpp::Rcout << "Observation type: " << obs_type << std::endl;
+           //Rcpp::Rcout << "Observation type: " << obs_type << std::endl;
             
           start_index_in_samples = sample_data_start[index];
           end_index_in_samples = sample_data_start[index+1] - 1;
@@ -157,8 +157,12 @@ NumericVector titre_data_fast(const NumericVector &theta,
     Rcpp::Rcout << "Start index in samples: " << start_index_in_samples << std::endl;
     Rcpp::Rcout << "End index in samples: " << end_index_in_samples << std::endl;
     Rcpp::Rcout << "Start index in data: " << start_index_in_data << std::endl;
-*/
+    Rcpp::Rcout << "Nrows in samples: " << nrows_per_sample << std::endl;
     
+    Rcpp::Rcout << "Mu: " << mus(obs_type) << std::endl;
+    Rcpp::Rcout << "Mu short: " << mu_shorts(obs_type) << std::endl;
+    */
+
           // ====================================================== //
           // =============== CHOOSE MODEL TO SOLVE =============== //
           // ====================================================== //

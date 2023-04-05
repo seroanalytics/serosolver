@@ -370,13 +370,13 @@ setup_titredat_for_posterior_func <- function(titre_dat, antigenic_map=NULL, str
       strain_isolation_times <- strain_isolation_times_tmp
       
       ## If no observation types assumed, set all to 1.
-      if (!("obs_type" %in% colnames(antigenic_map)) | length(unique(antigenic_map$obs_type)) != n_obs_types) {
-          antigenic_map <- antigenic_map[,colnames(antigenic_map) != "obs_type"]
-          antigenic_map <- replicate(n_obs_types, expr=antigenic_map,simplify=FALSE)
-            for(index in 1:length(antigenic_map)){
-                antigenic_map[[index]]$obs_type <- index
-            }
-          antigenic_map <- do.call("rbind",antigenic_map)
+      if (!("obs_type" %in% colnames(antigenic_map))) {
+          message(cat("Note: no obs_type detection in antigenic_map. Aligning antigenic map with par_tab."))
+          antigenic_map_tmp <- replicate(n_obs_types,antigenic_map,simplify=FALSE)
+          for(obs_type in unique_obs_types){
+              antigenic_map_tmp[[obs_type]]$obs_type <- obs_type
+          }
+          antigenic_map <- do.call(rbind,antigenic_map_tmp)
       }
       
   } else {

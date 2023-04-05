@@ -315,12 +315,12 @@ create_posterior_func <- function(par_tab,
    
     ## Add a dummy observation type variable if not provided
     if (!("obs_type" %in% colnames(titre_dat))) {
-        message(cat("Adding missing obs_type to titre_dat"))
+        message(cat("Note: no obs_type detection in titre_dat. Assuming all obs_type as 1."))
         titre_dat$obs_type <- 1
     }
     
     if (!("obs_type" %in% colnames(par_tab))) {
-        message(cat("Adding missing obs_type to par_tab"))
+        message(cat("Note: no obs_type detection in par_tab Assuming all obs_type as 1."))
         par_tab$obs_type <- 1
     }
     
@@ -345,7 +345,12 @@ create_posterior_func <- function(par_tab,
       
       ## If no observation types assumed, set all to 1.
       if (!("obs_type" %in% colnames(antigenic_map))) {
-          antigenic_map$obs_type <- 1
+          message(cat("Note: no obs_type detection in antigenic_map. Aligning antigenic map with par_tab."))
+          antigenic_map_tmp <- replicate(n_obs_types,antigenic_map,simplify=FALSE)
+          for(obs_type in unique_obs_types){
+              antigenic_map_tmp[[obs_type]]$obs_type <- obs_type
+          }
+          antigenic_map <- do.call(rbind,antigenic_map_tmp)
       }
       
     } else {
@@ -678,6 +683,7 @@ create_posterior_func <- function(par_tab,
         }
     } else {
         message(cat("Creating model solving function...\n"))
+        browser()
         ## Final version is just the model solving function
         f <- function(pars, infection_history_mat) {
             theta <- pars[theta_indices]
@@ -698,6 +704,7 @@ create_posterior_func <- function(par_tab,
                 antigenic_map_long[,obs_type] <- create_cross_reactivity_vector(antigenic_map_melted[[obs_type]], sigma1s[obs_type])
                 antigenic_map_short[,obs_type] <- create_cross_reactivity_vector(antigenic_map_melted[[obs_type]], sigma2s[obs_type])
             }
+
             y_new <- titre_data_fast(
                 theta, theta_indices_unique, unique_obs_types,
                 infection_history_mat, strain_isolation_times, infection_strain_indices,
