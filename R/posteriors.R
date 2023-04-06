@@ -307,6 +307,7 @@ create_posterior_func <- function(par_tab,
                                   function_type = 1,
                                   titre_before_infection=FALSE,
                                   data_type=1,
+                                  obs_types_weights =1,
                                   ...) {
     check_par_tab(par_tab, TRUE, version)
     if (!("group" %in% colnames(titre_dat))) {
@@ -331,6 +332,15 @@ create_posterior_func <- function(par_tab,
     ## Get unique observation types
     unique_obs_types <- unique(titre_dat$obs_type)
     n_obs_types <- length(unique_obs_types)
+    
+    ## Likelihood versions for different obs types
+    if(length(data_type) ==1 & n_obs_types > 1){
+        data_type <- rep(data_type, n_obs_types)
+    }
+    
+    if(length(obs_types_weights) ==1 & n_obs_types > 1){
+        obs_types_weights <- rep(1, n_obs_types)
+    }
     
     #########################################################
     ## SETUP ANTIGENIC MAP
@@ -429,6 +439,8 @@ create_posterior_func <- function(par_tab,
                                                         function(x) nrow(x[x$run != 1,]))$V1
     cum_nrows_per_individual_in_data <- cumsum(c(0, nrows_per_individual_in_data))
     
+    obs_type_indices <- lapply(unique_obs_types, function(x) which(titre_dat$obs_type == x))
+    
     ## Some additional setup for the repeat data
     ## Used to summarize into per-individual likelihoods later
     nrows_per_individual_in_data_repeats <- NULL
@@ -456,6 +468,7 @@ create_posterior_func <- function(par_tab,
     par_names_theta <- par_tab_unique[theta_indices_unique, "names"]
     theta_indices_unique <- theta_indices_unique - 1
     names(theta_indices_unique) <- par_names_theta
+    n_pars <- length(theta_indices_unique)
 
     ## These will be different for each obs_type
     option_indices <- which(par_tab$type == 0)
@@ -506,52 +519,63 @@ create_posterior_func <- function(par_tab,
     
     ## Allow different likelihood function for each observation type
     ## Set data type for likelihood function
-    if(data_type == 1){
-      likelihood_func_use <- likelihood_func_fast
-      message(cat("Setting to discretized, bounded observations\n"))
-      
-    } else if(data_type == 2){
-      message(cat("Setting to continuous, bounded observations\n"))
-      likelihood_func_use <- likelihood_func_fast_continuous
-    } else {
-      message(cat("Assuming discretized, bounded observations\n"))
-      likelihood_func_use <- likelihood_func_fast
+    ## Potentially different likelihood for each observation type
+    likelihood_func_use <- list()
+    for(obs_type in unique_obs_types){
+        if(data_type[obs_type] == 1){
+          likelihood_func_use[[obs_type]] <- likelihood_func_fast
+          message(cat("Setting to discretized, bounded observations\n"))
+          
+        } else if(data_type[obs_type] == 2){
+          message(cat("Setting to continuous, bounded observations\n"))
+          likelihood_func_use[[obs_type]] <- likelihood_func_fast_continuous
+        } else {
+          message(cat("Assuming discretized, bounded observations\n"))
+          likelihood_func_use[[obs_type]] <- likelihood_func_fast
+        }
     }
     
     if (function_type == 1) {
         message(cat("Creating posterior solving function...\n"))
         f <- function(pars, infection_history_mat) {
             theta <- pars[theta_indices]
-            names(theta) <- par_names_theta
-
+            names(theta) <- par_names_theta_all
+            
+            ## Pass strain-dependent boosting down
             if (use_strain_dependent) {
                 mus <- pars[mu_indices_par_tab]
             }
-
-            antigenic_map_long <- create_cross_reactivity_vector(
-                antigenic_map_melted,
-                theta["sigma1"]
-            )
-            antigenic_map_short <- create_cross_reactivity_vector(
-                antigenic_map_melted,
-                theta["sigma2"]
-            )
-
-            ## Calculate titres for measured data
+            
+            antigenic_map_long <- matrix(nrow=length(strain_isolation_times)^2, ncol=n_obs_types)
+            antigenic_map_short <- matrix(nrow=length(strain_isolation_times)^2, ncol=n_obs_types)
+            
+            sigma1s <- theta[which(par_names_theta_all=="sigma1")]
+            sigma2s <- theta[which(par_names_theta_all=="sigma2")]
+            
+            for(obs_type in unique_obs_types){
+                antigenic_map_long[,obs_type] <- create_cross_reactivity_vector(antigenic_map_melted[[obs_type]], sigma1s[obs_type])
+                antigenic_map_short[,obs_type] <- create_cross_reactivity_vector(antigenic_map_melted[[obs_type]], sigma2s[obs_type])
+            }
+            
             y_new <- titre_data_fast(
-                theta, infection_history_mat, strain_isolation_times, infection_strain_indices,
-                sample_times, type_data_start, obs_types, sample_data_start, titre_data_start,
-                nrows_per_sample, measured_strain_indices, antigenic_map_long,
+                theta, theta_indices_unique, unique_obs_types,
+                infection_history_mat, strain_isolation_times, infection_strain_indices,
+                sample_times, type_data_start,obs_types,
+                sample_data_start, titre_data_start,
+                nrows_per_sample, measured_strain_indices, 
+                antigenic_map_long,
                 antigenic_map_short,
                 antigenic_distances,
                 mus, boosting_vec_indices,
                 titre_before_infection
             )
+            
             if (use_measurement_bias) {
                 measurement_bias <- pars[measurement_indices_par_tab]
                 titre_shifts <- measurement_bias[expected_indices]
                 y_new <- y_new + titre_shifts
             }
+            
             ## Transmission prob is the part of the likelihood function corresponding to each individual
             transmission_prob <- rep(0, n_indiv)
             if (explicit_phi) {
@@ -575,11 +599,25 @@ create_posterior_func <- function(par_tab,
             if (solve_likelihood) {
                 ## Calculate likelihood for unique titres and repeat data
                 ## Sum these for each individual
-                liks <- likelihood_func_use(theta, titres_unique, y_new)
-                liks <- sum_buckets(liks, nrows_per_individual_in_data)
-                if (repeat_data_exist) {
-                    liks_repeats <- likelihood_func_use(theta, titres_repeats, y_new[repeat_indices])
-                    liks <- liks + sum_buckets(liks_repeats, nrows_per_individual_in_data_repeats)
+                liks <- numeric(n_indivs)
+                for(obs_type in unique_obs_types){
+                    ## Need theta for each observation type
+                    liks_tmp <- likelihood_func_use[[obs_type]](
+                                                    theta[(unique_theta_indices+1) + n_pars*(obs_type-1)], 
+                                                    titres_unique[obs_type_indices[[obs_type]]], 
+                                                    y_new[obs_type_indices[[obs_type]]])
+                    
+                    liks <- liks + obs_types_weights[obs_type]*sum_buckets(liks_tmp, nrows_per_individual_in_data[[obs_type]])
+                    if (repeat_data_exist) {
+                        ## Need theta for each observation type
+                        
+                        liks_repeats <- likelihood_func_use[[obs_type]](
+                            theta[(unique_theta_indices+1) + n_pars*(obs_type-1)], 
+                            titres_repeats[obs_type_indices_repeats[[obs_type]]], 
+                            y_new[repeat_indices][obs_type_indices_repeats[[obs_type]]])
+                        
+                        liks <- liks + obs_types_weights[obs_type]*sum_buckets(liks_repeats, nrows_per_individual_in_data_repeats[[obs_type]])
+                    }
                 }
             } else {
                 liks <- rep(-100000, n_indiv)
@@ -683,7 +721,6 @@ create_posterior_func <- function(par_tab,
         }
     } else {
         message(cat("Creating model solving function...\n"))
-        browser()
         ## Final version is just the model solving function
         f <- function(pars, infection_history_mat) {
             theta <- pars[theta_indices]

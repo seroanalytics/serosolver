@@ -16,7 +16,7 @@
 #' @param repeats number of repeat observations for each year
 #' @param mu_indices default NULL, optional vector giving the index of `mus` that each strain uses the boosting parameter from. eg. if there are 6 circulation years in strain_isolation_times and 3 strain clusters, then this might be c(1,1,2,2,3,3)
 #' @param measurement_indices default NULL, optional vector giving the index of `measurement_bias` that each strain uses the measurement shift from from. eg. if there's 6 circulation years and 3 strain clusters, then this might be c(1,1,2,2,3,3)
-#' @param add_noise if TRUE, adds observation noise to the simulated titres
+#' @param obs_dist if not NULL, then a vector of data types to use for each obs_type
 #' @return a list with: 1) the data frame of titre data as returned by \code{\link{simulate_group}}; 2) a matrix of infection histories as returned by \code{\link{simulate_infection_histories}}; 3) a vector of ages
 #' @family simulation_functions
 #' @examples
@@ -52,7 +52,7 @@ simulate_data <- function(par_tab,
                           repeats = 1,
                           mu_indices = NULL,
                           measurement_indices = NULL,
-                          add_noise = TRUE) {
+                          obs_dist = NULL) {
 
     #########################################################
     ## PARAMETER TABLE CHECKS
@@ -179,7 +179,7 @@ simulate_data <- function(par_tab,
         mu_indices, 
         measurement_bias,
         measurement_indices, 
-        add_noise, 
+        obs_dist, 
         DOBs
     )
     y <- sim_dat$titre_dat
@@ -242,7 +242,7 @@ simulate_group <- function(n_indiv,
                            mu_indices = NULL,
                            measurement_bias = NULL,
                            measurement_indices = NULL,
-                           add_noise = TRUE,
+                           obs_dist = NULL,
                            DOBs=NULL) {
 
   ## Create antigenic map for short and long term boosting
@@ -295,7 +295,7 @@ simulate_group <- function(n_indiv,
       mus, mu_indices,
       measurement_bias,
       measurement_indices,
-      add_noise, repeats, DOB
+      obs_dist, repeats, DOB
     ))
     ## Record individual ID
     y$indiv <- i
@@ -330,7 +330,8 @@ simulate_individual_faster <- function(theta,
                                        measured_strains,
                                        mus = NULL, mu_indices = NULL,
                                        measurement_bias = NULL, measurement_indices = NULL,
-                                       add_noise = TRUE, repeats = 1,
+                                       obs_dist = NULL, 
+                                       repeats = 1,
                                        DOB = NULL) {
   if (is.null(mus)) {
     mus <- c(-1)
@@ -342,6 +343,7 @@ simulate_individual_faster <- function(theta,
         unique_theta_indices <- seq_along(unique_theta_names)-1
         names(unique_theta_indices) <- unique_theta_names
     }
+    n_pars <- length(unique_theta_indices)
     
   inf_hist <- matrix(nrow = 1, ncol = length(infection_history))
   inf_hist[1, ] <- infection_history
@@ -397,15 +399,23 @@ simulate_individual_faster <- function(theta,
   sampling_times <- rep(sampling_times, repeats)
   dat[, 1] <- sampling_times
   dat[, 2] <- rep(rep(rep(measured_strains, n_samps), repeats),n_obs_types)
-  dat[, 3] <- rep(unique_obs_types,each=length(measured_strains)*n_samps*repeats)
-
+  
+  obs_types_data <- rep(unique_obs_types,each=length(measured_strains)*n_samps*repeats)
+  
+  dat[, 3] <- obs_types_data
   ## Add observation noise, including measurement bias if selected
-  if (add_noise) {
-    if (!is.null(measurement_indices)) {
-      dat[, 4] <- add_noise(titres, theta, measurement_bias, measurement_indices[match(dat[, 2], strain_isolation_times)])
-    } else {
-      dat[, 4] <- add_noise(titres, theta, NULL, NULL)
-    }
+  if (!is.null(obs_dist)) {
+      for(obs_type in unique_obs_types){
+        if (!is.null(measurement_indices)) {
+          dat[obs_types_data == obs_type, 4] <- add_noise(titres[obs_types_data == obs_type], 
+                                                                          theta[(unique_theta_indices+1) + n_pars*(obs_type-1)], 
+                                                                          measurement_bias, measurement_indices[match(dat[, 2], strain_isolation_times)],data_type=obs_dist[obs_type])
+        } else {
+          dat[obs_types_data == obs_type, 4] <- add_noise(titres[obs_types_data == obs_type], 
+                                                                          theta[(unique_theta_indices+1) + n_pars*(obs_type-1)], 
+                                                                          NULL, NULL,data_type=obs_dist[obs_type])
+        }
+      }
   } else {
     dat[, 4] <- titres
   }
