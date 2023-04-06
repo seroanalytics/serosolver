@@ -434,19 +434,20 @@ create_posterior_func <- function(par_tab,
 
     ## Which entries of the unique titre data correspond to each individual? 
     ## Used to summarize into per-individual likelihoods later
-    nrows_per_individual_in_data <- NULL
-    nrows_per_individual_in_data <- plyr::ddply(titre_dat_unique, .(individual),
-                                                        function(x) nrow(x[x$run != 1,]))$V1
-    cum_nrows_per_individual_in_data <- cumsum(c(0, nrows_per_individual_in_data))
-    
-    obs_type_indices <- lapply(unique_obs_types, function(x) which(titre_dat$obs_type == x))
+    nrows_per_individual_in_data <- lapply(unique_obs_types, function(y) 
+        plyr::ddply(titre_dat_unique[titre_dat_unique$obs_type == y,], .(individual), "nrow")$nrow
+        )
+    cum_nrows_per_individual_in_data <- lapply(nrows_per_individual_in_data, function(x) cumsum(c(0, x)))
     
     ## Some additional setup for the repeat data
     ## Used to summarize into per-individual likelihoods later
-    nrows_per_individual_in_data_repeats <- NULL
-    nrows_per_individual_in_data_repeats <- plyr::ddply(titre_dat, .(individual),
-                                                        function(x) nrow(x[x$run != 1,]))$V1
-    cum_nrows_per_individual_in_data_repeats <- cumsum(c(0, nrows_per_individual_in_data_repeats))
+    nrows_per_individual_in_data_repeats <- lapply(unique_obs_types, function(y) 
+        plyr::ddply(titre_dat_repeats[titre_dat_repeats$obs_type == y,], .(individual), "nrow")$nrow
+    )
+    cum_nrows_per_individual_in_data_repeats <- lapply(nrows_per_individual_in_data_repeats, function(x) cumsum(c(0, x)))
+    
+    obs_type_indices <- lapply(unique_obs_types, function(x) which(titre_dat_unique$obs_type == x))
+    obs_type_indices_repeats <- lapply(unique_obs_types, function(x) which(titre_dat_repeats$obs_type == x))
     
     ## Pull out unique and repeat titres for solving likelihood later
     titres_unique <- titre_dat_unique$titre
@@ -603,7 +604,7 @@ create_posterior_func <- function(par_tab,
                 for(obs_type in unique_obs_types){
                     ## Need theta for each observation type
                     liks_tmp <- likelihood_func_use[[obs_type]](
-                                                    theta[(unique_theta_indices+1) + n_pars*(obs_type-1)], 
+                                                    theta[(theta_indices_unique+1) + n_pars*(obs_type-1)], 
                                                     titres_unique[obs_type_indices[[obs_type]]], 
                                                     y_new[obs_type_indices[[obs_type]]])
                     
@@ -612,7 +613,7 @@ create_posterior_func <- function(par_tab,
                         ## Need theta for each observation type
                         
                         liks_repeats <- likelihood_func_use[[obs_type]](
-                            theta[(unique_theta_indices+1) + n_pars*(obs_type-1)], 
+                            theta[(theta_indices_unique+1) + n_pars*(obs_type-1)], 
                             titres_repeats[obs_type_indices_repeats[[obs_type]]], 
                             y_new[repeat_indices][obs_type_indices_repeats[[obs_type]]])
                         
