@@ -39,8 +39,6 @@ simulate_individual(
 
 \item{measurement_indices}{default NULL, optional vector giving the index of `measurement_bias` that each strain uses the measurement shift from from. eg. if there's 6 circulation years and 3 strain clusters, then this might be c(1,1,2,2,3,3)}
 
-\item{add_noise}{if TRUE, adds observation noise to the simulated titres}
-
 \item{repeats}{number of repeat observations for each year}
 }
 \value{

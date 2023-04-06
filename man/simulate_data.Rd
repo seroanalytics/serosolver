@@ -8,7 +8,6 @@ simulate_data(
   par_tab,
   group = 1,
   n_indiv = 100,
-  buckets = 1,
   antigenic_map = NULL,
   strain_isolation_times = NULL,
   measured_strains = NULL,
@@ -21,7 +20,7 @@ simulate_data(
   repeats = 1,
   mu_indices = NULL,
   measurement_indices = NULL,
-  add_noise = TRUE
+  obs_dist = NULL
 )
 }
 \arguments{
@@ -30,8 +29,6 @@ simulate_data(
 \item{group}{which group index to give this simulated data}
 
 \item{n_indiv}{number of individuals to simulate}
-
-\item{buckets}{time resolution of the simulated data. buckets=1 indicates annual time resolution; buckets=4 indicates quarterly; buckets=12 monthly}
 
 \item{antigenic_map}{(optional) A data frame of antigenic x and y coordinates. Must have column names: x_coord; y_coord; inf_times. See \code{\link{example_antigenic_map}}}
 
@@ -57,7 +54,7 @@ simulate_data(
 
 \item{measurement_indices}{default NULL, optional vector giving the index of `measurement_bias` that each strain uses the measurement shift from from. eg. if there's 6 circulation years and 3 strain clusters, then this might be c(1,1,2,2,3,3)}
 
-\item{add_noise}{if TRUE, adds observation noise to the simulated titres}
+\item{obs_dist}{if not NULL, then a vector of data types to use for each obs_type}
 }
 \value{
 a list with: 1) the data frame of titre data as returned by \code{\link{simulate_group}}; 2) a matrix of infection histories as returned by \code{\link{simulate_infection_histories}}; 3) a vector of ages

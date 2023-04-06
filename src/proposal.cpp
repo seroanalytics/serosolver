@@ -161,7 +161,14 @@ arma::mat inf_hist_prop_prior_v3(arma::mat infection_history_mat,
 //' @export
 //' @family infection_history_proposal
 // [[Rcpp::export]]
-List inf_hist_prop_prior_v2_and_v4(const NumericVector &theta, // Model parameters
+List inf_hist_prop_prior_v2_and_v4(
+        
+        
+        const NumericVector &theta, //All model parameters
+        const IntegerVector &unique_theta_indices, //Indices for each model parameter type
+        const IntegerVector &unique_obs_types, // Vector of unique observation types
+        
+        
 				   const IntegerMatrix &infection_history_mat,  // Current infection history
 				   const NumericVector &old_probs_1,
 				   const IntegerVector &sampled_indivs,
@@ -180,18 +187,33 @@ List inf_hist_prop_prior_v2_and_v4(const NumericVector &theta, // Model paramete
 				   const NumericVector &circulation_times,
 				   const IntegerVector &circulation_times_indices,
 				   const NumericVector &sample_times,
-				   const IntegerVector &rows_per_indiv_in_samples, // How many rows in unique sample times table correspond to each individual?
-				   const IntegerVector &cum_nrows_per_individual_in_data, // How many rows in the titre data correspond to each individual?
-				   const IntegerVector &cum_nrows_per_individual_in_repeat_data, // How many rows in the repeat titre data correspond to each individual?
-				   const IntegerVector &nrows_per_blood_sample, // How many rows in the titre data table correspond to each unique individual + sample time + repeat?
+				   
+				   const IntegerVector &type_data_start, // For each individual, which entry in the unique(titre_dat[,c("individual","obs_type)]) data frame is their first?
+				   const IntegerVector &obs_types, // For each unique sample/individual index, what observation type is it?
+				   
+				   const IntegerVector &sample_data_start, 
+				   const IntegerVector &titre_data_start, 
+				   const IntegerVector &nrows_per_sample, // Split the sample times for each individual
+				   
+				   const IntegerVector &cum_nrows_per_individual_in_data, // How many rows in the titre data correspond to each individual? By obs_type
+				   const IntegerVector &cum_nrows_per_individual_in_repeat_data, // How many rows in the repeat titre data correspond to each individual? By obs_type
+				   
 				   const IntegerVector &group_id_vec, // Which group does each individual belong to?
 				   const IntegerVector &measurement_strain_indices, // For each titre measurement, corresponding entry in antigenic map
-				   const NumericVector &antigenic_map_long, 
-				   const NumericVector &antigenic_map_short,
+				   
+				   const NumericMatrix &antigenic_map_long, // Now a matrix of antigenic maps
+				   const NumericMatrix &antigenic_map_short,
+				   
 				   const NumericVector &antigenic_distances,
+				   
 				   const NumericVector &data,
 				   const NumericVector &repeat_data,
-				   const IntegerVector &repeat_indices,
+				   
+				   const int &n_titres_total,
+				   
+				   const IntegerVector &repeat_indices, // Which indices in the main titre data do we use for repeat measurements?
+				   const bool &repeat_data_exist,
+				   
 				   const NumericVector &titre_shifts,
 				   IntegerVector proposal_iter,
 				   IntegerVector accepted_iter,
@@ -199,20 +221,22 @@ List inf_hist_prop_prior_v2_and_v4(const NumericVector &theta, // Model paramete
 				   IntegerVector accepted_swap,
 				   IntegerMatrix overall_swap_proposals,
 				   IntegerMatrix overall_add_proposals,
+				   
 				   const NumericVector time_sample_probs,
-				   const NumericVector &mus,
+				   const NumericVector &mus_strain_dep,
 				   const IntegerVector &boosting_vec_indices,
 				   const IntegerVector &total_alive,
+				   
+				   const IntegerVector &data_types,
+				   const NumericVector &obs_weights,
 				   const double temp=1,
-				   bool solve_likelihood=true,
-				   const int data_type=1
-				   ){
+				   bool solve_likelihood=true){
   // ########################################################################
   // Parameters to control indexing of data
 IntegerMatrix new_infection_history_mat(clone(infection_history_mat)); // Can this be avoided? Create a copy of the inf hist matrix
 //IntegerMatrix new_infection_history_mat(infection_history_mat); // Can this be avoided? Create a copy of the inf hist matrix
-    
-  int n_titres_total = data.size(); // How many titres are there in total?
+List ret;
+  //int n_titres_total = data.size(); // How many titres are there in total?
   NumericVector predicted_titres(n_titres_total); // Vector to store predicted titres
   NumericVector old_probs = clone(old_probs_1); // Create a copy of the current old probs
   
@@ -227,16 +251,16 @@ IntegerMatrix new_infection_history_mat(clone(infection_history_mat)); // Can th
   // Using prior version 2 or 4?
   bool prior_on_total = total_alive(0) > 0;
 
-  //Repeat data?
-  bool repeat_data_exist = repeat_indices[0] >= 0;
-  
-  // These indices allow us to step through the titre data vector
-  // as if it were a matrix ie. number of rows for each individual
-  // at a time
-  int index_in_samples; // Index in sample times vector to point to
-  int end_index_in_samples; // Index in sample times vector to end at
-  int start_index_in_data; // Index in titre data to start at
-  int end_index_in_data; // Index in titre data to end at
+  // To track how far through the larger vectors we move for each individual
+  int obs_type=0;
+  double obs_weight=1.0;
+  int data_type = 1;
+  int type_start;
+  int type_end;
+  int start_index_in_samples;
+  int end_index_in_samples;
+  int start_index_in_data;
+  int end_index_in_data;
 
   int group_id; // Vector of group IDs for each individual
  
@@ -288,87 +312,97 @@ IntegerMatrix new_infection_history_mat(clone(infection_history_mat)); // Can th
 
   //double lbeta_const = R::lbeta(alpha, beta);
 
-  // For likelihood
-  const double sd = theta["error"];
-  const double den = sd*M_SQRT2;
-  const double max_titre = theta["MAX_TITRE"];
-  const double log_const = log(0.5);
-  const double den2 = log(sd*2.50662827463);
-  double min_titre = 1.0;
-  
-  if(data_type==2){
-    min_titre = theta["MIN_TITRE"];
-  }
-  
   // ====================================================== //
   // =============== SETUP MODEL PARAMETERS =============== //
   // ====================================================== //
   // 1. Extract general parameters that apply to all models
   // Pull out model parameters so only need to allocate once
-  double mu = theta["mu"];
-  double mu_short = theta["mu_short"];
-  double wane = theta["wane"];
-  double tau = theta["tau"];
-
-  // 2. Extract model parameters that are for specific mechanisms
-  //    set a boolean flag to choose between model versions
+  int n_types = unique_obs_types.size();
+  int n_theta = unique_theta_indices.size();
   
-  // Alternative waning function
-  int wane_type = theta["wane_type"]; 
-  bool alternative_wane_func = wane_type == 1;
-  double kappa;
-  double t_change;
-  if (alternative_wane_func){
-    kappa = theta["kappa"];
-    t_change = theta["t_change"];
-  }  
+  // For likelihood functions
+  NumericVector sds(n_types);
+  NumericVector dens(n_types);
+  const double log_const = log(0.5);
+  NumericVector den2s(n_types);
+  
+  // Base model parameters
+  NumericVector mus(n_types);
+  NumericVector mu_shorts(n_types);
+  NumericVector wanes(n_types);
+  NumericVector taus(n_types);
+  
+  NumericVector max_titres(n_types);
+  NumericVector min_titres(n_types);
 
-  // Titre dependent boosting
-  bool titre_dependent_boosting = theta["titre_dependent"] == 1;
-  double gradient;
-  double boost_limit;
-  if (titre_dependent_boosting) {
-    gradient = theta["gradient"];
-    boost_limit = theta["boost_limit"];
-  }
+  int mu_index = unique_theta_indices["mu"];
+  int mu_short_index = unique_theta_indices["mu_short"];
+  int wane_index = unique_theta_indices["wane"];
+  int tau_index = unique_theta_indices["tau"];
+  int error_index = unique_theta_indices["error"];
+  
+  int min_index = unique_theta_indices["MIN_TITRE"];
+  int max_index = unique_theta_indices["MAX_TITRE"];
+  
+  // Titre-dependent boosting function
+  bool titre_dependent_boosting;
+  NumericVector gradients(n_types); 
+  NumericVector boost_limits(n_types);   
+  
+  int titre_dependent_boosting_index = unique_theta_indices["titre_dependent"];
+  int gradient_index = unique_theta_indices["gradient"];
+  int boost_limit_index = unique_theta_indices["boost_limit"];  
   
   // Strain-specific boosting
   bool strain_dep_boost = false;
-  if (mus.size() > 1) {
-    strain_dep_boost = true;    
+  if (mus_strain_dep.size() > 1) {
+      strain_dep_boost = true;    
+  }
+  
+  // Create vectors of model parameters for each of the observation types
+  for(int x = 0; x < n_types; ++x){
+      mus[x] = theta[mu_index + x*n_theta];
+      mu_shorts[x] = theta[mu_short_index + x*n_theta];
+      wanes[x] = theta[wane_index + x*n_theta];
+      taus[x] = theta[tau_index + x*n_theta];
+      min_titres[x] = theta[min_index + x*n_theta];
+      max_titres[x] = theta[max_index + x*n_theta];
+      
+      // For likelihood functions
+      sds[x] = theta[error_index + x*n_theta];
+      dens[x] = sds[x]*M_SQRT2; // Constant for the discretized normal distribution
+      den2s[x] = log(sds[x]*2.50662827463); // Constant for the normal distribution
+      
+      // Titre dependent boosting
+      titre_dependent_boosting = theta[titre_dependent_boosting_index+ x*n_theta];
+      if (titre_dependent_boosting) {
+          gradients(x) = theta[gradient_index + x*n_theta];
+          boost_limits(x) = theta[boost_limit_index + x*n_theta];
+      }
   }
 
- 
-  // 3. If not using one of the specific mechanism functions, set the base_function flag to TRUE
-  bool base_function = !(alternative_wane_func ||
-			 titre_dependent_boosting ||
-			 strain_dep_boost);
-  
   // 4. Extra titre shifts
   bool use_titre_shifts = false;
   if(titre_shifts.size() == n_titres_total) use_titre_shifts = true;
+  
   // ########################################################################
   // For each individual
   for(int i = 0; i < n_sampled; ++i){
-     //Rcpp::Rcout << "i: " << i << std::endl << std::endl;
     // Which proposal step to take and do we need to calculate the likelihood    
     swap_step_option = R::runif(0,1) < swap_propn;
     
     // Get index, group and current likelihood of individual under consideration
     indiv = sampled_indivs[i]-1;
+    //Rcpp::Rcout << "indiv: " << indiv+1 << std::endl << std::endl;
     
     group_id = group_id_vec[indiv];
     old_prob = old_probs_1[indiv];
-    // Indexing for data upkeep
-    index_in_samples = rows_per_indiv_in_samples[indiv];
-    end_index_in_samples = rows_per_indiv_in_samples[indiv+1] - 1;
-
-    start_index_in_data = cum_nrows_per_individual_in_data[indiv];
-    end_index_in_data = cum_nrows_per_individual_in_data[indiv+1]-1;
+    //Rcpp::Rcout << "Old prob: " << old_prob << std::endl << std::endl;
     
     // Time sampling control
     n_years_samp = n_years_samp_vec[indiv]; // How many times are we intending to resample for this individual?
     n_samp_length  = strain_mask[indiv] - age_mask[indiv] + 1; // How many times maximum can we sample from?
+    
     // If swap step, only doing one proposal for this individual
     if(swap_step_option){
       n_samp_max = 1;
@@ -382,18 +416,21 @@ IntegerMatrix new_infection_history_mat(clone(infection_history_mat)); // Can th
 
     // Extract time sampling probabilities and re-normalise
     samps_shifted = samps + age_mask[indiv] - 1;
+   
     tmp_loc_sample_probs = time_sample_probs[samps_shifted];
     // Re-normalise
     tmp_loc_sample_probs = tmp_loc_sample_probs/sum(tmp_loc_sample_probs);
-    
     locs = RcppArmadillo::sample(samps, n_samp_max, FALSE, tmp_loc_sample_probs);
+
+    
     // For each selected infection history entry
     for(int j = 0; j < n_samp_max; ++j){
       // Assume that proposal hasn't changed likelihood until shown otherwise
       lik_changed = false;
       // Infection history to update
       new_infection_history = new_infection_history_mat(indiv,_);
-
+      //Rcpp::Rcout << "Infection history before: " << new_infection_history<< std::endl;
+      
       ///////////////////////////////////////////////////////
       // OPTION 1: Swap contents of a year for an individual
       ///////////////////////////////////////////////////////
@@ -522,123 +559,181 @@ IntegerMatrix new_infection_history_mat(clone(infection_history_mat)); // Can th
       // If a change was made to the infection history,
       // calculate likelihood of new Z
       ////////////////////////
-      if(solve_likelihood && lik_changed){
+      
+      //if(solve_likelihood && lik_changed){
+      if(TRUE){
+          //Rcpp::Rcout << "Infection history after change: " << new_infection_history<< std::endl;
+          
     	// Calculate likelihood!
     	indices = new_infection_history > 0;
     	infection_times = circulation_times[indices];
     
     	infection_strain_indices_tmp = circulation_times_indices[indices];	  
+    	
+    	
+    	// Start end end location of the type_data matrix
+    	type_start = type_data_start[indiv];
+    	type_end = type_data_start[indiv+1]-1;
+    	
+    	//Rcpp::Rcout << "Type start: " << type_start << std::endl;
+    	//Rcpp::Rcout << "Type end: " << type_end << std::endl << std::endl;
+    	
     	// ====================================================== //
     	// =============== CHOOSE MODEL TO SOLVE =============== //
     	// ====================================================== //
-    	if (base_function) {
-    	  titre_data_fast_individual_base(predicted_titres, mu, mu_short,
-    					  wane, tau,
-    					  infection_times,
-    					  infection_strain_indices_tmp,
-    					  measurement_strain_indices,
-    					  sample_times,
-    					  index_in_samples,
-    					  end_index_in_samples,
-    					  start_index_in_data,
-    					  nrows_per_blood_sample,
-    					  number_strains,
-    					  antigenic_map_short,
-    					  antigenic_map_long,
-    					  false);	  
-    	} else if (titre_dependent_boosting) {
-    	  titre_data_fast_individual_titredep(predicted_titres, mu, mu_short,
-    					      wane, tau,
-    					      gradient, boost_limit,
-    					      infection_times,
-    					      infection_strain_indices_tmp,
-    					      measurement_strain_indices,
-    					      sample_times,
-    					      index_in_samples,
-    					      end_index_in_samples,
-    					      start_index_in_data,
-    					      nrows_per_blood_sample,
-    					      number_strains,
-    					      antigenic_map_short,
-    					      antigenic_map_long,
-    					      false);	
-    	} else if (strain_dep_boost) {
-    	  titre_data_fast_individual_strain_dependent(predicted_titres, 
-    						      mus, boosting_vec_indices, 
-    						      mu_short,
-    						      wane, tau,
-    						      infection_times,
-    						      infection_strain_indices_tmp,
-    						      measurement_strain_indices,
-    						      sample_times,
-    						      index_in_samples,
-    						      end_index_in_samples,
-    						      start_index_in_data,
-    						      nrows_per_blood_sample,
-    						      number_strains,
-    						      antigenic_map_short,
-    						      antigenic_map_long,
-    						      false);
-    	} else if(alternative_wane_func){
-    	  titre_data_fast_individual_wane2(predicted_titres, mu, mu_short,
-    					   wane, tau,
-    					   kappa, t_change,
-    					   infection_times,
-    					   infection_strain_indices_tmp,
-    					   measurement_strain_indices,
-    					   sample_times,
-    					   index_in_samples,
-    					   end_index_in_samples,
-    					   start_index_in_data,
-    					   nrows_per_blood_sample,
-    					   number_strains,
-    					   antigenic_map_short,
-    					   antigenic_map_long,
-    					   false);
-    	} else {
-    	  titre_data_fast_individual_base(predicted_titres, mu, mu_short,
-    					  wane, tau,
-    					  infection_times,
-    					  infection_strain_indices_tmp,
-    					  measurement_strain_indices,
-    					  sample_times,
-    					  index_in_samples,
-    					  end_index_in_samples,
-    					  start_index_in_data,
-    					  nrows_per_blood_sample,
-    					  number_strains,
-    					  antigenic_map_short,
-    					  antigenic_map_long,
-    					  false);
-    	}
-    	//}
-    	if(use_titre_shifts){
-    	  add_measurement_shifts(predicted_titres, titre_shifts, 
-    				 start_index_in_data, end_index_in_data);
-    	}
-    	// Now have all predicted titres for this individual calculated
-    	// Need to calculate likelihood of these titres... 
-    	new_prob = 0;
-    	
-    	// Go from first row in the data for this individual to up to the next one, accumulating
-    	// likelihood for this individual
-    	// For unique data
-      // Data_type 1 is discretized, bounded data
-      if(data_type==1){
-    	  proposal_likelihood_func(new_prob, predicted_titres, indiv, data, repeat_data, repeat_indices,
-    		  		 cum_nrows_per_individual_in_data, cum_nrows_per_individual_in_repeat_data,
-    			  	 log_const, den, max_titre, repeat_data_exist);
-      // Data_type 2 is continuous, bounded data
-      } else if(data_type==2){
-        proposal_likelihood_func_continuous(new_prob, predicted_titres, indiv, data, repeat_data, repeat_indices,
-                                            cum_nrows_per_individual_in_data, cum_nrows_per_individual_in_repeat_data,
-                                            log_const, sd, den, den2, max_titre, min_titre, repeat_data_exist);
-      } else {
-        proposal_likelihood_func(new_prob, predicted_titres, indiv, data, repeat_data, repeat_indices,
-                                 cum_nrows_per_individual_in_data, cum_nrows_per_individual_in_repeat_data,
-                                 log_const, den, max_titre, repeat_data_exist);
-      }
+    	// For each observation type solved for this individual
+	    new_prob = 0;
 
+    	for(int index = type_start; index <= type_end; ++index){
+    	    //Rcpp::Rcout << "index: " << index << std::endl;
+    	    obs_type = obs_types[index]-1;
+    	    data_type = data_types[obs_type];
+    	    obs_weight = obs_weights[obs_type];
+    	    
+    	    //Rcpp::Rcout << "obs_type: " << obs_type << std::endl;
+    	    //Rcpp::Rcout << "data_type: " << data_type << std::endl;
+    	    //Rcpp::Rcout << "obs_weight: " << obs_weight << std::endl;
+    	    
+    	    
+    	    // Now have all predicted titres for this individual calculated
+    	    // Need to calculate likelihood of these titres... 
+    	    start_index_in_samples = sample_data_start[index];
+    	    end_index_in_samples = sample_data_start[index+1]-1;
+    	    start_index_in_data = titre_data_start[start_index_in_samples];
+    	    end_index_in_data = titre_data_start[end_index_in_samples+1]-1;
+    	    
+    	    
+    	    //Rcpp::Rcout << "start_index_in_samples: " << start_index_in_samples << std::endl;
+    	    //Rcpp::Rcout << "end_index_in_samples: " << end_index_in_samples << std::endl;
+    	    //Rcpp::Rcout << "start_index_in_data: " << start_index_in_data << std::endl;
+    	    ////Rcpp::Rcout << "end_index_in_data: " << end_index_in_data << std::endl;
+    	    //Rcpp::Rcout << "end_index_in_data + 1: " << end_index_in_data+1 << std::endl;
+    	    
+    	    //Rcpp::Rcout << "Predicted titres before: " << predicted_titres << std::endl;
+    	    
+        	if (titre_dependent_boosting) {
+        	  titre_data_fast_individual_titredep(predicted_titres, 
+                                               mus(obs_type), 
+                                               mu_shorts(obs_type),
+                                               wanes(obs_type), 
+                                               taus(obs_type),
+                                               gradients(obs_type), 
+                                               boost_limits(obs_type),
+        					      infection_times,
+        					      infection_strain_indices_tmp,
+        					      measurement_strain_indices,
+        					      sample_times,
+        					      start_index_in_samples,
+        					      end_index_in_samples,
+        					      start_index_in_data,
+        					      nrows_per_sample,
+        					      number_strains,
+        					      antigenic_map_short(_,obs_type),
+        					      antigenic_map_long(_,obs_type),
+        					      false);	
+        	} else if (strain_dep_boost) {
+        	  titre_data_fast_individual_strain_dependent(predicted_titres, 
+                                                       mus(obs_type), 
+                                                       boosting_vec_indices, 
+                                                       mu_shorts(obs_type),
+                                                       wanes(obs_type), 
+                                                       taus(obs_type),
+        						      infection_times,
+        						      infection_strain_indices_tmp,
+        						      measurement_strain_indices,
+        						      sample_times,
+        						      start_index_in_samples,
+        						      end_index_in_samples,
+        						      start_index_in_data,
+        						      nrows_per_sample,
+        						      number_strains,
+        						      antigenic_map_short(_,obs_type),
+        						      antigenic_map_long(_,obs_type),
+        						      false);
+        	} else {
+        	  titre_data_fast_individual_base(predicted_titres, 
+                                           mus(obs_type), 
+                                           mu_shorts(obs_type),
+                                           wanes(obs_type), 
+                                           taus(obs_type),
+        					  infection_times,
+        					  infection_strain_indices_tmp,
+        					  measurement_strain_indices,
+        					  sample_times,
+        					  start_index_in_samples,
+        					  end_index_in_samples,
+        					  start_index_in_data,
+        					  nrows_per_sample,
+        					  number_strains,
+        					  antigenic_map_short(_,obs_type),
+        					  antigenic_map_long(_,obs_type),
+        					  false);
+        	}
+        	//Rcpp::Rcout << "Predicted titres: " << predicted_titres << std::endl;
+        	
+        	//}
+        	if(use_titre_shifts){
+        	  add_measurement_shifts(predicted_titres, titre_shifts, 
+        				 start_index_in_data, end_index_in_data);
+        	}
+        	// Go from first row in the data for this individual to up to the next one, accumulating
+        	// likelihood for this individual
+        	// For unique data
+            // Data_type 1 is discretized, bounded data
+            /*Rcpp::Rcout << "Data: " << data << std::endl;  
+        	Rcpp::Rcout << "Repeat data: " << repeat_data << std::endl;  
+        	Rcpp::Rcout << "Repeat data exists: " << repeat_data_exist << std::endl;  
+        	Rcpp::Rcout << "Index: " << index << std::endl;  
+        	
+        	Rcpp::Rcout << "Cumu nrow start: " << cum_nrows_per_individual_in_data[index] << std::endl;  
+        	Rcpp::Rcout << "Cumu nrow end: " << cum_nrows_per_individual_in_data[index+1] << std::endl;  
+        	*/
+              if(data_type==1){
+            	  proposal_likelihood_func(new_prob, predicted_titres, 
+                                        index, 
+                                        data,  
+                                         repeat_data, 
+                                         repeat_indices,
+                                         cum_nrows_per_individual_in_data, 
+                                         cum_nrows_per_individual_in_repeat_data,
+            			  	 log_const, 
+            			  	 dens(obs_type), 
+            			  	 max_titres(obs_type), 
+            			  	 repeat_data_exist,
+            			  	 obs_weight);
+              // Data_type 2 is continuous, bounded data
+              } else if(data_type==2){
+                proposal_likelihood_func_continuous(new_prob, predicted_titres, 
+                                                    index, 
+                                                    data, 
+                                                    repeat_data, 
+                                                    repeat_indices,
+                                                    cum_nrows_per_individual_in_data, 
+                                                    cum_nrows_per_individual_in_repeat_data,
+                                                    log_const, 
+                                                    sds(obs_type), dens(obs_type), den2s(obs_type), 
+                                                    max_titres(obs_type), 
+                                                    min_titres(obs_type), 
+                                                    repeat_data_exist,
+                                                    obs_weight);
+              } else {
+                proposal_likelihood_func(new_prob, predicted_titres, index, 
+                                         data, 
+                                         repeat_data, 
+                                         repeat_indices,
+                                         cum_nrows_per_individual_in_data, 
+                                         cum_nrows_per_individual_in_repeat_data,
+                                         log_const, 
+                                         dens(obs_type), 
+                                         max_titres(obs_type), 
+                                         repeat_data_exist,
+                                         obs_weight);
+              }
+              //Rcpp::Rcout << "New prob: " << new_prob << std::endl<< std::endl;
+              
+    	}
+    	//Rcpp::Rcout << "New prob end: " << new_prob << std::endl<< std::endl << std::endl;
+    	
       } else {
 	        old_prob = new_prob = old_probs[indiv];
       }
@@ -655,6 +750,7 @@ IntegerMatrix new_infection_history_mat(clone(infection_history_mat)); // Can th
       rand1 = R::runif(0,1);
       if(lik_changed && log(rand1) < log_prob/temp){
     	// Update the entry in the new matrix Z1
+    	//Rcpp::Rcout << "Updating entry" << std::endl;
     	old_prob = new_prob;
     	old_probs[indiv] = new_prob;
     
@@ -687,7 +783,6 @@ IntegerMatrix new_infection_history_mat(clone(infection_history_mat)); // Can th
       }
     }
   }
-  List ret;
   ret["old_probs"] = old_probs;
   ret["new_infection_history"] = new_infection_history_mat;
   ret["proposal_iter"] = proposal_iter;

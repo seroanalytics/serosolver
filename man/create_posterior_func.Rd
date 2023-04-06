@@ -18,13 +18,14 @@ create_posterior_func(
   function_type = 1,
   titre_before_infection = FALSE,
   data_type = 1,
+  obs_types_weights = 1,
   ...
 )
 }
 \arguments{
 \item{par_tab}{the parameter table controlling information such as bounds, initial values etc. See \code{\link{example_par_tab}}}
 
-\item{titre_dat}{the data frame of data to be fitted. Must have columns: group (index of group); individual (integer ID of individual); samples (numeric time of sample taken); virus (numeric time of when the virus was circulating); titre (integer of titre value against the given virus at that sampling time). See \code{\link{example_titre_dat}}}
+\item{titre_dat}{the data frame of data to be fitted. Must have columns: group (index of group); individual (integer ID of individual); samples (numeric time of sample taken); virus (numeric time of when the virus was circulating); obs_type (integer of the observation group type, using a unique value for each distinctive type of observation underpinned by the same generative model); titre (integer of titre value against the given virus at that sampling time). See \code{\link{example_titre_dat}}}
 
 \item{antigenic_map}{(optional) a data frame of antigenic x and y coordinates. Must have column names: x_coord; y_coord; inf_times. See \code{\link{example_antigenic_map}}}
 

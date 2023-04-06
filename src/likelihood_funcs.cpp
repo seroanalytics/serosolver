@@ -203,7 +203,8 @@ void proposal_likelihood_func(double &new_prob,
 			      const double &log_const,
 			      const double &den,
 			      const double &max_titre,
-			      const bool &repeat_data_exist){
+			      const bool &repeat_data_exist,
+			      const double &obs_weight = 1.0){
   for(int x = cum_nrows_per_individual_in_data[indiv]; x < cum_nrows_per_individual_in_data[indiv+1]; ++x){
     if(data[x] < max_titre && data[x] >= 1.0){
       new_prob += log_const + log((erf((data[x] + 1.0 - predicted_titres[x]) / den) -
@@ -229,6 +230,10 @@ void proposal_likelihood_func(double &new_prob,
       }
     }
   }
+  
+  // Re-weight likelihood
+  new_prob = new_prob*obs_weight;
+  
   // Need to erase the predicted titre data...
   for(int x = cum_nrows_per_individual_in_data[indiv]; x < cum_nrows_per_individual_in_data[indiv+1]; ++x){
     predicted_titres[x] = 0;
@@ -253,7 +258,8 @@ void proposal_likelihood_func_continuous(double &new_prob,
                               const double &den2,
                               const double &max_titre,
                               const double &min_titre,
-                              const bool &repeat_data_exist){
+                              const bool &repeat_data_exist,
+                              const double &obs_weight = 1.0){
   
   for(int x = cum_nrows_per_individual_in_data[indiv]; x < cum_nrows_per_individual_in_data[indiv+1]; ++x){
     if(data[x] < max_titre && data[x] > min_titre){
@@ -278,6 +284,9 @@ void proposal_likelihood_func_continuous(double &new_prob,
       }
     }
   }
+  // Re-weight likelihood
+  new_prob = new_prob*obs_weight;
+  
   // Need to erase the predicted titre data...
   for(int x = cum_nrows_per_individual_in_data[indiv]; x < cum_nrows_per_individual_in_data[indiv+1]; ++x){
     predicted_titres[x] = 0;

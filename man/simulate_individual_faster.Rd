@@ -6,10 +6,12 @@
 \usage{
 simulate_individual_faster(
   theta,
+  unique_theta_indices = NULL,
   infection_history,
   antigenic_map_long,
   antigenic_map_short,
-  antigenic_distances,
+  antigenic_distances = NULL,
+  unique_obs_types = seq_len(ncol(antigenic_map_long)),
   sampling_times,
   strain_isolation_times,
   measured_strains,
@@ -17,7 +19,7 @@ simulate_individual_faster(
   mu_indices = NULL,
   measurement_bias = NULL,
   measurement_indices = NULL,
-  add_noise = TRUE,
+  obs_dist = NULL,
   repeats = 1,
   DOB = NULL
 )
@@ -31,7 +33,7 @@ simulate_individual_faster(
 
 \item{antigenic_map_short}{the short term antigenic cross reactivity map generated from \code{\link{create_cross_reactivity_vector}}}
 
-\item{antigenic_distances}{same dimensions as antigenic_map_long and antigenic_map_short, but gives the raw euclidean antigenic distances}
+\item{antigenic_distances}{(optional) same dimensions as antigenic_map_long and antigenic_map_short, but gives the raw euclidean antigenic distances}
 
 \item{sampling_times}{vector of times at which blood samples were taken}
 
@@ -45,7 +47,7 @@ simulate_individual_faster(
 
 \item{measurement_indices}{default NULL, optional vector giving the index of `measurement_bias` that each strain uses the measurement shift from from. eg. if there's 6 circulation years and 3 strain clusters, then this might be c(1,1,2,2,3,3)}
 
-\item{add_noise}{if TRUE, adds observation noise to the simulated titres}
+\item{obs_dist}{if not NULL, then a vector of data types to use for each obs_type}
 
 \item{repeats}{number of repeat observations for each year}
 }

@@ -13,7 +13,7 @@ setup_titredat_for_posterior_func(
 )
 }
 \arguments{
-\item{titre_dat}{the data frame of data to be fitted. Must have columns: group (index of group); individual (integer ID of individual); samples (numeric time of sample taken); virus (numeric time of when the virus was circulating); titre (integer of titre value against the given virus at that sampling time). See \code{\link{example_titre_dat}}}
+\item{titre_dat}{the data frame of data to be fitted. Must have columns: group (index of group); individual (integer ID of individual); samples (numeric time of sample taken); virus (numeric time of when the virus was circulating); obs_type (integer of the observation group type, using a unique value for each distinctive type of observation underpinned by the same generative model); titre (integer of titre value against the given virus at that sampling time). See \code{\link{example_titre_dat}}}
 
 \item{antigenic_map}{(optional) a data frame of antigenic x and y coordinates. Must have column names: x_coord; y_coord; inf_times. See \code{\link{example_antigenic_map}}}
 
@@ -28,6 +28,7 @@ a very long list. See source code directly.
 }
 \description{
 Sets up a large list of pre-indexing and pre-processing to speed up the model solving during MCMC fitting.
+Note that this should be `titre_dat` after subsetting to only `run==1`, as we will figure out elsewhere which solves to use as repeats
 }
 \seealso{
 \code{\link{create_posterior_func}}

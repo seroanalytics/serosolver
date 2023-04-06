@@ -331,7 +331,10 @@ create_posterior_func <- function(par_tab,
     
     ## Get unique observation types
     unique_obs_types <- unique(titre_dat$obs_type)
+    unique_obs_types <- unique_obs_types[order(unique_obs_types)]
     n_obs_types <- length(unique_obs_types)
+    
+    n_indivs <- length(unique(titre_dat$individual))
     
     ## Likelihood versions for different obs types
     if(length(data_type) ==1 & n_obs_types > 1){
@@ -434,17 +437,33 @@ create_posterior_func <- function(par_tab,
 
     ## Which entries of the unique titre data correspond to each individual? 
     ## Used to summarize into per-individual likelihoods later
-    nrows_per_individual_in_data <- lapply(unique_obs_types, function(y) 
-        plyr::ddply(titre_dat_unique[titre_dat_unique$obs_type == y,], .(individual), "nrow")$nrow
-        )
-    cum_nrows_per_individual_in_data <- lapply(nrows_per_individual_in_data, function(x) cumsum(c(0, x)))
+    nrows_per_individual_in_data <-  titre_dat_unique %>% group_by(individual, obs_type) %>% 
+        tally() %>% 
+        pivot_wider(id_cols=individual,values_from=n,names_from=obs_type,values_fill=0) %>%
+        ungroup() %>%
+        select(-individual)
+    nrows_per_individual_in_data <- nrows_per_individual_in_data %>% 
+        select(order(colnames(nrows_per_individual_in_data)))
+    nrows_per_individual_in_data <- as.matrix(nrows_per_individual_in_data)
+    
+    tmp <- titre_dat_unique %>% group_by(individual, obs_type) %>% 
+        tally() %>% pull(n)
+    cum_nrows_per_individual_in_data <- cumsum(c(0,tmp))
     
     ## Some additional setup for the repeat data
     ## Used to summarize into per-individual likelihoods later
-    nrows_per_individual_in_data_repeats <- lapply(unique_obs_types, function(y) 
-        plyr::ddply(titre_dat_repeats[titre_dat_repeats$obs_type == y,], .(individual), "nrow")$nrow
-    )
-    cum_nrows_per_individual_in_data_repeats <- lapply(nrows_per_individual_in_data_repeats, function(x) cumsum(c(0, x)))
+    nrows_per_individual_in_data_repeats <-  titre_dat_repeats %>% group_by(individual, obs_type) %>% 
+        tally() %>% 
+        pivot_wider(id_cols=individual,values_from=n,names_from=obs_type,values_fill=0) %>%
+        ungroup() %>%
+        select(-individual)
+    nrows_per_individual_in_data_repeats <- nrows_per_individual_in_data_repeats %>% 
+        select(order(colnames(nrows_per_individual_in_data_repeats)))
+    nrows_per_individual_in_data_repeats <- as.matrix(nrows_per_individual_in_data_repeats)
+    
+    tmp <- titre_dat_repeats %>% group_by(individual, obs_type) %>% 
+        tally() %>% pull(n)
+    cum_nrows_per_individual_in_data_repeats <- cumsum(c(0,tmp))
     
     obs_type_indices <- lapply(unique_obs_types, function(x) which(titre_dat_unique$obs_type == x))
     obs_type_indices_repeats <- lapply(unique_obs_types, function(x) which(titre_dat_repeats$obs_type == x))
@@ -454,6 +473,25 @@ create_posterior_func <- function(par_tab,
     titres_repeats <- titre_dat_repeats$titre
     repeat_indices <- titre_dat_repeats$index
     repeat_indices_cpp <- repeat_indices - 1
+    
+    ## Not a good solution, but make lists of the titre data, repeat titre data and indices. This will be used by the Cpp proposal
+    ## function
+    titres_unique_list <- list()
+    titres_repeats_list <- list()
+    repeat_indices_cpp_list <- list()
+    for(x in unique_obs_types){
+        tmp_titre_dat <- titre_dat_unique[titre_dat_unique$obs_type == x,]
+        tmp_titre_dat_repeats <- titre_dat_repeats[titre_dat_repeats$obs_type == x,]
+        
+        tmp <- row.match(
+            tmp_titre_dat_repeats[, c("individual", "samples", "obs_type", "virus")],
+            tmp_titre_dat[, c("individual", "samples", "obs_type", "virus")]
+        )
+        
+        titres_unique_list[[x]] <- tmp_titre_dat$titre
+        titres_repeats_list[[x]] <- tmp_titre_dat_repeats$titre
+        repeat_indices_cpp_list[[x]] <- tmp-1
+    }
     
     #########################################################
     ## PARAMETER TABLE
@@ -504,9 +542,10 @@ create_posterior_func <- function(par_tab,
     } else {
         boosting_vec_indices <- mus <- c(-1)
     }
-
+    repeat_indices_bool <- TRUE
     if (!repeat_data_exist) {
         repeat_indices_cpp <- c(-1)
+        repeat_indices_bool <- FALSE
     }
 
     ## These will be the same for each obs_type, as currently only one exposure type
@@ -608,7 +647,7 @@ create_posterior_func <- function(par_tab,
                                                     titres_unique[obs_type_indices[[obs_type]]], 
                                                     y_new[obs_type_indices[[obs_type]]])
                     
-                    liks <- liks + obs_types_weights[obs_type]*sum_buckets(liks_tmp, nrows_per_individual_in_data[[obs_type]])
+                    liks <- liks + obs_types_weights[obs_type]*sum_buckets(liks_tmp, nrows_per_individual_in_data[,obs_type])
                     if (repeat_data_exist) {
                         ## Need theta for each observation type
                         
@@ -617,7 +656,7 @@ create_posterior_func <- function(par_tab,
                             titres_repeats[obs_type_indices_repeats[[obs_type]]], 
                             y_new[repeat_indices][obs_type_indices_repeats[[obs_type]]])
                         
-                        liks <- liks + obs_types_weights[obs_type]*sum_buckets(liks_repeats, nrows_per_individual_in_data_repeats[[obs_type]])
+                        liks <- liks + obs_types_weights[obs_type]*sum_buckets(liks_repeats, nrows_per_individual_in_data_repeats[,obs_type])
                     }
                 }
             } else {
@@ -654,7 +693,7 @@ create_posterior_func <- function(par_tab,
                       temp=1,
                       propose_from_prior=TRUE) {
             theta <- pars[theta_indices]
-            names(theta) <- par_names_theta
+            names(theta) <- par_names_theta_all
 
             ## Pass strain-dependent boosting down
             if (use_strain_dependent) {
@@ -664,15 +703,27 @@ create_posterior_func <- function(par_tab,
                 measurement_bias <- pars[measurement_indices_par_tab]
                 titre_shifts <- measurement_bias[expected_indices]
             }
-            ## Work out short and long term boosting cross reactivity - C++ function
-            antigenic_map_long <- create_cross_reactivity_vector(antigenic_map_melted, theta["sigma1"])
-            antigenic_map_short <- create_cross_reactivity_vector(antigenic_map_melted, theta["sigma2"])
+            
+            antigenic_map_long <- matrix(nrow=length(strain_isolation_times)^2, ncol=n_obs_types)
+            antigenic_map_short <- matrix(nrow=length(strain_isolation_times)^2, ncol=n_obs_types)
+            
+            sigma1s <- theta[which(par_names_theta_all=="sigma1")]
+            sigma2s <- theta[which(par_names_theta_all=="sigma2")]
+            
+            for(obs_type in unique_obs_types){
+                antigenic_map_long[,obs_type] <- create_cross_reactivity_vector(antigenic_map_melted[[obs_type]], sigma1s[obs_type])
+                antigenic_map_short[,obs_type] <- create_cross_reactivity_vector(antigenic_map_melted[[obs_type]], sigma2s[obs_type])
+            }
 
             n_infections <- sum_infections_by_group(infection_history_mat, group_id_vec, n_groups)
             if (version == 4) n_infected_group <- rowSums(n_infections)
+            #browser()
             ## Now pass to the C++ function
             res <- inf_hist_prop_prior_v2_and_v4(
                 theta,
+                theta_indices_unique, 
+                unique_obs_types,
+                
                 infection_history_mat,
                 probs,
                 sampled_indivs,
@@ -691,18 +742,31 @@ create_posterior_func <- function(par_tab,
                 strain_isolation_times,
                 infection_strain_indices,
                 sample_times,
-                rows_per_indiv_in_samples,
+                
+                type_data_start,
+                obs_types,
+                sample_data_start, 
+                titre_data_start,
+                nrows_per_sample,
+                
                 cum_nrows_per_individual_in_data,
                 cum_nrows_per_individual_in_data_repeats,
-                nrows_per_sample,
+
                 group_id_vec,
                 measured_strain_indices,
                 antigenic_map_long,
                 antigenic_map_short,
                 antigenic_distances,
+                
                 titres_unique,
                 titres_repeats,
+                
+                length(titres_unique),
+                
                 repeat_indices_cpp,
+                
+                repeat_indices_bool,
+                
                 titre_shifts,
                 proposal_iter = proposal_iter,
                 accepted_iter = accepted_iter,
@@ -714,9 +778,10 @@ create_posterior_func <- function(par_tab,
                 mus,
                 boosting_vec_indices,
                 n_alive_total,
+                data_type,
+                obs_types_weights,
                 temp,
-                solve_likelihood,
-                data_type
+                solve_likelihood
             )
             return(res)
         }

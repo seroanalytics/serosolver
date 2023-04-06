@@ -14,7 +14,8 @@ void proposal_likelihood_func(double &new_prob,
 			      const double &log_const,
 			      const double &den,
 			      const double &max_titre,
-			      const bool &repeat_data_exist);
+			      const bool &repeat_data_exist,
+			      const double &obs_weight);
 #endif
 
 #ifndef PROPOSAL_LIKELIHOOD_FUNC_CONTINUOUS_H
@@ -33,5 +34,6 @@ void proposal_likelihood_func_continuous(double &new_prob,
                                          const double &den2,
                                          const double &max_titre,
                                          const double &min_titre,
-                                         const bool &repeat_data_exist);
+                                         const bool &repeat_data_exist,
+                                             const double &obs_weight);
 #endif

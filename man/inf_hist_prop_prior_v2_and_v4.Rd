@@ -6,6 +6,8 @@
 \usage{
 inf_hist_prop_prior_v2_and_v4(
   theta,
+  unique_theta_indices,
+  unique_obs_types,
   infection_history_mat,
   old_probs_1,
   sampled_indivs,
@@ -24,10 +26,13 @@ inf_hist_prop_prior_v2_and_v4(
   circulation_times,
   circulation_times_indices,
   sample_times,
-  rows_per_indiv_in_samples,
+  type_data_start,
+  obs_types,
+  sample_data_start,
+  titre_data_start,
+  nrows_per_sample,
   cum_nrows_per_individual_in_data,
   cum_nrows_per_individual_in_repeat_data,
-  nrows_per_blood_sample,
   group_id_vec,
   measurement_strain_indices,
   antigenic_map_long,
@@ -36,6 +41,7 @@ inf_hist_prop_prior_v2_and_v4(
   data,
   repeat_data,
   repeat_indices,
+  repeat_data_exist,
   titre_shifts,
   proposal_iter,
   accepted_iter,
@@ -44,12 +50,13 @@ inf_hist_prop_prior_v2_and_v4(
   overall_swap_proposals,
   overall_add_proposals,
   time_sample_probs,
-  mus,
+  mus_strain_dep,
   boosting_vec_indices,
   total_alive,
+  data_types,
+  obs_weights,
   temp = 1,
-  solve_likelihood = TRUE,
-  data_type = 1L
+  solve_likelihood = TRUE
 )
 }
 \arguments{
@@ -89,13 +96,9 @@ inf_hist_prop_prior_v2_and_v4(
 
 \item{sample_times}{NumericVector, the vector of real times that samples were taken}
 
-\item{rows_per_indiv_in_samples}{IntegerVector, How many rows in titre data correspond to each individual, sample and repeat?}
-
 \item{cum_nrows_per_individual_in_data}{IntegerVector, How many rows in the titre data correspond to each individual?}
 
 \item{cum_nrows_per_individual_in_repeat_data}{IntegerVector, For the repeat data (ie. already calculated these titres), how many rows in the titre data correspond to each individual?}
-
-\item{nrows_per_blood_sample}{IntegerVector, Split the sample times and runs for each individual}
 
 \item{group_id_vec}{IntegerVector, vector with 1 entry per individual, giving the group ID of that individual}
 
@@ -123,8 +126,6 @@ inf_hist_prop_prior_v2_and_v4(
 
 \item{accepted_swap}{IntegerVector, vector with entry for each individual, storing the number of accepted infection history swaps}
 
-\item{mus}{NumericVector, if length is greater than one, assumes that strain-specific boosting is used rather than a single boosting parameter}
-
 \item{boosting_vec_indices}{IntegerVector, same length as circulation_times, giving the index in the vector \code{mus} that each entry should use as its boosting parameter.}
 
 \item{total_alive}{IntegerVector, giving the total number of potential infection events for each group. This only applies to prior version 4. If set to a vector of values -1, then this is ignored.}
@@ -132,6 +133,12 @@ inf_hist_prop_prior_v2_and_v4(
 \item{temp}{double, temperature for parallel tempering MCMC}
 
 \item{solve_likelihood}{bool, if FALSE does not solve likelihood when calculating acceptance probability}
+
+\item{rows_per_indiv_in_samples}{IntegerVector, How many rows in titre data correspond to each individual, sample and repeat?}
+
+\item{nrows_per_blood_sample}{IntegerVector, Split the sample times and runs for each individual}
+
+\item{mus}{NumericVector, if length is greater than one, assumes that strain-specific boosting is used rather than a single boosting parameter}
 
 \item{data_type}{int, defaults to 1 for discretized, bounded data. Set to 2 for continuous, bounded data}
 }

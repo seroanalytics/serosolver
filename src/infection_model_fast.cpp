@@ -33,11 +33,13 @@ NumericVector titre_data_fast(const NumericVector &theta,
 			      const NumericVector &circulation_times,
 			      const IntegerVector &circulation_times_indices,
 			      const NumericVector &sample_times,
+			      
 			      const IntegerVector &type_data_start,
 			      const IntegerVector &obs_types,
 			      const IntegerVector &sample_data_start, 
 			      const IntegerVector &titre_data_start, 
 			      const IntegerVector &nrows_per_sample, // Split the sample times for each individual
+			      
 			      const IntegerVector &measurement_strain_indices, // For each titre measurement, corresponding entry in antigenic map
 			      const NumericMatrix &antigenic_map_long,
 			      const NumericMatrix &antigenic_map_short,

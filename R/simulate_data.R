@@ -58,10 +58,6 @@ simulate_data <- function(par_tab,
     ## PARAMETER TABLE CHECKS
     #########################################################
     check_par_tab(par_tab)
-    if (!("group" %in% colnames(titre_dat))) {
-        titre_dat$group <- 1
-    }
-    
     
     if (!("obs_type" %in% colnames(par_tab))) {
         message(cat("Note: no obs_type detection in par_tab Assuming all obs_type as 1."))
@@ -244,7 +240,7 @@ simulate_group <- function(n_indiv,
                            measurement_indices = NULL,
                            obs_dist = NULL,
                            DOBs=NULL) {
-
+    n_obs_types <- length(unique_obs_types)
   ## Create antigenic map for short and long term boosting
     antigenic_map_long <- matrix(nrow=length(strain_isolation_times)^2, ncol=n_obs_types)
     antigenic_map_short <- matrix(nrow=length(strain_isolation_times)^2, ncol=n_obs_types)
@@ -299,10 +295,11 @@ simulate_group <- function(n_indiv,
     ))
     ## Record individual ID
     y$indiv <- i
-    colnames(y) <- c("samples", "virus", "obs_type","titre", "run", "individual")
+    colnames(y) <- c("samples", "virus", "obs_type","titre", "individual")
     ## Combine data
-    dat <- rbind(dat, y[, c("individual", "samples", "virus", "obs_type","titre", "run")])
+    dat <- rbind(dat, y[, c("individual", "samples", "virus", "obs_type","titre")])
   }
+  dat <- dat %>% group_by(individual,samples,virus,obs_type) %>% mutate(run = 1:n()) %>% ungroup() %>% as.data.frame()
   return(list(titre_dat = dat, infection_history = infection_histories))
 }
 #' Simulate individual data quickly
@@ -370,7 +367,7 @@ simulate_individual_faster <- function(theta,
   
   ## Entries in the antigenic map for each measured strain
   measured_strain_indices <- match(rep(rep(measured_strains, n_samps), n_obs_types), strain_isolation_times) - 1
-  dat <- matrix(nrow = length(measured_strain_indices) * repeats, ncol = 5) ## To store simulated data
+  dat <- matrix(nrow = length(measured_strain_indices) * repeats, ncol = 4) ## To store simulated data
   ## Go into C++ code to solve titre model
   titres <- titre_data_fast(
     theta, 
@@ -395,7 +392,7 @@ simulate_individual_faster <- function(theta,
   titres <- rep(titres, repeats)
   ## Housekeeping for return data
   sampling_times <- rep(rep(sampling_times, each=length(measured_strains)),n_obs_types)
-  enum_repeats <- rep(1:repeats, each = length(sampling_times))
+  #enum_repeats <- rep(1:repeats, each = length(sampling_times))
   sampling_times <- rep(sampling_times, repeats)
   dat[, 1] <- sampling_times
   dat[, 2] <- rep(rep(rep(measured_strains, n_samps), repeats),n_obs_types)
@@ -419,7 +416,7 @@ simulate_individual_faster <- function(theta,
   } else {
     dat[, 4] <- titres
   }
-  dat[, 5] <- enum_repeats
+  #dat[, 5] <- enum_repeats
   return(dat)
 }
 
