@@ -206,6 +206,8 @@ void proposal_likelihood_func(double &new_prob,
 			      const bool &repeat_data_exist,
 			      const double &obs_weight = 1.0){
   for(int x = cum_nrows_per_individual_in_data[indiv]; x < cum_nrows_per_individual_in_data[indiv+1]; ++x){
+
+      
     if(data[x] < max_titre && data[x] >= 1.0){
       new_prob += log_const + log((erf((data[x] + 1.0 - predicted_titres[x]) / den) -
 				   erf((data[x]     - predicted_titres[x]) / den)));    

@@ -409,7 +409,7 @@ setup_titredat_for_posterior_func <- function(titre_dat, antigenic_map=NULL, str
   
   ## How many rows in the titre data correspond to each unique individual, sample, observation type?
   ## ie. each element of this vector corresponds to one set of titres that need to be predicted
-  nrows_per_sample <- plyr::ddply(titre_dat, .(individual, samples, obs_type), nrow)$V1
+  nrows_per_sample <- plyr::ddply(titre_dat, .(individual,obs_type, samples), nrow)$V1
   titre_data_start <- cumsum(c(0,nrows_per_sample))
 
     ## Get unique groups

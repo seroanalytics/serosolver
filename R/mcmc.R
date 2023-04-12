@@ -380,13 +380,19 @@ run_MCMC <- function(par_tab,
   ## MCMC ALGORITHM
   #####################
   log_prob <- 0
-
+  
+  ## If switch_sample is 0, only ever sample theta. If Inf, only sample inf_hist
   ## Track whether we should be sampling theta or inf hist
-  if (switch_sample >= 1) {
+  if (switch_sample == 0){
+      switch_sample_flag <- TRUE
+  } else if (switch_sample >= 1) {
     switch_sample_flag <- c(rep(TRUE, switch_sample), FALSE)
-  } else {
+  } else if(is.infinite(switch_sample)) {
+      switch_sample_flag <- FALSE
+  } else  {
     switch_sample_flag <- c(TRUE, rep(FALSE, floor(1 / switch_sample)))
   }
+  
   switch_sample_i <- 1
   switch_sample_flag_length <- length(switch_sample_flag)
 
@@ -428,6 +434,9 @@ run_MCMC <- function(par_tab,
         }
       }
       ## Calculate new likelihood for these parameters
+        #print("THETA PROPOSAL")
+     #print(paste0("Likelihood before proposal: ", sum(posterior_simp(current_pars, infection_histories)[[1]])))      
+        
       tmp_new_posteriors <- posterior_simp(proposal, infection_histories)
       new_indiv_likelihoods <- tmp_new_posteriors[[1]] / temp # For each individual
       new_indiv_priors <- tmp_new_posteriors[[2]]
@@ -436,9 +445,13 @@ run_MCMC <- function(par_tab,
       new_total_prior_prob <- sum(new_indiv_priors) +
           extra_probabilities(proposal, infection_histories)
       new_total_posterior <- new_total_likelihood + new_total_prior_prob # Posterior
+      
+      #print(paste0("Likelihood after proposal: ", sum(new_indiv_likelihoods)))      
 
         ## Otherwise, resample infection history
     } else {
+        #print("INF HIST PROPOSAL")
+        
         ## Choose a random subset of individuals to update
         indiv_sub_sample <- sample(1:n_indiv, ceiling(hist_sample_prob * n_indiv))
         indiv_sub_sample <- indiv_sub_sample[order(indiv_sub_sample)]
@@ -478,6 +491,9 @@ run_MCMC <- function(par_tab,
         } else if (hist_proposal == 2) {
             ## Swap entire contents or propose new
             if (inf_swap_prob > hist_switch_prob) {
+                #print(proposal)
+                #print(paste0("Likelihood before proposal: ", sum(indiv_likelihoods)))
+                #print(paste0("Likelihood solved (should be same as before): ", sum(posterior_simp(proposal, infection_histories)[[1]])))      
                 #print(paste0("Sum infection histories before: ", sum(infection_histories)))
                 prop_gibbs <- proposal_gibbs(
                     proposal,
@@ -496,14 +512,41 @@ run_MCMC <- function(par_tab,
                     temp,
                     propose_from_prior
                 )
-                #print(paste0("Sum infection histories after: ", sum(infection_histories)))
-                      
+                #print(paste0("Likelihood after proposal: ", sum(prop_gibbs$old_probs)))
+                
                 histiter <- prop_gibbs$proposal_iter
                 histaccepted <- prop_gibbs$accepted_iter
                 new_indiv_likelihoods <- prop_gibbs$old_probs
-                new_infection_histories <- prop_gibbs$new_infection_history
-                #print(paste0("Sum new infection histories after: ", sum(new_infection_histories)))
+                new_infection_histories <- prop_gibbs$new_infection_history     
+                #print(paste0("Which changed: ", which(rowSums(abs(infection_histories - new_infection_histories)) > 0)))
                 
+                
+                
+                liksA <- posterior_simp(proposal, new_infection_histories)[[1]]
+                liksB <- prop_gibbs$old_probs
+                #print(paste0("Which not correct: ", which(abs( liksA- prop_gibbs$old_probs) > 0.001)))
+                #print(paste0("Incorrect by: ", liksA- prop_gibbs$old_probs))
+                #print(paste0("Likelihood solved after proposal (should be same as after): ", sum(posterior_simp(proposal, new_infection_histories)[[1]])))      
+
+                #print(paste0("Sum new infection histories after: ", sum(new_infection_histories)))
+                if(any(abs(liksA-liksB) > 0.1)){
+                    browser()
+                    model_func <- protect(CREATE_POSTERIOR_FUNC(par_tab,
+                                                                titre_dat,
+                                                                antigenic_map,
+                                                                strain_isolation_times,
+                                                                version=version,
+                                                                solve_likelihood,
+                                                                age_mask,
+                                                                measurement_indices_by_time = measurement_indices,
+                                                                mu_indices = mu_indices,
+                                                                n_alive = n_alive,
+                                                                function_type = 3,
+                                                                ...
+                    ))
+                    tmp_y <- model_func(proposal, new_infection_histories)
+                }
+                    
                 new_likelihoods_calculated <- TRUE
 
                 overall_swap_proposals <- prop_gibbs$overall_swap_proposals
@@ -582,6 +625,7 @@ run_MCMC <- function(par_tab,
             ## Accept with probability 1 if better, or proportional to
             ## difference if not
             current_pars <- proposal
+            #print("Accepted proposed theta parameters")
             ## Store acceptances
             ## If all parameters are fixed, then we 'accept'
             if (length(unfixed_pars) == 0) {

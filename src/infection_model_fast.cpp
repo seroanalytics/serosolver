@@ -93,7 +93,7 @@ NumericVector titre_data_fast(const NumericVector &theta,
   int error_index = unique_theta_indices["error"];
 
   // Titre-dependent boosting function
-  bool titre_dependent_boosting;
+  bool titre_dependent_boosting=false;
   NumericVector gradients(n_types); 
   NumericVector boost_limits(n_types);   
   
@@ -116,11 +116,11 @@ NumericVector titre_data_fast(const NumericVector &theta,
       errors[x] = theta[error_index + x*n_theta];
       
       // Titre dependent boosting
-      titre_dependent_boosting = theta[titre_dependent_boosting_index+ x*n_theta];
-      if (titre_dependent_boosting) {
-          gradients(x) = theta[gradient_index + x*n_theta];
-          boost_limits(x) = theta[boost_limit_index + x*n_theta];
-      }
+      //titre_dependent_boosting = theta[titre_dependent_boosting_index+ x*n_theta];
+     // if (titre_dependent_boosting) {
+       //   gradients(x) = theta[gradient_index + x*n_theta];
+       //   boost_limits(x) = theta[boost_limit_index + x*n_theta];
+      //}
   }
 
   // To store calculated titres
@@ -164,14 +164,13 @@ NumericVector titre_data_fast(const NumericVector &theta,
     Rcpp::Rcout << "Mu: " << mus(obs_type) << std::endl;
     Rcpp::Rcout << "Mu short: " << mu_shorts(obs_type) << std::endl;
     */
-
           // ====================================================== //
           // =============== CHOOSE MODEL TO SOLVE =============== //
           // ====================================================== //
           // Go to sub function - this is where we have options for different models
           // Note, these are in "boosting_functions.cpp"
           if (titre_dependent_boosting) {
-        	titre_data_fast_individual_titredep(predicted_titres, 
+              titre_data_fast_individual_titredep(predicted_titres, 
                                 mus(obs_type), 
                                 mu_shorts(obs_type),
 				                wanes(obs_type), 

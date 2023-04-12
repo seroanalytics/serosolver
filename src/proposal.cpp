@@ -345,7 +345,7 @@ List ret;
   int max_index = unique_theta_indices["MAX_TITRE"];
   
   // Titre-dependent boosting function
-  bool titre_dependent_boosting;
+  bool titre_dependent_boosting=false;
   NumericVector gradients(n_types); 
   NumericVector boost_limits(n_types);   
   
@@ -374,11 +374,11 @@ List ret;
       den2s[x] = log(sds[x]*2.50662827463); // Constant for the normal distribution
       
       // Titre dependent boosting
-      titre_dependent_boosting = theta[titre_dependent_boosting_index+ x*n_theta];
-      if (titre_dependent_boosting) {
-          gradients(x) = theta[gradient_index + x*n_theta];
-          boost_limits(x) = theta[boost_limit_index + x*n_theta];
-      }
+      //titre_dependent_boosting = theta[titre_dependent_boosting_index+ x*n_theta];
+      //if (titre_dependent_boosting) {
+       //   gradients(x) = theta[gradient_index + x*n_theta];
+      //    boost_limits(x) = theta[boost_limit_index + x*n_theta];
+      //}
   }
 
   // 4. Extra titre shifts
@@ -420,11 +420,12 @@ List ret;
     tmp_loc_sample_probs = time_sample_probs[samps_shifted];
     // Re-normalise
     tmp_loc_sample_probs = tmp_loc_sample_probs/sum(tmp_loc_sample_probs);
-    locs = RcppArmadillo::sample(samps, n_samp_max, FALSE, tmp_loc_sample_probs);
+    locs = RcppArmadillo::sample(samps, n_samp_max, false, tmp_loc_sample_probs);
 
     
     // For each selected infection history entry
     for(int j = 0; j < n_samp_max; ++j){
+        //Rcpp::Rcout << "Updating infection history entry: " << j << std::endl;
       // Assume that proposal hasn't changed likelihood until shown otherwise
       lik_changed = false;
       // Infection history to update
@@ -560,9 +561,9 @@ List ret;
       // calculate likelihood of new Z
       ////////////////////////
       
-      //if(solve_likelihood && lik_changed){
-      if(TRUE){
-          //Rcpp::Rcout << "Infection history after change: " << new_infection_history<< std::endl;
+      if(solve_likelihood && lik_changed){
+        //if(TRUE){
+         //Rcpp::Rcout << "Infection history after change: " << new_infection_history<< std::endl;
           
     	// Calculate likelihood!
     	indices = new_infection_history > 0;
@@ -593,8 +594,14 @@ List ret;
     	    //Rcpp::Rcout << "obs_type: " << obs_type << std::endl;
     	    //Rcpp::Rcout << "data_type: " << data_type << std::endl;
     	    //Rcpp::Rcout << "obs_weight: " << obs_weight << std::endl;
-    	    
-    	    
+    	    /*
+    	    Rcpp::Rcout << "Mu: " <<mus(obs_type)<< std::endl;
+    	    Rcpp::Rcout << "Mu_short: " <<mu_shorts(obs_type)<< std::endl;
+            Rcpp::Rcout << "wane: " <<wanes(obs_type)<< std::endl;
+            Rcpp::Rcout << "tau: " << taus(obs_type)<< std::endl;
+            Rcpp::Rcout << "gradients: " << gradients(obs_type)<< std::endl;
+            Rcpp::Rcout << "boost_limits: " << boost_limits(obs_type)<< std::endl;
+    	        */
     	    // Now have all predicted titres for this individual calculated
     	    // Need to calculate likelihood of these titres... 
     	    start_index_in_samples = sample_data_start[index];
@@ -610,8 +617,11 @@ List ret;
     	    //Rcpp::Rcout << "end_index_in_data + 1: " << end_index_in_data+1 << std::endl;
     	    
     	    //Rcpp::Rcout << "Predicted titres before: " << predicted_titres << std::endl;
+    	   
     	    
         	if (titre_dependent_boosting) {
+        	    //Rcpp::Rcout << "Titre dep model: " << std::endl;
+        	    
         	  titre_data_fast_individual_titredep(predicted_titres, 
                                                mus(obs_type), 
                                                mu_shorts(obs_type),
@@ -632,6 +642,8 @@ List ret;
         					      antigenic_map_long(_,obs_type),
         					      false);	
         	} else if (strain_dep_boost) {
+        	    //Rcpp::Rcout << "Strain dep model: " << std::endl;
+        	    
         	  titre_data_fast_individual_strain_dependent(predicted_titres, 
                                                        mus(obs_type), 
                                                        boosting_vec_indices, 
@@ -651,6 +663,8 @@ List ret;
         						      antigenic_map_long(_,obs_type),
         						      false);
         	} else {
+        	    //Rcpp::Rcout << "Base model boosting: " << std::endl;
+        	    
         	  titre_data_fast_individual_base(predicted_titres, 
                                            mus(obs_type), 
                                            mu_shorts(obs_type),
@@ -680,13 +694,13 @@ List ret;
         	// likelihood for this individual
         	// For unique data
             // Data_type 1 is discretized, bounded data
-            /*Rcpp::Rcout << "Data: " << data << std::endl;  
-        	Rcpp::Rcout << "Repeat data: " << repeat_data << std::endl;  
-        	Rcpp::Rcout << "Repeat data exists: " << repeat_data_exist << std::endl;  
-        	Rcpp::Rcout << "Index: " << index << std::endl;  
+            /*//Rcpp::Rcout << "Data: " << data << std::endl;  
+        	//Rcpp::Rcout << "Repeat data: " << repeat_data << std::endl;  
+        	//Rcpp::Rcout << "Repeat data exists: " << repeat_data_exist << std::endl;  
+        	//Rcpp::Rcout << "Index: " << index << std::endl;  
         	
-        	Rcpp::Rcout << "Cumu nrow start: " << cum_nrows_per_individual_in_data[index] << std::endl;  
-        	Rcpp::Rcout << "Cumu nrow end: " << cum_nrows_per_individual_in_data[index+1] << std::endl;  
+        	//Rcpp::Rcout << "Cumu nrow start: " << cum_nrows_per_individual_in_data[index] << std::endl;  
+        	//Rcpp::Rcout << "Cumu nrow end: " << cum_nrows_per_individual_in_data[index+1] << std::endl;  
         	*/
               if(data_type==1){
             	  proposal_likelihood_func(new_prob, predicted_titres, 
@@ -735,6 +749,7 @@ List ret;
     	//Rcpp::Rcout << "New prob end: " << new_prob << std::endl<< std::endl << std::endl;
     	
       } else {
+          //Rcpp::Rcout << "Infection history unchanged" << std::endl;
 	        old_prob = new_prob = old_probs[indiv];
       }
      
