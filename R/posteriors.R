@@ -18,10 +18,10 @@ r_likelihood <- function(expected, data, theta, expected_indices = NULL, measure
   small_i <- data < 1
   rest_i <- data >= 1 & data < theta["MAX_TITRE"]
 
-  liks[large_i] <- pnorm(theta["MAX_TITRE"], expected[large_i], theta["error"], lower.tail = FALSE, log.p = TRUE)
-  liks[small_i] <- pnorm(1, expected[small_i], theta["error"], lower.tail = TRUE, log.p = TRUE)
-  liks[rest_i] <- log(pnorm(data[rest_i] + 1, expected[rest_i], theta["error"], lower.tail = TRUE, log.p = FALSE) -
-    pnorm(data[rest_i], expected[rest_i], theta["error"], lower.tail = TRUE, log.p = FALSE))
+  liks[large_i] <- pnorm(theta["MAX_TITRE"], expected[large_i], theta["obs_sd"], lower.tail = FALSE, log.p = TRUE)
+  liks[small_i] <- pnorm(1, expected[small_i], theta["obs_sd"], lower.tail = TRUE, log.p = TRUE)
+  liks[rest_i] <- log(pnorm(data[rest_i] + 1, expected[rest_i], theta["obs_sd"], lower.tail = TRUE, log.p = FALSE) -
+    pnorm(data[rest_i], expected[rest_i], theta["obs_sd"], lower.tail = TRUE, log.p = FALSE))
   return(liks)
 }
 
@@ -46,9 +46,9 @@ r_likelihood_continuous <- function(expected, data, theta, expected_indices = NU
   small_i <- data <= theta["MIN_TITRE"]
   rest_i <- data > theta["MIN_TITRE"] & data < theta["MAX_TITRE"]
   
-  liks[large_i] <- pnorm(theta["MAX_TITRE"], expected[large_i], theta["error"], lower.tail = FALSE, log.p = TRUE)
-  liks[small_i] <- pnorm(theta["MIN_TITRE"], expected[small_i], theta["error"], lower.tail = TRUE, log.p = TRUE)
-  liks[rest_i] <- dnorm(data[rest_i], expected[rest_i], theta["error"], log = TRUE)
+  liks[large_i] <- pnorm(theta["MAX_TITRE"], expected[large_i], theta["obs_sd"], lower.tail = FALSE, log.p = TRUE)
+  liks[small_i] <- pnorm(theta["MIN_TITRE"], expected[small_i], theta["obs_sd"], lower.tail = TRUE, log.p = TRUE)
+  liks[rest_i] <- dnorm(data[rest_i], expected[rest_i], theta["obs_sd"], log = TRUE)
   return(liks)
 }
 
@@ -501,13 +501,6 @@ create_posterior_func <- function(par_tab,
     
     ## In general we are just going to use the indices for a single observation type
     par_tab_unique <- par_tab[!is.na(par_tab$obs_type) & par_tab$obs_type == min(par_tab$obs_type),]
-    theta_indices_unique <- which(par_tab_unique$type %in% c(0, 1))
-    
-    ## Each obs_type must have the same vector of parameters in the same order
-    par_names_theta <- par_tab_unique[theta_indices_unique, "names"]
-    theta_indices_unique <- theta_indices_unique - 1
-    names(theta_indices_unique) <- par_names_theta
-    n_pars <- length(theta_indices_unique)
 
     ## These will be different for each obs_type
     option_indices <- which(par_tab$type == 0)
@@ -515,8 +508,15 @@ create_posterior_func <- function(par_tab,
     measurement_indices_par_tab <- which(par_tab$type == 3)
     mu_indices_par_tab <- which(par_tab$type == 6)
     
-    par_names_theta_all <- par_tab[theta_indices,"names"]
+    theta_indices_unique <- which(par_tab_unique$type %in% c(0, 1))
     
+    ## Each obs_type must have the same vector of parameters in the same order
+    par_names_theta <- par_tab_unique[theta_indices_unique, "names"]
+    theta_indices_unique <- seq_along(theta_indices_unique) - 1
+    names(theta_indices_unique) <- par_names_theta
+    
+    par_names_theta_all <- par_tab[theta_indices,"names"]
+    n_pars <- length(theta_indices_unique)
     
     ## Sort out any assumptions for measurement bias
     use_measurement_bias <- (length(measurement_indices_par_tab) > 0) & !is.null(measurement_indices_by_time)
@@ -528,10 +528,9 @@ create_posterior_func <- function(par_tab,
     additional_arguments <- NULL
 
     repeat_data_exist <- nrow(titre_dat_repeats) > 0
-
     if (use_measurement_bias) {
         message(cat("Using measurement bias\n"))
-        expected_indices <- measurement_indices_by_time[match(titre_dat_unique$virus, strain_isolation_times)]
+        expected_indices <- titre_dat_unique %>% left_join(measurement_indices_by_time,by = c("virus", "obs_type")) %>% pull(rho_index)
     } else {
         expected_indices <- c(-1)
     }
@@ -554,7 +553,7 @@ create_posterior_func <- function(par_tab,
     knot_indices <- which(par_tab$type == 5) ## For functional form version of FOI
     
     ## Find which options are being used in advance for speed
-    explicit_phi <- (length(phi_indices) > 0) ## Explicit prob of infection term
+    explicit_phi <- "phi" %in% par_tab$names ## Explicit prob of infection term
     spline_phi <- (length(knot_indices) > 0)
     
     ## Allow different likelihood function for each observation type

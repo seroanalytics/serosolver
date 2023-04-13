@@ -64,6 +64,8 @@ void titre_data_fast_individual_base(NumericVector &predicted_titres,
 	 (!boost_before_infection && sampling_time >= infection_times[x])){
 	time = sampling_time - infection_times[x]; // Time between sample and infection
 	wane_amount= MAX(0, 1.0 - (wane*time)); // Basic waning function
+	//Rcpp::Rcout << "Wane parameter: " << wane << std::endl;
+	//Rcpp::Rcout << "Wane amount: " << wane_amount << std::endl;
 	seniority = MAX(0, 1.0 - tau*(n_inf - 1.0)); // Antigenic seniority
 	inf_map_index = infection_strain_indices_tmp[x]; // Index of this infecting strain in antigenic map
 

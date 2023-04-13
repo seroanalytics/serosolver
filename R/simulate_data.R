@@ -110,12 +110,6 @@ simulate_data <- function(par_tab,
     
     ## In general we are just going to use the indices for a single observation type
     par_tab_unique <- par_tab[!is.na(par_tab$obs_type) & par_tab$obs_type == min(par_tab$obs_type),]
-    theta_indices_unique <- which(par_tab_unique$type %in% c(0, 1))
-    
-    ## Each obs_type must have the same vector of parameters in the same order
-    par_names_theta <- par_tab_unique[theta_indices_unique, "names"]
-    theta_indices_unique <- theta_indices_unique - 1
-    names(theta_indices_unique) <- par_names_theta
     
     ## These will be different for each obs_type
     option_indices <- which(par_tab$type == 0)
@@ -123,7 +117,17 @@ simulate_data <- function(par_tab,
     measurement_indices_par_tab <- which(par_tab$type == 3)
     mu_indices_par_tab <- which(par_tab$type == 6)
     
+    theta_indices_unique <- which(par_tab_unique$type %in% c(0, 1))
+    
+    ## Each obs_type must have the same vector of parameters in the same order
+    par_names_theta <- par_tab_unique[theta_indices_unique, "names"]
+    theta_indices_unique <- seq_along(theta_indices_unique) - 1
+    names(theta_indices_unique) <- par_names_theta
+    
     par_names_theta_all <- par_tab[theta_indices,"names"]
+
+    ## Measurement indices unique
+    measurement_indices_unique <- seq_along(which(par_tab_unique$type == 3)) - 1
 
     ## Extract parameters
     pars <- par_tab$values
@@ -135,7 +139,7 @@ simulate_data <- function(par_tab,
         message(cat("Strain specific boosting\n"))
         mus <- pars[mu_indices_par_tab]
     }
-    
+
     measurement_bias <- NULL
     if (!is.null(measurement_indices)) {
         message(cat("Measurement bias\n"))
@@ -346,18 +350,18 @@ simulate_individual_faster <- function(theta,
   inf_hist[1, ] <- infection_history
 
   n_samps <- length(sampling_times)
-    n_obs_types <- length(unique_obs_types)
+  n_obs_types <- length(unique_obs_types)
   
-    sampling_times_long <- rep(sampling_times, n_obs_types)
+  sampling_times_long <- rep(sampling_times, n_obs_types)
     
-    ## length(measured_strains) observations made per blood sample
-    nrows_per_sample <- rep(length(measured_strains), n_samps*n_obs_types)
+  ## length(measured_strains) observations made per blood sample
+  nrows_per_sample <- rep(length(measured_strains), n_samps*n_obs_types)
 
   ## Cumulative of the above for the algorithm
-    titre_data_start <- cumsum(c(0, nrows_per_sample))
+  titre_data_start <- cumsum(c(0, nrows_per_sample))
 
   ## Iterate through sample times sample_times[0:(n_samps-1)] to solve the model
-    sample_data_start <- cumsum(c(0, rep(n_samps,n_obs_types)))
+  sample_data_start <- cumsum(c(0, rep(n_samps,n_obs_types)))
 
   ## Entries in the antigenic map
   strain_indices <- match(strain_isolation_times, strain_isolation_times) - 1
@@ -404,9 +408,12 @@ simulate_individual_faster <- function(theta,
   if (!is.null(obs_dist)) {
       for(obs_type in unique_obs_types){
         if (!is.null(measurement_indices)) {
+            indices_tmp <- measurement_indices$obs_type == obs_type
+            use_measurement_indices <- measurement_indices[indices_tmp,][match(dat[obs_types_data==obs_type,2], measurement_indices[indices_tmp,"virus"]),"rho_index"]
           dat[obs_types_data == obs_type, 4] <- add_noise(titres[obs_types_data == obs_type], 
                                                                           theta[(unique_theta_indices+1) + n_pars*(obs_type-1)], 
-                                                                          measurement_bias, measurement_indices[match(dat[, 2], strain_isolation_times)],data_type=obs_dist[obs_type])
+                                                                          measurement_bias,use_measurement_indices,
+                                                          data_type=obs_dist[obs_type])
         } else {
           dat[obs_types_data == obs_type, 4] <- add_noise(titres[obs_types_data == obs_type], 
                                                                           theta[(unique_theta_indices+1) + n_pars*(obs_type-1)], 
@@ -523,16 +530,16 @@ simulate_individual <- function(theta,
 #' @examples
 #' \dontrun{
 #' ## ... example in simulate_individual
-#' pars <- c("error"=1)
+#' pars <- c("obs_sd"=1)
 #' y <- runif(100)
 #' noisy_y <- add_noise(y, pars)
 #' }
 add_noise <- function(y, theta, measurement_bias = NULL, indices = NULL,data_type=1) {
   if(data_type ==2){
     if (!is.null(measurement_bias)) {
-      noise_y <- rnorm(length(y), mean = y + measurement_bias[indices], sd = theta["error"])
+      noise_y <- rnorm(length(y), mean = y + measurement_bias[indices], sd = theta["obs_sd"])
     } else {
-      noise_y <- rnorm(length(y), mean = y, sd = theta["error"])
+      noise_y <- rnorm(length(y), mean = y, sd = theta["obs_sd"])
     }
     
     ## If outside of bounds, truncate
@@ -541,9 +548,9 @@ add_noise <- function(y, theta, measurement_bias = NULL, indices = NULL,data_typ
   } else {
   ## Draw from normal
     if (!is.null(measurement_bias)) {
-      noise_y <- floor(rnorm(length(y), mean = y + measurement_bias[indices], sd = theta["error"]))
+      noise_y <- floor(rnorm(length(y), mean = y + measurement_bias[indices], sd = theta["obs_sd"]))
     } else {
-      noise_y <- floor(rnorm(length(y), mean = y, sd = theta["error"]))
+      noise_y <- floor(rnorm(length(y), mean = y, sd = theta["obs_sd"]))
     }
   
     ## If outside of bounds, truncate

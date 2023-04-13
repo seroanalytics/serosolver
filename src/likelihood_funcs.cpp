@@ -134,7 +134,7 @@ double inf_mat_prior_total_group_cpp(const IntegerVector& n_infections_group, co
 NumericVector likelihood_func_fast(const NumericVector &theta, const NumericVector &obs, const NumericVector &predicted_titres){
   int total_titres = predicted_titres.size();
   NumericVector ret(total_titres);
-  const double sd = theta["error"];
+  const double sd = theta["obs_sd"];
   const double den = sd*M_SQRT2;
   const double max_titre = theta["MAX_TITRE"];
   const double log_const = log(0.5);
@@ -169,7 +169,7 @@ NumericVector likelihood_func_fast(const NumericVector &theta, const NumericVect
 NumericVector likelihood_func_fast_continuous(const NumericVector &theta, const NumericVector &obs, const NumericVector &predicted_titres){
  int total_titres = predicted_titres.size();
  NumericVector ret(total_titres);
- const double sd = theta["error"];
+ const double sd = theta["obs_sd"];
  const double den = sd*M_SQRT2;
  const double den2 = log(sd*2.50662827463);
  const double max_titre = theta["MAX_TITRE"];

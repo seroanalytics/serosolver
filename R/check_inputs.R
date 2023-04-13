@@ -60,17 +60,11 @@ check_par_tab <- function(par_tab, mcmc = FALSE, version = NULL) {
     pars <- par_tab$values
     names(pars) <- par_tab$names
 
-    ## Checks for wane_type
-    ## Extract wane_type
-    wane_type <- pars["wane_type"]
-    if (is.na(wane_type)) stop("wane_type is missing from par_tab (specify 0 for linear decrease or 1 for piecewise linear) ") ## If user has not entered wane_type in par_tab
-                                        # Check that additional parameters are present
-    if (wane_type == 1 & (!("kappa" %in% names(pars)) | !("t_change" %in% names(pars)))) stop("Parameters needed for wane_type=1 (piecewise linear) are missing")
     explicit_phi <- "phi" %in% names(pars)
 
     ## Additional checks that should happen in run_MCMC
     if (mcmc == TRUE) {
-        phi_indices <- which(par_tab$type == 2)
+        phi_indices <- which(par_tab$names == "phi")
         no_phi <- length(phi_indices)
         explicit_phi <- (no_phi > 0)
 

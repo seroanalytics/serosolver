@@ -90,16 +90,16 @@ NumericVector titre_data_fast(const NumericVector &theta,
   int mu_short_index = unique_theta_indices["mu_short"];
   int wane_index = unique_theta_indices["wane"];
   int tau_index = unique_theta_indices["tau"];
-  int error_index = unique_theta_indices["error"];
+  int error_index = unique_theta_indices["obs_sd"];
 
   // Titre-dependent boosting function
-  bool titre_dependent_boosting=false;
+  IntegerVector titre_dependent_boosting(n_types);
   NumericVector gradients(n_types); 
   NumericVector boost_limits(n_types);   
   
   int titre_dependent_boosting_index = unique_theta_indices["titre_dependent"];
-  int gradient_index = unique_theta_indices["gradient"];
-  int boost_limit_index = unique_theta_indices["boost_limit"];  
+  int gradient_index = -1;
+  int boost_limit_index = -1;
   
   // Strain-specific boosting
   bool strain_dep_boost = false;
@@ -108,7 +108,9 @@ NumericVector titre_data_fast(const NumericVector &theta,
   }
   
   // Create vectors of model parameters for each of the observation types
+
   for(int x = 0; x < n_types; ++x){
+
       mus[x] = theta[mu_index + x*n_theta];
       mu_shorts[x] = theta[mu_short_index + x*n_theta];
       wanes[x] = theta[wane_index + x*n_theta];
@@ -116,11 +118,14 @@ NumericVector titre_data_fast(const NumericVector &theta,
       errors[x] = theta[error_index + x*n_theta];
       
       // Titre dependent boosting
-      //titre_dependent_boosting = theta[titre_dependent_boosting_index+ x*n_theta];
-     // if (titre_dependent_boosting) {
-       //   gradients(x) = theta[gradient_index + x*n_theta];
-       //   boost_limits(x) = theta[boost_limit_index + x*n_theta];
-      //}
+      titre_dependent_boosting[x] = theta[titre_dependent_boosting_index+ x*n_theta];
+      
+      if(titre_dependent_boosting[x] == 1) {
+          gradient_index = unique_theta_indices["gradient"];
+          boost_limit_index = unique_theta_indices["boost_limit"];  
+          gradients[x] = theta[gradient_index + x*n_theta];
+          boost_limits[x] = theta[boost_limit_index + x*n_theta];
+      }
   }
 
   // To store calculated titres
@@ -155,21 +160,13 @@ NumericVector titre_data_fast(const NumericVector &theta,
           start_index_in_samples = sample_data_start[index];
           end_index_in_samples = sample_data_start[index+1] - 1;
           start_index_in_data = titre_data_start[start_index_in_samples];
-    /*
-    Rcpp::Rcout << "Start index in samples: " << start_index_in_samples << std::endl;
-    Rcpp::Rcout << "End index in samples: " << end_index_in_samples << std::endl;
-    Rcpp::Rcout << "Start index in data: " << start_index_in_data << std::endl;
-    Rcpp::Rcout << "Nrows in samples: " << nrows_per_sample << std::endl;
-    
-    Rcpp::Rcout << "Mu: " << mus(obs_type) << std::endl;
-    Rcpp::Rcout << "Mu short: " << mu_shorts(obs_type) << std::endl;
-    */
+  
           // ====================================================== //
           // =============== CHOOSE MODEL TO SOLVE =============== //
           // ====================================================== //
           // Go to sub function - this is where we have options for different models
           // Note, these are in "boosting_functions.cpp"
-          if (titre_dependent_boosting) {
+          if (titre_dependent_boosting(obs_type)) {
               titre_data_fast_individual_titredep(predicted_titres, 
                                 mus(obs_type), 
                                 mu_shorts(obs_type),

@@ -339,19 +339,19 @@ List ret;
   int mu_short_index = unique_theta_indices["mu_short"];
   int wane_index = unique_theta_indices["wane"];
   int tau_index = unique_theta_indices["tau"];
-  int error_index = unique_theta_indices["error"];
+  int error_index = unique_theta_indices["obs_sd"];
   
   int min_index = unique_theta_indices["MIN_TITRE"];
   int max_index = unique_theta_indices["MAX_TITRE"];
   
   // Titre-dependent boosting function
-  bool titre_dependent_boosting=false;
+  IntegerVector titre_dependent_boosting(n_types);
   NumericVector gradients(n_types); 
   NumericVector boost_limits(n_types);   
   
   int titre_dependent_boosting_index = unique_theta_indices["titre_dependent"];
-  int gradient_index = unique_theta_indices["gradient"];
-  int boost_limit_index = unique_theta_indices["boost_limit"];  
+  int gradient_index = -1;
+  int boost_limit_index = -1;
   
   // Strain-specific boosting
   bool strain_dep_boost = false;
@@ -374,11 +374,14 @@ List ret;
       den2s[x] = log(sds[x]*2.50662827463); // Constant for the normal distribution
       
       // Titre dependent boosting
-      //titre_dependent_boosting = theta[titre_dependent_boosting_index+ x*n_theta];
-      //if (titre_dependent_boosting) {
-       //   gradients(x) = theta[gradient_index + x*n_theta];
-      //    boost_limits(x) = theta[boost_limit_index + x*n_theta];
-      //}
+      titre_dependent_boosting[x] = theta[titre_dependent_boosting_index+ x*n_theta];
+      //Rcpp::Rcout << "Titre dependent: " << titre_dependent_boosting[x] << std::endl;
+      if(titre_dependent_boosting[x] == 1) {
+          gradient_index = unique_theta_indices["gradient"];
+          boost_limit_index = unique_theta_indices["boost_limit"];  
+          gradients[x] = theta[gradient_index + x*n_theta];
+          boost_limits[x] = theta[boost_limit_index + x*n_theta];
+      }
   }
 
   // 4. Extra titre shifts
@@ -610,16 +613,7 @@ List ret;
     	    end_index_in_data = titre_data_start[end_index_in_samples+1]-1;
     	    
     	    
-    	    //Rcpp::Rcout << "start_index_in_samples: " << start_index_in_samples << std::endl;
-    	    //Rcpp::Rcout << "end_index_in_samples: " << end_index_in_samples << std::endl;
-    	    //Rcpp::Rcout << "start_index_in_data: " << start_index_in_data << std::endl;
-    	    ////Rcpp::Rcout << "end_index_in_data: " << end_index_in_data << std::endl;
-    	    //Rcpp::Rcout << "end_index_in_data + 1: " << end_index_in_data+1 << std::endl;
-    	    
-    	    //Rcpp::Rcout << "Predicted titres before: " << predicted_titres << std::endl;
-    	   
-    	    
-        	if (titre_dependent_boosting) {
+        	if (titre_dependent_boosting(obs_type)) {
         	    //Rcpp::Rcout << "Titre dep model: " << std::endl;
         	    
         	  titre_data_fast_individual_titredep(predicted_titres, 

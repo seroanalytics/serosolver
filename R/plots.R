@@ -82,13 +82,18 @@ get_titre_predictions <- function(chain, infection_histories, titre_dat,
     }
     nstrain <- length(strain_isolation_times)
     n_indiv <- length(individuals)
-
+    if(!("obs_type" %in% colnames(titre_dat))){
+        titre_dat$obs_type <- 1
+    }
+    unique_obs_types <- unique(titre_dat$obs_type)
+    
     ## Empty data structures to save output to
     infection_history_dens <- NULL
     tmp_samp <- sample(samps, nsamp)
     
     ## See the function in posteriors.R
     titre_dat1 <- titre_dat
+    
     
     if (expand_titredat) {
         titre_dat1 <- expand.grid(
@@ -128,7 +133,9 @@ get_titre_predictions <- function(chain, infection_histories, titre_dat,
         tmp_inf_hist <- infection_histories[infection_histories$sampno == index, ]
         tmp_inf_hist <- as.matrix(Matrix::sparseMatrix(i = tmp_inf_hist$i, j = tmp_inf_hist$j, x = tmp_inf_hist$x, dims = c(n_indiv, nstrain)))
         predicted_titres[, i] <- model_func(pars, tmp_inf_hist)
-        observed_predicted_titres[,i] <- add_noise(predicted_titres[,i], pars, NULL, NULL,data_type=data_type)
+        for(obs_type in unique_obs_types){
+            observed_predicted_titres[which(titre_dat1$obs_type == obs_type),i] <- add_noise(predicted_titres[which(titre_dat1$obs_type == obs_type),i], pars, NULL, NULL,data_type=data_type[obs_type])
+        }
         inf_hist_all[[i]] <- tmp_inf_hist
         ## Get residuals between observations and predictions
         residuals[, i] <- titre_dat1$titre - floor(predicted_titres[, i])
@@ -495,15 +502,7 @@ plot_posteriors_theta <- function(chain,
     ## Combined chain
     free_chain <- chain[chain$sampno > burnin, ]
 
-    ## Get quantiles and create table of results
-    ## These are from Adam's summaries...
-    free_chain$sigma1drop <- free_chain$mu * free_chain$sigma1
-    free_chain$sigma2drop <- free_chain$mu_short * free_chain$sigma2
-    free_chain$wane_titre <- free_chain$mu_short * free_chain$wane
-    free_chain$errorCorrect1 <- pnorm(3, mean = 1.5, sd = free_chain$error) - pnorm(2, mean = 2.5, sd = free_chain$error)
-    free_chain$errorCorrect2 <- pnorm(4, mean = 1.5, sd = free_chain$error) - pnorm(1, mean = 2.5, sd = free_chain$error)
-
-
+   
     thin_free_chain <- free_chain[sample(1:nrow(free_chain), samples, replace = TRUE), ]
 
     parameter <- c(
@@ -878,7 +877,8 @@ plot_attack_rates <- function(infection_histories, titre_dat, strain_isolation_t
                               plot_den = FALSE,
                               true_ar = NULL, by_group = FALSE,
                               group_subset = NULL, plot_residuals = FALSE,
-                              colour_by_taken = TRUE, by_val = 5) {
+                              colour_by_taken = TRUE, by_val = 5,
+                              min_time=min(strain_isolation_times),max_time=max(strain_isolation_times)) {
     ## Some year/sample combinations might have no infections there.
     ## Need to make sure that these get considered
     if (is.null(infection_histories$chain_no)) {
@@ -909,7 +909,7 @@ plot_attack_rates <- function(infection_histories, titre_dat, strain_isolation_t
     n_alive_tot <- get_n_alive(titre_dat, strain_isolation_times)
     colnames(infection_histories)[1] <- "individual"
     infection_histories <- merge(infection_histories, data.table(unique(titre_dat[, c("individual", "group")])), by = c("individual","group"))
-    years <- c(strain_isolation_times, max(strain_isolation_times) + 3)
+    years <- c(strain_isolation_times, max(strain_isolation_times) + 2)
     data.table::setkey(infection_histories, "sampno", "j", "chain_no", "group")
     tmp <- infection_histories[, list(V1 = sum(x)), by = key(infection_histories)]
     tmp$taken <- years[tmp$j] %in% unique(titre_dat$samples)
@@ -943,11 +943,14 @@ plot_attack_rates <- function(infection_histories, titre_dat, strain_isolation_t
     tmp <- merge(tmp, data.table(n_alive_tmp), by = c("group", "j"))
     tmp$V1 <- tmp$V1 / tmp$n_alive
 
-    min_year <- min(strain_isolation_times)
-    max_year <- max(strain_isolation_times)
-    year_breaks <- c(min_year, seq(5 * round(min_year / 5), max_year, by = 5))
-    year_labels <- c(min_year, seq(5 * round(min_year / 5), max_year, by = 5))
+    year_breaks <- c(min_time, seq(by_val * round(min_time / by_val), max_time, by = by_val))
+    year_labels <- c(min_time, seq(by_val * round(min_time / by_val), max_time, by = by_val))
 
+    if (!is.null(prior_dens)) {
+        year_breaks <- c(year_breaks, max_time + 2)
+        year_labels <- c(year_labels, "Prior")
+    }
+    
     if (!plot_den) {
         quantiles <- ddply(tmp, .(j, group), function(x) quantile(x$V1, c(0.025, 0.5, 0.975)))
         colnames(quantiles) <- c("j", "group", "lower", "median", "upper")
@@ -958,17 +961,11 @@ plot_attack_rates <- function(infection_histories, titre_dat, strain_isolation_t
 
         quantiles$tested <- quantiles$j %in% unique(titre_dat$virus)
         quantiles$tested <- ifelse(quantiles$tested, "Yes", "No")
-
-        min_year <- min(strain_isolation_times)
-        max_year <- max(strain_isolation_times)
-        year_breaks <- c(min_year, seq(by_val * round(min_year / by_val), max_year, by = by_val))
-        year_labels <- c(min_year, seq(by_val * round(min_year / by_val), max_year, by = by_val))
-
+        
         if (!is.null(prior_dens)) {
             quantiles[quantiles$j == max(years), "taken"] <- "Prior"
-            year_breaks <- c(year_breaks, max_year + 3)
-            year_labels <- c(year_labels, "Prior")
         }
+        
         colnames(quantiles)[which(colnames(quantiles) == "taken")] <- "Sample taken"
         colnames(quantiles)[which(colnames(quantiles) == "tested")]  <- "Virus tested"
 
@@ -1016,15 +1013,16 @@ plot_attack_rates <- function(infection_histories, titre_dat, strain_isolation_t
 
         p <- ggplot(tmp[tmp$group %in% group_subset, ]) +
             geom_violin(aes(x = j, y = V1, fill = taken, group = j),
-                        draw_quantiles = c(0.5), scale = "width",
+                        alpha=0.25,
+                        draw_quantiles = c(0.025,0.5,0.975), scale = "width",
                         adjust=2
                         )
     }
     if (!is.null(true_ar) & !plot_residuals) {
         p <- p +
             geom_point(
-                data = true_ar[true_ar$group %in% group_subset, ], aes(x = j, y = AR),
-                col = "purple", size = 0.5
+                data = true_ar[true_ar$group %in% group_subset, ], aes(x = j, y = AR,shape="True attack rate"),stroke=1.25,
+                col = "red", size = 2.5
             )
     }
     if (!plot_residuals) {
@@ -1036,12 +1034,19 @@ plot_attack_rates <- function(infection_histories, titre_dat, strain_isolation_t
     if (by_group) {
         p <- p + facet_wrap(~group, ncol = 2)
     }
+    if (!is.null(prior_dens)) {
+        max_time <- max_time + 2.5
+    }
+    
     p <- p +
-        scale_x_continuous(breaks = year_breaks, labels = year_labels) +
+        scale_x_continuous(breaks = year_breaks, labels = year_labels,limits=c(min_time-0.5,max_time)) +
         theme_classic() +
-        theme(legend.position = "none") +
+        theme(legend.position = "bottom") +
         ylab("Estimated attack rate") +
-        xlab("Year")
+        xlab("Year") +
+        scale_fill_manual(name="Samples taken in\n time period",values=c("No"="darkorange","Yes"="blue","Prior"="grey40")) +
+        scale_shape_manual(name="",values=c("True attack rate"=4))
+    
     if (plot_residuals) {
         p <- p +
             geom_hline(yintercept = 0, linetype = "dashed") +
@@ -1286,16 +1291,22 @@ plot_data <- function(titre_dat, infection_histories,
     melted_inf_hist <- melted_inf_hist[melted_inf_hist$variable <= melted_inf_hist$samples, ]
     samps <- sample(unique(titre_dat$individual), n_indivs)
 
+    if("obs_type" %in% colnames(titre_dat)){
+        titre_dat$obs_type <- as.factor(titre_dat$obs_type)
+    } else {
+        titre_dat$obs_type <- 1
+    }
+    
     if (study_design == "multi-strain") {
         p1 <- ggplot(titre_dat[titre_dat$individual %in% samps, ]) +
-            geom_point(aes(x = as.integer(virus), y = titre)) +
+            geom_point(aes(x = as.integer(virus), y = titre, col=obs_type)) +
             geom_vline(data = melted_inf_hist[melted_inf_hist$individual %in% samps, ], aes(xintercept = variable), col = "red", linetype = "dashed") +
             theme_bw() +
             xlab("Strain") +
             facet_grid(individual ~ samples)
     } else {
         p1 <- ggplot(titre_dat[titre_dat$individual %in% samps, ]) +
-            geom_point(aes(x = samples, y = titre, col=virus)) +
+            geom_point(aes(x = samples, y = titre, col=virus, col=obs_type)) +
             geom_vline(data = melted_inf_hist[melted_inf_hist$individual %in% samps, ], 
                        aes(xintercept = variable), col = "red", linetype = "dashed") +
             theme_bw() +
