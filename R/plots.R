@@ -94,13 +94,14 @@ get_titre_predictions <- function(chain, infection_histories, titre_dat,
         titre_dat1 <- expand.grid(
             individual = unique(titre_dat$individual),
             samples = unique(titre_dat$samples),
+            obs_type=unique(titre_dat$obs_type),
             titre = 0, run = 1
         )
         titre_dat2 <- unique(titre_dat[, c("individual", "virus", "group", "DOB")])
         titre_dat1 <- merge(titre_dat1, titre_dat2)
         titre_dat1 <- titre_dat1[
             order(titre_dat1$group, titre_dat1$individual, titre_dat1$samples, titre_dat1$virus),
-            c("individual", "samples", "virus", "titre", "run", "group", "DOB")
+            c("individual", "samples","obs_type", "virus", "titre", "run", "group", "DOB")
         ]
     }
     model_func <- create_posterior_func(par_tab, titre_dat1, antigenic_map, 100,
