@@ -1240,7 +1240,7 @@ plot_number_infections <- function(inf_chain, pad_chain = TRUE) {
     indiv_hist$individual <- 1:nrow(indiv_hist)
     p <- ggplot(indiv_hist) +
         geom_pointrange(aes(x = individual + 1, y = median, ymin = lower, ymax = upper),
-                        size = 0.1, shape = 21, fatten = 0.1
+                        linewidth = 0.1, shape = 21, fatten = 0.1
                         ) +
         scale_y_continuous(expand = c(0, 0)) +
         xlab("Individual (ordered)") +
