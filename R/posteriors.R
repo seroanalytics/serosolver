@@ -324,7 +324,7 @@ create_posterior_func <- function(par_tab,
         message(cat("Note: no obs_type detection in par_tab Assuming all obs_type as 1."))
         par_tab$obs_type <- 1
     }
-    
+    ## Testing github
     check_data(titre_dat)
     
     titre_dat <- titre_dat %>% arrange(individual, obs_type, samples, virus, run)
