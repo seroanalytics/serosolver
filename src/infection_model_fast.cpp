@@ -62,7 +62,7 @@ NumericVector titre_data_fast(const NumericVector &theta,
   int start_index_in_data;
   
   // Only use the infections that actually happened
-  IntegerVector infection_history(number_strains);
+  //IntegerVector infection_history(number_strains);
   LogicalVector indices;
   
   NumericVector infection_times;
@@ -83,21 +83,21 @@ NumericVector titre_data_fast(const NumericVector &theta,
   NumericVector errors(n_types);
   NumericVector taus(n_types);
   
-  NumericVector min_titres(n_types);
+  //NumericVector min_titres(n_types);
   double min_titre = 0;
   
-  int mu_index = unique_theta_indices["mu"];
-  int mu_short_index = unique_theta_indices["mu_short"];
-  int wane_index = unique_theta_indices["wane"];
-  int tau_index = unique_theta_indices["tau"];
-  int error_index = unique_theta_indices["obs_sd"];
+  int mu_index = unique_theta_indices("mu");
+  int mu_short_index = unique_theta_indices("mu_short");
+  int wane_index = unique_theta_indices("wane");
+  int tau_index = unique_theta_indices("tau");
+  int error_index = unique_theta_indices("obs_sd");
 
   // Titre-dependent boosting function
   IntegerVector titre_dependent_boosting(n_types);
   NumericVector gradients(n_types); 
   NumericVector boost_limits(n_types);   
   
-  int titre_dependent_boosting_index = unique_theta_indices["titre_dependent"];
+  int titre_dependent_boosting_index = unique_theta_indices("titre_dependent");
   int gradient_index = -1;
   int boost_limit_index = -1;
   
@@ -111,20 +111,20 @@ NumericVector titre_data_fast(const NumericVector &theta,
 
   for(int x = 0; x < n_types; ++x){
 
-      mus[x] = theta[mu_index + x*n_theta];
-      mu_shorts[x] = theta[mu_short_index + x*n_theta];
-      wanes[x] = theta[wane_index + x*n_theta];
-      taus[x] = theta[tau_index + x*n_theta];
-      errors[x] = theta[error_index + x*n_theta];
+      mus(x) = theta(mu_index + x*n_theta);
+      mu_shorts(x) = theta(mu_short_index + x*n_theta);
+      wanes(x) = theta(wane_index + x*n_theta);
+      taus(x) = theta(tau_index + x*n_theta);
+      errors(x) = theta(error_index + x*n_theta);
       
       // Titre dependent boosting
-      titre_dependent_boosting[x] = theta[titre_dependent_boosting_index+ x*n_theta];
+      titre_dependent_boosting(x) = theta(titre_dependent_boosting_index+ x*n_theta);
       
-      if(titre_dependent_boosting[x] == 1) {
-          gradient_index = unique_theta_indices["gradient"];
-          boost_limit_index = unique_theta_indices["boost_limit"];  
-          gradients[x] = theta[gradient_index + x*n_theta];
-          boost_limits[x] = theta[boost_limit_index + x*n_theta];
+      if(titre_dependent_boosting(x) == 1) {
+          gradient_index = unique_theta_indices("gradient");
+          boost_limit_index = unique_theta_indices("boost_limit");  
+          gradients(x) = theta(gradient_index + x*n_theta);
+          boost_limits(x) = theta(boost_limit_index + x*n_theta);
       }
   }
 
@@ -134,8 +134,8 @@ NumericVector titre_data_fast(const NumericVector &theta,
   // For each individual
   for (int i = 1; i <= n; ++i) {
       //Rcpp::Rcout << std::endl << "Individual: " << i << std::endl;
-    infection_history = infection_history_mat(i-1,_);
-    indices = infection_history > 0;
+    //infection_history = infection_history_mat(i-1,_);
+    indices = infection_history_mat(i-1,_) > 0;
     //Rcpp::Rcout << "Indices: " << indices << std::endl;
     
     infection_times = circulation_times[indices];
@@ -146,20 +146,17 @@ NumericVector titre_data_fast(const NumericVector &theta,
       infection_strain_indices_tmp = circulation_times_indices[indices];
     
     // Start end end location of the type_data matrix
-    type_start = type_data_start[i-1];
-    type_end = type_data_start[i]-1;
-    
-    //Rcpp::Rcout << "Type start: " << type_start << std::endl;
-    //Rcpp::Rcout << "Type end: " << type_end << std::endl << std::endl;
+    type_start = type_data_start(i-1);
+    type_end = type_data_start(i)-1;
     
     // For each observation type solved for this individual
         for(int index = type_start; index <= type_end; ++index){
-            obs_type = obs_types[index]-1;
+            obs_type = obs_types(index)-1;
            //Rcpp::Rcout << "Observation type: " << obs_type << std::endl;
             
-          start_index_in_samples = sample_data_start[index];
-          end_index_in_samples = sample_data_start[index+1] - 1;
-          start_index_in_data = titre_data_start[start_index_in_samples];
+          start_index_in_samples = sample_data_start(index);
+          end_index_in_samples = sample_data_start(index+1) - 1;
+          start_index_in_data = titre_data_start(start_index_in_samples);
   
           // ====================================================== //
           // =============== CHOOSE MODEL TO SOLVE =============== //

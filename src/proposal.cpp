@@ -335,21 +335,21 @@ List ret;
   NumericVector max_titres(n_types);
   NumericVector min_titres(n_types);
 
-  int mu_index = unique_theta_indices["mu"];
-  int mu_short_index = unique_theta_indices["mu_short"];
-  int wane_index = unique_theta_indices["wane"];
-  int tau_index = unique_theta_indices["tau"];
-  int error_index = unique_theta_indices["obs_sd"];
+  int mu_index = unique_theta_indices("mu");
+  int mu_short_index = unique_theta_indices("mu_short");
+  int wane_index = unique_theta_indices("wane");
+  int tau_index = unique_theta_indices("tau");
+  int error_index = unique_theta_indices("obs_sd");
   
-  int min_index = unique_theta_indices["MIN_TITRE"];
-  int max_index = unique_theta_indices["MAX_TITRE"];
+  int min_index = unique_theta_indices("MIN_TITRE");
+  int max_index = unique_theta_indices("MAX_TITRE");
   
   // Titre-dependent boosting function
   IntegerVector titre_dependent_boosting(n_types);
   NumericVector gradients(n_types); 
   NumericVector boost_limits(n_types);   
   
-  int titre_dependent_boosting_index = unique_theta_indices["titre_dependent"];
+  int titre_dependent_boosting_index = unique_theta_indices("titre_dependent");
   int gradient_index = -1;
   int boost_limit_index = -1;
   
@@ -361,26 +361,26 @@ List ret;
   
   // Create vectors of model parameters for each of the observation types
   for(int x = 0; x < n_types; ++x){
-      mus[x] = theta[mu_index + x*n_theta];
-      mu_shorts[x] = theta[mu_short_index + x*n_theta];
-      wanes[x] = theta[wane_index + x*n_theta];
-      taus[x] = theta[tau_index + x*n_theta];
-      min_titres[x] = theta[min_index + x*n_theta];
-      max_titres[x] = theta[max_index + x*n_theta];
+      mus(x) = theta(mu_index + x*n_theta);
+      mu_shorts(x) = theta(mu_short_index + x*n_theta);
+      wanes(x) = theta(wane_index + x*n_theta);
+      taus(x) = theta(tau_index + x*n_theta);
+      min_titres(x) = theta(min_index + x*n_theta);
+      max_titres(x) = theta(max_index + x*n_theta);
       
       // For likelihood functions
-      sds[x] = theta[error_index + x*n_theta];
-      dens[x] = sds[x]*M_SQRT2; // Constant for the discretized normal distribution
-      den2s[x] = log(sds[x]*2.50662827463); // Constant for the normal distribution
+      sds(x) = theta(error_index + x*n_theta);
+      dens(x) = sds(x)*M_SQRT2; // Constant for the discretized normal distribution
+      den2s(x) = log(sds(x)*2.50662827463); // Constant for the normal distribution
       
       // Titre dependent boosting
-      titre_dependent_boosting[x] = theta[titre_dependent_boosting_index+ x*n_theta];
-      //Rcpp::Rcout << "Titre dependent: " << titre_dependent_boosting[x] << std::endl;
-      if(titre_dependent_boosting[x] == 1) {
-          gradient_index = unique_theta_indices["gradient"];
-          boost_limit_index = unique_theta_indices["boost_limit"];  
-          gradients[x] = theta[gradient_index + x*n_theta];
-          boost_limits[x] = theta[boost_limit_index + x*n_theta];
+      titre_dependent_boosting(x) = theta(titre_dependent_boosting_index+ x*n_theta);
+      //Rcpp::Rcout << "Titre dependent: " << titre_dependent_boosting(x) << std::endl;
+      if(titre_dependent_boosting(x) == 1) {
+          gradient_index = unique_theta_indices("gradient");
+          boost_limit_index = unique_theta_indices("boost_limit");  
+          gradients(x) = theta(gradient_index + x*n_theta);
+          boost_limits(x) = theta(boost_limit_index + x*n_theta);
       }
   }
 
@@ -395,16 +395,16 @@ List ret;
     swap_step_option = R::runif(0,1) < swap_propn;
     
     // Get index, group and current likelihood of individual under consideration
-    indiv = sampled_indivs[i]-1;
+    indiv = sampled_indivs(i)-1;
     //Rcpp::Rcout << "indiv: " << indiv+1 << std::endl << std::endl;
     
-    group_id = group_id_vec[indiv];
-    old_prob = old_probs_1[indiv];
+    group_id = group_id_vec(indiv);
+    old_prob = old_probs_1(indiv);
     //Rcpp::Rcout << "Old prob: " << old_prob << std::endl << std::endl;
     
     // Time sampling control
-    n_years_samp = n_years_samp_vec[indiv]; // How many times are we intending to resample for this individual?
-    n_samp_length  = strain_mask[indiv] - age_mask[indiv] + 1; // How many times maximum can we sample from?
+    n_years_samp = n_years_samp_vec(indiv); // How many times are we intending to resample for this individual?
+    n_samp_length  = strain_mask(indiv) - age_mask(indiv) + 1; // How many times maximum can we sample from?
     
     // If swap step, only doing one proposal for this individual
     if(swap_step_option){
@@ -418,9 +418,9 @@ List ret;
     samps = seq(0, n_samp_length-1);    // Create vector from 0:length of alive years
 
     // Extract time sampling probabilities and re-normalise
-    samps_shifted = samps + age_mask[indiv] - 1;
+    samps_shifted = samps + age_mask(indiv) - 1;
    
-    tmp_loc_sample_probs = time_sample_probs[samps_shifted];
+    tmp_loc_sample_probs = time_sample_probs(samps_shifted);
     // Re-normalise
     tmp_loc_sample_probs = tmp_loc_sample_probs/sum(tmp_loc_sample_probs);
     locs = RcppArmadillo::sample(samps, n_samp_max, false, tmp_loc_sample_probs);
@@ -441,7 +441,7 @@ List ret;
       // If swap step
       prior_old = prior_new = 0;
       if(swap_step_option){
-    	loc1 = locs[j]; // Choose a location from age_mask to strain_mask
+    	loc1 = locs(j); // Choose a location from age_mask to strain_mask
     	loc2 = loc1 + floor(R::runif(-swap_distance,swap_distance+1));
     
     	// If we have gone too far left or right, reflect at the boundaries
@@ -460,8 +460,8 @@ List ret;
     	//if(loc2 >= n_samp_length) loc2 = n_samp_length - loc2 + n_samp_length - 2;
     	
     	// Get onto right scale (starting at age mask)
-    	loc1 += age_mask[indiv] - 1;
-    	loc2 += age_mask[indiv] - 1;
+    	loc1 += age_mask(indiv) - 1;
+    	loc2 += age_mask(indiv) - 1;
     	  
     	loc1_val_old = new_infection_history(loc1);
     	loc2_val_old = new_infection_history(loc2);
@@ -473,7 +473,7 @@ List ret;
     	// If prior version 4, then prior doesn't change by swapping
     	if(loc1_val_old != loc2_val_old){
     	  lik_changed = true;
-    	  proposal_swap[indiv] += 1;
+    	  proposal_swap(indiv) += 1;
     	  if(!prior_on_total){
     	    // Number of infections in that group in that time
     	      m_1_old = n_infections(group_id,loc1);      
@@ -510,7 +510,7 @@ List ret;
     	// OPTION 2: Add/remove infection
     	///////////////////////////////////////////////////////
       } else {
-    	year = locs[j] + age_mask[indiv] - 1;
+    	year = locs(j) + age_mask(indiv) - 1;
     	old_entry = new_infection_history(year);
     	overall_add_proposals(indiv,year)++;
     	if(!prior_on_total){	
@@ -556,7 +556,7 @@ List ret;
     	
     	if(new_entry != old_entry){
     	  lik_changed = true;
-    	  proposal_iter[indiv] += 1;		
+    	  proposal_iter(indiv) += 1;		
     	}
       }
       ////////////////////////
@@ -570,14 +570,14 @@ List ret;
           
     	// Calculate likelihood!
     	indices = new_infection_history > 0;
-    	infection_times = circulation_times[indices];
+    	infection_times = circulation_times(indices);
     
-    	infection_strain_indices_tmp = circulation_times_indices[indices];	  
+    	infection_strain_indices_tmp = circulation_times_indices(indices);	  
     	
     	
     	// Start end end location of the type_data matrix
-    	type_start = type_data_start[indiv];
-    	type_end = type_data_start[indiv+1]-1;
+    	type_start = type_data_start(indiv);
+    	type_end = type_data_start(indiv+1)-1;
     	
     	//Rcpp::Rcout << "Type start: " << type_start << std::endl;
     	//Rcpp::Rcout << "Type end: " << type_end << std::endl << std::endl;
@@ -590,9 +590,9 @@ List ret;
 
     	for(int index = type_start; index <= type_end; ++index){
     	    //Rcpp::Rcout << "index: " << index << std::endl;
-    	    obs_type = obs_types[index]-1;
-    	    data_type = data_types[obs_type];
-    	    obs_weight = obs_weights[obs_type];
+    	    obs_type = obs_types(index)-1;
+    	    data_type = data_types(obs_type);
+    	    obs_weight = obs_weights(obs_type);
     	    
     	    //Rcpp::Rcout << "obs_type: " << obs_type << std::endl;
     	    //Rcpp::Rcout << "data_type: " << data_type << std::endl;
@@ -607,10 +607,10 @@ List ret;
     	        */
     	    // Now have all predicted titres for this individual calculated
     	    // Need to calculate likelihood of these titres... 
-    	    start_index_in_samples = sample_data_start[index];
-    	    end_index_in_samples = sample_data_start[index+1]-1;
-    	    start_index_in_data = titre_data_start[start_index_in_samples];
-    	    end_index_in_data = titre_data_start[end_index_in_samples+1]-1;
+    	    start_index_in_samples = sample_data_start(index);
+    	    end_index_in_samples = sample_data_start(index+1)-1;
+    	    start_index_in_data = titre_data_start(start_index_in_samples);
+    	    end_index_in_data = titre_data_start(end_index_in_samples+1)-1;
     	    
     	    
         	if (titre_dependent_boosting(obs_type)) {
@@ -693,8 +693,8 @@ List ret;
         	//Rcpp::Rcout << "Repeat data exists: " << repeat_data_exist << std::endl;  
         	//Rcpp::Rcout << "Index: " << index << std::endl;  
         	
-        	//Rcpp::Rcout << "Cumu nrow start: " << cum_nrows_per_individual_in_data[index] << std::endl;  
-        	//Rcpp::Rcout << "Cumu nrow end: " << cum_nrows_per_individual_in_data[index+1] << std::endl;  
+        	//Rcpp::Rcout << "Cumu nrow start: " << cum_nrows_per_individual_in_data(index) << std::endl;  
+        	//Rcpp::Rcout << "Cumu nrow end: " << cum_nrows_per_individual_in_data(index+1) << std::endl;  
         	*/
               if(data_type==1){
             	  proposal_likelihood_func(new_prob, predicted_titres, 
@@ -744,7 +744,7 @@ List ret;
     	
       } else {
           //Rcpp::Rcout << "Infection history unchanged" << std::endl;
-	        old_prob = new_prob = old_probs[indiv];
+	        old_prob = new_prob = old_probs(indiv);
       }
      
       //////////////////////////////
@@ -761,11 +761,11 @@ List ret;
     	// Update the entry in the new matrix Z1
     	//Rcpp::Rcout << "Updating entry" << std::endl;
     	old_prob = new_prob;
-    	old_probs[indiv] = new_prob;
+    	old_probs(indiv) = new_prob;
     
     	// Carry out the swap
     	if(swap_step_option){
-    	  accepted_swap[indiv] += 1;
+    	  accepted_swap(indiv) += 1;
     	  tmp = new_infection_history_mat(indiv,loc1);
     	  new_infection_history_mat(indiv,loc1) = new_infection_history_mat(indiv,loc2);
     	  new_infection_history_mat(indiv,loc2) = tmp;
@@ -779,7 +779,7 @@ List ret;
 	  // only move within an individual (so number in group stays same)
     	} else {
     	    
-    	    accepted_iter[indiv] += 1;
+    	    accepted_iter(indiv) += 1;
     	    new_infection_history_mat(indiv,year) = new_entry;	
     	  // Update total number of infections in group/time
     	    if(!prior_on_total){

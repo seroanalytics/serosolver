@@ -608,7 +608,6 @@ create_posterior_func <- function(par_tab,
                 mus, boosting_vec_indices,
                 titre_before_infection
             )
-            
             if (use_measurement_bias) {
                 measurement_bias <- pars[measurement_indices_par_tab]
                 titre_shifts <- measurement_bias[expected_indices]
