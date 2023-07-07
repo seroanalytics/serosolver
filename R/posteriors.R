@@ -237,25 +237,6 @@ prob_mus <- function(mus, pars) {
   mu_mean <- pars["mu_mean"]
   mu_sd <- pars["mu_sd"]
   return(sum(dnorm(mus, mu_mean, mu_sd, log = TRUE)))
-  ## 
-  ## location <- log(mu_mean^2 / sqrt(mu_sd^2 + mu_mean^2))
-  ## shape <- sqrt(log(1 + (mu_sd^2/mu_mean^2)))
-  ## l_mean <- log(mu_mean) - (mu_sd^2)/2
-  ## p <- sum(dnorm(log(mus),mu_mean,mu_sd,log=TRUE))
-  ## p_mean <- 0.6
-  ## p_sd <- 0.5
-  ## p_mu <- log(p_mean/sqrt(1 + (p_sd/p_mean)^2))
-  ## p_sigma <- sqrt(log(1 + (p_sd/p_mean)^2))
-  ## p_lik <- log(p_sigma*2.506628) - 0.5*((mu_mean - p_mu)/p_sigma)^2
-  ## return(p+p_lik)
-  ## return(sum(log(dtruncnorm(mus, a=0,mean=mu_mean, sd=mu_sd))))
-  ## return(sum(dlnorm(mus, location, shape, log=TRUE)))
-  ## mean_log_y <- mean(log(mus))
-  ## sd_log_y <- sd(log(mus))
-  ## sigmaOfLogY <- dunif(mu_sd, 0.001*sd_log_y,1000*sd_log_y)
-  ## muOfLogY <- dnorm(mu_mean, mean_log_y, 1/(10*sd_log_y)^2)
-  ## return(sum(dlnorm(mus, mu_mean, 1/mu_sd^2, log=TRUE)) + sigmaOfLogY + muOfLogY)
-  ## return(sum(dlnorm(mus, mu_mean, mu_sd, log = TRUE)))
 }
 
 
@@ -321,9 +302,16 @@ create_posterior_func <- function(par_tab,
     }
     
     if (!("obs_type" %in% colnames(par_tab))) {
-        message(cat("Note: no obs_type detection in par_tab Assuming all obs_type as 1."))
+        message(cat("Note: no obs_type detection in par_tab. Assuming all obs_type as 1."))
         par_tab$obs_type <- 1
     }
+    if (!is.null(measurement_indices_by_time) & !("obs_type" %in% colnames(measurement_indices_by_time))) {
+      message(cat("Note: no obs_type detection in measurement_indices_by_time. Assuming all obs_type as 1."))
+      measurement_indices_by_time$obs_type <- 1
+    }
+  
+  
+  
     check_data(titre_dat)
     
     titre_dat <- titre_dat %>% arrange(individual, obs_type, samples, virus, run)
@@ -454,7 +442,12 @@ create_posterior_func <- function(par_tab,
     nrows_per_individual_in_data_repeats <-  titre_dat_repeats %>% group_by(individual, obs_type) %>% 
         tally() %>% 
         pivot_wider(id_cols=individual,values_from=n,names_from=obs_type,values_fill=0) %>%
-        ungroup() %>%
+        ungroup()
+    
+    ## Need to make sure that there are entries for each individual, even if 0s
+    indiv_repeat_indices <- nrows_per_individual_in_data_repeats %>% pull(individual)
+    
+    nrows_per_individual_in_data_repeats <- nrows_per_individual_in_data_repeats %>%
         select(-individual)
     nrows_per_individual_in_data_repeats <- nrows_per_individual_in_data_repeats %>% 
         select(order(colnames(nrows_per_individual_in_data_repeats)))
@@ -594,13 +587,21 @@ create_posterior_func <- function(par_tab,
                 antigenic_map_long[,obs_type] <- create_cross_reactivity_vector(antigenic_map_melted[[obs_type]], sigma1s[obs_type])
                 antigenic_map_short[,obs_type] <- create_cross_reactivity_vector(antigenic_map_melted[[obs_type]], sigma2s[obs_type])
             }
-            
+
             y_new <- titre_data_fast(
-                theta, theta_indices_unique, unique_obs_types,
-                infection_history_mat, strain_isolation_times, infection_strain_indices,
-                sample_times, type_data_start,obs_types,
-                sample_data_start, titre_data_start,
-                nrows_per_sample, measured_strain_indices, 
+                theta, 
+                theta_indices_unique, 
+                unique_obs_types,
+                infection_history_mat, 
+                strain_isolation_times, 
+                infection_strain_indices,
+                sample_times, 
+                type_data_start,
+                obs_types,
+                sample_data_start, 
+                titre_data_start,
+                nrows_per_sample, 
+                measured_strain_indices, 
                 antigenic_map_long,
                 antigenic_map_short,
                 antigenic_distances,
@@ -654,7 +655,7 @@ create_posterior_func <- function(par_tab,
                             titres_repeats[obs_type_indices_repeats[[obs_type]]], 
                             y_new[repeat_indices][obs_type_indices_repeats[[obs_type]]])
                         
-                        liks <- liks + obs_types_weights[obs_type]*sum_buckets(liks_repeats, nrows_per_individual_in_data_repeats[,obs_type])
+                        liks[indiv_repeat_indices] <- liks[indiv_repeat_indices] + obs_types_weights[obs_type]*sum_buckets(liks_repeats, nrows_per_individual_in_data_repeats[,obs_type])
                     }
                 }
             } else {
@@ -715,7 +716,6 @@ create_posterior_func <- function(par_tab,
 
             n_infections <- sum_infections_by_group(infection_history_mat, group_id_vec, n_groups)
             if (version == 4) n_infected_group <- rowSums(n_infections)
-            #browser()
             ## Now pass to the C++ function
             res <- inf_hist_prop_prior_v2_and_v4(
                 theta,

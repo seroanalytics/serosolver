@@ -71,9 +71,8 @@ run_MCMC <- function(par_tab,
                      solve_likelihood = TRUE,
                      n_alive = NULL,
                      ...) {
-#    browser()
   ## Error checks --------------------------------------
-  check_par_tab(par_tab, TRUE, version)
+  par_tab <- check_par_tab(par_tab, TRUE, version)
   ## Sort out MCMC parameters --------------------------------------
   ###################################################################
   mcmc_pars_used <- c(
@@ -176,7 +175,7 @@ run_MCMC <- function(par_tab,
   ## Extract titre_dat parameters
   ##############
   ## Check the titre_dat input
-  check_data(titre_dat)
+  titre_dat <- check_data(titre_dat)
 
   if (!is.null(antigenic_map)) {
     strain_isolation_times <- unique(antigenic_map$inf_times) # How many strains are we testing against and what time did they circulate

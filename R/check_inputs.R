@@ -45,7 +45,7 @@ check_inf_hist <- function(titre_dat, strain_isolation_times, inf_hist){
 #' @param par_tab the parameter table controlling information such as bounds, initial values etc
 #' @param mcmc logical, if TRUE then checks are performed for the MCMC algorithm. Use FALSE when simulating data
 #' @param version which version of the posterior function is being used? See \code{\link{create_posterior_func}}
-#' @return nothing, only an error message if necessary
+#' @return the same par_tab object with corrections if needed
 #' @family check_inputs
 #' @examples
 #' data(example_par_tab)
@@ -55,7 +55,15 @@ check_par_tab <- function(par_tab, mcmc = FALSE, version = NULL) {
     ## Checks that should happen in simulate_data and run_MCMC
     essential_names <- c("names","values","fixed","steps","lower_bound","upper_bound","lower_start","upper_start","type")
     if (!all(essential_names %in% colnames(par_tab))) {
-        stop(paste(c("Some column names missing from par_tab: ", setdiff(essential_names,colnames(par_tab))),collapse=" "))
+        message(paste(c("Some column names missing from par_tab: ", setdiff(essential_names,colnames(par_tab))),collapse=" "))
+        if(!("steps" %in% colnames(par_tab))){
+          message("Adding \"steps\" to par_tab variables.")
+          par_tab$steps <- 0.1
+        }
+        if(!("type" %in% colnames(par_tab))){
+          message("Adding \"obs_type\" to par_tab variables.")
+          par_tab$obs_type <- 1
+        }
     }
     pars <- par_tab$values
     names(pars) <- par_tab$names
@@ -96,12 +104,12 @@ check_par_tab <- function(par_tab, mcmc = FALSE, version = NULL) {
     if (!("alpha" %in% par_tab$names) | !("beta" %in% par_tab$names)) {
         stop("par_tab must have entries for `alpha` and `beta` for infection history prior")
     }
-
+    par_tab
 }
 
 #' Checks the entries of data used in run_MCMC
 #' @param data the data frame of data to be fitted. Must have columns: group (index of group); individual (integer ID of individual); samples (numeric time of sample taken); virus (numeric time of when the virus was circulating); titre (integer of titre value against the given virus at that sampling time)
-#' @return nothing at the moment
+#' @return the same data object with corrections if needed
 #' @family check_inputs
 #' @examples
 #' data(example_titre_dat)
@@ -113,8 +121,14 @@ check_data <- function(data) {
     ## If there are any missing columns (NOTE: not checking if group or run are present)
     if (all(col.names %in% colnames(data)) != TRUE) {
         missing.cols <- col.names[which(col.names %in% colnames(data) == FALSE)] ## Find the missing column names
-        stop(paste(c("The following column(s) are missing from data: ", missing.cols), collapse = " "))
+        message(paste(c("The following column(s) are missing from data: ", missing.cols), collapse = " "))
+
+        if(!("type" %in% colnames(data))){
+          message("Adding \"obs_type\" to data variables.")
+          data$obs_type <- 1
+        }
     }
+    return(data)
 }
 
 #' Checks the attack_rates supplied in simulate_data
