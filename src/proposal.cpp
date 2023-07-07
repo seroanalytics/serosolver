@@ -420,7 +420,7 @@ List ret;
     // Extract time sampling probabilities and re-normalise
     samps_shifted = samps + age_mask(indiv) - 1;
    
-    tmp_loc_sample_probs = time_sample_probs(samps_shifted);
+    tmp_loc_sample_probs = time_sample_probs[samps_shifted];
     // Re-normalise
     tmp_loc_sample_probs = tmp_loc_sample_probs/sum(tmp_loc_sample_probs);
     locs = RcppArmadillo::sample(samps, n_samp_max, false, tmp_loc_sample_probs);
@@ -570,9 +570,9 @@ List ret;
           
     	// Calculate likelihood!
     	indices = new_infection_history > 0;
-    	infection_times = circulation_times(indices);
+    	infection_times = circulation_times[indices];
     
-    	infection_strain_indices_tmp = circulation_times_indices(indices);	  
+    	infection_strain_indices_tmp = circulation_times_indices[indices];	  
     	
     	
     	// Start end end location of the type_data matrix
