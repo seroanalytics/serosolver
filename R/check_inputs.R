@@ -53,7 +53,7 @@ check_inf_hist <- function(titre_dat, strain_isolation_times, inf_hist){
 #' @export
 check_par_tab <- function(par_tab, mcmc = FALSE, version = NULL) {
     ## Checks that should happen in simulate_data and run_MCMC
-    essential_names <- c("names","values","fixed","lower_bound","upper_bound","lower_start","upper_start","type")
+    essential_names <- c("names","values","fixed","steps","lower_bound","upper_bound","lower_start","upper_start","type")
     if (!all(essential_names %in% colnames(par_tab))) {
         stop(paste(c("Some column names missing from par_tab: ", setdiff(essential_names,colnames(par_tab))),collapse=" "))
     }
