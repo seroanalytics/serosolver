@@ -67,7 +67,19 @@ NumericVector titre_data_fast(const NumericVector &theta,
   double wane = theta["wane"];
   double tau = theta["tau"];
   double min_titre = 0; //theta["min_titre"];
+  double sigma_s = theta["sigma2"];
+  double sigma_l = theta["sigma1"];
 
+  // Pre-compute waning and antigenic seniority contributions for speed
+  NumericVector wane_amounts(number_strains);
+  NumericVector seniority_amounts(number_strains);
+  double t = 0;
+  for(int index = 0; index < number_strains; ++index){
+      wane_amounts[index] = MAX(0, 1.0 - (wane*t));
+      seniority_amounts[index] = MAX(0, 1.0 - (tau*t));
+      t = t + 1.0;
+  }
+  
   // 2. Extract model parameters that are for specific mechanisms
   //    set a boolean flag to choose between model versions
   
@@ -89,7 +101,21 @@ NumericVector titre_data_fast(const NumericVector &theta,
     gradient = theta["gradient"];
     boost_limit = theta["boost_limit"];
   }
-
+  
+  // Complex cross-reactivity model
+  bool complex_cr = theta["complex_cr"] == 1;
+    double sigma_birth_mod_s;
+    double sigma_birth_mod_l;
+    double sigma_future_mod_s;
+    double sigma_future_mod_l;
+    if(complex_cr){
+        sigma_birth_mod_s = theta["sigma_birth_mod_s"];
+        sigma_birth_mod_l= theta["sigma_birth_mod_l"];
+        sigma_future_mod_s= theta["sigma_future_mod_s"];
+        sigma_future_mod_l= theta["sigma_future_mod_l"];
+    }
+    
+        
   // Strain-specific boosting
   bool strain_dep_boost = false;
   if (mus.size() > 1) {
@@ -99,6 +125,7 @@ NumericVector titre_data_fast(const NumericVector &theta,
   // 3. If not using one of the specific mechanism functions, set the base_function flag to TRUE
   bool base_function = !(alternative_wane_func ||
 			 titre_dependent_boosting ||
+			 complex_cr || 
 			 strain_dep_boost);
 
   // To store calculated titres
@@ -124,6 +151,7 @@ NumericVector titre_data_fast(const NumericVector &theta,
       if (base_function) {
 	titre_data_fast_individual_base(predicted_titres, mu, mu_short,
 					wane, tau,
+					wane_amounts, seniority_amounts,
 					infection_times,
 					infection_strain_indices_tmp,
 					measurement_strain_indices,
@@ -185,9 +213,27 @@ NumericVector titre_data_fast(const NumericVector &theta,
 					 antigenic_map_short,
 					 antigenic_map_long,
 					 boost_before_infection);
+      } else if(complex_cr) {
+          titre_data_fast_individual_complex_cr(predicted_titres, mu, mu_short,
+                                          wane, tau,sigma_s, sigma_l,
+                                          sigma_birth_mod_s, sigma_birth_mod_l,
+                                          sigma_future_mod_s, sigma_future_mod_l,
+                                          wane_amounts, seniority_amounts,
+                                          infection_times,
+                                          infection_strain_indices_tmp,
+                                          measurement_strain_indices,
+                                          sample_times,
+                                          index_in_samples,
+                                          end_index_in_samples,
+                                          start_index_in_data,
+                                          nrows_per_blood_sample,
+                                          number_strains,
+                                          antigenic_distances,
+                                          boost_before_infection);
       } else {
 	titre_data_fast_individual_base(predicted_titres, mu, mu_short,
 					wane, tau,
+					wane_amounts, seniority_amounts,
 					infection_times,
 					infection_strain_indices_tmp,
 					measurement_strain_indices,
