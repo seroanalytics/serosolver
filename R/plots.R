@@ -60,7 +60,8 @@ get_titre_predictions <- function(chain, infection_histories, titre_dat,
                                   measurement_indices_by_time = NULL,
                                   for_res_plot = FALSE, expand_titredat = FALSE,
                                   titre_before_infection=FALSE, titres_for_regression=FALSE,
-                                  data_type=1){
+                                  data_type=1,
+                                  prior_version=2){
     ## Need to align the iterations of the two MCMC chains
     ## and choose some random samples
     samps <- intersect(unique(infection_histories$sampno), unique(chain$sampno))
@@ -104,7 +105,7 @@ get_titre_predictions <- function(chain, infection_histories, titre_dat,
         ]
     }
     model_func <- create_posterior_func(par_tab, titre_dat1, antigenic_map, 100,
-                                        mu_indices = mu_indices,version=2,
+                                        mu_indices = mu_indices,version=prior_version,
                                         measurement_indices_by_time = measurement_indices_by_time, function_type = 4,
                                         titre_before_infection=titre_before_infection,
                                         data_type=data_type

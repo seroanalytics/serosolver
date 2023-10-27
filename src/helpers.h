@@ -30,6 +30,7 @@ NumericVector sum_buckets(NumericVector a, NumericVector buckets);
 void add_measurement_shifts(NumericVector &predicted_titres, 
 			    const NumericVector &to_add,
 			    const int &start_index_in_data,
-			    const int &end_index_in_data
+			    const int &end_index_in_data,
+			    const bool shift_positives_only
 			    );
 #endif

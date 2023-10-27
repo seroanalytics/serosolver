@@ -87,6 +87,7 @@ calc_phi_probs_indiv <- function(phis, infection_history, age_mask, strain_mask)
       (1 - phis[i])^(1 - infection_history[, i]))) *
       as.numeric(age_mask <= i) *
       as.numeric(strain_mask >= i)
+    if(any(is.nan(to_add)) | !is.finite(sum(to_add))) browser()
     lik <- lik + to_add
   }
   lik
@@ -237,25 +238,6 @@ prob_mus <- function(mus, pars) {
   mu_mean <- pars["mu_mean"]
   mu_sd <- pars["mu_sd"]
   return(sum(dnorm(mus, mu_mean, mu_sd, log = TRUE)))
-  ## 
-  ## location <- log(mu_mean^2 / sqrt(mu_sd^2 + mu_mean^2))
-  ## shape <- sqrt(log(1 + (mu_sd^2/mu_mean^2)))
-  ## l_mean <- log(mu_mean) - (mu_sd^2)/2
-  ## p <- sum(dnorm(log(mus),mu_mean,mu_sd,log=TRUE))
-  ## p_mean <- 0.6
-  ## p_sd <- 0.5
-  ## p_mu <- log(p_mean/sqrt(1 + (p_sd/p_mean)^2))
-  ## p_sigma <- sqrt(log(1 + (p_sd/p_mean)^2))
-  ## p_lik <- log(p_sigma*2.506628) - 0.5*((mu_mean - p_mu)/p_sigma)^2
-  ## return(p+p_lik)
-  ## return(sum(log(dtruncnorm(mus, a=0,mean=mu_mean, sd=mu_sd))))
-  ## return(sum(dlnorm(mus, location, shape, log=TRUE)))
-  ## mean_log_y <- mean(log(mus))
-  ## sd_log_y <- sd(log(mus))
-  ## sigmaOfLogY <- dunif(mu_sd, 0.001*sd_log_y,1000*sd_log_y)
-  ## muOfLogY <- dnorm(mu_mean, mean_log_y, 1/(10*sd_log_y)^2)
-  ## return(sum(dlnorm(mus, mu_mean, 1/mu_sd^2, log=TRUE)) + sigmaOfLogY + muOfLogY)
-  ## return(sum(dlnorm(mus, mu_mean, mu_sd, log = TRUE)))
 }
 
 
@@ -275,6 +257,7 @@ prob_mus <- function(mus, pars) {
 #' @param function_type integer specifying which version of this function to use. Specify 1 to give a posterior solving function; 2 to give the gibbs sampler for infection history proposals; otherwise just solves the titre model and returns predicted titres. NOTE that this is not the same as the attack rate prior argument, \code{version}!
 #' @param titre_before_infection TRUE/FALSE value. If TRUE, solves titre predictions, but gives the predicted titre at a given time point BEFORE any infection during that time occurs.
 #' @param data_type integer, currently accepting 1 or 2. Set to 1 for discretized, bounded data, or 2 for continuous, bounded data. Note that with 2, MIN_TITRE must be set.
+#' @param shift_positives_only bool, if TRUE, then only adds the measurement shift to predicted titers > 1. Otherwise, adds the shift to all titres.
 #' @param ... other arguments to pass to the posterior solving function
 #' @return a single function pointer that takes only pars and infection_histories as unnamed arguments. This function goes on to return a vector of posterior values for each individual
 #' @examples
@@ -307,6 +290,7 @@ create_posterior_func <- function(par_tab,
                                   function_type = 1,
                                   titre_before_infection=FALSE,
                                   data_type=1,
+                                  shift_positives_only=FALSE,
                                   ...) {
     #browser()
     check_par_tab(par_tab, TRUE, version)
@@ -377,6 +361,9 @@ create_posterior_func <- function(par_tab,
     weights_indices <- which(par_tab$type == 4) ## For functional form version of FOI
     knot_indices <- which(par_tab$type == 5) ## For functional form version of FOI
     mu_indices_par_tab <- which(par_tab$type == 6)
+    
+    ## TEMP -- testing the visit-specific measurement offsets
+    #measurement_indices_visit_par_tab <- which(par_tab$type == 9)
 #########################################################
 
     ## Some additional setup for the repeat data
@@ -408,6 +395,7 @@ create_posterior_func <- function(par_tab,
     if (use_measurement_bias) {
         message(cat("Using measurement bias\n"))
         expected_indices <- measurement_indices_by_time[match(titre_dat_unique$virus, strain_isolation_times)]
+        expected_indices_visit <- titre_dat_unique$visit
     } else {
         expected_indices <- c(-1)
     }
@@ -468,7 +456,18 @@ create_posterior_func <- function(par_tab,
             if (use_measurement_bias) {
                 measurement_bias <- pars[measurement_indices_par_tab]
                 titre_shifts <- measurement_bias[expected_indices]
-                y_new <- y_new + titre_shifts
+                
+                ## Measurement bias from visit
+               # measurement_bias_visit <- pars[measurement_indices_visit_par_tab]
+                #titre_shifts2 <- measurement_bias_visit[expected_indices_visit]
+                
+                #titre_shifts <- titre_shifts + titre_shifts2
+                
+                if(shift_positives_only){
+                  y_new[y_new > 1] <- y_new[y_new > 1] + titre_shifts[y_new > 1]
+                } else {
+                  y_new <- y_new + titre_shifts
+                }
             }
             ## Transmission prob is the part of the likelihood function corresponding to each individual
             transmission_prob <- rep(0, n_indiv)
@@ -516,6 +515,7 @@ create_posterior_func <- function(par_tab,
         beta <- par_tab[par_tab$names == "beta","values"]
         n_infected_group <- c(0, 0)
         ## Generate prior lookup table
+        # Dimensions are: rows = n_infected, cols = time, 3D = group
         lookup_tab <- create_prior_lookup_groups(titre_dat, strain_isolation_times, alpha, beta, n_alive)
         ## Use the original gibbs proposal function if no titre immunity
         f <- function(pars, infection_history_mat,
@@ -542,6 +542,13 @@ create_posterior_func <- function(par_tab,
             if (use_measurement_bias) {
                 measurement_bias <- pars[measurement_indices_par_tab]
                 titre_shifts <- measurement_bias[expected_indices]
+                
+                ## FINDME - Measurement bias from visit
+                #measurement_bias_visit <- pars[measurement_indices_visit_par_tab]
+                #titre_shifts2 <- measurement_bias_visit[expected_indices_visit]
+                
+                #titre_shifts <- titre_shifts + titre_shifts2
+                
             }
             ## Work out short and long term boosting cross reactivity - C++ function
             antigenic_map_long <- create_cross_reactivity_vector(antigenic_map_melted, theta["sigma1"])
@@ -595,7 +602,8 @@ create_posterior_func <- function(par_tab,
                 n_alive_total,
                 temp,
                 solve_likelihood,
-                data_type
+                data_type,
+                shift_positives_only
             )
             return(res)
         }
@@ -626,7 +634,19 @@ create_posterior_func <- function(par_tab,
             if (use_measurement_bias) {
                 measurement_bias <- pars[measurement_indices_par_tab]
                 titre_shifts <- measurement_bias[expected_indices]
-                y_new <- y_new + titre_shifts
+                
+                ## FINDME - Measurement bias from visit
+                #measurement_bias_visit <- pars[measurement_indices_visit_par_tab]
+                #titre_shifts2 <- measurement_bias_visit[expected_indices_visit]
+                
+                #titre_shifts <- titre_shifts + titre_shifts2
+                
+                if(shift_positives_only){
+                  y_new[y_new > 1] <- y_new[y_new > 1] + titre_shifts[y_new > 1]
+                } else {
+                  y_new <- y_new + titre_shifts
+                  
+                }
             }
             y_new[overall_indices]
         }

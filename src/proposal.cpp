@@ -205,11 +205,12 @@ List inf_hist_prop_prior_v2_and_v4(const NumericVector &theta, // Model paramete
 				   const IntegerVector &total_alive,
 				   const double temp=1,
 				   bool solve_likelihood=true,
-				   const int data_type=1
+				   const int data_type=1,
+				   const bool shift_positives_only=false
 				   ){
   // ########################################################################
   // Parameters to control indexing of data
-IntegerMatrix new_infection_history_mat(clone(infection_history_mat)); // Can this be avoided? Create a copy of the inf hist matrix
+  IntegerMatrix new_infection_history_mat(clone(infection_history_mat)); // Can this be avoided? Create a copy of the inf hist matrix
 //IntegerMatrix new_infection_history_mat(infection_history_mat); // Can this be avoided? Create a copy of the inf hist matrix
     
   int n_titres_total = data.size(); // How many titres are there in total?
@@ -429,298 +430,298 @@ IntegerMatrix new_infection_history_mat(clone(infection_history_mat)); // Can th
       // If swap step
       prior_old = prior_new = 0;
       if(swap_step_option){
-    	loc1 = locs[j]; // Choose a location from age_mask to strain_mask
-    	loc2 = loc1 + floor(R::runif(-swap_distance,swap_distance+1));
-    
-    	// If we have gone too far left or right, reflect at the boundaries
-    	
-    	while(loc2 < 0){
-    	  // If gone negative, then reflect to the other side.
-    	  // ie. -1 becomes the last entry, -2 becomes the second last entry etc.
-    	  loc2 += n_samp_length;
-    	}
-    	while(loc2 >= n_samp_length){
-    	  loc2 -= n_samp_length;
-    	}
-	
-    	// Try bounce rather than reflect to other side
-    	//if(loc2 < 0) loc2 = -loc2;
-    	//if(loc2 >= n_samp_length) loc2 = n_samp_length - loc2 + n_samp_length - 2;
-    	
-    	// Get onto right scale (starting at age mask)
-    	loc1 += age_mask[indiv] - 1;
-    	loc2 += age_mask[indiv] - 1;
-    	  
-    	loc1_val_old = new_infection_history(loc1);
-    	loc2_val_old = new_infection_history(loc2);
-    
-    	overall_swap_proposals(indiv,loc1)++;
-    	overall_swap_proposals(indiv,loc2)++;
-	
-    	// Only proceed if we've actually made a change
-    	// If prior version 4, then prior doesn't change by swapping
-    	if(loc1_val_old != loc2_val_old){
-    	  lik_changed = true;
-    	  proposal_swap[indiv] += 1;
-    	  if(!prior_on_total){
-    	    // Number of infections in that group in that time
-    	      m_1_old = n_infections(group_id,loc1);      
-    	      m_2_old = n_infections(group_id,loc2);
-    	  
-    	      // Swap contents
-    	      new_infection_history(loc1) = new_infection_history(loc2);
-    	      new_infection_history(loc2) = loc1_val_old;
-    	  
-    	      // Number alive is number alive overall in that time and group
-    	      n_1 = n_alive(group_id, loc1);
-    	      n_2 = n_alive(group_id, loc2);
-    	    
-    	      // Prior for new state
-    	      m_1_new = m_1_old - loc1_val_old + loc2_val_old;
-    	      m_2_new = m_2_old - loc2_val_old + loc1_val_old;
-    
-    	      
-    	      prior_1_old = prior_lookup(m_1_old, loc1, group_id);
-    	      prior_2_old = prior_lookup(m_2_old, loc2, group_id);
-    	      prior_old = prior_1_old + prior_2_old;
-    	      
-    	      prior_1_new = prior_lookup(m_1_new, loc1, group_id);
-    	      prior_2_new = prior_lookup(m_2_new, loc2, group_id);
-    	      prior_new = prior_1_new + prior_2_new;
-    	      
-    	    } else {
-    	      // Prior version 4
-    	      prior_old = prior_new = 0;
-    	    }
-    	  }
+      	loc1 = locs[j]; // Choose a location from age_mask to strain_mask
+      	loc2 = loc1 + floor(R::runif(-swap_distance,swap_distance+1));
+      
+      	// If we have gone too far left or right, reflect at the boundaries
+      	
+      	while(loc2 < 0){
+      	  // If gone negative, then reflect to the other side.
+      	  // ie. -1 becomes the last entry, -2 becomes the second last entry etc.
+      	  loc2 += n_samp_length;
+      	}
+      	while(loc2 >= n_samp_length){
+      	  loc2 -= n_samp_length;
+      	}
+  	
+      	// Try bounce rather than reflect to other side
+      	//if(loc2 < 0) loc2 = -loc2;
+      	//if(loc2 >= n_samp_length) loc2 = n_samp_length - loc2 + n_samp_length - 2;
+      	
+      	// Get onto right scale (starting at age mask)
+      	loc1 += age_mask[indiv] - 1;
+      	loc2 += age_mask[indiv] - 1;
+      	  
+      	loc1_val_old = new_infection_history(loc1);
+      	loc2_val_old = new_infection_history(loc2);
+      
+      	overall_swap_proposals(indiv,loc1)++;
+      	overall_swap_proposals(indiv,loc2)++;
+  	
+      	// Only proceed if we've actually made a change
+      	// If prior version 4, then prior doesn't change by swapping
+      	if(loc1_val_old != loc2_val_old){
+      	  lik_changed = true;
+      	  proposal_swap[indiv] += 1;
+      	  if(!prior_on_total){
+      	    // Number of infections in that group in that time
+      	      m_1_old = n_infections(group_id,loc1);      
+      	      m_2_old = n_infections(group_id,loc2);
+      	  
+      	      // Swap contents
+      	      new_infection_history(loc1) = new_infection_history(loc2);
+      	      new_infection_history(loc2) = loc1_val_old;
+      	  
+      	      // Number alive is number alive overall in that time and group
+      	      n_1 = n_alive(group_id, loc1);
+      	      n_2 = n_alive(group_id, loc2);
+      	    
+      	      // Prior for new state
+      	      m_1_new = m_1_old - loc1_val_old + loc2_val_old;
+      	      m_2_new = m_2_old - loc2_val_old + loc1_val_old;
+      
+      	      
+      	      prior_1_old = prior_lookup(m_1_old, loc1, group_id);
+      	      prior_2_old = prior_lookup(m_2_old, loc2, group_id);
+      	      prior_old = prior_1_old + prior_2_old;
+      	      
+      	      prior_1_new = prior_lookup(m_1_new, loc1, group_id);
+      	      prior_2_new = prior_lookup(m_2_new, loc2, group_id);
+      	      prior_new = prior_1_new + prior_2_new;
+      	      
+      	    } else {
+      	      // Prior version 4
+      	      prior_old = prior_new = 0;
+      	    }
+      	  }
 	
     	///////////////////////////////////////////////////////
     	// OPTION 2: Add/remove infection
     	///////////////////////////////////////////////////////
       } else {
-    	year = locs[j] + age_mask[indiv] - 1;
-    	old_entry = new_infection_history(year);
-    	overall_add_proposals(indiv,year)++;
-    	if(!prior_on_total){	
-    	  // Get number of individuals that were alive and/or infected in that year,
-    	  // less the current individual
-    	  // Number of infections in this year, less infection status of this individual in this year
-    	  m = n_infections(group_id, year) - old_entry;
-    	  n = n_alive(group_id, year) - 1;
-    	} else {
-    	  m = n_infected_group(group_id) - old_entry;
-    	  n = total_alive(group_id) - 1;
-    	}
-
-    	if(propose_from_prior){
-            // Is there room to add another infection?
-    	  // Work out proposal ratio - prior from alpha, beta and number of other infections
-    	  ratio = (m + alpha)/(n + alpha + beta);
-    
-    	  // Propose 1 or 0 based on this ratio
-    	  rand1 = R::runif(0,1);	
-
-    	  if(rand1 < ratio){
-    	    new_entry = 1;
-    	    new_infection_history(year) = 1;
-    	  } else {
-    	    new_entry = 0;
-    	    new_infection_history(year) = 0;
-    	  }
-    	} else {
-    	  if(old_entry == 0) {
-    	    new_entry = 1;
-    	    new_infection_history(year) = 1;
-    	  } else {
-    	    new_entry = 0;
-    	    new_infection_history(year) = 0;
-    	  }
-    	  m_1_old = m + old_entry;
-    	  m_1_new = m + new_entry;
-    	  
-    	  prior_old = prior_lookup(m_1_old, year, group_id);
-    	  prior_new = prior_lookup(m_1_new, year, group_id);
-    	}
-    	
-    	if(new_entry != old_entry){
-    	  lik_changed = true;
-    	  proposal_iter[indiv] += 1;		
-    	}
+      	year = locs[j] + age_mask[indiv] - 1;
+      	old_entry = new_infection_history(year);
+      	overall_add_proposals(indiv,year)++;
+      	if(!prior_on_total){	
+      	  // Get number of individuals that were alive and/or infected in that year,
+      	  // less the current individual
+      	  // Number of infections in this year, less infection status of this individual in this year
+      	  m = n_infections(group_id, year) - old_entry;
+      	  n = n_alive(group_id, year) - 1;
+      	} else {
+      	  m = n_infected_group(group_id) - old_entry;
+      	  n = total_alive(group_id) - 1;
+      	}
+  
+      	if(propose_from_prior){
+              // Is there room to add another infection?
+      	  // Work out proposal ratio - prior from alpha, beta and number of other infections
+      	  ratio = (m + alpha)/(n + alpha + beta);
+      
+      	  // Propose 1 or 0 based on this ratio
+      	  rand1 = R::runif(0,1);	
+  
+      	  if(rand1 < ratio){
+      	    new_entry = 1;
+      	    new_infection_history(year) = 1;
+      	  } else {
+      	    new_entry = 0;
+      	    new_infection_history(year) = 0;
+      	  }
+      	} else {
+      	  if(old_entry == 0) {
+      	    new_entry = 1;
+      	    new_infection_history(year) = 1;
+      	  } else {
+      	    new_entry = 0;
+      	    new_infection_history(year) = 0;
+      	  }
+      	  m_1_old = m + old_entry;
+      	  m_1_new = m + new_entry;
+      	  
+      	  prior_old = prior_lookup(m_1_old, year, group_id);
+      	  prior_new = prior_lookup(m_1_new, year, group_id);
+      	}
+      	
+      	if(new_entry != old_entry){
+      	  lik_changed = true;
+      	  proposal_iter[indiv] += 1;		
+      	}
       }
       ////////////////////////
       // If a change was made to the infection history,
       // calculate likelihood of new Z
       ////////////////////////
       if(solve_likelihood && lik_changed){
-    	// Calculate likelihood!
-    	indices = new_infection_history > 0;
-    	infection_times = circulation_times[indices];
-    
-    	infection_strain_indices_tmp = circulation_times_indices[indices];	  
-    	// ====================================================== //
-    	// =============== CHOOSE MODEL TO SOLVE =============== //
-    	// ====================================================== //
-    	if (base_function) {
-    	  titre_data_fast_individual_base(predicted_titres, mu, mu_short,
-    					  wane, tau,
-    					  wane_amounts, seniority_amounts,
-    					  infection_times,
-    					  infection_strain_indices_tmp,
-    					  measurement_strain_indices,
-    					  sample_times,
-    					  index_in_samples,
-    					  end_index_in_samples,
-    					  start_index_in_data,
-    					  nrows_per_blood_sample,
-    					  number_strains,
-    					  antigenic_map_short,
-    					  antigenic_map_long,
-    					  false);	  
-    	} else if (titre_dependent_boosting) {
-    	  titre_data_fast_individual_titredep(predicted_titres, mu, mu_short,
-    					      wane, tau,
-    					      gradient, boost_limit,
-    					      infection_times,
-    					      infection_strain_indices_tmp,
-    					      measurement_strain_indices,
-    					      sample_times,
-    					      index_in_samples,
-    					      end_index_in_samples,
-    					      start_index_in_data,
-    					      nrows_per_blood_sample,
-    					      number_strains,
-    					      antigenic_map_short,
-    					      antigenic_map_long,
-    					      false);	
-    	} else if (strain_dep_boost) {
-    	  titre_data_fast_individual_strain_dependent(predicted_titres, 
-    						      mus, boosting_vec_indices, 
-    						      mu_short,
-    						      wane, tau,
-    						      infection_times,
-    						      infection_strain_indices_tmp,
-    						      measurement_strain_indices,
-    						      sample_times,
-    						      index_in_samples,
-    						      end_index_in_samples,
-    						      start_index_in_data,
-    						      nrows_per_blood_sample,
-    						      number_strains,
-    						      antigenic_map_short,
-    						      antigenic_map_long,
-    						      false);
-    	} else if(alternative_wane_func){
-    	  titre_data_fast_individual_wane2(predicted_titres, mu, mu_short,
-    					   wane, tau,
-    					   kappa, t_change,
-    					   infection_times,
-    					   infection_strain_indices_tmp,
-    					   measurement_strain_indices,
-    					   sample_times,
-    					   index_in_samples,
-    					   end_index_in_samples,
-    					   start_index_in_data,
-    					   nrows_per_blood_sample,
-    					   number_strains,
-    					   antigenic_map_short,
-    					   antigenic_map_long,
-    					   false);
-    	} else if(complex_cr) {
-    	    titre_data_fast_individual_complex_cr(predicted_titres, mu, mu_short,
-                                               wane, tau,sigma_s, sigma_l,
-                                               sigma_birth_mod_s, sigma_birth_mod_l,
-                                               sigma_future_mod_s, sigma_future_mod_l,
-                                               wane_amounts, seniority_amounts,
-                                               infection_times,
-                                               infection_strain_indices_tmp,
-                                               measurement_strain_indices,
-                                               sample_times,
-                                               index_in_samples,
-                                               end_index_in_samples,
-                                               start_index_in_data,
-                                               nrows_per_blood_sample,
-                                               number_strains,
-                                               antigenic_distances,
-                                               false);
-    	} else {
-    	  titre_data_fast_individual_base(predicted_titres, mu, mu_short,
-    					  wane, tau,
-    					  wane_amounts, seniority_amounts,
-    					  infection_times,
-    					  infection_strain_indices_tmp,
-    					  measurement_strain_indices,
-    					  sample_times,
-    					  index_in_samples,
-    					  end_index_in_samples,
-    					  start_index_in_data,
-    					  nrows_per_blood_sample,
-    					  number_strains,
-    					  antigenic_map_short,
-    					  antigenic_map_long,
-    					  false);
-    	}
+      	// Calculate likelihood!
+      	indices = new_infection_history > 0;
+      	infection_times = circulation_times[indices];
+      
+      	infection_strain_indices_tmp = circulation_times_indices[indices];	  
+      	// ====================================================== //
+      	// =============== CHOOSE MODEL TO SOLVE =============== //
+      	// ====================================================== //
+      	if (base_function) {
+      	  titre_data_fast_individual_base(predicted_titres, mu, mu_short,
+      					  wane, tau,
+      					  wane_amounts, seniority_amounts,
+      					  infection_times,
+      					  infection_strain_indices_tmp,
+      					  measurement_strain_indices,
+      					  sample_times,
+      					  index_in_samples,
+      					  end_index_in_samples,
+      					  start_index_in_data,
+      					  nrows_per_blood_sample,
+      					  number_strains,
+      					  antigenic_map_short,
+      					  antigenic_map_long,
+      					  false);	  
+      	} else if (titre_dependent_boosting) {
+      	  titre_data_fast_individual_titredep(predicted_titres, mu, mu_short,
+      					      wane, tau,
+      					      gradient, boost_limit,
+      					      infection_times,
+      					      infection_strain_indices_tmp,
+      					      measurement_strain_indices,
+      					      sample_times,
+      					      index_in_samples,
+      					      end_index_in_samples,
+      					      start_index_in_data,
+      					      nrows_per_blood_sample,
+      					      number_strains,
+      					      antigenic_map_short,
+      					      antigenic_map_long,
+      					      false);	
+      	} else if (strain_dep_boost) {
+      	  titre_data_fast_individual_strain_dependent(predicted_titres, 
+      						      mus, boosting_vec_indices, 
+      						      mu_short,
+      						      wane, tau,
+      						      infection_times,
+      						      infection_strain_indices_tmp,
+      						      measurement_strain_indices,
+      						      sample_times,
+      						      index_in_samples,
+      						      end_index_in_samples,
+      						      start_index_in_data,
+      						      nrows_per_blood_sample,
+      						      number_strains,
+      						      antigenic_map_short,
+      						      antigenic_map_long,
+      						      false);
+      	} else if(alternative_wane_func){
+      	  titre_data_fast_individual_wane2(predicted_titres, mu, mu_short,
+      					   wane, tau,
+      					   kappa, t_change,
+      					   infection_times,
+      					   infection_strain_indices_tmp,
+      					   measurement_strain_indices,
+      					   sample_times,
+      					   index_in_samples,
+      					   end_index_in_samples,
+      					   start_index_in_data,
+      					   nrows_per_blood_sample,
+      					   number_strains,
+      					   antigenic_map_short,
+      					   antigenic_map_long,
+      					   false);
+      	} else if(complex_cr) {
+      	    titre_data_fast_individual_complex_cr(predicted_titres, mu, mu_short,
+                                                 wane, tau,sigma_s, sigma_l,
+                                                 sigma_birth_mod_s, sigma_birth_mod_l,
+                                                 sigma_future_mod_s, sigma_future_mod_l,
+                                                 wane_amounts, seniority_amounts,
+                                                 infection_times,
+                                                 infection_strain_indices_tmp,
+                                                 measurement_strain_indices,
+                                                 sample_times,
+                                                 index_in_samples,
+                                                 end_index_in_samples,
+                                                 start_index_in_data,
+                                                 nrows_per_blood_sample,
+                                                 number_strains,
+                                                 antigenic_distances,
+                                                 false);
+      	} else {
+      	  titre_data_fast_individual_base(predicted_titres, mu, mu_short,
+      					  wane, tau,
+      					  wane_amounts, seniority_amounts,
+      					  infection_times,
+      					  infection_strain_indices_tmp,
+      					  measurement_strain_indices,
+      					  sample_times,
+      					  index_in_samples,
+      					  end_index_in_samples,
+      					  start_index_in_data,
+      					  nrows_per_blood_sample,
+      					  number_strains,
+      					  antigenic_map_short,
+      					  antigenic_map_long,
+      					  false);
+      	}
     	//}
-    	if(use_titre_shifts){
-    	  add_measurement_shifts(predicted_titres, titre_shifts, 
-    				 start_index_in_data, end_index_in_data);
-    	}
-    	// Now have all predicted titres for this individual calculated
-    	// Need to calculate likelihood of these titres... 
-    	new_prob = 0;
-    	
-    	// Go from first row in the data for this individual to up to the next one, accumulating
-    	// likelihood for this individual
-    	// For unique data
-      // Data_type 1 is discretized, bounded data
-      if(data_type==1){
-    	  proposal_likelihood_func(new_prob, predicted_titres, indiv, data, repeat_data, repeat_indices,
-    		  		 cum_nrows_per_individual_in_data, cum_nrows_per_individual_in_repeat_data,
-    			  	 log_const, den, max_titre, repeat_data_exist);
-      // Data_type 2 is continuous, bounded data
-      } else if(data_type==2){
-        proposal_likelihood_func_continuous(new_prob, predicted_titres, indiv, data, repeat_data, repeat_indices,
-                                            cum_nrows_per_individual_in_data, cum_nrows_per_individual_in_repeat_data,
-                                            log_const, sd, den, den2, max_titre, min_titre, repeat_data_exist);
+      	if(use_titre_shifts){
+      	  add_measurement_shifts(predicted_titres, titre_shifts, 
+      				 start_index_in_data, end_index_in_data, shift_positives_only);
+      	}
+      	// Now have all predicted titres for this individual calculated
+      	// Need to calculate likelihood of these titres... 
+      	new_prob = 0;
+      	
+      	// Go from first row in the data for this individual to up to the next one, accumulating
+      	// likelihood for this individual
+      	// For unique data
+        // Data_type 1 is discretized, bounded data
+        if(data_type==1){
+      	  proposal_likelihood_func(new_prob, predicted_titres, indiv, data, repeat_data, repeat_indices,
+      		  		 cum_nrows_per_individual_in_data, cum_nrows_per_individual_in_repeat_data,
+      			  	 log_const, den, max_titre, repeat_data_exist);
+        // Data_type 2 is continuous, bounded data
+        } else if(data_type==2){
+          proposal_likelihood_func_continuous(new_prob, predicted_titres, indiv, data, repeat_data, repeat_indices,
+                                              cum_nrows_per_individual_in_data, cum_nrows_per_individual_in_repeat_data,
+                                              log_const, sd, den, den2, max_titre, min_titre, repeat_data_exist);
+        } else {
+          proposal_likelihood_func(new_prob, predicted_titres, indiv, data, repeat_data, repeat_indices,
+                                   cum_nrows_per_individual_in_data, cum_nrows_per_individual_in_repeat_data,
+                                   log_const, den, max_titre, repeat_data_exist);
+        }
+        new_prob = new_prob/temp;
       } else {
-        proposal_likelihood_func(new_prob, predicted_titres, indiv, data, repeat_data, repeat_indices,
-                                 cum_nrows_per_individual_in_data, cum_nrows_per_individual_in_repeat_data,
-                                 log_const, den, max_titre, repeat_data_exist);
-      }
-
-      } else {
-	        old_prob = new_prob = old_probs[indiv];
+	      old_prob = new_prob = old_probs[indiv];
       }
      
       //////////////////////////////
       // METROPOLIS-HASTINGS STEP
       //////////////////////////////
       if(swap_step_option){ 
-	    log_prob = std::min<double>(0.0, (new_prob+prior_new) - (old_prob+prior_old));
+	      log_prob = std::min<double>(0.0, (new_prob+prior_new) - (old_prob+prior_old));
       } else {
-	    log_prob = std::min<double>(0.0, (new_prob+prior_new) - (old_prob+prior_old));
+	      log_prob = std::min<double>(0.0, (new_prob+prior_new) - (old_prob+prior_old));
       }
       
       rand1 = R::runif(0,1);
-      if(lik_changed && log(rand1) < log_prob/temp){
-    	// Update the entry in the new matrix Z1
-    	old_prob = new_prob;
-    	old_probs[indiv] = new_prob;
-    
-    	// Carry out the swap
-    	if(swap_step_option){
-    	  accepted_swap[indiv] += 1;
-    	  tmp = new_infection_history_mat(indiv,loc1);
-    	  new_infection_history_mat(indiv,loc1) = new_infection_history_mat(indiv,loc2);
-    	  new_infection_history_mat(indiv,loc2) = tmp;
-	  
-    	  // Update number of infections in the two swapped times
-    	  if(!prior_on_total){
-    	    n_infections(group_id, loc1) = m_1_new;
-    	    n_infections(group_id, loc2) = m_2_new;
-    	  }
-	  // Don't need to update group infections if prior_on_total, as infections
-	  // only move within an individual (so number in group stays same)
-    	} else {
+      if(lik_changed && log(rand1) < log_prob){
+      	// Update the entry in the new matrix Z1
+      	old_prob = new_prob;
+      	old_probs[indiv] = new_prob;
+      
+      	// Carry out the swap
+      	if(swap_step_option){
+      	  accepted_swap[indiv] += 1;
+      	  tmp = new_infection_history_mat(indiv,loc1);
+      	  new_infection_history_mat(indiv,loc1) = new_infection_history_mat(indiv,loc2);
+      	  new_infection_history_mat(indiv,loc2) = tmp;
+  	  
+      	  // Update number of infections in the two swapped times
+      	  if(!prior_on_total){
+      	    n_infections(group_id, loc1) = m_1_new;
+      	    n_infections(group_id, loc2) = m_2_new;
+      	  }
+  	  // Don't need to update group infections if prior_on_total, as infections
+  	  // only move within an individual (so number in group stays same)
+      	} else {
     	    
     	    accepted_iter[indiv] += 1;
     	    new_infection_history_mat(indiv,year) = new_entry;	

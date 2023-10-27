@@ -88,15 +88,23 @@ IntegerMatrix sum_infections_by_group(IntegerMatrix inf_hist, IntegerVector grou
 //' @param to_add NumericVector the vector of all measurement shifts to apply
 //' @param start_index_in_data int the first index of to_add and predicted_titres to combine
 //' @param end_index_in_data int the end index of to_add and predicted_titres to combine
+//' @param shift_positives_only 
 //' @return nothing
 //' @export
 //[[Rcpp::export]]
 void add_measurement_shifts(NumericVector &predicted_titres, 
 			    const NumericVector &to_add,
 			    const int &start_index_in_data,
-			    const int &end_index_in_data
+			    const int &end_index_in_data,
+			    const bool shift_positives_only
 			    ){
   for(int j = start_index_in_data; j <= end_index_in_data; ++j){
-    predicted_titres[j] += to_add[j];
+    if(shift_positives_only){
+      if(predicted_titres[j] > 1.0){
+        predicted_titres[j] += to_add[j];
+      }
+    } else {
+      predicted_titres[j] += to_add[j];
+    }
   }
 }
