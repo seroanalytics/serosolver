@@ -15,8 +15,8 @@ univ_proposal <- function(values, lower_bounds, upper_bounds, steps, index) {
 
   ## Commented out using guassian proposals, which does work but risks being
   ## inefficient due to stepping outside of bounds
-  ## rtn[index] <- rnorm(1,values[index],steps[index])
-  ## return(rtn)
+  rtn[index] <- rnorm(1,values[index],steps[index])
+  return(rtn)
 
   mn <- lower_bounds[index]
   mx <- upper_bounds[index]

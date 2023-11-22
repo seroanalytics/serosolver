@@ -58,7 +58,7 @@ NumericVector sum_buckets(NumericVector a, NumericVector buckets){
   int index = 0;
   for(int i = 0; i < buckets.size(); ++i){
     results[i] = 0;
-    for(int j = 0; (j < buckets[i]) & (index < a.size()); ++j){
+    for(int j = 0; (j < buckets[i]) && (index < a.size()); ++j){
       results[i] += a[index++];
     }
   }

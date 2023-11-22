@@ -32,7 +32,7 @@ scaletuning <- function(step, popt, pcur) {
   if (pcur == 1) pcur <- 0.99
   if (pcur == 0) pcur <- 0.01
   step <- (step * qnorm(popt / 2)) / qnorm(pcur / 2)
-  if (step > 1) step <- 1
+  if (step > 100) step <- 100
   step <- max(0.00001, step)
   return(step)
 }

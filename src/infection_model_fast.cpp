@@ -17,8 +17,6 @@
 //' @param antigenic_map_long NumericVector, the collapsed cross reactivity map for long term boosting, after multiplying by sigma1 see \code{\link{create_cross_reactivity_vector}}
 //' @param antigenic_map_short NumericVector, the collapsed cross reactivity map for short term boosting, after multiplying by sigma2, see \code{\link{create_cross_reactivity_vector}}
 //' @param antigenic_distances NumericVector, the collapsed cross reactivity map giving euclidean antigenic distances, see \code{\link{create_cross_reactivity_vector}}
-//' @param mus NumericVector, if length is greater than one, assumes that strain-specific boosting is used rather than a single boosting parameter
-//' @param boosting_vec_indices IntegerVector, same length as circulation_times, giving the index in the vector \code{mus} that each entry should use as its boosting parameter.
 //' @param boost_before_infection bool to indicate if calculated titre for that time should be before the infection has occurred, used to calculate titre-mediated immunity
 //' @return NumericVector of predicted titres for each entry in measurement_strain_indices
 //' @export
@@ -35,9 +33,7 @@ NumericVector titre_data_fast(const NumericVector &theta,
 			      const IntegerVector &measurement_strain_indices, // For each titre measurement, corresponding entry in antigenic map
 			      const NumericVector &antigenic_map_long,
 			      const NumericVector &antigenic_map_short,
-			      const NumericVector &antigenic_distances,	// Currently not doing anything, but has uses for model extensions		      
-			      const NumericVector &mus,
-			      const IntegerVector &boosting_vec_indices,
+			      const NumericVector &antigenic_distances,	// Currently not doing anything, but has uses for model extensions
 			      bool boost_before_infection = false
 			      ){
   // Dimensions of structures
@@ -82,17 +78,6 @@ NumericVector titre_data_fast(const NumericVector &theta,
   
   // 2. Extract model parameters that are for specific mechanisms
   //    set a boolean flag to choose between model versions
-  
-  // Alternative waning function
-  int wane_type = theta["wane_type"]; 
-  bool alternative_wane_func = wane_type == 1;
-  double kappa;
-  double t_change;
- if (alternative_wane_func){
-    kappa = theta["kappa"];
-    t_change = theta["t_change"];
-  }
- 
   // Titre dependent boosting
   bool titre_dependent_boosting = theta["titre_dependent"] == 1;
   double gradient;
@@ -115,18 +100,8 @@ NumericVector titre_data_fast(const NumericVector &theta,
         sigma_future_mod_l= theta["sigma_future_mod_l"];
     }
     
-        
-  // Strain-specific boosting
-  bool strain_dep_boost = false;
-  if (mus.size() > 1) {
-    strain_dep_boost = true;    
-  }
-  
   // 3. If not using one of the specific mechanism functions, set the base_function flag to TRUE
-  bool base_function = !(alternative_wane_func ||
-			 titre_dependent_boosting ||
-			 complex_cr || 
-			 strain_dep_boost);
+  bool base_function = !(complex_cr ||  titre_dependent_boosting);
 
   // To store calculated titres
   NumericVector predicted_titres(total_titres, min_titre);
@@ -149,70 +124,37 @@ NumericVector titre_data_fast(const NumericVector &theta,
       // Go to sub function - this is where we have options for different models
       // Note, these are in "boosting_functions.cpp"
       if (base_function) {
-	titre_data_fast_individual_base(predicted_titres, mu, mu_short,
-					wane, tau,
-					wane_amounts, seniority_amounts,
-					infection_times,
-					infection_strain_indices_tmp,
-					measurement_strain_indices,
-					sample_times,
-					index_in_samples,
-					end_index_in_samples,
-					start_index_in_data,
-					nrows_per_blood_sample,
-					number_strains,
-					antigenic_map_short,
-					antigenic_map_long,
-					boost_before_infection);
+        	titre_data_fast_individual_base(predicted_titres, mu, mu_short,
+        					wane, tau,
+        					wane_amounts, seniority_amounts,
+        					infection_times,
+        					infection_strain_indices_tmp,
+        					measurement_strain_indices,
+        					sample_times,
+        					index_in_samples,
+        					end_index_in_samples,
+        					start_index_in_data,
+        					nrows_per_blood_sample,
+        					number_strains,
+        					antigenic_map_short,
+        					antigenic_map_long,
+        					boost_before_infection);
       } else if (titre_dependent_boosting) {
-	titre_data_fast_individual_titredep(predicted_titres, mu, mu_short,
-					    wane, tau,
-					    gradient, boost_limit,
-					    infection_times,
-					    infection_strain_indices_tmp,
-					    measurement_strain_indices,
-					    sample_times,
-					    index_in_samples,
-					    end_index_in_samples,
-					    start_index_in_data,
-					    nrows_per_blood_sample,
-					    number_strains,
-					    antigenic_map_short,
-					    antigenic_map_long,
-					    boost_before_infection);	
-      } else if (strain_dep_boost) {
-	titre_data_fast_individual_strain_dependent(predicted_titres, 
-						    mus, boosting_vec_indices, 
-						    mu_short,
-						    wane, tau,
-						    infection_times,
-						    infection_strain_indices_tmp,
-						    measurement_strain_indices,
-						    sample_times,
-						    index_in_samples,
-						    end_index_in_samples,
-						    start_index_in_data,
-						    nrows_per_blood_sample,
-						    number_strains,
-						    antigenic_map_short,
-						    antigenic_map_long,
-						    boost_before_infection);
-      } else if(alternative_wane_func) {
-	titre_data_fast_individual_wane2(predicted_titres, mu, mu_short,
-					 wane, tau,
-					 kappa, t_change,
-					 infection_times,
-					 infection_strain_indices_tmp,
-					 measurement_strain_indices,
-					 sample_times,
-					 index_in_samples,
-					 end_index_in_samples,
-					 start_index_in_data,
-					 nrows_per_blood_sample,
-					 number_strains,
-					 antigenic_map_short,
-					 antigenic_map_long,
-					 boost_before_infection);
+          	titre_data_fast_individual_titredep(predicted_titres, mu, mu_short,
+          					    wane, tau,
+          					    gradient, boost_limit,
+          					    infection_times,
+          					    infection_strain_indices_tmp,
+          					    measurement_strain_indices,
+          					    sample_times,
+          					    index_in_samples,
+          					    end_index_in_samples,
+          					    start_index_in_data,
+          					    nrows_per_blood_sample,
+          					    number_strains,
+          					    antigenic_map_short,
+          					    antigenic_map_long,
+          					    boost_before_infection);	
       } else if(complex_cr) {
           titre_data_fast_individual_complex_cr(predicted_titres, mu, mu_short,
                                           wane, tau,sigma_s, sigma_l,
@@ -231,23 +173,22 @@ NumericVector titre_data_fast(const NumericVector &theta,
                                           antigenic_distances,
                                           boost_before_infection);
       } else {
-	titre_data_fast_individual_base(predicted_titres, mu, mu_short,
-					wane, tau,
-					wane_amounts, seniority_amounts,
-					infection_times,
-					infection_strain_indices_tmp,
-					measurement_strain_indices,
-					sample_times,
-					index_in_samples,
-					end_index_in_samples,
-					start_index_in_data,
-					nrows_per_blood_sample,
-					number_strains,
-					antigenic_map_short,
-					antigenic_map_long,
-					boost_before_infection);
+        	titre_data_fast_individual_base(predicted_titres, mu, mu_short,
+        					wane, tau,
+        					wane_amounts, seniority_amounts,
+        					infection_times,
+        					infection_strain_indices_tmp,
+        					measurement_strain_indices,
+        					sample_times,
+        					index_in_samples,
+        					end_index_in_samples,
+        					start_index_in_data,
+        					nrows_per_blood_sample,
+        					number_strains,
+        					antigenic_map_short,
+        					antigenic_map_long,
+        					boost_before_infection);
       }
-     
     }
   }
   return(predicted_titres);

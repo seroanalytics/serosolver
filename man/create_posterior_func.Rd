@@ -13,11 +13,11 @@ create_posterior_func(
   solve_likelihood = TRUE,
   age_mask = NULL,
   measurement_indices_by_time = NULL,
-  mu_indices = NULL,
   n_alive = NULL,
   function_type = 1,
   titre_before_infection = FALSE,
   data_type = 1,
+  shift_positives_only = FALSE,
   ...
 )
 }
@@ -38,8 +38,6 @@ create_posterior_func(
 
 \item{measurement_indices_by_time}{if not NULL, then use these indices to specify which measurement bias parameter index corresponds to which time}
 
-\item{mu_indices}{if not NULL, then use these indices to specify which boosting parameter index corresponds to which time}
-
 \item{n_alive}{if not NULL, uses this as the number alive in a given year rather than calculating from the ages. This is needed if the number of alive individuals is known, but individual birth dates are not}
 
 \item{function_type}{integer specifying which version of this function to use. Specify 1 to give a posterior solving function; 2 to give the gibbs sampler for infection history proposals; otherwise just solves the titre model and returns predicted titres. NOTE that this is not the same as the attack rate prior argument, \code{version}!}
@@ -47,6 +45,8 @@ create_posterior_func(
 \item{titre_before_infection}{TRUE/FALSE value. If TRUE, solves titre predictions, but gives the predicted titre at a given time point BEFORE any infection during that time occurs.}
 
 \item{data_type}{integer, currently accepting 1 or 2. Set to 1 for discretized, bounded data, or 2 for continuous, bounded data. Note that with 2, MIN_TITRE must be set.}
+
+\item{shift_positives_only}{bool, if TRUE, then only adds the measurement shift to predicted titers > 1. Otherwise, adds the shift to all titres.}
 
 \item{...}{other arguments to pass to the posterior solving function}
 }

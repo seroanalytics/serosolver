@@ -151,8 +151,6 @@ arma::mat inf_hist_prop_prior_v3(arma::mat infection_history_mat,
 //' @param accepted_iter IntegerVector, vector with entry for each individual, storing the number of accepted infection history add/remove proposals for each individual.
 //' @param proposal_swap IntegerVector, vector with entry for each individual, storing the number of proposed infection history swaps
 //' @param accepted_swap IntegerVector, vector with entry for each individual, storing the number of accepted infection history swaps
-//' @param mus NumericVector, if length is greater than one, assumes that strain-specific boosting is used rather than a single boosting parameter
-//' @param boosting_vec_indices IntegerVector, same length as circulation_times, giving the index in the vector \code{mus} that each entry should use as its boosting parameter.
 //' @param total_alive IntegerVector, giving the total number of potential infection events for each group. This only applies to prior version 4. If set to a vector of values -1, then this is ignored.
 //' @param temp double, temperature for parallel tempering MCMC
 //' @param solve_likelihood bool, if FALSE does not solve likelihood when calculating acceptance probability
@@ -200,8 +198,6 @@ List inf_hist_prop_prior_v2_and_v4(const NumericVector &theta, // Model paramete
 				   IntegerMatrix overall_swap_proposals,
 				   IntegerMatrix overall_add_proposals,
 				   const NumericVector time_sample_probs,
-				   const NumericVector &mus,
-				   const IntegerVector &boosting_vec_indices,
 				   const IntegerVector &total_alive,
 				   const double temp=1,
 				   bool solve_likelihood=true,
@@ -211,8 +207,7 @@ List inf_hist_prop_prior_v2_and_v4(const NumericVector &theta, // Model paramete
   // ########################################################################
   // Parameters to control indexing of data
   IntegerMatrix new_infection_history_mat(clone(infection_history_mat)); // Can this be avoided? Create a copy of the inf hist matrix
-//IntegerMatrix new_infection_history_mat(infection_history_mat); // Can this be avoided? Create a copy of the inf hist matrix
-    
+
   int n_titres_total = data.size(); // How many titres are there in total?
   NumericVector predicted_titres(n_titres_total); // Vector to store predicted titres
   NumericVector old_probs = clone(old_probs_1); // Create a copy of the current old probs
@@ -228,7 +223,7 @@ List inf_hist_prop_prior_v2_and_v4(const NumericVector &theta, // Model paramete
   // Using prior version 2 or 4?
   bool prior_on_total = total_alive(0) > 0;
 
-  //Repeat data?
+  // Repeat data?
   bool repeat_data_exist = repeat_indices[0] >= 0;
   
   // These indices allow us to step through the titre data vector
@@ -277,7 +272,6 @@ List inf_hist_prop_prior_v2_and_v4(const NumericVector &theta, // Model paramete
   double n_2; // Number alive in time period 2
   
   double m_1_new, m_1_old,m_2_new,m_2_old;
-  // double n_1, n_2;
   double prior_1_old, prior_2_old, prior_1_new,prior_2_new,prior_new,prior_old;
 
   double rand1; // Store a random number
@@ -286,8 +280,6 @@ List inf_hist_prop_prior_v2_and_v4(const NumericVector &theta, // Model paramete
   double old_prob; // Likelihood of old number
   double new_prob; // Likelihood of new number
   double log_prob; // Likelihood ratio
-
-  //double lbeta_const = R::lbeta(alpha, beta);
 
   // For likelihood
   const double sd = theta["error"];
@@ -312,7 +304,6 @@ List inf_hist_prop_prior_v2_and_v4(const NumericVector &theta, // Model paramete
   double tau = theta["tau"];
   double sigma_s = theta["sigma2"];
   double sigma_l = theta["sigma1"];
-  
 
   // Pre-compute waning and antigenic seniority contributions for speed
   NumericVector wane_amounts(number_strains);
@@ -324,19 +315,8 @@ List inf_hist_prop_prior_v2_and_v4(const NumericVector &theta, // Model paramete
       t = t + 1.0;
   }
   
-  
-  // 2. Extract model parameters that are for specific mechanisms
-  //    set a boolean flag to choose between model versions
-  
-  // Alternative waning function
-  int wane_type = theta["wane_type"]; 
-  bool alternative_wane_func = wane_type == 1;
-  double kappa;
-  double t_change;
-  if (alternative_wane_func){
-    kappa = theta["kappa"];
-    t_change = theta["t_change"];
-  }  
+  // Extract model parameters that are for specific mechanisms
+  //  set a boolean flag to choose between model versions
 
   // Titre dependent boosting
   bool titre_dependent_boosting = theta["titre_dependent"] == 1;
@@ -360,19 +340,8 @@ List inf_hist_prop_prior_v2_and_v4(const NumericVector &theta, // Model paramete
       sigma_future_mod_l= theta["sigma_future_mod_l"];
   }
   
-  
-  // Strain-specific boosting
-  bool strain_dep_boost = false;
-  if (mus.size() > 1) {
-    strain_dep_boost = true;    
-  }
-
- 
   // 3. If not using one of the specific mechanism functions, set the base_function flag to TRUE
-  bool base_function = !(alternative_wane_func ||
-			 titre_dependent_boosting ||
-			 complex_cr || 
-			 strain_dep_boost);
+  bool base_function = !(titre_dependent_boosting || complex_cr);
   
   // 4. Extra titre shifts
   bool use_titre_shifts = false;
@@ -380,15 +349,14 @@ List inf_hist_prop_prior_v2_and_v4(const NumericVector &theta, // Model paramete
   // ########################################################################
   // For each individual
   for(int i = 0; i < n_sampled; ++i){
-     //Rcpp::Rcout << "i: " << i << std::endl << std::endl;
     // Which proposal step to take and do we need to calculate the likelihood    
     swap_step_option = R::runif(0,1) < swap_propn;
     
     // Get index, group and current likelihood of individual under consideration
     indiv = sampled_indivs[i]-1;
-    
     group_id = group_id_vec[indiv];
     old_prob = old_probs_1[indiv];
+    
     // Indexing for data upkeep
     index_in_samples = rows_per_indiv_in_samples[indiv];
     end_index_in_samples = rows_per_indiv_in_samples[indiv+1] - 1;
@@ -405,7 +373,7 @@ List inf_hist_prop_prior_v2_and_v4(const NumericVector &theta, // Model paramete
       // Get this individual's infection history
       new_infection_history = new_infection_history_mat(indiv,_);
     } else {
-      // Sample n_samp_length. Ths will be used to pull years from sample_years
+      // Sample n_samp_length. This will be used to pull years from sample_years
       n_samp_max = std::min(n_years_samp, n_samp_length); // Use the smaller of these two numbers
     }
     samps = seq(0, n_samp_length-1);    // Create vector from 0:length of alive years
@@ -413,10 +381,12 @@ List inf_hist_prop_prior_v2_and_v4(const NumericVector &theta, // Model paramete
     // Extract time sampling probabilities and re-normalise
     samps_shifted = samps + age_mask[indiv] - 1;
     tmp_loc_sample_probs = time_sample_probs[samps_shifted];
+    
     // Re-normalise
     tmp_loc_sample_probs = tmp_loc_sample_probs/sum(tmp_loc_sample_probs);
-    
+    // Randomly choose locations to update
     locs = RcppArmadillo::sample(samps, n_samp_max, FALSE, tmp_loc_sample_probs);
+    
     // For each selected infection history entry
     for(int j = 0; j < n_samp_max; ++j){
       // Assume that proposal hasn't changed likelihood until shown otherwise
@@ -434,7 +404,6 @@ List inf_hist_prop_prior_v2_and_v4(const NumericVector &theta, // Model paramete
       	loc2 = loc1 + floor(R::runif(-swap_distance,swap_distance+1));
       
       	// If we have gone too far left or right, reflect at the boundaries
-      	
       	while(loc2 < 0){
       	  // If gone negative, then reflect to the other side.
       	  // ie. -1 becomes the last entry, -2 becomes the second last entry etc.
@@ -593,39 +562,6 @@ List inf_hist_prop_prior_v2_and_v4(const NumericVector &theta, // Model paramete
       					      antigenic_map_short,
       					      antigenic_map_long,
       					      false);	
-      	} else if (strain_dep_boost) {
-      	  titre_data_fast_individual_strain_dependent(predicted_titres, 
-      						      mus, boosting_vec_indices, 
-      						      mu_short,
-      						      wane, tau,
-      						      infection_times,
-      						      infection_strain_indices_tmp,
-      						      measurement_strain_indices,
-      						      sample_times,
-      						      index_in_samples,
-      						      end_index_in_samples,
-      						      start_index_in_data,
-      						      nrows_per_blood_sample,
-      						      number_strains,
-      						      antigenic_map_short,
-      						      antigenic_map_long,
-      						      false);
-      	} else if(alternative_wane_func){
-      	  titre_data_fast_individual_wane2(predicted_titres, mu, mu_short,
-      					   wane, tau,
-      					   kappa, t_change,
-      					   infection_times,
-      					   infection_strain_indices_tmp,
-      					   measurement_strain_indices,
-      					   sample_times,
-      					   index_in_samples,
-      					   end_index_in_samples,
-      					   start_index_in_data,
-      					   nrows_per_blood_sample,
-      					   number_strains,
-      					   antigenic_map_short,
-      					   antigenic_map_long,
-      					   false);
       	} else if(complex_cr) {
       	    titre_data_fast_individual_complex_cr(predicted_titres, mu, mu_short,
                                                  wane, tau,sigma_s, sigma_l,
@@ -660,7 +596,6 @@ List inf_hist_prop_prior_v2_and_v4(const NumericVector &theta, // Model paramete
       					  antigenic_map_long,
       					  false);
       	}
-    	//}
       	if(use_titre_shifts){
       	  add_measurement_shifts(predicted_titres, titre_shifts, 
       				 start_index_in_data, end_index_in_data, shift_positives_only);

@@ -31,7 +31,7 @@ This vignette demonstrates only how to reproduce the MCMC chains, simulate data,
 `serosolver` may be installed from github using the `devtools` package. There are a number of additional packages that we need for this analysis.
 ```{r message=FALSE, warning=FALSE, r,eval=TRUE}
 # Required to run serosolver
-devtools::install_github("seroanalytics/serosolver")
+devtools::install_github("seroanalytics/serosolver",ref="published")
 library(serosolver)
 library(plyr)
 library(data.table)
@@ -384,7 +384,6 @@ n_indiv <- length(unique(titre_dat$individual))
 
 dat <- simulate_data(par_tab = sim_par_tab, 
                      n_indiv = n_indiv,
-                     buckets = resolution,
                      strain_isolation_times = strain_isolation_times,
                      measured_strains = min(strain_isolation_times),
                      sampling_times = sampling_times, 
@@ -406,7 +405,7 @@ actual_total_infections <- sum(sim_infection_histories)
 ## Red lines show times of infection
 ## Note that x-axis shows quarters (ie. year*4)
 plot_data(sim_titre_dat, sim_infection_histories, strain_isolation_times,
-          n_indivs = 16,study_design="single_strain")
+          n_indivs = 9,study_design="single_strain") + scale_x_continuous(breaks=seq(8035,8050,by=3),labels=seq(1,16,by=3),limits=c(8035,8050))
 
 sim_ages <- dat[["ages"]]
 sim_titre_dat <- merge(sim_titre_dat, sim_ages)

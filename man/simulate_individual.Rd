@@ -11,8 +11,6 @@ simulate_individual(
   sampling_times,
   strain_isolation_times,
   measured_strains,
-  mus = NULL,
-  mu_indices = NULL,
   measurement_bias = NULL,
   measurement_indices = NULL,
   add_noise = TRUE,
@@ -32,10 +30,6 @@ simulate_individual(
 \item{strain_isolation_times}{(optional) If no antigenic map is specified, this argument gives the vector of times at which individuals can be infected}
 
 \item{measured_strains}{vector of which strains had titres measured in `strain_isolation_times`}
-
-\item{mus}{default NULL, optional vector of boosting parameters for each strain}
-
-\item{mu_indices}{default NULL, optional vector giving the index of `mus` that each strain uses the boosting parameter from. eg. if there are 6 circulation years in strain_isolation_times and 3 strain clusters, then this might be c(1,1,2,2,3,3)}
 
 \item{measurement_indices}{default NULL, optional vector giving the index of `measurement_bias` that each strain uses the measurement shift from from. eg. if there's 6 circulation years and 3 strain clusters, then this might be c(1,1,2,2,3,3)}
 

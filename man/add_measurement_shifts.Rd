@@ -8,7 +8,8 @@ add_measurement_shifts(
   predicted_titres,
   to_add,
   start_index_in_data,
-  end_index_in_data
+  end_index_in_data,
+  shift_positives_only
 )
 }
 \arguments{
@@ -17,6 +18,8 @@ add_measurement_shifts(
 \item{start_index_in_data}{int the first index of to_add and predicted_titres to combine}
 
 \item{end_index_in_data}{int the end index of to_add and predicted_titres to combine}
+
+\item{shift_positives_only}{}
 
 \item{predicted_titre}{NumericVector, the predicted titres. Note that this vector will be changed!}
 }

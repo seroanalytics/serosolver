@@ -44,12 +44,11 @@ inf_hist_prop_prior_v2_and_v4(
   overall_swap_proposals,
   overall_add_proposals,
   time_sample_probs,
-  mus,
-  boosting_vec_indices,
   total_alive,
   temp = 1,
   solve_likelihood = TRUE,
-  data_type = 1L
+  data_type = 1L,
+  shift_positives_only = FALSE
 )
 }
 \arguments{
@@ -122,10 +121,6 @@ inf_hist_prop_prior_v2_and_v4(
 \item{proposal_swap}{IntegerVector, vector with entry for each individual, storing the number of proposed infection history swaps}
 
 \item{accepted_swap}{IntegerVector, vector with entry for each individual, storing the number of accepted infection history swaps}
-
-\item{mus}{NumericVector, if length is greater than one, assumes that strain-specific boosting is used rather than a single boosting parameter}
-
-\item{boosting_vec_indices}{IntegerVector, same length as circulation_times, giving the index in the vector \code{mus} that each entry should use as its boosting parameter.}
 
 \item{total_alive}{IntegerVector, giving the total number of potential infection events for each group. This only applies to prior version 4. If set to a vector of values -1, then this is ignored.}
 

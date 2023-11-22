@@ -19,7 +19,6 @@ simulate_data(
   age_max = 80,
   attack_rates,
   repeats = 1,
-  mu_indices = NULL,
   measurement_indices = NULL,
   add_noise = TRUE
 )
@@ -52,8 +51,6 @@ simulate_data(
 \item{attack_rates}{a vector of attack_rates for each entry in strain_isolation_times to be used in the simulation (between 0 and 1)}
 
 \item{repeats}{number of repeat observations for each year}
-
-\item{mu_indices}{default NULL, optional vector giving the index of `mus` that each strain uses the boosting parameter from. eg. if there are 6 circulation years in strain_isolation_times and 3 strain clusters, then this might be c(1,1,2,2,3,3)}
 
 \item{measurement_indices}{default NULL, optional vector giving the index of `measurement_bias` that each strain uses the measurement shift from from. eg. if there's 6 circulation years and 3 strain clusters, then this might be c(1,1,2,2,3,3)}
 

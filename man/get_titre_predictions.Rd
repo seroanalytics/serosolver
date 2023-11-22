@@ -20,7 +20,8 @@ get_titre_predictions(
   expand_titredat = FALSE,
   titre_before_infection = FALSE,
   titres_for_regression = FALSE,
-  data_type = 1
+  data_type = 1,
+  prior_version = 2
 )
 }
 \arguments{

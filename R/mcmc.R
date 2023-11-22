@@ -12,7 +12,6 @@
 #' @param CREATE_POSTERIOR_FUNC Pointer to posterior function used to calculate a likelihood. This will probably be \code{\link{create_posterior_func}}
 #' @param CREATE_PRIOR_FUNC User function of prior for model parameters. Should take parameter values only
 #' @param version which infection history assumption version to use? See \code{\link{describe_priors}} for options. Can be 1, 2, 3 or 4
-#' @param mu_indices optional NULL. For random effects on boosting parameter, mu. Vector of indices of length equal to number of circulation times. If random mus are included in the parameter table, this vector specifies which mu to use for each circulation year. For example, if years 1970-1976 have unique boosting, then mu_indices should be c(1,2,3,4,5,6). If every 3 year block shares has a unique boosting parameter, then this should be c(1,1,1,2,2,2)
 #' @param measurement_indices optional NULL. For measurement bias function. Vector of indices of length equal to number of circulation times. For each year, gives the index of parameters named "rho" that correspond to each time period
 #' @param measurement_random_effects optional FALSE. Boolean indicating if measurement bias is a random effects term. If TRUE adds a component to the posterior calculation that calculates the probability of a set of measurement shifts "rho", given a mean and standard deviation
 #' @param proposal_ratios optional NULL. Can set the relative sampling weights of the infection state times. Should be an integer vector of length matching nrow(antigenic_map). Otherwise, leave as NULL for uniform sampling.
@@ -62,7 +61,6 @@ run_MCMC <- function(par_tab,
                      CREATE_POSTERIOR_FUNC = create_posterior_func,
                      CREATE_PRIOR_FUNC = NULL,
                      version = 1,
-                     mu_indices = NULL,
                      measurement_indices = NULL,
                      measurement_random_effects = FALSE,
                      proposal_ratios = NULL,
@@ -203,10 +201,6 @@ run_MCMC <- function(par_tab,
     if(is.null(proposal_ratios)){
         proposal_ratios <- rep(1, length(strain_isolation_times))
     }
-        
-    ##histadd_overall <- integer(n_indiv)
-    ##histmove_overall <- integer(n_indiv)
-
     n_infs_vec <- rep(n_infs, n_indiv) # How many infection history moves to make with each proposal
     move_sizes <- rep(move_size, n_indiv) # How many years to move in smart proposal step
 ###############
@@ -241,7 +235,6 @@ run_MCMC <- function(par_tab,
     solve_likelihood,
     age_mask,
     measurement_indices_by_time = measurement_indices,
-    mu_indices = mu_indices,
     n_alive = n_alive,
     function_type = 1,
     ...
@@ -261,19 +254,12 @@ run_MCMC <- function(par_tab,
       solve_likelihood,
       age_mask,
       measurement_indices_by_time = measurement_indices,
-      mu_indices = mu_indices,
       n_alive = n_alive,
       function_type = 2,
       ...
     ))
   }
-    ## If using random effects on mu, need to include hyperprior term on mu
-    ## We can't do this in the main posterior function, because this term
-    ## applies to the overall posterior whereas the main posterior function
-    ## returns each individual's posterior
-    if (!is.null(mu_indices)) {
-        prior_mu <- create_prior_mu(par_tab)
-    }
+  
     if (measurement_random_effects) {
         prior_shifts <- create_prob_shifts(par_tab)
     }
@@ -324,7 +310,6 @@ run_MCMC <- function(par_tab,
       }
     }
     if (!is.null(CREATE_PRIOR_FUNC)) prior_probab <- prior_probab + prior_func(prior_pars)
-    if (!is.null(mu_indices)) prior_probab <- prior_probab + prior_mu(prior_pars)
     if (measurement_random_effects) prior_probab <- prior_probab + prior_shifts(prior_pars)
     prior_probab
   }
@@ -477,7 +462,6 @@ run_MCMC <- function(par_tab,
         } else if (hist_proposal == 2) {
             ## Swap entire contents or propose new
             if (inf_swap_prob > hist_switch_prob) {
-                #print(paste0("Sum infection histories before: ", sum(infection_histories)))
                 prop_gibbs <- proposal_gibbs(
                     proposal,
                     infection_histories,
@@ -495,14 +479,12 @@ run_MCMC <- function(par_tab,
                     temp,
                     propose_from_prior
                 )
-                #print(paste0("Sum infection histories after: ", sum(infection_histories)))
-                      
+
                 histiter <- prop_gibbs$proposal_iter
                 histaccepted <- prop_gibbs$accepted_iter
                 new_indiv_likelihoods <- prop_gibbs$old_probs
                 new_infection_histories <- prop_gibbs$new_infection_history
-                #print(paste0("Sum new infection histories after: ", sum(new_infection_histories)))
-                
+
                 new_likelihoods_calculated <- TRUE
 
                 overall_swap_proposals <- prop_gibbs$overall_swap_proposals
@@ -551,12 +533,6 @@ run_MCMC <- function(par_tab,
             new_indiv_likelihoods <- new_post[[1]] / temp
             new_indiv_priors <- new_post[[2]]
         }
-        #n_infections <- sum_infections_by_group(new_infection_histories, group_ids_vec, n_groups)
-        #if (any(n_infections > n_alive)){
-        #    print("error 2 -- more infections than there are individuals alive")
-         #   browser()
-         #   
-        #}
         
         new_indiv_posteriors <- new_indiv_likelihoods + new_indiv_priors
         new_total_likelihood <- sum(new_indiv_likelihoods)

@@ -106,60 +106,6 @@ calc_phi_loc_probs_indiv <- function(phis, group_probs, infection_history, age_m
   lik
 }
 
-
-#' Calculate FOI from spline - INACTIVE
-#'
-#' Version of FOI prior that calculates a seasonal spline such that the FOI in a given time point (month) comes from this spline term
-#' @inheritParams calc_phi_probs
-#' @param foi vector of force of infections per year
-#' @param knots vector of knots for the spline
-#' @param theta vector of theta parameters for spline
-#' @return a vector of log probabilities for each individual
-#' @family priors
-calc_phi_probs_spline <- function(foi, knots, theta, infection_history, age_mask) {
-  phis <- generate_phis(foi, knots, theta, length(foi), 12)
-  lik <- numeric(nrow(infection_history))
-  for (i in 1:ncol(infection_history)) {
-    lik <- lik + infection_history[, i] * log(phis[i]) + (1 - infection_history[, i]) * log(phis[i]) + log(as.numeric(age_mask <= i)) + log(as.numeric(strain_mask >= i))
-  }
-  lik
-}
-
-#' Generate FOI phis - INACTIVE
-#'
-#' Calculates the seasonal spline for \code{\link{calc_phi_probs_spline}}
-#' @inheritParams calc_phi_probs_spline
-#' @param n_years number of years to calculate
-#' @param buckets number of buckets per year (12 for monthly, 1 for annual)
-#' @param degree degree of the spline
-#' @return a vector of FOIs for each time point
-generate_phis <- function(foi, knots, theta, n_years, buckets, degree = 2) {
-  x <- seq(0, buckets - 1, by = 1) / buckets
-  n_knots <- length(knots) + degree + 1
-  all_dat <- NULL
-  index <- 1
-  tmp <- gen_spline_y(x, knots, degree, theta)
-  tmp <- tmp / sum(tmp)
-  all_dat <- numeric(length(tmp) * length(foi))
-  for (i in 1:n_years) {
-    all_dat[index:(index + length(tmp) - 1)] <- tmp * foi[i]
-    index <- index + length(tmp)
-  }
-  all_dat
-}
-
-#' Generates a spline for \code{\link{generate_phis}} - INACTIVE
-gen_spline_y <- function(x, knots, degree, theta, intercept = TRUE) {
-  basis <- bs(
-    x = x, knots = knots, degree = degree,
-    Boundary.knots = c(0, 1), intercept = intercept
-  )
-
-  y.spline <- basis %*% theta
-  return(as.vector(y.spline))
-}
-
-
 #' Prior on measurement shifts
 #'
 #' Assumes measurement shifts are drawn from a normal distribution (random effects) with given standard deviation and mean. Code is commented out to assume log normally distributied
@@ -171,9 +117,7 @@ gen_spline_y <- function(x, knots, degree, theta, intercept = TRUE) {
 prob_shifts <- function(rhos, pars) {
   rho_mean <- pars["rho_mean"]
   rho_sd <- pars["rho_sd"]
-  ## l_mean <- log(mu_mean) - (mu_sd^2)/2
   return(sum(dnorm(rhos, rho_mean, rho_sd, log = TRUE)))
-  # return(sum(dlnorm(mus, l_mean, mu_sd, log=TRUE)))
 }
 
 #' Measurement shift creation
@@ -197,50 +141,6 @@ create_prob_shifts <- function(par_tab) {
   f
 }
 
-#' Create strain specific bias prior
-#'
-#' Creates a function that can be used to easily solve the prior on the strain-specific boosting parameters (normal random effects)
-#' @inheritParams create_prob_shifts
-#' @return a function pointer
-#' @family priors
-#' @export
-create_prior_mu <- function(par_tab) {
-  ## Extract parameter type indices from par_tab, to split up
-  ## similar parameters in model solving functions
-  option_indices <- which(par_tab$type == 0)
-  theta_indices <- which(par_tab$type %in% c(0, 1))
-  phi_indices <- which(par_tab$type == 2)
-  measurement_indices_par_tab <- which(par_tab$type == 3)
-  weights_indices <- which(par_tab$type == 4) ## For functional form version
-  knot_indices <- which(par_tab$type == 5)
-  mu_indices_par_tab <- which(par_tab$type == 6)
-
-  par_names_theta <- par_tab[theta_indices, "names"]
-
-  ## Expect to only take the vector of parameters
-  f <- function(pars) {
-    mus <- pars[mu_indices_par_tab]
-    pars <- pars[theta_indices]
-    names(pars) <- par_names_theta
-    return(prob_mus(mus, pars))
-  }
-}
-
-#' Prior probability of strain specific boosting
-#'
-#' Function find the prior probability of a set of boosting parameters assuming that boosting is drawn from a normal distribution (random effects)
-#' @param mus the vector of boosting parameters
-#' @param pars the vector of other model parameters including mu_mean and mu_sd
-#' @return a single log prior probability
-#' @family priors
-#' @export
-prob_mus <- function(mus, pars) {
-  mu_mean <- pars["mu_mean"]
-  mu_sd <- pars["mu_sd"]
-  return(sum(dnorm(mus, mu_mean, mu_sd, log = TRUE)))
-}
-
-
 #' Posterior function pointer
 #'
 #' Takes all of the input data/parameters and returns a function pointer. This function finds the posterior for a given set of input parameters (theta) and infection histories without needing to pass the data set back and forth. No example is provided for function_type=2, as this should only be called within \code{\link{run_MCMC}}
@@ -252,7 +152,6 @@ prob_mus <- function(mus, pars) {
 #' @param solve_likelihood usually set to TRUE. If FALSE, does not solve the likelihood and instead just samples/solves based on the model prior
 #' @param age_mask see \code{\link{create_age_mask}} - a vector with one entry for each individual specifying the first epoch of circulation in which an individual could have been exposed
 #' @param measurement_indices_by_time if not NULL, then use these indices to specify which measurement bias parameter index corresponds to which time
-#' @param mu_indices if not NULL, then use these indices to specify which boosting parameter index corresponds to which time
 #' @param n_alive if not NULL, uses this as the number alive in a given year rather than calculating from the ages. This is needed if the number of alive individuals is known, but individual birth dates are not
 #' @param function_type integer specifying which version of this function to use. Specify 1 to give a posterior solving function; 2 to give the gibbs sampler for infection history proposals; otherwise just solves the titre model and returns predicted titres. NOTE that this is not the same as the attack rate prior argument, \code{version}!
 #' @param titre_before_infection TRUE/FALSE value. If TRUE, solves titre predictions, but gives the predicted titre at a given time point BEFORE any infection during that time occurs.
@@ -285,7 +184,6 @@ create_posterior_func <- function(par_tab,
                                   solve_likelihood = TRUE,
                                   age_mask = NULL,
                                   measurement_indices_by_time = NULL,
-                                  mu_indices = NULL,
                                   n_alive = NULL,
                                   function_type = 1,
                                   titre_before_infection=FALSE,
@@ -358,10 +256,7 @@ create_posterior_func <- function(par_tab,
     theta_indices <- which(par_tab$type %in% c(0, 1))
     phi_indices <- which(par_tab$type == 2)
     measurement_indices_par_tab <- which(par_tab$type == 3)
-    weights_indices <- which(par_tab$type == 4) ## For functional form version of FOI
-    knot_indices <- which(par_tab$type == 5) ## For functional form version of FOI
-    mu_indices_par_tab <- which(par_tab$type == 6)
-    
+
     ## TEMP -- testing the visit-specific measurement offsets
     #measurement_indices_visit_par_tab <- which(par_tab$type == 9)
 #########################################################
@@ -381,13 +276,11 @@ create_posterior_func <- function(par_tab,
 
     ## Find which options are being used in advance for speed
     explicit_phi <- (length(phi_indices) > 0) ## Explicit prob of infection term
-    spline_phi <- (length(knot_indices) > 0)
     use_measurement_bias <- (length(measurement_indices_par_tab) > 0) & !is.null(measurement_indices_by_time)
 
     titre_shifts <- c(0)
     expected_indices <- NULL
     measurement_bias <- NULL
-    use_strain_dependent <- (length(mu_indices) > 0) & !is.null(mu_indices)
     additional_arguments <- NULL
 
     repeat_data_exist <- nrow(titre_dat_repeats) > 0
@@ -398,13 +291,6 @@ create_posterior_func <- function(par_tab,
         expected_indices_visit <- titre_dat_unique$visit
     } else {
         expected_indices <- c(-1)
-    }
-
-    if (use_strain_dependent) {
-        boosting_vec_indices <- mu_indices - 1
-        mus <- rep(2, length(strain_isolation_times))
-    } else {
-        boosting_vec_indices <- mus <- c(-1)
     }
 
     if (!repeat_data_exist) {
@@ -430,17 +316,13 @@ create_posterior_func <- function(par_tab,
             theta <- pars[theta_indices]
             names(theta) <- par_names_theta
 
-            if (use_strain_dependent) {
-                mus <- pars[mu_indices_par_tab]
-            }
-
             antigenic_map_long <- create_cross_reactivity_vector(
                 antigenic_map_melted,
                 theta["sigma1"]
             )
             antigenic_map_short <- create_cross_reactivity_vector(
                 antigenic_map_melted,
-                theta["sigma2"]
+                theta["sigma2"]*theta["sigma1"]
             )
 
             ## Calculate titres for measured data
@@ -450,8 +332,7 @@ create_posterior_func <- function(par_tab,
                 nrows_per_blood_sample, measured_strain_indices,
                 antigenic_map_long,
                 antigenic_map_short,
-                antigenic_distances,
-                mus, boosting_vec_indices
+                antigenic_distances
             )
             if (use_measurement_bias) {
                 measurement_bias <- pars[measurement_indices_par_tab]
@@ -473,21 +354,11 @@ create_posterior_func <- function(par_tab,
             transmission_prob <- rep(0, n_indiv)
             if (explicit_phi) {
                 phis <- pars[phi_indices]
-                if (spline_phi) {
-                    ## If using spline term for FOI, add here
-                    weights <- pars[weights_indices]
-                    knots <- pars[knot_indices]
-                    liks <- liks + calc_phi_probs_spline(
-                                       phis, knots, weights,
-                                       infection_history_mat, age_mask
-                                   )
-                } else {
-                    ## Or the baseline transmission likelihood contribution
-                    transmission_prob <- calc_phi_probs_indiv(
-                        phis, infection_history_mat,
-                        age_mask, strain_mask
-                    )
-                }
+                ## Or the baseline transmission likelihood contribution
+                transmission_prob <- calc_phi_probs_indiv(
+                    phis, infection_history_mat,
+                    age_mask, strain_mask
+                )
             }
             if (solve_likelihood) {
                 ## Calculate likelihood for unique titres and repeat data
@@ -535,24 +406,14 @@ create_posterior_func <- function(par_tab,
             theta <- pars[theta_indices]
             names(theta) <- par_names_theta
 
-            ## Pass strain-dependent boosting down
-            if (use_strain_dependent) {
-                mus <- pars[mu_indices_par_tab]
-            }
+         
             if (use_measurement_bias) {
                 measurement_bias <- pars[measurement_indices_par_tab]
                 titre_shifts <- measurement_bias[expected_indices]
-                
-                ## FINDME - Measurement bias from visit
-                #measurement_bias_visit <- pars[measurement_indices_visit_par_tab]
-                #titre_shifts2 <- measurement_bias_visit[expected_indices_visit]
-                
-                #titre_shifts <- titre_shifts + titre_shifts2
-                
             }
             ## Work out short and long term boosting cross reactivity - C++ function
             antigenic_map_long <- create_cross_reactivity_vector(antigenic_map_melted, theta["sigma1"])
-            antigenic_map_short <- create_cross_reactivity_vector(antigenic_map_melted, theta["sigma2"])
+            antigenic_map_short <- create_cross_reactivity_vector(antigenic_map_melted, theta["sigma2"]*theta["sigma1"])
 
             n_infections <- sum_infections_by_group(infection_history_mat, group_id_vec, n_groups)
             if (version == 4) n_infected_group <- rowSums(n_infections)
@@ -597,8 +458,6 @@ create_posterior_func <- function(par_tab,
                 overall_swap_proposals,
                 overall_add_proposals,
                 proposal_ratios,
-                mus,
-                boosting_vec_indices,
                 n_alive_total,
                 temp,
                 solve_likelihood,
@@ -614,13 +473,8 @@ create_posterior_func <- function(par_tab,
             theta <- pars[theta_indices]
             names(theta) <- par_names_theta
 
-            ## Pass strain-dependent boosting down
-            if (use_strain_dependent) {
-                mus <- pars[mu_indices_par_tab]
-            }
-
             antigenic_map_long <- create_cross_reactivity_vector(antigenic_map_melted, theta["sigma1"])
-            antigenic_map_short <- create_cross_reactivity_vector(antigenic_map_melted, theta["sigma2"])
+            antigenic_map_short <- create_cross_reactivity_vector(antigenic_map_melted, theta["sigma2"]*theta["sigma1"])
 
             y_new <- titre_data_fast(
                 theta, infection_history_mat, strain_isolation_times, infection_strain_indices,
@@ -628,19 +482,12 @@ create_posterior_func <- function(par_tab,
                 nrows_per_blood_sample, measured_strain_indices, antigenic_map_long,
                 antigenic_map_short,
                 antigenic_distances,
-                mus, boosting_vec_indices,
                 titre_before_infection
             )
             if (use_measurement_bias) {
                 measurement_bias <- pars[measurement_indices_par_tab]
                 titre_shifts <- measurement_bias[expected_indices]
-                
-                ## FINDME - Measurement bias from visit
-                #measurement_bias_visit <- pars[measurement_indices_visit_par_tab]
-                #titre_shifts2 <- measurement_bias_visit[expected_indices_visit]
-                
-                #titre_shifts <- titre_shifts + titre_shifts2
-                
+              
                 if(shift_positives_only){
                   y_new[y_new > 1] <- y_new[y_new > 1] + titre_shifts[y_new > 1]
                 } else {

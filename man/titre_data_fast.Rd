@@ -17,8 +17,6 @@ titre_data_fast(
   antigenic_map_long,
   antigenic_map_short,
   antigenic_distances,
-  mus,
-  boosting_vec_indices,
   boost_before_infection = FALSE
 )
 }
@@ -46,10 +44,6 @@ titre_data_fast(
 \item{antigenic_map_short}{NumericVector, the collapsed cross reactivity map for short term boosting, after multiplying by sigma2, see \code{\link{create_cross_reactivity_vector}}}
 
 \item{antigenic_distances}{NumericVector, the collapsed cross reactivity map giving euclidean antigenic distances, see \code{\link{create_cross_reactivity_vector}}}
-
-\item{mus}{NumericVector, if length is greater than one, assumes that strain-specific boosting is used rather than a single boosting parameter}
-
-\item{boosting_vec_indices}{IntegerVector, same length as circulation_times, giving the index in the vector \code{mus} that each entry should use as its boosting parameter.}
 
 \item{boost_before_infection}{bool to indicate if calculated titre for that time should be before the infection has occurred, used to calculate titre-mediated immunity}
 }
