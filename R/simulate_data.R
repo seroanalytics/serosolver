@@ -5,16 +5,16 @@
 #' @param group which group index to give this simulated data
 #' @param n_indiv number of individuals to simulate
 #' @param antigenic_map (optional) A data frame of antigenic x and y coordinates. Must have column names: x_coord; y_coord; inf_times. See \code{\link{example_antigenic_map}}
-#' @param strain_isolation_times (optional) If no antigenic map is specified, this argument gives the vector of times at which individuals can be infected
-#' @param measured_strains vector of strains that have titres measured matching entries in strain_isolation_times
-#' @param sampling_times possible sampling times for the individuals, matching entries in strain_isolation_times
+#' @param possible_exposure_times (optional) If no antigenic map is specified, this argument gives the vector of times at which individuals can be infected
+#' @param measured_strains vector of strains that have titres measured matching entries in possible_exposure_times
+#' @param sampling_times possible sampling times for the individuals, matching entries in possible_exposure_times
 #' @param nsamps the number of samples each individual has (eg. nsamps=2 gives each individual 2 random sampling times from sampling_times)
 #' @param titre_sensoring numeric between 0 and 1, used to censor a proportion of titre observations at random (MAR)
 #' @param age_min simulated age minimum
 #' @param age_max simulated age maximum
-#' @param attack_rates a vector of attack_rates for each entry in strain_isolation_times to be used in the simulation (between 0 and 1)
+#' @param attack_rates a vector of attack_rates for each entry in possible_exposure_times to be used in the simulation (between 0 and 1)
 #' @param repeats number of repeat observations for each year
-#' @param mu_indices default NULL, optional vector giving the index of `mus` that each strain uses the boosting parameter from. eg. if there are 6 circulation years in strain_isolation_times and 3 strain clusters, then this might be c(1,1,2,2,3,3)
+#' @param mu_indices default NULL, optional vector giving the index of `mus` that each strain uses the boosting parameter from. eg. if there are 6 circulation years in possible_exposure_times and 3 strain clusters, then this might be c(1,1,2,2,3,3)
 #' @param measurement_indices default NULL, optional vector giving the index of `measurement_bias` that each strain uses the measurement shift from from. eg. if there's 6 circulation years and 3 strain clusters, then this might be c(1,1,2,2,3,3)
 #' @param obs_dist if not NULL, then a vector of data types to use for each obs_type
 #' @return a list with: 1) the data frame of titre data as returned by \code{\link{simulate_group}}; 2) a matrix of infection histories as returned by \code{\link{simulate_infection_histories}}; 3) a vector of ages
@@ -24,13 +24,13 @@
 #' data(example_antigenic_map)
 #'
 #' ## Times at which individuals can be infected
-#' strain_isolation_times <- example_antigenic_map$inf_times
+#' possible_exposure_times <- example_antigenic_map$inf_times
 #' ## Simulate some random attack rates between 0 and 0.2
-#' attack_rates <- runif(length(strain_isolation_times), 0, 0.2)
+#' attack_rates <- runif(length(possible_exposure_times), 0, 0.2)
 #' ## Vector giving the circulation times of measured strains
-#' sampled_viruses <- seq(min(strain_isolation_times), max(strain_isolation_times), by=2)
+#' sampled_viruses <- seq(min(possible_exposure_times), max(possible_exposure_times), by=2)
 #' all_simulated_data <- simulate_data(par_tab=example_par_tab, group=1, n_indiv=50,    
-#'                                    strain_isolation_times=strain_isolation_times,
+#'                                    possible_exposure_times=possible_exposure_times,
 #'                                    measured_strains=sampled_viruses,
 #'                                    sampling_times=2010:2015, nsamps=2, antigenic_map=example_antigenic_map, 
 #'                                    age_min=10,age_max=75,
@@ -42,7 +42,7 @@ simulate_data <- function(par_tab,
                           group = 1,
                           n_indiv = 100,
                           antigenic_map = NULL,
-                          strain_isolation_times = NULL,
+                          possible_exposure_times = NULL,
                           measured_strains = NULL,
                           sampling_times,
                           nsamps = 2,
@@ -73,11 +73,11 @@ simulate_data <- function(par_tab,
     #########################################################
     ## Check if an antigenic map is provided. If not, then create a dummy map where all pathogens have the same position on the map
     if (!is.null(antigenic_map)) {
-        strain_isolation_times_tmp <- unique(antigenic_map$inf_times) # How many strains are we testing against and what time did they circulate
-        if(!is.null(strain_isolation_times) & !identical(strain_isolation_times, strain_isolation_times_tmp)){
-            message(cat("Warning: provided strain_isolation_times argument does not match entries in the antigenic map. Please make sure that there is an entry in the antigenic map for each possible circulation time. Using the antigenic map times."))
+        possible_exposure_times_tmp <- unique(antigenic_map$inf_times) # How many strains are we testing against and what time did they circulate
+        if(!is.null(possible_exposure_times) & !identical(possible_exposure_times, possible_exposure_times_tmp)){
+            message(cat("Warning: provided possible_exposure_times argument does not match entries in the antigenic map. Please make sure that there is an entry in the antigenic map for each possible circulation time. Using the antigenic map times."))
         }
-        strain_isolation_times <- strain_isolation_times_tmp
+        possible_exposure_times <- possible_exposure_times_tmp
         
         ## If no observation types assumed, set all to 1.
         if (!("obs_type" %in% colnames(antigenic_map))) {
@@ -92,12 +92,12 @@ simulate_data <- function(par_tab,
     } else {
         ## Create a dummy map with entries for each observation type
         antigenic_map <- data.frame("x_coord"=1,"y_coord"=1,
-                                    "inf_times"=rep(strain_isolation_times, n_obs_types), 
-                                    "obs_type"=rep(unique_obs_types,each=length(strain_isolation_times)))
+                                    "inf_times"=rep(possible_exposure_times, n_obs_types), 
+                                    "obs_type"=rep(unique_obs_types,each=length(possible_exposure_times)))
     }
     
     ## Check attack_rates entry
-    check_attack_rates(attack_rates, strain_isolation_times)
+    check_attack_rates(attack_rates, possible_exposure_times)
 
     message("Simulating data\n")    
 
@@ -147,7 +147,7 @@ simulate_data <- function(par_tab,
     }
     
     if (is.null(measured_strains)) {
-        measured_strains <- strain_isolation_times
+        measured_strains <- possible_exposure_times
     }
     
     ## Simulate ages, where "age" is the age at the time of the last sample
@@ -155,7 +155,7 @@ simulate_data <- function(par_tab,
     
     ## Simulate infection histories
     tmp <- simulate_infection_histories(
-        attack_rates, strain_isolation_times,
+        attack_rates, possible_exposure_times,
         sampling_times, DOBs
     )
     infection_history <- tmp[[1]]
@@ -169,7 +169,7 @@ simulate_data <- function(par_tab,
         unique_obs_types,
         
         infection_history,
-        strain_isolation_times, 
+        possible_exposure_times, 
         measured_strains,
         sampling_times,
         nsamps, 
@@ -186,8 +186,8 @@ simulate_data <- function(par_tab,
     infection_history <- sim_dat$infection_history
 
     ## Need to update attack rate estimate based on strain mask, which is corrected in simulate_group
-    age_mask <- create_age_mask(DOBs, strain_isolation_times)
-    strain_mask <- create_strain_mask(y, strain_isolation_times)
+    age_mask <- create_age_mask(DOBs, possible_exposure_times)
+    strain_mask <- create_strain_mask(y, possible_exposure_times)
     ## Can't be exposed or infected after the last sampling time
     for (i in 1:nrow(infection_history)) {
         if (strain_mask[i] < ncol(infection_history)) {
@@ -195,7 +195,7 @@ simulate_data <- function(par_tab,
         }
     }
 
-    n_alive <- sapply(seq(1, length(strain_isolation_times)), function(x)
+    n_alive <- sapply(seq(1, length(possible_exposure_times)), function(x)
         sum(age_mask <= x))
     ARs <- colSums(infection_history) / n_alive
 
@@ -204,7 +204,7 @@ simulate_data <- function(par_tab,
     y$group <- group
 
     ages <- data.frame("individual" = 1:n_indiv, "DOB" = DOBs)
-    attack_rates <- data.frame("year" = strain_isolation_times, "AR" = ARs)
+    attack_rates <- data.frame("year" = possible_exposure_times, "AR" = ARs)
     return(list(
         data = y, infection_histories = infection_history,
         ages = ages, attack_rates = attack_rates, phis = attack_rates
@@ -215,14 +215,14 @@ simulate_data <- function(par_tab,
 
 #' Simulate group data
 #'
-#' Simulates a full set of titre data for n_indiv individuals with known theta and infection_histories. Each individual gets nsamps random samples from sampleTimes, and infections can occur at any of strain_isolation_times
+#' Simulates a full set of titre data for n_indiv individuals with known theta and infection_histories. Each individual gets nsamps random samples from sampleTimes, and infections can occur at any of possible_exposure_times
 #' @inheritParams simulate_data
 #' @param theta the named parameter vector
 #' @param theta_indices_unique
 #' @param unique_obs_types
 #' @param infection_histories the matrix of 1s and 0s giving presence/absence of infections for each individual
 #' @param mus default NULL, optional vector of boosting parameters for each strain
-#' @param DOBs vector giving the time period of birth (entries corresponding to `strain_isolation_times`)
+#' @param DOBs vector giving the time period of birth (entries corresponding to `possible_exposure_times`)
 #' @return a data frame with columns individual, samples, virus and titre of simulated data
 #' @family simulation_functions
 #' @export
@@ -232,7 +232,7 @@ simulate_group <- function(n_indiv,
                            theta_indices_unique,
                            unique_obs_types,
                            infection_histories,
-                           strain_isolation_times,
+                           possible_exposure_times,
                            measured_strains,
                            sample_times,
                            nsamps,
@@ -246,8 +246,8 @@ simulate_group <- function(n_indiv,
                            DOBs=NULL) {
     n_obs_types <- length(unique_obs_types)
   ## Create antigenic map for short and long term boosting
-    antigenic_map_long <- matrix(nrow=length(strain_isolation_times)^2, ncol=n_obs_types)
-    antigenic_map_short <- matrix(nrow=length(strain_isolation_times)^2, ncol=n_obs_types)
+    antigenic_map_long <- matrix(nrow=length(possible_exposure_times)^2, ncol=n_obs_types)
+    antigenic_map_short <- matrix(nrow=length(possible_exposure_times)^2, ncol=n_obs_types)
     
     sigma1s <- theta[which(names(theta)=="sigma1")]
     sigma2s <- theta[which(names(theta)=="sigma2")]
@@ -277,7 +277,7 @@ simulate_group <- function(n_indiv,
     }
 
     ## Individuals can't be infected after their latest sampling time
-    strain_mask <- max(which(max(samps) >= strain_isolation_times))
+    strain_mask <- max(which(max(samps) >= possible_exposure_times))
     if (strain_mask < ncol(infection_histories)) {
       infection_histories[i, (strain_mask + 1):ncol(infection_histories)] <- 0
     }
@@ -290,7 +290,7 @@ simulate_group <- function(n_indiv,
       antigenic_distances,
       unique_obs_types,
       samps,
-      strain_isolation_times,
+      possible_exposure_times,
       measured_strains,
       mus, mu_indices,
       measurement_bias,
@@ -315,7 +315,7 @@ simulate_group <- function(n_indiv,
 #' @param antigenic_map_short the short term antigenic cross reactivity map generated from \code{\link{create_cross_reactivity_vector}}
 #' @param antigenic_distances (optional) same dimensions as antigenic_map_long and antigenic_map_short, but gives the raw euclidean antigenic distances
 #' @param sampling_times vector of times at which blood samples were taken
-#' @param measured_strains vector of which strains had titres measured in `strain_isolation_times`
+#' @param measured_strains vector of which strains had titres measured in `possible_exposure_times`
 #' @return a data frame with columns samples, virus and titre of simulated data
 #' @family simulation_functions
 #' @export
@@ -327,7 +327,7 @@ simulate_individual_faster <- function(theta,
                                        antigenic_distances=NULL,
                                        unique_obs_types=seq_len(ncol(antigenic_map_long)),
                                        sampling_times,
-                                       strain_isolation_times,
+                                       possible_exposure_times,
                                        measured_strains,
                                        mus = NULL, mu_indices = NULL,
                                        measurement_bias = NULL, measurement_indices = NULL,
@@ -364,13 +364,13 @@ simulate_individual_faster <- function(theta,
   sample_data_start <- cumsum(c(0, rep(n_samps,n_obs_types)))
 
   ## Entries in the antigenic map
-  strain_indices <- match(strain_isolation_times, strain_isolation_times) - 1
+  strain_indices <- match(possible_exposure_times, possible_exposure_times) - 1
 
   ## Observation types to match sample times
   type_data_start <- c(0,n_obs_types)
   
   ## Entries in the antigenic map for each measured strain
-  measured_strain_indices <- match(rep(rep(measured_strains, n_samps), n_obs_types), strain_isolation_times) - 1
+  measured_strain_indices <- match(rep(rep(measured_strains, n_samps), n_obs_types), possible_exposure_times) - 1
   dat <- matrix(nrow = length(measured_strain_indices) * repeats, ncol = 4) ## To store simulated data
   ## Go into C++ code to solve titre model
   titres <- titre_data_fast(
@@ -378,7 +378,7 @@ simulate_individual_faster <- function(theta,
     unique_theta_indices,
     unique_obs_types,
     inf_hist, 
-    strain_isolation_times, 
+    possible_exposure_times, 
     strain_indices,
     sampling_times_long, 
     type_data_start=type_data_start,
@@ -434,7 +434,7 @@ simulate_individual_faster <- function(theta,
 #' @inheritParams simulate_group
 #' @param infection_history the vector of 1s and 0s giving presence/absence of infections
 #' @param sampling_times vector of times at which blood samples were taken
-#' @param measured_strains vector of which strains had titres measured in `strain_isolation_times`
+#' @param measured_strains vector of which strains had titres measured in `possible_exposure_times`
 #' @return a data frame with columns samples, virus and titre of simulated data
 #' @family simulation_functions
 #' @export
@@ -444,14 +444,14 @@ simulate_individual_faster <- function(theta,
 #' infection_history <- sample(c(0,1),size=nrow(example_antigenic_map), replace=TRUE,prob=c(0.9,0.1))
 #' pars <- example_par_tab$values
 #' names(pars) <- example_par_tab$names
-#' strain_isolation_times <- example_antigenic_map$inf_times
+#' possible_exposure_times <- example_antigenic_map$inf_times
 #' y <- simulate_individual(pars, infection_history, example_antigenic_map, 2009, 
-#'                          strain_isolation_times,strain_isolation_times,add_noise=FALSE)
+#'                          possible_exposure_times,possible_exposure_times,add_noise=FALSE)
 simulate_individual <- function(theta,
                                 infection_history,
                                 antigenic_map,
                                 sampling_times,
-                                strain_isolation_times,
+                                possible_exposure_times,
                                 measured_strains,
                                 mus = NULL, mu_indices = NULL,
                                 measurement_bias = NULL, measurement_indices = NULL,
@@ -481,15 +481,15 @@ simulate_individual <- function(theta,
   rows_per_indiv <- c(0, n_samps)
 
   ## Entries in the antigenic map
-  strain_indices <- match(strain_isolation_times, strain_isolation_times) - 1
+  strain_indices <- match(possible_exposure_times, possible_exposure_times) - 1
 
   ## Entries in the antigenic map for each measured strain
-  measured_strain_indices <- match(rep(measured_strains, n_samps), strain_isolation_times) - 1
+  measured_strain_indices <- match(rep(measured_strains, n_samps), possible_exposure_times) - 1
   dat <- matrix(nrow = length(measured_strain_indices) * repeats, ncol = 4) ## To store simulated data
 
   ## Go into C++ code to solve titre model
   titres <- titre_data_fast(
-    theta, inf_hist, strain_isolation_times, strain_indices,
+    theta, inf_hist, possible_exposure_times, strain_indices,
     sampling_times, rows_per_indiv, cumu_rows,
     rows_per_blood, measured_strain_indices,
     antigenic_map_long, antigenic_map_short,
@@ -582,20 +582,20 @@ simulate_attack_rates <- function(infection_years, mean_par = 0.15, sd_par = 0.5
 #'
 #' Given a vector of infection probabilities and potential infection times, simulates infections for each element of ages (ie. each element is an individual age. Only adds infections for alive individuals)
 #' @param p_inf a vector of attack rates (infection probabilities) for each year
-#' @param strain_isolation_times the vector of possible infection times
+#' @param possible_exposure_times the vector of possible infection times
 #' @param sampling_times vector of potential sampling times
 #' @param DOBs a vector of ages for each individual
 #' @return a list with a matrix of infection histories for each individual in ages and the true attack rate for each epoch
 #' @family simulation_functions
 #' @examples
 #' p_inf <- runif(40,0.1,0.4)
-#' strain_isolation_times <- seq_len(40) + 1967
+#' possible_exposure_times <- seq_len(40) + 1967
 #' n_indivs <- 100
-#' sampling_times <- rep(max(strain_isolation_times), n_indivs)
-#' DOBs <- rep(min(strain_isolation_times), n_indivs)
-#' inf_hist <- simulate_infection_histories(p_inf, strain_isolation_times, sampling_times, DOBs)
+#' sampling_times <- rep(max(possible_exposure_times), n_indivs)
+#' DOBs <- rep(min(possible_exposure_times), n_indivs)
+#' inf_hist <- simulate_infection_histories(p_inf, possible_exposure_times, sampling_times, DOBs)
 #' @export
-simulate_infection_histories <- function(p_inf, strain_isolation_times, sampling_times, DOBs) {
+simulate_infection_histories <- function(p_inf, possible_exposure_times, sampling_times, DOBs) {
   n_strains <- length(p_inf) # How many strains
   n_indiv <- length(DOBs) # How many individuals
   indivs <- 1:n_indiv
@@ -609,12 +609,12 @@ simulate_infection_histories <- function(p_inf, strain_isolation_times, sampling
   attack_rates[attack_rates > 1] <- 1
   ARs <- numeric(n_strains)
 
-  age_mask <- create_age_mask(DOBs, strain_isolation_times)
+  age_mask <- create_age_mask(DOBs, possible_exposure_times)
 
   ## For each strain (ie. each infection year)
   for (i in 1:n_strains) {
     ## If there are strains circulating beyond the max sampling times, then alive==0
-    if (max(sampling_times) >= strain_isolation_times[i]) {
+    if (max(sampling_times) >= possible_exposure_times[i]) {
       ## Find who was alive (all we need sampling_times for is its max value)
       alive <- which(age_mask <= i)
 

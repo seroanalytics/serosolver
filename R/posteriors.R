@@ -246,7 +246,7 @@ prob_mus <- function(mus, pars) {
 #' @param par_tab the parameter table controlling information such as bounds, initial values etc. See \code{\link{example_par_tab}}
 #' @param titre_dat the data frame of data to be fitted. Must have columns: group (index of group); individual (integer ID of individual); samples (numeric time of sample taken); virus (numeric time of when the virus was circulating); obs_type (integer of the observation group type, using a unique value for each distinctive type of observation underpinned by the same generative model); titre (integer of titre value against the given virus at that sampling time). See \code{\link{example_titre_dat}}
 #' @param antigenic_map (optional) a data frame of antigenic x and y coordinates. Must have column names: x_coord; y_coord; inf_times. See \code{\link{example_antigenic_map}}
-#' @param strain_isolation_times (optional) if no antigenic map is specified, this argument gives the vector of times at which individuals can be infected
+#' @param possible_exposure_times (optional) if no antigenic map is specified, this argument gives the vector of times at which individuals can be infected
 #' @param version which infection history assumption version to use? See \code{\link{describe_priors}} for options. Can be 1, 2, 3 or 4
 #' @param solve_likelihood usually set to TRUE. If FALSE, does not solve the likelihood and instead just samples/solves based on the model prior
 #' @param age_mask see \code{\link{create_age_mask}} - a vector with one entry for each individual specifying the first epoch of circulation in which an individual could have been exposed
@@ -278,7 +278,7 @@ prob_mus <- function(mus, pars) {
 create_posterior_func <- function(par_tab,
                                   titre_dat,
                                   antigenic_map=NULL,
-                                  strain_isolation_times=NULL,
+                                  possible_exposure_times=NULL,
                                   version = 1,
                                   solve_likelihood = TRUE,
                                   age_mask = NULL,
@@ -337,11 +337,11 @@ create_posterior_func <- function(par_tab,
     #########################################################
     ## Check if an antigenic map is provided. If not, then create a dummy map where all pathogens have the same position on the map
     if (!is.null(antigenic_map)) {
-        strain_isolation_times_tmp <- unique(antigenic_map$inf_times) # How many strains are we testing against and what time did they circulate
-        if(!is.null(strain_isolation_times) & !identical(strain_isolation_times, strain_isolation_times_tmp)){
-            message(cat("Warning: provided strain_isolation_times argument does not match entries in the antigenic map. Please make sure that there is an entry in the antigenic map for each possible circulation time. Using the antigenic map times."))
+        possible_exposure_times_tmp <- unique(antigenic_map$inf_times) # How many strains are we testing against and what time did they circulate
+        if(!is.null(possible_exposure_times) & !identical(possible_exposure_times, possible_exposure_times_tmp)){
+            message(cat("Warning: provided possible_exposure_times argument does not match entries in the antigenic map. Please make sure that there is an entry in the antigenic map for each possible circulation time. Using the antigenic map times."))
         }
-      strain_isolation_times <- strain_isolation_times_tmp
+      possible_exposure_times <- possible_exposure_times_tmp
       
       ## If no observation types assumed, set all to 1.
       if (!("obs_type" %in% colnames(antigenic_map))) {
@@ -356,8 +356,8 @@ create_posterior_func <- function(par_tab,
     } else {
         ## Create a dummy map with entries for each observation type
       antigenic_map <- data.frame("x_coord"=1,"y_coord"=1,
-                                  "inf_times"=rep(strain_isolation_times, n_obs_types), 
-                                  "obs_type"=rep(unique_obs_types,each=length(strain_isolation_times)))
+                                  "inf_times"=rep(possible_exposure_times, n_obs_types), 
+                                  "obs_type"=rep(unique_obs_types,each=length(possible_exposure_times)))
     }
     #########################################################
     ## SETUP DATA
@@ -383,7 +383,7 @@ create_posterior_func <- function(par_tab,
     ## Setup data vectors and extract
     setup_dat <- setup_titredat_for_posterior_func(
         titre_dat_unique, antigenic_map, 
-        strain_isolation_times,
+        possible_exposure_times,
         age_mask, n_alive
     )
     ## Vector of observation types matching the unique samples
@@ -397,7 +397,7 @@ create_posterior_func <- function(par_tab,
     antigenic_map_melted <- setup_dat$antigenic_map_melted
     antigenic_distances <- antigenic_map_melted[[1]]
     
-    strain_isolation_times <- setup_dat$strain_isolation_times
+    possible_exposure_times <- setup_dat$possible_exposure_times
     infection_strain_indices <- setup_dat$infection_strain_indices
     
     ## Sample collection times, entry for each unique individual, observation type and sample
@@ -529,7 +529,7 @@ create_posterior_func <- function(par_tab,
 
     if (use_strain_dependent) {
         boosting_vec_indices <- mu_indices - 1
-        mus <- rep(2, length(strain_isolation_times))
+        mus <- rep(2, length(possible_exposure_times))
     } else {
         boosting_vec_indices <- mus <- c(-1)
     }
@@ -577,8 +577,8 @@ create_posterior_func <- function(par_tab,
                 mus <- pars[mu_indices_par_tab]
             }
             
-            antigenic_map_long <- matrix(nrow=length(strain_isolation_times)^2, ncol=n_obs_types)
-            antigenic_map_short <- matrix(nrow=length(strain_isolation_times)^2, ncol=n_obs_types)
+            antigenic_map_long <- matrix(nrow=length(possible_exposure_times)^2, ncol=n_obs_types)
+            antigenic_map_short <- matrix(nrow=length(possible_exposure_times)^2, ncol=n_obs_types)
             
             sigma1s <- theta[which(par_names_theta_all=="sigma1")]
             sigma2s <- theta[which(par_names_theta_all=="sigma2")]
@@ -593,7 +593,7 @@ create_posterior_func <- function(par_tab,
                 theta_indices_unique, 
                 unique_obs_types,
                 infection_history_mat, 
-                strain_isolation_times, 
+                possible_exposure_times, 
                 infection_strain_indices,
                 sample_times, 
                 type_data_start,
@@ -674,7 +674,7 @@ create_posterior_func <- function(par_tab,
         beta <- par_tab[par_tab$names == "beta","values"]
         n_infected_group <- c(0, 0)
         ## Generate prior lookup table
-        lookup_tab <- create_prior_lookup_groups(titre_dat, strain_isolation_times, alpha, beta, n_alive)
+        lookup_tab <- create_prior_lookup_groups(titre_dat, possible_exposure_times, alpha, beta, n_alive)
         ## Use the original gibbs proposal function if no titre immunity
         f <- function(pars, infection_history_mat,
                       probs, sampled_indivs,
@@ -702,8 +702,8 @@ create_posterior_func <- function(par_tab,
                 titre_shifts <- measurement_bias[expected_indices]
             }
             
-            antigenic_map_long <- matrix(nrow=length(strain_isolation_times)^2, ncol=n_obs_types)
-            antigenic_map_short <- matrix(nrow=length(strain_isolation_times)^2, ncol=n_obs_types)
+            antigenic_map_long <- matrix(nrow=length(possible_exposure_times)^2, ncol=n_obs_types)
+            antigenic_map_short <- matrix(nrow=length(possible_exposure_times)^2, ncol=n_obs_types)
             
             sigma1s <- theta[which(par_names_theta_all=="sigma1")]
             sigma2s <- theta[which(par_names_theta_all=="sigma2")]
@@ -736,7 +736,7 @@ create_posterior_func <- function(par_tab,
                 propose_from_prior,
                 alpha,
                 beta,
-                strain_isolation_times,
+                possible_exposure_times,
                 infection_strain_indices,
                 sample_times,
                 
@@ -794,8 +794,8 @@ create_posterior_func <- function(par_tab,
                 mus <- pars[mu_indices_par_tab]
             }
             
-            antigenic_map_long <- matrix(nrow=length(strain_isolation_times)^2, ncol=n_obs_types)
-            antigenic_map_short <- matrix(nrow=length(strain_isolation_times)^2, ncol=n_obs_types)
+            antigenic_map_long <- matrix(nrow=length(possible_exposure_times)^2, ncol=n_obs_types)
+            antigenic_map_short <- matrix(nrow=length(possible_exposure_times)^2, ncol=n_obs_types)
             
             sigma1s <- theta[which(par_names_theta_all=="sigma1")]
             sigma2s <- theta[which(par_names_theta_all=="sigma2")]
@@ -807,7 +807,7 @@ create_posterior_func <- function(par_tab,
 
             y_new <- titre_data_fast(
                 theta, theta_indices_unique, unique_obs_types,
-                infection_history_mat, strain_isolation_times, infection_strain_indices,
+                infection_history_mat, possible_exposure_times, infection_strain_indices,
                 sample_times, type_data_start,obs_types,
                 sample_data_start, titre_data_start,
                 nrows_per_sample, measured_strain_indices, 

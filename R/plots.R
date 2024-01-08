@@ -28,7 +28,7 @@ generate_quantiles <- function(x, sig_f = 3, qs = c(0.025, 0.5, 0.975), as_text 
 #' @param titre_dat the data frame of titre data
 #' @param individuals the subset of individuals to generate credible intervals for
 #' @param antigenic_map (optional) a data frame of antigenic x and y coordinates. Must have column names: x_coord; y_coord; inf_times. See \code{\link{example_antigenic_map}}
-#' @param strain_isolation_times (optional) if no antigenic map is specified, this argument gives the vector of times at which individuals can be infected
+#' @param possible_exposure_times (optional) if no antigenic map is specified, this argument gives the vector of times at which individuals can be infected
 #' @param par_tab the table controlling the parameters in the MCMC chain
 #' @param nsamp number of samples to take from posterior
 #' @param add_residuals if true, returns an extra output summarising residuals between the model prediction and data
@@ -54,7 +54,7 @@ generate_quantiles <- function(x, sig_f = 3, qs = c(0.025, 0.5, 0.975), as_text 
 #' @export
 get_titre_predictions <- function(chain, infection_histories, titre_dat,
                                   individuals, antigenic_map=NULL,
-                                  strain_isolation_times=NULL, par_tab,
+                                  possible_exposure_times=NULL, par_tab,
                                   nsamp = 100, add_residuals = FALSE,
                                   mu_indices = NULL,
                                   measurement_indices_by_time = NULL,
@@ -76,11 +76,11 @@ get_titre_predictions <- function(chain, infection_histories, titre_dat,
 
     ## Format the antigenic map to solve the model 
     if (!is.null(antigenic_map)) {
-        strain_isolation_times <- unique(antigenic_map$inf_times) # How many strains are we testing against and what time did they circulate
+        possible_exposure_times <- unique(antigenic_map$inf_times) # How many strains are we testing against and what time did they circulate
     } else {
-        antigenic_map <- data.frame("x_coord"=1,"y_coord"=1,"inf_times"=strain_isolation_times)
+        antigenic_map <- data.frame("x_coord"=1,"y_coord"=1,"inf_times"=possible_exposure_times)
     }
-    nstrain <- length(strain_isolation_times)
+    nstrain <- length(possible_exposure_times)
     n_indiv <- length(individuals)
     if(!("obs_type" %in% colnames(titre_dat))){
         titre_dat$obs_type <- 1
@@ -190,7 +190,7 @@ get_titre_predictions <- function(chain, infection_histories, titre_dat,
     ## Get infection history density for each individual and each epoch
     data.table::setkey(tmp_inf_chain, "i", "j")
     infection_history_dens <- tmp_inf_chain[, list(V1 = sum(x) / length(tmp_samp)), by = key(tmp_inf_chain)]
-    infection_history_dens$j <- strain_isolation_times[infection_history_dens$j]
+    infection_history_dens$j <- possible_exposure_times[infection_history_dens$j]
     colnames(infection_history_dens) <- c("individual", "variable", "value")
     infection_history_final <- infection_history_dens
     best_inf <- data.frame(best_inf)
@@ -235,7 +235,7 @@ get_titre_predictions <- function(chain, infection_histories, titre_dat,
 #' @export
 plot_infection_histories_long <- function(chain, infection_histories, titre_dat,
                                      individuals, antigenic_map=NULL, 
-                                     strain_isolation_times=NULL, par_tab,
+                                     possible_exposure_times=NULL, par_tab,
                                      nsamp = 100,
                                      mu_indices = NULL,
                                      measurement_indices_by_time = NULL,
@@ -244,7 +244,7 @@ plot_infection_histories_long <- function(chain, infection_histories, titre_dat,
     ## Generate titre predictions
     titre_preds <- get_titre_predictions(
         chain, infection_histories, titre_dat, individuals,
-        antigenic_map, strain_isolation_times, 
+        antigenic_map, possible_exposure_times, 
         par_tab, nsamp, FALSE, mu_indices,
         measurement_indices_by_time,
         expand_titredat=TRUE,
@@ -316,7 +316,7 @@ plot_infection_histories_long <- function(chain, infection_histories, titre_dat,
 #' @export
 plot_infection_histories <- function(chain, infection_histories, titre_dat,
                                      individuals, antigenic_map=NULL, 
-                                     strain_isolation_times=NULL, par_tab,
+                                     possible_exposure_times=NULL, par_tab,
                                      nsamp = 100,
                                      mu_indices = NULL,
                                      measurement_indices_by_time = NULL,
@@ -326,7 +326,7 @@ plot_infection_histories <- function(chain, infection_histories, titre_dat,
     ## Generate titre predictions
     titre_preds <- get_titre_predictions(
         chain, infection_histories, titre_dat, individuals,
-        antigenic_map, strain_isolation_times, 
+        antigenic_map, possible_exposure_times, 
         par_tab, nsamp, FALSE, mu_indices,
         measurement_indices_by_time,
         expand_titredat=TRUE,data_type=data_type
@@ -372,7 +372,7 @@ plot_infection_histories <- function(chain, infection_histories, titre_dat,
               axis.text.x=element_text(angle=45,hjust=1,size=8),
               axis.text.y=element_text(size=8),
               plot.margin=margin(r=15,t=5,l=5))+
-        coord_cartesian(ylim=c(min_titre,max_titre+1),xlim=range(strain_isolation_times)) +
+        coord_cartesian(ylim=c(min_titre,max_titre+1),xlim=range(possible_exposure_times)) +
         scale_y_continuous(breaks=seq(min_titre,max_titre+2,by=2)) +
         facet_wrap(~individual,ncol=p_ncol)
     titre_pred_p
@@ -398,20 +398,20 @@ plot_infection_histories <- function(chain, infection_histories, titre_dat,
 #' data(example_antigenic_map)
 #' data(example_titre_dat)
 #'
-#' strain_isolation_times <- example_antigenic_map$inf_times
+#' possible_exposure_times <- example_antigenic_map$inf_times
 #' ## Setup known attack rates
-#' n_alive <- get_n_alive(example_titre_dat, strain_isolation_times)
+#' n_alive <- get_n_alive(example_titre_dat, possible_exposure_times)
 #' n_infs <- colSums(example_inf_hist)
 #' known_ar <- n_infs/n_alive
-#' known_ar <- data.frame("j"=strain_isolation_times,"AR"=known_ar,"group"=1)
+#' known_ar <- data.frame("j"=possible_exposure_times,"AR"=known_ar,"group"=1)
 #' 
 #' ## Setup known infection histories
 #' known_inf_hist <- data.frame(example_inf_hist)
-#' colnames(known_inf_hist) <- strain_isolation_times
+#' colnames(known_inf_hist) <- possible_exposure_times
 #' 
-#' n_alive_group <- get_n_alive_group(example_titre_dat, strain_isolation_times,melt_dat = TRUE)
-#' n_alive_group$j <- strain_isolation_times[n_alive_group$j]
-#' all_plots <- plot_posteriors_infhist(example_inf_chain, strain_isolation_times, n_alive_group,
+#' n_alive_group <- get_n_alive_group(example_titre_dat, possible_exposure_times,melt_dat = TRUE)
+#' n_alive_group$j <- possible_exposure_times[n_alive_group$j]
+#' all_plots <- plot_posteriors_infhist(example_inf_chain, possible_exposure_times, n_alive_group,
 #'                                      known_ar=known_ar,known_infection_history = known_inf_hist,
 #'                                      samples=100)
 #' }
@@ -600,22 +600,22 @@ plot_posteriors_theta <- function(chain,
 #' data(example_antigenic_map)
 #' data(example_titre_dat)
 #' data(example_inf_hist)
-#' strain_isolation_times <- example_antigenic_map$inf_times
+#' possible_exposure_times <- example_antigenic_map$inf_times
 #' ## Find number alive in each time period
-#' n_alive <- get_n_alive(example_titre_dat, strain_isolation_times)
+#' n_alive <- get_n_alive(example_titre_dat, possible_exposure_times)
 #' ## Get actual number of infections per time
 #' n_infs <- colSums(example_inf_hist)
 #' ## Create data frame of true ARs
 #' known_ar <- n_infs/n_alive
-#' known_ar <- data.frame("j"=strain_isolation_times,"AR"=known_ar,"group"=1)
+#' known_ar <- data.frame("j"=possible_exposure_times,"AR"=known_ar,"group"=1)
 #' ## Get true infection histories
 #' known_inf_hist <- data.frame(example_inf_hist)
-#' colnames(known_inf_hist) <- strain_isolation_times
+#' colnames(known_inf_hist) <- possible_exposure_times
 #'
 #' ## Need to get group specific n_alive and adjust to correct time frame 
-#' n_alive_group <- get_n_alive_group(example_titre_dat, strain_isolation_times,melt_dat = TRUE)
-#' n_alive_group$j <- strain_isolation_times[n_alive_group$j]
-#' results <- calculate_infection_history_statistics(example_inf_chain, 0, strain_isolation_times,
+#' n_alive_group <- get_n_alive_group(example_titre_dat, possible_exposure_times,melt_dat = TRUE)
+#' n_alive_group$j <- possible_exposure_times[n_alive_group$j]
+#' results <- calculate_infection_history_statistics(example_inf_chain, 0, possible_exposure_times,
 #'                                                   n_alive=n_alive_group, known_ar=known_ar,
 #'                                                   known_infection_history=known_inf_hist)
 #' @export
@@ -762,7 +762,7 @@ calculate_infection_history_statistics <- function(inf_chain, burnin = 0, years 
 #' @param cumulative if TRUE, plots the cumulative attack rate
 #' @return a ggplot2 object with the inferred attack rates for each potential epoch of circulation
 #' @export
-plot_attack_rates_monthly <- function(infection_histories, titre_dat, strain_isolation_times,
+plot_attack_rates_monthly <- function(infection_histories, titre_dat, possible_exposure_times,
                                       n_alive = NULL, ymax = 1, buckets = 1,
                                       pad_chain = TRUE, true_ar = NULL, by_group = FALSE, group_subset = NULL,
                                       cumulative = FALSE,add_box=FALSE) {
@@ -784,16 +784,16 @@ plot_attack_rates_monthly <- function(infection_histories, titre_dat, strain_iso
     ## Scale by number of individuals that were alive in each epoch
     ## and generate quantiles
     months <- 1:buckets
-    years <- strain_isolation_times
+    years <- possible_exposure_times
     years <- range(floor(years / buckets))
     years <- years[1]:years[2]
     labels <- c(sapply(years, function(x) paste0(months, "/", x)))
-    labels1 <- labels[1:length(strain_isolation_times)]
+    labels1 <- labels[1:length(possible_exposure_times)]
     labels1 <- labels1[seq(1, length(labels1), by = 1)]
-    year_break <- strain_isolation_times[seq(1, length(strain_isolation_times), by = 1)]
+    year_break <- possible_exposure_times[seq(1, length(possible_exposure_times), by = 1)]
 
     if (is.null(n_alive)) {
-        n_alive <- as.data.frame(get_n_alive_group(titre_dat, strain_isolation_times))
+        n_alive <- as.data.frame(get_n_alive_group(titre_dat, possible_exposure_times))
         n_alive$group <- 1:nrow(n_alive)
     }
     n_alive_tmp <- reshape2::melt(n_alive, id.vars = "group")
@@ -809,7 +809,7 @@ plot_attack_rates_monthly <- function(infection_histories, titre_dat, strain_iso
     if (cumulative & !pad_chain) message("Error - cannot calculate cumulative incidence without pad_chain = TRUE\n")
 
     tmp <- merge(tmp, data.table(n_alive_tmp), by = c("group", "j"))
-    tmp$time <- strain_isolation_times[tmp$j]
+    tmp$time <- possible_exposure_times[tmp$j]
     tmp$V1 <- tmp$V1 / tmp$n_alive
     tmp[is.nan(tmp$V1), "V1"] <- 0
     if (cumulative && pad_chain) {
@@ -854,7 +854,7 @@ plot_attack_rates_monthly <- function(infection_histories, titre_dat, strain_iso
 #' Plots inferred historical attack rates from the MCMC output on infection histories
 #' @param infection_histories the MCMC chain for infection histories
 #' @param titre_dat the data frame of titre data
-#' @param strain_isolation_times vector of the epochs of potential circulation
+#' @param possible_exposure_times vector of the epochs of potential circulation
 #' @param n_alive vector with the number of people alive in each year of circulation. Can be left as NULL, and ages will be used to infer this
 #' @param resolution divides strain isolation times by this number for x axis labels
 #' @param pointsize Numeric - how big should each point be?
@@ -862,7 +862,7 @@ plot_attack_rates_monthly <- function(infection_histories, titre_dat, strain_iso
 #' @param pad_chain if TRUE, fills the infection history data table with entries for non-infection events (ie. 0s). Can be switched to FALSE for speed to get a rough idea of what the attack rates look like.
 #' @param prior_pars if not NULL, a list of parameters for the attack rate prior, giving the assumed prior_version along with alpha and beta
 #' @param plot_den if TRUE, produces a violin plot of attack rates rather than pointrange
-#' @param true_ar data frame of true attack rates, with first column `year` equal to `strain_isolation_times`, and second column `AR` giving the attack rate. Column names: group, j, AR
+#' @param true_ar data frame of true attack rates, with first column `year` equal to `possible_exposure_times`, and second column `AR` giving the attack rate. Column names: group, j, AR
 #' @param by_group if TRUE, facets the plot by group ID
 #' @param group_subset if not NULL, plots only this subset of groups eg. 1:5
 #' @param plot_residuals if TRUE, plots the residuals between inferred and true attack rate
@@ -870,7 +870,7 @@ plot_attack_rates_monthly <- function(infection_histories, titre_dat, strain_iso
 #' @param by_val frequency of x-axis labels
 #' @return a ggplot2 object with the inferred attack rates for each potential epoch of circulation
 #' @export
-plot_attack_rates <- function(infection_histories, titre_dat, strain_isolation_times, 
+plot_attack_rates <- function(infection_histories, titre_dat, possible_exposure_times, 
                               n_alive = NULL,
                               pointsize = 1, fatten = 1,
                               pad_chain = TRUE, prior_pars = NULL,
@@ -878,7 +878,7 @@ plot_attack_rates <- function(infection_histories, titre_dat, strain_isolation_t
                               true_ar = NULL, by_group = FALSE,
                               group_subset = NULL, plot_residuals = FALSE,
                               colour_by_taken = TRUE, by_val = 5,
-                              min_time=min(strain_isolation_times),max_time=max(strain_isolation_times)) {
+                              min_time=min(possible_exposure_times),max_time=max(possible_exposure_times)) {
     ## Some year/sample combinations might have no infections there.
     ## Need to make sure that these get considered
     if (is.null(infection_histories$chain_no)) {
@@ -900,16 +900,16 @@ plot_attack_rates <- function(infection_histories, titre_dat, strain_isolation_t
     ## Scale by number of individuals that were alive in each epoch
     ## and generate quantiles
     if (is.null(n_alive)) {
-        n_alive <- get_n_alive_group(titre_dat, strain_isolation_times)
+        n_alive <- get_n_alive_group(titre_dat, possible_exposure_times)
     }
     n_alive <- as.data.frame(n_alive)
     n_alive$group <- 1:nrow(n_alive)
     
     n_groups <- length(unique(titre_dat$group))
-    n_alive_tot <- get_n_alive(titre_dat, strain_isolation_times)
+    n_alive_tot <- get_n_alive(titre_dat, possible_exposure_times)
     colnames(infection_histories)[1] <- "individual"
     infection_histories <- merge(infection_histories, data.table(unique(titre_dat[, c("individual", "group")])), by = c("individual","group"))
-    years <- c(strain_isolation_times, max(strain_isolation_times) + 2)
+    years <- c(possible_exposure_times, max(possible_exposure_times) + 2)
     data.table::setkey(infection_histories, "sampno", "j", "chain_no", "group")
     tmp <- infection_histories[, list(V1 = sum(x)), by = key(infection_histories)]
     tmp$taken <- years[tmp$j] %in% unique(titre_dat$samples)
@@ -1003,7 +1003,7 @@ plot_attack_rates <- function(infection_histories, titre_dat, strain_isolation_t
             if (!is.null(prior_pars)) {
                 true_ar <- rbind(true_ar, data.frame(
                                               group = 1:n_groups,
-                                              j = max(strain_isolation_times) + 3,
+                                              j = max(possible_exposure_times) + 3,
                                               AR = median(prior_dens$V1)
                                           ))
             }
@@ -1111,8 +1111,8 @@ pad_inf_chain <- function(inf_chain) {
 #' data(example_titre_dat)
 #' data(example_antigenic_map)
 #' times <- example_antigenic_map$inf_times
-#' n_alive_group <- get_n_alive_group(example_titre_dat, strain_isolation_times,melt_dat = TRUE)
-#' n_alive_group$j <- strain_isolation_times[n_alive_group$j]
+#' n_alive_group <- get_n_alive_group(example_titre_dat, possible_exposure_times,melt_dat = TRUE)
+#' n_alive_group$j <- possible_exposure_times[n_alive_group$j]
 #' plot_infection_history_chains_time(example_inf_chain, 0, sample(1:length(times),10),n_alive,FALSE)
 #' }
 #' @export
@@ -1261,7 +1261,7 @@ plot_number_infections <- function(inf_chain, pad_chain = TRUE) {
 #' Plots measured titres and known infection histories for all individuals, facetted by sample time (multi-strain panel) or virus variable (longitidunal single strain)
 #' @param titre_dat the data frame of titre data
 #' @param infection_histories the infection history matrix
-#' @param strain_isolation_times the vector of times at which individuals could be infected
+#' @param possible_exposure_times the vector of times at which individuals could be infected
 #' @param n_indivs how many individuals to plot
 #' @param start_inf if not NULL, plots the infection history matrix used as the starting point in the MCMC chain
 #' @param study_design default "multi-strain" facets by sample time. "single-strain" gives sample time on the x-axis and colours by virus
@@ -1272,17 +1272,17 @@ plot_number_infections <- function(inf_chain, pad_chain = TRUE) {
 #' data(example_titre_dat)
 #' data(example_inf_hist)
 #' data(example_antigenic_map)
-#' strain_isolation_times <- example_antigenic_map$inf_times
-#' plot_data(example_titre_dat, example_inf_hist, strain_isolation_times, 5)
+#' possible_exposure_times <- example_antigenic_map$inf_times
+#' plot_data(example_titre_dat, example_inf_hist, possible_exposure_times, 5)
 #' }
 #' @export
 plot_data <- function(titre_dat, infection_histories, 
-                      strain_isolation_times, 
+                      possible_exposure_times, 
                       n_indivs, start_inf = NULL,
                       study_design="multi-strain"){
     indivs <- unique(titre_dat$individual)
     infection_history <- as.data.frame(cbind(indivs, infection_histories))
-    colnames(infection_history) <- c("individual", strain_isolation_times)
+    colnames(infection_history) <- c("individual", possible_exposure_times)
     melted_inf_hist <- reshape2::melt(infection_history, id.vars = "individual")
     melted_inf_hist$variable <- as.numeric(as.character(melted_inf_hist$variable))
     melted_inf_hist <- melted_inf_hist[melted_inf_hist$value > 0, ]
@@ -1316,7 +1316,7 @@ plot_data <- function(titre_dat, infection_histories,
     
     if (!is.null(start_inf)) {
         start_inf_hist <- as.data.frame(cbind(indivs, start_inf))
-        colnames(start_inf_hist) <- c("individual", strain_isolation_times)
+        colnames(start_inf_hist) <- c("individual", possible_exposure_times)
         melted_start_hist <- reshape2::melt(start_inf_hist, id.vars = "individual")
         melted_start_hist$variable <- as.numeric(as.character(melted_start_hist$variable))
         melted_start_hist <- melted_start_hist[melted_start_hist$value > 0, ]
@@ -1334,12 +1334,12 @@ plot_data <- function(titre_dat, infection_histories,
 #' @param indivs vector of individual ids to plot
 #' @param real_inf_hist if not NULL, adds lines to the plots showing the known true infection times
 #' @param start_inf if not NULL, adds lines to show where the MCMC chain started
-#' @param strain_isolation_times vector of times at which individuals could have been infected
+#' @param possible_exposure_times vector of times at which individuals could have been infected
 #' @param nsamp how many samples from the MCMC chain to take?
 #' @param ages if not NULL, adds lines to show when an individual was born
 #' @param number_col how many columns to use for the cumulative infection history plot
 #' @param pad_chain if TRUE, pads the infection history MCMC chain to have entries for non-infection events
-#' @param subset_years if not NULL, pass a vector of indices to only take a subset of indices from strain_isolation_times
+#' @param subset_years if not NULL, pass a vector of indices to only take a subset of indices from possible_exposure_times
 #' @param return_data if TRUE, returns the infection history posterior densities used to generate the plots
 #' @return two ggplot objects
 #' @family infection_history_plots
@@ -1358,7 +1358,7 @@ plot_data <- function(titre_dat, infection_histories,
 #' }
 #' @export
 generate_cumulative_inf_plots <- function(inf_chain, burnin = 0, indivs, real_inf_hist = NULL, start_inf = NULL,
-                                          strain_isolation_times, nsamp = 100, ages = NULL, number_col = 1,
+                                          possible_exposure_times, nsamp = 100, ages = NULL, number_col = 1,
                                           pad_chain = TRUE, subset_years = NULL, return_data = FALSE) {
     inf_chain <- inf_chain[inf_chain$sampno > burnin, ]
     inf_chain <- inf_chain[inf_chain$i %in% indivs,]
@@ -1381,13 +1381,13 @@ generate_cumulative_inf_plots <- function(inf_chain, burnin = 0, indivs, real_in
     densities <- inf_chain1[, list(V1 = sum(x) / max_sampno), by = key(inf_chain1)]
 
     ## Convert to real time points
-    densities$j <- as.numeric(strain_isolation_times[densities$j])
+    densities$j <- as.numeric(possible_exposure_times[densities$j])
     densities$i <- as.numeric(densities$i)
 
     ## If someone wasn't infected in a given year at all, then need a 0
-    strain_isolation_times1 <- strain_isolation_times
-    if (!is.null(subset_years)) strain_isolation_times1 <- strain_isolation_times[subset_years]
-    all_combos <- data.table(expand.grid(i = indivs, j = strain_isolation_times1, chain_no = unique(inf_chain$chain_no)))
+    possible_exposure_times1 <- possible_exposure_times
+    if (!is.null(subset_years)) possible_exposure_times1 <- possible_exposure_times[subset_years]
+    all_combos <- data.table(expand.grid(i = indivs, j = possible_exposure_times1, chain_no = unique(inf_chain$chain_no)))
     all_combos$j <- as.numeric(all_combos$j)
     all_combos$i <- as.numeric(all_combos$i)
     all_combos <- data.table::fsetdiff(all_combos[, c("i", "j", "chain_no")], densities[, c("i", "j", "chain_no")])
@@ -1400,7 +1400,7 @@ generate_cumulative_inf_plots <- function(inf_chain, burnin = 0, indivs, real_in
         infection_history1 <- infection_history1[indivs, ]
         infection_history1$individual <- indivs
 
-        colnames(infection_history1) <- c(strain_isolation_times, "i")
+        colnames(infection_history1) <- c(possible_exposure_times, "i")
         infection_history1 <- reshape2::melt(infection_history1, id.vars = "i")
         infection_history1$variable <- as.numeric(as.character(infection_history1$variable))
         infection_history1 <- infection_history1[infection_history1$value == 1, ]
@@ -1422,14 +1422,14 @@ generate_cumulative_inf_plots <- function(inf_chain, burnin = 0, indivs, real_in
     ## MCMC chain
     tmp_inf_chain <- inf_chain[inf_chain$i %in% indivs, ]
     hist_profiles <- ddply(tmp_inf_chain, .(i, sampno, chain_no), function(x) {
-        empty <- numeric(length(strain_isolation_times))
+        empty <- numeric(length(possible_exposure_times))
         empty[x[x$x == 1, "j"]] <- 1
         cumsum(empty)
     })
 
     hist_profiles <- hist_profiles[, colnames(hist_profiles) != "sampno"]
 
-    colnames(hist_profiles) <- c("i", "chain_no", strain_isolation_times)
+    colnames(hist_profiles) <- c("i", "chain_no", possible_exposure_times)
     hist_profiles_lower <- ddply(hist_profiles, .(i, chain_no), function(x) apply(x, 2, function(y) quantile(y, c(0.025))))
     hist_profiles_lower <- reshape2::melt(hist_profiles_lower, id.vars = c("i", "chain_no"))
     colnames(hist_profiles_lower) <- c("individual", "chain_no", "variable", "lower")
@@ -1449,7 +1449,7 @@ generate_cumulative_inf_plots <- function(inf_chain, burnin = 0, indivs, real_in
     real_hist_profiles <- NULL
     if (!is.null(real_inf_hist)) {
         real_hist_profiles <- as.data.frame(t(apply(real_inf_hist, 1, cumsum)))
-        colnames(real_hist_profiles) <- strain_isolation_times
+        colnames(real_hist_profiles) <- possible_exposure_times
 
         real_hist_profiles <- real_hist_profiles[indivs, ]
         real_hist_profiles$individual <- indivs
@@ -1459,7 +1459,7 @@ generate_cumulative_inf_plots <- function(inf_chain, burnin = 0, indivs, real_in
     ## Process starting point from MCMC chain
     if (!is.null(start_inf)) {
         start_hist_profiles <- as.data.frame(t(apply(start_inf, 1, cumsum)))
-        colnames(start_hist_profiles) <- strain_isolation_times
+        colnames(start_hist_profiles) <- possible_exposure_times
         start_hist_profiles <- start_hist_profiles[indivs, ]
         start_hist_profiles$individual <- indivs
         start_hist_profiles <- reshape2::melt(start_hist_profiles, id.vars = "individual")
@@ -1480,9 +1480,9 @@ generate_cumulative_inf_plots <- function(inf_chain, burnin = 0, indivs, real_in
 
     if (!is.null(ages)) {
         tmp_age <- ages[ages$individual %in% indivs, ]
-        age_mask <- create_age_mask(tmp_age[, 2], strain_isolation_times)
+        age_mask <- create_age_mask(tmp_age[, 2], possible_exposure_times)
         age_dat <- data.frame(j = age_mask, individual = indivs[order(indivs)])
-        p1 <- p1 + geom_vline(data = age_dat, aes(xintercept = strain_isolation_times[j]), col = "purple", linetype = "dashed")
+        p1 <- p1 + geom_vline(data = age_dat, aes(xintercept = possible_exposure_times[j]), col = "purple", linetype = "dashed")
     }
     p1 <- p1 + facet_wrap(~individual, ncol = number_col) +
         theme_bw() +

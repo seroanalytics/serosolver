@@ -2,8 +2,8 @@
 #'
 #' Checks that the infection history matrix is allowable given the birth dates and sampling times of the data
 #' @param titre_dat the data frame of titre data
-#' @param strain_isolation_times the circulation times of possible infecting strains eg. 1968:2015
-#' @param inf_hist the infection history matrix, with nrows = number indivs and ncols = length(strain_isolation_times)
+#' @param possible_exposure_times vector of times at which individuals could be exposed e.g., seq(1968,2015,by=1)
+#' @param inf_hist the infection history matrix, with nrows = number indivs and ncols = length(possible_exposure_times)
 #' @return a single boolean value, FALSE if the check passes, otherwise throws an error
 #' @family check_inputs
 #' data(example_titre_dat)
@@ -11,10 +11,10 @@
 #' times <- 1968:2015
 #' check_inf_hist(example_titre_dat, times, example_inf_hist)
 #' @export
-check_inf_hist <- function(titre_dat, strain_isolation_times, inf_hist){
+check_inf_hist <- function(titre_dat, possible_exposure_times, inf_hist){
     DOBs <- get_DOBs(titre_dat)
-    age_mask <- create_age_mask(DOBs[,2],strain_isolation_times)
-    strain_mask <- create_strain_mask(titre_dat, strain_isolation_times)
+    age_mask <- create_age_mask(DOBs[,2],possible_exposure_times)
+    strain_mask <- create_strain_mask(titre_dat, possible_exposure_times)
     before_born <- logical(length(age_mask))
     after_sample <- logical(length(strain_mask))
     res <- logical(length(age_mask))
@@ -83,7 +83,7 @@ check_par_tab <- function(par_tab, mcmc = FALSE, version = NULL) {
         if (version == 1) {
             ## Check that the correct number of phis are present
             if(!explicit_phi){
-                stop("prior version 1 is specified, but there are no entries for phi in par_tab. Note that there must be one phi entry per entry in strain_isolation_times")
+                stop("prior version 1 is specified, but there are no entries for phi in par_tab. Note that there must be one phi entry per entry in possible_exposure_times")
             }
         }
         if (all(par_tab$fixed == 1)) {
@@ -133,16 +133,16 @@ check_data <- function(data) {
 
 #' Checks the attack_rates supplied in simulate_data
 #' @param attack_rates a vector of attack_rates to be used in the simulation
-#' @param strain_isolation_times vector of strain circulation times
+#' @param possible_exposure_times vector of strain circulation times
 #' @return nothing at the moment
 #' @family check_inputs
 #' @examples
 #' attack_rates <- runif(40)
-#' strain_isolation_times <- seq_len(40)
-#' check_attack_rates(attack_rates, strain_isolation_times)
+#' possible_exposure_times <- seq_len(40)
+#' check_attack_rates(attack_rates, possible_exposure_times)
 #' @export
-check_attack_rates <- function(attack_rates, strain_isolation_times) {
-    if (length(attack_rates) != length(strain_isolation_times)) stop("attack_rates is not the same length as strain_isolation_times")
+check_attack_rates <- function(attack_rates, possible_exposure_times) {
+    if (length(attack_rates) != length(possible_exposure_times)) stop("attack_rates is not the same length as possible_exposure_times")
     if (any(attack_rates < 0) || any(attack_rates > 1)) stop("attack_rates must be between 0 and 1")
 }
 #' Checks if the multivariate proposal is being used with the FOI proposal
@@ -157,14 +157,14 @@ check_proposals <- function(version, mvr_pars) {
 
 #' Check if the starting infection history table and titre data are consistent
 #' @param titre_dat the data frame of titer data
-#' @param strain_isolation_times the vector of times corresponding to entries in DOB
+#' @param possible_exposure_times the vector of times corresponding to entries in DOB
 #' @param inf_hist the starting infection history matrix
 #' @return nothing, prints a warning
 #' @family check_inputs
 #' @export
-check_inf_hist <- function(titre_dat,strain_isolation_times, inf_hist){
+check_inf_hist <- function(titre_dat,possible_exposure_times, inf_hist){
     DOBs <- create_age_mask(titre_dat %>% select(individual, DOB) %>% distinct() %>% pull(DOB),
-                            strain_isolation_times)
+                            possible_exposure_times)
     correct_dob <- rep(0,length(DOBs))
     for(i in seq_along(DOBs)){
         if(DOBs[i] > 1 & any(inf_hist[i,1:(DOBs[i]-1)] > 0)) correct_dob[i] <- 1

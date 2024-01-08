@@ -70,13 +70,13 @@ get_n_alive_group <- function(titre_dat, times, melt_dat = FALSE) {
 }
 
 #' @export
-create_prior_lookup <- function(titre_dat, strain_isolation_times, alpha1, beta1, n_alive=NULL){
+create_prior_lookup <- function(titre_dat, possible_exposure_times, alpha1, beta1, n_alive=NULL){
     if(is.null(n_alive)){
-        n_alive <- get_n_alive(titre_dat, strain_isolation_times)
+        n_alive <- get_n_alive(titre_dat, possible_exposure_times)
     }
-    lookup_tab <- matrix(nrow=max(n_alive)+1,ncol=length(strain_isolation_times))
+    lookup_tab <- matrix(nrow=max(n_alive)+1,ncol=length(possible_exposure_times))
     max_alive <- max(n_alive)
-    for(i in seq_along(strain_isolation_times)){
+    for(i in seq_along(possible_exposure_times)){
         results <- rep(-100000, max_alive+1)
         m <- seq_len(n_alive[i]+1)-1
         results[1:(n_alive[i]+1)] <- lbeta(alpha1 + m, n_alive[i] - m + beta1) + lbeta(alpha1, beta1)
@@ -88,14 +88,14 @@ create_prior_lookup <- function(titre_dat, strain_isolation_times, alpha1, beta1
 }
 
 #' @export
-create_prior_lookup_groups <- function(titre_dat, strain_isolation_times, alpha1, beta1, n_alive=NULL){
+create_prior_lookup_groups <- function(titre_dat, possible_exposure_times, alpha1, beta1, n_alive=NULL){
     if(is.null(n_alive)){
-        n_alive <- get_n_alive_group(titre_dat, strain_isolation_times)
+        n_alive <- get_n_alive_group(titre_dat, possible_exposure_times)
     }
-    lookup_tab <- array(-100000, dim=c(max(n_alive)+1,length(strain_isolation_times),nrow(n_alive)))
+    lookup_tab <- array(-100000, dim=c(max(n_alive)+1,length(possible_exposure_times),nrow(n_alive)))
     max_alive <- max(n_alive)
     for(g in 1:nrow(n_alive)){
-        for(i in seq_along(strain_isolation_times)){
+        for(i in seq_along(possible_exposure_times)){
             results <- rep(-100000, max_alive+1)
             m <- seq_len(n_alive[g,i]+1)-1
             results[1:(n_alive[g,i]+1)] <- lbeta(alpha1 + m, n_alive[g,i] - m + beta1) + lbeta(alpha1, beta1)
@@ -112,9 +112,9 @@ create_prior_lookup_groups <- function(titre_dat, strain_isolation_times, alpha1
 #' Create age mask
 #'
 #' Converts a data frame of individual ages to give the index of the first infection that individual could have had
-#' @param DOBs the vector of dates of birth, same time units as strain_isolation_times
-#' @param strain_isolation_times the vector of times that individuals can be infected
-#' @return a vector giving the first index of strain_isolation_times that an individual can be infected
+#' @param DOBs the vector of dates of birth, same time units as possible_exposure_times
+#' @param possible_exposure_times the vector of times that individuals can be infected
+#' @return a vector giving the first index of possible_exposure_times that an individual can be infected
 #' @family create_masks
 #' @examples
 #' data(example_titre_dat)
@@ -123,12 +123,12 @@ create_prior_lookup_groups <- function(titre_dat, strain_isolation_times, alpha1
 #' DOBs <- unique(example_titre_dat[,c("individual","DOB")])
 #' age_mask <- create_age_mask(DOBs$DOB, times)
 #' @export
-create_age_mask <- function(DOBs, strain_isolation_times) {
+create_age_mask <- function(DOBs, possible_exposure_times) {
   age_mask <- sapply(DOBs, function(x) {
     if (is.na(x)) {
       1
     } else {
-      which(as.numeric(x <= strain_isolation_times) > 0)[1]
+      which(as.numeric(x <= possible_exposure_times) > 0)[1]
     }
   })
   return(age_mask)
@@ -137,19 +137,19 @@ create_age_mask <- function(DOBs, strain_isolation_times) {
 #'
 #' Converts a data frame of individual sampling times to give the index of the last infection that individual could have had
 #' @param titre_dat the data frame of titre data. See \code{\link{example_titre_dat}}
-#' @param strain_isolation_times the vector of times that individuals can be infected
-#' @return a vector giving the last index of strain_isolation_times that an individual can be infected
+#' @param possible_exposure_times the vector of times that individuals can be infected
+#' @return a vector giving the last index of possible_exposure_times that an individual can be infected
 #' @family create_masks
 #' data(example_titre_dat)
 #' data(example_antigenic_map)
 #' times <- example_antigenic_map$inf_times
 #' strain_mask <- create_strain_mask(example_titre_dat, times)
 #' @export
-create_strain_mask <- function(titre_dat, strain_isolation_times) {
+create_strain_mask <- function(titre_dat, possible_exposure_times) {
   ids <- unique(titre_dat$individual)
   strain_mask <- sapply(ids, function(x) {
     sample_times <- titre_dat$samples[titre_dat$individual == x]
-    max(which(max(sample_times) >= strain_isolation_times))
+    max(which(max(sample_times) >= possible_exposure_times))
   })
   return(strain_mask)
 }
@@ -353,7 +353,7 @@ row.match <- function(x, table, nomatch = NA) {
 #' @return a very long list. See source code directly.
 #' @seealso \code{\link{create_posterior_func}}
 #' @export
-setup_titredat_for_posterior_func <- function(titre_dat, antigenic_map=NULL, strain_isolation_times=NULL,
+setup_titredat_for_posterior_func <- function(titre_dat, antigenic_map=NULL, possible_exposure_times=NULL,
                                               age_mask = NULL, n_alive = NULL) {
   essential_colnames <- c("individual", "samples", "titre", "virus", "obs_type","group")
   ## How many observation types are there?
@@ -363,11 +363,11 @@ setup_titredat_for_posterior_func <- function(titre_dat, antigenic_map=NULL, str
   
   ## Check if an antigenic map is provided. If not, then create a dummy map where all pathogens have the same position on the map
   if (!is.null(antigenic_map)) {
-      strain_isolation_times_tmp <- unique(antigenic_map$inf_times) # How many strains are we testing against and what time did they circulate
-      if(!is.null(strain_isolation_times) & !identical(strain_isolation_times, strain_isolation_times_tmp)){
-          message(cat("Warning: provided strain_isolation_times argument does not match entries in the antigenic map. Please make sure that there is an entry in the antigenic map for each possible circulation time. Using the antigenic map times."))
+      possible_exposure_times_tmp <- unique(antigenic_map$inf_times) # How many strains are we testing against and what time did they circulate
+      if(!is.null(possible_exposure_times) & !identical(possible_exposure_times, possible_exposure_times_tmp)){
+          message(cat("Warning: provided possible_exposure_times argument does not match entries in the antigenic map. Please make sure that there is an entry in the antigenic map for each possible circulation time. Using the antigenic map times."))
       }
-      strain_isolation_times <- strain_isolation_times_tmp
+      possible_exposure_times <- possible_exposure_times_tmp
       
       ## If no observation types assumed, set all to 1.
       if (!("obs_type" %in% colnames(antigenic_map))) {
@@ -382,10 +382,10 @@ setup_titredat_for_posterior_func <- function(titre_dat, antigenic_map=NULL, str
   } else {
       ## Create a dummy map with entries for each observation type
       antigenic_map <- data.frame("x_coord"=1,"y_coord"=1,
-                                  "inf_times"=rep(strain_isolation_times, n_obs_types), 
-                                  "obs_type"=rep(unique_obs_types,each=length(strain_isolation_times)))
+                                  "inf_times"=rep(possible_exposure_times, n_obs_types), 
+                                  "obs_type"=rep(unique_obs_types,each=length(possible_exposure_times)))
   }
-  strain_isolation_times <- unique(antigenic_map$inf_times)
+  possible_exposure_times <- unique(antigenic_map$inf_times)
   
   ## Create a melted antigenic map for each observation type
   antigenic_maps_melted <- lapply(unique_obs_types, function(b){
@@ -393,8 +393,8 @@ setup_titredat_for_posterior_func <- function(titre_dat, antigenic_map=NULL, str
       c(melt_antigenic_coords(tmp[,c("x_coord","y_coord")]))
     })
   
-  measured_strain_indices <- match(titre_dat$virus, strain_isolation_times) - 1 ## For each virus tested, what is its index in the antigenic map?
-  infection_strain_indices <- match(strain_isolation_times, strain_isolation_times) - 1 ## For each virus that circulated, what is its index in the antigenic map?
+  measured_strain_indices <- match(titre_dat$virus, possible_exposure_times) - 1 ## For each virus tested, what is its index in the antigenic map?
+  infection_strain_indices <- match(possible_exposure_times, possible_exposure_times) - 1 ## For each virus that circulated, what is its index in the antigenic map?
 
   ## Get unique measurement sets for each individual at
   ## each sampling time, for each observation type, for each repeat
@@ -420,21 +420,21 @@ setup_titredat_for_posterior_func <- function(titre_dat, antigenic_map=NULL, str
   if (!is.null(titre_dat$DOB)) {
     DOBs <- unique(titre_dat[, c("individual", "DOB")])[, 2]
   } else {
-    DOBs <- rep(min(strain_isolation_times), n_indiv)
-    titre_dat$DOB <- min(strain_isolation_times)
+    DOBs <- rep(min(possible_exposure_times), n_indiv)
+    titre_dat$DOB <- min(possible_exposure_times)
   }
-  age_mask <- create_age_mask(DOBs, strain_isolation_times)
-  strain_mask <- create_strain_mask(titre_dat, strain_isolation_times)
+  age_mask <- create_age_mask(DOBs, possible_exposure_times)
+  strain_mask <- create_strain_mask(titre_dat, possible_exposure_times)
   masks <- data.frame(cbind(age_mask, strain_mask))
 
   if (is.null(n_alive)) {
-    n_alive <- get_n_alive_group(titre_dat, strain_isolation_times)
+    n_alive <- get_n_alive_group(titre_dat, possible_exposure_times)
   }
 
   return(list(
     "obs_types"=obs_types,
     "antigenic_map_melted" = antigenic_maps_melted,
-    "strain_isolation_times" = strain_isolation_times,
+    "possible_exposure_times" = possible_exposure_times,
     "infection_strain_indices" = infection_strain_indices,
     
     "sample_times" = sample_times,

@@ -4,7 +4,7 @@
 #' @param par_tab The parameter table controlling information such as bounds, initial values etc. See \code{\link{example_par_tab}}
 #' @param titre_dat The data frame of titre data to be fitted. Must have columns: group (index of group); individual (integer ID of individual); samples (numeric time of sample taken); virus (numeric time of when the virus was circulating); titre (integer of titre value against the given virus at that sampling time); run (integer giving the repeated number of this titre); DOB (integer giving date of birth matching time units used in model). See \code{\link{example_titre_dat}}
 #' @param antigenic_map (optional) A data frame of antigenic x and y coordinates. Must have column names: x_coord; y_coord; inf_times. See \code{\link{example_antigenic_map}}
-#' @param strain_isolation_times (optional) If no antigenic map is specified, this argument gives the vector of times at which individuals can be infected
+#' @param possible_exposure_times (optional) If no antigenic map is specified, this argument gives the vector of times at which individuals can be infected
 #' @param mcmc_pars Named vector named vector with parameters for the MCMC procedure. See details
 #' @param mvr_pars Leave NULL to use univariate proposals. Otherwise, a list of parameters if using a multivariate proposal. Must contain an initial covariance matrix, weighting for adapting cov matrix, and an initial scaling parameter (0-1)
 #' @param start_inf_hist Infection history matrix to start MCMC at. Can be left NULL. See \code{\link{example_inf_hist}}
@@ -54,7 +54,7 @@
 run_MCMC <- function(par_tab,
                      titre_dat,
                      antigenic_map=NULL,
-                     strain_isolation_times=NULL,
+                     possible_exposure_times=NULL,
                      mcmc_pars = c(),
                      mvr_pars = NULL,
                      start_inf_hist = NULL,
@@ -178,9 +178,9 @@ run_MCMC <- function(par_tab,
   titre_dat <- check_data(titre_dat)
 
   if (!is.null(antigenic_map)) {
-    strain_isolation_times <- unique(antigenic_map$inf_times) # How many strains are we testing against and what time did they circulate
+    possible_exposure_times <- unique(antigenic_map$inf_times) # How many strains are we testing against and what time did they circulate
   } else {
-    antigenic_map <- data.frame("x_coord"=1,"y_coord"=1,"inf_times"=strain_isolation_times)
+    antigenic_map <- data.frame("x_coord"=1,"y_coord"=1,"inf_times"=possible_exposure_times)
   }
   
   n_indiv <- length(unique(titre_dat$individual)) # How many individuals in the titre_dat?
@@ -196,12 +196,12 @@ run_MCMC <- function(par_tab,
     histiter_move <- integer(n_indiv)
     histaccepted_move <- integer(n_indiv)
 
-    overall_swap_proposals <- matrix(0,nrow=n_indiv,ncol=length(strain_isolation_times))
-    overall_add_proposals <- matrix(0,nrow=n_indiv,ncol=length(strain_isolation_times))
+    overall_swap_proposals <- matrix(0,nrow=n_indiv,ncol=length(possible_exposure_times))
+    overall_add_proposals <- matrix(0,nrow=n_indiv,ncol=length(possible_exposure_times))
 
     ## Scaling of infection history time proposal sample probs    
     if(is.null(proposal_ratios)){
-        proposal_ratios <- rep(1, length(strain_isolation_times))
+        proposal_ratios <- rep(1, length(possible_exposure_times))
     }
         
     ##histadd_overall <- integer(n_indiv)
@@ -218,11 +218,11 @@ run_MCMC <- function(par_tab,
   if (!is.null(titre_dat$DOB)) {
     DOBs <- unique(titre_dat[, c("individual", "DOB")])[, 2]
   } else {
-    DOBs <- rep(min(strain_isolation_times), n_indiv)
+    DOBs <- rep(min(possible_exposure_times), n_indiv)
   }
-  age_mask <- create_age_mask(DOBs, strain_isolation_times)
+  age_mask <- create_age_mask(DOBs, possible_exposure_times)
   ## Create strain mask
-  strain_mask <- create_strain_mask(titre_dat, strain_isolation_times)
+  strain_mask <- create_strain_mask(titre_dat, possible_exposure_times)
   masks <- data.frame(cbind(age_mask, strain_mask))
 
   group_ids_vec <- unique(titre_dat[, c("individual", "group")])[, "group"] - 1
@@ -230,13 +230,13 @@ run_MCMC <- function(par_tab,
   ## Number of people that were born before each year and have had a sample taken since that year happened
 
   if (is.null(n_alive)) {
-    n_alive <- get_n_alive_group(titre_dat, strain_isolation_times)
+    n_alive <- get_n_alive_group(titre_dat, possible_exposure_times)
   }
   ## Create posterior calculating function
   posterior_simp <- protect(CREATE_POSTERIOR_FUNC(par_tab,
     titre_dat,
     antigenic_map,
-    strain_isolation_times,
+    possible_exposure_times,
     version=version,
     solve_likelihood,
     age_mask,
@@ -256,7 +256,7 @@ run_MCMC <- function(par_tab,
     proposal_gibbs <- protect(CREATE_POSTERIOR_FUNC(par_tab,
       titre_dat,
       antigenic_map,
-      strain_isolation_times,
+      possible_exposure_times,
       version=version,
       solve_likelihood,
       age_mask,
@@ -283,9 +283,9 @@ run_MCMC <- function(par_tab,
     infection_histories <- start_inf_hist
 
     if (is.null(start_inf_hist)) {
-        infection_histories <- setup_infection_histories_titre(titre_dat, strain_isolation_times, space = 5, titre_cutoff = 3)
+        infection_histories <- setup_infection_histories_titre(titre_dat, possible_exposure_times, space = 5, titre_cutoff = 3)
     }
-    check_inf_hist(titre_dat, strain_isolation_times, infection_histories)
+    check_inf_hist(titre_dat, possible_exposure_times, infection_histories)
     ## Initial likelihoods and individual priors
     tmp_posterior <- posterior_simp(current_pars, infection_histories)
     indiv_likelihoods <- tmp_posterior[[1]] / temp
@@ -521,7 +521,7 @@ run_MCMC <- function(par_tab,
                     model_func <- protect(CREATE_POSTERIOR_FUNC(par_tab,
                                                                 titre_dat,
                                                                 antigenic_map,
-                                                                strain_isolation_times,
+                                                                possible_exposure_times,
                                                                 version=version,
                                                                 solve_likelihood,
                                                                 age_mask,

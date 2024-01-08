@@ -62,7 +62,7 @@ rm_scale <- function(step_scale, mc, popt, log_prob, N_adapt) {
 #' Given a matrix of titre data, proposes plausible initial infection histories from which to begin MCMC sampling.
 #' NOTE - MIGHT NEED TO UPDATE THIS FOR GROUPS
 #' @param titre_dat the matrix of titres data with columns for individual, sample, and titre
-#' @param strain_isolation_times vector of real times for all strains
+#' @param possible_exposure_times vector of real times for all strains
 #' @param sample_prob given an infection seems likely based on titre, suggest infection with 1 minus this probability
 #' @param titre_cutoff specifies how high the titre must be to imply an infection
 #' @return an nxm matrix of infection histories containing 1s and 0s, where n is the number of individuals and m is the number of potential infecting strains
@@ -72,17 +72,17 @@ rm_scale <- function(step_scale, mc, popt, log_prob, N_adapt) {
 #' data(example_antigenic_map)
 #' start_inf <- setup_infection_histories_old(example_titre_dat, example_antigenic_map$inf_times, 0.2, 3)
 #' @export
-setup_infection_histories_old <- function(titre_dat, strain_isolation_times, sample_prob, titre_cutoff = 3) {
+setup_infection_histories_old <- function(titre_dat, possible_exposure_times, sample_prob, titre_cutoff = 3) {
   SAMPLE_PROB <- sample_prob
   n_indiv <- length(unique(titre_dat$individual))
-  n_strain <- length(strain_isolation_times)
+  n_strain <- length(possible_exposure_times)
   sampling_times <- unique(titre_dat$samples)
   sample_time <- max(sampling_times)
   infection_histories <- matrix(0, nrow = n_indiv, ncol = n_strain)
-  strain_mask <- create_strain_mask(titre_dat, strain_isolation_times)
+  strain_mask <- create_strain_mask(titre_dat, possible_exposure_times)
 
   ages <- unique(titre_dat[, c("individual", "DOB")])
-  age_mask <- create_age_mask(ages$DOB, strain_isolation_times)
+  age_mask <- create_age_mask(ages$DOB, possible_exposure_times)
 
   strains <- unique(titre_dat$virus)
 
@@ -131,16 +131,16 @@ setup_infection_histories_old <- function(titre_dat, strain_isolation_times, sam
 #' data(example_antigenic_map)
 #' start_inf <- setup_infection_histories_total(example_titre_dat, example_antigenic_map$inf_times, 2,10)
 #' @export
-setup_infection_histories_total <- function(titre_dat, strain_isolation_times, alpha = 1, beta = 1) {
+setup_infection_histories_total <- function(titre_dat, possible_exposure_times, alpha = 1, beta = 1) {
   DOBs <- unique(titre_dat[, c("individual", "DOB")])[, 2]
   n_indiv <- length(unique(titre_dat$individual))
-  n_strain <- length(strain_isolation_times)
+  n_strain <- length(possible_exposure_times)
 
-  age_mask <- create_age_mask(DOBs, strain_isolation_times)
-  strain_mask <- create_strain_mask(titre_dat, strain_isolation_times)
+  age_mask <- create_age_mask(DOBs, possible_exposure_times)
+  strain_mask <- create_strain_mask(titre_dat, possible_exposure_times)
   masks <- data.frame(cbind(age_mask, strain_mask))
   ## Number of people that were born before each year and have had a sample taken since that year happened
-  n_alive <- sum(sapply(seq(1, length(strain_isolation_times)), function(x) nrow(masks[masks$age_mask <= x & masks$strain_mask >= x, ])))
+  n_alive <- sum(sapply(seq(1, length(possible_exposure_times)), function(x) nrow(masks[masks$age_mask <= x & masks$strain_mask >= x, ])))
 
   ## How many infections are we spreading across everyone?
   total_infs <- rbb(1, n_alive, alpha, beta)
@@ -169,7 +169,7 @@ setup_infection_histories_total <- function(titre_dat, strain_isolation_times, a
 #' data(example_antigenic_map)
 #' start_inf <- setup_infection_histories(example_titre_dat, example_antigenic_map$inf_times)
 #' @export
-setup_infection_histories <- function(titre_dat, strain_isolation_times, space = 5, titre_cutoff = 2, sample_prob = 0.9) {
+setup_infection_histories <- function(titre_dat, possible_exposure_times, space = 5, titre_cutoff = 2, sample_prob = 0.9) {
   start_inf <- NULL
   individuals <- unique(titre_dat$individual)
   ages <- unique(titre_dat[, c("individual", "DOB")])
@@ -180,12 +180,12 @@ setup_infection_histories <- function(titre_dat, strain_isolation_times, space =
     dat <- titre_dat[titre_dat$individual == individual, ]
     dob <- as.numeric(ages[ages$individual == individual, "DOB"])
     strains <- unique(dat$virus)
-    # strains <- strain_isolation_times
+    # strains <- possible_exposure_times
     ## What was the most recent strain that the individual could get
-    strain_mask <- create_strain_mask(dat, strain_isolation_times)
+    strain_mask <- create_strain_mask(dat, possible_exposure_times)
 
     ## Only look at strains that circulated when an individual was alive and for samples not in the future
-    strains <- strains[strains >= dob & strains <= strain_isolation_times[strain_mask]]
+    strains <- strains[strains >= dob & strains <= possible_exposure_times[strain_mask]]
 
     inf_times <- NULL
     i <- 0
@@ -213,11 +213,11 @@ setup_infection_histories <- function(titre_dat, strain_isolation_times, space =
         dist <- 0
       }
     }
-    infections <- rep(0, length(strain_isolation_times))
-    infections[match(inf_times, strain_isolation_times)] <- 1
+    infections <- rep(0, length(possible_exposure_times))
+    infections[match(inf_times, possible_exposure_times)] <- 1
     start_inf <- rbind(start_inf, infections)
   }
-  colnames(start_inf) <- strain_isolation_times
+  colnames(start_inf) <- possible_exposure_times
   rownames(start_inf) <- NULL
   return(start_inf)
 }
@@ -227,7 +227,7 @@ setup_infection_histories <- function(titre_dat, strain_isolation_times, space =
 #' Very similar to \code{\link{setup_infection_histories}}, but is not restricted to placing starting infections against viruses to which an individual has a titre. Given a matrix of titre data, proposes plausible initial infection histories from which to begin MCMC sampling.
 #' The idea is to move along time in the context of antigenic drift and look at an individual's titre against each strain. Where titres are raised, we suggest an infection. However, to avoid suggesting multiple infections for regions of high antigenic similarity, we place a necessary gap (defined by `space`) between proposed infection times.
 #' @param titre_dat the matrix of titres data with columns for individual, sample, and titre
-#' @param strain_isolation_times vector of real times for all strains
+#' @param possible_exposure_times vector of real times for all strains
 #' @param space how many epochs must separate proposed infections
 #' @param titre_cutoff specifies how high the titre must be to imply an infection
 #' @param sample_prob if titre suggests an infection, then add an infection with 1 minus this probability
@@ -238,7 +238,7 @@ setup_infection_histories <- function(titre_dat, strain_isolation_times, space =
 #' data(example_antigenic_map)
 #' start_inf <- setup_infection_histories_titre(example_titre_dat, example_antigenic_map$inf_times)
 #' @export
-setup_infection_histories_titre <- function(titre_dat, strain_isolation_times, space = 5, titre_cutoff = 2, sample_prob = 0.9) {
+setup_infection_histories_titre <- function(titre_dat, possible_exposure_times, space = 5, titre_cutoff = 2, sample_prob = 0.9) {
   start_inf <- NULL
   individuals <- unique(titre_dat$individual)
   ages <- unique(titre_dat[, c("individual", "DOB")])
@@ -249,13 +249,13 @@ setup_infection_histories_titre <- function(titre_dat, strain_isolation_times, s
     dat <- titre_dat[titre_dat$individual == individual, ]
     unique_viruses <- unique(dat$virus)
     dob <- as.numeric(ages[ages$individual == individual, "DOB"])
-    strains <- strain_isolation_times
-    # strains <- strain_isolation_times
+    strains <- possible_exposure_times
+    # strains <- possible_exposure_times
     ## What was the most recent strain that the individual could get
-    strain_mask <- create_strain_mask(dat, strain_isolation_times)
+    strain_mask <- create_strain_mask(dat, possible_exposure_times)
 
     ## Only look at strains that circulated when an individual was alive and for samples not in the future
-    strains <- strains[strains >= dob & strains <= strain_isolation_times[strain_mask]]
+    strains <- strains[strains >= dob & strains <= possible_exposure_times[strain_mask]]
 
     inf_times <- NULL
     i <- 0
@@ -285,11 +285,11 @@ setup_infection_histories_titre <- function(titre_dat, strain_isolation_times, s
         dist <- 0
       }
     }
-    infections <- rep(0, length(strain_isolation_times))
-    infections[match(inf_times, strain_isolation_times)] <- 1
+    infections <- rep(0, length(possible_exposure_times))
+    infections[match(inf_times, possible_exposure_times)] <- 1
     start_inf <- rbind(start_inf, infections)
   }
-  colnames(start_inf) <- strain_isolation_times
+  colnames(start_inf) <- possible_exposure_times
   rownames(start_inf) <- NULL
   return(start_inf)
 }
