@@ -88,7 +88,7 @@ NumericVector titre_data_fast(const NumericVector &theta,
   }
   
   // Complex cross-reactivity model
-  bool complex_cr = theta["complex_cr"] == 1;
+  bool complex_cr = false; //theta["complex_cr"] == 1;
     double sigma_birth_mod_s;
     double sigma_birth_mod_l;
     double sigma_future_mod_s;

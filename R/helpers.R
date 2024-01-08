@@ -578,3 +578,27 @@ generate_antigenic_map_flexible <- function(antigenic_distances, buckets = 1, cl
 
   return(fit_dat)
 }
+
+## How many expected from prior?
+## No need to run -- it's just the same as the AR prior as the probability of infection in a subsequent time point is independent of the previous time point
+setup_infection_histories_prior <- function(titre_dat, strain_isolation_times, alpha=1,beta=1){
+  DOBs <- unique(titre_dat[, c("individual", "DOB")])[, 2]
+  n_indiv <- length(unique(titre_dat$individual))
+  n_strain <- length(strain_isolation_times)
+  
+  age_mask <- create_age_mask(DOBs, strain_isolation_times)
+  strain_mask <- create_strain_mask(titre_dat, strain_isolation_times)
+  masks <- data.frame(cbind(age_mask, strain_mask))
+  
+  ## Go through each possible infection and assign random with p total_infs/n_alive
+  infection_histories <- matrix(0, nrow = n_indiv, ncol = n_strain)
+  
+  probs <- rbeta(length(strain_isolation_times),alpha,beta)
+  
+  for (i in 1:nrow(masks)) {
+    years <- age_mask[i]:strain_mask[i]
+    n <- length(years)
+    infection_histories[i, years] <- rbinom(length(years), 1,probs[years])
+  }
+  return(infection_histories)
+}

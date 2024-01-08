@@ -322,7 +322,7 @@ create_posterior_func <- function(par_tab,
             )
             antigenic_map_short <- create_cross_reactivity_vector(
                 antigenic_map_melted,
-                theta["sigma2"]*theta["sigma1"]
+                theta["sigma2"]
             )
 
             ## Calculate titres for measured data
@@ -413,7 +413,7 @@ create_posterior_func <- function(par_tab,
             }
             ## Work out short and long term boosting cross reactivity - C++ function
             antigenic_map_long <- create_cross_reactivity_vector(antigenic_map_melted, theta["sigma1"])
-            antigenic_map_short <- create_cross_reactivity_vector(antigenic_map_melted, theta["sigma2"]*theta["sigma1"])
+            antigenic_map_short <- create_cross_reactivity_vector(antigenic_map_melted, theta["sigma2"])
 
             n_infections <- sum_infections_by_group(infection_history_mat, group_id_vec, n_groups)
             if (version == 4) n_infected_group <- rowSums(n_infections)
@@ -474,7 +474,7 @@ create_posterior_func <- function(par_tab,
             names(theta) <- par_names_theta
 
             antigenic_map_long <- create_cross_reactivity_vector(antigenic_map_melted, theta["sigma1"])
-            antigenic_map_short <- create_cross_reactivity_vector(antigenic_map_melted, theta["sigma2"]*theta["sigma1"])
+            antigenic_map_short <- create_cross_reactivity_vector(antigenic_map_melted, theta["sigma2"])
 
             y_new <- titre_data_fast(
                 theta, infection_history_mat, strain_isolation_times, infection_strain_indices,
