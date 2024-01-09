@@ -6,17 +6,20 @@
 #' @param upper_bounds a vector of the upper allowable bounds for the proposal
 #' @param steps a vector of step sizes for the proposal
 #' @param index numeric value for the index of the parameter to be moved from the param table and vector
+#' @param gaussian_proposal if TRUE, then samples moves from a Gaussian distribution centered around the current value
 #' @return the parameter vector after step
 #' @family proposals
 #' @export
 #' @useDynLib serosolver
-univ_proposal <- function(values, lower_bounds, upper_bounds, steps, index) {
+univ_proposal <- function(values, lower_bounds, upper_bounds, steps, index, gaussian_proposal=FALSE) {
   rtn <- values
 
-  ## Commented out using guassian proposals, which does work but risks being
-  ## inefficient due to stepping outside of bounds
-  ## rtn[index] <- rnorm(1,values[index],steps[index])
-  ## return(rtn)
+  ## If using simple gaussian proposals
+  if(gaussian_proposal){
+    rtn[index] <- rnorm(1,values[index],steps[index])
+    return(rtn)
+  }
+  ## Otherwise, using uniform proposals after convertion to a unit scale
 
   mn <- lower_bounds[index]
   mx <- upper_bounds[index]
