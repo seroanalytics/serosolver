@@ -393,8 +393,8 @@ setup_antibody_data_for_posterior_func <- function(antibody_data, antigenic_map=
       c(melt_antigenic_coords(tmp[,c("x_coord","y_coord")]))
     })
   
-  measured_strain_indices <- match(antibody_data$biomarker_id, possible_exposure_times) - 1 ## For each biomarker_id tested, what is its index in the antigenic map?
-  infection_strain_indices <- match(possible_exposure_times, possible_exposure_times) - 1 ## For each biomarker_id that circulated, what is its index in the antigenic map?
+  biomarker_id_indices <- match(antibody_data$biomarker_id, possible_exposure_times) - 1 ## For each biomarker_id tested, what is its index in the antigenic map?
+  exposure_id_indices <- match(possible_exposure_times, possible_exposure_times) - 1 ## For each biomarker_id that circulated, what is its index in the antigenic map?
 
   ## Get unique measurement sets for each individual at
   ## each sampling time, for each observation type, for each repeat
@@ -435,7 +435,7 @@ setup_antibody_data_for_posterior_func <- function(antibody_data, antigenic_map=
     "biomarker_groups"=biomarker_groups,
     "antigenic_map_melted" = antigenic_maps_melted,
     "possible_exposure_times" = possible_exposure_times,
-    "infection_strain_indices" = infection_strain_indices,
+    "exposure_id_indices" = exposure_id_indices,
     
     "sample_times" = sample_times,
     
@@ -447,7 +447,7 @@ setup_antibody_data_for_posterior_func <- function(antibody_data, antigenic_map=
     "group_id_vec" = group_id_vec,
     
     ## This one I need to figure out -- does it need to have a different set of indices for each observation type? Probably not
-    "measured_strain_indices" = measured_strain_indices,
+    "biomarker_id_indices" = biomarker_id_indices,
     "n_indiv" = n_indiv,
     "age_mask" = age_mask,
     "sample_mask" = sample_mask,
