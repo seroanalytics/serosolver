@@ -14,8 +14,8 @@
 #' data(example_antibody_data)
 #' data(example_antigenic_map)
 #' times <- example_antigenic_map$inf_times
-#' ages <- unique(example_antibody_data[,c("DOB","individual")])
-#' age_mask <- create_age_mask(ages$DOB, times)
+#' ages <- unique(example_antibody_data[,c("birth","individual")])
+#' age_mask <- create_age_mask(ages$birth, times)
 #' sample_mask <- create_sample_mask(example_antibody_data, times)
 #' new_inf_hist <- inf_hist_swap(example_inf_hist, age_mask,sample_mask, 1,3)[[1]]
 #' @export
@@ -71,8 +71,8 @@ inf_hist_swap <- function(infection_history, age_mask, sample_mask, swap_propn, 
 #' data(example_antibody_data)
 #' data(example_antigenic_map)
 #' times <- example_antigenic_map$inf_times
-#' ages <- unique(example_antibody_data[,c("DOB","individual")])
-#' age_mask <- create_age_mask(ages$DOB, times)
+#' ages <- unique(example_antibody_data[,c("birth","individual")])
+#' age_mask <- create_age_mask(ages$birth, times)
 #' sample_mask <- create_sample_mask(example_antibody_data, times)
 #' phis <- runif(length(times))
 #' n_alive <- get_n_alive(example_antibody_data,times)
@@ -155,10 +155,10 @@ inf_hist_swap_phi <- function(infection_history, phis, age_mask, sample_mask, sw
 #' data(example_antigenic_map)
 #'
 #' times <- example_antigenic_map$inf_times
-#' ages <- unique(example_antibody_data[,c("DOB","individual")])
+#' ages <- unique(example_antibody_data[,c("birth","individual")])
 #'
 #' ## Create age and strain mask
-#' age_mask <- create_age_mask(ages$DOB, times)
+#' age_mask <- create_age_mask(ages$birth, times)
 #' sample_mask <- create_sample_mask(example_antibody_data, times)
 #'
 #' ## Index of individuals to be resampled
