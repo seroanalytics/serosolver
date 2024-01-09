@@ -1,22 +1,22 @@
 #' Check infection history matrix
 #'
 #' Checks that the infection history matrix is allowable given the birth dates and sampling times of the data
-#' @param titre_dat the data frame of titre data
-#' @param possible_exposure_times vector of times at which individuals could be exposed e.g., seq(1968,2015,by=1)
+#' @param antibody_data the data frame of titre data
+#' @param possible_exposure_times vector of times at which individuals could be exposed e.g., `seq(1968,2015,by=1)`
 #' @param inf_hist the infection history matrix, with nrows = number indivs and ncols = length(possible_exposure_times)
 #' @return a single boolean value, FALSE if the check passes, otherwise throws an error
 #' @family check_inputs
-#' data(example_titre_dat)
+#' data(example_antibody_data)
 #' data(example_inf_hist)
 #' times <- 1968:2015
-#' check_inf_hist(example_titre_dat, times, example_inf_hist)
+#' check_inf_hist(example_antibody_data, times, example_inf_hist)
 #' @export
-check_inf_hist <- function(titre_dat, possible_exposure_times, inf_hist){
-    DOBs <- get_DOBs(titre_dat)
+check_inf_hist <- function(antibody_data, possible_exposure_times, inf_hist){
+    DOBs <- get_DOBs(antibody_data)
     age_mask <- create_age_mask(DOBs[,2],possible_exposure_times)
-    strain_mask <- create_strain_mask(titre_dat, possible_exposure_times)
+    sample_mask <- create_sample_mask(antibody_data, possible_exposure_times)
     before_born <- logical(length(age_mask))
-    after_sample <- logical(length(strain_mask))
+    after_sample <- logical(length(sample_mask))
     res <- logical(length(age_mask))
     for(i in seq_along(age_mask)){
         if(sum(inf_hist[i,] != 0)){
@@ -24,7 +24,7 @@ check_inf_hist <- function(titre_dat, possible_exposure_times, inf_hist){
             last_inf <- max(which(inf_hist[i,] == 1))
             
             before_born[i] <- first_inf < age_mask[i]
-            after_sample[i] <- last_inf > strain_mask[i]
+            after_sample[i] <- last_inf > sample_mask[i]
             res[i] <- before_born[i] | after_sample[i]
         } else {
             res[i] <- FALSE
@@ -53,7 +53,7 @@ check_inf_hist <- function(titre_dat, possible_exposure_times, inf_hist){
 #' @export
 check_par_tab <- function(par_tab, mcmc = FALSE, version = NULL) {
     ## Checks that should happen in simulate_data and run_MCMC
-    essential_names <- c("names","values","fixed","steps","lower_bound","upper_bound","lower_start","upper_start","type")
+    essential_names <- c("names","values","fixed","lower_bound","upper_bound","lower_start","upper_start","par_type")
     if (!all(essential_names %in% colnames(par_tab))) {
         message(paste(c("Some column names missing from par_tab: ", setdiff(essential_names,colnames(par_tab))),collapse=" "))
         if(!("steps" %in% colnames(par_tab))){
@@ -61,8 +61,8 @@ check_par_tab <- function(par_tab, mcmc = FALSE, version = NULL) {
           par_tab$steps <- 0.1
         }
         if(!("type" %in% colnames(par_tab))){
-          message("Adding \"obs_type\" to par_tab variables.")
-          par_tab$obs_type <- 1
+          message("Adding \"par_type\" to par_tab variables.")
+          par_tab$par_type <- 1
         }
     }
     pars <- par_tab$values
@@ -77,7 +77,7 @@ check_par_tab <- function(par_tab, mcmc = FALSE, version = NULL) {
         explicit_phi <- (no_phi > 0)
 
         ## Check that all optional parameters are fixed, if not, fix them
-        op_pars <- par_tab[which(par_tab$type == 0), ]
+        op_pars <- par_tab[which(par_tab$par_type == 0), ]
         if (all(op_pars$fixed == 1) == FALSE) stop("All optional parameters must be fixed")
 
         if (version == 1) {
@@ -92,17 +92,17 @@ check_par_tab <- function(par_tab, mcmc = FALSE, version = NULL) {
 
         
         if (version %in% c(2, 3, 4)) {
-            if (explicit_phi) stop(paste("phis are not required for versions 2, 3 or 4 but par_tab contains phi(s)")) ## Should we remove them?
+            if (explicit_phi) stop(paste("phis are not required for versions 2, 3 or 4 but par_tab contains phi(s). Suggest removing all entries named phi")) ## Should we remove them?
         }
         ## Check bounds are equal to starting bounds
         if (any(par_tab$upper_start > par_tab$upper_bound) | any(par_tab$lower_start < par_tab$lower_bound)) {
-            warning("Lower and upper bounds are not equal to the starting upper and lower bounds. If par_tab was used to create starting values, starting values may be out of bounds. ")
+            warning("lower_start and upper_start are not equal to the starting lower_bound and upper_bound. If par_tab was used to create starting values, starting values may be out of bounds. ")
         }
     }
     ## Check that alpha and beta there for beta distribution
     ## If there, Pull out alpha and beta for beta binomial proposals
-    if (!("alpha" %in% par_tab$names) | !("beta" %in% par_tab$names)) {
-        stop("par_tab must have entries for `alpha` and `beta` for infection history prior")
+    if (!("infection_model_prior_shape1" %in% par_tab$names) | !("infection_model_prior_shape2" %in% par_tab$names)) {
+        stop("par_tab must have entries for `infection_model_prior_shape1` and `infection_model_prior_shape2` for infection history prior")
     }
     par_tab
 }
@@ -112,20 +112,29 @@ check_par_tab <- function(par_tab, mcmc = FALSE, version = NULL) {
 #' @return the same data object with corrections if needed
 #' @family check_inputs
 #' @examples
-#' data(example_titre_dat)
-#' check_data(example_titre_dat)
+#' data(example_antibody_data)
+#' check_data(example_antibody_data)
 #' @export
 check_data <- function(data) {
     ## Check that all columns are present
-    col.names <- c("individual", "samples", "virus", "titre", "obs_type","group")
+    col.names <- c("individual", "sample_time", "biomarker_id","biomarker_group", "measurement", "repeat_number","population_group","birth")
     ## If there are any missing columns (NOTE: not checking if group or run are present)
     if (all(col.names %in% colnames(data)) != TRUE) {
         missing.cols <- col.names[which(col.names %in% colnames(data) == FALSE)] ## Find the missing column names
         message(paste(c("The following column(s) are missing from data: ", missing.cols), collapse = " "))
 
-        if(!("type" %in% colnames(data))){
-          message("Adding \"obs_type\" to data variables.")
-          data$obs_type <- 1
+        ## Add missing variable names
+        if(!("biomarker_group" %in% colnames(data))){
+          message("Adding \"biomarker_group\" to data variables.")
+          data$biomarker_group <- 1
+        }
+        if(!("population_group" %in% colnames(data))){
+          message("Adding \"population_group\" to data variables.")
+          data$population_group <- 1
+        }
+        if(!("repeat_number" %in% colnames(data))){
+          message("Adding \"repeat_number\" to data variables.")
+          data$repeat_number <- 1
         }
     }
     return(data)
@@ -156,14 +165,14 @@ check_proposals <- function(version, mvr_pars) {
 }
 
 #' Check if the starting infection history table and titre data are consistent
-#' @param titre_dat the data frame of titer data
+#' @param antibody_data the data frame of titer data
 #' @param possible_exposure_times the vector of times corresponding to entries in DOB
 #' @param inf_hist the starting infection history matrix
 #' @return nothing, prints a warning
 #' @family check_inputs
 #' @export
-check_inf_hist <- function(titre_dat,possible_exposure_times, inf_hist){
-    DOBs <- create_age_mask(titre_dat %>% select(individual, DOB) %>% distinct() %>% pull(DOB),
+check_inf_hist <- function(antibody_data,possible_exposure_times, inf_hist){
+    DOBs <- create_age_mask(antibody_data %>% select(individual, DOB) %>% distinct() %>% pull(DOB),
                             possible_exposure_times)
     correct_dob <- rep(0,length(DOBs))
     for(i in seq_along(DOBs)){

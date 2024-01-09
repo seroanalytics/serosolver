@@ -12,7 +12,8 @@
 #'     \item{upper_bound}{upper numeric bound for the parameter during fitting (upper uniform prior bound)}
 #'     \item{lower_start}{can be used to set the lower allowable random starting value for the MCMC}
 #'     \item{upper_start}{can be used to set the upper allowable random starting value for the MCMC}
-#'     \item{type}{used for admin during MCMC, set to 1 for normal model parameters, 0 for model options (eg. see titre_dependent), or 2 for attack rate terms, phi}
+#'     \item{par_type}{used for bookeeping during MCMC, set to 1 for normal model parameters, 0 for model options (eg. see titre_dependent), or 2 for attack rate terms, phi}
+#'     \item{biomarker_group}{gives the biomarker group each parameter corresponds to, matching entries in the titre_dat object}
 #' }
 #' @family example_data
 "example_par_tab"
@@ -47,13 +48,14 @@
 #' @usage data(example_titre_data)
 #' @format A data frame with 4800 rows (each corresponding to a unique titre reading) and 6 variables:
 #' \describe{
-#'     \item{individual}{index starting from 1 for the individual ID}
-#'     \item{sample_time}{time the serum sample was taken}
-#'     \item{biomarker_id}{ID of the biomarker being measured}
-#'     \item{observation}{the titre measurement for this strain at this sampling time}
-#'     \item{repeat_number}{where there are repeat measurements, gives the repeat number for this serum sample and strain measured}
-#'     \item{group}{group index of this individual}
-#'     \item{DOB}{date of birth matching the time resolution of the model}
+#'     \item{individual}{index starting from 1 for the individual ID. This should be continuous from 1:n.}
+#'     \item{sample_time}{time the serum sample was taken, matching the time resolution used in the overall model.}
+#'     \item{biomarker_id}{ID of the biomarker being measured. Usually this would correspond to the time period in which an antigen was assumed to be circulating, e.g., an entry of 2015 would correspond to the variant assumed to be circulating throughout 2015.}
+#'     \item{biomarker_group}{Group ID of the biomarker being measured. This will usually just be 1, but can be used where there are multiple biomarker types (not just antigens/targets) per sample. For example, this might represent antibody titer and avidity.}
+#'     \item{measurement}{the titre measurement for this strain at this sampling time.}
+#'     \item{repeat_number}{where there are repeat measurements, gives the repeat number for this serum sample and strain measured.}
+#'     \item{population_group}{group index of this individual, for example, corresponding to a study location.}
+#'     \item{birth}{date of birth matching the time resolution of the model.}
 #' }
 #' @family example_data
 "example_titre_dat"

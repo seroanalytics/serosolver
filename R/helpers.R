@@ -1,64 +1,64 @@
 #' Get number alive
 #'
-#' Given the titre_dat data frame, calculates the number that are alive (alive to be infected, that is) for each time in times
-#' @param titre_dat the data frame of titre data. See \code{\link{example_titre_dat}}
+#' Given the antibody_data data frame, calculates the number that are alive (alive to be infected, that is) for each time in times
+#' @param antibody_data the data frame of titre data. See \code{\link{example_antibody_data}}
 #' @param times the vector of times to calculate number alive for
 #' @return a vector giving the number alive in each time point
 #' @family get_summary
 #' @examples
-#' data(example_titre_dat)
+#' data(example_antibody_data)
 #' data(example_antigenic_map)
 #' times <- unique(example_antigenic_map$inf_times)
-#' get_n_alive(example_titre_dat, times)
+#' get_n_alive(example_antibody_data, times)
 #' @export
-get_n_alive <- function(titre_dat, times) {
-  DOBs <- unique(titre_dat[, c("individual", "DOB")])[, 2]
+get_n_alive <- function(antibody_data, times) {
+  DOBs <- unique(antibody_data[, c("individual", "birth")])[, 2]
   age_mask <- create_age_mask(DOBs, times)
-  strain_mask <- create_strain_mask(titre_dat, times)
-  masks <- data.frame(cbind(age_mask, strain_mask))
+  sample_mask <- create_sample_mask(antibody_data, times)
+  masks <- data.frame(cbind(age_mask, sample_mask))
   n_alive <- sapply(seq(1, length(times)), function(x)
-    nrow(masks[masks$age_mask <= x & masks$strain_mask >= x, ]))
+    nrow(masks[masks$age_mask <= x & masks$sample_mask >= x, ]))
 }
 
 #' Get DOBs
 #'
-#' Gets the dates of birth for each individual in titre_dat
-#' @param titre_dat the data frame of titre data. See \code{\link{example_titre_dat}}
-#' @return a data frame with individual ID and DOB
+#' Gets the dates of birth for each individual in antibody_data
+#' @param antibody_data the data frame of titre data. See \code{\link{example_antibody_data}}
+#' @return a data frame with individual and birth
 #' @family get_summary
 #' @examples
-#' data(example_titre_dat)
-#' get_DOBs(titre_dat)
+#' data(example_antibody_data)
+#' get_DOBs(antibody_data)
 #' @export
-get_DOBs <- function(titre_dat){
-    DOBs <- unique(titre_dat[,c("individual","DOB")])
+get_DOBs <- function(antibody_data){
+    DOBs <- unique(antibody_data[,c("individual","birth")])
 }
 
 #' Get number alive by location
 #'
-#' Given the titre_dat data frame with entries for location, calculates the number that are alive (alive to be infected, that is) for each time in times by location
-#' @param titre_dat the data frame of titre data. See \code{\link{example_titre_dat}}
+#' Given the antibody_data data frame with entries for location, calculates the number that are alive (alive to be infected, that is) for each time in times by location
+#' @param antibody_data the data frame of titre data. See \code{\link{example_antibody_data}}
 #' @param times the vector of times to calculate number alive for
-#' @param melt_dat if TRUE, returns a melted data frame. Returns a wide matrix otherwise.
+#' @param melt_data if TRUE, returns a melted data frame. Returns a wide matrix otherwise.
 #' @return a matrix giving the number alive in each time point in each location
 #' @family get_summary
 #' @examples
-#' data(example_titre_dat)
+#' data(example_antibody_data)
 #' data(example_antigenic_map)
 #' times <- unique(example_antigenic_map$inf_times)
-#' get_n_alive_group(example_titre_dat, times)
+#' get_n_alive_group(example_antibody_data, times)
 #' @export
-get_n_alive_group <- function(titre_dat, times, melt_dat = FALSE) {
-  DOBs <- unique(titre_dat[, c("individual", "group", "DOB")])
+get_n_alive_group <- function(antibody_data, times, melt_data = FALSE) {
+  DOBs <- unique(antibody_data[, c("individual", "group", "DOB")])
   age_mask <- create_age_mask(DOBs[, "DOB"], times)
-  strain_mask <- create_strain_mask(titre_dat, times)
-  masks <- data.frame(cbind(age_mask, strain_mask))
+  sample_mask <- create_sample_mask(antibody_data, times)
+  masks <- data.frame(cbind(age_mask, sample_mask))
   DOBs <- cbind(DOBs, masks)
   n_alive <- plyr::ddply(DOBs, ~group, function(y) sapply(seq(1, length(times)), function(x)
-      nrow(y[y$age_mask <= x & y$strain_mask >= x, ])))
+      nrow(y[y$age_mask <= x & y$sample_mask >= x, ])))
   n_alive <- as.matrix(n_alive[, 2:ncol(n_alive)])
   colnames(n_alive) <- times
-  if (melt_dat) {
+  if (melt_data) {
     n_alive <- data.frame(n_alive)
     n_alive$group <- 1:nrow(n_alive)
     n_alive <- reshape2::melt(n_alive, id.vars = c("group"))
@@ -70,9 +70,9 @@ get_n_alive_group <- function(titre_dat, times, melt_dat = FALSE) {
 }
 
 #' @export
-create_prior_lookup <- function(titre_dat, possible_exposure_times, alpha1, beta1, n_alive=NULL){
+create_prior_lookup <- function(antibody_data, possible_exposure_times, alpha1, beta1, n_alive=NULL){
     if(is.null(n_alive)){
-        n_alive <- get_n_alive(titre_dat, possible_exposure_times)
+        n_alive <- get_n_alive(antibody_data, possible_exposure_times)
     }
     lookup_tab <- matrix(nrow=max(n_alive)+1,ncol=length(possible_exposure_times))
     max_alive <- max(n_alive)
@@ -88,9 +88,9 @@ create_prior_lookup <- function(titre_dat, possible_exposure_times, alpha1, beta
 }
 
 #' @export
-create_prior_lookup_groups <- function(titre_dat, possible_exposure_times, alpha1, beta1, n_alive=NULL){
+create_prior_lookup_groups <- function(antibody_data, possible_exposure_times, alpha1, beta1, n_alive=NULL){
     if(is.null(n_alive)){
-        n_alive <- get_n_alive_group(titre_dat, possible_exposure_times)
+        n_alive <- get_n_alive_group(antibody_data, possible_exposure_times)
     }
     lookup_tab <- array(-100000, dim=c(max(n_alive)+1,length(possible_exposure_times),nrow(n_alive)))
     max_alive <- max(n_alive)
@@ -117,10 +117,10 @@ create_prior_lookup_groups <- function(titre_dat, possible_exposure_times, alpha
 #' @return a vector giving the first index of possible_exposure_times that an individual can be infected
 #' @family create_masks
 #' @examples
-#' data(example_titre_dat)
+#' data(example_antibody_data)
 #' data(example_antigenic_map)
 #' times <- example_antigenic_map$inf_times
-#' DOBs <- unique(example_titre_dat[,c("individual","DOB")])
+#' DOBs <- unique(example_antibody_data[,c("individual","DOB")])
 #' age_mask <- create_age_mask(DOBs$DOB, times)
 #' @export
 create_age_mask <- function(DOBs, possible_exposure_times) {
@@ -133,25 +133,25 @@ create_age_mask <- function(DOBs, possible_exposure_times) {
   })
   return(age_mask)
 }
-#' Create strain mask
+#' Create sample mask
 #'
-#' Converts a data frame of individual sampling times to give the index of the last infection that individual could have had
-#' @param titre_dat the data frame of titre data. See \code{\link{example_titre_dat}}
+#' Converts a data frame of individual sampling times to give the index of the last infection that individual could have had (as we can't observe anything after the last observation)
+#' @param antibody_data the data frame of titre data. See \code{\link{example_antibody_data}}
 #' @param possible_exposure_times the vector of times that individuals can be infected
 #' @return a vector giving the last index of possible_exposure_times that an individual can be infected
 #' @family create_masks
-#' data(example_titre_dat)
+#' data(example_antibody_data)
 #' data(example_antigenic_map)
 #' times <- example_antigenic_map$inf_times
-#' strain_mask <- create_strain_mask(example_titre_dat, times)
+#' sample_mask <- create_sample_mask(example_antibody_data, times)
 #' @export
-create_strain_mask <- function(titre_dat, possible_exposure_times) {
-  ids <- unique(titre_dat$individual)
-  strain_mask <- sapply(ids, function(x) {
-    sample_times <- titre_dat$samples[titre_dat$individual == x]
+create_sample_mask <- function(antibody_data, possible_exposure_times) {
+  ids <- unique(antibody_data$individual)
+  sample_mask <- sapply(ids, function(x) {
+    sample_times <- antibody_data$samples[antibody_data$individual == x]
     max(which(max(sample_times) >= possible_exposure_times))
   })
-  return(strain_mask)
+  return(sample_mask)
 }
 
 
@@ -348,17 +348,17 @@ row.match <- function(x, table, nomatch = NA) {
 #' Setup titre data indices
 #'
 #' Sets up a large list of pre-indexing and pre-processing to speed up the model solving during MCMC fitting.
-#' Note that this should be `titre_dat` after subsetting to only `run==1`, as we will figure out elsewhere which solves to use as repeats
+#' Note that this should be `antibody_data` after subsetting to only `run==1`, as we will figure out elsewhere which solves to use as repeats
 #' @inheritParams create_posterior_func
 #' @return a very long list. See source code directly.
 #' @seealso \code{\link{create_posterior_func}}
 #' @export
-setup_titredat_for_posterior_func <- function(titre_dat, antigenic_map=NULL, possible_exposure_times=NULL,
+setup_titredat_for_posterior_func <- function(antibody_data, antigenic_map=NULL, possible_exposure_times=NULL,
                                               age_mask = NULL, n_alive = NULL) {
   essential_colnames <- c("individual", "samples", "titre", "virus", "obs_type","group")
   ## How many observation types are there?
-  n_indiv <- length(unique(titre_dat$individual))
-  unique_obs_types <- unique(titre_dat$obs_type)
+  n_indiv <- length(unique(antibody_data$individual))
+  unique_obs_types <- unique(antibody_data$obs_type)
   n_obs_types <- length(unique_obs_types)
   
   ## Check if an antigenic map is provided. If not, then create a dummy map where all pathogens have the same position on the map
@@ -393,42 +393,42 @@ setup_titredat_for_posterior_func <- function(titre_dat, antigenic_map=NULL, pos
       c(melt_antigenic_coords(tmp[,c("x_coord","y_coord")]))
     })
   
-  measured_strain_indices <- match(titre_dat$virus, possible_exposure_times) - 1 ## For each virus tested, what is its index in the antigenic map?
+  measured_strain_indices <- match(antibody_data$virus, possible_exposure_times) - 1 ## For each virus tested, what is its index in the antigenic map?
   infection_strain_indices <- match(possible_exposure_times, possible_exposure_times) - 1 ## For each virus that circulated, what is its index in the antigenic map?
 
   ## Get unique measurement sets for each individual at
   ## each sampling time, for each observation type, for each repeat
   ## ie. each row of this is a unique blood sample and observation type taken
-  sample_data <- unique(titre_dat[, c("individual", "samples", "obs_type")])
+  sample_data <- unique(antibody_data[, c("individual", "samples", "obs_type")])
   sample_data_start <- cumsum(c(0,plyr::ddply(sample_data, .(individual, obs_type), nrow)$V1))
   sample_times <- sample_data$samples ## What were the times that these samples were taken?
   
-  type_data <- unique(titre_dat[,c("individual","obs_type")])
+  type_data <- unique(antibody_data[,c("individual","obs_type")])
   type_data_start <- cumsum(c(0, plyr::ddply(type_data, .(individual), nrow)$V1))
   obs_types <- type_data$obs_type
   
   ## How many rows in the titre data correspond to each unique individual, sample, observation type?
   ## ie. each element of this vector corresponds to one set of titres that need to be predicted
-  nrows_per_sample <- plyr::ddply(titre_dat, .(individual,obs_type, samples), nrow)$V1
-  titre_data_start <- cumsum(c(0,nrows_per_sample))
+  nrows_per_sample <- plyr::ddply(antibody_data, .(individual,obs_type, samples), nrow)$V1
+  antibody_data_start <- cumsum(c(0,nrows_per_sample))
 
     ## Get unique groups
-  groups <- unique(titre_dat$group)
-  group_table <- unique(titre_dat[, c("individual", "group")])
+  groups <- unique(antibody_data$group)
+  group_table <- unique(antibody_data[, c("individual", "group")])
   group_id_vec <- group_table$group - 1
 
-  if (!is.null(titre_dat$DOB)) {
-    DOBs <- unique(titre_dat[, c("individual", "DOB")])[, 2]
+  if (!is.null(antibody_data$DOB)) {
+    DOBs <- unique(antibody_data[, c("individual", "DOB")])[, 2]
   } else {
     DOBs <- rep(min(possible_exposure_times), n_indiv)
-    titre_dat$DOB <- min(possible_exposure_times)
+    antibody_data$DOB <- min(possible_exposure_times)
   }
   age_mask <- create_age_mask(DOBs, possible_exposure_times)
-  strain_mask <- create_strain_mask(titre_dat, possible_exposure_times)
-  masks <- data.frame(cbind(age_mask, strain_mask))
+  sample_mask <- create_sample_mask(antibody_data, possible_exposure_times)
+  masks <- data.frame(cbind(age_mask, sample_mask))
 
   if (is.null(n_alive)) {
-    n_alive <- get_n_alive_group(titre_dat, possible_exposure_times)
+    n_alive <- get_n_alive_group(antibody_data, possible_exposure_times)
   }
 
   return(list(
@@ -439,7 +439,7 @@ setup_titredat_for_posterior_func <- function(titre_dat, antigenic_map=NULL, pos
     
     "sample_times" = sample_times,
     
-    "titre_data_start"=titre_data_start,
+    "antibody_data_start"=antibody_data_start,
     "nrows_per_sample"=nrows_per_sample,
     "sample_data_start"=sample_data_start,
     "type_data_start"=type_data_start,
@@ -450,7 +450,7 @@ setup_titredat_for_posterior_func <- function(titre_dat, antigenic_map=NULL, pos
     "measured_strain_indices" = measured_strain_indices,
     "n_indiv" = n_indiv,
     "age_mask" = age_mask,
-    "strain_mask" = strain_mask,
+    "sample_mask" = sample_mask,
     "n_alive" = n_alive,
     "DOBs" = DOBs
   ))
@@ -458,8 +458,8 @@ setup_titredat_for_posterior_func <- function(titre_dat, antigenic_map=NULL, pos
 
 
 #' @export
-euc_distance <- function(i1, i2, fit_dat) {
-  return(sqrt((fit_dat[i1, "x_coord"] - fit_dat[i2, "x_coord"])^2 + (fit_dat[i1, "y_coord"] - fit_dat[i2, "y_coord"])^2))
+euc_distance <- function(i1, i2, fit_data) {
+  return(sqrt((fit_data[i1, "x_coord"] - fit_data[i2, "x_coord"])^2 + (fit_data[i1, "y_coord"] - fit_data[i2, "y_coord"])^2))
 }
 
 
@@ -520,10 +520,10 @@ generate_antigenic_map <- function(antigenic_distances, buckets = 1, spar = 0.3)
   Strain <- seq(1968 * buckets, 2016 * buckets - 1, by = 1)
   x_predict <- predict(x_line, data.frame(Strain))
   y_predict <- predict(fit, x = x_predict)
-  fit_dat <- data.frame(x = y_predict$x, y = y_predict$y)
-  fit_dat$strain <- Strain
-  colnames(fit_dat) <- c("x_coord", "y_coord", "inf_times")
-  return(fit_dat)
+  fit_data <- data.frame(x = y_predict$x, y = y_predict$y)
+  fit_data$strain <- Strain
+  colnames(fit_data) <- c("x_coord", "y_coord", "inf_times")
+  return(fit_data)
 }
 #' Generate antigenic map, flexible
 #'
@@ -572,9 +572,9 @@ generate_antigenic_map_flexible <- function(antigenic_distances, buckets = 1, cl
   x_predict <- predict(x_line, data.frame(Strain))
   y_predict <- predict(fit, x = x_predict)
 
-  fit_dat <- data.frame(x = y_predict$x, y = y_predict$y)
-  fit_dat$strain <- Strain
-  colnames(fit_dat) <- c("x_coord", "y_coord", "inf_times")
+  fit_data <- data.frame(x = y_predict$x, y = y_predict$y)
+  fit_data$strain <- Strain
+  colnames(fit_data) <- c("x_coord", "y_coord", "inf_times")
 
   ## If using clusters
   if (use_clusters) {
@@ -589,16 +589,16 @@ generate_antigenic_map_flexible <- function(antigenic_distances, buckets = 1, cl
     colnames(cluster_starts)[2] <- "first_cluster_year"
     clusters1 <- merge(clusters, cluster_starts, by = c("cluster_used"))
     clusters1 <- clusters1[, c("cluster_used", "first_cluster_year", "year")]
-    colnames(fit_dat)[3] <- "first_cluster_year"
+    colnames(fit_data)[3] <- "first_cluster_year"
 
     ## Merge on "inf_times" with first_cluster_year, such that all viruses
     ## in a cluster have the same location as the first virus in that cluster
-    fit_dat <- fit_dat[fit_dat$first_cluster_year %in% clusters1$first_cluster_year, ]
-    fit_dat <- merge(clusters1, fit_dat, by = "first_cluster_year")
-    fit_dat <- fit_dat[, c("x_coord", "y_coord", "year")]
-    colnames(fit_dat)[3] <- "inf_times"
-    fit_dat <- fit_dat[order(fit_dat$inf_times), ]
+    fit_data <- fit_data[fit_data$first_cluster_year %in% clusters1$first_cluster_year, ]
+    fit_data <- merge(clusters1, fit_data, by = "first_cluster_year")
+    fit_data <- fit_data[, c("x_coord", "y_coord", "year")]
+    colnames(fit_data)[3] <- "inf_times"
+    fit_data <- fit_data[order(fit_data$inf_times), ]
   }
 
-  return(fit_dat)
+  return(fit_data)
 }
