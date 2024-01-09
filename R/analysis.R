@@ -152,7 +152,7 @@ load_theta_chains <- function(location = getwd(), par_tab = NULL, unfixed = TRUE
   ## Get the estimated parameters only
   if (unfixed & !is.null(par_tab)) {
     fixed <- par_tab$fixed
-    use_colnames <- intersect(c("sampno", par_tab$names[which(fixed == 0)], "lnlike", "likelihood", "prior_prob", "chain_no"), colnames(read_chains[[1]]))
+    use_colnames <- intersect(c("sampno", par_tab$names[which(fixed == 0)], "posterior_prob", "likelihood", "prior_prob", "chain_no"), colnames(read_chains[[1]]))
     read_chains <- lapply(read_chains, function(x) x[, use_colnames])
   }
 
