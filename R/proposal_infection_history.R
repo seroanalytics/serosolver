@@ -1,6 +1,6 @@
 #' Swap infection history years
 #'
-#' Swaps the entire contents of two columns of the infection history matrix, adhering to age and strain limitations.
+#' Swaps the entire contents of two columns of the infection history matrix, adhering to age and sample time limitations.
 #' @param infection_history matrix of 1s and 0s to swap around representing the infection history
 #' @param age_mask the first index in infection_history that each individual (row) could be infected in
 #' @param sample_mask the last index in infection_history that each individual (row) could be infected in ie. the time of the latest blood sample
