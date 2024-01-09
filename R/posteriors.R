@@ -63,10 +63,10 @@ r_likelihood_continuous <- function(expected, data, theta, expected_indices = NU
 #' @return a single log probability
 #' @family priors
 #' @export
-calc_phi_probs <- function(phis, infection_history, age_mask, strain_mask) {
+calc_phi_probs <- function(phis, infection_history, age_mask, sample_mask) {
   lik <- 0
   for (i in 1:ncol(infection_history)) {
-    use_indivs <- intersect(which(age_mask <= i), which(strain_mask >= i))
+    use_indivs <- intersect(which(age_mask <= i), which(sample_mask >= i))
     lik <- lik + sum(log((phis[i]^infection_history[use_indivs, i] *
       (1 - phis[i])^(1 - infection_history[use_indivs, i]))))
   }
@@ -80,26 +80,26 @@ calc_phi_probs <- function(phis, infection_history, age_mask, strain_mask) {
 #' @return a vector of log probabilities for each individual
 #' @family priors
 #' @export
-calc_phi_probs_indiv <- function(phis, infection_history, age_mask, strain_mask) {
+calc_phi_probs_indiv <- function(phis, infection_history, age_mask, sample_mask) {
   lik <- numeric(nrow(infection_history))
   for (i in 1:ncol(infection_history)) {
     to_add <- log(((phis[i]^infection_history[, i]) *
       (1 - phis[i])^(1 - infection_history[, i]))) *
       as.numeric(age_mask <= i) *
-      as.numeric(strain_mask >= i)
+      as.numeric(sample_mask >= i)
     lik <- lik + to_add
   }
   lik
 }
 
-calc_phi_loc_probs_indiv <- function(phis, group_probs, infection_history, age_mask, strain_mask, group_indices) {
+calc_phi_loc_probs_indiv <- function(phis, group_probs, infection_history, age_mask, sample_mask, group_indices) {
   lik <- numeric(nrow(infection_history))
   max_group_p <- max(group_probs)
   group_probs <- group_probs / max_group_p
   for (i in 1:ncol(infection_history)) {
     tmp <- (infection_history[, i] * log(phis[i] * group_probs[group_indices]) +
       (1 - infection_history[, i]) * log(1 - phis[i] * group_probs[group_indices])) *
-      as.numeric(age_mask <= i) * as.numeric(strain_mask >= i)
+      as.numeric(age_mask <= i) * as.numeric(sample_mask >= i)
     lik <- lik + tmp
   }
   lik
@@ -119,7 +119,7 @@ calc_phi_probs_spline <- function(foi, knots, theta, infection_history, age_mask
   phis <- generate_phis(foi, knots, theta, length(foi), 12)
   lik <- numeric(nrow(infection_history))
   for (i in 1:ncol(infection_history)) {
-    lik <- lik + infection_history[, i] * log(phis[i]) + (1 - infection_history[, i]) * log(phis[i]) + log(as.numeric(age_mask <= i)) + log(as.numeric(strain_mask >= i))
+    lik <- lik + infection_history[, i] * log(phis[i]) + (1 - infection_history[, i]) * log(phis[i]) + log(as.numeric(age_mask <= i)) + log(as.numeric(sample_mask >= i))
   }
   lik
 }
@@ -244,7 +244,7 @@ prob_mus <- function(mus, pars) {
 #'
 #' Takes all of the input data/parameters and returns a function pointer. This function finds the posterior for a given set of input parameters (theta) and infection histories without needing to pass the data set back and forth. No example is provided for function_type=2, as this should only be called within \code{\link{run_MCMC}}
 #' @param par_tab the parameter table controlling information such as bounds, initial values etc. See \code{\link{example_par_tab}}
-#' @param titre_dat the data frame of data to be fitted. Must have columns: group (index of group); individual (integer ID of individual); samples (numeric time of sample taken); virus (numeric time of when the virus was circulating); obs_type (integer of the observation group type, using a unique value for each distinctive type of observation underpinned by the same generative model); titre (integer of titre value against the given virus at that sampling time). See \code{\link{example_titre_dat}}
+#' @param antibody_data the data frame of data to be fitted. Must have columns: group (index of group); individual (integer ID of individual); samples (numeric time of sample taken); virus (numeric time of when the virus was circulating); obs_type (integer of the observation group type, using a unique value for each distinctive type of observation underpinned by the same generative model); titre (integer of titre value against the given virus at that sampling time). See \code{\link{example_antibody_data}}
 #' @param antigenic_map (optional) a data frame of antigenic x and y coordinates. Must have column names: x_coord; y_coord; inf_times. See \code{\link{example_antigenic_map}}
 #' @param possible_exposure_times (optional) if no antigenic map is specified, this argument gives the vector of times at which individuals can be infected
 #' @param version which infection history assumption version to use? See \code{\link{describe_priors}} for options. Can be 1, 2, 3 or 4
@@ -261,22 +261,22 @@ prob_mus <- function(mus, pars) {
 #' @examples
 #' \dontrun{
 #' data(example_par_tab)
-#' data(example_titre_dat)
+#' data(example_antibody_data)
 #' data(example_antigenic_map)
 #' data(example_inf_hist)
 #'
-#' ## Simple model solving code. Output matches entries of example_titre_dat
-#' model_func <- create_posterior_func(example_par_tab, example_titre_dat, example_antigenic_map, function_type = 3)
+#' ## Simple model solving code. Output matches entries of example_antibody_data
+#' model_func <- create_posterior_func(example_par_tab, example_antibody_data, example_antigenic_map, function_type = 3)
 #' y <- model_func(example_par_tab$values, example_inf_hist)
 #'
 #' ## Solve likelihood
 #' par_tab <- example_par_tab[example_par_tab$names != "phi",]
-#' likelihood_func <- create_posterior_func(par_tab, example_titre_dat, example_antigenic_map, function_type = 1, version = 2)
+#' likelihood_func <- create_posterior_func(par_tab, example_antibody_data, example_antigenic_map, function_type = 1, version = 2)
 #' liks <- likelihood_func(par_tab$values, example_inf_hist)
 #' }
 #' @export
 create_posterior_func <- function(par_tab,
-                                  titre_dat,
+                                  antibody_data,
                                   antigenic_map=NULL,
                                   possible_exposure_times=NULL,
                                   version = 1,
@@ -291,14 +291,14 @@ create_posterior_func <- function(par_tab,
                                   obs_types_weights =1,
                                   ...) {
     check_par_tab(par_tab, TRUE, version)
-    if (!("group" %in% colnames(titre_dat))) {
-        titre_dat$group <- 1
+    if (!("group" %in% colnames(antibody_data))) {
+        antibody_data$group <- 1
     }
    
     ## Add a dummy observation type variable if not provided
-    if (!("obs_type" %in% colnames(titre_dat))) {
-        message(cat("Note: no obs_type detection in titre_dat. Assuming all obs_type as 1."))
-        titre_dat$obs_type <- 1
+    if (!("obs_type" %in% colnames(antibody_data))) {
+        message(cat("Note: no obs_type detection in antibody_data. Assuming all obs_type as 1."))
+        antibody_data$obs_type <- 1
     }
     
     if (!("obs_type" %in% colnames(par_tab))) {
@@ -312,16 +312,16 @@ create_posterior_func <- function(par_tab,
   
   
   
-    check_data(titre_dat)
+    check_data(antibody_data)
     
-    titre_dat <- titre_dat %>% arrange(individual, obs_type, samples, virus, run)
+    antibody_data <- antibody_data %>% arrange(individual, obs_type, samples, virus, run)
     
     ## Get unique observation types
-    unique_obs_types <- unique(titre_dat$obs_type)
+    unique_obs_types <- unique(antibody_data$obs_type)
     unique_obs_types <- unique_obs_types[order(unique_obs_types)]
     n_obs_types <- length(unique_obs_types)
     
-    n_indivs <- length(unique(titre_dat$individual))
+    n_indivs <- length(unique(antibody_data$individual))
     
     ## Likelihood versions for different obs types
     if(length(data_type) ==1 & n_obs_types > 1){
@@ -364,25 +364,25 @@ create_posterior_func <- function(par_tab,
     #########################################################
     ## Separate out initial readings and repeat readings - we only
     ## want to solve the model once for each unique indiv/sample/virus year tested
-    titre_dat_unique <- titre_dat[titre_dat$run == 1, ]
+    antibody_data_unique <- antibody_data[antibody_data$run == 1, ]
     ## Observations from repeats
-    titre_dat_repeats <- titre_dat[titre_dat$run != 1, ]
-    ## Find which entry in titre_dat_unique each titre_dat_repeats entry should correspond to
+    antibody_data_repeats <- antibody_data[antibody_data$run != 1, ]
+    ## Find which entry in antibody_data_unique each antibody_data_repeats entry should correspond to
     tmp <- row.match(
-        titre_dat_repeats[, c("individual", "samples", "obs_type", "virus")],
-        titre_dat_unique[, c("individual", "samples", "obs_type", "virus")]
+        antibody_data_repeats[, c("individual", "samples", "obs_type", "virus")],
+        antibody_data_unique[, c("individual", "samples", "obs_type", "virus")]
     )
-    titre_dat_repeats$index <- tmp
+    antibody_data_repeats$index <- tmp
 
-    ## Which entries in the overall titre_dat matrix does each entry in titre_dat_unique correspond to?
+    ## Which entries in the overall antibody_data matrix does each entry in antibody_data_unique correspond to?
     overall_indices <- row.match(
-        titre_dat[, c("individual", "samples", "obs_type","virus")],
-        titre_dat_unique[, c("individual", "samples", "obs_type","virus")]
+        antibody_data[, c("individual", "samples", "obs_type","virus")],
+        antibody_data_unique[, c("individual", "samples", "obs_type","virus")]
     )
 
     ## Setup data vectors and extract
     setup_dat <- setup_titredat_for_posterior_func(
-        titre_dat_unique, antigenic_map, 
+        antibody_data_unique, antigenic_map, 
         possible_exposure_times,
         age_mask, n_alive
     )
@@ -390,7 +390,7 @@ create_posterior_func <- function(par_tab,
     obs_types <- setup_dat$obs_types
     
     ## Number of unique groups
-    n_groups <- length(unique(titre_dat$group))
+    n_groups <- length(unique(antibody_data$group))
     group_id_vec <- setup_dat$group_id_vec
     
     ## List of melted antigenic maps, one entry for each observation type
@@ -405,9 +405,9 @@ create_posterior_func <- function(par_tab,
     ## Indices related to entries in sample_data
     sample_data_start <- setup_dat$sample_data_start
     
-    ## Indices related to entries in titre_dat
+    ## Indices related to entries in antibody_data
     nrows_per_sample <- setup_dat$nrows_per_sample
-    titre_data_start <- setup_dat$titre_data_start
+    antibody_data_start <- setup_dat$antibody_data_start
     
     ## Indices related to entries in type_data
     type_data_start <- setup_dat$type_data_start
@@ -418,13 +418,13 @@ create_posterior_func <- function(par_tab,
     
     n_alive <- setup_dat$n_alive
     age_mask <- setup_dat$age_mask
-    strain_mask <- setup_dat$strain_mask
+    sample_mask <- setup_dat$sample_mask
     n_indiv <- setup_dat$n_indiv
     DOBs <- setup_dat$DOBs
 
     ## Which entries of the unique titre data correspond to each individual? 
     ## Used to summarize into per-individual likelihoods later
-    nrows_per_individual_in_data <-  titre_dat_unique %>% group_by(individual, obs_type) %>% 
+    nrows_per_individual_in_data <-  antibody_data_unique %>% group_by(individual, obs_type) %>% 
         tally() %>% 
         pivot_wider(id_cols=individual,values_from=n,names_from=obs_type,values_fill=0) %>%
         ungroup() %>%
@@ -433,13 +433,13 @@ create_posterior_func <- function(par_tab,
         select(order(colnames(nrows_per_individual_in_data)))
     nrows_per_individual_in_data <- as.matrix(nrows_per_individual_in_data)
     
-    tmp <- titre_dat_unique %>% group_by(individual, obs_type) %>% 
+    tmp <- antibody_data_unique %>% group_by(individual, obs_type) %>% 
         tally() %>% pull(n)
     cum_nrows_per_individual_in_data <- cumsum(c(0,tmp))
     
     ## Some additional setup for the repeat data
     ## Used to summarize into per-individual likelihoods later
-    nrows_per_individual_in_data_repeats <-  titre_dat_repeats %>% group_by(individual, obs_type) %>% 
+    nrows_per_individual_in_data_repeats <-  antibody_data_repeats %>% group_by(individual, obs_type) %>% 
         tally() %>% 
         pivot_wider(id_cols=individual,values_from=n,names_from=obs_type,values_fill=0) %>%
         ungroup()
@@ -453,17 +453,17 @@ create_posterior_func <- function(par_tab,
         select(order(colnames(nrows_per_individual_in_data_repeats)))
     nrows_per_individual_in_data_repeats <- as.matrix(nrows_per_individual_in_data_repeats)
     
-    tmp <- titre_dat_repeats %>% group_by(individual, obs_type) %>% 
+    tmp <- antibody_data_repeats %>% group_by(individual, obs_type) %>% 
         tally() %>% pull(n)
     cum_nrows_per_individual_in_data_repeats <- cumsum(c(0,tmp))
     
-    obs_type_indices <- lapply(unique_obs_types, function(x) which(titre_dat_unique$obs_type == x))
-    obs_type_indices_repeats <- lapply(unique_obs_types, function(x) which(titre_dat_repeats$obs_type == x))
+    obs_type_indices <- lapply(unique_obs_types, function(x) which(antibody_data_unique$obs_type == x))
+    obs_type_indices_repeats <- lapply(unique_obs_types, function(x) which(antibody_data_repeats$obs_type == x))
     
     ## Pull out unique and repeat titres for solving likelihood later
-    titres_unique <- titre_dat_unique$titre
-    titres_repeats <- titre_dat_repeats$titre
-    repeat_indices <- titre_dat_repeats$index
+    titres_unique <- antibody_data_unique$titre
+    titres_repeats <- antibody_data_repeats$titre
+    repeat_indices <- antibody_data_repeats$index
     repeat_indices_cpp <- repeat_indices - 1
     
     ## Not a good solution, but make lists of the titre data, repeat titre data and indices. This will be used by the Cpp proposal
@@ -472,16 +472,16 @@ create_posterior_func <- function(par_tab,
     titres_repeats_list <- list()
     repeat_indices_cpp_list <- list()
     for(x in unique_obs_types){
-        tmp_titre_dat <- titre_dat_unique[titre_dat_unique$obs_type == x,]
-        tmp_titre_dat_repeats <- titre_dat_repeats[titre_dat_repeats$obs_type == x,]
+        tmp_antibody_data <- antibody_data_unique[antibody_data_unique$obs_type == x,]
+        tmp_antibody_data_repeats <- antibody_data_repeats[antibody_data_repeats$obs_type == x,]
         
         tmp <- row.match(
-            tmp_titre_dat_repeats[, c("individual", "samples", "obs_type", "virus")],
-            tmp_titre_dat[, c("individual", "samples", "obs_type", "virus")]
+            tmp_antibody_data_repeats[, c("individual", "samples", "obs_type", "virus")],
+            tmp_antibody_data[, c("individual", "samples", "obs_type", "virus")]
         )
         
-        titres_unique_list[[x]] <- tmp_titre_dat$titre
-        titres_repeats_list[[x]] <- tmp_titre_dat_repeats$titre
+        titres_unique_list[[x]] <- tmp_antibody_data$titre
+        titres_repeats_list[[x]] <- tmp_antibody_data_repeats$titre
         repeat_indices_cpp_list[[x]] <- tmp-1
     }
     
@@ -519,10 +519,10 @@ create_posterior_func <- function(par_tab,
     use_strain_dependent <- (length(mu_indices) > 0) & !is.null(mu_indices)
     additional_arguments <- NULL
 
-    repeat_data_exist <- nrow(titre_dat_repeats) > 0
+    repeat_data_exist <- nrow(antibody_data_repeats) > 0
     if (use_measurement_bias) {
         message(cat("Using measurement bias\n"))
-        expected_indices <- titre_dat_unique %>% left_join(measurement_indices_by_time,by = c("virus", "obs_type")) %>% pull(rho_index)
+        expected_indices <- antibody_data_unique %>% left_join(measurement_indices_by_time,by = c("virus", "obs_type")) %>% pull(rho_index)
     } else {
         expected_indices <- c(-1)
     }
@@ -588,7 +588,7 @@ create_posterior_func <- function(par_tab,
                 antigenic_map_short[,obs_type] <- create_cross_reactivity_vector(antigenic_map_melted[[obs_type]], sigma2s[obs_type])
             }
 
-            y_new <- titre_data_fast(
+            y_new <- antibody_data_fast(
                 theta, 
                 theta_indices_unique, 
                 unique_obs_types,
@@ -599,7 +599,7 @@ create_posterior_func <- function(par_tab,
                 type_data_start,
                 obs_types,
                 sample_data_start, 
-                titre_data_start,
+                antibody_data_start,
                 nrows_per_sample, 
                 measured_strain_indices, 
                 antigenic_map_long,
@@ -630,7 +630,7 @@ create_posterior_func <- function(par_tab,
                     ## Or the baseline transmission likelihood contribution
                     transmission_prob <- calc_phi_probs_indiv(
                         phis, infection_history_mat,
-                        age_mask, strain_mask
+                        age_mask, sample_mask
                     )
                 }
             }
@@ -674,7 +674,7 @@ create_posterior_func <- function(par_tab,
         beta <- par_tab[par_tab$names == "beta","values"]
         n_infected_group <- c(0, 0)
         ## Generate prior lookup table
-        lookup_tab <- create_prior_lookup_groups(titre_dat, possible_exposure_times, alpha, beta, n_alive)
+        lookup_tab <- create_prior_lookup_groups(antibody_data, possible_exposure_times, alpha, beta, n_alive)
         ## Use the original gibbs proposal function if no titre immunity
         f <- function(pars, infection_history_mat,
                       probs, sampled_indivs,
@@ -726,7 +726,7 @@ create_posterior_func <- function(par_tab,
                 sampled_indivs,
                 n_infs,
                 age_mask,
-                strain_mask,
+                sample_mask,
                 n_alive,
                 n_infections,
                 n_infected_group,
@@ -743,7 +743,7 @@ create_posterior_func <- function(par_tab,
                 type_data_start,
                 obs_types,
                 sample_data_start, 
-                titre_data_start,
+                antibody_data_start,
                 nrows_per_sample,
                 
                 cum_nrows_per_individual_in_data,
@@ -805,11 +805,11 @@ create_posterior_func <- function(par_tab,
                 antigenic_map_short[,obs_type] <- create_cross_reactivity_vector(antigenic_map_melted[[obs_type]], sigma2s[obs_type])
             }
 
-            y_new <- titre_data_fast(
+            y_new <- antibody_data_fast(
                 theta, theta_indices_unique, unique_obs_types,
                 infection_history_mat, possible_exposure_times, infection_strain_indices,
                 sample_times, type_data_start,obs_types,
-                sample_data_start, titre_data_start,
+                sample_data_start, antibody_data_start,
                 nrows_per_sample, measured_strain_indices, 
                 antigenic_map_long,
                 antigenic_map_short,

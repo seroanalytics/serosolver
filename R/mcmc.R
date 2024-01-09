@@ -2,7 +2,7 @@
 #'
 #' The Adaptive Metropolis-within-Gibbs algorithm. Given a starting point and the necessary MCMC parameters as set out below, performs a random-walk of the posterior space to produce an MCMC chain that can be used to generate MCMC density and iteration plots. The algorithm undergoes an adaptive period, where it changes the step size of the random walk for each parameter to approach the desired acceptance rate, popt. The algorithm then uses \code{\link{univ_proposal}} or \code{\link{mvr_proposal}} to explore parameter space, recording the value and posterior value at each step. The MCMC chain is saved in blocks as a .csv file at the location given by filename. This version of the algorithm is also designed to explore posterior densities for infection histories. See the package vignettes for examples. 
 #' @param par_tab The parameter table controlling information such as bounds, initial values etc. See \code{\link{example_par_tab}}
-#' @param titre_dat The data frame of titre data to be fitted. Must have columns: group (index of group); individual (integer ID of individual); samples (numeric time of sample taken); virus (numeric time of when the virus was circulating); titre (integer of titre value against the given virus at that sampling time); run (integer giving the repeated number of this titre); DOB (integer giving date of birth matching time units used in model). See \code{\link{example_titre_dat}}
+#' @param antibody_data The data frame of titre data to be fitted. Must have columns: group (index of group); individual (integer ID of individual); samples (numeric time of sample taken); virus (numeric time of when the virus was circulating); titre (integer of titre value against the given virus at that sampling time); run (integer giving the repeated number of this titre); DOB (integer giving date of birth matching time units used in model). See \code{\link{example_antibody_data}}
 #' @param antigenic_map (optional) A data frame of antigenic x and y coordinates. Must have column names: x_coord; y_coord; inf_times. See \code{\link{example_antigenic_map}}
 #' @param possible_exposure_times (optional) If no antigenic map is specified, this argument gives the vector of times at which individuals can be infected
 #' @param mcmc_pars Named vector named vector with parameters for the MCMC procedure. See details
@@ -19,7 +19,7 @@
 #' @param OPT_TUNING Constant describing the amount of leeway when adapting the proposals steps to reach a desired acceptance rate (ie. does not change step size if within OPT_TUNING of the specified acceptance rate)
 #' @param temp Temperature term for parallel tempering, raises likelihood to this value. Just used for testing at this point
 #' @param solve_likelihood if FALSE, returns only the prior and does not solve the likelihood. Use this if you wish to sample directly from the prior
-#' @param n_alive if not NULL, uses this as the number alive for the infection history prior, rather than calculating the number alive based on titre_dat
+#' @param n_alive if not NULL, uses this as the number alive for the infection history prior, rather than calculating the number alive based on antibody_data
 #' @param ... Other arguments to pass to CREATE_POSTERIOR_FUNC
 #' @return A list with: 1) relative file path at which the MCMC chain is saved as a .csv file; 2) relative file path at which the infection history chain is saved as a .csv file; 3) the last used covariance matrix if mvr_pars != NULL; 4) the last used scale/step size (if multivariate proposals) or vector of step sizes (if univariate proposals)
 #' @details
@@ -45,14 +45,14 @@
 #' @family mcmc
 #' @examples
 #' \dontrun{
-#' data(example_titre_dat)
+#' data(example_antibody_data)
 #' data(example_par_tab)
 #' data(example_antigenic_map)
-#' res <- run_MCMC(example_par_tab[example_par_tab$names != "phi",], example_titre_dat, example_antigenic_map, version=2)
+#' res <- run_MCMC(example_par_tab[example_par_tab$names != "phi",], example_antibody_data, example_antigenic_map, version=2)
 #' }
 #' @export
 run_MCMC <- function(par_tab,
-                     titre_dat,
+                     antibody_data,
                      antigenic_map=NULL,
                      possible_exposure_times=NULL,
                      mcmc_pars = c(),
@@ -172,10 +172,10 @@ run_MCMC <- function(par_tab,
 
 
   ###############
-  ## Extract titre_dat parameters
+  ## Extract antibody_data parameters
   ##############
-  ## Check the titre_dat input
-  titre_dat <- check_data(titre_dat)
+  ## Check the antibody_data input
+  antibody_data <- check_data(antibody_data)
 
   if (!is.null(antigenic_map)) {
     possible_exposure_times <- unique(antigenic_map$inf_times) # How many strains are we testing against and what time did they circulate
@@ -183,7 +183,7 @@ run_MCMC <- function(par_tab,
     antigenic_map <- data.frame("x_coord"=1,"y_coord"=1,"inf_times"=possible_exposure_times)
   }
   
-  n_indiv <- length(unique(titre_dat$individual)) # How many individuals in the titre_dat?
+  n_indiv <- length(unique(antibody_data$individual)) # How many individuals in the antibody_data?
 
    
 ###################
@@ -215,26 +215,26 @@ run_MCMC <- function(par_tab,
   ## Note that DOBs for all groups must be from same reference point
   ## -----------------------
   ###############
-  if (!is.null(titre_dat$DOB)) {
-    DOBs <- unique(titre_dat[, c("individual", "DOB")])[, 2]
+  if (!is.null(antibody_data$DOB)) {
+    DOBs <- unique(antibody_data[, c("individual", "DOB")])[, 2]
   } else {
     DOBs <- rep(min(possible_exposure_times), n_indiv)
   }
   age_mask <- create_age_mask(DOBs, possible_exposure_times)
   ## Create strain mask
-  strain_mask <- create_strain_mask(titre_dat, possible_exposure_times)
-  masks <- data.frame(cbind(age_mask, strain_mask))
+  sample_mask <- create_sample_mask(antibody_data, possible_exposure_times)
+  masks <- data.frame(cbind(age_mask, sample_mask))
 
-  group_ids_vec <- unique(titre_dat[, c("individual", "group")])[, "group"] - 1
+  group_ids_vec <- unique(antibody_data[, c("individual", "group")])[, "group"] - 1
   n_groups <- length(unique(group_ids_vec))
   ## Number of people that were born before each year and have had a sample taken since that year happened
 
   if (is.null(n_alive)) {
-    n_alive <- get_n_alive_group(titre_dat, possible_exposure_times)
+    n_alive <- get_n_alive_group(antibody_data, possible_exposure_times)
   }
   ## Create posterior calculating function
   posterior_simp <- protect(CREATE_POSTERIOR_FUNC(par_tab,
-    titre_dat,
+    antibody_data,
     antigenic_map,
     possible_exposure_times,
     version=version,
@@ -254,7 +254,7 @@ run_MCMC <- function(par_tab,
   ## If using gibbs proposal on infection_history, create here
   if (hist_proposal == 2) {
     proposal_gibbs <- protect(CREATE_POSTERIOR_FUNC(par_tab,
-      titre_dat,
+      antibody_data,
       antigenic_map,
       possible_exposure_times,
       version=version,
@@ -283,9 +283,9 @@ run_MCMC <- function(par_tab,
     infection_histories <- start_inf_hist
 
     if (is.null(start_inf_hist)) {
-        infection_histories <- setup_infection_histories_titre(titre_dat, possible_exposure_times, space = 5, titre_cutoff = 3)
+        infection_histories <- setup_infection_histories_titre(antibody_data, possible_exposure_times, space = 5, titre_cutoff = 3)
     }
-    check_inf_hist(titre_dat, possible_exposure_times, infection_histories)
+    check_inf_hist(antibody_data, possible_exposure_times, infection_histories)
     ## Initial likelihoods and individual priors
     tmp_posterior <- posterior_simp(current_pars, infection_histories)
     indiv_likelihoods <- tmp_posterior[[1]] / temp
@@ -473,13 +473,13 @@ run_MCMC <- function(par_tab,
                 new_infection_histories <- infection_history_symmetric(
                     infection_histories,
                     indiv_sub_sample,
-                    age_mask, strain_mask, move_sizes,
+                    age_mask, sample_mask, move_sizes,
                     n_infs_vec, rand_ns, swap_propn
                 )
             } else {
                 tmp_hist_switch <- inf_hist_swap_phi(
                     infection_histories, proposal[phi_indices],
-                    age_mask, strain_mask, year_swap_propn,
+                    age_mask, sample_mask, year_swap_propn,
                     move_size, n_alive
                 )
                 new_infection_histories <- tmp_hist_switch[[1]]
@@ -519,7 +519,7 @@ run_MCMC <- function(par_tab,
                 if(any(abs(liksA-liksB) > 0.1)){
                     browser()
                     model_func <- protect(CREATE_POSTERIOR_FUNC(par_tab,
-                                                                titre_dat,
+                                                                antibody_data,
                                                                 antigenic_map,
                                                                 possible_exposure_times,
                                                                 version=version,
@@ -541,7 +541,7 @@ run_MCMC <- function(par_tab,
             } else {
                 tmp <- inf_hist_swap(
                     infection_histories,
-                    age_mask, strain_mask,
+                    age_mask, sample_mask,
                     year_swap_propn, move_size
                 )
                 new_infection_histories <- tmp[[1]]
@@ -554,7 +554,7 @@ run_MCMC <- function(par_tab,
         } else if (hist_proposal == 3) {
             new_infection_histories <- inf_hist_prop_prior_v3(
                 infection_histories, indiv_sub_sample,
-                age_mask, strain_mask,
+                age_mask, sample_mask,
                 move_sizes, n_infs_vec,
                 alpha, beta, rand_ns, swap_propn
             )
@@ -562,7 +562,7 @@ run_MCMC <- function(par_tab,
         } else {
             new_infection_histories <- infection_history_symmetric(
                 infection_histories, indiv_sub_sample,
-                age_mask, strain_mask, move_sizes, n_infs_vec,
+                age_mask, sample_mask, move_sizes, n_infs_vec,
                 rand_ns, swap_propn
             )
         }
@@ -814,9 +814,9 @@ run_MCMC <- function(par_tab,
               move_sizes[move_sizes < 1] <- 1
 
               for (ii in seq_along(n_infs_vec)) {
-                  move_sizes[ii] <- min(move_sizes[ii], length(age_mask[ii]:strain_mask[ii]))
+                  move_sizes[ii] <- min(move_sizes[ii], length(age_mask[ii]:sample_mask[ii]))
                   move_sizes[ii] <- min(move_sizes[ii], 10)
-                  n_infs_vec[ii] <- min(n_infs_vec[ii], length(age_mask[ii]:strain_mask[ii]))
+                  n_infs_vec[ii] <- min(n_infs_vec[ii], length(age_mask[ii]:sample_mask[ii]))
               }
           }
           ## Look at infection history proposal sizes

@@ -34,8 +34,8 @@
 #'                                    sampling_times=2010:2015, nsamps=2, antigenic_map=example_antigenic_map, 
 #'                                    age_min=10,age_max=75,
 #'                                    attack_rates=attack_rates, repeats=2)
-#' titre_dat <- all_simulated_data$data
-#' titre_dat <- merge(titre_dat, all_simulated_data$ages)
+#' antibody_data <- all_simulated_data$data
+#' antibody_data <- merge(antibody_data, all_simulated_data$ages)
 #' @export
 simulate_data <- function(par_tab,
                           group = 1,
@@ -171,16 +171,16 @@ simulate_data <- function(par_tab,
         obs_dist, 
         DOBs
     )
-    y <- sim_dat$titre_dat
+    y <- sim_dat$antibody_data
     infection_history <- sim_dat$infection_history
 
     ## Need to update attack rate estimate based on strain mask, which is corrected in simulate_group
     age_mask <- create_age_mask(DOBs, possible_exposure_times)
-    strain_mask <- create_strain_mask(y, possible_exposure_times)
+    sample_mask <- create_sample_mask(y, possible_exposure_times)
     ## Can't be exposed or infected after the last sampling time
     for (i in 1:nrow(infection_history)) {
-        if (strain_mask[i] < ncol(infection_history)) {
-            infection_history[i, (strain_mask[i] + 1):ncol(infection_history)] <- 0
+        if (sample_mask[i] < ncol(infection_history)) {
+            infection_history[i, (sample_mask[i] + 1):ncol(infection_history)] <- 0
         }
     }
 
@@ -263,9 +263,9 @@ simulate_group <- function(n_indiv,
     }
 
     ## Individuals can't be infected after their latest sampling time
-    strain_mask <- max(which(max(samps) >= possible_exposure_times))
-    if (strain_mask < ncol(infection_histories)) {
-      infection_histories[i, (strain_mask + 1):ncol(infection_histories)] <- 0
+    sample_mask <- max(which(max(samps) >= possible_exposure_times))
+    if (sample_mask < ncol(infection_histories)) {
+      infection_histories[i, (sample_mask + 1):ncol(infection_histories)] <- 0
     }
     y <- as.data.frame(simulate_individual_faster(
       theta,
@@ -289,7 +289,7 @@ simulate_group <- function(n_indiv,
     dat <- rbind(dat, y[, c("individual", "samples", "virus", "obs_type","titre")])
   }
   dat <- dat %>% group_by(individual,samples,virus,obs_type) %>% mutate(run = 1:n()) %>% ungroup() %>% as.data.frame()
-  return(list(titre_dat = dat, infection_history = infection_histories))
+  return(list(antibody_data = dat, infection_history = infection_histories))
 }
 #' Simulate individual data quickly
 #'
@@ -339,7 +339,7 @@ simulate_individual_faster <- function(theta,
   nrows_per_sample <- rep(length(measured_biomarker_ids), n_samps*n_obs_types)
 
   ## Cumulative of the above for the algorithm
-  titre_data_start <- cumsum(c(0, nrows_per_sample))
+  antibody_data_start <- cumsum(c(0, nrows_per_sample))
 
   ## Iterate through sample times sample_times[0:(n_samps-1)] to solve the model
   sample_data_start <- cumsum(c(0, rep(n_samps,n_obs_types)))
@@ -354,7 +354,7 @@ simulate_individual_faster <- function(theta,
   measured_strain_indices <- match(rep(rep(measured_biomarker_ids, n_samps), n_obs_types), possible_exposure_times) - 1
   dat <- matrix(nrow = length(measured_strain_indices) * repeats, ncol = 4) ## To store simulated data
   ## Go into C++ code to solve titre model
-  titres <- titre_data_fast(
+  titres <- antibody_data_fast(
     theta, 
     unique_theta_indices,
     unique_obs_types,
@@ -365,7 +365,7 @@ simulate_individual_faster <- function(theta,
     type_data_start=type_data_start,
     obs_types=unique_obs_types,
     sample_data_start, 
-    titre_data_start,
+    antibody_data_start,
     nrows_per_sample, 
     measured_strain_indices,
     antigenic_map_long,
@@ -464,7 +464,7 @@ simulate_individual <- function(theta,
   dat <- matrix(nrow = length(measured_strain_indices) * repeats, ncol = 4) ## To store simulated data
 
   ## Go into C++ code to solve titre model
-  titres <- titre_data_fast(
+  titres <- antibody_data_fast(
     theta, inf_hist, possible_exposure_times, strain_indices,
     sampling_times, rows_per_indiv, cumu_rows,
     rows_per_blood, measured_strain_indices,

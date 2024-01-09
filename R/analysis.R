@@ -30,9 +30,9 @@ load_start_tab <- function(location = getwd()) {
 #' @export
 load_antibody_data <- function(location = getwd()) {
   files <- Sys.glob(file.path(location, "*_antibody_data.csv"))
-  files_titre_dat <- Sys.glob(file.path(location, "*_titre_dat.csv"))
+  files_antibody_data <- Sys.glob(file.path(location, "*_antibody_data.csv"))
   files_titreDat <- Sys.glob(file.path(location, "*_titreDat.csv"))
-  files <- c(files, files_titre_dat, files_titreDat)
+  files <- c(files, files_antibody_data, files_titreDat)
   if (length(files) < 1) {
     message("Error - no files found")
     return(NULL)

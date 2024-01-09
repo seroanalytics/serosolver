@@ -65,10 +65,10 @@ add_measurement_shifts <- function(predicted_titres, to_add, start_index_in_data
 #' @param circulation_times NumericVector, the actual times of circulation that the infection history vector corresponds to
 #' @param circulation_times_indices IntegerVector, which entry in the melted antigenic map that these infection times correspond to
 #' @param sample_times NumericVector, the times that each blood sample was taken
-#' @param type_data_start IntegerVector, one entry for each unique individual. Each entry gives the starting index for each individual of the data frame `unique(titre_dat[,c("individual","obs_type")])`.
-#' @param obs_types IntegerVector, result of `unique(titre_dat[,c("individual","obs_type")])$obs_type`
+#' @param type_data_start IntegerVector, one entry for each unique individual. Each entry gives the starting index for each individual of the data frame `unique(antibody_data[,c("individual","obs_type")])`.
+#' @param obs_types IntegerVector, result of `unique(antibody_data[,c("individual","obs_type")])$obs_type`
 #' @param sample_data_start IntegerVector, one entry for each unique individual and observation type combination. Each entry dictates how many indices through sample_times to iterate per individual and observation type (ie. how many sample times does each individual have?)
-#' @param titre_data_start IntegerVector, How many cumulative rows in the titre data correspond to each unique individual and observation type combination? 
+#' @param antibody_data_start IntegerVector, How many cumulative rows in the titre data correspond to each unique individual and observation type combination? 
 #' @param nrows_per_sample IntegerVector, one entry per sample taken. Dictates how many entries to iterate through cum_nrows_per_individual_in_data for each sampling time considered
 #' @param measurement_strain_indices IntegerVector, the indices of all measured strains in the melted antigenic map, with one entry per measured titre
 #' @param antigenic_map_long NumericVector, the collapsed cross reactivity map for long term boosting, after multiplying by sigma1 see \code{\link{create_cross_reactivity_vector}}
@@ -80,8 +80,8 @@ add_measurement_shifts <- function(predicted_titres, to_add, start_index_in_data
 #' @return NumericVector of predicted titres for each entry in measurement_strain_indices
 #' @export
 #' @family titre_model
-titre_data_fast <- function(theta, unique_theta_indices, unique_obs_types, infection_history_mat, circulation_times, circulation_times_indices, sample_times, type_data_start, obs_types, sample_data_start, titre_data_start, nrows_per_sample, measurement_strain_indices, antigenic_map_long, antigenic_map_short, antigenic_distances, mus_strain_dep, boosting_vec_indices, boost_before_infection = FALSE) {
-    .Call('_serosolver_titre_data_fast', PACKAGE = 'serosolver', theta, unique_theta_indices, unique_obs_types, infection_history_mat, circulation_times, circulation_times_indices, sample_times, type_data_start, obs_types, sample_data_start, titre_data_start, nrows_per_sample, measurement_strain_indices, antigenic_map_long, antigenic_map_short, antigenic_distances, mus_strain_dep, boosting_vec_indices, boost_before_infection)
+antibody_data_fast <- function(theta, unique_theta_indices, unique_obs_types, infection_history_mat, circulation_times, circulation_times_indices, sample_times, type_data_start, obs_types, sample_data_start, antibody_data_start, nrows_per_sample, measurement_strain_indices, antigenic_map_long, antigenic_map_short, antigenic_distances, mus_strain_dep, boosting_vec_indices, boost_before_infection = FALSE) {
+    .Call('_serosolver_antibody_data_fast', PACKAGE = 'serosolver', theta, unique_theta_indices, unique_obs_types, infection_history_mat, circulation_times, circulation_times_indices, sample_times, type_data_start, obs_types, sample_data_start, antibody_data_start, nrows_per_sample, measurement_strain_indices, antigenic_map_long, antigenic_map_short, antigenic_distances, mus_strain_dep, boosting_vec_indices, boost_before_infection)
 }
 
 #' Marginal prior probability (p(Z)) of a particular infection history matrix single prior
@@ -190,8 +190,8 @@ likelihood_func_fast_continuous <- function(theta, obs, predicted_titres) {
 #' @return a matrix of 1s and 0s corresponding to the infection histories for all individuals
 #' @export
 #' @family infection_history_proposal
-inf_hist_prop_prior_v3 <- function(infection_history_mat, sampled_indivs, age_mask, strain_mask, move_sizes, n_infs, alpha, beta, rand_ns, swap_propn) {
-    .Call('_serosolver_inf_hist_prop_prior_v3', PACKAGE = 'serosolver', infection_history_mat, sampled_indivs, age_mask, strain_mask, move_sizes, n_infs, alpha, beta, rand_ns, swap_propn)
+inf_hist_prop_prior_v3 <- function(infection_history_mat, sampled_indivs, age_mask, sample_mask, move_sizes, n_infs, alpha, beta, rand_ns, swap_propn) {
+    .Call('_serosolver_inf_hist_prop_prior_v3', PACKAGE = 'serosolver', infection_history_mat, sampled_indivs, age_mask, sample_mask, move_sizes, n_infs, alpha, beta, rand_ns, swap_propn)
 }
 
 #' Infection history gibbs proposal
@@ -203,7 +203,7 @@ inf_hist_prop_prior_v3 <- function(infection_history_mat, sampled_indivs, age_ma
 #' @param sampled_indivs IntegerVector, indices of sampled individuals
 #' @param n_years_samp_vec int, for each individual, how many time periods to resample infections for?
 #' @param age_mask IntegerVector, length of the number of individuals, with indices specifying first time period that an individual can be infected (indexed from 1, such that a value of 1 allows an individual to be infected in any time period)
-#' @param strain_mask IntegerVector, length of the number of individuals, with indices specifying last time period that an individual can be infected (ie. last time a sample was taken)
+#' @param sample_mask IntegerVector, length of the number of individuals, with indices specifying last time period that an individual can be infected (ie. last time a sample was taken)
 #' @param n_alive IntegerMatrix, number of columns is the number of time periods that an individual could be infected, giving the number of individual alive in each time period. Number of rows is the number of distinct groups.
 #' @param n_infections IntegerMatrix, the number of infections in each year (columns) for each group (rows)
 #' @param n_infected_group IntegerVector, the total number of infections across all times in each group
@@ -241,8 +241,8 @@ inf_hist_prop_prior_v3 <- function(infection_history_mat, sampled_indivs, age_ma
 #' @return an R list with 6 entries: 1) the vector replacing old_probs_1, corresponding to the new likelihoods per individual; 2) the matrix of 1s and 0s corresponding to the new infection histories for all individuals; 3-6) the updated entries for proposal_iter, accepted_iter, proposal_swap and accepted_swap.
 #' @export
 #' @family infection_history_proposal
-inf_hist_prop_prior_v2_and_v4 <- function(theta, unique_theta_indices, unique_obs_types, infection_history_mat, old_probs_1, sampled_indivs, n_years_samp_vec, age_mask, strain_mask, n_alive, n_infections, n_infected_group, prior_lookup, swap_propn, swap_distance, propose_from_prior, alpha, beta, circulation_times, circulation_times_indices, sample_times, type_data_start, obs_types, sample_data_start, titre_data_start, nrows_per_sample, cum_nrows_per_individual_in_data, cum_nrows_per_individual_in_repeat_data, group_id_vec, measurement_strain_indices, antigenic_map_long, antigenic_map_short, antigenic_distances, data, repeat_data, n_titres_total, repeat_indices, repeat_data_exist, titre_shifts, proposal_iter, accepted_iter, proposal_swap, accepted_swap, overall_swap_proposals, overall_add_proposals, time_sample_probs, mus_strain_dep, boosting_vec_indices, total_alive, data_types, obs_weights, temp = 1, solve_likelihood = TRUE) {
-    .Call('_serosolver_inf_hist_prop_prior_v2_and_v4', PACKAGE = 'serosolver', theta, unique_theta_indices, unique_obs_types, infection_history_mat, old_probs_1, sampled_indivs, n_years_samp_vec, age_mask, strain_mask, n_alive, n_infections, n_infected_group, prior_lookup, swap_propn, swap_distance, propose_from_prior, alpha, beta, circulation_times, circulation_times_indices, sample_times, type_data_start, obs_types, sample_data_start, titre_data_start, nrows_per_sample, cum_nrows_per_individual_in_data, cum_nrows_per_individual_in_repeat_data, group_id_vec, measurement_strain_indices, antigenic_map_long, antigenic_map_short, antigenic_distances, data, repeat_data, n_titres_total, repeat_indices, repeat_data_exist, titre_shifts, proposal_iter, accepted_iter, proposal_swap, accepted_swap, overall_swap_proposals, overall_add_proposals, time_sample_probs, mus_strain_dep, boosting_vec_indices, total_alive, data_types, obs_weights, temp, solve_likelihood)
+inf_hist_prop_prior_v2_and_v4 <- function(theta, unique_theta_indices, unique_obs_types, infection_history_mat, old_probs_1, sampled_indivs, n_years_samp_vec, age_mask, sample_mask, n_alive, n_infections, n_infected_group, prior_lookup, swap_propn, swap_distance, propose_from_prior, alpha, beta, circulation_times, circulation_times_indices, sample_times, type_data_start, obs_types, sample_data_start, antibody_data_start, nrows_per_sample, cum_nrows_per_individual_in_data, cum_nrows_per_individual_in_repeat_data, group_id_vec, measurement_strain_indices, antigenic_map_long, antigenic_map_short, antigenic_distances, data, repeat_data, n_titres_total, repeat_indices, repeat_data_exist, titre_shifts, proposal_iter, accepted_iter, proposal_swap, accepted_swap, overall_swap_proposals, overall_add_proposals, time_sample_probs, mus_strain_dep, boosting_vec_indices, total_alive, data_types, obs_weights, temp = 1, solve_likelihood = TRUE) {
+    .Call('_serosolver_inf_hist_prop_prior_v2_and_v4', PACKAGE = 'serosolver', theta, unique_theta_indices, unique_obs_types, infection_history_mat, old_probs_1, sampled_indivs, n_years_samp_vec, age_mask, sample_mask, n_alive, n_infections, n_infected_group, prior_lookup, swap_propn, swap_distance, propose_from_prior, alpha, beta, circulation_times, circulation_times_indices, sample_times, type_data_start, obs_types, sample_data_start, antibody_data_start, nrows_per_sample, cum_nrows_per_individual_in_data, cum_nrows_per_individual_in_repeat_data, group_id_vec, measurement_strain_indices, antigenic_map_long, antigenic_map_short, antigenic_distances, data, repeat_data, n_titres_total, repeat_indices, repeat_data_exist, titre_shifts, proposal_iter, accepted_iter, proposal_swap, accepted_swap, overall_swap_proposals, overall_add_proposals, time_sample_probs, mus_strain_dep, boosting_vec_indices, total_alive, data_types, obs_weights, temp, solve_likelihood)
 }
 
 #' Function to calculate non-linear waning
