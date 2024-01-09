@@ -70,7 +70,7 @@ get_n_alive_group <- function(antibody_data, times, melt_data = FALSE) {
 }
 
 #' @export
-create_prior_lookup <- function(antibody_data, possible_exposure_times, alpha1, beta1, n_alive=NULL){
+create_prior_lookup <- function(antibody_data, possible_exposure_times, infection_model_prior_shape1, beta1, n_alive=NULL){
     if(is.null(n_alive)){
         n_alive <- get_n_alive(antibody_data, possible_exposure_times)
     }
@@ -79,7 +79,7 @@ create_prior_lookup <- function(antibody_data, possible_exposure_times, alpha1, 
     for(i in seq_along(possible_exposure_times)){
         results <- rep(-100000, max_alive+1)
         m <- seq_len(n_alive[i]+1)-1
-        results[1:(n_alive[i]+1)] <- lbeta(alpha1 + m, n_alive[i] - m + beta1) + lbeta(alpha1, beta1)
+        results[1:(n_alive[i]+1)] <- lbeta(infection_model_prior_shape1 + m, n_alive[i] - m + beta1) + lbeta(infection_model_prior_shape1, beta1)
         lookup_tab[,i] <- results        
     }
     lookup_tab[!is.finite(lookup_tab)] <- -100000
@@ -88,7 +88,7 @@ create_prior_lookup <- function(antibody_data, possible_exposure_times, alpha1, 
 }
 
 #' @export
-create_prior_lookup_groups <- function(antibody_data, possible_exposure_times, alpha1, beta1, n_alive=NULL){
+create_prior_lookup_groups <- function(antibody_data, possible_exposure_times, infection_model_prior_shape1, beta1, n_alive=NULL){
     if(is.null(n_alive)){
         n_alive <- get_n_alive_group(antibody_data, possible_exposure_times)
     }
@@ -98,7 +98,7 @@ create_prior_lookup_groups <- function(antibody_data, possible_exposure_times, a
         for(i in seq_along(possible_exposure_times)){
             results <- rep(-100000, max_alive+1)
             m <- seq_len(n_alive[g,i]+1)-1
-            results[1:(n_alive[g,i]+1)] <- lbeta(alpha1 + m, n_alive[g,i] - m + beta1) + lbeta(alpha1, beta1)
+            results[1:(n_alive[g,i]+1)] <- lbeta(infection_model_prior_shape1 + m, n_alive[g,i] - m + beta1) + lbeta(infection_model_prior_shape1, beta1)
             lookup_tab[,i,g] <- results        
         }
     }
@@ -297,7 +297,7 @@ describe_priors <- function() {
   message("Which version to use in run_MCMC? The following text describes the proposal step for updating infection histories.")
   message("Version 1: Beta prior on per time attack rates. Explicit FOI on each epoch using probability of infection term. Proposal performs N `flip` proposals at random locations in an individual's infection history, switching 1->0 or 0->1. Otherwise, swaps the contents of two random locations")
   message("Version 2: Beta prior on per time attack rates. Gibbs sampling of infection histories as in Indian Buffet Process papers, integrating out each probability of infection term.")
-  message("Version 3: Beta prior on probability of infection for an individual, assuming independence between individuals. Samples from a beta binomial with alpha and beta specified by the par_tab input. Proposes nInfs moves at a time for add/remove, or when swapping, swaps locations up to moveSize time steps away")
+  message("Version 3: Beta prior on probability of infection for an individual, assuming independence between individuals. Samples from a beta binomial with shape1 and shape2 specified by the par_tab input. Proposes nInfs moves at a time for add/remove, or when swapping, swaps locations up to moveSize time steps away")
   message("Version 4: Beta prior on probability of any infection. Gibbs sampling of infection histories using total number of infections across all times and all individuals as the prior")
 }
 
@@ -311,22 +311,22 @@ logit_transform <- function(p, maxX) {
 }
 
 
-#' Pad par_tab with alpha and betas
+#' Pad par_tab with Beta distribution shape parameters
 #'
-#' Pads par_tab with a new row for each infection epoch, such that each epoch has its own alpha and beta
+#' Pads par_tab with a new row for each infection epoch, such that each epoch has its own shape1 and shape2
 #' @param par_tab as per usual
 #' @param n_times the number of additional rows to add for each alpha and beta
 #' @examples
 #' n_times <- 40
 #' data(example_par_tab)
-#' new_par_tab <- pad_alphas_and_betas(example_par_tab, n_times)
+#' new_par_tab <- pad_infection_model_prior_parameters(example_par_tab, n_times)
 #' @export
-pad_alphas_and_betas <- function(par_tab, n_times) {
-  alpha_row <- par_tab[par_tab$names == "alpha", ]
-  beta_row <- par_tab[par_tab$names == "beta", ]
+pad_infection_model_prior_parameters <- function(par_tab, n_times) {
+  shape1_row <- par_tab[par_tab$names == "infection_model_prior_shape1", ]
+  shape2_row <- par_tab[par_tab$names == "infection_model_prior_shape2", ]
 
   for (i in 1:(n_times - 1)) {
-    par_tab <- rbind(par_tab, alpha_row, beta_row)
+    par_tab <- rbind(par_tab, shape1_row, shape2_row)
   }
   par_tab
 }
@@ -490,41 +490,6 @@ melt_antigenic_coords <- function(anti.map.in) { # anti.map.in can be vector or 
   }
 }
 
-#' Generate antigenic map
-#'
-#' Fits a smoothing spline through a set of antigenic coordinates, and uses this to predict antigenic coordinates for all potential infection time points
-#' @param antigenic_distances a data frame of antigenic coordinates, with columns labelled X, Y and Strain for x coord, y coord and Strain label respectively. Strain labels should be in the virus_key vector which is at the top of this source code. See \code{\link{example_antigenic_map}}
-#' @param buckets the number of epochs per year. 1 means that each year has 1 strain; 12 means that each year has 12 strains (monthly resolution)
-#' @param spar to be passed to smooth.spline
-#' @return a fitted antigenic map
-#' @family antigenic_maps
-#' @examples
-#' \dontrun{
-#' antigenic_coords_path <- system.file("extdata", "fonville_map_approx.csv", package = "serosolver")
-#' antigenic_coords <- read.csv(antigenic_coords_path, stringsAsFactors=FALSE)
-#' antigenic_map <- generate_antigenic_map(antigenic_coords, 1)
-#' }
-#' @seealso \code{\link{generate_antigenic_map_flexible}}
-#' @export
-generate_antigenic_map <- function(antigenic_distances, buckets = 1, spar = 0.3) {
-  ## Following assumptions:
-  ## 1. X31 == 1969
-  ## 2. PE2009 is like the strain circulating in 2010
-  virus_key <- c(
-    "HK68" = 1968, "EN72" = 1972, "VI75" = 1975, "TX77" = 1977, "BK79" = 1979, "SI87" = 1987, "BE89" = 1989, "BJ89" = 1989,
-    "BE92" = 1992, "WU95" = 1995, "SY97" = 1997, "FU02" = 2002, "CA04" = 2004, "WI05" = 2005, "PE06" = 2009
-  ) * buckets
-  antigenic_distances$Strain <- virus_key[antigenic_distances$Strain]
-  fit <- smooth.spline(antigenic_distances$X, antigenic_distances$Y, spar = spar)
-  x_line <- lm(data = antigenic_distances, X ~ Strain)
-  Strain <- seq(1968 * buckets, 2016 * buckets - 1, by = 1)
-  x_predict <- predict(x_line, data.frame(Strain))
-  y_predict <- predict(fit, x = x_predict)
-  fit_data <- data.frame(x = y_predict$x, y = y_predict$y)
-  fit_data$strain <- Strain
-  colnames(fit_data) <- c("x_coord", "y_coord", "inf_times")
-  return(fit_data)
-}
 #' Generate antigenic map, flexible
 #'
 #' Fits a smoothing spline through a set of antigenic coordinates, and uses this to predict antigenic coordinates for all potential infection time points. This version is more flexible than \code{\link{generate_antigenic_map}}, and allows the user to specify "clusters" to assume that strains circulating in a given period are all identical, rather than on a continuous path through space as a function of time.
