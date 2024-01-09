@@ -3,12 +3,11 @@
 #' Example of the parameter table used through \code{serosolver}. This data frame is used to control everything related to the model parameters, including values, names, fixed/estimates, and uniform prior bounds.
 #' @docType data
 #' @usage data(example_par_tab)
-#' @format A data frame with 21 rows and 9 variables:
+#' @format A data frame with 21 rows and 8 variables:
 #' \describe{
 #'     \item{names}{string names of the model parameters}
 #'     \item{values}{numeric values of the parameters}
 #'     \item{fixed}{binary values indicating if the parameter should be fixed (1) or estimated (0) during the MCMC procedure}
-#'     \item{steps}{value between 0 and 1, giving the initial step size in the MCMC proposals. Note that these are adapted automatically}
 #'     \item{lower_bound}{lower numeric bound for the parameter during fitting (lower uniform prior bound)}
 #'     \item{upper_bound}{upper numeric bound for the parameter during fitting (upper uniform prior bound)}
 #'     \item{lower_start}{can be used to set the lower allowable random starting value for the MCMC}
@@ -20,7 +19,7 @@
 
 #' Example antigenic map
 #'
-#' Example of the 2-dimensional antigenic map used through \code{serosolver}. This data frame specifies the antigenic coordinates for each strain, with the assumption that only one representative strain circulates in each time period 
+#' Example of the 2-dimensional antigenic map used through \code{serosolver}. This data frame specifies the antigenic coordinates for each pathogen/variant, with the assumption that only one representative variant circulates in each time period 
 #' @docType data
 #' @usage data(example_antigenic_map)
 #' @format A data frame with 48 rows and 3 variables:
@@ -49,10 +48,10 @@
 #' @format A data frame with 4800 rows (each corresponding to a unique titre reading) and 6 variables:
 #' \describe{
 #'     \item{individual}{index starting from 1 for the individual ID}
-#'     \item{samples}{time of this serum sample, matching times in \code{\link{example_antigenic_map}}}
-#'     \item{virus}{circlation time of the strain being measured, matching times in \code{\link{example_antigenic_map}}}
-#'     \item{titre}{the titre measurement for this strain at this sampling time}
-#'     \item{run}{where there are repeat measurements, gives the repeat number for this serum sample and strain measured}
+#'     \item{sample_time}{time the serum sample was taken}
+#'     \item{biomarker_id}{ID of the biomarker being measured}
+#'     \item{observation}{the titre measurement for this strain at this sampling time}
+#'     \item{repeat_number}{where there are repeat measurements, gives the repeat number for this serum sample and strain measured}
 #'     \item{group}{group index of this individual}
 #'     \item{DOB}{date of birth matching the time resolution of the model}
 #' }
