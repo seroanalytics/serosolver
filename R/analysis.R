@@ -19,25 +19,26 @@ load_start_tab <- function(location = getwd()) {
   return(start_tab)
 }
 
-#' Read in titre_dat
+#' Read in antibody_data
 #'
-#' Searches the working directory for a file with "titre_dat.csv" in the name and reads in the first one found
+#' Searches the working directory for a file with "antibody_data.csv" in the name and reads in the first one found
 #' @inheritParams load_start_tab
 #' @return data frame, the first found starting parameter tables in the current working directory
 #' @family load_data_functions
 #' @examples
-#' \dontrun{load_titre_dat()}
+#' \dontrun{load_antibody_data()}
 #' @export
-load_titre_dat <- function(location = getwd()) {
-  files <- Sys.glob(file.path(location, "*_titre_dat.csv"))
-  files_old <- Sys.glob(file.path(location, "*_titreDat.csv"))
-  files <- c(files, files_old)
+load_antibody_data <- function(location = getwd()) {
+  files <- Sys.glob(file.path(location, "*_antibody_data.csv"))
+  files_titre_dat <- Sys.glob(file.path(location, "*_titre_dat.csv"))
+  files_titreDat <- Sys.glob(file.path(location, "*_titreDat.csv"))
+  files <- c(files, files_titre_dat, files_titreDat)
   if (length(files) < 1) {
     message("Error - no files found")
     return(NULL)
   }
-  titre_dat <- read.csv(files[1], stringsAsFactors = FALSE)
-  return(titre_dat)
+  antibody_data <- read.csv(files[1], stringsAsFactors = FALSE)
+  return(antibody_data)
 }
 
 
