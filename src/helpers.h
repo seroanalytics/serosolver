@@ -12,7 +12,7 @@ NumericVector subset_nullable_vector(const Nullable<NumericVector> &x, int index
 
 #ifndef CREATE_CROSS_REACTIVITY_VECTOR_H
 #define SUBSET_NULLABLE_VECTOR_H
-NumericVector create_cross_reactivity_vector(NumericVector x, double sigma);
+NumericVector create_cross_reactivity_vector(NumericVector x, double cr_gradient);
 #endif
 
 #ifndef SUM_LIKELIHOODS_H

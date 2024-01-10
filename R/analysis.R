@@ -30,7 +30,7 @@ load_start_tab <- function(location = getwd()) {
 #' @export
 load_antibody_data <- function(location = getwd()) {
   files <- Sys.glob(file.path(location, "*_antibody_data.csv"))
-  files_antibody_data <- Sys.glob(file.path(location, "*_antibody_data.csv"))
+  files_antibody_data <- Sys.glob(file.path(location, "*_titre_dat.csv"))
   files_titreDat <- Sys.glob(file.path(location, "*_titreDat.csv"))
   files <- c(files, files_antibody_data, files_titreDat)
   if (length(files) < 1) {
@@ -271,7 +271,7 @@ estimate_mode <- function(x) {
 #' @return the formatted quantiles
 #' @examples
 #' data(example_theta_chain)
-#' x <- example_theta_chain$mu
+#' x <- example_theta_chain$boost_long
 #' generate_quantiles(x)
 #' @export
 generate_quantiles <- function(x, sig_f = 3, qs = c(0.025, 0.5, 0.975), as_text = TRUE) {
@@ -319,7 +319,6 @@ get_antibody_level_predictions <- function(chain, infection_histories, antibody_
                                            individuals, antigenic_map=NULL,
                                            possible_exposure_times=NULL, par_tab,
                                            nsamp = 100, add_residuals = FALSE,
-                                           mu_indices = NULL,
                                            measurement_indices_by_time = NULL,
                                            for_res_plot = FALSE, expand_antibody_data = FALSE,
                                            antibody_level_before_infection=FALSE, for_regression=FALSE,
@@ -373,7 +372,7 @@ get_antibody_level_predictions <- function(chain, infection_histories, antibody_
     ]
   }
   model_func <- create_posterior_func(par_tab, antibody_data1, antigenic_map, 100,
-                                      mu_indices = mu_indices,version=2,
+                                     version=2,
                                       measurement_indices_by_time = measurement_indices_by_time, function_type = 4,
                                       antibody_level_before_infection=antibody_level_before_infection,
                                       data_type=data_type
