@@ -74,8 +74,8 @@ plot_model_fits <- function(chain, infection_histories, antibody_data,
   inf_hist_densities$xmin <- inf_hist_densities$variable-0.5
   inf_hist_densities$xmax <- inf_hist_densities$variable+0.5
   
-  max_titre <- max(antibody_data$measurement,na.rm=TRUE)
-  min_titre <- min(antibody_data$measurement,na.rm=TRUE)
+  max_measurement <- max(antibody_data$measurement,na.rm=TRUE)
+  min_measurement <- min(antibody_data$measurement,na.rm=TRUE)
   
   max_x <- max(inf_hist_densities$variable) + 5
   time_range <- range(inf_hist_densities$variable)
@@ -83,13 +83,13 @@ plot_model_fits <- function(chain, infection_histories, antibody_data,
   if(orientation=="longitudinal"){
     titre_pred_p <- ggplot(to_use) +
       geom_rect(data=inf_hist_densities,
-                aes(xmin=xmin,xmax=xmax,fill=value),ymin=min_titre-1,ymax=max_titre+2)+
+                aes(xmin=xmin,xmax=xmax,fill=value),ymin=min_measurement-1,ymax=max_measurement+2)+
       geom_ribbon(aes(x=biomarker_id,ymin=lower, ymax=upper),alpha=0.4, fill="#009E73",size=0.2)+
       geom_ribbon(data=model_preds[model_preds$individual %in% individuals,], 
                   aes(x=biomarker_id,ymin=lower,ymax=upper),alpha=0.7,fill="#009E73",size=0.2) + 
       geom_line(data=model_preds, aes(x=biomarker_id, y=median),linewidth=0.75,color="#009E73")+
-      geom_rect(ymin=max_titre,ymax=max_titre+2,xmin=0,xmax=max_x,fill="grey70")+
-      geom_rect(ymin=min_titre-2,ymax=min_titre,xmin=0,xmax=max_x,fill="grey70")+
+      geom_rect(ymin=max_measurement,ymax=max_measurement+2,xmin=0,xmax=max_x,fill="grey70")+
+      geom_rect(ymin=min_measurement-2,ymax=min_measurement,xmin=0,xmax=max_x,fill="grey70")+
       scale_x_continuous(expand=c(0,0)) +
       scale_fill_gradient(low="white",high="#D55E00",limits=c(0,1),name="Posterior probability of infection")+
       guides(fill=guide_colourbar(title.position="top",title.hjust=0.5,label.position = "bottom",
@@ -106,19 +106,19 @@ plot_model_fits <- function(chain, infection_histories, antibody_data,
             axis.text.x=element_text(angle=45,hjust=1,size=8),
             axis.text.y=element_text(size=8),
             plot.margin=margin(r=15,t=5,l=5))+
-      coord_cartesian(ylim=c(min_titre,max_titre+1),xlim=time_range) +
-      scale_y_continuous(breaks=seq(min_titre,max_titre+2,by=2)) +
+      coord_cartesian(ylim=c(min_measurement,max_measurement+1),xlim=time_range) +
+      scale_y_continuous(breaks=seq(min_measurement,max_measurement+2,by=2)) +
       facet_grid(individual~sample_time)
   } else {
     titre_pred_p <- ggplot(to_use) +
       geom_rect(data=inf_hist_densities,
-                aes(xmin=xmin,xmax=xmax,fill=value),ymin=min_titre-1,ymax=max_titre+2)+
+                aes(xmin=xmin,xmax=xmax,fill=value),ymin=min_measurement-1,ymax=max_measurement+2)+
       geom_ribbon(aes(x=sample_time,ymin=lower, ymax=upper),alpha=0.25, fill="#009E73",size=0.2)+
       geom_ribbon(data=model_preds[model_preds$individual %in% individuals,], 
                   aes(x=sample_time,ymin=lower,ymax=upper),alpha=0.5,fill="#009E73",size=0.2) + 
       geom_line(data=model_preds, aes(x=sample_time, y=median),linewidth=0.75,color="#009E73")+
-      geom_rect(ymin=max_titre,ymax=max_titre+2,xmin=0,xmax=max_x,fill="grey70")+
-      geom_rect(ymin=min_titre-2,ymax=min_titre,xmin=0,xmax=max_x,fill="grey70")+
+      geom_rect(ymin=max_measurement,ymax=max_measurement+2,xmin=0,xmax=max_x,fill="grey70")+
+      geom_rect(ymin=min_measurement-2,ymax=min_measurement,xmin=0,xmax=max_x,fill="grey70")+
       scale_x_continuous(expand=c(0,0)) +
       scale_fill_gradient(low="white",high="#D55E00",limits=c(0,1),name="Posterior probability of infection")+
       guides(fill=guide_colourbar(title.position="top",title.hjust=0.5,label.position = "bottom",
@@ -135,8 +135,8 @@ plot_model_fits <- function(chain, infection_histories, antibody_data,
             axis.text.x=element_text(angle=45,hjust=1,size=8),
             axis.text.y=element_text(size=8),
             plot.margin=margin(r=15,t=5,l=5))+
-      coord_cartesian(ylim=c(min_titre,max_titre+1),xlim=range(possible_exposure_times)) +
-      scale_y_continuous(breaks=seq(min_titre,max_titre+2,by=2)) +
+      coord_cartesian(ylim=c(min_measurement,max_measurement+1),xlim=range(possible_exposure_times)) +
+      scale_y_continuous(breaks=seq(min_measurement,max_measurement+2,by=2)) +
       facet_wrap(~individual,ncol=p_ncol)
   }
   titre_pred_p

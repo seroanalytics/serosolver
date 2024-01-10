@@ -13,7 +13,7 @@ void proposal_likelihood_func(double &new_prob,
 			      const IntegerVector &cum_nrows_per_individual_in_repeat_data,
 			      const double &log_const,
 			      const double &den,
-			      const double &max_titre,
+			      const double &max_measurement,
 			      const bool &repeat_data_exist,
 			      const double &obs_weight);
 #endif
@@ -32,8 +32,8 @@ void proposal_likelihood_func_continuous(double &new_prob,
                                          const double &sd,
                                          const double &den,
                                          const double &den2,
-                                         const double &max_titre,
-                                         const double &min_titre,
+                                         const double &max_measurement,
+                                         const double &min_measurement,
                                          const bool &repeat_data_exist,
                                              const double &obs_weight);
 #endif

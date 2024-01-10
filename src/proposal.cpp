@@ -332,8 +332,8 @@ List ret;
   NumericVector wanes(n_types);
   NumericVector taus(n_types);
   
-  NumericVector max_titres(n_types);
-  NumericVector min_titres(n_types);
+  NumericVector max_measurements(n_types);
+  NumericVector min_measurements(n_types);
 
   int mu_index = unique_theta_indices("mu");
   int mu_short_index = unique_theta_indices("mu_short");
@@ -341,8 +341,8 @@ List ret;
   int tau_index = unique_theta_indices("tau");
   int error_index = unique_theta_indices("obs_sd");
   
-  int min_index = unique_theta_indices("MIN_TITRE");
-  int max_index = unique_theta_indices("MAX_TITRE");
+  int min_index = unique_theta_indices("min_measurement");
+  int max_index = unique_theta_indices("max_measurement");
   
   // Titre-dependent boosting function
   IntegerVector titre_dependent_boosting(n_types);
@@ -365,8 +365,8 @@ List ret;
       mu_shorts(x) = theta(mu_short_index + x*n_theta);
       wanes(x) = theta(wane_index + x*n_theta);
       taus(x) = theta(tau_index + x*n_theta);
-      min_titres(x) = theta(min_index + x*n_theta);
-      max_titres(x) = theta(max_index + x*n_theta);
+      min_measurements(x) = theta(min_index + x*n_theta);
+      max_measurements(x) = theta(max_index + x*n_theta);
       
       // For likelihood functions
       sds(x) = theta(error_index + x*n_theta);
@@ -706,7 +706,7 @@ List ret;
                                          cum_nrows_per_individual_in_repeat_data,
             			  	 log_const, 
             			  	 dens(obs_type), 
-            			  	 max_titres(obs_type), 
+            			  	 max_measurements(obs_type), 
             			  	 repeat_data_exist,
             			  	 obs_weight);
               // Data_type 2 is continuous, bounded data
@@ -720,8 +720,8 @@ List ret;
                                                     cum_nrows_per_individual_in_repeat_data,
                                                     log_const, 
                                                     sds(obs_type), dens(obs_type), den2s(obs_type), 
-                                                    max_titres(obs_type), 
-                                                    min_titres(obs_type), 
+                                                    max_measurements(obs_type), 
+                                                    min_measurements(obs_type), 
                                                     repeat_data_exist,
                                                     obs_weight);
               } else {
@@ -733,7 +733,7 @@ List ret;
                                          cum_nrows_per_individual_in_repeat_data,
                                          log_const, 
                                          dens(obs_type), 
-                                         max_titres(obs_type), 
+                                         max_measurements(obs_type), 
                                          repeat_data_exist,
                                          obs_weight);
               }

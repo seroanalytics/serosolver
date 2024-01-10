@@ -1,9 +1,9 @@
 #include <Rcpp.h>
 using namespace Rcpp;
 
-#ifndef ANTIBODY_DATA_MODEL_H
-#define ANTIBODY_DATA_MODEL_H
-void antibody_data_model(NumericVector &predicted_antibody_levels,
+#ifndef ANTIBODY_DATA_MODEL_INDIVIDUAL_H
+#define ANTIBODY_DATA_MODEL_INDIVIDUAL_H
+void antibody_data_model_individual(NumericVector &predicted_antibody_levels,
                          const double &boost_long,
                          const double &boost_short,
                          const double &wane_short,
@@ -23,9 +23,9 @@ void antibody_data_model(NumericVector &predicted_antibody_levels,
 				     );
 #endif
 
-#ifndef ANTIBODY_DEPENDENT_BOOSTING_MODEL_H
-#define ANTIBODY_DEPENDENT_BOOSTING_MODEL_H
-void antibody_dependent_boosting_model(NumericVector &predicted_antibody_levels,
+#ifndef ANTIBODY_DEPENDENT_BOOSTING_MODEL_INDIVIDUAL_H
+#define ANTIBODY_DEPENDENT_BOOSTING_MODEL_INDIVIDUAL_H
+void antibody_dependent_boosting_model_individual(NumericVector &predicted_antibody_levels,
                                        const double &boost_long,
                                        const double &boost_short,
                                        const double &wane_short,

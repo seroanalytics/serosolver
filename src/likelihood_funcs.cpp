@@ -136,17 +136,17 @@ NumericVector likelihood_func_fast(const NumericVector &theta, const NumericVect
   NumericVector ret(total_titres);
   const double sd = theta["obs_sd"];
   const double den = sd*M_SQRT2;
-  const double max_titre = theta["MAX_TITRE"];
+  const double max_measurement = theta["max_measurement"];
   const double log_const = log(0.5);
 
   for(int i = 0; i < total_titres; ++i){
-    // Most titres are between 0 and max_titre, this is the difference in normal cdfs
-    if(obs[i] < max_titre && obs[i] >= 1.0){
+    // Most titres are between 0 and max_measurement, this is the difference in normal cdfs
+    if(obs[i] < max_measurement && obs[i] >= 1.0){
       ret[i] = log_const + log((erf((obs[i] + 1.0 - predicted_titres[i]) / den) -
 				erf((obs[i]     - predicted_titres[i]) / den)));    
       // For titres above the maximum, 
-    } else if(obs[i] >= max_titre) {
-      ret[i] = log_const + log(erfc((max_titre - predicted_titres[i])/den));
+    } else if(obs[i] >= max_measurement) {
+      ret[i] = log_const + log(erfc((max_measurement - predicted_titres[i])/den));
     } else {
       ret[i] = log_const + log(1.0 + erf((1.0 - predicted_titres[i])/den));
     }
@@ -172,19 +172,19 @@ NumericVector likelihood_func_fast_continuous(const NumericVector &theta, const 
  const double sd = theta["obs_sd"];
  const double den = sd*M_SQRT2;
  const double den2 = log(sd*2.50662827463);
- const double max_titre = theta["MAX_TITRE"];
- const double min_titre = theta["MIN_TITRE"];
+ const double max_measurement = theta["max_measurement"];
+ const double min_measurement = theta["min_measurement"];
  const double log_const = log(0.5);
  
  for(int i = 0; i < total_titres; ++i){
-   // Most titres are between 0 and max_titre, this is the difference in normal cdfs
-   if(obs[i] < max_titre && obs[i] > min_titre){
+   // Most titres are between 0 and max_measurement, this is the difference in normal cdfs
+   if(obs[i] < max_measurement && obs[i] > min_measurement){
      ret[i] = -0.5*(pow((obs[i]-predicted_titres[i])/sd, 2)) - den2;
      // For titres above the maximum, 
-   } else if(obs[i] >= max_titre) {
-     ret[i] = log_const + log(erfc((max_titre - predicted_titres[i])/den));
+   } else if(obs[i] >= max_measurement) {
+     ret[i] = log_const + log(erfc((max_measurement - predicted_titres[i])/den));
    } else {
-     ret[i] = log_const + log(1.0 + erf((theta["MIN_TITRE"] - predicted_titres[i])/den));
+     ret[i] = log_const + log(1.0 + erf((theta["min_measurement"] - predicted_titres[i])/den));
    }
  }
  return(ret);
@@ -202,17 +202,17 @@ void proposal_likelihood_func(double &new_prob,
 			      const IntegerVector &cum_nrows_per_individual_in_repeat_data,
 			      const double &log_const,
 			      const double &den,
-			      const double &max_titre,
+			      const double &max_measurement,
 			      const bool &repeat_data_exist,
 			      const double &obs_weight = 1.0){
   for(int x = cum_nrows_per_individual_in_data[indiv]; x < cum_nrows_per_individual_in_data[indiv+1]; ++x){
 
       
-    if(data[x] < max_titre && data[x] >= 1.0){
+    if(data[x] < max_measurement && data[x] >= 1.0){
       new_prob += log_const + log((erf((data[x] + 1.0 - predicted_titres[x]) / den) -
 				   erf((data[x]     - predicted_titres[x]) / den)));    
-    } else if(data[x] >= max_titre) {
-      new_prob += log_const + log(erfc((max_titre - predicted_titres[x])/den));
+    } else if(data[x] >= max_measurement) {
+      new_prob += log_const + log(erfc((max_measurement - predicted_titres[x])/den));
     } else {
       new_prob += log_const + log(1.0 + erf((1.0 - predicted_titres[x])/den));
     }
@@ -222,11 +222,11 @@ void proposal_likelihood_func(double &new_prob,
   // Do something for repeat data here
   if(repeat_data_exist){
     for(int x = cum_nrows_per_individual_in_repeat_data[indiv]; x < cum_nrows_per_individual_in_repeat_data[indiv+1]; ++x){
-      if(repeat_data[x] < max_titre && repeat_data[x] >= 1.0){
+      if(repeat_data[x] < max_measurement && repeat_data[x] >= 1.0){
 	new_prob += log_const + log((erf((repeat_data[x] + 1.0 - predicted_titres[repeat_indices[x]]) / den) -
 				     erf((repeat_data[x]     - predicted_titres[repeat_indices[x]]) / den)));    
-      } else if(repeat_data[x] >= max_titre) {
-	new_prob += log_const + log(erfc((max_titre - predicted_titres[repeat_indices[x]])/den));
+      } else if(repeat_data[x] >= max_measurement) {
+	new_prob += log_const + log(erfc((max_measurement - predicted_titres[repeat_indices[x]])/den));
       } else {
 	new_prob += log_const + log(1.0 + erf((1.0 - predicted_titres[repeat_indices[x]])/den));
       }
@@ -258,18 +258,18 @@ void proposal_likelihood_func_continuous(double &new_prob,
                               const double &sd,
                               const double &den,
                               const double &den2,
-                              const double &max_titre,
-                              const double &min_titre,
+                              const double &max_measurement,
+                              const double &min_measurement,
                               const bool &repeat_data_exist,
                               const double &obs_weight = 1.0){
   
   for(int x = cum_nrows_per_individual_in_data[indiv]; x < cum_nrows_per_individual_in_data[indiv+1]; ++x){
-    if(data[x] < max_titre && data[x] > min_titre){
+    if(data[x] < max_measurement && data[x] > min_measurement){
       new_prob += -0.5*(pow((data[x]-predicted_titres[x])/sd, 2)) - den2;
-    } else if(data[x] >= max_titre) {
-      new_prob += log_const + log(erfc((max_titre - predicted_titres[x])/den));
+    } else if(data[x] >= max_measurement) {
+      new_prob += log_const + log(erfc((max_measurement - predicted_titres[x])/den));
     } else {
-      new_prob += log_const + log(1.0 + erf((min_titre - predicted_titres[x])/den));
+      new_prob += log_const + log(1.0 + erf((min_measurement - predicted_titres[x])/den));
     }
   }
   
@@ -277,12 +277,12 @@ void proposal_likelihood_func_continuous(double &new_prob,
   // Do something for repeat data here
   if(repeat_data_exist){
     for(int x = cum_nrows_per_individual_in_repeat_data[indiv]; x < cum_nrows_per_individual_in_repeat_data[indiv+1]; ++x){
-      if(repeat_data[x] < max_titre && repeat_data[x] > min_titre){
+      if(repeat_data[x] < max_measurement && repeat_data[x] > min_measurement){
         new_prob += -0.5*(pow((repeat_data[x]-predicted_titres[x])/sd, 2)) - den2;
-      } else if(repeat_data[x] >= max_titre) {
-        new_prob += log_const + log(erfc((max_titre - predicted_titres[repeat_indices[x]])/den));
+      } else if(repeat_data[x] >= max_measurement) {
+        new_prob += log_const + log(erfc((max_measurement - predicted_titres[repeat_indices[x]])/den));
       } else {
-        new_prob += log_const + log(1.0 + erf((min_titre - predicted_titres[repeat_indices[x]])/den));
+        new_prob += log_const + log(1.0 + erf((min_measurement - predicted_titres[repeat_indices[x]])/den));
       }
     }
   }

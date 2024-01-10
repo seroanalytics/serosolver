@@ -1,4 +1,4 @@
-#include "boosting_functions_fast.h"
+#include "antibody_models_individual.h"
 
 #ifndef MAX
 #define MAX(a,b) ((a) < (b) ? (b) : (a)) // define MAX function for use later
@@ -8,12 +8,12 @@
 #define MIN(a,b) ((a) < (b) ? (a) : (b)) // define MAX function for use later
 #endif
 
-//' Antibody model Cpp implementation
+//' Antibody model for one individual
 //' 
 //' A fast implementation of the basic boosting function, giving predicted antibody_levels for a number of samples for one individual. Note that this version attempts to minimise memory allocations.
-//' @family boosting_functions
-//' @seealso \code{\link{antibody_dependent_boosting_model}}
-void antibody_data_model(NumericVector &predicted_antibody_levels,
+//' @family antibody_models
+//' @seealso \code{\link{antibody_model}}
+void antibody_data_model_individual(NumericVector &predicted_antibody_levels,
 				     const double &boost_long,
 				     const double &boost_short,
 				     const double &wane_short,
@@ -79,12 +79,12 @@ void antibody_data_model(NumericVector &predicted_antibody_levels,
   }
 }
 
-//' Antibody dependent boosting fast
+//' Antibody dependent boosting model, one individual
 //' 
 //' A fast implementation of the antibody dependent boosting function, giving predicted antibody levels for a number of samples for one individual. Note that this version attempts to minimise memory allocations.
-//' @family boosting_functions
-//' @seealso \code{\link{antibody_data_model}}
-void antibody_dependent_boosting_model(NumericVector &predicted_antibody_levels,
+//' @family antibody_models
+//' @seealso \code{\link{antibody_model}}
+void antibody_dependent_boosting_model_individual(NumericVector &predicted_antibody_levels,
 					 const double &boost_long,
 					 const double &boost_short,
 					 const double &wane_short,

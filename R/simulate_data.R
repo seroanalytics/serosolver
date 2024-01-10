@@ -498,8 +498,8 @@ simulate_individual <- function(theta,
 #'
 #' Adds truncated noise to titre data
 #' @param y the titre
-#' @param theta a vector with max_titre and error parameters
-#' @param data_type integer, currently accepting 1 or 2. Set to 1 for discretized, bounded data, or 2 for continuous, bounded data. Note that with 2, min_titre must be set.
+#' @param theta a vector with max_measurement and error parameters
+#' @param data_type integer, currently accepting 1 or 2. Set to 1 for discretized, bounded data, or 2 for continuous, bounded data. Note that with 2, min_measurement must be set.
 #' @return a noisy titre
 #' @export
 #' @examples
@@ -518,8 +518,8 @@ add_noise <- function(y, theta, measurement_bias = NULL, indices = NULL,data_typ
     }
     
     ## If outside of bounds, truncate
-    noise_y[noise_y < theta["min_titre"]] <- theta["min_titre"]
-    noise_y[noise_y > theta["max_titre"]] <- theta["max_titre"]
+    noise_y[noise_y < theta["min_measurement"]] <- theta["min_measurement"]
+    noise_y[noise_y > theta["max_measurement"]] <- theta["max_measurement"]
   } else {
   ## Draw from normal
     if (!is.null(measurement_bias)) {
@@ -530,7 +530,7 @@ add_noise <- function(y, theta, measurement_bias = NULL, indices = NULL,data_typ
   
     ## If outside of bounds, truncate
     noise_y[noise_y < 0] <- 0
-    noise_y[noise_y > theta["max_titre"]] <- theta["max_titre"]
+    noise_y[noise_y > theta["max_measurement"]] <- theta["max_measurement"]
   }
   return(noise_y)
 }
