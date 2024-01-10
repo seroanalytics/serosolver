@@ -260,3 +260,385 @@ estimate_mode <- function(x) {
   d <- density(x)
   d$x[which.max(d$y)]
 }
+
+#' Formatted quantiles
+#'
+#' Given a vector of MCMC samples, generates and formats the desired quantile estimates
+#' @param x the vector to summarise
+#' @param sig_f how many significant figures to print
+#' @param qs the vector of quantiles
+#' @param as_text if TRUE, formats nicely as text rather than a vector of numbers
+#' @return the formatted quantiles
+#' @examples
+#' data(example_theta_chain)
+#' x <- example_theta_chain$mu
+#' generate_quantiles(x)
+#' @export
+generate_quantiles <- function(x, sig_f = 3, qs = c(0.025, 0.5, 0.975), as_text = TRUE) {
+  res <- signif(quantile(x, qs), sig_f)
+  if (as_text) {
+    res <- paste(res[2], " (", res[1], "-", res[3], ")", sep = "")
+  }
+  return(res)
+}
+
+
+#' Generate antibody level credible intervals
+#'
+#' Generates credible intervals on antibody levels and infection histories from an MCMC chain output.
+#' @param chain the full MCMC chain to generate antibody level trajectories from
+#' @param infection_histories the MCMC chain for infection histories
+#' @param antibody_data the data frame of antibody level data
+#' @param individuals the subset of individuals to generate credible intervals for
+#' @param antigenic_map (optional) a data frame of antigenic x and y coordinates. Must have column names: x_coord; y_coord; inf_times. See \code{\link{example_antigenic_map}}
+#' @param possible_exposure_times (optional) if no antigenic map is specified, this argument gives the vector of times at which individuals can be infected
+#' @param par_tab the table controlling the parameters in the MCMC chain
+#' @param nsamp number of samples to take from posterior
+#' @param add_residuals if true, returns an extra output summarising residuals between the model prediction and data
+#' @param measurement_indices_by_time default NULL, optional vector giving the index of `measurement_bias` that each strain uses the measurement shift from from. eg. if there's 6 circulation years and 3 strain clusters
+#' @param for_res_plot TRUE/FALSE value. If using the output of this for plotting of residuals, returns the actual data points rather than summary statistics
+#' @param expand_antibody_data TRUE/FALSE value. If TRUE, solves antibody level predictions for all possible infection times. If left FALSE, then only solves for the infections times at which a antibody level against the circulating biomarker_id was measured in antibody_data.
+#' @param antibody_level_before_infection TRUE/FALSE value. If TRUE, solves antibody level predictions, but gives the predicted antibody level at a given time point BEFORE any infection during that time occurs.
+#' @param for_regression if TRUE, returns posterior draws rather than posterior summaries
+#' @param data_type integer, currently accepting 1 or 2. Set to 1 for discretized, bounded data, or 2 for continuous, bounded data. 
+#' @return a list with the antibody level predictions (95% credible intervals, median and multivariate posterior mode) and the probabilities of infection for each individual in each epoch
+#' @examples
+#' \dontrun{
+#' data(example_theta_chain)
+#' data(example_inf_chain)
+#' data(example_antibody_data)
+#' data(example_antigenic_map)
+#' data(example_par_tab)
+#'
+#' y <- get_antibody_level_predictions(example_theta_chain, example_inf_chain, example_antibody_data,
+#'                           unique(example_antibody_data$individual), example_antigenic_map,
+#'                           example_par_tab,expand_antibody_data = FALSE)
+#' }
+#' @export
+get_antibody_level_predictions <- function(chain, infection_histories, antibody_data,
+                                           individuals, antigenic_map=NULL,
+                                           possible_exposure_times=NULL, par_tab,
+                                           nsamp = 100, add_residuals = FALSE,
+                                           mu_indices = NULL,
+                                           measurement_indices_by_time = NULL,
+                                           for_res_plot = FALSE, expand_antibody_data = FALSE,
+                                           antibody_level_before_infection=FALSE, for_regression=FALSE,
+                                           data_type=1){
+  ## Need to align the iterations of the two MCMC chains
+  ## and choose some random samples
+  samps <- intersect(unique(infection_histories$sampno), unique(chain$sampno))
+  chain <- chain[chain$sampno %in% samps, ]
+  infection_histories <- infection_histories[infection_histories$sampno %in% samps, ]
+  
+  ## Take subset of individuals
+  antibody_data <- antibody_data[antibody_data$individual %in% individuals, ]
+  infection_histories <- infection_histories[infection_histories$i %in% individuals, ]
+  
+  antibody_data$individual <- match(antibody_data$individual, individuals)
+  infection_histories$i <- match(infection_histories$i, individuals)
+  
+  ## Format the antigenic map to solve the model 
+  if (!is.null(antigenic_map)) {
+    possible_exposure_times <- unique(antigenic_map$inf_times) # How many strains are we testing against and what time did they circulate
+  } else {
+    antigenic_map <- data.frame("x_coord"=1,"y_coord"=1,"inf_times"=possible_exposure_times)
+  }
+  nstrain <- length(possible_exposure_times)
+  n_indiv <- length(individuals)
+  if(!("biomarker_group" %in% colnames(antibody_data))){
+    antibody_data$biomarker_group <- 1
+  }
+  unique_biomarker_groups <- unique(antibody_data$biomarker_group)
+  
+  ## Empty data structures to save output to
+  infection_history_dens <- NULL
+  tmp_samp <- sample(samps, nsamp)
+  
+  ## See the function in posteriors.R
+  antibody_data1 <- antibody_data
+  
+  
+  if (expand_antibody_data) {
+    antibody_data1 <- expand.grid(
+      individual = unique(antibody_data$individual),
+      sample_time = unique(antibody_data$sample_time),
+      biomarker_group=unique(antibody_data$biomarker_group),
+      measurement = 0, repeat_number = 1
+    )
+    antibody_data2 <- unique(antibody_data[, c("individual", "biomarker_id", "population_group", "birth")])
+    antibody_data1 <- merge(antibody_data1, antibody_data2)
+    antibody_data1 <- antibody_data1[
+      order(antibody_data1$population_group, antibody_data1$individual, antibody_data1$sample_time, antibody_data1$biomarker_id),
+      c("individual", "sample_time","biomarker_group", "biomarker_id", "measurement", "repeat_number", "population_group", "birth")
+    ]
+  }
+  model_func <- create_posterior_func(par_tab, antibody_data1, antigenic_map, 100,
+                                      mu_indices = mu_indices,version=2,
+                                      measurement_indices_by_time = measurement_indices_by_time, function_type = 4,
+                                      antibody_level_before_infection=antibody_level_before_infection,
+                                      data_type=data_type
+  )
+  
+  predicted_titres <- residuals <- residuals_floor <- 
+    observed_predicted_titres <- matrix(nrow = nrow(antibody_data1), ncol = nsamp)
+  samp_record <- numeric(nsamp)
+  
+  
+  ## For each sample, take values for theta and infection histories and simulate titres
+  inf_hist_all <- list(nsamp)
+  for (i in 1:nsamp) {
+    index <- tmp_samp[i]
+    pars <- get_index_pars(chain, index)
+    pars <- pars[!(names(pars) %in% c("posterior_prob", "likelihood", "prior_prob",
+                                      "sampno", "total_infections", "chain_no"
+    ))]
+    ## pars <- pars[names(pars) %in% par_tab$names]
+    tmp_inf_hist <- infection_histories[infection_histories$sampno == index, ]
+    tmp_inf_hist <- as.matrix(Matrix::sparseMatrix(i = tmp_inf_hist$i, j = tmp_inf_hist$j, x = tmp_inf_hist$x, dims = c(n_indiv, nstrain)))
+    predicted_titres[, i] <- model_func(pars, tmp_inf_hist)
+    for(biomarker_group in unique_biomarker_groups){
+      observed_predicted_titres[which(antibody_data1$biomarker_group == biomarker_group),i] <- add_noise(predicted_titres[which(antibody_data1$biomarker_group == biomarker_group),i], pars, NULL, NULL,data_type=data_type[biomarker_group])
+    }
+    inf_hist_all[[i]] <- tmp_inf_hist
+    ## Get residuals between observations and predictions
+    residuals[, i] <- antibody_data1$measurement - floor(predicted_titres[, i])
+    residuals_floor[,i] <- antibody_data1$measurement - observed_predicted_titres[,i]
+    samp_record[i] <- index
+  }
+  colnames(predicted_titres) <- tmp_samp
+  
+  ## If generating for residual plot, can return now
+  if (for_res_plot) {
+    return(list(residuals, samp_record, antibody_data1,
+                predicted_titres,
+                observed_predicted_titres,
+                residuals_floor))
+  }
+  
+  #residuals <- cbind(antibody_data1, residuals)
+  
+  ## Get 95% credible interval and means
+  dat2 <- t(apply(predicted_titres, 1, function(x) quantile(x, c(0.025, 0.25, 0.5, 0.75, 0.975))))
+  
+  ## Get 95% credible interval and means of observations
+  obs_dat <- t(apply(observed_predicted_titres, 1, function(x) quantile(x, c(0.025, 0.25, 0.5, 0.75, 0.975))))
+  
+  residuals <- t(apply(residuals, 1, function(x) quantile(x, c(0.025, 0.5, 0.975))))
+  residuals <- cbind(antibody_data1, residuals)
+  
+  ## Find multivariate posterior mode estimate from the chain
+  best_pars <- get_best_pars(chain)
+  best_pars <- best_pars[!(names(best_pars) %in% c(
+    "posterior_prob", "likelihood", "prior_prob",
+    "sampno", "total_infections", "chain_no"
+  ))]
+  #best_pars <- best_pars[names(best_pars) %in% par_tab$names]
+  best_I <- chain$sampno[which.max(chain$posterior_prob)]
+  best_inf <- infection_histories[infection_histories$sampno == best_I, ]
+  best_inf <- as.matrix(Matrix::sparseMatrix(i = best_inf$i, j = best_inf$j, x = best_inf$x, dims = c(n_indiv, nstrain)))
+  
+  ## Generate trajectory for best parameters
+  best_traj <- model_func(best_pars, best_inf)
+  best_residuals <- antibody_data1$measurement - floor(best_traj)
+  best_residuals <- cbind(antibody_data1, best_residuals, "sampno" = best_I)
+  dat2 <- as.data.frame(dat2)
+  obs_dat <- as.data.frame(obs_dat)
+  
+  colnames(dat2) <- colnames(obs_dat) <- c("lower", "lower_50", "median", "upper_50", "upper")
+  dat2$max <- best_traj
+  dat2 <- cbind(antibody_data1, dat2)
+  obs_dat <- cbind(antibody_data1, obs_dat)
+  tmp_inf_chain <- data.table(subset(infection_histories, sampno %in% tmp_samp))
+  
+  ## Get infection history density for each individual and each epoch
+  data.table::setkey(tmp_inf_chain, "i", "j")
+  infection_history_dens <- tmp_inf_chain[, list(V1 = sum(x) / length(tmp_samp)), by = key(tmp_inf_chain)]
+  infection_history_dens$j <- possible_exposure_times[infection_history_dens$j]
+  colnames(infection_history_dens) <- c("individual", "variable", "value")
+  infection_history_final <- infection_history_dens
+  best_inf <- data.frame(best_inf)
+  best_inf$individual <- 1:nrow(best_inf)
+  best_inf$individual <- individuals[best_inf$individual]
+  
+  dat2$individual <- individuals[dat2$individual]
+  infection_history_final$individual <- individuals[infection_history_final$individual]
+  if(for_regression){
+    return(list("all_predictions"=predicted_titres, "all_inf_hist"=inf_hist_all,
+                "summary_titres"=dat2,"best_inf_hist"=best_inf, "predicted_observations"=obs_dat)) 
+  }
+  
+  if (add_residuals) {
+    result <- list("predictions" = dat2, "histories" = infection_history_final, 
+                   "residuals" = residuals, "bestRes" = best_residuals,"best_infhist"=best_inf,
+                   "predicted_observations"=obs_dat)
+  } else {
+    result <- list("predictions" = dat2, "histories" = infection_history_final,
+                   "best_infhist"=best_inf, "predicted_observations"=obs_dat)
+  }
+  return(result)
+}
+
+#' Get posterior information infection histories
+#'
+#' Finds the median, mean and 95% credible intervals for the attack rates and total number of infections per individual
+#' @param solve_cumulative if TRUE, finds the cumulative infection histories for each individual. This takes a while, so is left FALSE by default.
+#' @inheritParams plot_posteriors_infhist
+#' @return a list of data frames with summary statistics
+#' @family infection_history_plots
+#' @examples
+#' data(example_inf_chain)
+#' data(example_antigenic_map)
+#' data(example_antibody_data)
+#' data(example_inf_hist)
+#' possible_exposure_times <- example_antigenic_map$inf_times
+#' ## Find number alive in each time period
+#' n_alive <- get_n_alive(example_antibody_data, possible_exposure_times)
+#' ## Get actual number of infections per time
+#' n_infs <- colSums(example_inf_hist)
+#' ## Create data frame of true ARs
+#' known_ar <- n_infs/n_alive
+#' known_ar <- data.frame("j"=possible_exposure_times,"AR"=known_ar,"population_group"=1)
+#' ## Get true infection histories
+#' known_inf_hist <- data.frame(example_inf_hist)
+#' colnames(known_inf_hist) <- possible_exposure_times
+#'
+#' ## Need to get population_group specific n_alive and adjust to correct time frame 
+#' n_alive_group <- get_n_alive_group(example_antibody_data, possible_exposure_times,melt_dat = TRUE)
+#' n_alive_group$j <- possible_exposure_times[n_alive_group$j]
+#' results <- calculate_infection_history_statistics(example_inf_chain, 0, possible_exposure_times,
+#'                                                   n_alive=n_alive_group, known_ar=known_ar,
+#'                                                   known_infection_history=known_inf_hist)
+#' @export
+calculate_infection_history_statistics <- function(inf_chain, burnin = 0, years = NULL,
+                                                   n_alive = NULL, known_ar = NULL,
+                                                   group_ids = NULL,
+                                                   known_infection_history = NULL,
+                                                   solve_cumulative=FALSE) {
+  inf_chain <- inf_chain[inf_chain$sampno > burnin, ]
+  if (is.null(inf_chain$chain_no)) {
+    inf_chain$chain_no <- 1
+  }
+  message("Padding inf chain...\n")
+  inf_chain <- pad_inf_chain(inf_chain)
+  message("Done\n")
+  
+  if (!is.null(group_ids)) {
+    inf_chain <- merge(inf_chain, data.table(group_ids))
+  } else {
+    inf_chain$population_group <- 1
+  }
+  
+  message("Calculating by time summaries...\n")
+  data.table::setkey(inf_chain, "population_group", "j", "sampno", "chain_no")
+  n_inf_chain <- inf_chain[, list(total_infs = sum(x)), by = key(inf_chain)]
+  
+  
+  if (!is.null(years)) {
+    n_inf_chain$j <- years[n_inf_chain$j]
+  }
+  
+  if (!is.null(n_alive)) {
+    n_inf_chain <- merge(n_inf_chain, n_alive, by = c("j", "population_group"))
+    n_inf_chain$total_infs <- n_inf_chain$total_infs / n_inf_chain$n_alive
+    n_inf_chain[is.nan(n_inf_chain$total_infs), "total_infs"] <- 0
+  }
+  data.table::setkey(n_inf_chain, "population_group", "sampno", "chain_no")
+  n_inf_chain[, cumu_infs := cumsum(total_infs), by = key(n_inf_chain)]
+  gelman_res_j <- ddply(n_inf_chain, .(population_group,j), function(tmp_chain){
+    tmp_chain_mcmc <- split(as.data.table(tmp_chain), by=c("chain_no"))
+    tmp_chain_mcmc <- lapply(tmp_chain_mcmc, function(x) as.mcmc(x[,c("total_infs")]))
+    tmp_chain_mcmc <- as.mcmc.list(tmp_chain_mcmc)
+    gelman.diag(tmp_chain_mcmc)[[1]][1,]
+  })
+  colnames(gelman_res_j) <- c("population_group","j","gelman_point","gelman_upper")
+  
+  
+  data.table::setkey(n_inf_chain, "j", "population_group")
+  n_inf_chain_summaries <- n_inf_chain[, list(
+    mean = mean(as.double(total_infs)), median = median(as.double(total_infs)),
+    lower_quantile = quantile(as.double(total_infs), c(0.025)),
+    upper_quantile = quantile(as.double(total_infs), c(0.975)),
+    effective_size = tryCatch({
+      coda::effectiveSize(total_infs)
+    }, error = function(e) {
+      0
+    })
+  ),
+  by = key(n_inf_chain)
+  ]
+  n_inf_chain_summaries <- merge(n_inf_chain_summaries, gelman_res_j, by=c("j","population_group"))
+  
+  n_inf_chain_summaries_cumu <- n_inf_chain[, list(
+    mean = mean(as.double(cumu_infs)), median = median(as.double(cumu_infs)),
+    lower_quantile = quantile(as.double(cumu_infs), c(0.025)),
+    upper_quantile = quantile(as.double(cumu_infs), c(0.975)),
+    effective_size = tryCatch({
+      coda::effectiveSize(cumu_infs)
+    }, error = function(e) {
+      0
+    })
+  ),
+  by = key(n_inf_chain)
+  ]
+  message("Done\n")
+  if (!is.null(known_ar)) {
+    n_inf_chain_summaries <- merge(n_inf_chain_summaries, known_ar, by = c("j","population_group"))
+    n_inf_chain_summaries$correct <- (n_inf_chain_summaries$AR >=
+                                        n_inf_chain_summaries$lower_quantile) & (n_inf_chain_summaries$AR <=
+                                                                                   n_inf_chain_summaries$upper_quantile)
+  }
+  message("Calculating by individual summaries...\n")
+  data.table::setkey(inf_chain, "i", "sampno", "chain_no")
+  n_inf_chain_i <- inf_chain[, list(total_infs = sum(x)), by = key(inf_chain)]
+  
+  data.table::setkey(n_inf_chain_i, "i")
+  n_inf_chain_i_summaries <- n_inf_chain_i[, list(
+    mean = mean(total_infs),
+    median = as.integer(median(total_infs)),
+    lower_quantile = quantile(total_infs, 0.025),
+    upper_quantile = quantile(total_infs, 0.975),
+    effective_size = tryCatch({
+      coda::effectiveSize(total_infs)
+    }, error = function(e) {
+      0
+    })
+  ),
+  by = key(n_inf_chain_i)
+  ]
+  
+  if(solve_cumulative){
+    data.table::setkey(inf_chain,"i", "sampno", "chain_no")
+    n_inf_chain_i_cumu <- inf_chain[, cumu_infs := cumsum(x), by = key(inf_chain)]
+    
+    data.table::setkey(n_inf_chain_i_cumu, "i","j")
+    n_inf_chain_i_summaries_cumu <- n_inf_chain_i_cumu[, list(
+      mean = mean(cumu_infs),
+      median = as.integer(median(cumu_infs)),
+      lower_quantile = quantile(cumu_infs, 0.025),
+      upper_quantile = quantile(cumu_infs, 0.975),
+      effective_size = tryCatch({
+        coda::effectiveSize(cumu_infs)
+      }, error = function(e) {
+        0
+      })
+    ),
+    by = key(n_inf_chain_i_cumu)
+    ]
+  } else {
+    n_inf_chain_i_summaries_cumu <- NULL
+  }
+  message("Done\n")
+  if (!is.null(known_infection_history)) {
+    true_n_infs <- rowSums(known_infection_history)
+    true_n_infs <- data.frame(i = 1:length(true_n_infs), true_infs = true_n_infs)
+    n_inf_chain_i_summaries <- merge(n_inf_chain_i_summaries, true_n_infs, by = "i")
+    n_inf_chain_i_summaries$correct <- (n_inf_chain_i_summaries$true_inf >=
+                                          n_inf_chain_i_summaries$lower_quantile) & (n_inf_chain_i_summaries$true_inf <=
+                                                                                       n_inf_chain_i_summaries$upper_quantile)
+  }
+  
+  return(list(
+    "by_year" = n_inf_chain_summaries, "by_indiv" = n_inf_chain_i_summaries,
+    "by_year_cumu" = n_inf_chain_summaries_cumu, "by_indiv_cumu" = n_inf_chain_i_summaries_cumu
+  ))
+}

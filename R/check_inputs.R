@@ -56,10 +56,7 @@ check_par_tab <- function(par_tab, mcmc = FALSE, version = NULL) {
     essential_names <- c("names","values","fixed","lower_bound","upper_bound","lower_start","upper_start","par_type")
     if (!all(essential_names %in% colnames(par_tab))) {
         message(paste(c("Some column names missing from par_tab: ", setdiff(essential_names,colnames(par_tab))),collapse=" "))
-        if(!("steps" %in% colnames(par_tab))){
-          message("Adding \"steps\" to par_tab variables.")
-          par_tab$steps <- 0.1
-        }
+     
         if(!("type" %in% colnames(par_tab))){
           message("Adding \"par_type\" to par_tab variables.")
           par_tab$par_type <- 1
@@ -72,6 +69,12 @@ check_par_tab <- function(par_tab, mcmc = FALSE, version = NULL) {
 
     ## Additional checks that should happen in run_MCMC
     if (mcmc == TRUE) {
+      
+      if(!("steps" %in% colnames(par_tab))){
+        message("Adding \"steps\" to par_tab variables.")
+        par_tab$steps <- 0.1
+      }
+      
         phi_indices <- which(par_tab$names == "phi")
         no_phi <- length(phi_indices)
         explicit_phi <- (no_phi > 0)
