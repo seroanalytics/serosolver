@@ -5,16 +5,16 @@
 \title{Marginal prior probability (p(Z)) of a particular infection history matrix single prior
  Prior is independent contribution from each year}
 \usage{
-inf_mat_prior_cpp(infection_history, n_alive, alpha, beta)
+inf_mat_prior_cpp(infection_history, n_alive, shape1, shape2)
 }
 \arguments{
 \item{infection_history}{IntegerMatrix, the infection history matrix}
 
 \item{n_alive}{IntegerVector, vector giving the number of individuals alive in each time unit}
 
-\item{alpha}{double, alpha parameter for beta distribution prior}
+\item{shape1}{double, shape1 (alpha) parameter for beta distribution prior}
 
-\item{beta}{double, beta parameter for beta distribution prior}
+\item{shape2}{double, shape2 (beta) parameter for beta distribution prior}
 }
 \value{
 a single prior probability

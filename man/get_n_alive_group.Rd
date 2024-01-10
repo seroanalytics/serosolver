@@ -4,26 +4,26 @@
 \alias{get_n_alive_group}
 \title{Get number alive by location}
 \usage{
-get_n_alive_group(titre_dat, times, melt_dat = FALSE)
+get_n_alive_group(antibody_data, times, melt_data = FALSE)
 }
 \arguments{
-\item{titre_dat}{the data frame of titre data. See \code{\link{example_titre_dat}}}
+\item{antibody_data}{the data frame of antibody data. See \code{\link{example_antibody_data}}}
 
 \item{times}{the vector of times to calculate number alive for}
 
-\item{melt_dat}{if TRUE, returns a melted data frame. Returns a wide matrix otherwise.}
+\item{melt_data}{if TRUE, returns a melted data frame. Returns a wide matrix otherwise.}
 }
 \value{
 a matrix giving the number alive in each time point in each location
 }
 \description{
-Given the titre_dat data frame with entries for location, calculates the number that are alive (alive to be infected, that is) for each time in times by location
+Given the antibody_data data frame with entries for location, calculates the number that are alive (alive to be infected, that is) for each time in times by location
 }
 \examples{
-data(example_titre_dat)
+data(example_antibody_data)
 data(example_antigenic_map)
 times <- unique(example_antigenic_map$inf_times)
-get_n_alive_group(example_titre_dat, times)
+get_n_alive_group(example_antibody_data, times)
 }
 \seealso{
 Other get_summary: 

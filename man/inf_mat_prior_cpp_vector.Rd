@@ -3,25 +3,25 @@
 \name{inf_mat_prior_cpp_vector}
 \alias{inf_mat_prior_cpp_vector}
 \title{Marginal prior probability (p(Z)) of a particular infection history matrix vector prior
- Prior is independent contribution from each year, but each year has its own alpha and beta}
+ Prior is independent contribution from each year, but each year has its own shape parameters}
 \usage{
-inf_mat_prior_cpp_vector(infection_history, n_alive, alphas, betas)
+inf_mat_prior_cpp_vector(infection_history, n_alive, shape1s, shape2s)
 }
 \arguments{
 \item{infection_history}{IntegerMatrix, the infection history matrix}
 
 \item{n_alive}{IntegerVector, vector giving the number of individuals alive in each time unit}
 
-\item{alphas}{NumericVector, alpha parameters for beta distribution prior, one for each time unit}
+\item{shape1s}{NumericVector, shape1 (alpha) parameters for beta distribution prior, one for each time unit}
 
-\item{betas}{NumericVector, beta parameters for beta distribution prior, one for each time unit}
+\item{shape2s}{NumericVector, shape2 (beta) parameters for beta distribution prior, one for each time unit}
 }
 \value{
 a single prior probability
 }
 \description{
 Marginal prior probability (p(Z)) of a particular infection history matrix vector prior
- Prior is independent contribution from each year, but each year has its own alpha and beta
+ Prior is independent contribution from each year, but each year has its own shape parameters
 }
 \seealso{
 Other inf_mat_prior: 

@@ -20,10 +20,10 @@ Searches the working directory for a file with "antigenic_map.csv" in the name a
 }
 \seealso{
 Other load_data_functions: 
+\code{\link{load_antibody_data}()},
 \code{\link{load_infection_chains}()},
 \code{\link{load_mcmc_chains}()},
 \code{\link{load_start_tab}()},
-\code{\link{load_theta_chains}()},
-\code{\link{load_titre_dat}()}
+\code{\link{load_theta_chains}()}
 }
 \concept{load_data_functions}

@@ -4,24 +4,24 @@
 \alias{create_age_mask}
 \title{Create age mask}
 \usage{
-create_age_mask(DOBs, strain_isolation_times)
+create_age_mask(DOBs, possible_exposure_times)
 }
 \arguments{
-\item{DOBs}{the vector of dates of birth, same time units as strain_isolation_times}
+\item{DOBs}{the vector of dates of birth, same time units as possible_exposure_times}
 
-\item{strain_isolation_times}{the vector of times that individuals can be infected}
+\item{possible_exposure_times}{the vector of times that individuals can be infected}
 }
 \value{
-a vector giving the first index of strain_isolation_times that an individual can be infected
+a vector giving the first index of possible_exposure_times that an individual can be infected
 }
 \description{
 Converts a data frame of individual ages to give the index of the first infection that individual could have had
 }
 \examples{
-data(example_titre_dat)
+data(example_antibody_data)
 data(example_antigenic_map)
 times <- example_antigenic_map$inf_times
-DOBs <- unique(example_titre_dat[,c("individual","DOB")])
-age_mask <- create_age_mask(DOBs$DOB, times)
+DOBs <- unique(example_antibody_data[,c("individual","birth")])
+age_mask <- create_age_mask(DOBs$birth, times)
 }
 \concept{create_masks}

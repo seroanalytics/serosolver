@@ -54,11 +54,14 @@ NumericVector create_cross_reactivity_vector(NumericVector x, double cr_gradient
 //' @export
 //[[Rcpp::export]]
 NumericVector sum_buckets(NumericVector a, NumericVector buckets){
-  NumericVector results(buckets.size());
+  int buckets_size = buckets.size();
+  int a_size = a.size();
+  
+  NumericVector results(buckets_size);
   int index = 0;
-  for(int i = 0; i < buckets.size(); ++i){
+  for(int i = 0; i < buckets_size; ++i){
     results[i] = 0;
-    for(int j = 0; (j < buckets[i]) & (index < a.size()); ++j){
+    for(int j = 0; (j < buckets[i]) && (index < a_size); ++j){
       results[i] += a[index++];
     }
   }

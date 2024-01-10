@@ -11,7 +11,7 @@ A matrix with 50 rows (individuals) and 48 columns. Each entry can only be 1 (pr
 data(example_inf_hist)
 }
 \description{
-Example of the infection history matrix for a cohort of 50 individuals, matching \code{\link{example_titre_dat}} and \code{\link{example_antigenic_map}}
+Example of the infection history matrix for a cohort of 50 individuals, matching \code{\link{example_antibody_data}} and \code{\link{example_antigenic_map}}
 }
 \seealso{
 Other example_data: 

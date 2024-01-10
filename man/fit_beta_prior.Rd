@@ -43,7 +43,6 @@ Other priors:
 \code{\link{calc_phi_probs_indiv}()},
 \code{\link{calc_phi_probs_spline}()},
 \code{\link{calc_phi_probs}()},
-\code{\link{create_prior_mu}()},
 \code{\link{create_prob_shifts}()},
 \code{\link{find_beta_prior_mode}()},
 \code{\link{find_beta_prior_with_mean_var}()},
@@ -51,7 +50,6 @@ Other priors:
 \code{\link{fit_normal_prior}()},
 \code{\link{inf_mat_prior}()},
 \code{\link{infection_history_prior}()},
-\code{\link{prob_mus}()},
 \code{\link{prob_shifts}()}
 }
 \concept{priors}

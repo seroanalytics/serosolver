@@ -6,9 +6,9 @@
 \usage{
 run_MCMC(
   par_tab,
-  titre_dat,
+  antibody_data,
   antigenic_map = NULL,
-  strain_isolation_times = NULL,
+  possible_exposure_times = NULL,
   mcmc_pars = c(),
   mvr_pars = NULL,
   start_inf_hist = NULL,
@@ -16,7 +16,6 @@ run_MCMC(
   CREATE_POSTERIOR_FUNC = create_posterior_func,
   CREATE_PRIOR_FUNC = NULL,
   version = 1,
-  mu_indices = NULL,
   measurement_indices = NULL,
   measurement_random_effects = FALSE,
   proposal_ratios = NULL,
@@ -30,11 +29,11 @@ run_MCMC(
 \arguments{
 \item{par_tab}{The parameter table controlling information such as bounds, initial values etc. See \code{\link{example_par_tab}}}
 
-\item{titre_dat}{The data frame of titre data to be fitted. Must have columns: group (index of group); individual (integer ID of individual); samples (numeric time of sample taken); virus (numeric time of when the virus was circulating); titre (integer of titre value against the given virus at that sampling time); run (integer giving the repeated number of this titre); DOB (integer giving date of birth matching time units used in model). See \code{\link{example_titre_dat}}}
+\item{antibody_data}{The data frame of titre data to be fitted. Must have columns: group (index of group); individual (integer ID of individual); samples (numeric time of sample taken); virus (numeric time of when the virus was circulating); titre (integer of titre value against the given virus at that sampling time); run (integer giving the repeated number of this titre); DOB (integer giving date of birth matching time units used in model). See \code{\link{example_antibody_data}}}
 
 \item{antigenic_map}{(optional) A data frame of antigenic x and y coordinates. Must have column names: x_coord; y_coord; inf_times. See \code{\link{example_antigenic_map}}}
 
-\item{strain_isolation_times}{(optional) If no antigenic map is specified, this argument gives the vector of times at which individuals can be infected}
+\item{possible_exposure_times}{(optional) If no antigenic map is specified, this argument gives the vector of times at which individuals can be infected}
 
 \item{mcmc_pars}{Named vector named vector with parameters for the MCMC procedure. See details}
 
@@ -50,8 +49,6 @@ run_MCMC(
 
 \item{version}{which infection history assumption version to use? See \code{\link{describe_priors}} for options. Can be 1, 2, 3 or 4}
 
-\item{mu_indices}{optional NULL. For random effects on boosting parameter, mu. Vector of indices of length equal to number of circulation times. If random mus are included in the parameter table, this vector specifies which mu to use for each circulation year. For example, if years 1970-1976 have unique boosting, then mu_indices should be c(1,2,3,4,5,6). If every 3 year block shares has a unique boosting parameter, then this should be c(1,1,1,2,2,2)}
-
 \item{measurement_indices}{optional NULL. For measurement bias function. Vector of indices of length equal to number of circulation times. For each year, gives the index of parameters named "rho" that correspond to each time period}
 
 \item{measurement_random_effects}{optional FALSE. Boolean indicating if measurement bias is a random effects term. If TRUE adds a component to the posterior calculation that calculates the probability of a set of measurement shifts "rho", given a mean and standard deviation}
@@ -64,7 +61,7 @@ run_MCMC(
 
 \item{solve_likelihood}{if FALSE, returns only the prior and does not solve the likelihood. Use this if you wish to sample directly from the prior}
 
-\item{n_alive}{if not NULL, uses this as the number alive for the infection history prior, rather than calculating the number alive based on titre_dat}
+\item{n_alive}{if not NULL, uses this as the number alive for the infection history prior, rather than calculating the number alive based on antibody_data}
 
 \item{...}{Other arguments to pass to CREATE_POSTERIOR_FUNC}
 }
@@ -97,10 +94,10 @@ The \code{mcmc_pars} argument has the following options:
 }
 \examples{
 \dontrun{
-data(example_titre_dat)
+data(example_antibody_data)
 data(example_par_tab)
 data(example_antigenic_map)
-res <- run_MCMC(example_par_tab[example_par_tab$names != "phi",], example_titre_dat, example_antigenic_map, version=2)
+res <- run_MCMC(example_par_tab[example_par_tab$names != "phi",], example_antibody_data, example_antigenic_map, version=2)
 }
 }
 \seealso{

@@ -2,17 +2,17 @@
 % Please edit documentation in R/RcppExports.R
 \name{inf_hist_prop_prior_v3}
 \alias{inf_hist_prop_prior_v3}
-\title{Fast infection history proposal function}
+\title{Infection history proposal function}
 \usage{
 inf_hist_prop_prior_v3(
   infection_history_mat,
   sampled_indivs,
   age_mask,
-  strain_mask,
+  sample_mask,
   move_sizes,
   n_infs,
-  alpha,
-  beta,
+  shape1,
+  shape2,
   rand_ns,
   swap_propn
 )
@@ -28,11 +28,13 @@ inf_hist_prop_prior_v3(
 
 \item{n_infs}{IntegerVector, how many infections to add/remove/swap with each proposal step for each individual}
 
-\item{alpha}{double, alpha parameter of the beta binomial}
+\item{shape1}{double, shape1 (alpha) parameter of the beta binomial}
 
-\item{beta}{double, beta parameter of the beta binomial}
+\item{shape2}{double, shape2 (beta) parameter of the beta binomial}
 
 \item{rand_ns}{NumericVector, a vector of random numbers for each sampled individual. The idea is to pre-specify whether an individual experiences an add/remove step or a swap step to avoid random number sampling in C++}
+
+\item{strain_mask}{IntegerVector, for each individual gives the last column in the infection history matrix that an individual could have been exposed to indexed from 1. ie. if their last serum sample was in the 40th epoch, entry would be 40}
 }
 \value{
 a matrix of 1s and 0s corresponding to the infection histories for all individuals

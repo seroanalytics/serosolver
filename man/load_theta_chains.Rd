@@ -37,10 +37,10 @@ Searches the given working directory for MCMC outputs from \code{\link{run_MCMC}
 }
 \seealso{
 Other load_data_functions: 
+\code{\link{load_antibody_data}()},
 \code{\link{load_antigenic_map_file}()},
 \code{\link{load_infection_chains}()},
 \code{\link{load_mcmc_chains}()},
-\code{\link{load_start_tab}()},
-\code{\link{load_titre_dat}()}
+\code{\link{load_start_tab}()}
 }
 \concept{load_data_functions}

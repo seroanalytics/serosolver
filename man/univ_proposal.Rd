@@ -4,7 +4,14 @@
 \alias{univ_proposal}
 \title{MCMC proposal function}
 \usage{
-univ_proposal(values, lower_bounds, upper_bounds, steps, index)
+univ_proposal(
+  values,
+  lower_bounds,
+  upper_bounds,
+  steps,
+  index,
+  gaussian_proposal = FALSE
+)
 }
 \arguments{
 \item{values}{a vector of the parameters to be explored}
@@ -16,6 +23,8 @@ univ_proposal(values, lower_bounds, upper_bounds, steps, index)
 \item{steps}{a vector of step sizes for the proposal}
 
 \item{index}{numeric value for the index of the parameter to be moved from the param table and vector}
+
+\item{gaussian_proposal}{if TRUE, then samples moves from a Gaussian distribution centered around the current value}
 }
 \value{
 the parameter vector after step

@@ -4,16 +4,21 @@
 \alias{inf_mat_prior}
 \title{Infection history prior R}
 \usage{
-inf_mat_prior(infection_history, age_mask, alpha1, beta1)
+inf_mat_prior(
+  infection_history,
+  age_mask,
+  infection_model_prior_shape1,
+  infection_model_prior_shape2
+)
 }
 \arguments{
 \item{infection_history}{the infection history matrix}
 
 \item{age_mask}{the age mask, giving the first index of the infection_history matrix that each individual can be exposed to. One entry per individual}
 
-\item{alpha1}{alpha parameter for beta distribution}
+\item{infection_model_prior_shape1}{shape1 parameter for the Beta distribution}
 
-\item{beta1}{beta parameter for beta distribution}
+\item{infection_model_prior_shape2}{shape2 parameter for the Beta distribution}
 }
 \value{
 a prior probability for each individual
@@ -26,7 +31,6 @@ Other priors:
 \code{\link{calc_phi_probs_indiv}()},
 \code{\link{calc_phi_probs_spline}()},
 \code{\link{calc_phi_probs}()},
-\code{\link{create_prior_mu}()},
 \code{\link{create_prob_shifts}()},
 \code{\link{find_beta_prior_mode}()},
 \code{\link{find_beta_prior_with_mean_var}()},
@@ -34,7 +38,6 @@ Other priors:
 \code{\link{fit_beta_prior}()},
 \code{\link{fit_normal_prior}()},
 \code{\link{infection_history_prior}()},
-\code{\link{prob_mus}()},
 \code{\link{prob_shifts}()}
 }
 \concept{priors}

@@ -8,7 +8,7 @@ inf_hist_swap_phi(
   infection_history,
   phis,
   age_mask,
-  strain_mask,
+  sample_mask,
   swap_propn,
   move_size,
   n_alive
@@ -21,7 +21,7 @@ inf_hist_swap_phi(
 
 \item{age_mask}{the first index in infection_history that each individual (row) could be infected in}
 
-\item{strain_mask}{the last index in infection_history that each individual (row) could be infected in ie. the time of the latest blood sample}
+\item{sample_mask}{the last index in infection_history that each individual (row) could be infected in ie. the time of the latest blood sample}
 
 \item{swap_propn}{what proportion of infections should be swapped?}
 
@@ -37,15 +37,15 @@ Swaps the entire contents of two columns of the infection history matrix, adheri
 }
 \examples{
 data(example_inf_hist)
-data(example_titre_dat)
+data(example_antibody_data)
 data(example_antigenic_map)
 times <- example_antigenic_map$inf_times
-ages <- unique(example_titre_dat[,c("DOB","individual")])
-age_mask <- create_age_mask(ages$DOB, times)
-strain_mask <- create_strain_mask(example_titre_dat, times)
+ages <- unique(example_antibody_data[,c("birth","individual")])
+age_mask <- create_age_mask(ages$birth, times)
+sample_mask <- create_sample_mask(example_antibody_data, times)
 phis <- runif(length(times))
-n_alive <- get_n_alive(example_titre_dat,times)
-new_inf_hist <- inf_hist_swap_phi(example_inf_hist, phis, age_mask,strain_mask, 1,3, n_alive)
+n_alive <- get_n_alive(example_antibody_data,times)
+new_inf_hist <- inf_hist_swap_phi(example_inf_hist, phis, age_mask,sample_mask, 1,3, n_alive)
 }
 \seealso{
 \code{\link{inf_hist_swap}}

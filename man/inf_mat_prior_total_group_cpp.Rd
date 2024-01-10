@@ -5,16 +5,21 @@
 \title{Marginal prior probability (p(Z)) of a particular infection history matrix total prior
  Prior here is on the total number of infections across all individuals and times}
 \usage{
-inf_mat_prior_total_group_cpp(n_infections_group, n_alive_group, alpha, beta)
+inf_mat_prior_total_group_cpp(
+  n_infections_group,
+  n_alive_group,
+  shape1,
+  shape2
+)
 }
 \arguments{
 \item{n_infections_group}{IntegerVector, the total number of infections in each group}
 
 \item{n_alive_group}{IntegerVector, vector giving total number of potential infection events per group}
 
-\item{alpha}{double, alpha parameter for beta distribution prior}
+\item{shape1}{double, shape1 (alpha) parameter for beta distribution prior}
 
-\item{beta}{double, beta parameter for beta distribution prior}
+\item{shape2}{double, shape2 (beta) parameter for beta distribution prior}
 }
 \value{
 a single prior probability

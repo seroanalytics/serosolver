@@ -5,17 +5,17 @@
 \alias{example_par_tab}
 \title{Example parameter table}
 \format{
-A data frame with 21 rows and 9 variables:
+A data frame with 21 rows and 8 variables:
 \describe{
     \item{names}{string names of the model parameters}
     \item{values}{numeric values of the parameters}
     \item{fixed}{binary values indicating if the parameter should be fixed (1) or estimated (0) during the MCMC procedure}
-    \item{steps}{value between 0 and 1, giving the initial step size in the MCMC proposals. Note that these are adapted automatically}
     \item{lower_bound}{lower numeric bound for the parameter during fitting (lower uniform prior bound)}
     \item{upper_bound}{upper numeric bound for the parameter during fitting (upper uniform prior bound)}
     \item{lower_start}{can be used to set the lower allowable random starting value for the MCMC}
     \item{upper_start}{can be used to set the upper allowable random starting value for the MCMC}
-    \item{type}{used for admin during MCMC, set to 1 for normal model parameters, 0 for model options (eg. see titre_dependent), or 2 for attack rate terms, phi}
+    \item{par_type}{used for bookeeping during MCMC, set to 1 for normal model parameters, 0 for model options (eg. see titre_dependent), or 2 for attack rate terms, phi}
+    \item{biomarker_group}{gives the biomarker group each parameter corresponds to, matching entries in the antibody_data object}
 }
 }
 \usage{

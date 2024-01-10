@@ -10,14 +10,12 @@ simulate_group(
   theta_indices_unique,
   unique_obs_types,
   infection_histories,
-  strain_isolation_times,
-  measured_strains,
+  possible_exposure_times,
+  measured_biomarker_ids,
   sample_times,
   nsamps,
   antigenic_map,
   repeats = 1,
-  mus = NULL,
-  mu_indices = NULL,
   measurement_bias = NULL,
   measurement_indices = NULL,
   obs_dist = NULL,
@@ -31,31 +29,27 @@ simulate_group(
 
 \item{infection_histories}{the matrix of 1s and 0s giving presence/absence of infections for each individual}
 
-\item{strain_isolation_times}{(optional) If no antigenic map is specified, this argument gives the vector of times at which individuals can be infected}
+\item{possible_exposure_times}{(optional) If no antigenic map is specified, this argument gives the vector of times at which individuals can be infected}
 
-\item{measured_strains}{vector of strains that have titres measured matching entries in strain_isolation_times}
+\item{measured_biomarker_ids}{vector of biomarker IDs that have titres measured matching entries in possible_exposure_times}
 
 \item{nsamps}{the number of samples each individual has (eg. nsamps=2 gives each individual 2 random sampling times from sampling_times)}
 
-\item{antigenic_map}{(optional) A data frame of antigenic x and y coordinates. Must have column names: x_coord; y_coord; inf_times. See \code{\link{example_antigenic_map}}}
+\item{antigenic_map}{(optional) A data frame of antigenic x and y coordinates. Must have column names: x_coord; y_coord; inf_times. See \code{\link{example_antigenic_map}}.}
 
 \item{repeats}{number of repeat observations for each year}
-
-\item{mus}{default NULL, optional vector of boosting parameters for each strain}
-
-\item{mu_indices}{default NULL, optional vector giving the index of `mus` that each strain uses the boosting parameter from. eg. if there are 6 circulation years in strain_isolation_times and 3 strain clusters, then this might be c(1,1,2,2,3,3)}
 
 \item{measurement_indices}{default NULL, optional vector giving the index of `measurement_bias` that each strain uses the measurement shift from from. eg. if there's 6 circulation years and 3 strain clusters, then this might be c(1,1,2,2,3,3)}
 
 \item{obs_dist}{if not NULL, then a vector of data types to use for each obs_type}
 
-\item{DOBs}{vector giving the time period of birth (entries corresponding to `strain_isolation_times`)}
+\item{DOBs}{vector giving the time period of birth (entries corresponding to `possible_exposure_times`)}
 }
 \value{
 a data frame with columns individual, samples, virus and titre of simulated data
 }
 \description{
-Simulates a full set of titre data for n_indiv individuals with known theta and infection_histories. Each individual gets nsamps random samples from sampleTimes, and infections can occur at any of strain_isolation_times
+Simulates a full set of titre data for n_indiv individuals with known theta and infection_histories. Each individual gets nsamps random samples from sampleTimes, and infections can occur at any of possible_exposure_times
 }
 \seealso{
 \code{\link{simulate_individual}}, \code{\link{simulate_individual_faster}}

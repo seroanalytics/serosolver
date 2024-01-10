@@ -328,7 +328,7 @@ plot_attack_rates_pointrange <- function(infection_histories, antibody_data, pos
     }
   } else {
     tmp$j <- years[tmp$j]
-    colnames(tmp)[which(colnames(tmp) == "j"] <- "time"
+    colnames(tmp)[which(colnames(tmp) == "j")] <- "time"
     if (plot_residuals) {
       true_ar <- true_ar[, c("population_group", "time", "AR")]
       if (!is.null(prior_pars)) {

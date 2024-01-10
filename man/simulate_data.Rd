@@ -9,8 +9,8 @@ simulate_data(
   group = 1,
   n_indiv = 100,
   antigenic_map = NULL,
-  strain_isolation_times = NULL,
-  measured_strains = NULL,
+  possible_exposure_times = NULL,
+  measured_biomarker_ids = NULL,
   sampling_times,
   nsamps = 2,
   titre_sensoring = 0,
@@ -18,7 +18,6 @@ simulate_data(
   age_max = 80,
   attack_rates,
   repeats = 1,
-  mu_indices = NULL,
   measurement_indices = NULL,
   obs_dist = NULL
 )
@@ -30,13 +29,13 @@ simulate_data(
 
 \item{n_indiv}{number of individuals to simulate}
 
-\item{antigenic_map}{(optional) A data frame of antigenic x and y coordinates. Must have column names: x_coord; y_coord; inf_times. See \code{\link{example_antigenic_map}}}
+\item{antigenic_map}{(optional) A data frame of antigenic x and y coordinates. Must have column names: x_coord; y_coord; inf_times. See \code{\link{example_antigenic_map}}.}
 
-\item{strain_isolation_times}{(optional) If no antigenic map is specified, this argument gives the vector of times at which individuals can be infected}
+\item{possible_exposure_times}{(optional) If no antigenic map is specified, this argument gives the vector of times at which individuals can be infected}
 
-\item{measured_strains}{vector of strains that have titres measured matching entries in strain_isolation_times}
+\item{measured_biomarker_ids}{vector of biomarker IDs that have titres measured matching entries in possible_exposure_times}
 
-\item{sampling_times}{possible sampling times for the individuals, matching entries in strain_isolation_times}
+\item{sampling_times}{possible sampling times for the individuals, matching entries in possible_exposure_times}
 
 \item{nsamps}{the number of samples each individual has (eg. nsamps=2 gives each individual 2 random sampling times from sampling_times)}
 
@@ -46,11 +45,9 @@ simulate_data(
 
 \item{age_max}{simulated age maximum}
 
-\item{attack_rates}{a vector of attack_rates for each entry in strain_isolation_times to be used in the simulation (between 0 and 1)}
+\item{attack_rates}{a vector of attack_rates for each entry in possible_exposure_times to be used in the simulation (between 0 and 1)}
 
 \item{repeats}{number of repeat observations for each year}
-
-\item{mu_indices}{default NULL, optional vector giving the index of `mus` that each strain uses the boosting parameter from. eg. if there are 6 circulation years in strain_isolation_times and 3 strain clusters, then this might be c(1,1,2,2,3,3)}
 
 \item{measurement_indices}{default NULL, optional vector giving the index of `measurement_bias` that each strain uses the measurement shift from from. eg. if there's 6 circulation years and 3 strain clusters, then this might be c(1,1,2,2,3,3)}
 
@@ -67,19 +64,19 @@ data(example_par_tab)
 data(example_antigenic_map)
 
 ## Times at which individuals can be infected
-strain_isolation_times <- example_antigenic_map$inf_times
+possible_exposure_times <- example_antigenic_map$inf_times
 ## Simulate some random attack rates between 0 and 0.2
-attack_rates <- runif(length(strain_isolation_times), 0, 0.2)
+attack_rates <- runif(length(possible_exposure_times), 0, 0.2)
 ## Vector giving the circulation times of measured strains
-sampled_viruses <- seq(min(strain_isolation_times), max(strain_isolation_times), by=2)
+sampled_viruses <- seq(min(possible_exposure_times), max(possible_exposure_times), by=2)
 all_simulated_data <- simulate_data(par_tab=example_par_tab, group=1, n_indiv=50,    
-                                   strain_isolation_times=strain_isolation_times,
-                                   measured_strains=sampled_viruses,
+                                   possible_exposure_times=possible_exposure_times,
+                                   measured_biomarker_ids=sampled_viruses,
                                    sampling_times=2010:2015, nsamps=2, antigenic_map=example_antigenic_map, 
                                    age_min=10,age_max=75,
                                    attack_rates=attack_rates, repeats=2)
-titre_dat <- all_simulated_data$data
-titre_dat <- merge(titre_dat, all_simulated_data$ages)
+antibody_data <- all_simulated_data$data
+antibody_data <- merge(antibody_data, all_simulated_data$ages)
 }
 \seealso{
 Other simulation_functions: 

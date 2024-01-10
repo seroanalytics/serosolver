@@ -37,10 +37,10 @@ Reads in all MCMC chains for theta and infection histories from the specified di
 }
 \seealso{
 Other load_data_functions: 
+\code{\link{load_antibody_data}()},
 \code{\link{load_antigenic_map_file}()},
 \code{\link{load_infection_chains}()},
 \code{\link{load_start_tab}()},
-\code{\link{load_theta_chains}()},
-\code{\link{load_titre_dat}()}
+\code{\link{load_theta_chains}()}
 }
 \concept{load_data_functions}

@@ -16,7 +16,7 @@ A data frame with 48 rows and 3 variables:
 data(example_antigenic_map)
 }
 \description{
-Example of the 2-dimensional antigenic map used through \code{serosolver}. This data frame specifies the antigenic coordinates for each strain, with the assumption that only one representative strain circulates in each time period
+Example of the 2-dimensional antigenic map used through \code{serosolver}. This data frame specifies the antigenic coordinates for each pathogen/variant, with the assumption that only one representative variant circulates in each time period
 }
 \seealso{
 Other example_data: 

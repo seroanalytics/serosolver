@@ -10,14 +10,14 @@ check_data(data)
 \item{data}{the data frame of data to be fitted. Must have columns: group (index of group); individual (integer ID of individual); samples (numeric time of sample taken); virus (numeric time of when the virus was circulating); titre (integer of titre value against the given virus at that sampling time)}
 }
 \value{
-nothing at the moment
+the same data object with corrections if needed
 }
 \description{
 Checks the entries of data used in run_MCMC
 }
 \examples{
-data(example_titre_dat)
-check_data(example_titre_dat)
+data(example_antibody_data)
+check_data(example_antibody_data)
 }
 \seealso{
 Other check_inputs: 

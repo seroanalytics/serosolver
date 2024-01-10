@@ -4,12 +4,12 @@
 \alias{check_attack_rates}
 \title{Checks the attack_rates supplied in simulate_data}
 \usage{
-check_attack_rates(attack_rates, strain_isolation_times)
+check_attack_rates(attack_rates, possible_exposure_times)
 }
 \arguments{
 \item{attack_rates}{a vector of attack_rates to be used in the simulation}
 
-\item{strain_isolation_times}{vector of strain circulation times}
+\item{possible_exposure_times}{vector of strain circulation times}
 }
 \value{
 nothing at the moment
@@ -19,8 +19,8 @@ Checks the attack_rates supplied in simulate_data
 }
 \examples{
 attack_rates <- runif(40)
-strain_isolation_times <- seq_len(40)
-check_attack_rates(attack_rates, strain_isolation_times)
+possible_exposure_times <- seq_len(40)
+check_attack_rates(attack_rates, possible_exposure_times)
 }
 \seealso{
 Other check_inputs: 

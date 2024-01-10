@@ -4,14 +4,14 @@
 \alias{check_inf_hist}
 \title{Check infection history matrix}
 \usage{
-check_inf_hist(titre_dat, strain_isolation_times, inf_hist)
+check_inf_hist(antibody_data, possible_exposure_times, inf_hist)
 
-check_inf_hist(titre_dat, strain_isolation_times, inf_hist)
+check_inf_hist(antibody_data, possible_exposure_times, inf_hist)
 }
 \arguments{
-\item{titre_dat}{the data frame of titer data}
+\item{antibody_data}{the data frame of titer data}
 
-\item{strain_isolation_times}{the vector of times corresponding to entries in DOB}
+\item{possible_exposure_times}{the vector of times corresponding to entries in DOB}
 
 \item{inf_hist}{the starting infection history matrix}
 }
@@ -32,7 +32,7 @@ Other check_inputs:
 }
 \concept{check_inputs}
 \concept{check_inputs
-data(example_titre_dat)
+data(example_antibody_data)
 data(example_inf_hist)
 times <- 1968:2015
-check_inf_hist(example_titre_dat, times, example_inf_hist)}
+check_inf_hist(example_antibody_data, times, example_inf_hist)}

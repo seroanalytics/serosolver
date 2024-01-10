@@ -293,11 +293,10 @@ List inf_hist_prop_prior_v2_and_v4(
   // ########################################################################
   double m; // number of infections in a given year
   double n; // number alive in a particular year
-  double n_1; // Number alive in time period 1 
-  double n_2; // Number alive in time period 2
+  //double n_1; // Number alive in time period 1 
+  //double n_2; // Number alive in time period 2
   
   double m_1_new, m_1_old,m_2_new,m_2_old;
-  // double n_1, n_2;
   double prior_1_old, prior_2_old, prior_1_new,prior_2_new,prior_new,prior_old;
 
   double rand1; // Store a random number
@@ -326,7 +325,7 @@ List inf_hist_prop_prior_v2_and_v4(
   // Base model parameters
   NumericVector boost_long_parameters(n_types);
   NumericVector boost_short_parameters(n_types);
-  NumericVector wane_short_short_parameters(n_types);
+  NumericVector wane_short_parameters(n_types);
   NumericVector antigenic_seniority_parameters(n_types);
   
   NumericVector max_measurements(n_types);
@@ -354,7 +353,7 @@ List inf_hist_prop_prior_v2_and_v4(
   for(int x = 0; x < n_types; ++x){
     boost_long_parameters(x) = theta(boost_long_index + x*n_theta);
     boost_short_parameters(x) = theta(boost_short_index + x*n_theta);
-    wane_short_short_parameters(x) = theta(wane_short_index + x*n_theta);
+    wane_short_parameters(x) = theta(wane_short_index + x*n_theta);
     antigenic_seniority_parameters(x) = theta(antigenic_seniority_index + x*n_theta);
       min_measurements(x) = theta(min_index + x*n_theta);
       max_measurements(x) = theta(max_index + x*n_theta);
@@ -475,8 +474,8 @@ List inf_hist_prop_prior_v2_and_v4(
     	      new_infection_history(loc2) = loc1_val_old;
     	  
     	      // Number alive is number alive overall in that time and group
-    	      n_1 = n_alive(group_id, loc1);
-    	      n_2 = n_alive(group_id, loc2);
+    	      //n_1 = n_alive(group_id, loc1);
+    	      //n_2 = n_alive(group_id, loc2);
     	    
     	      // Prior for new state
     	      m_1_new = m_1_old - loc1_val_old + loc2_val_old;
@@ -643,8 +642,8 @@ List inf_hist_prop_prior_v2_and_v4(
               if(data_type==2){
                 proposal_likelihood_func_continuous(new_prob, predicted_antibody_levels, 
                                                     index, 
-                                                    data, 
-                                                    repeat_data, 
+                                                    antibody_data, 
+                                                    antibody_data_repeats, 
                                                     repeat_indices,
                                                     cum_nrows_per_individual_in_data, 
                                                     cum_nrows_per_individual_in_repeat_data,
@@ -659,8 +658,8 @@ List inf_hist_prop_prior_v2_and_v4(
                 // Data_type 1 is discretized, bounded data
                 proposal_likelihood_func(new_prob, predicted_antibody_levels, 
                                          index, 
-                                         data,  
-                                         repeat_data, 
+                                         antibody_data, 
+                                         antibody_data_repeats, 
                                          repeat_indices,
                                          cum_nrows_per_individual_in_data, 
                                          cum_nrows_per_individual_in_repeat_data,

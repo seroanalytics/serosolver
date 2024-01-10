@@ -6,32 +6,31 @@
 \usage{
 create_posterior_func(
   par_tab,
-  titre_dat,
+  antibody_data,
   antigenic_map = NULL,
-  strain_isolation_times = NULL,
-  version = 1,
+  possible_exposure_times = NULL,
+  prior_version = 1,
   solve_likelihood = TRUE,
   age_mask = NULL,
   measurement_indices_by_time = NULL,
-  mu_indices = NULL,
   n_alive = NULL,
   function_type = 1,
-  titre_before_infection = FALSE,
+  antibody_level_before_infection = FALSE,
   data_type = 1,
-  obs_types_weights = 1,
+  biomarker_groups_weights = 1,
   ...
 )
 }
 \arguments{
 \item{par_tab}{the parameter table controlling information such as bounds, initial values etc. See \code{\link{example_par_tab}}}
 
-\item{titre_dat}{the data frame of data to be fitted. Must have columns: group (index of group); individual (integer ID of individual); samples (numeric time of sample taken); virus (numeric time of when the virus was circulating); obs_type (integer of the observation group type, using a unique value for each distinctive type of observation underpinned by the same generative model); titre (integer of titre value against the given virus at that sampling time). See \code{\link{example_titre_dat}}}
+\item{antibody_data}{the data frame of data to be fitted. Must have columns: group (index of group); individual (integer ID of individual); samples (numeric time of sample taken); virus (numeric time of when the virus was circulating); biomarker_group (integer of the observation group type, using a unique value for each distinctive type of observation underpinned by the same generative model); titre (integer of titre value against the given virus at that sampling time). See \code{\link{example_antibody_data}}}
 
 \item{antigenic_map}{(optional) a data frame of antigenic x and y coordinates. Must have column names: x_coord; y_coord; inf_times. See \code{\link{example_antigenic_map}}}
 
-\item{strain_isolation_times}{(optional) if no antigenic map is specified, this argument gives the vector of times at which individuals can be infected}
+\item{possible_exposure_times}{(optional) if no antigenic map is specified, this argument gives the vector of times at which individuals can be infected}
 
-\item{version}{which infection history assumption version to use? See \code{\link{describe_priors}} for options. Can be 1, 2, 3 or 4}
+\item{prior_version}{which infection history assumption version to use? See \code{\link{describe_priors}} for options. Can be 1, 2, 3 or 4}
 
 \item{solve_likelihood}{usually set to TRUE. If FALSE, does not solve the likelihood and instead just samples/solves based on the model prior}
 
@@ -39,17 +38,15 @@ create_posterior_func(
 
 \item{measurement_indices_by_time}{if not NULL, then use these indices to specify which measurement bias parameter index corresponds to which time}
 
-\item{mu_indices}{if not NULL, then use these indices to specify which boosting parameter index corresponds to which time}
-
 \item{n_alive}{if not NULL, uses this as the number alive in a given year rather than calculating from the ages. This is needed if the number of alive individuals is known, but individual birth dates are not}
 
 \item{function_type}{integer specifying which version of this function to use. Specify 1 to give a posterior solving function; 2 to give the gibbs sampler for infection history proposals; otherwise just solves the titre model and returns predicted titres. NOTE that this is not the same as the attack rate prior argument, \code{version}!}
 
-\item{titre_before_infection}{TRUE/FALSE value. If TRUE, solves titre predictions, but gives the predicted titre at a given time point BEFORE any infection during that time occurs.}
-
-\item{data_type}{integer, currently accepting 1 or 2. Set to 1 for discretized, bounded data, or 2 for continuous, bounded data. Note that with 2, MIN_TITRE must be set.}
+\item{data_type}{integer, currently accepting 1 for discrete or 2 for continuous.}
 
 \item{...}{other arguments to pass to the posterior solving function}
+
+\item{titre_before_infection}{TRUE/FALSE value. If TRUE, solves titre predictions, but gives the predicted titre at a given time point BEFORE any infection during that time occurs.}
 }
 \value{
 a single function pointer that takes only pars and infection_histories as unnamed arguments. This function goes on to return a vector of posterior values for each individual
@@ -60,17 +57,17 @@ Takes all of the input data/parameters and returns a function pointer. This func
 \examples{
 \dontrun{
 data(example_par_tab)
-data(example_titre_dat)
+data(example_antibody_data)
 data(example_antigenic_map)
 data(example_inf_hist)
 
-## Simple model solving code. Output matches entries of example_titre_dat
-model_func <- create_posterior_func(example_par_tab, example_titre_dat, example_antigenic_map, function_type = 3)
+## Simple model solving code. Output matches entries of example_antibody_data
+model_func <- create_posterior_func(example_par_tab, example_antibody_data, example_antigenic_map, function_type = 3)
 y <- model_func(example_par_tab$values, example_inf_hist)
 
 ## Solve likelihood
 par_tab <- example_par_tab[example_par_tab$names != "phi",]
-likelihood_func <- create_posterior_func(par_tab, example_titre_dat, example_antigenic_map, function_type = 1, version = 2)
+likelihood_func <- create_posterior_func(par_tab, example_antibody_data, example_antigenic_map, function_type = 1, prior_version = 2)
 liks <- likelihood_func(par_tab$values, example_inf_hist)
 }
 }

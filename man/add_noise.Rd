@@ -9,9 +9,9 @@ add_noise(y, theta, measurement_bias = NULL, indices = NULL, data_type = 1)
 \arguments{
 \item{y}{the titre}
 
-\item{theta}{a vector with MAX_TITRE and error parameters}
+\item{theta}{a vector with max_measurement and error parameters}
 
-\item{data_type}{integer, currently accepting 1 or 2. Set to 1 for discretized, bounded data, or 2 for continuous, bounded data. Note that with 2, MIN_TITRE must be set.}
+\item{data_type}{integer, currently accepting 1 or 2. Set to 1 for discretized, bounded data, or 2 for continuous, bounded data. Note that with 2, min_measurement must be set.}
 }
 \value{
 a noisy titre
@@ -22,7 +22,7 @@ Adds truncated noise to titre data
 \examples{
 \dontrun{
 ## ... example in simulate_individual
-pars <- c("error"=1)
+pars <- c("obs_sd"=1)
 y <- runif(100)
 noisy_y <- add_noise(y, pars)
 }

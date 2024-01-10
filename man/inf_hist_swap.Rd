@@ -7,7 +7,7 @@
 inf_hist_swap(
   infection_history,
   age_mask,
-  strain_mask,
+  sample_mask,
   swap_propn,
   move_size,
   proposal_ratios = NULL
@@ -18,7 +18,7 @@ inf_hist_swap(
 
 \item{age_mask}{the first index in infection_history that each individual (row) could be infected in}
 
-\item{strain_mask}{the last index in infection_history that each individual (row) could be infected in ie. the time of the latest blood sample}
+\item{sample_mask}{the last index in infection_history that each individual (row) could be infected in ie. the time of the latest blood sample}
 
 \item{swap_propn}{what proportion of infections should be swapped?}
 
@@ -30,17 +30,17 @@ inf_hist_swap(
 the same infection_history matrix, but with two columns swapped
 }
 \description{
-Swaps the entire contents of two columns of the infection history matrix, adhering to age and strain limitations.
+Swaps the entire contents of two columns of the infection history matrix, adhering to age and sample time limitations.
 }
 \examples{
 data(example_inf_hist)
-data(example_titre_dat)
+data(example_antibody_data)
 data(example_antigenic_map)
 times <- example_antigenic_map$inf_times
-ages <- unique(example_titre_dat[,c("DOB","individual")])
-age_mask <- create_age_mask(ages$DOB, times)
-strain_mask <- create_strain_mask(example_titre_dat, times)
-new_inf_hist <- inf_hist_swap(example_inf_hist, age_mask,strain_mask, 1,3)[[1]]
+ages <- unique(example_antibody_data[,c("birth","individual")])
+age_mask <- create_age_mask(ages$birth, times)
+sample_mask <- create_sample_mask(example_antibody_data, times)
+new_inf_hist <- inf_hist_swap(example_inf_hist, age_mask,sample_mask, 1,3)[[1]]
 }
 \seealso{
 Other proposals: 

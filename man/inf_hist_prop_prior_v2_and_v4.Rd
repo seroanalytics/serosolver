@@ -7,13 +7,13 @@
 inf_hist_prop_prior_v2_and_v4(
   theta,
   unique_theta_indices,
-  unique_obs_types,
+  unique_biomarker_groups,
   infection_history_mat,
-  old_probs_1,
+  likelihoods_pre_proposal,
   sampled_indivs,
-  n_years_samp_vec,
+  n_times_samp_vec,
   age_mask,
-  strain_mask,
+  sample_mask,
   n_alive,
   n_infections,
   n_infected_group,
@@ -21,28 +21,29 @@ inf_hist_prop_prior_v2_and_v4(
   swap_propn,
   swap_distance,
   propose_from_prior,
-  alpha,
-  beta,
-  circulation_times,
-  circulation_times_indices,
+  shape1,
+  shape2,
+  possible_exposure_times,
+  possible_exposure_times_indices,
   sample_times,
   type_data_start,
-  obs_types,
+  biomarker_groups,
   sample_data_start,
-  titre_data_start,
+  antibody_data_start,
   nrows_per_sample,
   cum_nrows_per_individual_in_data,
   cum_nrows_per_individual_in_repeat_data,
   group_id_vec,
-  measurement_strain_indices,
+  biomarker_id_indices,
   antigenic_map_long,
   antigenic_map_short,
   antigenic_distances,
-  data,
-  repeat_data,
+  antibody_data,
+  antibody_data_repeats,
+  n_measurements_total,
   repeat_indices,
   repeat_data_exist,
-  titre_shifts,
+  measurement_shifts,
   proposal_iter,
   accepted_iter,
   proposal_swap,
@@ -50,8 +51,6 @@ inf_hist_prop_prior_v2_and_v4(
   overall_swap_proposals,
   overall_add_proposals,
   time_sample_probs,
-  mus_strain_dep,
-  boosting_vec_indices,
   total_alive,
   data_types,
   obs_weights,
@@ -64,15 +63,15 @@ inf_hist_prop_prior_v2_and_v4(
 
 \item{infection_history_mat}{IntegerMatrix the matrix of 1s and 0s corresponding to individual infection histories}
 
-\item{old_probs_1}{NumericVector, the current likelihoods for each individual}
+\item{likelihoods_pre_proposal}{NumericVector, the current likelihoods for each individual before proposing new infection histories}
 
 \item{sampled_indivs}{IntegerVector, indices of sampled individuals}
 
-\item{n_years_samp_vec}{int, for each individual, how many time periods to resample infections for?}
+\item{n_times_samp_vec}{int, for each individual, how many time periods to resample infections for?}
 
 \item{age_mask}{IntegerVector, length of the number of individuals, with indices specifying first time period that an individual can be infected (indexed from 1, such that a value of 1 allows an individual to be infected in any time period)}
 
-\item{strain_mask}{IntegerVector, length of the number of individuals, with indices specifying last time period that an individual can be infected (ie. last time a sample was taken)}
+\item{sample_mask}{IntegerVector, length of the number of individuals, with indices specifying last time period that an individual can be infected (ie. last time a sample was taken)}
 
 \item{n_alive}{IntegerMatrix, number of columns is the number of time periods that an individual could be infected, giving the number of individual alive in each time period. Number of rows is the number of distinct groups.}
 
@@ -86,23 +85,23 @@ inf_hist_prop_prior_v2_and_v4(
 
 \item{swap_distance}{int, in a swap step, how many time steps either side of the chosen time period to swap with}
 
-\item{alpha}{double, alpha parameter for beta prior on infection probability}
+\item{shape1}{double, shape1 (alpha) parameter for beta prior on infection probability}
 
-\item{beta}{double, beta parameter for beta prior on infection probability}
+\item{shape2}{double, shape2 (beta) parameter for beta prior on infection probability}
 
-\item{circulation_times}{NumericVector, the times that each strain circulated}
+\item{possible_exposure_times}{NumericVector, the times that individuals could be infected}
 
-\item{circulation_times_indices}{IntegerVector, indexing vector from 0:(number of strains-1)}
+\item{possible_exposure_times_indices}{IntegerVector, indexing vector from 0:(number of exposure times-1)}
 
 \item{sample_times}{NumericVector, the vector of real times that samples were taken}
 
-\item{cum_nrows_per_individual_in_data}{IntegerVector, How many rows in the titre data correspond to each individual?}
+\item{cum_nrows_per_individual_in_data}{IntegerVector, How many rows in the antibody data correspond to each individual?}
 
-\item{cum_nrows_per_individual_in_repeat_data}{IntegerVector, For the repeat data (ie. already calculated these titres), how many rows in the titre data correspond to each individual?}
+\item{cum_nrows_per_individual_in_repeat_data}{IntegerVector, For the repeat data (ie. already calculated these antibody levels), how many rows in the antibody data correspond to each individual?}
 
 \item{group_id_vec}{IntegerVector, vector with 1 entry per individual, giving the group ID of that individual}
 
-\item{measurement_strain_indices}{IntegerVector, For each titre measurement, corresponding entry in antigenic map}
+\item{biomarker_id_indices}{IntegerVector, For each antibody measurement, corresponding entry in antigenic map}
 
 \item{antigenic_map_long}{NumericVector, the collapsed cross reactivity map for long term boosting, after multiplying by sigma1, see \code{\link{create_cross_reactivity_vector}}}
 
@@ -110,13 +109,13 @@ inf_hist_prop_prior_v2_and_v4(
 
 \item{antigenic_distances}{NumericVector matching the dimensions of antigenic_map_long and antigenic_map_short, but with the raw antigenic distances between strains}
 
-\item{data}{NumericVector, data for all individuals for the first instance of each calculated titre}
+\item{antibody_data}{NumericVector, data for all individuals for the first instance of each calculated antibody level}
 
-\item{repeat_data}{NumericVector, the repeat titre data for all individuals (ie. do not solve the same titres twice)}
+\item{antibody_data_repeats}{NumericVector, the repeat antibody data for all individuals (ie. do not solve the same antibody level twice)}
 
-\item{repeat_indices}{IntegerVector, which index in the main data vector does each entry in repeat_data correspond to ie. which calculated titre in predicted_titres should be used for each observation?}
+\item{repeat_indices}{IntegerVector, which index in the main data vector does each entry in repeat_data correspond to ie. which calculated antibody level in predicted_antibody_levels should be used for each observation?}
 
-\item{titre_shifts}{NumericVector, if length matches the length of \code{data}, adds these as measurement shifts to the predicted titres. If lengths do not match, is not used.}
+\item{measurement_shifts}{NumericVector, if length matches the length of \code{data}, adds these as measurement shifts to the antibody levels. If lengths do not match, is not used.}
 
 \item{proposal_iter}{IntegerVector, vector with entry for each individual, storing the number of infection history add/remove proposals for each individual.}
 
@@ -126,24 +125,20 @@ inf_hist_prop_prior_v2_and_v4(
 
 \item{accepted_swap}{IntegerVector, vector with entry for each individual, storing the number of accepted infection history swaps}
 
-\item{boosting_vec_indices}{IntegerVector, same length as circulation_times, giving the index in the vector \code{mus} that each entry should use as its boosting parameter.}
-
 \item{total_alive}{IntegerVector, giving the total number of potential infection events for each group. This only applies to prior version 4. If set to a vector of values -1, then this is ignored.}
 
 \item{temp}{double, temperature for parallel tempering MCMC}
 
 \item{solve_likelihood}{bool, if FALSE does not solve likelihood when calculating acceptance probability}
 
-\item{rows_per_indiv_in_samples}{IntegerVector, How many rows in titre data correspond to each individual, sample and repeat?}
+\item{rows_per_indiv_in_samples}{IntegerVector, How many rows in antibody data correspond to each individual, sample and repeat?}
 
 \item{nrows_per_blood_sample}{IntegerVector, Split the sample times and runs for each individual}
-
-\item{mus}{NumericVector, if length is greater than one, assumes that strain-specific boosting is used rather than a single boosting parameter}
 
 \item{data_type}{int, defaults to 1 for discretized, bounded data. Set to 2 for continuous, bounded data}
 }
 \value{
-an R list with 6 entries: 1) the vector replacing old_probs_1, corresponding to the new likelihoods per individual; 2) the matrix of 1s and 0s corresponding to the new infection histories for all individuals; 3-6) the updated entries for proposal_iter, accepted_iter, proposal_swap and accepted_swap.
+an R list with 6 entries: 1) the vector replacing likelihoods_pre_proposal, corresponding to the new likelihoods per individual; 2) the matrix of 1s and 0s corresponding to the new infection histories for all individuals; 3-6) the updated entries for proposal_iter, accepted_iter, proposal_swap and accepted_swap.
 }
 \description{
 Generates a new infection history matrix and corresponding individual likelihoods, using a gibbs sampler from the infection history prior. See \code{\link{inf_hist_prop_prior_v3}}, as inputs are very similar.

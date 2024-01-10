@@ -5,16 +5,16 @@
 \title{Marginal prior probability (p(Z)) of infection history matrix with groups
  Prior is independent contribution from each year and group}
 \usage{
-inf_mat_prior_group_cpp(n_infections, n_alive, alpha, beta)
+inf_mat_prior_group_cpp(n_infections, n_alive, shape1, shape2)
 }
 \arguments{
 \item{n_infections}{IntegerMatrix, the total number of infections in each time point/group}
 
 \item{n_alive}{IntegerMatrix, matrix giving the number of individuals alive in each time unit in each group}
 
-\item{alpha}{double, alpha parameter for beta distribution prior}
+\item{shape1}{double, shape1 (alpha) parameter for beta distribution prior}
 
-\item{beta}{double, beta parameter for beta distribution prior}
+\item{shape2}{double, shape2 (beta) parameter for beta distribution prior}
 }
 \value{
 a single prior probability

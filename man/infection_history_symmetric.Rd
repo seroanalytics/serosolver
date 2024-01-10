@@ -8,7 +8,7 @@ infection_history_symmetric(
   new_inf_hist,
   sampled_indivs,
   age_mask,
-  strain_mask,
+  sample_mask,
   move_sizes,
   n_infs,
   rand_ns,
@@ -22,7 +22,7 @@ infection_history_symmetric(
 
 \item{age_mask}{a vector (one value for each individual) giving the first infection epoch that an individual could have been exposed in. That is, if an individual was born in the 7th epoch, their entry in age_mask would be 7.}
 
-\item{strain_mask}{a vector (one value for each individual) giving the last infection epoch that an individual could have been exposed in.}
+\item{sample_mask}{a vector (one value for each individual) giving the last infection epoch that an individual could have been exposed in.}
 
 \item{move_sizes}{when performing a move step, how far should two epochs be swapped?}
 
@@ -40,15 +40,15 @@ Performs a flipping/swapping infection history update step for a matrix of infec
 }
 \examples{
 data(example_inf_hist)
-data(example_titre_dat)
+data(example_antibody_data)
 data(example_antigenic_map)
 
 times <- example_antigenic_map$inf_times
-ages <- unique(example_titre_dat[,c("DOB","individual")])
+ages <- unique(example_antibody_data[,c("birth","individual")])
 
 ## Create age and strain mask
-age_mask <- create_age_mask(ages$DOB, times)
-strain_mask <- create_strain_mask(example_titre_dat, times)
+age_mask <- create_age_mask(ages$birth, times)
+sample_mask <- create_sample_mask(example_antibody_data, times)
 
 ## Index of individuals to be resampled
 indivs <- 1:nrow(example_inf_hist)
@@ -61,7 +61,7 @@ n_infs <- rep(10, n_indiv)
 ## Pre-compute random numbers
 rand_ns <- runif(n_indiv)
 
-new_inf_hist <- infection_history_symmetric(example_inf_hist, indivs,age_mask ,strain_mask, move_sizes, n_infs, rand_ns, 0.5)
+new_inf_hist <- infection_history_symmetric(example_inf_hist, indivs,age_mask ,sample_mask, move_sizes, n_infs, rand_ns, 0.5)
 }
 \seealso{
 Other proposals: 

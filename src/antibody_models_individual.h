@@ -42,6 +42,7 @@ void antibody_dependent_boosting_model_individual(NumericVector &predicted_antib
                                        const IntegerVector &nrows_per_blood_sample,
                                        const int &number_possible_exposures,
                                        const NumericVector &antigenic_map_short,
-                                       const NumericVector &antigenic_map_long
+                                       const NumericVector &antigenic_map_long,
+                                       bool boost_before_infection
 					 );
 #endif

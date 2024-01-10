@@ -5,24 +5,24 @@
 \title{Add measurement shifts to predictions}
 \usage{
 add_measurement_shifts(
-  predicted_titres,
+  predicted_antibody_levels,
   to_add,
   start_index_in_data,
   end_index_in_data
 )
 }
 \arguments{
+\item{predicted_antibody_levels}{NumericVector, the predicted antibody levels. Note that this vector will be changed!}
+
 \item{to_add}{NumericVector the vector of all measurement shifts to apply}
 
-\item{start_index_in_data}{int the first index of to_add and predicted_titres to combine}
+\item{start_index_in_data}{int the first index of to_add and predicted_antibody_levels to combine}
 
-\item{end_index_in_data}{int the end index of to_add and predicted_titres to combine}
-
-\item{predicted_titre}{NumericVector, the predicted titres. Note that this vector will be changed!}
+\item{end_index_in_data}{int the end index of to_add and predicted_antibody_levels to combine}
 }
 \value{
 nothing
 }
 \description{
-Adds observation error shifts to predicted antibody titres.
+Adds observation error shifts to predicted antibody levels.
 }

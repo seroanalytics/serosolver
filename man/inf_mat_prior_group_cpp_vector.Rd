@@ -3,25 +3,25 @@
 \name{inf_mat_prior_group_cpp_vector}
 \alias{inf_mat_prior_group_cpp_vector}
 \title{Marginal prior probability (p(Z)) of a particular infection history matrix vector prior by group
- Prior is independent contribution from each time, but each time has its own alpha and beta}
+ Prior is independent contribution from each time, but each time has its own shape parameters}
 \usage{
-inf_mat_prior_group_cpp_vector(n_infections, n_alive, alphas, betas)
+inf_mat_prior_group_cpp_vector(n_infections, n_alive, shape1s, shape2s)
 }
 \arguments{
 \item{n_infections}{IntegerMatrix, the total number of infections in each time point/group}
 
 \item{n_alive}{IntegerMatrix, matrix giving the number of individuals alive in each time unit in each group}
 
-\item{alphas}{NumericVector, alpha parameters for beta distribution prior, one for each time unit}
+\item{shape1s}{NumericVector, shape1 (alpha) parameters for beta distribution prior, one for each time unit}
 
-\item{betas}{NumericVector, beta parameters for beta distribution prior, one for each time unit}
+\item{shape2s}{NumericVector, shape2 (beta) parameters for beta distribution prior, one for each time unit}
 }
 \value{
 a single prior probability
 }
 \description{
 Marginal prior probability (p(Z)) of a particular infection history matrix vector prior by group
- Prior is independent contribution from each time, but each time has its own alpha and beta
+ Prior is independent contribution from each time, but each time has its own shape parameters
 }
 \seealso{
 Other inf_mat_prior: 

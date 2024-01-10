@@ -7,7 +7,7 @@
 infection_history_prior(pars, infection_history, age_mask)
 }
 \arguments{
-\item{pars}{the named parameter vector with alpha and beta}
+\item{pars}{the named parameter vector with infection_model_prior_shape1 and infection_model_prior_shape2 corresponding to the beta binomial distribution}
 
 \item{infection_history}{the infection history matrix}
 
@@ -24,7 +24,6 @@ Other priors:
 \code{\link{calc_phi_probs_indiv}()},
 \code{\link{calc_phi_probs_spline}()},
 \code{\link{calc_phi_probs}()},
-\code{\link{create_prior_mu}()},
 \code{\link{create_prob_shifts}()},
 \code{\link{find_beta_prior_mode}()},
 \code{\link{find_beta_prior_with_mean_var}()},
@@ -32,7 +31,6 @@ Other priors:
 \code{\link{fit_beta_prior}()},
 \code{\link{fit_normal_prior}()},
 \code{\link{inf_mat_prior}()},
-\code{\link{prob_mus}()},
 \code{\link{prob_shifts}()}
 }
 \concept{priors}

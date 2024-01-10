@@ -12,10 +12,10 @@ find_beta_prior_mode(mode1, k)
 \item{k}{the desired certainty in the prior, must be at least 2. The higher this number, the "stronger" the prior}
 }
 \value{
-a list with alpha and beta parameters for the Beta distribution
+a list with shape1 and shape2 parameters for the Beta distribution
 }
 \description{
-Calculates the necessary parameters for the beta distribution to give the desired mode and certainty, k
+Calculates the necessary parameters for the Beta distribution to give the desired mode and certainty, k
 }
 \examples{
 find_beta_prior_mode(0.15, 10)
@@ -25,7 +25,6 @@ Other priors:
 \code{\link{calc_phi_probs_indiv}()},
 \code{\link{calc_phi_probs_spline}()},
 \code{\link{calc_phi_probs}()},
-\code{\link{create_prior_mu}()},
 \code{\link{create_prob_shifts}()},
 \code{\link{find_beta_prior_with_mean_var}()},
 \code{\link{find_beta_prior_with_mean}()},
@@ -33,7 +32,6 @@ Other priors:
 \code{\link{fit_normal_prior}()},
 \code{\link{inf_mat_prior}()},
 \code{\link{infection_history_prior}()},
-\code{\link{prob_mus}()},
 \code{\link{prob_shifts}()}
 }
 \concept{priors}

@@ -14,7 +14,7 @@ check_par_tab(par_tab, mcmc = FALSE, version = NULL)
 \item{version}{which version of the posterior function is being used? See \code{\link{create_posterior_func}}}
 }
 \value{
-nothing, only an error message if necessary
+the same par_tab object with corrections if needed
 }
 \description{
 Checks the entries of par_tab used in simulate_data

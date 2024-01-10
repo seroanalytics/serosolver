@@ -3,25 +3,25 @@
 \name{likelihood_func_fast}
 \alias{likelihood_func_fast}
 \title{Fast observation error function
- Calculate the probability of a set of observed titres given a corresponding set of predicted titres. FAST IMPLEMENTATION}
+ Calculate the probability of a set of observed antibody levels given a corresponding set of predicted antibody levels.}
 \usage{
-likelihood_func_fast(theta, obs, predicted_titres)
+likelihood_func_fast(theta, obs, predicted_antibody_levels)
 }
 \arguments{
-\item{theta}{NumericVector, a named parameter vector giving the normal distribution standard deviation and the max observable titre}
+\item{theta}{NumericVector, a named parameter vector giving the normal distribution standard deviation and the max observable antibody level}
 
-\item{obs}{NumericVector, the vector of observed log titres}
+\item{obs}{NumericVector, the vector of observed log antibody levels}
 
-\item{predicted_titres}{NumericVector, the vector of predicted log titres}
+\item{predicted_antibody_levels}{NumericVector, the vector of predicted log antibody levels}
 
 \item{a}{vector of same length as the input data giving the probability of observing each observation given the predictions}
 }
 \value{
-a likelihood for each observed titre
+a likelihood for each observed antibody level
 }
 \description{
 Fast observation error function
- Calculate the probability of a set of observed titres given a corresponding set of predicted titres. FAST IMPLEMENTATION
+ Calculate the probability of a set of observed antibody levels given a corresponding set of predicted antibody levels.
 }
 \seealso{
 Other likelihood_functions: 

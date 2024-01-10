@@ -58,7 +58,7 @@
 #'     \item{birth}{date of birth matching the time resolution of the model.}
 #' }
 #' @family example_data
-"example_antibody_data"
+"example_titre_dat"
 
 
 #' Example MCMC chain for kinetics parameters

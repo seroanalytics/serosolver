@@ -368,7 +368,7 @@ create_posterior_func <- function(par_tab,
              #       liks <- liks + calc_phi_probs_spline(
             #                           phis, knots, weights,
             #                           infection_history_mat, age_mask
-                                   )
+             #                      )
              #   } else {
                     ## Or the baseline transmission likelihood contribution
             #        transmission_prob <- calc_phi_probs_indiv(
@@ -547,7 +547,7 @@ create_posterior_func <- function(par_tab,
                 nrows_per_sample, biomarker_id_indices, 
                 antigenic_map_long,
                 antigenic_map_short,
-                antigenic_distances
+                antigenic_distances,
                 antibody_level_before_infection
             )
             if (use_measurement_bias) {

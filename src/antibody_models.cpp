@@ -177,7 +177,7 @@ NumericVector antibody_model(const NumericVector &theta,
   					    antigenic_map_long(_,biomarker_group),
   					    boost_before_infection);	
             } else {
-            	antibody_data_fast_individual_base(
+              antibody_data_model_individual(
             	        predicted_antibody_levels, 
                       boost_long_parameters(biomarker_group), 
                       boost_short_parameters(biomarker_group),

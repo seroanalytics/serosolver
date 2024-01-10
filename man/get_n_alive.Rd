@@ -4,10 +4,10 @@
 \alias{get_n_alive}
 \title{Get number alive}
 \usage{
-get_n_alive(titre_dat, times)
+get_n_alive(antibody_data, times)
 }
 \arguments{
-\item{titre_dat}{the data frame of titre data. See \code{\link{example_titre_dat}}}
+\item{antibody_data}{the data frame of titre data. See \code{\link{example_antibody_data}}}
 
 \item{times}{the vector of times to calculate number alive for}
 }
@@ -15,13 +15,13 @@ get_n_alive(titre_dat, times)
 a vector giving the number alive in each time point
 }
 \description{
-Given the titre_dat data frame, calculates the number that are alive (alive to be infected, that is) for each time in times
+Given the antibody_data data frame, calculates the number that are alive (alive to be infected, that is) for each time in times
 }
 \examples{
-data(example_titre_dat)
+data(example_antibody_data)
 data(example_antigenic_map)
 times <- unique(example_antigenic_map$inf_times)
-get_n_alive(example_titre_dat, times)
+get_n_alive(example_antibody_data, times)
 }
 \seealso{
 Other get_summary: 

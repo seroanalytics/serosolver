@@ -9,10 +9,8 @@ simulate_individual(
   infection_history,
   antigenic_map,
   sampling_times,
-  strain_isolation_times,
-  measured_strains,
-  mus = NULL,
-  mu_indices = NULL,
+  possible_exposure_times,
+  measured_biomarker_ids,
   measurement_bias = NULL,
   measurement_indices = NULL,
   add_noise = TRUE,
@@ -25,17 +23,13 @@ simulate_individual(
 
 \item{infection_history}{the vector of 1s and 0s giving presence/absence of infections}
 
-\item{antigenic_map}{(optional) A data frame of antigenic x and y coordinates. Must have column names: x_coord; y_coord; inf_times. See \code{\link{example_antigenic_map}}}
+\item{antigenic_map}{(optional) A data frame of antigenic x and y coordinates. Must have column names: x_coord; y_coord; inf_times. See \code{\link{example_antigenic_map}}.}
 
 \item{sampling_times}{vector of times at which blood samples were taken}
 
-\item{strain_isolation_times}{(optional) If no antigenic map is specified, this argument gives the vector of times at which individuals can be infected}
+\item{possible_exposure_times}{(optional) If no antigenic map is specified, this argument gives the vector of times at which individuals can be infected}
 
-\item{measured_strains}{vector of which strains had titres measured in `strain_isolation_times`}
-
-\item{mus}{default NULL, optional vector of boosting parameters for each strain}
-
-\item{mu_indices}{default NULL, optional vector giving the index of `mus` that each strain uses the boosting parameter from. eg. if there are 6 circulation years in strain_isolation_times and 3 strain clusters, then this might be c(1,1,2,2,3,3)}
+\item{measured_biomarker_ids}{vector of which strains had titres measured in `possible_exposure_times`}
 
 \item{measurement_indices}{default NULL, optional vector giving the index of `measurement_bias` that each strain uses the measurement shift from from. eg. if there's 6 circulation years and 3 strain clusters, then this might be c(1,1,2,2,3,3)}
 
@@ -53,9 +47,9 @@ data(example_antigenic_map)
 infection_history <- sample(c(0,1),size=nrow(example_antigenic_map), replace=TRUE,prob=c(0.9,0.1))
 pars <- example_par_tab$values
 names(pars) <- example_par_tab$names
-strain_isolation_times <- example_antigenic_map$inf_times
+possible_exposure_times <- example_antigenic_map$inf_times
 y <- simulate_individual(pars, infection_history, example_antigenic_map, 2009, 
-                         strain_isolation_times,strain_isolation_times,add_noise=FALSE)
+                         possible_exposure_times,possible_exposure_times,add_noise=FALSE)
 }
 \seealso{
 Other simulation_functions: 

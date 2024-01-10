@@ -4,20 +4,20 @@
 \alias{get_DOBs}
 \title{Get DOBs}
 \usage{
-get_DOBs(titre_dat)
+get_DOBs(antibody_data)
 }
 \arguments{
-\item{titre_dat}{the data frame of titre data. See \code{\link{example_titre_dat}}}
+\item{antibody_data}{the data frame of antibody data. See \code{\link{example_antibody_data}}}
 }
 \value{
-a data frame with individual ID and DOB
+a data frame with individual and birth
 }
 \description{
-Gets the dates of birth for each individual in titre_dat
+Gets the dates of birth for each individual in antibody_data
 }
 \examples{
-data(example_titre_dat)
-get_DOBs(titre_dat)
+data(example_antibody_data)
+get_DOBs(antibody_data)
 }
 \seealso{
 Other get_summary: 
