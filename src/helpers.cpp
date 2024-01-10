@@ -83,20 +83,20 @@ IntegerMatrix sum_infections_by_group(IntegerMatrix inf_hist, IntegerVector grou
 
 //' Add measurement shifts to predictions
 //'
-//' Adds observation error shifts to predicted antibody titres.
-//' @param predicted_titre NumericVector, the predicted titres. Note that this vector will be changed!
+//' Adds observation error shifts to predicted antibody levels.
+//' @param predicted_antibody_levels NumericVector, the predicted antibody levels. Note that this vector will be changed!
 //' @param to_add NumericVector the vector of all measurement shifts to apply
-//' @param start_index_in_data int the first index of to_add and predicted_titres to combine
-//' @param end_index_in_data int the end index of to_add and predicted_titres to combine
+//' @param start_index_in_data int the first index of to_add and predicted_antibody_levels to combine
+//' @param end_index_in_data int the end index of to_add and predicted_antibody_levels to combine
 //' @return nothing
 //' @export
 //[[Rcpp::export]]
-void add_measurement_shifts(NumericVector &predicted_titres, 
+void add_measurement_shifts(NumericVector &predicted_antibody_levels, 
 			    const NumericVector &to_add,
 			    const int &start_index_in_data,
 			    const int &end_index_in_data
 			    ){
   for(int j = start_index_in_data; j <= end_index_in_data; ++j){
-    predicted_titres[j] += to_add[j];
+    predicted_antibody_levels[j] += to_add[j];
   }
 }

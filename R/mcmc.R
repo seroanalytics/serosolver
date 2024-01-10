@@ -488,7 +488,7 @@ run_MCMC <- function(par_tab,
                 
                 histiter <- prop_gibbs$proposal_iter
                 histaccepted <- prop_gibbs$accepted_iter
-                new_indiv_likelihoods <- prop_gibbs$old_probs
+                new_indiv_likelihoods <- prop_gibbs$likelihoods_pre_proposal_tmp
                 new_infection_histories <- prop_gibbs$new_infection_history     
                 
                 new_likelihoods_calculated <- TRUE

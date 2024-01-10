@@ -78,6 +78,7 @@ NumericVector antibody_model(const NumericVector &theta,
   NumericVector obs_sd_parameters(n_types);
   NumericVector antigenic_seniority_parameters(n_types);
   
+  //NumericVector max_measurements(n_types);
   //NumericVector min_measurements(n_types);
   double min_measurement = 0;
   
@@ -87,6 +88,9 @@ NumericVector antibody_model(const NumericVector &theta,
   int antigenic_seniority_index = unique_theta_indices("antigenic_seniority");
   int error_index = unique_theta_indices("obs_sd");
 
+  //int min_index = unique_theta_indices("min_measurement");
+  //int max_index = unique_theta_indices("max_measurement");
+  
   // Titre-dependent boosting function
   IntegerVector antibody_dependent_boosting(n_types);
   NumericVector gradients(n_types); 
@@ -105,6 +109,9 @@ NumericVector antibody_model(const NumericVector &theta,
       wane_short_short_parameters(x) = theta(wane_short_index + x*n_theta);
       antigenic_seniority_parameters(x) = theta(antigenic_seniority_index + x*n_theta);
       obs_sd_parameters(x) = theta(error_index + x*n_theta);
+      
+      //min_measurements(x) = theta(min_index + x*n_theta);
+      //max_measurements(x) = theta(max_index + x*n_theta);
       
       // Titre dependent boosting
       antibody_dependent_boosting(x) = theta(antibody_dependent_boosting_index+ x*n_theta);
