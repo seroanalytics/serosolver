@@ -17,7 +17,7 @@ add_noise(y, theta, measurement_bias = NULL, indices = NULL, data_type = 1)
 a noisy titre
 }
 \description{
-Adds truncated noise to titre data
+Adds truncated noise to antibody data
 }
 \examples{
 \dontrun{

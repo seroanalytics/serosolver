@@ -11,7 +11,7 @@ simulate_individual_faster(
   antigenic_map_long,
   antigenic_map_short,
   antigenic_distances = NULL,
-  unique_obs_types = seq_len(ncol(antigenic_map_long)),
+  unique_biomarker_groups = seq_len(ncol(antigenic_map_long)),
   sampling_times,
   possible_exposure_times,
   measured_biomarker_ids,
@@ -37,11 +37,11 @@ simulate_individual_faster(
 
 \item{possible_exposure_times}{(optional) If no antigenic map is specified, this argument gives the vector of times at which individuals can be infected}
 
-\item{measured_biomarker_ids}{vector of which strains had titres measured in `possible_exposure_times`}
+\item{measured_biomarker_ids}{vector of which biomarker IDs had measurements in `possible_exposure_times`}
 
-\item{measurement_indices}{default NULL, optional vector giving the index of `measurement_bias` that each strain uses the measurement shift from from. eg. if there's 6 circulation years and 3 strain clusters, then this might be c(1,1,2,2,3,3)}
+\item{measurement_indices}{default NULL, optional vector giving the index of `measurement_bias` that each antigen/biomarker ID uses the measurement shift from from. eg. if there's 6 circulation years and 3 strain clusters, then this might be c(1,1,2,2,3,3)}
 
-\item{obs_dist}{if not NULL, then a vector of data types to use for each obs_type}
+\item{obs_dist}{if not NULL, then a vector of data types to use for each biomarker_group}
 
 \item{repeats}{number of repeat observations for each year}
 }
@@ -49,7 +49,7 @@ simulate_individual_faster(
 a data frame with columns samples, virus and titre of simulated data
 }
 \description{
-FOR USERS: USE \code{\link{simulate_individual}}. This function does the same thing, but with a few short cuts for speed. Simulates a full set of titre data for an individual with known theta and infection_history.
+FOR USERS: USE \code{\link{simulate_individual}}. This function does the same thing, but with a few short cuts for speed. Simulates a full set of antibody data for an individual with known theta and infection_history.
 }
 \seealso{
 Other simulation_functions: 

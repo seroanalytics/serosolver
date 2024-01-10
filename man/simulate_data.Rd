@@ -13,7 +13,7 @@ simulate_data(
   measured_biomarker_ids = NULL,
   sampling_times,
   nsamps = 2,
-  titre_sensoring = 0,
+  missing_data = 0,
   age_min = 5,
   age_max = 80,
   attack_rates,
@@ -39,7 +39,7 @@ simulate_data(
 
 \item{nsamps}{the number of samples each individual has (eg. nsamps=2 gives each individual 2 random sampling times from sampling_times)}
 
-\item{titre_sensoring}{numeric between 0 and 1, used to censor a proportion of titre observations at random (MAR)}
+\item{missing_data}{numeric between 0 and 1, used to censor a proportion of titre observations at random (MAR)}
 
 \item{age_min}{simulated age minimum}
 
@@ -49,12 +49,12 @@ simulate_data(
 
 \item{repeats}{number of repeat observations for each year}
 
-\item{measurement_indices}{default NULL, optional vector giving the index of `measurement_bias` that each strain uses the measurement shift from from. eg. if there's 6 circulation years and 3 strain clusters, then this might be c(1,1,2,2,3,3)}
+\item{measurement_indices}{default NULL, optional vector giving the index of `measurement_bias` that each antigen/biomarker ID uses the measurement shift from from. eg. if there's 6 circulation years and 3 strain clusters, then this might be c(1,1,2,2,3,3)}
 
-\item{obs_dist}{if not NULL, then a vector of data types to use for each obs_type}
+\item{obs_dist}{if not NULL, then a vector of data types to use for each biomarker_group}
 }
 \value{
-a list with: 1) the data frame of titre data as returned by \code{\link{simulate_group}}; 2) a matrix of infection histories as returned by \code{\link{simulate_infection_histories}}; 3) a vector of ages
+a list with: 1) the data frame of antibody data as returned by \code{\link{simulate_group}}; 2) a matrix of infection histories as returned by \code{\link{simulate_infection_histories}}; 3) a vector of ages
 }
 \description{
 Simulates a full data set for a given set of parameters etc.
@@ -67,11 +67,11 @@ data(example_antigenic_map)
 possible_exposure_times <- example_antigenic_map$inf_times
 ## Simulate some random attack rates between 0 and 0.2
 attack_rates <- runif(length(possible_exposure_times), 0, 0.2)
-## Vector giving the circulation times of measured strains
-sampled_viruses <- seq(min(possible_exposure_times), max(possible_exposure_times), by=2)
+## Vector giving the circulation times of measured antigens
+sampled_antigens <- seq(min(possible_exposure_times), max(possible_exposure_times), by=2)
 all_simulated_data <- simulate_data(par_tab=example_par_tab, group=1, n_indiv=50,    
                                    possible_exposure_times=possible_exposure_times,
-                                   measured_biomarker_ids=sampled_viruses,
+                                   measured_biomarker_ids=sampled_antigens,
                                    sampling_times=2010:2015, nsamps=2, antigenic_map=example_antigenic_map, 
                                    age_min=10,age_max=75,
                                    attack_rates=attack_rates, repeats=2)

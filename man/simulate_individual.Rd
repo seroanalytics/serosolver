@@ -29,17 +29,17 @@ simulate_individual(
 
 \item{possible_exposure_times}{(optional) If no antigenic map is specified, this argument gives the vector of times at which individuals can be infected}
 
-\item{measured_biomarker_ids}{vector of which strains had titres measured in `possible_exposure_times`}
+\item{measured_biomarker_ids}{vector of which biomarker IDs had measurements in `possible_exposure_times`}
 
-\item{measurement_indices}{default NULL, optional vector giving the index of `measurement_bias` that each strain uses the measurement shift from from. eg. if there's 6 circulation years and 3 strain clusters, then this might be c(1,1,2,2,3,3)}
+\item{measurement_indices}{default NULL, optional vector giving the index of `measurement_bias` that each antigen/biomarker ID uses the measurement shift from from. eg. if there's 6 circulation years and 3 strain clusters, then this might be c(1,1,2,2,3,3)}
 
 \item{repeats}{number of repeat observations for each year}
 }
 \value{
-a data frame with columns samples, virus and titre of simulated data
+a data frame with columns samples, biomarker IDs and antibody levels of simulated data
 }
 \description{
-Simulates a full set of titre data for an individual with known theta and infection_history.
+Simulates a full set of antibody data for an individual with known theta and infection_history.
 }
 \examples{
 data(example_par_tab)

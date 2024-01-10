@@ -8,7 +8,7 @@ simulate_group(
   n_indiv,
   theta,
   theta_indices_unique,
-  unique_obs_types,
+  unique_biomarker_groups,
   infection_histories,
   possible_exposure_times,
   measured_biomarker_ids,
@@ -39,9 +39,9 @@ simulate_group(
 
 \item{repeats}{number of repeat observations for each year}
 
-\item{measurement_indices}{default NULL, optional vector giving the index of `measurement_bias` that each strain uses the measurement shift from from. eg. if there's 6 circulation years and 3 strain clusters, then this might be c(1,1,2,2,3,3)}
+\item{measurement_indices}{default NULL, optional vector giving the index of `measurement_bias` that each antigen/biomarker ID uses the measurement shift from from. eg. if there's 6 circulation years and 3 strain clusters, then this might be c(1,1,2,2,3,3)}
 
-\item{obs_dist}{if not NULL, then a vector of data types to use for each obs_type}
+\item{obs_dist}{if not NULL, then a vector of data types to use for each biomarker_group}
 
 \item{DOBs}{vector giving the time period of birth (entries corresponding to `possible_exposure_times`)}
 }
@@ -49,7 +49,7 @@ simulate_group(
 a data frame with columns individual, samples, virus and titre of simulated data
 }
 \description{
-Simulates a full set of titre data for n_indiv individuals with known theta and infection_histories. Each individual gets nsamps random samples from sampleTimes, and infections can occur at any of possible_exposure_times
+Simulates a full set of antibody data for n_indiv individuals with known theta and infection_histories. Each individual gets nsamps random samples from sample_times, and infections can occur at any of possible_exposure_times
 }
 \seealso{
 \code{\link{simulate_individual}}, \code{\link{simulate_individual_faster}}
