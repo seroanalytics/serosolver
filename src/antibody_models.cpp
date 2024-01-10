@@ -46,7 +46,7 @@ NumericVector antibody_model(const NumericVector &theta,
   // Dimensions of structures
   int n = infection_history_mat.nrow();
   int number_possible_infections = infection_history_mat.ncol();
-  int total_measurements = biomarker_id_indices.size();
+  int n_measurements = biomarker_id_indices.size();
   
   // To track how far through the larger vectors we move for each individual
   int biomarker_group=0;
@@ -118,7 +118,7 @@ NumericVector antibody_model(const NumericVector &theta,
   }
 
   // To store calculated titres
-  NumericVector predicted_antibody_levels(total_measurements, min_measurement);
+  NumericVector predicted_antibody_levels(n_measurements, min_measurement);
 
   
     // For each individual
