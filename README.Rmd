@@ -54,10 +54,10 @@ data(example_par_tab)
 data(example_antigenic_map)
 
 ## Get all possible infection times
-strain_isolation_times <- unique(example_antigenic_map$inf_times)
+possible_exposure_times <- unique(example_antigenic_map$inf_times)
 
-## Vector of strains that have titres (note only one representative strain per time)
-sampled_viruses <- seq(min(strain_isolation_times), max(strain_isolation_times), by=2)
+## Vector of antibgens that have biomarker measurements (note only one representative antigen per time)
+sampled_antigens <- seq(min(possible_exposure_times), max(possible_exposure_times), by=2)
 
 ## Times at which serum samples can be taken
 sampling_times <- 2010:2015
@@ -66,12 +66,14 @@ sampling_times <- 2010:2015
 n_samps <- 2
 
 ## Simulate some random attack rates
-attack_rates <- runif(length(strain_isolation_times), 0.05, 0.15)
+attack_rates <- runif(length(possible_exposure_times), 0.05, 0.15)
+
+par_tab <- read.csv("~/Documents/GitHub/serosolver/inst/extdata/par_tab_base.csv")
 
 ## Simulate a full serosurvey with these parameters
-all_simulated_data <- simulate_data(par_tab=example_par_tab, group=1, n_indiv=50,
-                                  strain_isolation_times=strain_isolation_times,
-                                  measured_strains=sampled_viruses,
+all_simulated_data <- simulate_data(par_tab=par_tab, group=1, n_indiv=50,
+                                  possible_exposure_times=possible_exposure_times,
+                                  measured_biomarker_ids = sampled_antigens,
                                   sampling_times=2010:2015, nsamps=n_samps,
                                   antigenic_map=example_antigenic_map,
                                   age_min=10,age_max=75,

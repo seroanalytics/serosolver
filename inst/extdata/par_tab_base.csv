@@ -6,8 +6,9 @@ wane_long,0,1,0,1,0.01,0.1,1
 wane_short,0.2,0,0,1,0.01,0.1,1
 cr_long,0.1,0,0,1,0.1,0.2,1
 cr_short,0.03,0,0,1,0.01,0.1,1
-min_titre,0,1,0,0,0,0,1
-max_titre,8,1,8,8,8,8,1
+min_measurement,0,1,0,0,0,0,1
+max_measurement,8,1,8,8,8,8,1
 obs_sd,1,0,0,25,0.5,2,1
-infection_model_prior_alpha,1,1,0,1000,0,1000,1
-infection_model_prior_beta,1,1,0,1000,0,1000,1
+infection_model_prior_shape1,1,1,0,1000,0,1000,1
+infection_model_prior_shape2,1,1,0,1000,0,1000,1
+antibody_dependent_boosting,0,1,0,1,0,1,1

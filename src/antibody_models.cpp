@@ -96,7 +96,7 @@ NumericVector antibody_model(const NumericVector &theta,
   NumericVector gradients(n_types); 
   NumericVector boost_limits(n_types);   
   
-  int antibody_dependent_boosting_index = unique_theta_indices("antibody_dependent");
+  int antibody_dependent_boosting_index = unique_theta_indices("antibody_dependent_boosting");
   int gradient_index = -1;
   int boost_limit_index = -1;
 

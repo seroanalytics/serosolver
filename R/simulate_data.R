@@ -110,11 +110,11 @@ simulate_data <- function(par_tab,
     par_tab_unique <- par_tab[!is.na(par_tab$biomarker_group) & par_tab$biomarker_group == min(par_tab$biomarker_group),]
     
     ## These will be different for each biomarker_group
-    option_indices <- which(par_tab$type == 0)
-    theta_indices <- which(par_tab$type %in% c(0, 1))
-    measurement_indices_par_tab <- which(par_tab$type == 3)
+    option_indices <- which(par_tab$par_type == 0)
+    theta_indices <- which(par_tab$par_type %in% c(0, 1))
+    measurement_indices_par_tab <- which(par_tab$par_type == 3)
 
-    theta_indices_unique <- which(par_tab_unique$type %in% c(0, 1))
+    theta_indices_unique <- which(par_tab_unique$par_type %in% c(0, 1))
     
     ## Each biomarker_group must have the same vector of parameters in the same order
     par_names_theta <- par_tab_unique[theta_indices_unique, "names"]
@@ -124,7 +124,7 @@ simulate_data <- function(par_tab,
     par_names_theta_all <- par_tab[theta_indices,"names"]
 
     ## Measurement indices unique
-    measurement_indices_unique <- seq_along(which(par_tab_unique$type == 3)) - 1
+    measurement_indices_unique <- seq_along(which(par_tab_unique$par_type == 3)) - 1
 
     ## Extract parameters
     pars <- par_tab$values
@@ -326,7 +326,6 @@ simulate_individual_faster <- function(theta,
         names(unique_theta_indices) <- unique_theta_names
     }
     n_pars <- length(unique_theta_indices)
-    
   inf_hist <- matrix(nrow = 1, ncol = length(infection_history))
   inf_hist[1, ] <- infection_history
 
