@@ -175,7 +175,7 @@ check_proposals <- function(version, mvr_pars) {
 #' @family check_inputs
 #' @export
 check_inf_hist <- function(antibody_data,possible_exposure_times, inf_hist){
-    DOBs <- create_age_mask(antibody_data %>% select(individual, DOB) %>% distinct() %>% pull(DOB),
+    DOBs <- create_age_mask(antibody_data %>% select(individual, birth) %>% distinct() %>% pull(birth),
                             possible_exposure_times)
     correct_dob <- rep(0,length(DOBs))
     for(i in seq_along(DOBs)){

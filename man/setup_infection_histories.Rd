@@ -37,6 +37,6 @@ start_inf <- setup_infection_histories(example_antibody_data, example_antigenic_
 }
 \seealso{
 Other setup_infection_histories: 
-\code{\link{setup_infection_histories_titre}()}
+\code{\link{setup_infection_histories_antibody_level}()}
 }
 \concept{setup_infection_histories}

@@ -106,9 +106,9 @@ setup_infection_histories_prior <- function(antibody_data, possible_exposure_tim
 #' @examples
 #' data(example_antibody_data)
 #' data(example_antigenic_map)
-#' start_inf <- setup_infection_histories_titre(example_antibody_data, example_antigenic_map$inf_times)
+#' start_inf <- setup_infection_histories_antibody_level(example_antibody_data, example_antigenic_map$inf_times)
 #' @export
-setup_infection_histories_titre <- function(antibody_data, possible_exposure_times, space = 5, antibody_cutoff = 2, sample_prob = 0.9) {
+setup_infection_histories_antibody_level <- function(antibody_data, possible_exposure_times, space = 5, antibody_cutoff = 2, sample_prob = 0.9) {
   start_inf <- NULL
   individuals <- unique(antibody_data$individual)
   ages <- unique(antibody_data[, c("individual", "birth")])
@@ -169,7 +169,7 @@ setup_infection_histories_titre <- function(antibody_data, possible_exposure_tim
 #'
 #' Given a matrix of antibody data, proposes plausible initial infection histories from which to begin MCMC sampling.
 #' The idea is to move along time in the context of antigenic drift and look at an individual's antibody level against each biomarker ID Where antibody levels are raised, we suggest an infection. However, to avoid suggesting multiple infections for regions of high antigenic similarity, we place a necessary gap (defined by `space`) between proposed infection times.
-#' @inheritParams setup_infection_histories_titre
+#' @inheritParams setup_infection_histories_antibody_level
 #' @return an nxm matrix of infection histories containing 1s and 0s, where n is the number of individuals and m is the number of time periods for potential infection
 #' @family setup_infection_histories
 #' @examples

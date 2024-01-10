@@ -58,7 +58,7 @@ simulate_data <- function(par_tab,
     check_par_tab(par_tab)
     
     if (!("biomarker_group" %in% colnames(par_tab))) {
-        message(cat("Note: no biomarker_group detection in par_tab Assuming all biomarker_group as 1. If this was deliberate, you can ignore this message."))
+        message(cat("Note: no biomarker_group detection in par_tab Assuming all biomarker_group as 1. If this was deliberate, you can ignore this message.\n"))
         par_tab$biomarker_group <- 1
     }
     
@@ -73,13 +73,13 @@ simulate_data <- function(par_tab,
     if (!is.null(antigenic_map)) {
         possible_exposure_times_tmp <- unique(antigenic_map$inf_times) # How many antigens are we testing against and what time did they circulate
         if(!is.null(possible_exposure_times) & !identical(possible_exposure_times, possible_exposure_times_tmp)){
-            message(cat("Warning: provided possible_exposure_times argument does not match entries in the antigenic map. Please make sure that there is an entry in the antigenic map for each possible circulation time. Using the antigenic map times."))
+            message(cat("Warning: provided possible_exposure_times argument does not match entries in the antigenic map. Please make sure that there is an entry in the antigenic map for each possible circulation time. Using the antigenic map times.\n"))
         }
         possible_exposure_times <- possible_exposure_times_tmp
         
         ## If no observation types assumed, set all to 1.
         if (!("biomarker_group" %in% colnames(antigenic_map))) {
-            message(cat("Note: no biomarker_group detection in antigenic_map. Aligning antigenic map with par_tab. If this was deliberate, you can ignore this message."))
+            message(cat("Note: no biomarker_group detection in antigenic_map. Aligning antigenic map with par_tab. If this was deliberate, you can ignore this message.\n"))
             antigenic_map_tmp <- replicate(n_biomarker_groups,antigenic_map,simplify=FALSE)
             for(biomarker_group in unique_biomarker_groups){
                 antigenic_map_tmp[[biomarker_group]]$biomarker_group <- biomarker_group
@@ -195,7 +195,7 @@ simulate_data <- function(par_tab,
     ages <- data.frame("individual" = 1:n_indiv, "birth" = DOBs)
     attack_rates <- data.frame("time" = possible_exposure_times, "AR" = ARs)
     return(list(
-        data = y, infection_histories = infection_history,
+        antibody_data = y, infection_histories = infection_history,
         ages = ages, attack_rates = attack_rates, phis = attack_rates
     ))
 }

@@ -213,7 +213,7 @@ run_MCMC <- function(par_tab,
   ## Note that DOBs for all groups must be from same reference point
   ## -----------------------
   ###############
-  if (!is.null(antibody_data$DOB)) {
+  if (!is.null(antibody_data$birth)) {
     DOBs <- unique(antibody_data[, c("individual", "birth")])[, 2]
   } else {
     DOBs <- rep(min(possible_exposure_times), n_indiv)
@@ -273,7 +273,7 @@ run_MCMC <- function(par_tab,
     infection_histories <- start_inf_hist
 
     if (is.null(start_inf_hist)) {
-        infection_histories <- setup_infection_histories_titre(antibody_data, possible_exposure_times, space = 5, titre_cutoff = 3)
+        infection_histories <- setup_infection_histories_antibody_level(antibody_data, possible_exposure_times, space = 5, antibody_cutoff = 3)
     }
     check_inf_hist(antibody_data, possible_exposure_times, infection_histories)
     ## Initial likelihoods and individual priors
