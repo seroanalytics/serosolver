@@ -43,7 +43,7 @@ There are additional Rmarkdown vignettes for [Case Study 1][c1-vignette-doc] (lo
 
 This is a basic example of simulating some serological data and fitting the model using the MCMC framework.
 
-```{r example, message=FALSE,warning=FALSE,eval=FALSE}
+```{r example, message=FALSE,warning=FALSE,eval=TRUE}
 #library(serosolver)
 library(plyr)
 library(dplyr)
@@ -72,6 +72,11 @@ inf_chain <- data.table::fread(res$history_file)
 plot(coda::as.mcmc(chain[chain$sampno > 20000,c("boost_long","wane_short","posterior_prob")]))
 
 # Plot model predicted titres for a subset of individuals
-plot_model_fits(chain = chain,infection_histories = inf_chain,example_antibody_data = antibody_data,individuals=c(1:4),antigenic_map=example_antigenic_map,par_tab=par_tab,orientation="cross-sectional")
+plot_model_fits(chain = chain,
+                infection_histories = inf_chain,
+                antibody_data = example_antibody_data,individuals=c(1:4),
+                antigenic_map=example_antigenic_map,
+                par_tab=example_par_tab,
+                orientation="cross-sectional")
 
 ```
