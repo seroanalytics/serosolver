@@ -1,4 +1,5 @@
-#include <Rcpp.h>
+// [[Rcpp::depends(RcppArmadillo)]]
+#include <RcppArmadillo.h>
 using namespace Rcpp;
 
 #ifndef ANTIBODY_DATA_MODEL_INDIVIDUAL_H
@@ -17,8 +18,8 @@ void antibody_data_model_individual(NumericVector &predicted_antibody_levels,
                          const int &start_index_in_data1,
                          const IntegerVector &nrows_per_blood_sample,
                          const int &number_possible_exposures,
-                         const NumericVector &antigenic_map_short,
-                         const NumericVector &antigenic_map_long,
+                         const double *antigenic_map_short,
+                         const double *antigenic_map_long,
                          bool boost_before_infection
 				     );
 #endif
@@ -41,8 +42,8 @@ void antibody_dependent_boosting_model_individual(NumericVector &predicted_antib
                                        const int &start_index_in_data1,
                                        const IntegerVector &nrows_per_blood_sample,
                                        const int &number_possible_exposures,
-                                       const NumericVector &antigenic_map_short,
-                                       const NumericVector &antigenic_map_long,
+                                       const double *antigenic_map_short,
+                                       const double *antigenic_map_long,
                                        bool boost_before_infection
 					 );
 #endif

@@ -141,8 +141,8 @@ arma::mat inf_hist_prop_prior_v3(arma::mat infection_history_mat,
 //' @param nrows_per_blood_sample IntegerVector, Split the sample times and runs for each individual
 //' @param group_id_vec IntegerVector, vector with 1 entry per individual, giving the group ID of that individual
 //' @param biomarker_id_indices IntegerVector, For each antibody measurement, corresponding entry in antigenic map
-//' @param antigenic_map_long NumericVector, the collapsed cross reactivity map for long term boosting, after multiplying by sigma1, see \code{\link{create_cross_reactivity_vector}}
-//' @param antigenic_map_short NumericVector, the collapsed cross reactivity map for short term boosting, after multiplying by sigma2, see \code{\link{create_cross_reactivity_vector}}
+//' @param antigenic_map_long arma::mat, the collapsed cross reactivity map for long term boosting, after multiplying by sigma1, see \code{\link{create_cross_reactivity_vector}}
+//' @param antigenic_map_short arma::mat, the collapsed cross reactivity map for short term boosting, after multiplying by sigma2, see \code{\link{create_cross_reactivity_vector}}
 //' @param antigenic_distances NumericVector matching the dimensions of antigenic_map_long and antigenic_map_short, but with the raw antigenic distances between strains
 //' @param antibody_data NumericVector, data for all individuals for the first instance of each calculated antibody level
 //' @param antibody_data_repeats NumericVector, the repeat antibody data for all individuals (ie. do not solve the same antibody level twice)
@@ -200,8 +200,8 @@ List inf_hist_prop_prior_v2_and_v4(
 				   const IntegerVector &group_id_vec, // Which group does each individual belong to?
 				   const IntegerVector &biomarker_id_indices, // For each measurement, corresponding entry in antigenic map
 				   
-				   const NumericMatrix &antigenic_map_long, // Now a matrix of antigenic maps
-				   const NumericMatrix &antigenic_map_short,
+				   const arma::mat &antigenic_map_long, // Now a matrix of antigenic maps
+				   const arma::mat &antigenic_map_short,
 				   
 				   const NumericVector &antigenic_distances,
 				   
@@ -609,8 +609,8 @@ List inf_hist_prop_prior_v2_and_v4(
         					      start_index_in_data,
         					      nrows_per_sample,
         					      number_possible_exposures,
-        					      antigenic_map_short(_,biomarker_group),
-        					      antigenic_map_long(_,biomarker_group),
+        					      antigenic_map_short.colptr(biomarker_group),
+        					      antigenic_map_long.colptr(biomarker_group),
         					      false);	
         	} else {
         	  antibody_data_model_individual(predicted_antibody_levels, 
@@ -627,8 +627,8 @@ List inf_hist_prop_prior_v2_and_v4(
         					  start_index_in_data,
         					  nrows_per_sample,
         					  number_possible_exposures,
-        					  antigenic_map_short(_,biomarker_group),
-        					  antigenic_map_long(_,biomarker_group),
+        					  antigenic_map_short.colptr(biomarker_group),
+        					  antigenic_map_long.colptr(biomarker_group),
         					  false);
         	}
         	if(use_measurement_shifts){

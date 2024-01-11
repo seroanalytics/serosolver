@@ -15,8 +15,8 @@
 //' @param antibody_data_start IntegerVector, How many cumulative rows in the antibody data correspond to each unique individual and observation type combination? 
 //' @param nrows_per_sample IntegerVector, one entry per sample taken. Dictates how many entries to iterate through cum_nrows_per_individual_in_data for each sampling time considered
 //' @param biomarker_id_indices IntegerVector, the indices of all measured biomarkers in the melted antigenic map, with one entry per measured biomarker
-//' @param antigenic_map_long NumericVector, the collapsed cross reactivity map for long term boosting, after multiplying by cr_long see \code{\link{create_cross_reactivity_vector}}
-//' @param antigenic_map_short NumericVector, the collapsed cross reactivity map for short term boosting, after multiplying by cr_short, see \code{\link{create_cross_reactivity_vector}}
+//' @param antigenic_map_long arma::mat, the collapsed cross reactivity map for long term boosting, after multiplying by cr_long see \code{\link{create_cross_reactivity_vector}}
+//' @param antigenic_map_short arma::mat, the collapsed cross reactivity map for short term boosting, after multiplying by cr_short, see \code{\link{create_cross_reactivity_vector}}
 //' @param antigenic_distances NumericVector, the collapsed cross reactivity map giving euclidean antigenic distances, see \code{\link{create_cross_reactivity_vector}}
 //' @param boost_before_infection bool to indicate if calculated antibody level for that time should be before the infection has occurred, used to calculate antibody-mediated immunity
 //' @return NumericVector of predicted antibody levels for each entry in biomarker_id_indices
@@ -38,8 +38,8 @@ NumericVector antibody_model(const NumericVector &theta,
 			      const IntegerVector &nrows_per_sample, // Split the sample times for each individual
 			      
 			      const IntegerVector &biomarker_id_indices, // For each antibody measurement, corresponding entry in antigenic map
-			      const NumericMatrix &antigenic_map_long,
-			      const NumericMatrix &antigenic_map_short,
+			      const arma::mat &antigenic_map_long,
+			      const arma::mat &antigenic_map_short,
 			      const NumericVector &antigenic_distances,	// Currently not doing anything, but has uses for model extensions		      
 			      bool boost_before_infection = false
 			      ){
@@ -87,7 +87,10 @@ NumericVector antibody_model(const NumericVector &theta,
   int wane_short_index = unique_theta_indices("wane_short");
   int antigenic_seniority_index = unique_theta_indices("antigenic_seniority");
   int error_index = unique_theta_indices("obs_sd");
-
+  
+  //NumericVector antigenic_map_long_tmp(antigenic_map_long.nrow());
+  //NumericVector antigenic_map_short_tmp(antigenic_map_short.nrow());
+  
   //int min_index = unique_theta_indices("min_measurement");
   //int max_index = unique_theta_indices("max_measurement");
   
@@ -127,6 +130,9 @@ NumericVector antibody_model(const NumericVector &theta,
   // To store calculated titres
   NumericVector predicted_antibody_levels(n_measurements, min_measurement);
 
+ // antigenic_map_long_tmp = antigenic_map_long(_,biomarker_group);
+  //antigenic_map_short_tmp = antigenic_map_short(_,biomarker_group);
+  
   // For each individual
   for (int i = 1; i <= n; ++i) {
     indices = infection_history_mat(i-1,_) > 0;
@@ -148,6 +154,9 @@ NumericVector antibody_model(const NumericVector &theta,
             start_index_in_samples = sample_data_start(index);
             end_index_in_samples = sample_data_start(index+1) - 1;
             start_index_in_data = antibody_data_start(start_index_in_samples);
+    
+      
+    
     
             // ====================================================== //
             // =============== CHOOSE MODEL TO SOLVE =============== //
@@ -172,8 +181,8 @@ NumericVector antibody_model(const NumericVector &theta,
   					    start_index_in_data,
   					    nrows_per_sample,
   					    number_possible_infections,
-  					    antigenic_map_short(_,biomarker_group),
-  					    antigenic_map_long(_,biomarker_group),
+  					    antigenic_map_short.colptr(biomarker_group),
+  					    antigenic_map_long.colptr(biomarker_group),
   					    boost_before_infection);	
             } else {
               antibody_data_model_individual(
@@ -191,8 +200,8 @@ NumericVector antibody_model(const NumericVector &theta,
             					start_index_in_data,
             					nrows_per_sample,
             					number_possible_infections,
-            					antigenic_map_short(_,biomarker_group),
-            					antigenic_map_long(_,biomarker_group),
+            					antigenic_map_short.colptr(biomarker_group),
+            					antigenic_map_long.colptr(biomarker_group),
             					boost_before_infection);
               }
           }

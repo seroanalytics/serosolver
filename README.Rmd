@@ -45,9 +45,6 @@ This is a basic example of simulating some serological data and fitting the mode
 
 ```{r example, message=FALSE,warning=FALSE,eval=TRUE}
 #library(serosolver)
-library(plyr)
-library(dplyr)
-library(data.table)
 library(ggplot2)
 devtools::load_all("~/Documents/GitHub/serosolver")
 
@@ -62,10 +59,11 @@ plot_antibody_data(example_antibody_data,example_inf_hist,example_antigenic_map$
 ## Run the MCMC
 # This example uses prior version 2 (i.e. beta prior on phi with parameters alpha, beta)
 # We have to remove the explicit specification of phi in the parameter table
+t1 <- Sys.time()
 res <- run_MCMC(example_par_tab, example_antibody_data, example_antigenic_map,
                 filename="test", prior_version=2,
-                mcmc_pars=c(adaptive_period=20000, iterations=80000))
-
+                mcmc_pars=c(adaptive_period=10000, iterations=20000))
+Sys.time() - t1
 ## Read in the MCMC chains and plot posteriors
 chain <- read.csv(res$chain_file)
 inf_chain <- data.table::fread(res$history_file)
