@@ -48,6 +48,7 @@ check_inf_hist <- function(antibody_data, possible_exposure_times, inf_hist,VERB
 #' @param par_tab the parameter table controlling information such as bounds, initial values etc
 #' @param mcmc logical, if TRUE then checks are performed for the MCMC algorithm. Use FALSE when simulating data
 #' @param version which version of the posterior function is being used? See \code{\link{create_posterior_func}}
+#' @param possible_exposure_times optional vector of possible exposure times
 #' @param VERBOSE if TRUE, prints warning messages
 #' @return the same par_tab object with corrections if needed
 #' @family check_inputs
@@ -55,7 +56,7 @@ check_inf_hist <- function(antibody_data, possible_exposure_times, inf_hist,VERB
 #' data(example_par_tab)
 #' check_par_tab(example_par_tab, FALSE, version=1)
 #' @export
-check_par_tab <- function(par_tab, mcmc = FALSE, version = NULL,VERBOSE=FALSE) {
+check_par_tab <- function(par_tab, mcmc = FALSE, version = NULL,possible_exposure_times=NULL, VERBOSE=FALSE) {
     ## Checks that should happen in simulate_data and run_MCMC
     essential_names <- c("names","values","fixed","lower_bound","upper_bound","lower_start","upper_start","par_type")
     if (!all(essential_names %in% colnames(par_tab))) {
@@ -90,16 +91,29 @@ check_par_tab <- function(par_tab, mcmc = FALSE, version = NULL,VERBOSE=FALSE) {
         if (version == 1) {
             ## Check that the correct number of phis are present
             if(!explicit_phi){
-                stop("prior version 1 is specified, but there are no entries for phi in par_tab. Note that there must be one phi entry per entry in possible_exposure_times")
+                if(VERBOSE) message(cat("Prior version 1 is specified, but there are no entries for phi in par_tab. Note that there must be one phi entry per entry in possible_exposure_times"))
+            }
+          
+            if(!is.null(possible_exposure_times) & no_phi < length(possible_exposure_times)){
+              if(VERBOSE) message(cat("Padding par_tab with phis, as number of phi parameters does not match possible_exposure_times")) ## Should we remove them?
+              par_tab_phi <- data.frame(names="phi",values=0.1,fixed=0,lower_bound=0,upper_bound=1,lower_start=0,upper_start=1,par_type=2,steps=0.1)
+              n_missing <- length(possible_exposure_times) - no_phi
+              for(i in 1:n_missing){
+                par_tab <- rbind(par_tab, par_tab_phi)
+              }
             }
         }
+        
         if (all(par_tab$fixed == 1)) {
-            stop("all parameters are set to be fixed. The MCMC procedure will not work. Please set at least the entry for error to be fixed <- 0")
+            stop("All parameters are set to be fixed. The MCMC procedure will not work. Please set at least the entry for error to be fixed <- 0")
         }
 
         
         if (version %in% c(2, 3, 4)) {
-            if (explicit_phi) stop(paste("phis are not required for versions 2, 3 or 4 but par_tab contains phi(s). Suggest removing all entries named phi")) ## Should we remove them?
+            if (explicit_phi){
+              if(VERBOSE) message(cat("Phis are not required for versions 2, 3 or 4 but par_tab contains phi(s). Removing all entries named phi")) ## Should we remove them?
+              par_tab <- par_tab[par_tab$names != "phi",]
+            }
         }
         ## Check bounds are equal to starting bounds
         if (any(par_tab$upper_start > par_tab$upper_bound) | any(par_tab$lower_start < par_tab$lower_bound)) {

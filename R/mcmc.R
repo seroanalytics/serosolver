@@ -70,7 +70,13 @@ run_MCMC <- function(par_tab,
                      n_alive = NULL,
                      ...) {
   ## Error checks --------------------------------------
-  par_tab <- check_par_tab(par_tab, TRUE, prior_version)
+  if (!is.null(antigenic_map)) {
+    possible_exposure_times <- unique(antigenic_map$inf_times) # How many strains are we testing against and what time did they circulate
+  } else {
+    antigenic_map <- data.frame("x_coord"=1,"y_coord"=1,"inf_times"=possible_exposure_times)
+  }
+  
+  par_tab <- check_par_tab(par_tab, TRUE,possible_exposure_times=possible_exposure_times, version=prior_version)
   ## Sort out MCMC parameters --------------------------------------
   ###################################################################
   mcmc_pars_used <- c(
@@ -174,12 +180,6 @@ run_MCMC <- function(par_tab,
   ##############
   ## Check the antibody_data input
   antibody_data <- check_data(antibody_data)
-
-  if (!is.null(antigenic_map)) {
-    possible_exposure_times <- unique(antigenic_map$inf_times) # How many strains are we testing against and what time did they circulate
-  } else {
-    antigenic_map <- data.frame("x_coord"=1,"y_coord"=1,"inf_times"=possible_exposure_times)
-  }
   
   n_indiv <- length(unique(antibody_data$individual)) # How many individuals in the antibody_data?
 
@@ -296,36 +296,41 @@ run_MCMC <- function(par_tab,
         infection_model_prior_shape2 <- prior_pars["infection_model_prior_shape2"]
         prior_probab <- 0
 
-    ## If prior prior_version 2 or 4
-    if (hist_proposal == 2) {
-      ## Prior prior_version 4
-      if (prior_on_total) {
-        n_infections <- sum_infections_by_group(prior_infection_history, group_ids_vec, n_groups)
-        n_infections_group <- rowSums(n_infections)
-        prior_probab <- prior_probab + inf_mat_prior_total_group_cpp(
-          n_infections_group,
-          n_alive_tot, infection_model_prior_shape1, infection_model_prior_shape2
-        )
-      } else {
-          n_infections <- sum_infections_by_group(prior_infection_history, group_ids_vec, n_groups)
-          if (any(n_infections > n_alive)){
-             #message("error -- more infections than there are individuals alive")
-             prior_probab <- -Inf
+        ## If prior prior_version 2 or 4
+        if (hist_proposal == 2) {
+          ## Prior prior_version 4
+          if (prior_on_total) {
+            n_infections <- sum_infections_by_group(prior_infection_history, group_ids_vec, n_groups)
+            n_infections_group <- rowSums(n_infections)
+            prior_probab <- prior_probab + inf_mat_prior_total_group_cpp(
+              n_infections_group,
+              n_alive_tot, infection_model_prior_shape1, infection_model_prior_shape2
+            )
           } else {
-            prior_probab <- prior_probab + inf_mat_prior_group_cpp(n_infections, n_alive, infection_model_prior_shape1, infection_model_prior_shape2)
+              n_infections <- sum_infections_by_group(prior_infection_history, group_ids_vec, n_groups)
+              if (any(n_infections > n_alive)){
+                 #message("error -- more infections than there are individuals alive")
+                 prior_probab <- -Inf
+              } else {
+                prior_probab <- prior_probab + 
+                  inf_mat_prior_group_cpp(n_infections, n_alive, infection_model_prior_shape1, infection_model_prior_shape2)
+              }
           }
-      }
+        }
+        if (!is.null(CREATE_PRIOR_FUNC)) prior_probab <- prior_probab + prior_func(prior_pars)
+        if (measurement_random_effects) prior_probab <- prior_probab + prior_shifts(prior_pars)
+        prior_probab
     }
-    if (!is.null(CREATE_PRIOR_FUNC)) prior_probab <- prior_probab + prior_func(prior_pars)
-    if (measurement_random_effects) prior_probab <- prior_probab + prior_shifts(prior_pars)
-    prior_probab
-  }
     ## Initial total prior prob
     total_prior_prob <- sum(indiv_priors) + extra_probabilities(current_pars,infection_histories)
     total_likelihood <- sum(indiv_likelihoods)
     ## Initial posterior prob
     total_posterior <- total_likelihood + total_prior_prob
 
+    if(!is.finite(total_prior_prob)) stop(paste("Error: starting prior probability is not finite."))
+    if(!is.finite(total_likelihood)) stop(paste("Error: starting likelihood is not finite."))
+    if(!is.finite(total_posterior)) stop(paste("Error: starting posterior probability is not finite."))
+    
     message(cat("Starting posterior probability: ", total_posterior, "\n", sep = "\t"))
     message(cat("Starting likelihood : ", total_likelihood, "\n", sep = "\t"))
     message(cat("Starting prior prob: ", total_prior_prob, "\n", sep = "\t"))

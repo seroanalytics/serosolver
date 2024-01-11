@@ -73,7 +73,7 @@ attack_rates <- runif(length(possible_exposure_times), 0.05, 0.15)
 par_tab <- read.csv("~/Documents/GitHub/serosolver/inst/extdata/par_tab_base.csv")
 
 ## Simulate a full serosurvey with these parameters
-all_simulated_data <- simulate_data(par_tab=par_tab, group=1, n_indiv=50,
+all_simulated_data <- simulate_data(par_tab=par_tab, group=1, n_indiv=100,
                                   possible_exposure_times=possible_exposure_times,
                                   measured_biomarker_ids = sampled_antigens,
                                   sampling_times=2010:2015, nsamps=n_samps,
@@ -86,18 +86,18 @@ all_simulated_data <- simulate_data(par_tab=par_tab, group=1, n_indiv=50,
 antibody_data <- all_simulated_data$antibody_data
 ages <- all_simulated_data$ages
 example_inf_hist <- all_simulated_data$infection_histories
-example_antibody_data <- merge(antibody_data, ages)
 plot_data(antibody_data,example_inf_hist,possible_exposure_times,5)
+par_tab <- check_par_tab(par_tab,TRUE,1,example_antigenic_map$inf_times)
 
 ## Run the MCMC
 # This example uses prior version 2 (i.e. beta prior on phi with parameters alpha, beta)
 # We have to remove the explicit specification of phi in the parameter table
-par_tab <- par_tab[par_tab$names != "phi",]
-res <- run_MCMC(par_tab, example_antibody_data, example_antigenic_map, 
+res <- run_MCMC(par_tab, antibody_data, example_antigenic_map, start_inf_hist=example_inf_hist,
                 filename="test", prior_version=2,
-                mcmc_pars=c(adaptive_period=20000, iterations=80000, 
-                            inf_propn=0.5,hist_sample_prob=0.5,
-                            save_block=100,thin=10,thin_hist=100))
+                mcmc_pars=c(adaptive_period=10000, iterations=30000, 
+                            inf_propn=0.1,hist_sample_prob=0.5,swap_propn=0.5,
+                            save_block=100,thin=10,thin_hist=100,hist_opt=1),
+                solve_likelihood=TRUE)
 
 ## Read in the MCMC chains and plot posteriors
 chain <- read.csv(res$chain_file)
@@ -106,7 +106,16 @@ plot(coda::as.mcmc(chain[chain$sampno > 20000,c("boost_long","wane_short","poste
 
 # Plot model predicted titres for a subset of individuals
 plot_model_fits(chain = chain,infection_histories = inf_chain,
-                         antibody_data = example_antibody_data,individuals=c(1:4),
+                         antibody_data = antibody_data,individuals=c(1:4),
                          antigenic_map=example_antigenic_map,par_tab=par_tab,orientation="cross-sectional")
+n_alive <- get_n_alive_group(antibody_data,example_antigenic_map$inf_times,melt_dat=TRUE)
+n_alive$j <- match(n_alive$j,example_antigenic_map$inf_times)
+
+plot_infection_history_chains_time(inf_chain,0000,n_alive=NULL)
+plot_attack_rates_pointrange(infection_histories = inf_chain,
+                         antibody_data = antibody_data,possible_exposure_times=example_antigenic_map$inf_times,
+                         n_alive=NULL,true_ar=all_simulated_data$attack_rates)
+
+
 
 ```

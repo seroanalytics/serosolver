@@ -11,3 +11,4 @@ obs_sd,1,0,0,25,0.5,2,1
 infection_model_prior_shape1,1,1,0,1000,0,1000,1
 infection_model_prior_shape2,1,1,0,1000,0,1000,1
 antibody_dependent_boosting,0,1,0,1,0,1,1
+phi,0.2,0,0,1,0,1,2

@@ -225,7 +225,9 @@ plot_attack_rates_pointrange <- function(infection_histories, antibody_data, pos
   if (!by_group) {
     antibody_data$population_group <- 1
     infection_histories$population_group <- 1
+    true_ar$population_group <- 1
   }
+  
   
   ## Find inferred total number of infections from the MCMC output
   ## Scale by number of individuals that were alive in each epoch
@@ -312,19 +314,23 @@ plot_attack_rates_pointrange <- function(infection_histories, antibody_data, pos
     if (colour_by_taken == TRUE) {
       p <- p + geom_pointrange(aes(
         x = j, y = median, ymin = lower, ymax = upper,
-        col = `Sample taken`, shape = `Sample taken`
+        col = `Sample taken`
       ),
       size = pointsize,
       fatten = fatten
-      )
+      )  +
+        scale_fill_manual(name="Samples taken",values=c("No"="darkorange","Yes"="blue","Prior"="grey40"))+
+        scale_color_manual(name="Samples taken",values=c("No"="darkorange","Yes"="blue","Prior"="grey40"))
     } else {
       p <- p + geom_pointrange(aes(
         x = j, y = median, ymin = lower, ymax = upper,
-        col = `Biomarker tested`, shape = `Biomarker tested`
+        col = `Biomarker tested`
       ),
       size = pointsize,
       fatten = fatten
-      )
+      )+
+        scale_fill_manual(name="Biomarker tested",values=c("No"="darkorange","Yes"="blue","Prior"="grey40"))+
+        scale_color_manual(name="Biomarker tested",values=c("No"="darkorange","Yes"="blue","Prior"="grey40"))
     }
   } else {
     tmp$j <- years[tmp$j]
@@ -353,8 +359,9 @@ plot_attack_rates_pointrange <- function(infection_histories, antibody_data, pos
     p <- p +
       geom_point(
         data = true_ar[true_ar$population_group %in% group_subset, ], aes(x = time, y = AR,shape="True attack rate"),stroke=1.25,
-        col = "red", size = 2.5
-      )
+        col = "black", size = 2.5
+      ) +
+      scale_shape_manual(name="",values=c("True attack rate"=1))
   }
   if (!plot_residuals) {
     p <- p +
@@ -374,9 +381,7 @@ plot_attack_rates_pointrange <- function(infection_histories, antibody_data, pos
     theme_classic() +
     theme(legend.position = "bottom") +
     ylab("Estimated attack rate") +
-    xlab("Date") +
-    scale_fill_manual(name="Samples taken in\n time period",values=c("No"="darkorange","Yes"="blue","Prior"="grey40")) +
-    scale_shape_manual(name="",values=c("True attack rate"=4))
+    xlab("Date")
   
   if (plot_residuals) {
     p <- p +
@@ -429,9 +434,9 @@ plot_infection_history_chains_time <- function(inf_chain, burnin = 0, times = NU
     n_inf_chain$V1 <- n_inf_chain$V1 / n_alive[match(n_inf_chain$j, n_alive$j),"n_alive"]
   }
   
-  if (!is.null(years)) {
-    use_years <- intersect(unique(n_inf_chain$j), years)
-    n_inf_chain <- n_inf_chain[n_inf_chain$j %in% use_years, ]
+  if (!is.null(times)) {
+    use_times<- intersect(unique(n_inf_chain$j), times)
+    n_inf_chain <- n_inf_chain[n_inf_chain$j %in% use_times, ]
   }
   
   inf_chain_p <- ggplot(n_inf_chain) + geom_line(aes(x = sampno, y = V1, col = as.factor(chain_no))) +

@@ -290,7 +290,7 @@ create_posterior_func <- function(par_tab,
     }
 
     ## These will be the same for each biomarker_group, as currently only one exposure type
-    ## phi_indices <- which(par_tab$par_type == 2)
+    phi_indices <- which(par_tab$par_type == 2)
     ## weights_indices <- which(par_tab$par_type == 4) ## For functional form version of FOI
     ## knot_indices <- which(par_tab$par_type == 5) ## For functional form version of FOI
     
@@ -319,9 +319,19 @@ create_posterior_func <- function(par_tab,
     if (function_type == 1) {
         message(cat("Creating posterior solving function...\n"))
         f <- function(pars, infection_history_mat) {
+          
+          ## Transmission prob is the part of the likelihood function corresponding to each individual
+          transmission_prob <- rep(0, n_indiv)
+          if (explicit_phi) {
+            phis <- pars[phi_indices]
+            transmission_prob <- calc_phi_probs_indiv(
+              phis, infection_history_mat,
+              age_mask, sample_mask)
+          }
+          if (solve_likelihood) {
             theta <- pars[theta_indices]
             names(theta) <- par_names_theta_all
-           
+            
             antigenic_map_long <- matrix(nrow=length(possible_exposure_times)^2, ncol=n_biomarker_groups)
             antigenic_map_short <- matrix(nrow=length(possible_exposure_times)^2, ncol=n_biomarker_groups)
             
@@ -329,55 +339,33 @@ create_posterior_func <- function(par_tab,
             cr_shorts <- theta[which(par_names_theta_all=="cr_short")]
             
             for(biomarker_group in unique_biomarker_groups){
-                antigenic_map_long[,biomarker_group] <- create_cross_reactivity_vector(antigenic_map_melted[[biomarker_group]], cr_longs[biomarker_group])
-                antigenic_map_short[,biomarker_group] <- create_cross_reactivity_vector(antigenic_map_melted[[biomarker_group]], cr_shorts[biomarker_group])
+              antigenic_map_long[,biomarker_group] <- create_cross_reactivity_vector(antigenic_map_melted[[biomarker_group]], cr_longs[biomarker_group])
+              antigenic_map_short[,biomarker_group] <- create_cross_reactivity_vector(antigenic_map_melted[[biomarker_group]], cr_shorts[biomarker_group])
             }
             y_new <- antibody_model(
-                theta, 
-                theta_indices_unique, 
-                unique_biomarker_groups,
-                infection_history_mat, 
-                possible_exposure_times, 
-                exposure_id_indices,
-                sample_times, 
-                type_data_start,
-                biomarker_groups,
-                sample_data_start, 
-                antibody_data_start,
-                nrows_per_sample, 
-                biomarker_id_indices, 
-                antigenic_map_long,
-                antigenic_map_short,
-                antigenic_distances,
-                antibody_level_before_infection
+              theta, 
+              theta_indices_unique, 
+              unique_biomarker_groups,
+              infection_history_mat, 
+              possible_exposure_times, 
+              exposure_id_indices,
+              sample_times, 
+              type_data_start,
+              biomarker_groups,
+              sample_data_start, 
+              antibody_data_start,
+              nrows_per_sample, 
+              biomarker_id_indices, 
+              antigenic_map_long,
+              antigenic_map_short,
+              antigenic_distances,
+              antibody_level_before_infection
             )
             if (use_measurement_bias) {
-                measurement_bias <- pars[measurement_indices_par_tab]
-                antibody_level_shifts <- measurement_bias[expected_indices]
-                y_new <- y_new + antibody_level_shifts
+              measurement_bias <- pars[measurement_indices_par_tab]
+              antibody_level_shifts <- measurement_bias[expected_indices]
+              y_new <- y_new + antibody_level_shifts
             }
-            
-            ## Transmission prob is the part of the likelihood function corresponding to each individual
-            transmission_prob <- rep(0, n_indiv)
-            #if (explicit_phi) {
-            #    phis <- pars[phi_indices]
-            #   if (spline_phi) {
-                    ## If using spline term for FOI, add here
-            #        weights <- pars[weights_indices]
-            #       knots <- pars[knot_indices]
-             #       liks <- liks + calc_phi_probs_spline(
-            #                           phis, knots, weights,
-            #                           infection_history_mat, age_mask
-             #                      )
-             #   } else {
-                    ## Or the baseline transmission likelihood contribution
-            #        transmission_prob <- calc_phi_probs_indiv(
-              #          phis, infection_history_mat,
-             #           age_mask, sample_mask
-              #      )
-             #   }
-           #  }
-            if (solve_likelihood) {
                 ## Calculate likelihood for unique antibody_levels and repeat data
                 ## Sum these for each individual
                 liks <- numeric(n_indivs)
