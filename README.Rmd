@@ -62,7 +62,7 @@ plot_antibody_data(example_antibody_data,example_inf_hist,example_antigenic_map$
 t1 <- Sys.time()
 res <- run_MCMC(example_par_tab, example_antibody_data, example_antigenic_map,
                 filename="test", prior_version=2,
-                mcmc_pars=c(adaptive_period=10000, iterations=20000))
+                mcmc_pars=c(adaptive_period=20000, iterations=80000))
 Sys.time() - t1
 ## Read in the MCMC chains and plot posteriors
 chain <- read.csv(res$chain_file)
