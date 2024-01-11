@@ -191,7 +191,7 @@ expand_summary_inf_chain <- function(inf_chain) {
 #' @useDynLib serosolver
 get_best_pars <- function(chain) {
   tmp_names <- colnames(chain)[2:(ncol(chain) - 1)]
-  best_pars <- as.numeric(chain[which.max(chain[, "lnlike"]), 2:(ncol(chain) - 1)])
+  best_pars <- as.numeric(chain[which.max(chain[, "posterior_prob"]), 2:(ncol(chain) - 1)])
   names(best_pars) <- tmp_names
   return(best_pars)
 }
@@ -350,11 +350,12 @@ row.match <- function(x, table, nomatch = NA) {
 #' Sets up a large list of pre-indexing and pre-processing to speed up the model solving during MCMC fitting.
 #' Note that this should be `antibody_data` after subsetting to only `run==1`, as we will figure out elsewhere which solves to use as repeats
 #' @inheritParams create_posterior_func
+#' @param VERBOSE if TRUE, brings warning messages
 #' @return a very long list. See source code directly.
 #' @seealso \code{\link{create_posterior_func}}
 #' @export
 setup_antibody_data_for_posterior_func <- function(antibody_data, antigenic_map=NULL, possible_exposure_times=NULL,
-                                              age_mask = NULL, n_alive = NULL) {
+                                              age_mask = NULL, n_alive = NULL,VERBOSE=FALSE) {
   essential_colnames <- c("individual", "sample_time", "measurement", "biomarker_id", "biomarker_group","population_group")
   ## How many observation types are there?
   n_indiv <- length(unique(antibody_data$individual))
@@ -365,13 +366,13 @@ setup_antibody_data_for_posterior_func <- function(antibody_data, antigenic_map=
   if (!is.null(antigenic_map)) {
       possible_exposure_times_tmp <- unique(antigenic_map$inf_times) # How many strains are we testing against and what time did they circulate
       if(!is.null(possible_exposure_times) & !identical(possible_exposure_times, possible_exposure_times_tmp)){
-          message(cat("Warning: provided possible_exposure_times argument does not match entries in the antigenic map. Please make sure that there is an entry in the antigenic map for each possible circulation time. Using the antigenic map times."))
+          if(VERBOSE) message(cat("Warning: provided possible_exposure_times argument does not match entries in the antigenic map. Please make sure that there is an entry in the antigenic map for each possible circulation time. Using the antigenic map times.\n"))
       }
       possible_exposure_times <- possible_exposure_times_tmp
       
       ## If no observation types assumed, set all to 1.
       if (!("biomarker_group" %in% colnames(antigenic_map))) {
-          message(cat("Note: no biomarker_group detection in antigenic_map. Aligning antigenic map with par_tab."))
+        if(VERBOSE) message(cat("Note: no biomarker_group detection in antigenic_map. Aligning antigenic map with par_tab.\n"))
           antigenic_map_tmp <- replicate(n_biomarker_groups,antigenic_map,simplify=FALSE)
           for(biomarker_group in unique_biomarker_groups){
               antigenic_map_tmp[[biomarker_group]]$biomarker_group <- biomarker_group

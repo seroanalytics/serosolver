@@ -11,7 +11,7 @@
 #' @param filename The full filepath at which the MCMC chain should be saved. "_chain.csv" will be appended to the end of this, so filename should have no file extensions
 #' @param CREATE_POSTERIOR_FUNC Pointer to posterior function used to calculate a likelihood. This will probably be \code{\link{create_posterior_func}}
 #' @param CREATE_PRIOR_FUNC User function of prior for model parameters. Should take parameter values only
-#' @param version which infection history assumption version to use? See \code{\link{describe_priors}} for options. Can be 1, 2, 3 or 4
+#' @param prior_version which infection history assumption prior_version to use? See \code{\link{describe_priors}} for options. Can be 1, 2, 3 or 4
 #' @param measurement_indices optional NULL. For measurement bias function. Vector of indices of length equal to number of circulation times. For each year, gives the index of parameters named "rho" that correspond to each time period
 #' @param measurement_random_effects optional FALSE. Boolean indicating if measurement bias is a random effects term. If TRUE adds a component to the posterior calculation that calculates the probability of a set of measurement shifts "rho", given a mean and standard deviation
 #' @param proposal_ratios optional NULL. Can set the relative sampling weights of the infection state times. Should be an integer vector of length matching nrow(antigenic_map). Otherwise, leave as NULL for uniform sampling.
@@ -47,7 +47,7 @@
 #' data(example_antibody_data)
 #' data(example_par_tab)
 #' data(example_antigenic_map)
-#' res <- run_MCMC(example_par_tab[example_par_tab$names != "phi",], example_antibody_data, example_antigenic_map, version=2)
+#' res <- run_MCMC(example_par_tab[example_par_tab$names != "phi",], example_antibody_data, example_antigenic_map, prior_version=2)
 #' }
 #' @export
 run_MCMC <- function(par_tab,
@@ -60,7 +60,7 @@ run_MCMC <- function(par_tab,
                      filename = "test",
                      CREATE_POSTERIOR_FUNC = create_posterior_func,
                      CREATE_PRIOR_FUNC = NULL,
-                     version = 1,
+                     prior_version = 1,
                      measurement_indices = NULL,
                      measurement_random_effects = FALSE,
                      proposal_ratios = NULL,
@@ -70,7 +70,7 @@ run_MCMC <- function(par_tab,
                      n_alive = NULL,
                      ...) {
   ## Error checks --------------------------------------
-  par_tab <- check_par_tab(par_tab, TRUE, version)
+  par_tab <- check_par_tab(par_tab, TRUE, prior_version)
   ## Sort out MCMC parameters --------------------------------------
   ###################################################################
   mcmc_pars_used <- c(
@@ -104,23 +104,23 @@ run_MCMC <- function(par_tab,
     propose_from_prior <- mcmc_pars_used["propose_from_prior"]
   ###################################################################
 
-  ## Sort out which version to run --------------------------------------
+  ## Sort out which prior_version to run --------------------------------------
   prior_on_total <- FALSE
-  if (version == 1) { ## Lambda version
+  if (prior_version == 1) { ## Lambda prior_version
     prop_print <- "Prior version 1: Using phi prior on infection history, with symmetric proposal probabilities"
     hist_proposal <- 1
-  } else if (version == 2) { ## Gibbs version
+  } else if (prior_version == 2) { ## Gibbs prior_version
     prop_print <- "Prior version 2: Using integrated FOI prior on infection history, with gibbs sampling of infections"
     hist_proposal <- 2
-  } else if (version == 3) { ## Beta binomial version
+  } else if (prior_version == 3) { ## Beta binomial prior_version
     prop_print <- "Prior version 3: Using beta prior on total number of infections for an individual, with proposals from this prior"
     hist_switch_prob <- 0
     hist_proposal <- 3
-  } else if (version == 4) {
+  } else if (prior_version == 4) {
     prop_print <- "Prior version 4: Using beta prior on total number of infections across all years and all individuals, with gibbs sampling of infections"
     hist_proposal <- 2
     prior_on_total <- TRUE
-  } else { ## By default, use phi version
+  } else { ## By default, use phi prior_version
     stop("Invalid version specified - must be 1 (phi), 2 (beta on times), 3 (beta on individual) or 4 (beta on overall)")
   }
   message(cat(prop_print, "\n"))
@@ -235,7 +235,7 @@ run_MCMC <- function(par_tab,
     antibody_data,
     antigenic_map,
     possible_exposure_times,
-    version=version,
+    prior_version=prior_version,
     solve_likelihood,
     age_mask,
     measurement_indices_by_time = measurement_indices,
@@ -254,7 +254,7 @@ run_MCMC <- function(par_tab,
       antibody_data,
       antigenic_map,
       possible_exposure_times,
-      version=version,
+      prior_version=prior_version,
       solve_likelihood,
       age_mask,
       measurement_indices_by_time = measurement_indices,
@@ -275,7 +275,10 @@ run_MCMC <- function(par_tab,
     if (is.null(start_inf_hist)) {
         infection_histories <- setup_infection_histories_antibody_level(antibody_data, possible_exposure_times, space = 5, antibody_cutoff = 3)
     }
+
+  
     check_inf_hist(antibody_data, possible_exposure_times, infection_histories)
+
     ## Initial likelihoods and individual priors
     tmp_posterior <- posterior_simp(current_pars, infection_histories)
     indiv_likelihoods <- tmp_posterior[[1]] / temp
@@ -293,9 +296,9 @@ run_MCMC <- function(par_tab,
         infection_model_prior_shape2 <- prior_pars["infection_model_prior_shape2"]
         prior_probab <- 0
 
-    ## If prior version 2 or 4
+    ## If prior prior_version 2 or 4
     if (hist_proposal == 2) {
-      ## Prior version 4
+      ## Prior prior_version 4
       if (prior_on_total) {
         n_infections <- sum_infections_by_group(prior_infection_history, group_ids_vec, n_groups)
         n_infections_group <- rowSums(n_infections)
@@ -464,7 +467,7 @@ run_MCMC <- function(par_tab,
                 proposal[phi_indices] <- tmp_hist_switch[[2]]
                 infection_history_swap_n <- infection_history_swap_n + 1
             }
-            ## Gibbs sampler version, integrate out phi
+            ## Gibbs sampler prior_version, integrate out phi
         } else if (hist_proposal == 2) {
             ## Swap entire contents or propose new
             if (inf_swap_prob > hist_switch_prob) {
@@ -587,7 +590,7 @@ run_MCMC <- function(par_tab,
         ## If normal proposal
         if (inf_swap_prob > hist_switch_prob) {
             ## MH step for each individual
-            ## For prior version 1 and 3, need to explicitly do acceptances
+            ## For prior prior_version 1 and 3, need to explicitly do acceptances
             if (hist_proposal != 2) {
                 log_probs <- (new_indiv_posteriors[indiv_sub_sample] -
                               indiv_posteriors[indiv_sub_sample]) +
@@ -616,7 +619,7 @@ run_MCMC <- function(par_tab,
                 histaccepted[change_i] <- histaccepted[change_i] + 1
 
                 proposal_ratio <- rep(0, n_indiv)
-                ## For prior versions 2 and 4, have already done the acceptance rates
+                ## For prior prior_versions 2 and 4, have already done the acceptance rates
             } else {
                 if (!is.na(log_prob) & !is.nan(log_prob) & is.finite(log_prob)) {
                     infection_histories <- new_infection_histories
@@ -687,7 +690,7 @@ run_MCMC <- function(par_tab,
       pcur <- tempaccepted / tempiter ## get current acceptance rate
       message(cat("Pcur: ", signif(pcur, 3), "\n", sep = "\t"))
       message(cat("Step sizes: ", signif(steps, 3), "\n", sep = "\t"))
-      message(cat("population_group inf hist swap pcur: ",
+      message(cat("Group inf hist swap pcur: ",
         signif(infection_history_swap_accept / infection_history_swap_n, 3),"\n", 
         sep = "\t"
       ))
@@ -783,7 +786,7 @@ run_MCMC <- function(par_tab,
           message(cat("Pcur theta: ", signif(pcur, 3), "\n", sep = "\t"))
           message(cat("Step sizes: ", signif(steps, 3), "\n", sep = "\t"))
           message(cat("Pcur group inf hist swap: ", signif(pcur_hist_swap, 3), "\n", sep = "\t"))
-          message(cat("population_group inf hist swap propn: ", year_swap_propn, "\n", sep = "\t"))
+          message(cat("Group inf hist swap propn: ", year_swap_propn, "\n", sep = "\t"))
           pcur_hist <- histaccepted / histiter ## Overall
           ## If not accepting, send a warning
           if (all(pcur[!is.nan(pcur)] == 0)) {

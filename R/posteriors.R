@@ -15,6 +15,7 @@
 #' @param function_type integer specifying which version of this function to use. Specify 1 to give a posterior solving function; 2 to give the gibbs sampler for infection history proposals; otherwise just solves the titre model and returns predicted titres. NOTE that this is not the same as the attack rate prior argument, \code{version}!
 #' @param titre_before_infection TRUE/FALSE value. If TRUE, solves titre predictions, but gives the predicted titre at a given time point BEFORE any infection during that time occurs.
 #' @param data_type integer, currently accepting 1 for discrete or 2 for continuous. 
+#' @param VERBOSE if TRUE, prints warning messages
 #' @param ... other arguments to pass to the posterior solving function
 #' @return a single function pointer that takes only pars and infection_histories as unnamed arguments. This function goes on to return a vector of posterior values for each individual
 #' @examples
@@ -47,31 +48,31 @@ create_posterior_func <- function(par_tab,
                                   antibody_level_before_infection=FALSE,
                                   data_type=1,
                                   biomarker_groups_weights =1,
+                                  VERBOSE=FALSE,
                                   ...) {
-
-    check_par_tab(par_tab, TRUE, prior_version)
+    check_par_tab(par_tab, TRUE, prior_version,VERBOSE)
     if (!("population_group" %in% colnames(antibody_data))) {
         antibody_data$population_group <- 1
     }
    
     ## Add a dummy observation type variable if not provided
     if (!("biomarker_group" %in% colnames(antibody_data))) {
-        message(cat("Note: no biomarker_group detected in antibody_data. Assuming all biomarker_group as 1."))
+        if(VERBOSE) message(cat("Note: no biomarker_group detected in antibody_data. Assuming all biomarker_group as 1."))
         antibody_data$biomarker_group <- 1
     }
     
     if (!("biomarker_group" %in% colnames(par_tab))) {
-        message(cat("Note: no biomarker_group detected in par_tab. Assuming all biomarker_group as 1."))
+      if(VERBOSE) message(cat("Note: no biomarker_group detected in par_tab. Assuming all biomarker_group as 1."))
         par_tab$biomarker_group <- 1
     }
     if (!is.null(measurement_indices_by_time) & !("biomarker_group" %in% colnames(measurement_indices_by_time))) {
-      message(cat("Note: no biomarker_group detected in measurement_indices_by_time. Assuming all biomarker_group as 1."))
+      if(VERBOSE) message(cat("Note: no biomarker_group detected in measurement_indices_by_time. Assuming all biomarker_group as 1."))
       measurement_indices_by_time$biomarker_group <- 1
     }
   
     ## Check that antibody data is formatted correctly
-    check_data(antibody_data)
-    antibody_data <- antibody_data %>% arrange(individual, biomarker_group, sample_times, biomarker_id, repeat_number)
+    check_data(antibody_data,VERBOSE)
+    antibody_data <- antibody_data %>% arrange(individual, biomarker_group, sample_time, biomarker_id, repeat_number)
     
     ## Get unique observation types
     unique_biomarker_groups <- unique(antibody_data$biomarker_group)
@@ -96,13 +97,13 @@ create_posterior_func <- function(par_tab,
     if (!is.null(antigenic_map)) {
         possible_exposure_times_tmp <- unique(antigenic_map$inf_times) # How many strains are we testing against and what time did they circulate
         if(!is.null(possible_exposure_times) & !identical(possible_exposure_times, possible_exposure_times_tmp)){
-            message(cat("Warning: provided possible_exposure_times argument does not match entries in the antigenic map. Please make sure that there is an entry in the antigenic map for each possible circulation time. Using the antigenic map times."))
+          if(VERBOSE) message(cat("Warning: provided possible_exposure_times argument does not match entries in the antigenic map. Please make sure that there is an entry in the antigenic map for each possible circulation time. Using the antigenic map times."))
         }
       possible_exposure_times <- possible_exposure_times_tmp
       
       ## If no observation types assumed, set all to 1.
       if (!("biomarker_group" %in% colnames(antigenic_map))) {
-          message(cat("Note: no biomarker_group detection in antigenic_map. Aligning antigenic map with par_tab."))
+        if(VERBOSE) message(cat("Note: no biomarker_group detection in antigenic_map. Aligning antigenic map with par_tab."))
           antigenic_map_tmp <- replicate(n_biomarker_groups,antigenic_map,simplify=FALSE)
           for(biomarker_group in unique_biomarker_groups){
               antigenic_map_tmp[[biomarker_group]]$biomarker_group <- biomarker_group
@@ -126,15 +127,15 @@ create_posterior_func <- function(par_tab,
     antibody_data_repeats <- antibody_data[antibody_data$repeat_number != 1, ]
     ## Find which entry in antibody_data_unique each antibody_data_repeats entry should correspond to
     tmp <- row.match(
-        antibody_data_repeats[, c("individual", "sample_times", "biomarker_group", "biomarker_id")],
-        antibody_data_unique[, c("individual", "sample_times", "biomarker_group", "biomarker_id")]
+        antibody_data_repeats[, c("individual", "sample_time", "biomarker_group", "biomarker_id")],
+        antibody_data_unique[, c("individual", "sample_time", "biomarker_group", "biomarker_id")]
     )
     antibody_data_repeats$index <- tmp
 
     ## Which entries in the overall antibody_data matrix does each entry in antibody_data_unique correspond to?
     overall_indices <- row.match(
-        antibody_data[, c("individual", "sample_times", "biomarker_group","biomarker_id")],
-        antibody_data_unique[, c("individual", "sample_times", "biomarker_group","biomarker_id")]
+        antibody_data[, c("individual", "sample_time", "biomarker_group","biomarker_id")],
+        antibody_data_unique[, c("individual", "sample_time", "biomarker_group","biomarker_id")]
     )
 
     ## Setup data vectors and extract
@@ -158,7 +159,7 @@ create_posterior_func <- function(par_tab,
     exposure_id_indices <- setup_dat$exposure_id_indices
     
     ## Sample collection times, entry for each unique individual, observation type and sample
-    sample_times <- setup_dat$sample_times
+    sample_times <- setup_dat$sample_time
     ## Indices related to entries in sample_data
     sample_data_start <- setup_dat$sample_data_start
     
@@ -167,7 +168,7 @@ create_posterior_func <- function(par_tab,
     antibody_data_start <- setup_dat$antibody_data_start
     
     ## Indices related to entries in type_data
-    type_data_start <- setup_dat$par_type_data_start
+    type_data_start <- setup_dat$type_data_start
     biomarker_groups <- setup_dat$biomarker_groups
     
     ## Indices related to entries in the antigenic map
@@ -183,7 +184,7 @@ create_posterior_func <- function(par_tab,
     ## Used to summarize into per-individual likelihoods later
     nrows_per_individual_in_data <-  antibody_data_unique %>% group_by(individual, biomarker_group) %>% 
         tally() %>% 
-        pivot_wider(id_cols=individual,values_from=n,names_from=biomarker_group,values_fill=0) %>%
+        tidyr::pivot_wider(id_cols=individual,values_from=n,names_from=biomarker_group,values_fill=0) %>%
         ungroup() %>%
         select(-individual)
     nrows_per_individual_in_data <- nrows_per_individual_in_data %>% 
@@ -198,7 +199,7 @@ create_posterior_func <- function(par_tab,
     ## Used to summarize into per-individual likelihoods later
     nrows_per_individual_in_data_repeats <-  antibody_data_repeats %>% group_by(individual, biomarker_group) %>% 
         tally() %>% 
-        pivot_wider(id_cols=individual,values_from=n,names_from=biomarker_group,values_fill=0) %>%
+        tidyr::pivot_wider(id_cols=individual,values_from=n,names_from=biomarker_group,values_fill=0) %>%
         ungroup()
     
     ## Need to make sure that there are entries for each individual, even if 0s
@@ -233,8 +234,8 @@ create_posterior_func <- function(par_tab,
         tmp_antibody_data_repeats <- antibody_data_repeats[antibody_data_repeats$biomarker_group == x,]
         
         tmp <- row.match(
-            tmp_antibody_data_repeats[, c("individual", "sample_times", "biomarker_group", "biomarker_id")],
-            tmp_antibody_data[, c("individual", "sample_times", "biomarker_group", "biomarker_id")]
+            tmp_antibody_data_repeats[, c("individual", "sample_time", "biomarker_group", "biomarker_id")],
+            tmp_antibody_data[, c("individual", "sample_time", "biomarker_group", "biomarker_id")]
         )
         
         antibody_levels_unique_list[[x]] <- tmp_antibody_data$measurement
@@ -331,7 +332,6 @@ create_posterior_func <- function(par_tab,
                 antigenic_map_long[,biomarker_group] <- create_cross_reactivity_vector(antigenic_map_melted[[biomarker_group]], cr_longs[biomarker_group])
                 antigenic_map_short[,biomarker_group] <- create_cross_reactivity_vector(antigenic_map_melted[[biomarker_group]], cr_shorts[biomarker_group])
             }
-
             y_new <- antibody_model(
                 theta, 
                 theta_indices_unique, 

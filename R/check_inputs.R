@@ -3,6 +3,7 @@
 #' Checks that the infection history matrix is allowable given the birth dates and sampling times of the data
 #' @param antibody_data the data frame of titre data
 #' @param possible_exposure_times vector of times at which individuals could be exposed e.g., `seq(1968,2015,by=1)`
+#' @param VERBOSE if TRUE, prints warning messages
 #' @param inf_hist the infection history matrix, with nrows = number indivs and ncols = length(possible_exposure_times)
 #' @return a single boolean value, FALSE if the check passes, otherwise throws an error
 #' @family check_inputs
@@ -11,7 +12,7 @@
 #' times <- 1968:2015
 #' check_inf_hist(example_antibody_data, times, example_inf_hist)
 #' @export
-check_inf_hist <- function(antibody_data, possible_exposure_times, inf_hist){
+check_inf_hist <- function(antibody_data, possible_exposure_times, inf_hist,VERBOSE=FALSE){
     DOBs <- get_DOBs(antibody_data)
     age_mask <- create_age_mask(DOBs[,2],possible_exposure_times)
     sample_mask <- create_sample_mask(antibody_data, possible_exposure_times)
@@ -31,8 +32,10 @@ check_inf_hist <- function(antibody_data, possible_exposure_times, inf_hist){
         }
     }
     if (any(res)) {
+      if(VERBOSE){
         message(cat("Which infections before birth: ", which(before_born), "\n"))
         message(cat("Which infections after last sample: ", which(after_sample), "\n"))
+      }
         stop("Error in inf hist - infections occuring before individuals are born of after their latest sample\n")
     }
     return(any(res))
@@ -45,20 +48,21 @@ check_inf_hist <- function(antibody_data, possible_exposure_times, inf_hist){
 #' @param par_tab the parameter table controlling information such as bounds, initial values etc
 #' @param mcmc logical, if TRUE then checks are performed for the MCMC algorithm. Use FALSE when simulating data
 #' @param version which version of the posterior function is being used? See \code{\link{create_posterior_func}}
+#' @param VERBOSE if TRUE, prints warning messages
 #' @return the same par_tab object with corrections if needed
 #' @family check_inputs
 #' @examples
 #' data(example_par_tab)
 #' check_par_tab(example_par_tab, FALSE, version=1)
 #' @export
-check_par_tab <- function(par_tab, mcmc = FALSE, version = NULL) {
+check_par_tab <- function(par_tab, mcmc = FALSE, version = NULL,VERBOSE=FALSE) {
     ## Checks that should happen in simulate_data and run_MCMC
     essential_names <- c("names","values","fixed","lower_bound","upper_bound","lower_start","upper_start","par_type")
     if (!all(essential_names %in% colnames(par_tab))) {
         message(paste(c("Some column names missing from par_tab: ", setdiff(essential_names,colnames(par_tab))),collapse=" "))
      
         if(!("type" %in% colnames(par_tab))){
-          message("Adding \"par_type\" to par_tab variables.")
+          if(VERBOSE) message("Adding \"par_type\" to par_tab variables.")
           par_tab$par_type <- 1
         }
     }
@@ -71,7 +75,7 @@ check_par_tab <- function(par_tab, mcmc = FALSE, version = NULL) {
     if (mcmc == TRUE) {
       
       if(!("steps" %in% colnames(par_tab))){
-        message("Adding \"steps\" to par_tab variables.")
+        if(VERBOSE) message("Adding \"steps\" to par_tab variables.")
         par_tab$steps <- 0.1
       }
       
@@ -112,31 +116,32 @@ check_par_tab <- function(par_tab, mcmc = FALSE, version = NULL) {
 
 #' Checks the entries of data used in run_MCMC
 #' @param data the data frame of data to be fitted. Must have columns: group (index of group); individual (integer ID of individual); samples (numeric time of sample taken); virus (numeric time of when the virus was circulating); titre (integer of titre value against the given virus at that sampling time)
+#' @param VERBOSE if TRUE, prints warning messages
 #' @return the same data object with corrections if needed
 #' @family check_inputs
 #' @examples
 #' data(example_antibody_data)
 #' check_data(example_antibody_data)
 #' @export
-check_data <- function(data) {
+check_data <- function(data,VERBOSE=FALSE) {
     ## Check that all columns are present
     col.names <- c("individual", "sample_time", "biomarker_id","biomarker_group", "measurement", "repeat_number","population_group","birth")
     ## If there are any missing columns (NOTE: not checking if group or run are present)
     if (all(col.names %in% colnames(data)) != TRUE) {
         missing.cols <- col.names[which(col.names %in% colnames(data) == FALSE)] ## Find the missing column names
-        message(paste(c("The following column(s) are missing from data: ", missing.cols), collapse = " "))
+        if(VERBOSE) message(paste(c("The following column(s) are missing from data: ", missing.cols), collapse = " "))
 
         ## Add missing variable names
         if(!("biomarker_group" %in% colnames(data))){
-          message("Adding \"biomarker_group\" to data variables.")
+          if(VERBOSE) message("Adding \"biomarker_group\" to data variables.")
           data$biomarker_group <- 1
         }
         if(!("population_group" %in% colnames(data))){
-          message("Adding \"population_group\" to data variables.")
+          if(VERBOSE) message("Adding \"population_group\" to data variables.")
           data$population_group <- 1
         }
         if(!("repeat_number" %in% colnames(data))){
-          message("Adding \"repeat_number\" to data variables.")
+          if(VERBOSE) message("Adding \"repeat_number\" to data variables.")
           data$repeat_number <- 1
         }
     }

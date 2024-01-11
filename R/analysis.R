@@ -297,7 +297,8 @@ generate_quantiles <- function(x, sig_f = 3, qs = c(0.025, 0.5, 0.975), as_text 
 #' @param add_residuals if true, returns an extra output summarising residuals between the model prediction and data
 #' @param measurement_indices_by_time default NULL, optional vector giving the index of `measurement_bias` that each strain uses the measurement shift from from. eg. if there's 6 circulation years and 3 strain clusters
 #' @param for_res_plot TRUE/FALSE value. If using the output of this for plotting of residuals, returns the actual data points rather than summary statistics
-#' @param expand_antibody_data TRUE/FALSE value. If TRUE, solves antibody level predictions for all possible infection times. If left FALSE, then only solves for the infections times at which a antibody level against the circulating biomarker_id was measured in antibody_data.
+#' @param expand_antibody_data TRUE/FALSE value. If TRUE, solves antibody level predictions for the entire study period (i.e., between the range of antibody_data$sample_time). If left FALSE, then only solves for the infections times at which a antibody level against the circulating biomarker_id was measured in antibody_data.
+#' @param expand_to_all_times TRUE/FALSE value. If TRUE, solves antibody level predictions for all possible infection times (i.e., for the range in possible_exposure_times). If left FALSE, then only solves for the infections times at which a antibody level against the circulating biomarker_id was measured in antibody_data.
 #' @param antibody_level_before_infection TRUE/FALSE value. If TRUE, solves antibody level predictions, but gives the predicted antibody level at a given time point BEFORE any infection during that time occurs.
 #' @param for_regression if TRUE, returns posterior draws rather than posterior summaries
 #' @param data_type integer, currently accepting 1 or 2. Set to 1 for discretized, bounded data, or 2 for continuous, bounded data. 
@@ -318,9 +319,10 @@ generate_quantiles <- function(x, sig_f = 3, qs = c(0.025, 0.5, 0.975), as_text 
 get_antibody_level_predictions <- function(chain, infection_histories, antibody_data,
                                            individuals, antigenic_map=NULL,
                                            possible_exposure_times=NULL, par_tab,
-                                           nsamp = 100, add_residuals = FALSE,
+                                           nsamp = 1000, add_residuals = FALSE,
                                            measurement_indices_by_time = NULL,
                                            for_res_plot = FALSE, expand_antibody_data = FALSE,
+                                           expand_to_all_times=FALSE,
                                            antibody_level_before_infection=FALSE, for_regression=FALSE,
                                            data_type=1){
   ## Need to align the iterations of the two MCMC chains
@@ -328,6 +330,8 @@ get_antibody_level_predictions <- function(chain, infection_histories, antibody_
   samps <- intersect(unique(infection_histories$sampno), unique(chain$sampno))
   chain <- chain[chain$sampno %in% samps, ]
   infection_histories <- infection_histories[infection_histories$sampno %in% samps, ]
+  
+  nsamp <- min(nsamp, length(unique(chain$sampno)))
   
   ## Take subset of individuals
   antibody_data <- antibody_data[antibody_data$individual %in% individuals, ]
@@ -358,9 +362,14 @@ get_antibody_level_predictions <- function(chain, infection_histories, antibody_
   
   
   if (expand_antibody_data) {
+    if(expand_to_all_times){
+      expand_times <- possible_exposure_times
+    } else {
+      expand_times <- unique(antibody_data$sample_time)
+    }
     antibody_data1 <- expand.grid(
       individual = unique(antibody_data$individual),
-      sample_time = unique(antibody_data$sample_time),
+      sample_time = expand_times,
       biomarker_group=unique(antibody_data$biomarker_group),
       measurement = 0, repeat_number = 1
     )
@@ -371,8 +380,8 @@ get_antibody_level_predictions <- function(chain, infection_histories, antibody_
       c("individual", "sample_time","biomarker_group", "biomarker_id", "measurement", "repeat_number", "population_group", "birth")
     ]
   }
-  model_func <- create_posterior_func(par_tab, antibody_data1, antigenic_map, 100,
-                                     version=2,
+  model_func <- create_posterior_func(par_tab, antibody_data1, antigenic_map, possible_exposure_times,
+                                     prior_version=2,
                                       measurement_indices_by_time = measurement_indices_by_time, function_type = 4,
                                       antibody_level_before_infection=antibody_level_before_infection,
                                       data_type=data_type

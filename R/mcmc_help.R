@@ -143,10 +143,10 @@ setup_infection_histories_antibody_level <- function(antibody_data, possible_exp
           biomarker_id <- times[i]
           dist <- biomarker_id - new_inf ## How many years since last infection?
           measured_biomarker <- unique_biomarkers[which(abs(unique_biomarkers - biomarker_id) == min(abs(unique_biomarkers - biomarker_id)))][1]
-          new_measurement <- max(dat[dat$virus == measured_biomarker, "measurement"]) ## Get max measurement against next biomarker ID along
+          new_measurement <- max(dat[dat$biomarker_id == measured_biomarker, "measurement"]) ## Get max measurement against next biomarker ID along
           ## If this one is better, replace and reset distance
           if (new_measurement > measurement) {
-            new_inf <- strain
+            new_inf <- measured_biomarker
             measurement <- new_measurement
             dist <- 0
           }
@@ -189,7 +189,7 @@ setup_infection_histories <- function(antibody_data, possible_exposure_times, sp
     dob <- as.numeric(ages[ages$individual == individual, "birth"])
     biomarker_ids <- unique(dat$biomarker_id)
 
-    ## What was the most recent strain that the individual could get
+    ## What was the most recent infection that the individual could get
     sample_mask <- create_sample_mask(dat, possible_exposure_times)
 
     ## Only look at biomarker IDs that circulated when an individual was alive and for samples not in the future

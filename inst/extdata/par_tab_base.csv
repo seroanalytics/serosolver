@@ -2,7 +2,6 @@ names,values,fixed,lower_bound,upper_bound,lower_start,upper_start,par_type
 boost_long,1.8,0,0,8,1,3,1
 boost_short,2.7,0,0,8,2,3,1
 antigenic_seniority,0.05,0,0,1,0.01,0.1,1
-wane_long,0,1,0,1,0.01,0.1,1
 wane_short,0.2,0,0,1,0.01,0.1,1
 cr_long,0.1,0,0,1,0.1,0.2,1
 cr_short,0.03,0,0,1,0.01,0.1,1

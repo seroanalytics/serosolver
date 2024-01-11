@@ -31,8 +31,9 @@ plot_antibody_dependent_boosting <- function(chain, n, titres = seq(0, 8, by = 0
 #'
 #' Given outputs from an MCMC run and the data used for fitting, generates an NxM matrix of plots where N is the number of individuals to be plotted and M is the range of sampling times. Where data are available, plots the observed antibody measurements and model predicted trajectories. Unlike plot_infection_histories_cross_sectional, places biomarker_id on the x-axis and facets by sample time and individual.
 #' @inheritParams get_antibody_level_predictions
-#' @param p_ncol integer giving the number of columns of subplots to create if using orientation = "cross-sectional"
-#' @param orientation either "longitudinal" or "cross-sectional"
+#' @param p_ncol integer giving the number of columns of subplots to create if using orientation = "longitudinal"
+#' @param orientation either "cross-sectional" or "longitudinal"
+#' @param subset_biomarker_ids if not NULL, then a vector giving the entries of biomarker_id to include in the longitudinal plot
 #' @return a ggplot2 object
 #' @family infection_history_plots
 #' @examples
@@ -50,29 +51,41 @@ plot_antibody_dependent_boosting <- function(chain, n, titres = seq(0, 8, by = 0
 plot_model_fits <- function(chain, infection_histories, antibody_data,
                                           individuals, antigenic_map=NULL, 
                                           possible_exposure_times=NULL, par_tab,
-                                          nsamp = 100,
+                                          nsamp = 1000,
                                           measurement_indices_by_time = NULL,
-                            p_ncol=length(individuals)/2,data_type=1,
-                            orientation="longitudinal") {
+                            p_ncol=length(individuals)/2,
+                            data_type=1,
+                            expand_to_all_times=FALSE,
+                            orientation="cross-sectional",
+                            subset_biomarker_ids=NULL) {
   individuals <- individuals[order(individuals)]
+  if(is.null(possible_exposure_times)){
+    possible_exposure_times <- unique(antigenic_map$inf_times)
+ }
+  
   ## Generate antibody predictions
-  titre_preds <- get_antibody_level_predictions(
+  antibody_preds <- get_antibody_level_predictions(
     chain, infection_histories, antibody_data, individuals,
     antigenic_map, possible_exposure_times, 
     par_tab, nsamp, FALSE, 
     measurement_indices_by_time,
     expand_antibody_data=TRUE,
+    expand_to_all_times=expand_to_all_times,
     data_type=data_type
   )
-  
   ## Use these antibody predictions and summary statistics on infection histories
-  to_use <- titre_preds$predicted_observations
-  model_preds <- titre_preds$predictions
+  to_use <- antibody_preds$predicted_observations
+  model_preds <- antibody_preds$predictions
   to_use$individual <- individuals[to_use$individual]
   
-  inf_hist_densities <- titre_preds$histories
+  inf_hist_densities <- antibody_preds$histories
   inf_hist_densities$xmin <- inf_hist_densities$variable-0.5
   inf_hist_densities$xmax <- inf_hist_densities$variable+0.5
+  
+  ## Subset infection history densities to not plot infections before sample time
+  inf_hist_densities <- inf_hist_densities %>% 
+    left_join(model_preds[model_preds$individual %in% individuals,c("individual","sample_time")] %>% dplyr::distinct(),by="individual") %>% 
+    dplyr::filter(variable <= sample_time)
   
   max_measurement <- max(antibody_data$measurement,na.rm=TRUE)
   min_measurement <- min(antibody_data$measurement,na.rm=TRUE)
@@ -80,7 +93,7 @@ plot_model_fits <- function(chain, infection_histories, antibody_data,
   max_x <- max(inf_hist_densities$variable) + 5
   time_range <- range(inf_hist_densities$variable)
   
-  if(orientation=="longitudinal"){
+  if(orientation=="cross-sectional"){
     titre_pred_p <- ggplot(to_use) +
       geom_rect(data=inf_hist_densities,
                 aes(xmin=xmin,xmax=xmax,fill=value),ymin=min_measurement-1,ymax=max_measurement+2)+
@@ -110,21 +123,33 @@ plot_model_fits <- function(chain, infection_histories, antibody_data,
       scale_y_continuous(breaks=seq(min_measurement,max_measurement+2,by=2)) +
       facet_grid(individual~sample_time)
   } else {
-    titre_pred_p <- ggplot(to_use) +
-      geom_rect(data=inf_hist_densities,
-                aes(xmin=xmin,xmax=xmax,fill=value),ymin=min_measurement-1,ymax=max_measurement+2)+
-      geom_ribbon(aes(x=sample_time,ymin=lower, ymax=upper),alpha=0.25, fill="#009E73",size=0.2)+
-      geom_ribbon(data=model_preds[model_preds$individual %in% individuals,], 
-                  aes(x=sample_time,ymin=lower,ymax=upper),alpha=0.5,fill="#009E73",size=0.2) + 
-      geom_line(data=model_preds, aes(x=sample_time, y=median),linewidth=0.75,color="#009E73")+
+    
+    if(!is.null(subset_biomarker_ids)){
+      to_use <- to_use %>% dplyr::filter(biomarker_id %in% subset_biomarker_ids)
+      model_preds <- model_preds %>% dplyr::filter(biomarker_id %in% subset_biomarker_ids)
+      antibody_data <- antibody_data %>% dplyr::filter(biomarker_id %in% subset_biomarker_ids)
+    }
+      
+    to_use$biomarker_id <- as.factor(to_use$biomarker_id)
+    model_preds$biomarker_id <- as.factor(to_use$biomarker_id)
+    antibody_data$biomarker_id <- as.factor(antibody_data$biomarker_id)
+    
+      
+    titre_pred_p <- ggplot(to_use[to_use$individual %in% individuals,]) +
+      geom_ribbon(aes(x=sample_time,ymin=lower, ymax=upper,fill=biomarker_id,group=biomarker_id),alpha=0.25, size=0.2)+
+      #geom_ribbon(data=model_preds[model_preds$individual %in% individuals,], 
+      #            aes(x=sample_time,ymin=lower,ymax=upper,fill=biomarker_id,group=biomarker_id),alpha=0.5,size=0.2) + 
+      geom_line(data=model_preds, aes(x=sample_time, y=median,color=biomarker_id,group=biomarker_id),linewidth=0.75)+
       geom_rect(ymin=max_measurement,ymax=max_measurement+2,xmin=0,xmax=max_x,fill="grey70")+
       geom_rect(ymin=min_measurement-2,ymax=min_measurement,xmin=0,xmax=max_x,fill="grey70")+
       scale_x_continuous(expand=c(0,0)) +
-      scale_fill_gradient(low="white",high="#D55E00",limits=c(0,1),name="Posterior probability of infection")+
-      guides(fill=guide_colourbar(title.position="top",title.hjust=0.5,label.position = "bottom",
-                                  barwidth=10,barheight = 0.5, frame.colour="black",ticks=FALSE)) +
-      geom_point(data=antibody_data[antibody_data$individual %in% individuals,], aes(x=sample_time, y=measurement),shape=23, 
-                 col="black",size=1,fill=viridis(1)[1])+
+      #scale_fill_gradient(low="white",high="#D55E00",limits=c(0,1),name="Posterior probability of infection")+
+     # guides(fill=guide_colourbar(title.position="top",title.hjust=0.5,label.position = "bottom",
+      #                            barwidth=10,barheight = 0.5, frame.colour="black",ticks=FALSE)) +
+      scale_fill_viridis_d(name="Biomarker ID") +
+      scale_color_viridis_d(name="Biomarker ID") +
+      geom_point(data=antibody_data[antibody_data$individual %in% individuals,], aes(x=sample_time, y=measurement,col=biomarker_id),shape=23, 
+                 size=1)+
       ylab("log antibody level") +
       xlab("Time of antigen circulation") +
       theme_pubr()+
@@ -134,8 +159,9 @@ plot_model_fits <- function(chain, infection_histories, antibody_data,
             axis.title=element_text(size=10),
             axis.text.x=element_text(angle=45,hjust=1,size=8),
             axis.text.y=element_text(size=8),
-            plot.margin=margin(r=15,t=5,l=5))+
-      coord_cartesian(ylim=c(min_measurement,max_measurement+1),xlim=range(possible_exposure_times)) +
+            plot.margin=margin(r=15,t=5,l=5),
+            legend.position="bottom")+
+      coord_cartesian(ylim=c(min_measurement,max_measurement+1),xlim=range(to_use$sample_time)) +
       scale_y_continuous(breaks=seq(min_measurement,max_measurement+2,by=2)) +
       facet_wrap(~individual,ncol=p_ncol)
   }

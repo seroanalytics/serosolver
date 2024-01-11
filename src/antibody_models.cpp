@@ -47,7 +47,7 @@ NumericVector antibody_model(const NumericVector &theta,
   int n = infection_history_mat.nrow();
   int number_possible_infections = infection_history_mat.ncol();
   int n_measurements = biomarker_id_indices.size();
-  
+
   // To track how far through the larger vectors we move for each individual
   int biomarker_group=0;
   int type_start;
@@ -127,8 +127,7 @@ NumericVector antibody_model(const NumericVector &theta,
   // To store calculated titres
   NumericVector predicted_antibody_levels(n_measurements, min_measurement);
 
-  
-    // For each individual
+  // For each individual
   for (int i = 1; i <= n; ++i) {
     indices = infection_history_mat(i-1,_) > 0;
     

@@ -288,7 +288,7 @@ simulate_group <- function(n_indiv,
     ## Combine data
     dat <- rbind(dat, y[, c("individual", "sample_time", "biomarker_id", "biomarker_group","measurement")])
   }
-  dat <- dat %>% group_by(individual,sample_time,biomarker_id,biomarker_group) %>% mutate(run = 1:n()) %>% ungroup() %>% as.data.frame()
+  dat <- dat %>% group_by(individual,sample_time,biomarker_id,biomarker_group) %>% mutate(repeat_number = 1:n()) %>% ungroup() %>% as.data.frame()
   return(list(antibody_data = dat, infection_history = infection_histories))
 }
 #' Simulate individual data quickly
@@ -344,14 +344,13 @@ simulate_individual_faster <- function(theta,
   sample_data_start <- cumsum(c(0, rep(n_samps,n_biomarker_groups)))
 
   ## Entries in the antigenic map
-  strain_indices <- match(possible_exposure_times, possible_exposure_times) - 1
+  exposure_time_indices <- match(possible_exposure_times, possible_exposure_times) - 1
 
   ## Observation types to match sample times
   type_data_start <- c(0,n_biomarker_groups)
-  
   ## Entries in the antigenic map for each measured strain
-  measured_strain_indices <- match(rep(rep(measured_biomarker_ids, n_samps), n_biomarker_groups), possible_exposure_times) - 1
-  dat <- matrix(nrow = length(measured_strain_indices) * repeats, ncol = 4) ## To store simulated data
+  measured_biomarker_id_indices <- match(rep(rep(measured_biomarker_ids, n_samps), n_biomarker_groups), possible_exposure_times) - 1
+  dat <- matrix(nrow = length(measured_biomarker_id_indices) * repeats, ncol = 4) ## To store simulated data
   ## Go into C++ code to solve antibody model
   antibody_levels <- antibody_model(
     theta, 
@@ -359,14 +358,14 @@ simulate_individual_faster <- function(theta,
     unique_biomarker_groups,
     inf_hist, 
     possible_exposure_times, 
-    strain_indices,
+    exposure_time_indices,
     sampling_times_long, 
     type_data_start=type_data_start,
     biomarker_groups=unique_biomarker_groups,
     sample_data_start, 
     antibody_data_start,
     nrows_per_sample, 
-    measured_strain_indices,
+    measured_biomarker_id_indices,
     antigenic_map_long,
     antigenic_map_short,
     antigenic_distances,
@@ -455,7 +454,7 @@ simulate_individual <- function(theta,
   rows_per_indiv <- c(0, n_samps)
 
   ## Entries in the antigenic map
-  strain_indices <- match(possible_exposure_times, possible_exposure_times) - 1
+  exposure_time_indices <- match(possible_exposure_times, possible_exposure_times) - 1
 
   ## Entries in the antigenic map for each measured strain
   measured_biomarker_id_indices <- match(rep(measured_biomarker_ids, n_samps), possible_exposure_times) - 1
@@ -463,7 +462,7 @@ simulate_individual <- function(theta,
 
   ## Go into C++ code to solve the antibody model
   antibody_levels <- antibody_model(
-    theta, inf_hist, possible_exposure_times, strain_indices,
+    theta, inf_hist, possible_exposure_times, exposure_time_indices,
     sampling_times, rows_per_indiv, cumu_rows,
     rows_per_blood, measured_biomarker_ids,
     antigenic_map_long, antigenic_map_short,
