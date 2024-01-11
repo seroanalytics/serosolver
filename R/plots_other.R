@@ -15,10 +15,10 @@
 #' data(example_inf_hist)
 #' data(example_antigenic_map)
 #' possible_exposure_times <- example_antigenic_map$inf_times
-#' plot_data(example_antibody_data, example_inf_hist, possible_exposure_times, 5)
+#' plot_antibody_data(example_antibody_data, example_inf_hist, possible_exposure_times, 5)
 #' }
 #' @export
-plot_data <- function(antibody_data, infection_histories, 
+plot_antibody_data <- function(antibody_data, infection_histories, 
                       possible_exposure_times, 
                       n_indivs, start_inf = NULL,
                       study_design="multi-antigen"){
@@ -42,7 +42,7 @@ plot_data <- function(antibody_data, infection_histories,
     if (study_design == "multi-antigen") {
         p1 <- ggplot(antibody_data[antibody_data$individual %in% samps, ]) +
             geom_point(aes(x = as.integer(biomarker_id), y = measurement, col=biomarker_group)) +
-            geom_vline(data = melted_inf_hist[melted_inf_hist$individual %in% samps, ], aes(xintercept = variable), col = "red", linetype = "dashed") +
+            geom_vline(data = melted_inf_hist[melted_inf_hist$individual %in% samps, ], aes(xintercept = variable,linetype="Known infection time"), col = "grey10") +
             theme_bw() +
             xlab("Antigen") +
             facet_grid(individual ~ sample_time)
@@ -50,7 +50,7 @@ plot_data <- function(antibody_data, infection_histories,
         p1 <- ggplot(antibody_data[antibody_data$individual %in% samps, ]) +
             geom_point(aes(x = sample_time, y = measurement, col=biomarker_id, col=biomarker_group)) +
             geom_vline(data = melted_inf_hist[melted_inf_hist$individual %in% samps, ], 
-                       aes(xintercept = variable), col = "red", linetype = "dashed") +
+                       aes(xintercept = variable,linetype="Known infection time"), col = "grey10") +
             theme_bw() +
             xlab("Antigen circulation time") +
             facet_wrap(~individual)
@@ -64,7 +64,7 @@ plot_data <- function(antibody_data, infection_histories,
         melted_start_hist <- melted_start_hist[melted_start_hist$value > 0, ]
         p1 <- p1 + geom_vline(data = melted_start_hist[melted_start_hist$individual %in% samps, ], aes(xintercept = variable), col = "blue", linetype = "dashed")
     }
-    p1 <- p1 + ylab("log antibody level")
+    p1 <- p1 + ylab("log antibody level") + scale_color_viridis_d() + scale_linetype_manual(name="",values=c("Known infection time"="dashed"))
     return(p1)
 }
 

@@ -12,11 +12,13 @@ plot_model_fits(
   antigenic_map = NULL,
   possible_exposure_times = NULL,
   par_tab,
-  nsamp = 100,
+  nsamp = 1000,
   measurement_indices_by_time = NULL,
   p_ncol = length(individuals)/2,
   data_type = 1,
-  orientation = "longitudinal"
+  expand_to_all_times = FALSE,
+  orientation = "cross-sectional",
+  subset_biomarker_ids = NULL
 )
 }
 \arguments{
@@ -38,11 +40,15 @@ plot_model_fits(
 
 \item{measurement_indices_by_time}{default NULL, optional vector giving the index of `measurement_bias` that each strain uses the measurement shift from from. eg. if there's 6 circulation years and 3 strain clusters}
 
-\item{p_ncol}{integer giving the number of columns of subplots to create if using orientation = "cross-sectional"}
+\item{p_ncol}{integer giving the number of columns of subplots to create if using orientation = "longitudinal"}
 
 \item{data_type}{integer, currently accepting 1 or 2. Set to 1 for discretized, bounded data, or 2 for continuous, bounded data.}
 
-\item{orientation}{either "longitudinal" or "cross-sectional"}
+\item{expand_to_all_times}{TRUE/FALSE value. If TRUE, solves antibody level predictions for all possible infection times (i.e., for the range in possible_exposure_times). If left FALSE, then only solves for the infections times at which a antibody level against the circulating biomarker_id was measured in antibody_data.}
+
+\item{orientation}{either "cross-sectional" or "longitudinal"}
+
+\item{subset_biomarker_ids}{if not NULL, then a vector giving the entries of biomarker_id to include in the longitudinal plot}
 }
 \value{
 a ggplot2 object

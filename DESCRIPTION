@@ -1,6 +1,6 @@
 Package: serosolver
 Title: Inference Framework for Serological Data
-Version: 1.0.1
+Version: 1.1.1
 Authors@R: 
     c(person(given = "James",
              family = "Hay",
@@ -35,6 +35,8 @@ Imports:
     data.table,
     ggplot2,
     plyr,
+    dplyr,
+    tidyr,
     Rcpp
 Suggests:
     coda,

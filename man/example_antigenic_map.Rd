@@ -20,11 +20,11 @@ Example of the 2-dimensional antigenic map used through \code{serosolver}. This 
 }
 \seealso{
 Other example_data: 
+\code{\link{example_antibody_data}},
 \code{\link{example_inf_chain}},
 \code{\link{example_inf_hist}},
 \code{\link{example_par_tab}},
-\code{\link{example_theta_chain}},
-\code{\link{example_titre_dat}}
+\code{\link{example_theta_chain}}
 }
 \concept{example_data}
 \keyword{datasets}

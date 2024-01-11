@@ -15,7 +15,7 @@ run_MCMC(
   filename = "test",
   CREATE_POSTERIOR_FUNC = create_posterior_func,
   CREATE_PRIOR_FUNC = NULL,
-  version = 1,
+  prior_version = 1,
   measurement_indices = NULL,
   measurement_random_effects = FALSE,
   proposal_ratios = NULL,
@@ -47,7 +47,7 @@ run_MCMC(
 
 \item{CREATE_PRIOR_FUNC}{User function of prior for model parameters. Should take parameter values only}
 
-\item{version}{which infection history assumption version to use? See \code{\link{describe_priors}} for options. Can be 1, 2, 3 or 4}
+\item{prior_version}{which infection history assumption prior_version to use? See \code{\link{describe_priors}} for options. Can be 1, 2, 3 or 4}
 
 \item{measurement_indices}{optional NULL. For measurement bias function. Vector of indices of length equal to number of circulation times. For each year, gives the index of parameters named "rho" that correspond to each time period}
 
@@ -97,7 +97,7 @@ The \code{mcmc_pars} argument has the following options:
 data(example_antibody_data)
 data(example_par_tab)
 data(example_antigenic_map)
-res <- run_MCMC(example_par_tab[example_par_tab$names != "phi",], example_antibody_data, example_antigenic_map, version=2)
+res <- run_MCMC(example_par_tab[example_par_tab$names != "phi",], example_antibody_data, example_antigenic_map, prior_version=2)
 }
 }
 \seealso{

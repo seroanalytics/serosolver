@@ -4,7 +4,13 @@
 \alias{check_par_tab}
 \title{Check par_tab for simulate_data}
 \usage{
-check_par_tab(par_tab, mcmc = FALSE, version = NULL)
+check_par_tab(
+  par_tab,
+  mcmc = FALSE,
+  version = NULL,
+  possible_exposure_times = NULL,
+  VERBOSE = FALSE
+)
 }
 \arguments{
 \item{par_tab}{the parameter table controlling information such as bounds, initial values etc}
@@ -12,6 +18,10 @@ check_par_tab(par_tab, mcmc = FALSE, version = NULL)
 \item{mcmc}{logical, if TRUE then checks are performed for the MCMC algorithm. Use FALSE when simulating data}
 
 \item{version}{which version of the posterior function is being used? See \code{\link{create_posterior_func}}}
+
+\item{possible_exposure_times}{optional vector of possible exposure times}
+
+\item{VERBOSE}{if TRUE, prints warning messages}
 }
 \value{
 the same par_tab object with corrections if needed

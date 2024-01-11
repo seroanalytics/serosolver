@@ -14,6 +14,8 @@ check_inf_hist(antibody_data, possible_exposure_times, inf_hist)
 \item{possible_exposure_times}{the vector of times corresponding to entries in DOB}
 
 \item{inf_hist}{the starting infection history matrix}
+
+\item{VERBOSE}{if TRUE, prints warning messages}
 }
 \value{
 a single boolean value, FALSE if the check passes, otherwise throws an error

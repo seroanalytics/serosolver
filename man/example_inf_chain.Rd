@@ -15,11 +15,11 @@ Outputs of a quick MCMC run corresponding to the example data. See \code{\link{e
 }
 \seealso{
 Other example_data: 
+\code{\link{example_antibody_data}},
 \code{\link{example_antigenic_map}},
 \code{\link{example_inf_hist}},
 \code{\link{example_par_tab}},
-\code{\link{example_theta_chain}},
-\code{\link{example_titre_dat}}
+\code{\link{example_theta_chain}}
 }
 \concept{example_data}
 \keyword{datasets}

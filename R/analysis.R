@@ -650,3 +650,55 @@ calculate_infection_history_statistics <- function(inf_chain, burnin = 0, years 
     "by_year_cumu" = n_inf_chain_summaries_cumu, "by_indiv_cumu" = n_inf_chain_i_summaries_cumu
   ))
 }
+
+#' Identify runs of infections from posterior
+#'
+#' For each individual and MCMC iteration, uses the infection history MCMC chain and detects runs of consecutive infections.
+#' @param inf_chain data table of the infection histories posterior
+#' @return a tibble giving the consecutive infection run length, the start and end time of each run, which index the run is (ie., which distinct infection), and the time from the end of the previous run, for each i and sampno
+#' @examples
+#' \dontrun{
+#' identify_run_lengths(inf_chain)
+#' }
+#' @export
+identify_run_lengths <- function(inf_chain) {
+  inf_chain %>% 
+    arrange(sampno, i, j) %>%
+    as_tibble() %>%
+    group_by(i, sampno) %>%
+    mutate(run_group = cumsum(c(0, diff(x != 1) != 0))) %>%
+    filter(x == 1) %>%
+    group_by(i, sampno, run_group) %>%
+    summarise(run_length = n(),
+              start_time = first(j),
+              end_time = last(j))%>%
+    group_by(i, sampno) %>%
+    mutate(infection_index = row_number(),
+           time_diff = start_time - lag(end_time,1,default=NA)) %>%
+    ungroup()%>%
+    select(-run_group)
+}
+
+#' Summarize runs of infections from posterior
+#'
+#' Either takes the output of \code{\link{identify_run_lengths}} and produces summary statistics giving the posterior median and 95% quantiles for the length of each infection run
+#' @param inf_chain data table of the infection histories posterior or tibble from \code{\link{identify_run_lengths}}
+#' @return a tibble summarizing the infection run lengths for each individual and distinct infection event
+#' @examples
+#' \dontrun{
+#' summarize_run_lengths(inf_chain)
+#' summarize_run_lengths(identify_run_lengths(inf_chain))
+#' }
+#' @export
+summarize_run_lengths <- function(inf_chain){
+  if(!("run_length" %in% colnames(inf_chain))){
+    summary <- identify_run_lengths(inf_chain) 
+  } else {
+    summary <- inf_chain
+  }
+  summary %>%
+    group_by(i, infection_index) %>% 
+    dplyr::summarize(median_run_length=median(run_length),
+                     lower95_run_length=quantile(run_length,0.025),
+                     upper95_run_length=quantile(run_length,0.975))
+}

@@ -18,6 +18,7 @@ create_posterior_func(
   antibody_level_before_infection = FALSE,
   data_type = 1,
   biomarker_groups_weights = 1,
+  VERBOSE = FALSE,
   ...
 )
 }
@@ -43,6 +44,8 @@ create_posterior_func(
 \item{function_type}{integer specifying which version of this function to use. Specify 1 to give a posterior solving function; 2 to give the gibbs sampler for infection history proposals; otherwise just solves the titre model and returns predicted titres. NOTE that this is not the same as the attack rate prior argument, \code{version}!}
 
 \item{data_type}{integer, currently accepting 1 for discrete or 2 for continuous.}
+
+\item{VERBOSE}{if TRUE, prints warning messages}
 
 \item{...}{other arguments to pass to the posterior solving function}
 

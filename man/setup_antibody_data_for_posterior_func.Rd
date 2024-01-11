@@ -9,7 +9,8 @@ setup_antibody_data_for_posterior_func(
   antigenic_map = NULL,
   possible_exposure_times = NULL,
   age_mask = NULL,
-  n_alive = NULL
+  n_alive = NULL,
+  VERBOSE = FALSE
 )
 }
 \arguments{
@@ -22,6 +23,8 @@ setup_antibody_data_for_posterior_func(
 \item{age_mask}{see \code{\link{create_age_mask}} - a vector with one entry for each individual specifying the first epoch of circulation in which an individual could have been exposed}
 
 \item{n_alive}{if not NULL, uses this as the number alive in a given year rather than calculating from the ages. This is needed if the number of alive individuals is known, but individual birth dates are not}
+
+\item{VERBOSE}{if TRUE, brings warning messages}
 }
 \value{
 a very long list. See source code directly.

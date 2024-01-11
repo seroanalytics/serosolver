@@ -4,10 +4,12 @@
 \alias{check_data}
 \title{Checks the entries of data used in run_MCMC}
 \usage{
-check_data(data)
+check_data(data, VERBOSE = FALSE)
 }
 \arguments{
 \item{data}{the data frame of data to be fitted. Must have columns: group (index of group); individual (integer ID of individual); samples (numeric time of sample taken); virus (numeric time of when the virus was circulating); titre (integer of titre value against the given virus at that sampling time)}
+
+\item{VERBOSE}{if TRUE, prints warning messages}
 }
 \value{
 the same data object with corrections if needed

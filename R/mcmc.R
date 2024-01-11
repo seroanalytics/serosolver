@@ -83,7 +83,7 @@ run_MCMC <- function(par_tab,
     "iterations" = 50000, "popt" = 0.44, "popt_hist" = 0.44, "opt_freq" = 2000, "thin" = 1,
     "adaptive_period" = 10000,
     "save_block" = 100, "thin_hist" = 10, "hist_sample_prob" = 0.5, "switch_sample" = 2, "burnin" = 0,
-    "inf_propn" = 0.5, "move_size" = 3, "hist_opt" = 0, "swap_propn" = 0.5,
+    "inf_propn" = 0.5, "move_size" = 3, "hist_opt" = 1, "swap_propn" = 0.5,
     "hist_switch_prob" = 0, "year_swap_propn" = 1, "propose_from_prior"=TRUE
   )
     mcmc_pars_used[names(mcmc_pars)] <- mcmc_pars
