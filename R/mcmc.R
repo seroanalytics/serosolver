@@ -78,7 +78,7 @@ run_MCMC <- function(par_tab,
     antigenic_map <- data.frame("x_coord"=1,"y_coord"=1,"inf_times"=possible_exposure_times)
   }
   
-  par_tab <- check_par_tab(par_tab, TRUE,possible_exposure_times=possible_exposure_times, version=prior_version)
+  par_tab <- check_par_tab(par_tab, TRUE,possible_exposure_times=possible_exposure_times, version=prior_version,VERBOSE)
   ## Sort out MCMC parameters --------------------------------------
   ###################################################################
   mcmc_pars_used <- c(
@@ -181,7 +181,7 @@ run_MCMC <- function(par_tab,
   ## Extract antibody_data parameters
   ##############
   ## Check the antibody_data input
-  antibody_data <- check_data(antibody_data)
+  antibody_data <- check_data(antibody_data,VERBOSE=VERBOSE)
   
   n_indiv <- length(unique(antibody_data$individual)) # How many individuals in the antibody_data?
 
@@ -279,7 +279,7 @@ run_MCMC <- function(par_tab,
     }
 
   
-    check_inf_hist(antibody_data, possible_exposure_times, infection_histories)
+    check_inf_hist(antibody_data, possible_exposure_times, infection_histories,VERBOSE=VERBOSE)
 
     ## Initial likelihoods and individual priors
     tmp_posterior <- posterior_simp(current_pars, infection_histories)
@@ -696,12 +696,12 @@ run_MCMC <- function(par_tab,
     if (i > (adaptive_period + burnin) & i %% opt_freq == 0) {
       pcur <- tempaccepted / tempiter ## get current acceptance rate
       if(VERBOSE){
-      message(cat("Pcur: ", signif(pcur, 3), "\n", sep = "\t"))
-      message(cat("Step sizes: ", signif(steps, 3), "\n", sep = "\t"))
-      message(cat("Group inf hist swap pcur: ",
-        signif(infection_history_swap_accept / infection_history_swap_n, 3),"\n", 
-        sep = "\t"
-      ))
+        message(cat("Pcur: ", signif(pcur, 3), "\n", sep = "\t"))
+        message(cat("Step sizes: ", signif(steps, 3), "\n", sep = "\t"))
+        message(cat("Group inf hist swap pcur: ",
+          signif(infection_history_swap_accept / infection_history_swap_n, 3),"\n", 
+          sep = "\t"
+        ))
       }
       infection_history_swap_accept <- infection_history_swap_n <- 0
       tempaccepted <- tempiter <- reset
@@ -711,9 +711,9 @@ run_MCMC <- function(par_tab,
       pcur_hist_add <- histaccepted_add / histiter_add ## For adding
       pcur_hist_move <- histaccepted_move / histiter_move ## For adding
       if(VERBOSE){
-      message(cat("Pcur hist add: ", head(signif(pcur_hist_add, 3)),"\n",  sep = "\t"))
-      message(cat("Pcur hist move: ", head(signif(pcur_hist_move, 3)), "\n", sep = "\t"))
-}
+        message(cat("Pcur hist add: ", head(signif(pcur_hist_add, 3)),"\n",  sep = "\t"))
+        message(cat("Pcur hist move: ", head(signif(pcur_hist_move, 3)), "\n", sep = "\t"))
+      }
       ##histadd_overall <- histadd_overall + histiter_add
       ##histmove_overall <- histmove_overall + histiter_move
       
@@ -788,6 +788,7 @@ run_MCMC <- function(par_tab,
               }
           }
           ## Look at infection history proposal sizes
+          if(VERBOSE){
           message(cat("Pcur hist add: ", head(signif(pcur_hist_add, 3)), "\n", sep = "\t"))
           message(cat("No. infections sampled: ", head(n_infs_vec), "\n", sep = "\t"))
           message(cat("Pcur hist move: ", head(signif(pcur_hist_move, 3)), "\n", sep = "\t"))
@@ -796,6 +797,7 @@ run_MCMC <- function(par_tab,
           message(cat("Step sizes: ", signif(steps, 3), "\n", sep = "\t"))
           message(cat("Pcur group inf hist swap: ", signif(pcur_hist_swap, 3), "\n", sep = "\t"))
           message(cat("Group inf hist swap propn: ", year_swap_propn, "\n", sep = "\t"))
+          }
           pcur_hist <- histaccepted / histiter ## Overall
           ## If not accepting, send a warning
           if (all(pcur[!is.nan(pcur)] == 0)) {

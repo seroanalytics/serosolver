@@ -2,10 +2,9 @@
 #'
 #' Plots measured antibody measurements and known infection histories for all individuals, faceted by sample time (multi-antigen panel) or biomarker_id variable (longitudinal single antigen)
 #' @param antibody_data the data frame of antibody data
-#' @param infection_histories the infection history matrix
 #' @param possible_exposure_times the vector of times at which individuals could be infected
 #' @param n_indivs how many individuals to plot
-#' @param start_inf if not NULL, plots the infection history matrix used as the starting point in the MCMC chain
+#' @param infection_histories the infection history matrix
 #' @param study_design default "multi-antigen" facets by sample time. "single-antigen" gives sample time on the x-axis and colours by biomarker_id
 #' @return a ggplot object
 #' @family infection_history_plots
@@ -15,23 +14,15 @@
 #' data(example_inf_hist)
 #' data(example_antigenic_map)
 #' possible_exposure_times <- example_antigenic_map$inf_times
-#' plot_antibody_data(example_antibody_data, example_inf_hist, possible_exposure_times, 5)
+#' plot_antibody_data(example_antibody_data, possible_exposure_times, 5, example_inf_hist)
 #' }
 #' @export
 plot_antibody_data <- function(antibody_data, 
-                               infection_histories=NULL, 
-                      possible_exposure_times, 
-                      n_indivs, start_inf = NULL,
+                               possible_exposure_times, 
+                               n_indivs,     
+                               infection_histories=NULL,                   
                       study_design="multi-antigen"){
     indivs <- unique(antibody_data$individual)
-    infection_history <- as.data.frame(cbind(indivs, infection_histories))
-    colnames(infection_history) <- c("individual", possible_exposure_times)
-    melted_inf_hist <- reshape2::melt(infection_history, id.vars = "individual")
-    melted_inf_hist$variable <- as.numeric(as.character(melted_inf_hist$variable))
-    melted_inf_hist <- melted_inf_hist[melted_inf_hist$value > 0, ]
-    tmp <- unique(antibody_data[, c("individual", "sample_time")])
-    melted_inf_hist <- merge(melted_inf_hist, tmp)
-    melted_inf_hist <- melted_inf_hist[melted_inf_hist$variable <= melted_inf_hist$sample_time, ]
     samps <- sample(unique(antibody_data$individual), n_indivs)
 
     if("biomarker_group" %in% colnames(antibody_data)){
@@ -42,29 +33,32 @@ plot_antibody_data <- function(antibody_data,
     
     if (study_design == "multi-antigen") {
         p1 <- ggplot(antibody_data[antibody_data$individual %in% samps, ]) +
-            geom_point(aes(x = as.integer(biomarker_id), y = measurement, col=biomarker_group)) +
-            geom_vline(data = melted_inf_hist[melted_inf_hist$individual %in% samps, ], aes(xintercept = variable,linetype="Known infection time"), col = "grey10") +
+            geom_point(aes(x = as.integer(biomarker_id), y = measurement, col=biomarker_group))+
             theme_bw() +
             xlab("Antigen") +
             facet_grid(individual ~ sample_time)
     } else {
         p1 <- ggplot(antibody_data[antibody_data$individual %in% samps, ]) +
             geom_point(aes(x = sample_time, y = measurement, col=biomarker_id, col=biomarker_group)) +
-            geom_vline(data = melted_inf_hist[melted_inf_hist$individual %in% samps, ], 
-                       aes(xintercept = variable,linetype="Known infection time"), col = "grey10") +
             theme_bw() +
             xlab("Antigen circulation time") +
             facet_wrap(~individual)
     }
     
-    if (!is.null(start_inf)) {
-        start_inf_hist <- as.data.frame(cbind(indivs, start_inf))
-        colnames(start_inf_hist) <- c("individual", possible_exposure_times)
-        melted_start_hist <- reshape2::melt(start_inf_hist, id.vars = "individual")
-        melted_start_hist$variable <- as.numeric(as.character(melted_start_hist$variable))
-        melted_start_hist <- melted_start_hist[melted_start_hist$value > 0, ]
-        p1 <- p1 + geom_vline(data = melted_start_hist[melted_start_hist$individual %in% samps, ], aes(xintercept = variable), col = "blue", linetype = "dashed")
+    if(!is.null(infection_history)) {
+      infection_history <- as.data.frame(cbind(indivs, infection_histories))
+      colnames(infection_history) <- c("individual", possible_exposure_times)
+      melted_inf_hist <- reshape2::melt(infection_history, id.vars = "individual")
+      melted_inf_hist$variable <- as.numeric(as.character(melted_inf_hist$variable))
+      melted_inf_hist <- melted_inf_hist[melted_inf_hist$value > 0, ]
+      tmp <- unique(antibody_data[, c("individual", "sample_time")])
+      melted_inf_hist <- merge(melted_inf_hist, tmp)
+      melted_inf_hist <- melted_inf_hist[melted_inf_hist$variable <= melted_inf_hist$sample_time, ]
+      
+      p1 <- p1 + geom_vline(data = melted_inf_hist[melted_inf_hist$individual %in% samps, ], aes(xintercept = variable,linetype="Known infection time"), col = "grey10")
     }
+      
+    
     p1 <- p1 + ylab("log antibody level") + scale_color_viridis_d() + scale_linetype_manual(name="",values=c("Known infection time"="dashed"))
     
     p1 <- p1 + 
