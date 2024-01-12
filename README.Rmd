@@ -46,7 +46,9 @@ This is a basic example of simulating some serological data and fitting the mode
 ```{r example, message=FALSE,warning=FALSE,eval=TRUE}
 library(serosolver)
 library(ggplot2)
+library(plyr)
 library(dplyr)
+library(data.table)
 
 ## Load in example parameter values and antigenic map
 data(example_par_tab)
@@ -57,8 +59,7 @@ data(example_inf_hist)
 plot_antibody_data(example_antibody_data,example_inf_hist,example_antigenic_map$inf_times,n_indivs=5)
 
 ## Run the MCMC
-# This example uses prior version 2 (i.e. beta prior on phi with parameters alpha, beta)
-# We have to remove the explicit specification of phi in the parameter table
+# This example uses prior version 2 (i.e. beta prior on phi with parameters shape1 and shape2)
 res <- run_MCMC(example_par_tab, example_antibody_data, example_antigenic_map,
                 filename="test", prior_version=2,
                 mcmc_pars=c(adaptive_period=20000, iterations=80000,save_block=10000))

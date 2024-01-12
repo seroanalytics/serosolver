@@ -65,6 +65,12 @@ plot_antibody_data <- function(antibody_data, infection_histories,
         p1 <- p1 + geom_vline(data = melted_start_hist[melted_start_hist$individual %in% samps, ], aes(xintercept = variable), col = "blue", linetype = "dashed")
     }
     p1 <- p1 + ylab("log antibody level") + scale_color_viridis_d() + scale_linetype_manual(name="",values=c("Known infection time"="dashed"))
+    
+    p1 <- p1 + 
+      theme(legend.position="bottom",
+            axis.text.x=element_text(size=6),
+            axis.text.y=element_text(size=6),
+            axis.title=element_text(size=8))
     return(p1)
 }
 

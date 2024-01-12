@@ -19,6 +19,7 @@
 #' @param temp Temperature term for parallel tempering, raises likelihood to this value. Just used for testing at this point
 #' @param solve_likelihood if FALSE, returns only the prior and does not solve the likelihood. Use this if you wish to sample directly from the prior
 #' @param n_alive if not NULL, uses this as the number alive for the infection history prior, rather than calculating the number alive based on antibody_data
+#' @param VERBOSE if TRUE, prints progress updates during the run
 #' @param ... Other arguments to pass to CREATE_POSTERIOR_FUNC
 #' @return A list with: 1) relative file path at which the MCMC chain is saved as a .csv file; 2) relative file path at which the infection history chain is saved as a .csv file; 3) the last used covariance matrix if mvr_pars != NULL; 4) the last used scale/step size (if multivariate proposals) or vector of step sizes (if univariate proposals)
 #' @details
@@ -64,10 +65,10 @@ run_MCMC <- function(par_tab,
                      measurement_indices = NULL,
                      measurement_random_effects = FALSE,
                      proposal_ratios = NULL,
-                     OPT_TUNING = 0.1,
                      temp = 1,
                      solve_likelihood = TRUE,
                      n_alive = NULL,
+                     OPT_TUNING = 0.1,
                      ...) {
   ## Error checks --------------------------------------
   if (!is.null(antigenic_map)) {
@@ -129,7 +130,7 @@ run_MCMC <- function(par_tab,
   } else { ## By default, use phi prior_version
     stop("Invalid version specified - must be 1 (phi), 2 (beta on times), 3 (beta on individual) or 4 (beta on overall)")
   }
-  message(cat(prop_print, "\n"))
+  if(VERBOSE) message(cat(prop_print, "\n"))
 
   ## Extract parameter settings
   par_names <- as.character(par_tab$names) # Parameter names
@@ -309,7 +310,6 @@ run_MCMC <- function(par_tab,
           } else {
               n_infections <- sum_infections_by_group(prior_infection_history, group_ids_vec, n_groups)
               if (any(n_infections > n_alive)){
-                 #message("error -- more infections than there are individuals alive")
                  prior_probab <- -Inf
               } else {
                 prior_probab <- prior_probab + 
@@ -331,9 +331,9 @@ run_MCMC <- function(par_tab,
     if(!is.finite(total_likelihood)) stop(paste("Error: starting likelihood is not finite."))
     if(!is.finite(total_posterior)) stop(paste("Error: starting posterior probability is not finite."))
     
-    message(cat("Starting posterior probability: ", total_posterior, "\n", sep = "\t"))
-    message(cat("Starting likelihood : ", total_likelihood, "\n", sep = "\t"))
-    message(cat("Starting prior prob: ", total_prior_prob, "\n", sep = "\t"))
+    if(VERBOSE) message(cat("Starting posterior probability: ", total_posterior, "\n", sep = "\t"))
+    if(VERBOSE) message(cat("Starting likelihood : ", total_likelihood, "\n", sep = "\t"))
+    if(VERBOSE) message(cat("Starting prior prob: ", total_prior_prob, "\n", sep = "\t"))
 ###############
 
   ####################
@@ -392,8 +392,9 @@ run_MCMC <- function(par_tab,
   for (i in 1:(iterations + adaptive_period + burnin)) {
     ## Whether to swap entire year contents or not - only applies to gibbs sampling
     inf_swap_prob <- runif(1)
-    if (i %% save_block == 0) message(cat("Current iteration: ", i, "\n", sep = "\t"))
-  
+    if (i %% save_block == 0){
+      if(VERBOSE) message(cat("Current iteration: ", i, "\n", sep = "\t"))
+    }
     ######################
     ## PROPOSALS
     ######################
@@ -693,12 +694,14 @@ run_MCMC <- function(par_tab,
     ## If within adaptive period, need to do some adapting!
     if (i > (adaptive_period + burnin) & i %% opt_freq == 0) {
       pcur <- tempaccepted / tempiter ## get current acceptance rate
+      if(VERBOSE){
       message(cat("Pcur: ", signif(pcur, 3), "\n", sep = "\t"))
       message(cat("Step sizes: ", signif(steps, 3), "\n", sep = "\t"))
       message(cat("Group inf hist swap pcur: ",
         signif(infection_history_swap_accept / infection_history_swap_n, 3),"\n", 
         sep = "\t"
       ))
+      }
       infection_history_swap_accept <- infection_history_swap_n <- 0
       tempaccepted <- tempiter <- reset
       ## Have a look at the acceptance rates for infection histories
@@ -706,10 +709,10 @@ run_MCMC <- function(par_tab,
       pcur_hist <- histaccepted / histiter ## Overall
       pcur_hist_add <- histaccepted_add / histiter_add ## For adding
       pcur_hist_move <- histaccepted_move / histiter_move ## For adding
-
+      if(VERBOSE){
       message(cat("Pcur hist add: ", head(signif(pcur_hist_add, 3)),"\n",  sep = "\t"))
       message(cat("Pcur hist move: ", head(signif(pcur_hist_move, 3)), "\n", sep = "\t"))
-
+}
       ##histadd_overall <- histadd_overall + histiter_add
       ##histmove_overall <- histmove_overall + histiter_move
       
@@ -795,7 +798,7 @@ run_MCMC <- function(par_tab,
           pcur_hist <- histaccepted / histiter ## Overall
           ## If not accepting, send a warning
           if (all(pcur[!is.nan(pcur)] == 0)) {
-              message("Warning: acceptance rates are 0. Might be an error with the theta proposal?\n")
+            if(VERBOSE) message("Warning: acceptance rates are 0. Might be an error with the theta proposal?\n")
           }
 
           tempaccepted <- tempiter <- reset
