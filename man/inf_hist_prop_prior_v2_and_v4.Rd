@@ -103,9 +103,9 @@ inf_hist_prop_prior_v2_and_v4(
 
 \item{biomarker_id_indices}{IntegerVector, For each antibody measurement, corresponding entry in antigenic map}
 
-\item{antigenic_map_long}{NumericVector, the collapsed cross reactivity map for long term boosting, after multiplying by sigma1, see \code{\link{create_cross_reactivity_vector}}}
+\item{antigenic_map_long}{arma::mat, the collapsed cross reactivity map for long term boosting, after multiplying by sigma1, see \code{\link{create_cross_reactivity_vector}}}
 
-\item{antigenic_map_short}{NumericVector, the collapsed cross reactivity map for short term boosting, after multiplying by sigma2, see \code{\link{create_cross_reactivity_vector}}}
+\item{antigenic_map_short}{arma::mat, the collapsed cross reactivity map for short term boosting, after multiplying by sigma2, see \code{\link{create_cross_reactivity_vector}}}
 
 \item{antigenic_distances}{NumericVector matching the dimensions of antigenic_map_long and antigenic_map_short, but with the raw antigenic distances between strains}
 

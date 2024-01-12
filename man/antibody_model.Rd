@@ -47,9 +47,9 @@ antibody_model(
 
 \item{biomarker_id_indices}{IntegerVector, the indices of all measured biomarkers in the melted antigenic map, with one entry per measured biomarker}
 
-\item{antigenic_map_long}{NumericVector, the collapsed cross reactivity map for long term boosting, after multiplying by cr_long see \code{\link{create_cross_reactivity_vector}}}
+\item{antigenic_map_long}{arma::mat, the collapsed cross reactivity map for long term boosting, after multiplying by cr_long see \code{\link{create_cross_reactivity_vector}}}
 
-\item{antigenic_map_short}{NumericVector, the collapsed cross reactivity map for short term boosting, after multiplying by cr_short, see \code{\link{create_cross_reactivity_vector}}}
+\item{antigenic_map_short}{arma::mat, the collapsed cross reactivity map for short term boosting, after multiplying by cr_short, see \code{\link{create_cross_reactivity_vector}}}
 
 \item{antigenic_distances}{NumericVector, the collapsed cross reactivity map giving euclidean antigenic distances, see \code{\link{create_cross_reactivity_vector}}}
 

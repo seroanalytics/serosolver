@@ -45,8 +45,8 @@ plot_infection_history_chains_time(example_inf_chain, 0, sample(1:length(times),
 
 Other infection_history_plots: 
 \code{\link{calculate_infection_history_statistics}()},
+\code{\link{plot_antibody_data}()},
 \code{\link{plot_cumulative_infection_histories}()},
-\code{\link{plot_data}()},
 \code{\link{plot_individual_number_infections}()},
 \code{\link{plot_infection_history_chains_indiv}()},
 \code{\link{plot_model_fits}()},
