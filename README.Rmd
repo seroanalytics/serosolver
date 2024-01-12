@@ -43,7 +43,7 @@ There are additional Rmarkdown vignettes for [Case Study 1][c1-vignette-doc] (lo
 
 This is a basic example of simulating some serological data and fitting the model using the MCMC framework.
 
-```{r example, message=FALSE,warning=FALSE,eval=TRUE}
+```{r example_setup, message=FALSE,warning=FALSE,eval=TRUE}
 library(serosolver)
 library(ggplot2)
 library(plyr)
@@ -55,19 +55,24 @@ data(example_par_tab)
 data(example_antigenic_map)
 data(example_antibody_data)
 data(example_inf_hist)
-
+```
+```{r example_plot, message=FALSE,warning=FALSE,eval=TRUE}
 plot_antibody_data(example_antibody_data,example_inf_hist,example_antigenic_map$inf_times,n_indivs=5)
+```
 
+```{r example_mcmc, message=FALSE,warning=FALSE,eval=TRUE}
 ## Run the MCMC
 # This example uses prior version 2 (i.e. beta prior on phi with parameters shape1 and shape2)
 res <- run_MCMC(example_par_tab, example_antibody_data, example_antigenic_map,
                 filename="test", prior_version=2,
-                mcmc_pars=c(adaptive_period=20000, iterations=80000,save_block=10000))
+                mcmc_pars=c(adaptive_period=20000, iterations=80000,save_block=10000),
+                VERBOSE=FALSE)
 ## Read in the MCMC chains and plot posteriors
 chain <- read.csv(res$chain_file)
 inf_chain <- data.table::fread(res$history_file)
 plot(coda::as.mcmc(chain[chain$sampno > 20000,c("boost_long","wane_short","posterior_prob")]))
-
+```
+```{r example_model_fits, message=FALSE,warning=FALSE,eval=TRUE}
 # Plot model predicted titres for a subset of individuals
 plot_model_fits(chain = chain,
                 infection_histories = inf_chain,

@@ -69,6 +69,7 @@ run_MCMC <- function(par_tab,
                      solve_likelihood = TRUE,
                      n_alive = NULL,
                      OPT_TUNING = 0.1,
+                     VERBOSE=TRUE,
                      ...) {
   ## Error checks --------------------------------------
   if (!is.null(antigenic_map)) {

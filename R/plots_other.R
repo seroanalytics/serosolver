@@ -1,6 +1,6 @@
-#' Useful plot for looking at simulated data
+#' Plot raw data
 #'
-#' Plots measured titres and known infection histories for all individuals, faceted by sample time (multi-antigen panel) or biomarker_id variable (longitudinal single antigen)
+#' Plots measured antibody measurements and known infection histories for all individuals, faceted by sample time (multi-antigen panel) or biomarker_id variable (longitudinal single antigen)
 #' @param antibody_data the data frame of antibody data
 #' @param infection_histories the infection history matrix
 #' @param possible_exposure_times the vector of times at which individuals could be infected
@@ -18,7 +18,8 @@
 #' plot_antibody_data(example_antibody_data, example_inf_hist, possible_exposure_times, 5)
 #' }
 #' @export
-plot_antibody_data <- function(antibody_data, infection_histories, 
+plot_antibody_data <- function(antibody_data, 
+                               infection_histories=NULL, 
                       possible_exposure_times, 
                       n_indivs, start_inf = NULL,
                       study_design="multi-antigen"){
