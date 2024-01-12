@@ -31,7 +31,7 @@ Attempts to fit a beta distribution to a data frame of MCMC output from a previo
 }
 \examples{
 \dontrun{
-## Output from a previous run_MCMC chain
+## Output from a previous serosolver chain
 chain <- read.csv("madeup_chain.csv")
 results <- fit_beta_prior(chain, par_name="sigma1",plot_fit=FALSE)
 }

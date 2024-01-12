@@ -9,15 +9,34 @@ knitr::opts_chunk$set(
   collapse = TRUE,
   comment = "#>",
   fig.path = "man/figures/README-",
-  out.width = "100%"
+  out.width = "100%",
+  eval=TRUE
 )
 ```
 # serosolver
 
 [![Project Status: Active – The project has reached a stable, usable state and is being actively developed.](https://www.repostatus.org/badges/latest/active.svg)](https://www.repostatus.org/#active)
 
+`serosolver` uses a hierarchical model with a custom Markov chain Monte Carlo sampler to simultaneously infer antibody kinetics and infection histories from cross-sectional or longitudinal serological data. `serosolver` is a [time-since-infection serodynamics model](https://osf.io/preprints/osf/kqdsn), meaning that infection times are back-calculated from one or more antibody measurements through an antibody kinetics model. `serosolver` can be used to infer infection timings during a study period using longitudinal measurements against a single antigen, or lifetime infection histories using multi-antigen serology panels. The package and model are described by Hay _et al._ [here](https://doi.org/10.1371/journal.pcbi.1007840).
 
-`serosolver` is a modelling and inference package that uses a dynamic model to infer antibody dynamics and infection histories from cross-sectional or longitudinal serological data. The model infers individual-level infection histories, historical attack rates, and patterns of antibody dynamics by accounting for cross-reactive antibody responses and measurement error.
+## Recent changes
+`serosolver` is back in active development to fix bugs, standardize variable names and add new features.
+<details>
+  <summary>List of recent changes:</summary>
+  
+* Overhaul of variable names (e.g., _titre_ -> _measurement_, _strain_ -> _biomarker_id_)
+* Consolidation of plotting functions
+* Moving more options and inputs behind the scenes to streamline the user interface
+* Generalization to consider multiple biomarker types per sample (e.g., antibody titre and avidity)
+* Support for continuous as well as discrete observations (e.g., can now fit to ELISA data as well as HAI titres)
+* _IN PROGRESS_ Some small improvements to the MCMC sampler and parameter transformations
+* _IN PROGRESS_ Improved guidance and support for using priors
+* _IN PROGRESS_ Model infection histories and antibody kinetics as a function of demographic variables
+* _IN PROGRESS_ Allow some infection states to be fixed during fitting
+* _IN PROGRESS_ Inclusion of explicit immunity model
+* _IN PROGRESS_ Ways to fix or estimate starting/baseline titres
+* _IN PROGRESS_ Added tests
+</details>
 
 ## Installation
 1. Install [R][r-project]
@@ -32,7 +51,12 @@ library(serosolver)
 
 Read the [quick start vignette][vignette-doc] to set up and run a simple implementation with a simulation model.
 
-There are additional Rmarkdown vignettes for [Case Study 1][c1-vignette-doc] (longitudinal analysis of influenza A/H1N1p in Hong Kong) and [Case Study 2][c2-vignette-doc] (cross-sectional analysis of influenza A/H3N2 in Guangzhou Province, China), to accompany the analysis in the serosolver paper.
+Additional vignettes:
+
+* [Longitudinal data][c1-vignette-doc]: estimating infection timings using longitudinal data, example of influenza A/H1N1p in Hong Kong
+* [Cross-sectional data][c2-vignette-doc]: estimating life-course infection histories from multi-strain serology, example of influenza A/H3N2 from the [Fluscape cohort](https://pubmed.ncbi.nlm.nih.gov/26875566/)
+* [Multiple measurements]: fitting `serosolver` to multiple biomarker types, example of binding avidity and ELISA measurements per sample
+* [Group-level differences]: estimating demographic differences in antibody kinetics and attack rates
 
 [r-project]: http://cran.r-project.org
 [vignette-doc]: https://seroanalytics.github.io/serosolver/articles/serosolver-quick_start_guide.html
@@ -43,8 +67,8 @@ There are additional Rmarkdown vignettes for [Case Study 1][c1-vignette-doc] (lo
 
 This is a basic example of simulating some serological data and fitting the model using the MCMC framework.
 
-```{r example_setup, message=FALSE,warning=FALSE,eval=TRUE}
-library(serosolver)
+```{r example_setup, message=FALSE,warning=FALSE}
+devtools::load_all("~/Documents/GitHub/serosolver")
 library(ggplot2)
 library(plyr)
 library(dplyr)
@@ -56,29 +80,32 @@ data(example_antigenic_map)
 data(example_antibody_data)
 data(example_inf_hist)
 ```
-```{r example_plot, message=FALSE,warning=FALSE,eval=TRUE}
-plot_antibody_data(example_antibody_data,example_inf_hist,example_antigenic_map$inf_times,n_indivs=5)
+```{r example_plot, message=FALSE,warning=FALSE}
+plot_antibody_data(example_antibody_data,example_antigenic_map$inf_times,n_indivs=1:4,example_inf_hist)
 ```
 
-```{r example_mcmc, message=FALSE,warning=FALSE,eval=TRUE}
+```{r example_mcmc, message=FALSE,warning=FALSE}
 ## Run the MCMC
 # This example uses prior version 2 (i.e. beta prior on phi with parameters shape1 and shape2)
-res <- run_MCMC(example_par_tab, example_antibody_data, example_antigenic_map,
+burn_in <- 50000
+res <- serosolver(example_par_tab, example_antibody_data, example_antigenic_map,
                 filename="test", prior_version=2,
-                mcmc_pars=c(adaptive_period=20000, iterations=80000,save_block=10000),
+                mcmc_pars=c(adaptive_period=burn_in, iterations=200000,save_block=10000),
                 VERBOSE=FALSE)
 ## Read in the MCMC chains and plot posteriors
-chain <- read.csv(res$chain_file)
-inf_chain <- data.table::fread(res$history_file)
-plot(coda::as.mcmc(chain[chain$sampno > 20000,c("boost_long","wane_short","posterior_prob")]))
+chain <- read.csv(res$chain_file) %>% dplyr::filter(sampno > burn_in)
+inf_chain <- data.table::fread(res$history_file) %>% dplyr::filter(sampno > burn_in)
+plot(coda::as.mcmc(chain[,c("boost_long","wane_short","posterior_prob")]))
 ```
-```{r example_model_fits, message=FALSE,warning=FALSE,eval=TRUE}
+```{r example_model_fits, message=FALSE,warning=FALSE}
 # Plot model predicted titres for a subset of individuals
 plot_model_fits(chain = chain,
                 infection_histories = inf_chain,
-                antibody_data = example_antibody_data,individuals=c(1:4),
+                antibody_data = example_antibody_data,individuals=1:4,
                 antigenic_map=example_antigenic_map,
                 par_tab=example_par_tab,
                 orientation="cross-sectional")
 
 ```
+
+

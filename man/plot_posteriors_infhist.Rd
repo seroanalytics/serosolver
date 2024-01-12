@@ -16,7 +16,7 @@ plot_posteriors_infhist(
 )
 }
 \arguments{
-\item{inf_chain}{the data table with infection history samples from \code{\link{run_MCMC}}}
+\item{inf_chain}{the data table with infection history samples from \code{\link{serosolver}}}
 
 \item{years}{vector of the epochs of potential circulation}
 

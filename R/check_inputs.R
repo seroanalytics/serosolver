@@ -57,7 +57,7 @@ check_inf_hist <- function(antibody_data, possible_exposure_times, inf_hist,VERB
 #' check_par_tab(example_par_tab, FALSE, version=1)
 #' @export
 check_par_tab <- function(par_tab, mcmc = FALSE, version = NULL,possible_exposure_times=NULL, VERBOSE=FALSE) {
-    ## Checks that should happen in simulate_data and run_MCMC
+    ## Checks that should happen in simulate_data and serosolver
     essential_names <- c("names","values","fixed","lower_bound","upper_bound","lower_start","upper_start","par_type")
     if (!all(essential_names %in% colnames(par_tab))) {
         message(paste(c("Some column names missing from par_tab: ", setdiff(essential_names,colnames(par_tab))),collapse=" "))
@@ -72,7 +72,7 @@ check_par_tab <- function(par_tab, mcmc = FALSE, version = NULL,possible_exposur
 
     explicit_phi <- "phi" %in% names(pars)
 
-    ## Additional checks that should happen in run_MCMC
+    ## Additional checks that should happen in serosolver
     if (mcmc == TRUE) {
       
       if(!("steps" %in% colnames(par_tab))){
@@ -128,7 +128,7 @@ check_par_tab <- function(par_tab, mcmc = FALSE, version = NULL,possible_exposur
     par_tab
 }
 
-#' Checks the entries of data used in run_MCMC
+#' Checks the entries of data used in serosolver
 #' @param data the data frame of data to be fitted. Must have columns: group (index of group); individual (integer ID of individual); samples (numeric time of sample taken); virus (numeric time of when the virus was circulating); titre (integer of titre value against the given virus at that sampling time)
 #' @param VERBOSE if TRUE, prints warning messages
 #' @return the same data object with corrections if needed
@@ -190,10 +190,11 @@ check_proposals <- function(version, mvr_pars) {
 #' @param antibody_data the data frame of titer data
 #' @param possible_exposure_times the vector of times corresponding to entries in DOB
 #' @param inf_hist the starting infection history matrix
+#' @param VERBOSE if TRUE, prints warning messages
 #' @return nothing, prints a warning
 #' @family check_inputs
 #' @export
-check_inf_hist <- function(antibody_data,possible_exposure_times, inf_hist){
+check_inf_hist <- function(antibody_data,possible_exposure_times, inf_hist,VERBOSE=FALSE){
     DOBs <- create_age_mask(antibody_data %>% select(individual, birth) %>% distinct() %>% pull(birth),
                             possible_exposure_times)
     correct_dob <- rep(0,length(DOBs))

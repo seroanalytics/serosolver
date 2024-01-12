@@ -67,7 +67,7 @@ inf_mat_prior <- function(infection_history, age_mask, infection_model_prior_sha
 #' @family priors
 #' @examples
 #' \dontrun{
-#' ## Output from a previous run_MCMC chain
+#' ## Output from a previous serosolver chain
 #' chain <- read.csv("madeup_chain.csv")
 #' results <- fit_beta_prior(chain, par_name="sigma1",plot_fit=FALSE)
 #' }
@@ -118,7 +118,7 @@ fit_beta_prior <- function(chain_samples, par_name = "", error_tol = 999999999, 
 #' @seealso \code{\link{fit_normal_prior}}
 #' #' @examples
 #' \dontrun{
-#' ## Output from a previous run_MCMC chain
+#' ## Output from a previous serosolver chain
 #' chain <- read.csv("madeup_chain.csv")
 #' results <- fit_normal_prior(chain, par_name="mu",plot_fit=FALSE)
 #' }

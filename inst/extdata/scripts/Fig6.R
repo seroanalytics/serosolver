@@ -13,7 +13,7 @@ library(ggthemes)
 library(cowplot)
 library(grid)
 library(gridExtra)
-RUN_MCMC <- FALSE
+serosolver <- FALSE
 
 ## doRNG handles seeding in foreach loop
 set.seed(1234)
@@ -60,7 +60,7 @@ mcmc_pars <- c("iterations"=500000,"popt"=0.44,"popt_hist"=0.44,"opt_freq"=1000,
                "move_size"=3,"hist_opt"=1,"swap_propn"=0.5,"hist_switch_prob"=0.5,"year_swap_propn"=1)
 
 
-if(RUN_MCMC) {
+if(serosolver) {
   # starting parameter values  
   res <- foreach(x = filenames) %dopar% {
     ## Not all random starting conditions return finite likelihood, so for each chain generate random
@@ -79,7 +79,7 @@ if(RUN_MCMC) {
       start_prob <- sum(f(start_tab$values, start_inf))
     }
     
-    res <- run_MCMC(par_tab = start_tab, titre_dat = titre_dat,antigenic_map = fit_dat,start_inf_hist=start_inf, 
+    res <- serosolver(par_tab = start_tab, titre_dat = titre_dat,antigenic_map = fit_dat,start_inf_hist=start_inf, 
                     mcmc_pars = mcmc_pars,
                     filename = paste0("chains_main/",x), CREATE_POSTERIOR_FUNC = create_posterior_func, version = 2, temp=1,
                     fast_version=TRUE)

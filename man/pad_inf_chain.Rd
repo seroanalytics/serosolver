@@ -7,7 +7,7 @@
 pad_inf_chain(inf_chain)
 }
 \arguments{
-\item{inf_chain}{the data table with infection history samples from \code{\link{run_MCMC}}}
+\item{inf_chain}{the data table with infection history samples from \code{\link{serosolver}}}
 }
 \value{
 the same inf_chain that was passed in, but with 0s for missing i/j/sampno combinations

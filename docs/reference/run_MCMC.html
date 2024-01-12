@@ -6,7 +6,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>Adaptive Metropolis-within-Gibbs/Metropolis Hastings Random Walk Algorithm. — run_MCMC • serosolver</title>
+<title>Adaptive Metropolis-within-Gibbs/Metropolis Hastings Random Walk Algorithm. — serosolver • serosolver</title>
 
 
 <!-- jquery -->
@@ -35,7 +35,7 @@
 
 
 
-<meta property="og:title" content="Adaptive Metropolis-within-Gibbs/Metropolis Hastings Random Walk Algorithm. — run_MCMC" />
+<meta property="og:title" content="Adaptive Metropolis-within-Gibbs/Metropolis Hastings Random Walk Algorithm. — serosolver" />
 <meta property="og:description" content="The Adaptive Metropolis-within-Gibbs algorithm. Given a starting point and the necessary MCMC parameters as set out below, performs a random-walk of the posterior space to produce an MCMC chain that can be used to generate MCMC density and iteration plots. The algorithm undergoes an adaptive period, where it changes the step size of the random walk for each parameter to approach the desired acceptance rate, popt. The algorithm then uses univ_proposal or mvr_proposal to explore parameter space, recording the value and posterior value at each step. The MCMC chain is saved in blocks as a .csv file at the location given by filename. This version of the algorithm is also designed to explore posterior densities for infection histories. See the package vignettes for examples." />
 <meta name="twitter:card" content="summary" />
 
@@ -125,14 +125,14 @@
     <div class="page-header">
     <h1>Adaptive Metropolis-within-Gibbs/Metropolis Hastings Random Walk Algorithm.</h1>
     <small class="dont-index">Source: <a href='https://github.com/seroanalytics/serosolver/blob/master/R/mcmc.R'><code>R/mcmc.R</code></a></small>
-    <div class="hidden name"><code>run_MCMC.Rd</code></div>
+    <div class="hidden name"><code>serosolver.Rd</code></div>
     </div>
 
     <div class="ref-description">
     <p>The Adaptive Metropolis-within-Gibbs algorithm. Given a starting point and the necessary MCMC parameters as set out below, performs a random-walk of the posterior space to produce an MCMC chain that can be used to generate MCMC density and iteration plots. The algorithm undergoes an adaptive period, where it changes the step size of the random walk for each parameter to approach the desired acceptance rate, popt. The algorithm then uses <code><a href='univ_proposal.html'>univ_proposal</a></code> or <code><a href='mvr_proposal.html'>mvr_proposal</a></code> to explore parameter space, recording the value and posterior value at each step. The MCMC chain is saved in blocks as a .csv file at the location given by filename. This version of the algorithm is also designed to explore posterior densities for infection histories. See the package vignettes for examples.</p>
     </div>
 
-    <pre class="usage"><span class='fu'>run_MCMC</span>(
+    <pre class="usage"><span class='fu'>serosolver</span>(
   <span class='no'>par_tab</span>,
   <span class='no'>titre_dat</span>,
   <span class='kw'>antigenic_map</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
@@ -278,7 +278,7 @@
 <span class='fu'><a href='https://rdrr.io/r/utils/data.html'>data</a></span>(<span class='no'>example_titre_dat</span>)
 <span class='fu'><a href='https://rdrr.io/r/utils/data.html'>data</a></span>(<span class='no'>example_par_tab</span>)
 <span class='fu'><a href='https://rdrr.io/r/utils/data.html'>data</a></span>(<span class='no'>example_antigenic_map</span>)
-<span class='no'>res</span> <span class='kw'>&lt;-</span> <span class='fu'>run_MCMC</span>(<span class='no'>example_par_tab</span>[<span class='no'>example_par_tab</span>$<span class='no'>names</span> <span class='kw'>!=</span> <span class='st'>"phi"</span>,], <span class='no'>example_titre_dat</span>, <span class='no'>example_antigenic_map</span>, <span class='kw'>version</span><span class='kw'>=</span><span class='fl'>2</span>)
+<span class='no'>res</span> <span class='kw'>&lt;-</span> <span class='fu'>serosolver</span>(<span class='no'>example_par_tab</span>[<span class='no'>example_par_tab</span>$<span class='no'>names</span> <span class='kw'>!=</span> <span class='st'>"phi"</span>,], <span class='no'>example_titre_dat</span>, <span class='no'>example_antigenic_map</span>, <span class='kw'>version</span><span class='kw'>=</span><span class='fl'>2</span>)
 }</div></pre>
   </div>
   <div class="col-md-3 hidden-xs hidden-sm" id="sidebar">

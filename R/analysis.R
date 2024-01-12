@@ -112,7 +112,7 @@ load_mcmc_chains <- function(location = getwd(), par_tab = NULL, unfixed = TRUE,
 
 #' Load MCMC chains for theta
 #'
-#' Searches the given working directory for MCMC outputs from \code{\link{run_MCMC}}, loads these in, subsets for burn in and thinning, and formats as both lists and a combined data frame.
+#' Searches the given working directory for MCMC outputs from \code{\link{serosolver}}, loads these in, subsets for burn in and thinning, and formats as both lists and a combined data frame.
 #' @param location defaults to current working directory. Gives relative file path to look for files ending in "_chain.csv"
 #' @param par_tab if not NULL, can use this to only extract free model parameters
 #' @param unfixed if TRUE, only returns free model parameters (par_tab$fixed == 0) if par_tab specified
@@ -183,7 +183,7 @@ load_theta_chains <- function(location = getwd(), par_tab = NULL, unfixed = TRUE
 
 #' Load MCMC chains for infection histories
 #'
-#' Searches the given working directory for MCMC outputs from \code{\link{run_MCMC}}, loads these in, subsets for burn in and thinning, and formats as both lists and a combined data table.
+#' Searches the given working directory for MCMC outputs from \code{\link{serosolver}}, loads these in, subsets for burn in and thinning, and formats as both lists and a combined data table.
 #' @param location defaults to current working directory. Where to look for MCMC chains? These are files ending in "_infection_histories.csv"
 #' @inheritParams load_theta_chains
 #' @param chain_subset if not NULL, a vector of indices to only load and store a subset of the chains detected. eg. chain_subset = 1:3 means that only the first 3 detected files will be processed.

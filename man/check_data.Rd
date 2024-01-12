@@ -2,7 +2,7 @@
 % Please edit documentation in R/check_inputs.R
 \name{check_data}
 \alias{check_data}
-\title{Checks the entries of data used in run_MCMC}
+\title{Checks the entries of data used in serosolver}
 \usage{
 check_data(data, VERBOSE = FALSE)
 }
@@ -15,7 +15,7 @@ check_data(data, VERBOSE = FALSE)
 the same data object with corrections if needed
 }
 \description{
-Checks the entries of data used in run_MCMC
+Checks the entries of data used in serosolver
 }
 \examples{
 data(example_antibody_data)

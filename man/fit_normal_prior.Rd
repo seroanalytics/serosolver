@@ -33,7 +33,7 @@ Attempts to fit a normal distribution to a data frame of MCMC output from a prev
 \code{\link{fit_normal_prior}}
 #' @examples
 \dontrun{
-## Output from a previous run_MCMC chain
+## Output from a previous serosolver chain
 chain <- read.csv("madeup_chain.csv")
 results <- fit_normal_prior(chain, par_name="mu",plot_fit=FALSE)
 }

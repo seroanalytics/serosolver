@@ -294,7 +294,7 @@ fromUnitScale <- function(x, min, max) {
 #' Describe infection history priors
 #' @export
 describe_priors <- function() {
-  message("Which version to use in run_MCMC? The following text describes the proposal step for updating infection histories.")
+  message("Which version to use in serosolver? The following text describes the proposal step for updating infection histories.")
   message("Version 1: Beta prior on per time attack rates. Explicit FOI on each epoch using probability of infection term. Proposal performs N `flip` proposals at random locations in an individual's infection history, switching 1->0 or 0->1. Otherwise, swaps the contents of two random locations")
   message("Version 2: Beta prior on per time attack rates. Gibbs sampling of infection histories as in Indian Buffet Process papers, integrating out each probability of infection term.")
   message("Version 3: Beta prior on probability of infection for an individual, assuming independence between individuals. Samples from a beta binomial with shape1 and shape2 specified by the par_tab input. Proposes nInfs moves at a time for add/remove, or when swapping, swaps locations up to moveSize time steps away")
@@ -573,7 +573,7 @@ generate_antigenic_map_flexible <- function(antigenic_distances, buckets = 1, cl
 #' Pad infection history chain
 #'
 #' Given that the MCMC sampler only stores present infections (ie. there are no entries for 0s from the infection history matrix), for some summaries we need to add these 0s back in to avoid bias.
-#' @param inf_chain the data table with infection history samples from \code{\link{run_MCMC}}
+#' @param inf_chain the data table with infection history samples from \code{\link{serosolver}}
 #' @return the same inf_chain that was passed in, but with 0s for missing i/j/sampno combinations
 #' @export
 pad_inf_chain <- function(inf_chain) {

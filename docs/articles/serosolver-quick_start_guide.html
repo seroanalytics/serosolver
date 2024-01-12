@@ -467,13 +467,13 @@
 <div id="run-mcmc" class="section level2">
 <h2 class="hasAnchor">
 <a href="#run-mcmc" class="anchor"></a>3: Run MCMC</h2>
-<p><code>seroslver</code> uses an Adaptive Metropolis-within-Gibbs algorithm. Given a starting point and the necessary MCMC parameters, <code><a href="../reference/run_MCMC.html">run_MCMC()</a></code> performs a random-walk of the posterior space to produce an MCMC chain that can be used to generate MCMC density and iteration plots (see section 4).</p>
+<p><code>seroslver</code> uses an Adaptive Metropolis-within-Gibbs algorithm. Given a starting point and the necessary MCMC parameters, <code><a href="../reference/serosolver.html">serosolver()</a></code> performs a random-walk of the posterior space to produce an MCMC chain that can be used to generate MCMC density and iteration plots (see section 4).</p>
 <p>Using the default options, the MCMC can be run using the following.</p>
 <div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb7-1" title="1"><span class="co"># run MCMC  </span></a>
-<a class="sourceLine" id="cb7-2" title="2">  res &lt;-<span class="st"> </span><span class="kw"><a href="../reference/run_MCMC.html">run_MCMC</a></span>(<span class="dt">par_tab =</span> start_tab, <span class="dt">titre_dat =</span> titre_dat, <span class="dt">antigenic_map =</span> antigenic_map, </a>
+<a class="sourceLine" id="cb7-2" title="2">  res &lt;-<span class="st"> </span><span class="kw"><a href="../reference/serosolver.html">serosolver</a></span>(<span class="dt">par_tab =</span> start_tab, <span class="dt">titre_dat =</span> titre_dat, <span class="dt">antigenic_map =</span> antigenic_map, </a>
 <a class="sourceLine" id="cb7-3" title="3">                  <span class="dt">start_inf_hist =</span> start_inf, <span class="dt">CREATE_POSTERIOR_FUNC =</span> create_posterior_func,</a>
 <a class="sourceLine" id="cb7-4" title="4">                  <span class="dt">version =</span> <span class="dv">2</span>)</a></code></pre></div>
-<p>If you want to change any default options, such as increasing or decreasing the number of iterations and the adaptive period you can pass a vector of function argument values to <code><a href="../reference/run_MCMC.html">run_MCMC()</a></code>.</p>
+<p>If you want to change any default options, such as increasing or decreasing the number of iterations and the adaptive period you can pass a vector of function argument values to <code><a href="../reference/serosolver.html">serosolver()</a></code>.</p>
 <div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb8-1" title="1">  mcmc_pars &lt;-<span class="st"> </span><span class="kw"><a href="https://rdrr.io/r/base/c.html">c</a></span>(<span class="st">"iterations"</span>=<span class="dv">50000</span>,<span class="st">"popt"</span>=<span class="fl">0.44</span>,<span class="st">"popt_hist"</span>=<span class="fl">0.44</span>,</a>
 <a class="sourceLine" id="cb8-2" title="2">                <span class="st">"opt_freq"</span>=<span class="dv">1000</span>,<span class="st">"thin"</span>=<span class="dv">1</span>,</a>
 <a class="sourceLine" id="cb8-3" title="3">                <span class="st">"adaptive_period"</span>=<span class="dv">10000</span>, <span class="st">"save_block"</span>=<span class="dv">1000</span>, </a>
@@ -482,7 +482,7 @@
 <a class="sourceLine" id="cb8-6" title="6">                <span class="st">"move_size"</span>=<span class="dv">5</span>, <span class="st">"hist_opt"</span>=<span class="dv">0</span>,</a>
 <a class="sourceLine" id="cb8-7" title="7">                <span class="st">"swap_propn"</span>=<span class="fl">0.5</span>,<span class="st">"hist_switch_prob"</span>=<span class="fl">0.5</span>,</a>
 <a class="sourceLine" id="cb8-8" title="8">                <span class="st">"year_swap_propn"</span>=<span class="fl">0.5</span>)</a>
-<a class="sourceLine" id="cb8-9" title="9">  res &lt;-<span class="st"> </span><span class="kw"><a href="../reference/run_MCMC.html">run_MCMC</a></span>(<span class="dt">par_tab =</span> start_tab, <span class="dt">titre_dat =</span> titre_dat, <span class="dt">antigenic_map =</span> antigenic_map, </a>
+<a class="sourceLine" id="cb8-9" title="9">  res &lt;-<span class="st"> </span><span class="kw"><a href="../reference/serosolver.html">serosolver</a></span>(<span class="dt">par_tab =</span> start_tab, <span class="dt">titre_dat =</span> titre_dat, <span class="dt">antigenic_map =</span> antigenic_map, </a>
 <a class="sourceLine" id="cb8-10" title="10">                <span class="dt">mcmc_pars =</span> mcmc_pars, <span class="dt">start_inf_hist =</span> start_inf,</a>
 <a class="sourceLine" id="cb8-11" title="11">                <span class="dt">CREATE_POSTERIOR_FUNC =</span> create_posterior_func, <span class="dt">version =</span> <span class="dv">2</span>)</a></code></pre></div>
 </div>

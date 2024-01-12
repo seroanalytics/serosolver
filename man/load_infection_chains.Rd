@@ -24,7 +24,7 @@ load_infection_chains(
 a list with a) a list of each chain as a data table separately; b) a combined data table, indexing each iteration by which chain it comes from
 }
 \description{
-Searches the given working directory for MCMC outputs from \code{\link{run_MCMC}}, loads these in, subsets for burn in and thinning, and formats as both lists and a combined data table.
+Searches the given working directory for MCMC outputs from \code{\link{serosolver}}, loads these in, subsets for burn in and thinning, and formats as both lists and a combined data table.
 }
 \examples{
 \dontrun{load_infection_chains(thin=10,burnin=5000,chain_subset=1:3)}

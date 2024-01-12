@@ -22,7 +22,7 @@ start_tab <- generate_start_tab(example_par_tab)
 \seealso{
 Other mcmc: 
 \code{\link{rm_scale}()},
-\code{\link{run_MCMC}()},
+\code{\link{serosolver}()},
 \code{\link{save_infection_history_to_disk}()},
 \code{\link{scaletuning}()}
 }

@@ -33,7 +33,7 @@ setwd("E:/James/Google Drive/Influenza/serosolver/methods_paper/PLOS Comp Biol/R
 set.seed(0)
 
 # Setup -------------------------------------------------------------------
-RUN_MCMC <- FALSE
+serosolver <- FALSE
 
 ## Filename prefix for all saved outputs
 filename <- "case_study_1_test"   # The general output filename
@@ -102,7 +102,7 @@ prior_version <- 2
 
 # Run MCMC framework ------------------------------------------------------
 ## If FALSE, use pre-run chains
-if(RUN_MCMC) {
+if(serosolver) {
   ################################
   ## Unvaccinated participants
   ################################
@@ -132,7 +132,7 @@ if(RUN_MCMC) {
                                  version = prior_version) # function in posteriors.R
       start_prob <- sum(f(start_tab$values, start_inf)[[1]])
     }
-    res_unvac <- run_MCMC(par_tab = start_tab, 
+    res_unvac <- serosolver(par_tab = start_tab, 
                           titre_dat = titre_dat_unvac,
                           antigenic_map = NULL,
                           strain_isolation_times = strain_isolation_times,
@@ -172,7 +172,7 @@ if(RUN_MCMC) {
                                  version = prior_version) # function in posteriors.R
       start_prob <- sum(f(start_tab$values, start_inf)[[1]])
     }
-    res_vac <- run_MCMC(par_tab = start_tab, 
+    res_vac <- serosolver(par_tab = start_tab, 
                         titre_dat = titre_dat_vacc,
                         antigenic_map = NULL,
                         strain_isolation_times = strain_isolation_times,

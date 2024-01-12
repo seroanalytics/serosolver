@@ -30,7 +30,7 @@ load_theta_chains(
 a list with a) a list of each chain separately; b) a combined data frame, indexing each iteration by which chain it comes from
 }
 \description{
-Searches the given working directory for MCMC outputs from \code{\link{run_MCMC}}, loads these in, subsets for burn in and thinning, and formats as both lists and a combined data frame.
+Searches the given working directory for MCMC outputs from \code{\link{serosolver}}, loads these in, subsets for burn in and thinning, and formats as both lists and a combined data frame.
 }
 \examples{
 \dontrun{load_theta_chains(par_tab=par_tab, unfixed=TRUE,thin=10,burnin=5000,convert_mcmc=TRUE)}

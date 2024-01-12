@@ -16,7 +16,7 @@ calculate_infection_history_statistics(
 )
 }
 \arguments{
-\item{inf_chain}{the data table with infection history samples from \code{\link{run_MCMC}}}
+\item{inf_chain}{the data table with infection history samples from \code{\link{serosolver}}}
 
 \item{burnin}{if not already discarded, discard burn in from chain (takes rows where sampno > burnin)}
 

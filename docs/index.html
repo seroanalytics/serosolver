@@ -153,7 +153,7 @@
 <a class="sourceLine" id="cb2-41" title="41"><span class="co"># This example uses prior version 2 (i.e. beta prior on phi with parameters alpha, beta)</span></a>
 <a class="sourceLine" id="cb2-42" title="42"><span class="co"># We have to remove the explicit specification of phi in the parameter table</span></a>
 <a class="sourceLine" id="cb2-43" title="43">par_tab &lt;-<span class="st"> </span>example_par_tab[example_par_tab<span class="op">$</span>names <span class="op">!=</span><span class="st"> "phi"</span>,]</a>
-<a class="sourceLine" id="cb2-44" title="44">res &lt;-<span class="st"> </span><span class="kw"><a href="reference/run_MCMC.html">run_MCMC</a></span>(par_tab, example_titre_dat, example_antigenic_map, </a>
+<a class="sourceLine" id="cb2-44" title="44">res &lt;-<span class="st"> </span><span class="kw"><a href="reference/serosolver.html">serosolver</a></span>(par_tab, example_titre_dat, example_antigenic_map, </a>
 <a class="sourceLine" id="cb2-45" title="45">                <span class="dt">filename=</span><span class="st">"test"</span>, <span class="dt">version=</span><span class="dv">2</span>,</a>
 <a class="sourceLine" id="cb2-46" title="46">                <span class="dt">mcmc_pars=</span><span class="kw"><a href="https://rdrr.io/r/base/c.html">c</a></span>(<span class="dt">adaptive_period=</span><span class="dv">20000</span>, <span class="dt">iterations=</span><span class="dv">80000</span>, </a>
 <a class="sourceLine" id="cb2-47" title="47">                            <span class="dt">inf_propn=</span><span class="fl">0.5</span>,<span class="dt">hist_sample_prob=</span><span class="fl">0.5</span>,</a>

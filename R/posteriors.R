@@ -2,7 +2,7 @@
 
 #' Posterior function pointer
 #'
-#' Takes all of the input data/parameters and returns a function pointer. This function finds the posterior for a given set of input parameters (theta) and infection histories without needing to pass the data set back and forth. No example is provided for function_type=2, as this should only be called within \code{\link{run_MCMC}}
+#' Takes all of the input data/parameters and returns a function pointer. This function finds the posterior for a given set of input parameters (theta) and infection histories without needing to pass the data set back and forth. No example is provided for function_type=2, as this should only be called within \code{\link{serosolver}}
 #' @param par_tab the parameter table controlling information such as bounds, initial values etc. See \code{\link{example_par_tab}}
 #' @param antibody_data the data frame of data to be fitted. Must have columns: group (index of group); individual (integer ID of individual); samples (numeric time of sample taken); virus (numeric time of when the virus was circulating); biomarker_group (integer of the observation group type, using a unique value for each distinctive type of observation underpinned by the same generative model); titre (integer of titre value against the given virus at that sampling time). See \code{\link{example_antibody_data}}
 #' @param antigenic_map (optional) a data frame of antigenic x and y coordinates. Must have column names: x_coord; y_coord; inf_times. See \code{\link{example_antigenic_map}}
@@ -277,7 +277,7 @@ create_posterior_func <- function(par_tab,
 
     repeat_data_exist <- nrow(antibody_data_repeats) > 0
     if (use_measurement_bias) {
-        message(cat("Using measurement bias\n"))
+        if(VERBOSE) message(cat("Using measurement bias\n"))
         expected_indices <- antibody_data_unique %>% left_join(measurement_indices_by_time,by = c("biomarker_id", "biomarker_group")) %>% pull(rho_index)
     } else {
         expected_indices <- c(-1)
@@ -305,19 +305,19 @@ create_posterior_func <- function(par_tab,
     for(biomarker_group in unique_biomarker_groups){
         if(data_type[biomarker_group] == 1){
           likelihood_func_use[[biomarker_group]] <- likelihood_func_fast
-          message(cat("Setting to discretized, bounded observations\n"))
+          if(VERBOSE) message(cat("Setting to discretized, bounded observations\n"))
           
         } else if(data_type[biomarker_group] == 2){
-          message(cat("Setting to continuous, bounded observations\n"))
+          if(VERBOSE) message(cat("Setting to continuous, bounded observations\n"))
           likelihood_func_use[[biomarker_group]] <- likelihood_func_fast_continuous
         } else {
-          message(cat("Assuming discretized, bounded observations\n"))
+          if(VERBOSE) message(cat("Assuming discretized, bounded observations\n"))
           likelihood_func_use[[biomarker_group]] <- likelihood_func_fast
         }
     }
     
     if (function_type == 1) {
-        message(cat("Creating posterior solving function...\n"))
+      if(VERBOSE) message(cat("Creating posterior solving function...\n"))
         f <- function(pars, infection_history_mat) {
           
           ## Transmission prob is the part of the likelihood function corresponding to each individual
@@ -395,7 +395,7 @@ create_posterior_func <- function(par_tab,
         }
     } else if (function_type == 2) {
         
-        message(cat("Creating infection history proposal function\n"))
+      if(VERBOSE) message(cat("Creating infection history proposal function\n"))
         if (prior_version == 4) {
             n_alive_total <- rowSums(n_alive)
         } else {
@@ -509,7 +509,7 @@ create_posterior_func <- function(par_tab,
             return(res)
         }
     } else {
-        message(cat("Creating model solving function...\n"))
+      if(VERBOSE) message(cat("Creating model solving function...\n"))
         ## Final version is just the model solving function
         f <- function(pars, infection_history_mat) {
             theta <- pars[theta_indices]

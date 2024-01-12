@@ -48,10 +48,10 @@
 #' data(example_antibody_data)
 #' data(example_par_tab)
 #' data(example_antigenic_map)
-#' res <- run_MCMC(example_par_tab[example_par_tab$names != "phi",], example_antibody_data, example_antigenic_map, prior_version=2)
+#' res <- serosolver(example_par_tab[example_par_tab$names != "phi",], example_antibody_data, example_antigenic_map, prior_version=2)
 #' }
 #' @export
-run_MCMC <- function(par_tab,
+serosolver <- function(par_tab,
                      antibody_data,
                      antigenic_map=NULL,
                      possible_exposure_times=NULL,

@@ -26,7 +26,7 @@ library(gridExtra)
 setwd("E:/James/Google Drive/Influenza/serosolver/methods_paper/PLOS Comp Biol/Results/case_study_1/")
 
 # Setup -------------------------------------------------------------------
-RUN_MCMC <- FALSE
+serosolver <- FALSE
 
 ## We'll be parallelising a few chains
 cl <- makeCluster(detectCores(), type='PSOCK')
@@ -92,12 +92,12 @@ true_inf_hist <- dat$infection_histories
 # Run MCMC framework ------------------------------------------------------
 #setwd("Q:/serosolver_manuscript/case_study_1") # PC path
 x <- filenames
-# default mcmcPars (note: don't need to pass to run_MCMC unless you want non-default options)
+# default mcmcPars (note: don't need to pass to serosolver unless you want non-default options)
 mcmc_pars <- c("iterations"=1000000,"popt"=0.44,"popt_hist"=0.44,"opt_freq"=1000,"thin"=100,"adaptive_period"=200000, 
               "save_block"=1000, "thin_hist"=1000,"hist_sample_prob"=0.5,"switch_sample"=2, "burnin"=0, "inf_propn"=1, 
               "move_size"=3,"hist_opt"=1,"swap_propn"=0.5,"hist_switch_prob"=0.5,"year_swap_propn"=1)
 
-if(RUN_MCMC) {
+if(serosolver) {
   #res <- for(j in 1:length(filenames)){
   res <- foreach(x = filenames) %dopar% {
   # starting parameter values
@@ -115,7 +115,7 @@ if(RUN_MCMC) {
       start_prob <- sum(f(start_tab$values, start_inf)[[1]])
     }
     
-    res <- run_MCMC(par_tab = start_tab, titre_dat = titre_dat,antigenic_map = fit_dat,start_inf_hist=start_inf, 
+    res <- serosolver(par_tab = start_tab, titre_dat = titre_dat,antigenic_map = fit_dat,start_inf_hist=start_inf, 
                     mcmc_pars = mcmc_pars,
                     filename = paste0("chains_sim/",x), CREATE_POSTERIOR_FUNC = create_posterior_func, version = 2)
   }

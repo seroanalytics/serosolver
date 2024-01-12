@@ -96,7 +96,7 @@ y <- f(par_tab$values, start_inf)
 
 
 
-res_gibbs <- run_MCMC(start_tab, titre_dat=titre_dat, 
+res_gibbs <- serosolver(start_tab, titre_dat=titre_dat, 
          antigenic_map = fit_dat,mcmc_pars=mcmc_pars,
          mvr_pars=NULL, filename="chain_no_lik/gibbs/gibbs",PRIOR_FUNC=NULL,
          version=2,  
@@ -104,7 +104,7 @@ res_gibbs <- run_MCMC(start_tab, titre_dat=titre_dat,
          measurement_indices=NULL, solve_likelihood=FALSE,
          temp=1)
 
-res_lambda <- run_MCMC(par_tab_lambda, titre_dat=titre_dat, 
+res_lambda <- serosolver(par_tab_lambda, titre_dat=titre_dat, 
                       antigenic_map = fit_dat,mcmc_pars=mcmc_pars,
                       mvr_pars=NULL, filename="chain_no_lik/lambda/lambda",
                       create_posterior_func_fast, PRIOR_FUNC=NULL,
@@ -115,7 +115,7 @@ res_lambda <- run_MCMC(par_tab_lambda, titre_dat=titre_dat,
                       temp=1)
 
 
-res_beta_binomial <- run_MCMC(start_tab, titre_dat=titre_dat, 
+res_beta_binomial <- serosolver(start_tab, titre_dat=titre_dat, 
                       antigenic_map = fit_dat,mcmc_pars=mcmc_pars,
                       mvr_pars=NULL, filename="chain_no_lik/beta_binomial/beta_binomial",
                       PRIOR_FUNC=NULL,
@@ -126,7 +126,7 @@ res_beta_binomial <- run_MCMC(start_tab, titre_dat=titre_dat,
                       temp=1)
 
 
-res_overall <- run_MCMC(start_tab, titre_dat=titre_dat, 
+res_overall <- serosolver(start_tab, titre_dat=titre_dat, 
                               antigenic_map = fit_dat,mcmc_pars=mcmc_pars,
                               mvr_pars=NULL, filename="chain_no_lik/overall/overall",
                               create_posterior_func, PRIOR_FUNC=NULL,

@@ -7,7 +7,7 @@
 plot_individual_number_infections(inf_chain, pad_chain = TRUE)
 }
 \arguments{
-\item{inf_chain}{the data table with infection history samples from \code{\link{run_MCMC}}}
+\item{inf_chain}{the data table with infection history samples from \code{\link{serosolver}}}
 
 \item{pad_chain}{if TRUE, pads the infection history MCMC chain to have entries for non-infection events}
 }

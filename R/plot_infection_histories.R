@@ -1,7 +1,7 @@
 #' Plot inferred posteriors infection histories
 #'
 #' Plots and calculates many summary statistics from the infection history MCMC chain
-#' @param inf_chain the data table with infection history samples from \code{\link{run_MCMC}}
+#' @param inf_chain the data table with infection history samples from \code{\link{serosolver}}
 #' @param years vector of the epochs of potential circulation
 #' @param n_alive_group vector with the number of people alive in each year of circulation.
 #' @param known_ar data frame of known attack rates, if known.
@@ -401,7 +401,7 @@ plot_attack_rates_pointrange <- function(infection_histories, antibody_data, pos
 
 #' Plot MCMC trace for infections per year
 #'
-#' @param inf_chain the data table with infection history samples from \code{\link{run_MCMC}}
+#' @param inf_chain the data table with infection history samples from \code{\link{serosolver}}
 #' @param burnin optionally remove all sampno < burnin from the chain
 #' @param times vector of integers, if not NULL, only plots a subset of years (where 1 is the first year eg. 1968)
 #' @param n_alive if not NULL, then divides number of infections per year by number alive to give attack rates rather than total infections

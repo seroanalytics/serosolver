@@ -12,7 +12,7 @@ Robins and Monro scaler, thanks to Michael White
 \seealso{
 Other mcmc: 
 \code{\link{generate_start_tab}()},
-\code{\link{run_MCMC}()},
+\code{\link{serosolver}()},
 \code{\link{save_infection_history_to_disk}()},
 \code{\link{scaletuning}()}
 }

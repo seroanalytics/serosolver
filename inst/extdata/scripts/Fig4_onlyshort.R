@@ -24,7 +24,7 @@ library(ggthemes)
 library(cowplot)
 #library(doRNG)
 
-RUN_MCMC <- TRUE
+serosolver <- TRUE
 
 ## Filename prefix for all saved outputs
 filename <- "case_study_1_test"   # The general output filename
@@ -107,7 +107,7 @@ mcmcPars <- c("iterations"=500000,"popt"=0.44,"popt_hist"=0.44,"opt_freq"=1000,"
 # starting parameter values 
 #res <- for(j in 1:length(filenames)){
 
-if(RUN_MCMC) {
+if(serosolver) {
   res <- foreach(x = filenames) %dopar% {
     ## Not all random starting conditions return finite likelihood, so for each chain generate random
     ## conditions until we get one with a finite likelihood
@@ -132,7 +132,7 @@ if(RUN_MCMC) {
       f <- create_posterior_func(startTab1,titre_dat,fit_dat,version=2) # function in posteriors.R
       start_prob <- sum(f(startTab1$values, startInf)[[1]])
     }
-    res_unvac <- run_MCMC(par_tab = startTab1, titre_dat = titre_dat,antigenic_map = fit_dat,start_inf_hist=startInf, 
+    res_unvac <- serosolver(par_tab = startTab1, titre_dat = titre_dat,antigenic_map = fit_dat,start_inf_hist=startInf, 
                     mcmc_pars = mcmcPars,
                     filename = paste0("chains_unvac_simple/",x), CREATE_POSTERIOR_FUNC = create_posterior_func, version = 2, temp=1)
   }
@@ -167,7 +167,7 @@ if(RUN_MCMC) {
       f <- create_posterior_func(startTab1,titre_dat2,fit_dat,version=2) # function in posteriors.R
       start_prob <- sum(f(startTab1$values, startInf)[[1]])
     }
-    res_vac <- run_MCMC(par_tab = startTab1, titre_dat = titre_dat2,antigenic_map = fit_dat,start_inf_hist=startInf, 
+    res_vac <- serosolver(par_tab = startTab1, titre_dat = titre_dat2,antigenic_map = fit_dat,start_inf_hist=startInf, 
                         mcmc_pars = mcmcPars,
                         filename = paste0("chains_vac_simple/",x), CREATE_POSTERIOR_FUNC = create_posterior_func, version = 2, temp=1)
   }

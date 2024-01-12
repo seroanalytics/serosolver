@@ -13,7 +13,7 @@ plot_infection_history_chains_time(
 )
 }
 \arguments{
-\item{inf_chain}{the data table with infection history samples from \code{\link{run_MCMC}}}
+\item{inf_chain}{the data table with infection history samples from \code{\link{serosolver}}}
 
 \item{burnin}{optionally remove all sampno < burnin from the chain}
 

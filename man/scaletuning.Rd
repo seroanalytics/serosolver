@@ -23,7 +23,7 @@ Scales the given step size (between 0 and 1) based on the current acceptance rat
 Other mcmc: 
 \code{\link{generate_start_tab}()},
 \code{\link{rm_scale}()},
-\code{\link{run_MCMC}()},
+\code{\link{serosolver}()},
 \code{\link{save_infection_history_to_disk}()}
 }
 \concept{mcmc}
