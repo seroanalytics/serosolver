@@ -6,12 +6,12 @@
 
 //' Infection history proposal function
 //' 
-//' Proposes a new matrix of infection histories using a beta binomial proposal distribution. This particular implementation allows for n_infs epoch times to be changed with each function call. Furthermore, the size of the swap step is specified for each individual by move_sizes.
+//' Proposes a new matrix of infection histories using a beta binomial proposal distribution. This particular implementation allows for n_infs epoch times to be changed with each function call. Furthermore, the size of the swap step is specified for each individual by proposal_inf_hist_distances.
 //' @param infection_history_mat and RcppArmadillo matrix of infection histories, where rows represent individuals and columns represent potential infection times. The contents should be a set of 1s (presence of infection) and 0s (absence of infection)
 //' @param sampled_indivs IntegerVector, indices of which individuals to resample. Note that this is indexed from 1 (ie. as if passing straight from R)
 //' @param age_mask IntegerVector, for each individual gives the first column in the infection history matrix that an individual could have been exposed to indexed from 1. ie. if alive for the whole period, entry would be 1. If alive for the 11th epoch, entry would be 11.
 //' @param strain_mask IntegerVector, for each individual gives the last column in the infection history matrix that an individual could have been exposed to indexed from 1. ie. if their last serum sample was in the 40th epoch, entry would be 40
-//' @param move_sizes IntegerVector, how far can a swap step sample from specified for each individual
+//' @param proposal_inf_hist_distances IntegerVector, how far can a swap step sample from specified for each individual
 //' @param n_infs IntegerVector, how many infections to add/remove/swap with each proposal step for each individual
 //' @param shape1 double, shape1 (alpha) parameter of the beta binomial
 //' @param shape2 double, shape2 (beta) parameter of the beta binomial
@@ -24,12 +24,12 @@ arma::mat inf_hist_prop_prior_v3(arma::mat infection_history_mat,
 				 const IntegerVector& sampled_indivs, 
 				 const IntegerVector& age_mask,
 				 const IntegerVector& sample_mask,
-				 const IntegerVector& move_sizes, 
+				 const IntegerVector& proposal_inf_hist_distances, 
 				 const IntegerVector& n_infs,
 				 double shape1, 
 				 double shape2, 
 				 const NumericVector& rand_ns,
-				 const double& swap_propn) {
+				 const double& proposal_inf_hist_indiv_swap_ratio) {
   // Copy input matrix
   arma::mat new_infection_history_mat = infection_history_mat;
   IntegerVector locs; // Locations to be updated
@@ -64,7 +64,7 @@ arma::mat inf_hist_prop_prior_v3(arma::mat infection_history_mat,
     x_n_cols = x.n_cols;
     samps = seq(0,x_n_cols-1);
     // With some probability, add/remove infections or swap infections
-    if(rand_ns[i] > swap_propn){
+    if(rand_ns[i] > proposal_inf_hist_indiv_swap_ratio){
       n_samp_max = std::min(n_inf, x_n_cols); 
       // Sample N random locations
       locs = RcppArmadillo::sample(samps, n_samp_max, FALSE, NumericVector::create());
@@ -96,7 +96,7 @@ arma::mat inf_hist_prop_prior_v3(arma::mat infection_history_mat,
       if(subset_samps.size() > 0){
 	id1 = subset_samps(floor(R::runif(0,1)*subset_samps.size()));
 	max_i_indiv = x.size();
-	move_max = move_sizes[indiv];
+	move_max = proposal_inf_hist_distances[indiv];
 	move = floor(R::runif(0,1)*2*move_max) - move_max;
 	id2 = id1 + move;
 	while(id2 < 0) id2 += max_i_indiv;
@@ -128,7 +128,7 @@ arma::mat inf_hist_prop_prior_v3(arma::mat infection_history_mat,
 //' @param n_infections IntegerMatrix, the number of infections in each year (columns) for each group (rows)
 //' @param n_infected_group IntegerVector, the total number of infections across all times in each group
 //' @param prior_lookup arma::cube, the pre-computed lookup table for the beta prior on infection histories, dimensions are number of infections, time, and group
-//' @param swap_propn double, gives the proportion of proposals that will be swap steps (ie. swap contents of two cells in infection_history rather than adding/removing infections)
+//' @param proposal_inf_hist_indiv_swap_ratio double, gives the proportion of proposals that will be swap steps (ie. swap contents of two cells in infection_history rather than adding/removing infections)
 //' @param swap_distance int, in a swap step, how many time steps either side of the chosen time period to swap with
 //' @param shape1 double, shape1 (alpha) parameter for beta prior on infection probability
 //' @param shape2 double, shape2 (beta) parameter for beta prior on infection probability
@@ -178,7 +178,7 @@ List inf_hist_prop_prior_v2_and_v4(
 				   IntegerMatrix &n_infections, // No. of infections in each year/group
 				   IntegerVector &n_infected_group,
 				   const arma::cube &prior_lookup,
-				   const double &swap_propn,
+				   const double &proposal_inf_hist_indiv_swap_ratio,
 				   const int &swap_distance,
 				   const bool &propose_from_prior,
 				   const double &shape1, // shape1 for prior
@@ -382,7 +382,7 @@ List inf_hist_prop_prior_v2_and_v4(
   // For each individual
   for(int i = 0; i < n_sampled; ++i){
     // Which proposal step to take and do we need to calculate the likelihood    
-    swap_step_option = R::runif(0,1) < swap_propn;
+    swap_step_option = R::runif(0,1) < proposal_inf_hist_indiv_swap_ratio;
     
     // Get index, group and current likelihood of individual under consideration
     indiv = sampled_indivs(i)-1;

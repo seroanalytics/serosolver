@@ -15,7 +15,7 @@ plot_infection_history_chains_time(
 \arguments{
 \item{inf_chain}{the data table with infection history samples from \code{\link{serosolver}}}
 
-\item{burnin}{optionally remove all sampno < burnin from the chain}
+\item{burnin}{optionally remove all samp_no < burnin from the chain}
 
 \item{times}{vector of integers, if not NULL, only plots a subset of years (where 1 is the first year eg. 1968)}
 

@@ -9,7 +9,7 @@ check_par_tab(
   mcmc = FALSE,
   version = NULL,
   possible_exposure_times = NULL,
-  VERBOSE = FALSE
+  verbose = FALSE
 )
 }
 \arguments{
@@ -21,7 +21,7 @@ check_par_tab(
 
 \item{possible_exposure_times}{optional vector of possible exposure times}
 
-\item{VERBOSE}{if TRUE, prints warning messages}
+\item{verbose}{if TRUE, prints warning messages}
 }
 \value{
 the same par_tab object with corrections if needed

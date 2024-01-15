@@ -93,13 +93,13 @@ load_mcmc_chains <- function(location = getwd(), par_tab = NULL, unfixed = TRUE,
     ## Combine total number of infections with theta chain
   list_total_inf_chains <- lapply(inf_list_chains, function(x) get_total_number_infections(x, FALSE))
   theta_list_chains <- Map(
-    function(x, y) merge(data.table(x), data.table(y), by = c("sampno", "chain_no")),
+    function(x, y) merge(data.table(x), data.table(y), by = c("samp_no", "chain_no")),
     theta_list_chains, list_total_inf_chains
   )
-  theta_list_chains <- lapply(theta_list_chains, function(x) x[order(x[, "sampno"]), ])
-  unique_sampnos <- lapply(theta_list_chains, function(x) unique(x[, "sampno"])$sampno)
-  unique_sampnos <- Reduce(intersect, unique_sampnos)
-  theta_list_chains <- lapply(theta_list_chains, function(x) x[x$sampno %in% unique_sampnos, ])
+  theta_list_chains <- lapply(theta_list_chains, function(x) x[order(x[, "samp_no"]), ])
+  unique_samp_nos <- lapply(theta_list_chains, function(x) unique(x[, "samp_no"])$samp_no)
+  unique_samp_nos <- Reduce(intersect, unique_samp_nos)
+  theta_list_chains <- lapply(theta_list_chains, function(x) x[x$samp_no %in% unique_samp_nos, ])
 
     ## Convert to MCMC objects if desired
   if (convert_mcmc) {
@@ -126,7 +126,7 @@ load_mcmc_chains <- function(location = getwd(), par_tab = NULL, unfixed = TRUE,
 #' @export
 load_theta_chains <- function(location = getwd(), par_tab = NULL, unfixed = TRUE, thin = 1, burnin = 0, convert_mcmc = TRUE) {
   chains <- Sys.glob(file.path(location, "*_chain.csv"))
-  message(cat("Chains detected: ", length(chains), sep = "\t"))
+  message("Chains detected: ", length(chains), sep = "\t")
   if (length(chains) < 1) {
       message("Error - no chains found")
       return(NULL)
@@ -135,24 +135,24 @@ load_theta_chains <- function(location = getwd(), par_tab = NULL, unfixed = TRUE
   ## Read in the MCMC chains with fread for speed
   read_chains <- lapply(chains, read.csv)
 
-  message(cat("Highest MCMC sample interations: \n"))
-  lapply(read_chains, function(x) message(max(x$sampno)))
+  message("Highest MCMC sample interations: \n")
+  lapply(read_chains, function(x) message(max(x$samp_no)))
   
   ## Thin and remove burn in
   read_chains <- lapply(read_chains, function(x) x[seq(1, nrow(x), by = thin), ])
-  read_chains <- lapply(read_chains, function(x) x[x$sampno > burnin, ])
-  max_sampno <- min(as.numeric(lapply(read_chains, function(x) max(x$sampno))))
-  read_chains <- lapply(read_chains, function(x) x[x$sampno <= max_sampno, ])
-  unique_sampnos <- lapply(read_chains, function(x) unique(x[, "sampno"]))
-  unique_sampnos <- Reduce(intersect, unique_sampnos)
-  read_chains <- lapply(read_chains, function(x) x[x$sampno %in% unique_sampnos, ])
+  read_chains <- lapply(read_chains, function(x) x[x$samp_no > burnin, ])
+  max_samp_no <- min(as.numeric(lapply(read_chains, function(x) max(x$samp_no))))
+  read_chains <- lapply(read_chains, function(x) x[x$samp_no <= max_samp_no, ])
+  unique_samp_nos <- lapply(read_chains, function(x) unique(x[, "samp_no"]))
+  unique_samp_nos <- Reduce(intersect, unique_samp_nos)
+  read_chains <- lapply(read_chains, function(x) x[x$samp_no %in% unique_samp_nos, ])
 
   for (i in 1:length(read_chains)) read_chains[[i]]$chain_no <- i
 
   ## Get the estimated parameters only
   if (unfixed & !is.null(par_tab)) {
     fixed <- par_tab$fixed
-    use_colnames <- intersect(c("sampno", par_tab$names[which(fixed == 0)], "posterior_prob", "likelihood", "prior_prob", "chain_no"), colnames(read_chains[[1]]))
+    use_colnames <- intersect(c("samp_no", par_tab$names[which(fixed == 0)], "posterior_prob", "likelihood", "prior_prob", "chain_no"), colnames(read_chains[[1]]))
     read_chains <- lapply(read_chains, function(x) x[, use_colnames])
   }
 
@@ -197,7 +197,7 @@ load_infection_chains <- function(location = getwd(), thin = 1, burnin = 0, chai
   chains_old <- Sys.glob(file.path(location, "*_infectionHistories.csv"))
   chains <- c(chains, chains_old)
   if (!is.null(chain_subset)) chains <- chains[chain_subset]
-  message(cat("Chains detected: ", chains, sep = "\n"))
+  message("Chains detected: ", chains, sep = "\n")
   if (length(chains) < 1) {
     message("Error - no chains found")
     return(NULL)
@@ -208,17 +208,17 @@ load_infection_chains <- function(location = getwd(), thin = 1, burnin = 0, chai
   read_chains <- lapply(chains, data.table::fread)
 
   ## Thin and remove burn in
-  read_chains <- lapply(read_chains, function(x) x[sampno > burnin, ])
+  read_chains <- lapply(read_chains, function(x) x[samp_no > burnin, ])
   read_chains <- lapply(read_chains, function(x) {
-    sampnos <- unique(x$sampno)
-    sampnos <- sampnos[seq(1, length(sampnos), by = thin)]
-    x <- x[sampno %in% sampnos, ]
+    samp_nos <- unique(x$samp_no)
+    samp_nos <- samp_nos[seq(1, length(samp_nos), by = thin)]
+    x <- x[samp_no %in% samp_nos, ]
   })
-  max_sampno <- min(as.numeric(lapply(read_chains, function(x) max(x$sampno))))
-  read_chains <- lapply(read_chains, function(x) x[sampno <= max_sampno, ])
+  max_samp_no <- min(as.numeric(lapply(read_chains, function(x) max(x$samp_no))))
+  read_chains <- lapply(read_chains, function(x) x[samp_no <= max_samp_no, ])
 
   message("Number of rows: ")
-  print(lapply(read_chains, nrow))
+  lapply(read_chains, function(x) message(nrow(x)))
 
   for (i in 1:length(read_chains)) read_chains[[i]]$chain_no <- i
   chain <- do.call("rbind", read_chains)
@@ -243,7 +243,7 @@ get_total_number_infections <- function(inf_chain, pad_chain = TRUE) {
   }
   if (pad_chain) inf_chain <- pad_inf_chain(inf_chain)
   n_strain <- max(inf_chain$j)
-  data.table::setkey(inf_chain, "sampno", "chain_no")
+  data.table::setkey(inf_chain, "samp_no", "chain_no")
   ## For each individual, how many infections did they have in each sample in total?
   n_inf_chain <- inf_chain[, list(total_infections = sum(x)), by = key(inf_chain)]
 }
@@ -327,11 +327,19 @@ get_antibody_level_predictions <- function(chain, infection_histories, antibody_
                                            data_type=1){
   ## Need to align the iterations of the two MCMC chains
   ## and choose some random samples
-  samps <- intersect(unique(infection_histories$sampno), unique(chain$sampno))
-  chain <- chain[chain$sampno %in% samps, ]
-  infection_histories <- infection_histories[infection_histories$sampno %in% samps, ]
+  samps <- intersect(unique(infection_histories$samp_no), unique(chain$samp_no))
+  chain <- chain[chain$samp_no %in% samps, ]
+  infection_histories <- infection_histories[infection_histories$samp_no %in% samps, ]
   
-  nsamp <- min(nsamp, length(unique(chain$sampno)))
+  ## Convert samp_no and chainno to a single samp_no index
+  if(!("chain_no" %in% colnames(chain))){
+    chain$chain_no <- 1
+    infection_histories$chain_no <- 1
+  }
+  chain <- chain %>% dplyr::group_by(chain_no,samp_no) %>% dplyr::mutate(samp_no = cur_group_id()) %>% dplyr::ungroup() %>% dplyr::mutate(chain_no = 1) %>% arrange(samp_no)
+  infection_histories <- infection_histories %>% dplyr::group_by(chain_no,samp_no) %>% dplyr::mutate(samp_no = cur_group_id()) %>% dplyr::ungroup() %>% dplyr::mutate(chain_no = 1) %>% arrange(samp_no)
+  samps <- unique(chain$samp_no)
+  nsamp <- min(nsamp, length(unique(chain$samp_no)))
   
   ## Take subset of individuals
   antibody_data <- antibody_data[antibody_data$individual %in% individuals, ]
@@ -396,12 +404,12 @@ get_antibody_level_predictions <- function(chain, infection_histories, antibody_
   inf_hist_all <- list(nsamp)
   for (i in 1:nsamp) {
     index <- tmp_samp[i]
-    pars <- get_index_pars(chain, index)
+    pars <- get_index_pars(chain, samp_no=index,chain_no=1)
     pars <- pars[!(names(pars) %in% c("posterior_prob", "likelihood", "prior_prob",
-                                      "sampno", "total_infections", "chain_no"
+                                      "samp_no", "total_infections", "chain_no"
     ))]
     ## pars <- pars[names(pars) %in% par_tab$names]
-    tmp_inf_hist <- infection_histories[infection_histories$sampno == index, ]
+    tmp_inf_hist <- infection_histories[infection_histories$samp_no == index, ]
     tmp_inf_hist <- as.matrix(Matrix::sparseMatrix(i = tmp_inf_hist$i, j = tmp_inf_hist$j, x = tmp_inf_hist$x, dims = c(n_indiv, nstrain)))
     predicted_titres[, i] <- model_func(pars, tmp_inf_hist)
     for(biomarker_group in unique_biomarker_groups){
@@ -438,17 +446,17 @@ get_antibody_level_predictions <- function(chain, infection_histories, antibody_
   best_pars <- get_best_pars(chain)
   best_pars <- best_pars[!(names(best_pars) %in% c(
     "posterior_prob", "likelihood", "prior_prob",
-    "sampno", "total_infections", "chain_no"
+    "samp_no", "total_infections", "chain_no"
   ))]
   #best_pars <- best_pars[names(best_pars) %in% par_tab$names]
-  best_I <- chain$sampno[which.max(chain$posterior_prob)]
-  best_inf <- infection_histories[infection_histories$sampno == best_I, ]
+  best_I <- chain$samp_no[which.max(chain$posterior_prob)]
+  best_inf <- infection_histories[infection_histories$samp_no == best_I, ]
   best_inf <- as.matrix(Matrix::sparseMatrix(i = best_inf$i, j = best_inf$j, x = best_inf$x, dims = c(n_indiv, nstrain)))
   
   ## Generate trajectory for best parameters
   best_traj <- model_func(best_pars, best_inf)
   best_residuals <- antibody_data1$measurement - floor(best_traj)
-  best_residuals <- cbind(antibody_data1, best_residuals, "sampno" = best_I)
+  best_residuals <- cbind(antibody_data1, best_residuals, "samp_no" = best_I)
   dat2 <- as.data.frame(dat2)
   obs_dat <- as.data.frame(obs_dat)
   
@@ -456,7 +464,7 @@ get_antibody_level_predictions <- function(chain, infection_histories, antibody_
   dat2$max <- best_traj
   dat2 <- cbind(antibody_data1, dat2)
   obs_dat <- cbind(antibody_data1, obs_dat)
-  tmp_inf_chain <- data.table(subset(infection_histories, sampno %in% tmp_samp))
+  tmp_inf_chain <- data.table(subset(infection_histories, samp_no %in% tmp_samp))
   
   ## Get infection history density for each individual and each epoch
   data.table::setkey(tmp_inf_chain, "i", "j")
@@ -517,18 +525,18 @@ get_antibody_level_predictions <- function(chain, infection_histories, antibody_
 #'                                                   n_alive=n_alive_group, known_ar=known_ar,
 #'                                                   known_infection_history=known_inf_hist)
 #' @export
-calculate_infection_history_statistics <- function(inf_chain, burnin = 0, years = NULL,
+calculate_infection_history_statistics <- function(inf_chain, burnin = 0, possible_exposure_times = NULL,
                                                    n_alive = NULL, known_ar = NULL,
                                                    group_ids = NULL,
                                                    known_infection_history = NULL,
                                                    solve_cumulative=FALSE) {
-  inf_chain <- inf_chain[inf_chain$sampno > burnin, ]
+  inf_chain <- inf_chain[inf_chain$samp_no > burnin, ]
   if (is.null(inf_chain$chain_no)) {
     inf_chain$chain_no <- 1
   }
-  message("Padding inf chain...\n")
+  ## message("Padding inf chain...\n")
   inf_chain <- pad_inf_chain(inf_chain)
-  message("Done\n")
+  ## message("Done\n")
   
   if (!is.null(group_ids)) {
     inf_chain <- merge(inf_chain, data.table(group_ids))
@@ -536,13 +544,13 @@ calculate_infection_history_statistics <- function(inf_chain, burnin = 0, years 
     inf_chain$population_group <- 1
   }
   
-  message("Calculating by time summaries...\n")
-  data.table::setkey(inf_chain, "population_group", "j", "sampno", "chain_no")
+  ## message("Calculating by time summaries...\n")
+  data.table::setkey(inf_chain, "population_group", "j", "samp_no", "chain_no")
   n_inf_chain <- inf_chain[, list(total_infs = sum(x)), by = key(inf_chain)]
   
   
-  if (!is.null(years)) {
-    n_inf_chain$j <- years[n_inf_chain$j]
+  if (!is.null(possible_exposure_times)) {
+    n_inf_chain$j <- possible_exposure_times[n_inf_chain$j]
   }
   
   if (!is.null(n_alive)) {
@@ -550,15 +558,20 @@ calculate_infection_history_statistics <- function(inf_chain, burnin = 0, years 
     n_inf_chain$total_infs <- n_inf_chain$total_infs / n_inf_chain$n_alive
     n_inf_chain[is.nan(n_inf_chain$total_infs), "total_infs"] <- 0
   }
-  data.table::setkey(n_inf_chain, "population_group", "sampno", "chain_no")
+  data.table::setkey(n_inf_chain, "population_group", "samp_no", "chain_no")
   n_inf_chain[, cumu_infs := cumsum(total_infs), by = key(n_inf_chain)]
-  gelman_res_j <- ddply(n_inf_chain, .(population_group,j), function(tmp_chain){
-    tmp_chain_mcmc <- split(as.data.table(tmp_chain), by=c("chain_no"))
-    tmp_chain_mcmc <- lapply(tmp_chain_mcmc, function(x) as.mcmc(x[,c("total_infs")]))
-    tmp_chain_mcmc <- as.mcmc.list(tmp_chain_mcmc)
-    gelman.diag(tmp_chain_mcmc)[[1]][1,]
-  })
-  colnames(gelman_res_j) <- c("population_group","j","gelman_point","gelman_upper")
+  
+  if(length(unique(n_inf_chain$chain_no)) > 1){
+    gelman_res_j <- ddply(n_inf_chain, .(population_group,j), function(tmp_chain){
+      tmp_chain_mcmc <- split(as.data.table(tmp_chain), by=c("chain_no"))
+      tmp_chain_mcmc <- lapply(tmp_chain_mcmc, function(x) as.mcmc(x[,c("total_infs")]))
+      tmp_chain_mcmc <- as.mcmc.list(tmp_chain_mcmc)
+      gelman.diag(tmp_chain_mcmc)[[1]][1,]
+    })
+    colnames(gelman_res_j) <- c("population_group","j","gelman_point","gelman_upper")
+  } else {
+    gelman_res_j <- NULL
+  }
   
   
   data.table::setkey(n_inf_chain, "j", "population_group")
@@ -574,8 +587,10 @@ calculate_infection_history_statistics <- function(inf_chain, burnin = 0, years 
   ),
   by = key(n_inf_chain)
   ]
-  n_inf_chain_summaries <- merge(n_inf_chain_summaries, gelman_res_j, by=c("j","population_group"))
-  
+  if(length(unique(n_inf_chain$chain_no)) > 1){
+    
+    n_inf_chain_summaries <- merge(n_inf_chain_summaries, gelman_res_j, by=c("j","population_group"))
+  }
   n_inf_chain_summaries_cumu <- n_inf_chain[, list(
     mean = mean(as.double(cumu_infs)), median = median(as.double(cumu_infs)),
     lower_quantile = quantile(as.double(cumu_infs), c(0.025)),
@@ -588,15 +603,15 @@ calculate_infection_history_statistics <- function(inf_chain, burnin = 0, years 
   ),
   by = key(n_inf_chain)
   ]
-  message("Done\n")
+  ## message("Done\n")
   if (!is.null(known_ar)) {
     n_inf_chain_summaries <- merge(n_inf_chain_summaries, known_ar, by = c("j","population_group"))
     n_inf_chain_summaries$correct <- (n_inf_chain_summaries$AR >=
                                         n_inf_chain_summaries$lower_quantile) & (n_inf_chain_summaries$AR <=
                                                                                    n_inf_chain_summaries$upper_quantile)
   }
-  message("Calculating by individual summaries...\n")
-  data.table::setkey(inf_chain, "i", "sampno", "chain_no")
+  ## message("Calculating by individual summaries...\n")
+  data.table::setkey(inf_chain, "i", "samp_no", "chain_no")
   n_inf_chain_i <- inf_chain[, list(total_infs = sum(x)), by = key(inf_chain)]
   
   data.table::setkey(n_inf_chain_i, "i")
@@ -615,7 +630,7 @@ calculate_infection_history_statistics <- function(inf_chain, burnin = 0, years 
   ]
   
   if(solve_cumulative){
-    data.table::setkey(inf_chain,"i", "sampno", "chain_no")
+    data.table::setkey(inf_chain,"i", "samp_no", "chain_no")
     n_inf_chain_i_cumu <- inf_chain[, cumu_infs := cumsum(x), by = key(inf_chain)]
     
     data.table::setkey(n_inf_chain_i_cumu, "i","j")
@@ -635,7 +650,7 @@ calculate_infection_history_statistics <- function(inf_chain, burnin = 0, years 
   } else {
     n_inf_chain_i_summaries_cumu <- NULL
   }
-  message("Done\n")
+ ##  message("Done\n")
   if (!is.null(known_infection_history)) {
     true_n_infs <- rowSums(known_infection_history)
     true_n_infs <- data.frame(i = 1:length(true_n_infs), true_infs = true_n_infs)
@@ -655,7 +670,7 @@ calculate_infection_history_statistics <- function(inf_chain, burnin = 0, years 
 #'
 #' For each individual and MCMC iteration, uses the infection history MCMC chain and detects runs of consecutive infections.
 #' @param inf_chain data table of the infection histories posterior
-#' @return a tibble giving the consecutive infection run length, the start and end time of each run, which index the run is (ie., which distinct infection), and the time from the end of the previous run, for each i and sampno
+#' @return a tibble giving the consecutive infection run length, the start and end time of each run, which index the run is (ie., which distinct infection), and the time from the end of the previous run, for each i and samp_no
 #' @examples
 #' \dontrun{
 #' identify_run_lengths(inf_chain)
@@ -663,16 +678,16 @@ calculate_infection_history_statistics <- function(inf_chain, burnin = 0, years 
 #' @export
 identify_run_lengths <- function(inf_chain) {
   inf_chain %>% 
-    arrange(sampno, i, j) %>%
+    arrange(samp_no, i, j) %>%
     as_tibble() %>%
-    group_by(i, sampno) %>%
+    group_by(i, samp_no) %>%
     mutate(run_group = cumsum(c(0, diff(x != 1) != 0))) %>%
     filter(x == 1) %>%
-    group_by(i, sampno, run_group) %>%
+    group_by(i, samp_no, run_group) %>%
     summarise(run_length = n(),
               start_time = first(j),
               end_time = last(j))%>%
-    group_by(i, sampno) %>%
+    group_by(i, samp_no) %>%
     mutate(infection_index = row_number(),
            time_diff = start_time - lag(end_time,1,default=NA)) %>%
     ungroup()%>%

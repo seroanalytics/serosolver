@@ -87,9 +87,9 @@ n_alive_tmp <- sapply(seq(1,length(strain_isolation_times)), function(x)
   nrow(masks[masks$age_mask <=x & masks$strain_mask >= x,]))
 
 ## Specify paramters controlling the MCMC procedure
-mcmc_pars <- c("save_block"=1000,"thin"=10,"thin_hist"=100,"iterations"=50000,"adaptive_period"=10000,
-               "burnin"=0,"switch_sample"=2,"hist_switch_prob"=0,"year_swap_propn"=0.5,"swap_propn"=0.5,
-               "inf_propn"=1,"hist_sample_prob"=1,"move_size"=2, "hist_opt"=0,"popt"=0.44,"opt_freq"=2000)
+mcmc_pars <- c("save_block"=1000,"thin"=10,"thin_inf_hist"=100,"iterations"=50000,"adaptive_iterations"=10000,
+               "burnin"=0,"proposal_ratio"=2,"proposal_inf_hist_group_swap_ratio"=0,"proposal_inf_hist_group_swap_prop"=0.5,"proposal_inf_hist_indiv_swap_ratio"=0.5,
+               "proposal_inf_hist_time_prop"=1,"proposal_inf_hist_indiv_prop"=1,"proposal_inf_hist_distance"=2, "proposal_inf_hist_adaptive"=0,"target_acceptance_rate_theta"=0.44,"adaptive_frequency"=2000)
 
 f <- create_posterior_func(par_tab,titre_dat,fit_dat,2)
 y <- f(par_tab$values, start_inf)

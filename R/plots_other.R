@@ -132,3 +132,107 @@ plot_samples_distances <- function(antibody_data) {
     })
     ggplot(distances) + geom_histogram(aes(x = V1), binwidth = 1) + theme_bw() + xlab("Time points between samples")
 }
+
+#' @export
+plot_posteriors_theta <- function(chain,par_tab){
+  par_tab_tmp <- par_tab[par_tab$fixed == 0,]
+  par_indices <- c("samp_no","chain_no",par_tab_tmp[par_tab_tmp$par_type == 1,"names"],"total_infections","likelihood","prior_prob","posterior_prob")
+
+  chain <- chain %>% as_tibble()
+  chain$chain_no <- as.factor(chain$chain_no)
+  
+  p_trace_par <- chain[,par_indices] %>%
+    pivot_longer(-c(samp_no, chain_no)) %>%
+    ggplot() + 
+    geom_line(aes(x=samp_no,y=value,col=chain_no)) + 
+    facet_wrap(~name,scales="free_y") +
+    theme_bw()
+  
+  p_density_par <- chain[,par_indices] %>%
+    pivot_longer(-c(samp_no, chain_no)) %>%
+    ggplot() + 
+    geom_density(aes(x=value,fill=chain_no),alpha=0.25) +
+    facet_wrap(~name,scales="free") +
+    theme_bw()
+  
+  p_trace_phi <- p_density_phi <- NULL
+  if("phi" %in% par_tab$names & "phi" %in% colnames(chain)){
+    phi_indices <- 1:nrow(par_tab_tmp[par_tab_tmp$names == "phi",])
+    phi_indices <- c("samp_no","chain_no",c("phi",paste0("phi.",phi_indices[1:(length(phi_indices)-1)])))
+    p_trace_phi <- chain[,phi_indices] %>%
+      pivot_longer(-c(samp_no, chain_no)) %>%
+      ggplot() + 
+      geom_line(aes(x=samp_no,y=value,col=chain_no)) + 
+      facet_wrap(~name,scales="free_y") +
+      theme_bw()
+    p_density_phi <- chain[,phi_indices] %>%
+      pivot_longer(-c(samp_no, chain_no)) %>%
+      ggplot() + 
+      geom_density(aes(x=value,fill=chain_no),alpha=0.25) +
+      facet_wrap(~name,scales="free") +
+      theme_bw()
+  }
+  p_trace_rho <- p_density_rho <- NULL
+  if("rho" %in% par_tab$names& "rho" %in% colnames(chain)){
+    rho_indices <- 1:nrow(par_tab_tmp[par_tab_tmp$names == "rho",])
+    rho_indices <- c("samp_no","chain_no",c("rho",paste0("rho.",rho_indices[1:(length(rho_indices)-1)])))
+    p_trace_rho <- chain[,rho_indices] %>%
+      pivot_longer(-c(samp_no, chain_no)) %>%
+      ggplot() + 
+      geom_line(aes(x=samp_no,y=value,col=chain_no)) + 
+      facet_wrap(~name,scales="free_y") +
+      theme_bw()
+    p_density_rho <- chain[,rho_indices] %>%
+      pivot_longer(-c(samp_no, chain_no)) %>%
+      ggplot() + 
+      geom_density(aes(x=value,fill=chain_no),alpha=0.25) +
+      facet_wrap(~name,scales="free") +
+      theme_bw()
+  }
+    
+  list(p_trace_par, p_density_par,
+       p_trace_phi,p_density_phi,
+       p_trace_rho,p_density_rho)
+}
+
+#' @export
+plot_mcmc_diagnostics <- function(location, par_tab, burnin){
+  chains <- load_mcmc_chains(location=getwd(),par_tab=par_tab,burnin=burnin,unfixed=TRUE)
+  
+  par_medians <- sapply(chains$theta_chain[,!(colnames(chains$theta_chain) %in% c("samp_no","chain_no","posterior_prob","likelihood","prior_prob"))], function(x) median(x))
+  par_means <- sapply(chains$theta_chain[,!(colnames(chains$theta_chain) %in% c("samp_no","chain_no","posterior_prob","likelihood","prior_prob"))], function(x) mean(x))
+  par_lower95 <- sapply(chains$theta_chain[,!(colnames(chains$theta_chain) %in% c("samp_no","chain_no","posterior_prob","likelihood","prior_prob"))], function(x) quantile(x,0.025))
+  par_upper95 <- sapply(chains$theta_chain[,!(colnames(chains$theta_chain) %in% c("samp_no","chain_no","posterior_prob","likelihood","prior_prob"))], function(x) quantile(x,0.975))
+  
+  miss_cols <- colnames(chains$theta_chain)
+  miss_cols <- miss_cols[!(miss_cols %in% c("samp_no","chain_no","likelihood","prior_prob","posterior_prob"))]
+  chains1 <- lapply(chains$theta_list_chains, function(x){
+    x <- x %>% select(all_of(miss_cols)) %>% as.mcmc()
+  })
+
+  ess <- effectiveSize(chains1)
+  
+  par_estimates <- data.table(names=names(par_medians),median=par_medians,
+                              mean=par_means,lower95_CrI=par_lower95,upper95_CrI=par_upper95,
+                              ess=ess)
+  
+  if(length(chains$theta_list_chains) > 1){
+    gelman_res <- gelman.diag(chains1)
+    par_estimates <- cbind(par_estimates, gelman_res$psrf)
+    colnames(par_estimates)[7:8] <- c("Rhat point estimate","Rhat upper CI")
+  } else {
+    gelman_res <- "Cannot calculate Rhat with only 1 chain"
+  }
+  
+  
+  
+  p_inf_hists <- plot_posteriors_infhist(chains$inf_chain,example_antigenic_map$inf_times,n_alive=NULL)
+  p_thetas <- plot_posteriors_theta(chains$theta_chain,par_tab)
+  
+  list(
+    theta_estimates=par_estimates,
+    p_thetas=p_thetas,
+    inf_hist_estimates=p_inf_hists$estimates,
+    p_inf_hists=p_inf_hists[which(names(p_inf_hists) != "estimates")]
+      )
+}

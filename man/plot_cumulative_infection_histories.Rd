@@ -22,7 +22,7 @@ plot_cumulative_infection_histories(
 \arguments{
 \item{inf_chain}{the infection history chain}
 
-\item{burnin}{only plot samples where sampno > burnin}
+\item{burnin}{only plot samples where samp_no > burnin}
 
 \item{indivs}{vector of individual ids to plot}
 

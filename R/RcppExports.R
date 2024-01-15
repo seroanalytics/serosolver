@@ -176,12 +176,12 @@ likelihood_func_fast_continuous <- function(theta, obs, predicted_antibody_level
 
 #' Infection history proposal function
 #' 
-#' Proposes a new matrix of infection histories using a beta binomial proposal distribution. This particular implementation allows for n_infs epoch times to be changed with each function call. Furthermore, the size of the swap step is specified for each individual by move_sizes.
+#' Proposes a new matrix of infection histories using a beta binomial proposal distribution. This particular implementation allows for n_infs epoch times to be changed with each function call. Furthermore, the size of the swap step is specified for each individual by proposal_inf_hist_distances.
 #' @param infection_history_mat and RcppArmadillo matrix of infection histories, where rows represent individuals and columns represent potential infection times. The contents should be a set of 1s (presence of infection) and 0s (absence of infection)
 #' @param sampled_indivs IntegerVector, indices of which individuals to resample. Note that this is indexed from 1 (ie. as if passing straight from R)
 #' @param age_mask IntegerVector, for each individual gives the first column in the infection history matrix that an individual could have been exposed to indexed from 1. ie. if alive for the whole period, entry would be 1. If alive for the 11th epoch, entry would be 11.
 #' @param strain_mask IntegerVector, for each individual gives the last column in the infection history matrix that an individual could have been exposed to indexed from 1. ie. if their last serum sample was in the 40th epoch, entry would be 40
-#' @param move_sizes IntegerVector, how far can a swap step sample from specified for each individual
+#' @param proposal_inf_hist_distances IntegerVector, how far can a swap step sample from specified for each individual
 #' @param n_infs IntegerVector, how many infections to add/remove/swap with each proposal step for each individual
 #' @param shape1 double, shape1 (alpha) parameter of the beta binomial
 #' @param shape2 double, shape2 (beta) parameter of the beta binomial
@@ -189,8 +189,8 @@ likelihood_func_fast_continuous <- function(theta, obs, predicted_antibody_level
 #' @return a matrix of 1s and 0s corresponding to the infection histories for all individuals
 #' @export
 #' @family infection_history_proposal
-inf_hist_prop_prior_v3 <- function(infection_history_mat, sampled_indivs, age_mask, sample_mask, move_sizes, n_infs, shape1, shape2, rand_ns, swap_propn) {
-    .Call('_serosolver_inf_hist_prop_prior_v3', PACKAGE = 'serosolver', infection_history_mat, sampled_indivs, age_mask, sample_mask, move_sizes, n_infs, shape1, shape2, rand_ns, swap_propn)
+inf_hist_prop_prior_v3 <- function(infection_history_mat, sampled_indivs, age_mask, sample_mask, proposal_inf_hist_distances, n_infs, shape1, shape2, rand_ns, proposal_inf_hist_indiv_swap_ratio) {
+    .Call('_serosolver_inf_hist_prop_prior_v3', PACKAGE = 'serosolver', infection_history_mat, sampled_indivs, age_mask, sample_mask, proposal_inf_hist_distances, n_infs, shape1, shape2, rand_ns, proposal_inf_hist_indiv_swap_ratio)
 }
 
 #' Infection history gibbs proposal
@@ -207,7 +207,7 @@ inf_hist_prop_prior_v3 <- function(infection_history_mat, sampled_indivs, age_ma
 #' @param n_infections IntegerMatrix, the number of infections in each year (columns) for each group (rows)
 #' @param n_infected_group IntegerVector, the total number of infections across all times in each group
 #' @param prior_lookup arma::cube, the pre-computed lookup table for the beta prior on infection histories, dimensions are number of infections, time, and group
-#' @param swap_propn double, gives the proportion of proposals that will be swap steps (ie. swap contents of two cells in infection_history rather than adding/removing infections)
+#' @param proposal_inf_hist_indiv_swap_ratio double, gives the proportion of proposals that will be swap steps (ie. swap contents of two cells in infection_history rather than adding/removing infections)
 #' @param swap_distance int, in a swap step, how many time steps either side of the chosen time period to swap with
 #' @param shape1 double, shape1 (alpha) parameter for beta prior on infection probability
 #' @param shape2 double, shape2 (beta) parameter for beta prior on infection probability
@@ -238,7 +238,7 @@ inf_hist_prop_prior_v3 <- function(infection_history_mat, sampled_indivs, age_ma
 #' @return an R list with 6 entries: 1) the vector replacing likelihoods_pre_proposal, corresponding to the new likelihoods per individual; 2) the matrix of 1s and 0s corresponding to the new infection histories for all individuals; 3-6) the updated entries for proposal_iter, accepted_iter, proposal_swap and accepted_swap.
 #' @export
 #' @family infection_history_proposal
-inf_hist_prop_prior_v2_and_v4 <- function(theta, unique_theta_indices, unique_biomarker_groups, infection_history_mat, likelihoods_pre_proposal, sampled_indivs, n_times_samp_vec, age_mask, sample_mask, n_alive, n_infections, n_infected_group, prior_lookup, swap_propn, swap_distance, propose_from_prior, shape1, shape2, possible_exposure_times, possible_exposure_times_indices, sample_times, type_data_start, biomarker_groups, sample_data_start, antibody_data_start, nrows_per_sample, cum_nrows_per_individual_in_data, cum_nrows_per_individual_in_repeat_data, group_id_vec, biomarker_id_indices, antigenic_map_long, antigenic_map_short, antigenic_distances, antibody_data, antibody_data_repeats, n_measurements_total, repeat_indices, repeat_data_exist, measurement_shifts, proposal_iter, accepted_iter, proposal_swap, accepted_swap, overall_swap_proposals, overall_add_proposals, time_sample_probs, total_alive, data_types, obs_weights, temp = 1, solve_likelihood = TRUE) {
-    .Call('_serosolver_inf_hist_prop_prior_v2_and_v4', PACKAGE = 'serosolver', theta, unique_theta_indices, unique_biomarker_groups, infection_history_mat, likelihoods_pre_proposal, sampled_indivs, n_times_samp_vec, age_mask, sample_mask, n_alive, n_infections, n_infected_group, prior_lookup, swap_propn, swap_distance, propose_from_prior, shape1, shape2, possible_exposure_times, possible_exposure_times_indices, sample_times, type_data_start, biomarker_groups, sample_data_start, antibody_data_start, nrows_per_sample, cum_nrows_per_individual_in_data, cum_nrows_per_individual_in_repeat_data, group_id_vec, biomarker_id_indices, antigenic_map_long, antigenic_map_short, antigenic_distances, antibody_data, antibody_data_repeats, n_measurements_total, repeat_indices, repeat_data_exist, measurement_shifts, proposal_iter, accepted_iter, proposal_swap, accepted_swap, overall_swap_proposals, overall_add_proposals, time_sample_probs, total_alive, data_types, obs_weights, temp, solve_likelihood)
+inf_hist_prop_prior_v2_and_v4 <- function(theta, unique_theta_indices, unique_biomarker_groups, infection_history_mat, likelihoods_pre_proposal, sampled_indivs, n_times_samp_vec, age_mask, sample_mask, n_alive, n_infections, n_infected_group, prior_lookup, proposal_inf_hist_indiv_swap_ratio, swap_distance, propose_from_prior, shape1, shape2, possible_exposure_times, possible_exposure_times_indices, sample_times, type_data_start, biomarker_groups, sample_data_start, antibody_data_start, nrows_per_sample, cum_nrows_per_individual_in_data, cum_nrows_per_individual_in_repeat_data, group_id_vec, biomarker_id_indices, antigenic_map_long, antigenic_map_short, antigenic_distances, antibody_data, antibody_data_repeats, n_measurements_total, repeat_indices, repeat_data_exist, measurement_shifts, proposal_iter, accepted_iter, proposal_swap, accepted_swap, overall_swap_proposals, overall_add_proposals, time_sample_probs, total_alive, data_types, obs_weights, temp = 1, solve_likelihood = TRUE) {
+    .Call('_serosolver_inf_hist_prop_prior_v2_and_v4', PACKAGE = 'serosolver', theta, unique_theta_indices, unique_biomarker_groups, infection_history_mat, likelihoods_pre_proposal, sampled_indivs, n_times_samp_vec, age_mask, sample_mask, n_alive, n_infections, n_infected_group, prior_lookup, proposal_inf_hist_indiv_swap_ratio, swap_distance, propose_from_prior, shape1, shape2, possible_exposure_times, possible_exposure_times_indices, sample_times, type_data_start, biomarker_groups, sample_data_start, antibody_data_start, nrows_per_sample, cum_nrows_per_individual_in_data, cum_nrows_per_individual_in_repeat_data, group_id_vec, biomarker_id_indices, antigenic_map_long, antigenic_map_short, antigenic_distances, antibody_data, antibody_data_repeats, n_measurements_total, repeat_indices, repeat_data_exist, measurement_shifts, proposal_iter, accepted_iter, proposal_swap, accepted_swap, overall_swap_proposals, overall_add_proposals, time_sample_probs, total_alive, data_types, obs_weights, temp, solve_likelihood)
 }
 

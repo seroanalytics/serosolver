@@ -166,12 +166,12 @@ create_sample_mask <- function(antibody_data, possible_exposure_times) {
 #' @return the MCMC saved infection history expanded with infection times as columns
 #' @export
 expand_summary_inf_chain <- function(inf_chain) {
-  full_inf_chain <- data.table::CJ(i = 1:max(inf_chain$i), j = 1:max(inf_chain$j), sampno = min(inf_chain$sampno):max(inf_chain$sampno))
+  full_inf_chain <- data.table::CJ(i = 1:max(inf_chain$i), j = 1:max(inf_chain$j), samp_no = min(inf_chain$samp_no):max(inf_chain$samp_no))
   inf_chain <- data.table::data.table(apply(inf_chain, 2, as.numeric))
-  summary_with_non_infections <- merge(inf_chain, full_inf_chain, by = c("sampno", "j", "i"), all = TRUE)
+  summary_with_non_infections <- merge(inf_chain, full_inf_chain, by = c("samp_no", "j", "i"), all = TRUE)
   summary_with_non_infections[is.na(summary_with_non_infections$x), "x"] <- 0
-  colnames(summary_with_non_infections) <- c("sampno", "j", "individual", "x")
-  expanded_chain <- data.table::dcast(summary_with_non_infections, sampno + individual ~ j, value.var = "x")
+  colnames(summary_with_non_infections) <- c("samp_no", "j", "individual", "x")
+  expanded_chain <- data.table::dcast(summary_with_non_infections, samp_no + individual ~ j, value.var = "x")
   return(expanded_chain)
 }
 
@@ -190,8 +190,9 @@ expand_summary_inf_chain <- function(inf_chain) {
 #' @export
 #' @useDynLib serosolver
 get_best_pars <- function(chain) {
-  tmp_names <- colnames(chain)[2:(ncol(chain) - 1)]
-  best_pars <- as.numeric(chain[which.max(chain[, "posterior_prob"]), 2:(ncol(chain) - 1)])
+  tmp_names <- colnames(chain)
+  tmp_names <- tmp_names[!(tmp_names) %in% c("samp_no","chain_no","likelihood","posterior_prob","prior_prob")]
+  best_pars <- as.numeric(as.data.frame(chain)[which.max(as.data.frame(chain)[, "posterior_prob"]), tmp_names])
   names(best_pars) <- tmp_names
   return(best_pars)
 }
@@ -200,18 +201,32 @@ get_best_pars <- function(chain) {
 #'
 #' Given an MCMC chain, returns the parameters at the specified index
 #' @param chain the MCMC chain
-#' @param index the index
+#' @param samp_no the sample number
+#' @param index if not using `samp_no`, `index returns the desired row number`
+#' @param chain_no the chain number to subset
 #' @return a named vector of the best parameters
 #' @family mcmc_diagnostics
 #' @examples
 #' \dontrun{
 #' mcmc_chains <- load_theta_chains()
-#' pars <- get_index_pars(mcmc_chains$chain, 1000)
+#' pars <- get_index_pars(mcmc_chains$chain, index=100)
 #' }
 #' @export
-get_index_pars <- function(chain, index) {
-  tmp_names <- colnames(chain)[2:(ncol(chain) - 1)]
-  pars <- as.numeric(chain[chain$sampno == index, 2:(ncol(chain) - 1)])
+get_index_pars <- function(chain, samp_no=NULL,index=NULL,chain_no=NULL) {
+  tmp_names <- colnames(chain)
+  tmp_names <- tmp_names[!(tmp_names) %in% c("samp_no","chain_no","likelihood","posterior_prob","prior_prob")]
+
+  if(is.null(samp_no) & is.null(index)){
+    stop("Error in get_index_pars - must specify one of samp_no or index")
+  }
+  
+  if(!is.null(index)){
+    pars <- as.numeric(chain[index, tmp_names])
+  } else if(!is.null(chain_no) & "chain_no" %in% colnames(chain)) {
+    pars <- as.numeric(chain[chain$samp_no == samp_no & chain$chain_no==chain_no, tmp_names])
+  } else {
+    pars <- as.numeric(chain[chain$samp_no == samp_no, tmp_names])
+  }
   names(pars) <- tmp_names
   return(pars)
 }
@@ -267,7 +282,7 @@ to.svg <- function(expr, filename, ..., verbose = TRUE) {
 
 #' Protect function
 #'
-#' Wrapper function to protect calls to the posterior function. If posterior does not compute correctly, returns -100000.
+#' Wrapper function to protect calls to a function. If the function does not compute correctly, returns -100000.
 #' @param f the function to be protected
 #' @return the protected function
 #' @export
@@ -276,6 +291,23 @@ protect <- function(f) {
   function(...) {
     tryCatch(f(...), error = function(e) {
       message("caught error: ", e$message)
+      -10000000
+    })
+  }
+}
+
+#' Protect function (posterior function)
+#'
+#' Wrapper function to protect calls to the posterior function. If posterior does not compute correctly, returns -100000.
+#' @param f the function to be protected
+#' @return the protected function
+#' @export
+#' @useDynLib serosolver
+protect_posterior <- function(f) {
+  function(...) {
+    tryCatch(f(...), error = function(e) {
+      message("Error thrown in posterior solving function: ", e$message)
+      message("If this error seems fairly cryptic (e.g., subscript out of bounds), the error likely comes from the C++ code, indicating an error with the antibody model function. You may have misspecified some parameters in par_tab, or there may be a misalignment between par_tab, antibody_data and antigenic_map.")
       -10000000
     })
   }
@@ -350,12 +382,12 @@ row.match <- function(x, table, nomatch = NA) {
 #' Sets up a large list of pre-indexing and pre-processing to speed up the model solving during MCMC fitting.
 #' Note that this should be `antibody_data` after subsetting to only `run==1`, as we will figure out elsewhere which solves to use as repeats
 #' @inheritParams create_posterior_func
-#' @param VERBOSE if TRUE, brings warning messages
+#' @param verbose if TRUE, brings warning messages
 #' @return a very long list. See source code directly.
 #' @seealso \code{\link{create_posterior_func}}
 #' @export
 setup_antibody_data_for_posterior_func <- function(antibody_data, antigenic_map=NULL, possible_exposure_times=NULL,
-                                              age_mask = NULL, n_alive = NULL,VERBOSE=FALSE) {
+                                              age_mask = NULL, n_alive = NULL,verbose=FALSE) {
   essential_colnames <- c("individual", "sample_time", "measurement", "biomarker_id", "biomarker_group","population_group")
   ## How many observation types are there?
   n_indiv <- length(unique(antibody_data$individual))
@@ -366,13 +398,13 @@ setup_antibody_data_for_posterior_func <- function(antibody_data, antigenic_map=
   if (!is.null(antigenic_map)) {
       possible_exposure_times_tmp <- unique(antigenic_map$inf_times) # How many strains are we testing against and what time did they circulate
       if(!is.null(possible_exposure_times) & !identical(possible_exposure_times, possible_exposure_times_tmp)){
-          if(VERBOSE) message(cat("Warning: provided possible_exposure_times argument does not match entries in the antigenic map. Please make sure that there is an entry in the antigenic map for each possible circulation time. Using the antigenic map times.\n"))
+          if(verbose) message(cat("Warning: provided possible_exposure_times argument does not match entries in the antigenic map. Please make sure that there is an entry in the antigenic map for each possible circulation time. Using the antigenic map times.\n"))
       }
       possible_exposure_times <- possible_exposure_times_tmp
       
       ## If no observation types assumed, set all to 1.
       if (!("biomarker_group" %in% colnames(antigenic_map))) {
-        if(VERBOSE) message(cat("Note: no biomarker_group detection in antigenic_map. Aligning antigenic map with par_tab.\n"))
+        if(verbose) message(cat("Note: no biomarker_group detection in antigenic_map. Aligning antigenic map with par_tab.\n"))
           antigenic_map_tmp <- replicate(n_biomarker_groups,antigenic_map,simplify=FALSE)
           for(biomarker_group in unique_biomarker_groups){
               antigenic_map_tmp[[biomarker_group]]$biomarker_group <- biomarker_group
@@ -574,7 +606,7 @@ generate_antigenic_map_flexible <- function(antigenic_distances, buckets = 1, cl
 #'
 #' Given that the MCMC sampler only stores present infections (ie. there are no entries for 0s from the infection history matrix), for some summaries we need to add these 0s back in to avoid bias.
 #' @param inf_chain the data table with infection history samples from \code{\link{serosolver}}
-#' @return the same inf_chain that was passed in, but with 0s for missing i/j/sampno combinations
+#' @return the same inf_chain that was passed in, but with 0s for missing i/j/samp_no combinations
 #' @export
 pad_inf_chain <- function(inf_chain) {
   if (is.null(inf_chain$chain_no)) {
@@ -587,18 +619,28 @@ pad_inf_chain <- function(inf_chain) {
   is <- unique(inf_chain$i)
   js <- unique(inf_chain$j)
   
-  sampnos <- unique(inf_chain$sampno)
+  samp_nos <- unique(inf_chain$samp_no)
   chain_nos <- unique(inf_chain$chain_no)
   groups <- unique(inf_chain$population_group)
   expanded_values <- data.table::CJ(
     i = is,
     j = js,
-    sampno = sampnos,
+    samp_no = samp_nos,
     chain_no = chain_nos,
     population_group = groups
   )
-  diff_infs <- fsetdiff(expanded_values, inf_chain[, c("i", "j", "sampno", "chain_no", "population_group")])
+  diff_infs <- fsetdiff(expanded_values, inf_chain[, c("i", "j", "samp_no", "chain_no", "population_group")])
   diff_infs$x <- 0
   inf_chain <- rbind(inf_chain, diff_infs)
   return(inf_chain)
+}
+
+#' Unregister parallel backgrounds forcefully
+#'
+#' When the serosolver function uses a parallel backend but is not closed correctly, this can confuse `dopar` if the function is called again. This function tidies the parallel backend and corrects the error.
+#' @return NULL
+#' @export
+unregister_dopar <- function() {
+  env <- foreach:::.foreachGlobals
+  rm(list=ls(name=env), pos=env)
 }

@@ -1,6 +1,9 @@
 ---
-title: 'Quick start guide for serosolver'
-output: rmarkdown::html_vignette
+title: '_serosolver_ quick start guide'
+output: 
+  rmarkdown::html_vignette:
+    toc: true
+    number_sections: true
 csl: plos.csl
 bibliography: vignette_references.bib
 vignette: |
@@ -16,44 +19,51 @@ knitr::opts_chunk$set(
 )
 ```
 
-## Introduction
+### Overview
 
-In disease systems where a single infection is expected in a given period of time, serological data can be combined with models of antibody kinetics to infer past infection times and the force of infection on a population [@white2014; @metcalf2016; @borremans2016; @pepin2017]. However, simple models of antibody kinetics are often incomplete for viruses, such as influenza outside of a single season, due to the antigenically variable nature of the virus. Whereas raised antibody titres against a pathogen with a single circulating phenotype are indicative of infection, cross-reactive antibodies from antigenically similar influenza viruses results in a measurable antibody response against strains that an individual may not have seen [@beyer2004; @tebeest2014; @freeman2016]. Understanding the immunological processes which build an individual's antibody repertoire is further complicated by the interference of a pre-existing memory B cell response on the production of new B cell populations against the infecting strain [@andrews2015; @zarnitsyna2016].
+`serosolver` jointly infers antibody kinetics, infection histories and attack rates from cross-sectional or longitudinal serological data, originally described by Kucharski *et al.* @kucharski2018 and developed further by Hay *et al.* @hay2020 . `serosolver` the predictability of antibody kinetics over time following exposure, using one or more antibody level measurements combined with a parameterised antibody kinetics model to back-calculate (i.e., extrapolate backwards) the timing of individual infections. What distinguishes `serosolver` from other such [*time-since-infection*](https://osf.io/preprints/osf/kqdsn) models is a) jointly inferring an antibody kinetics model and infection histories within the same framework; b) the ability to infer multiple infections per person (though this is not always desirable); and c) supporting multi-antigen pathogen systems as well as single-antigen problems.
 
-Progress has been made in understanding the immunological mechanisms which link observed immune responses with disease incidence through experimental systems and human population studies [@li2013; @linderman2014; @gostic2016; @cobey2017; @monto2017]. Taking into account phenomena such as original antigenic sin (OAS), antigenic seniority, back-boosting and age-specific antibody responses have been used to significantly improve our interpretation of serological data [@kim2009; @lessler2012; @fonville2014; @monsterinhopping2016]. The full repertoire of humoral responses by one individual to all previous and future strains can be described by an antibody landscape, which quantifies the expected antibody titre against viruses on an antigenic map @fonville2014. Quantifying these mechanisms, along with antibody boosting and cross reactivity, can therefore be used to better predict antibody landscapes for humans @kucharski2015.
+The core of the package is the `serosolver` function, which takes all of the data and model assumptions as inputs and saves Markov chain Monte Carlo (MCMC) outputs to disk. `serosolver` implements a flexible, hierarchical model, meaning that users must be aware of a number of model design decisions. In this vignette, we will show how a serological dataset can be cleaned for use in `serosolver`, and walk through the core functionality of the package and post-processing functions.
 
-### Model Description
+### Contents
 
-`serosolver` uses a dynamic model of antibody dynamics, previously described by Kucharski *et al.* @kucharski2018 to infer infection histories and attack rates from cross-sectional or longitudinal serological data. The model infers individual infection histories, historical attack rates, and patterns of antibody dynamics by accounting for short-term, broadly reactive antibody boosting following exposure; long-term, narrowly-reactive antibody boosting; boosting suppression through antigenic seniority; and measurement error.
+This quick start guide is designed to provide the basic instructions to use `serosolver` on serological data. For more in depth instructions about the different capabilities of `serosolver` see the case study vignettes. The following steps are covered in this guide:
 
-### Vignette Outline
+1.  Installation and dependencies
+2.  Formatting and inputting a serological data set
+3.  Specifying model inputs
 
-This quick start guide is designed to provide the basic instructions to use `serosolver` on serological data. For more in depth instructions about the different capabilities of `serosolver` see the case study vignettes.The following steps are covered in this guide:
+-   Antibody kinetics model parameters
+-   Infection history model
+-   Antigenic map
 
-1.  Formatting and inputting a serological data set
-2.  Specifying inputs
-    -   Parameter values
-    -   Antigenic map
-    -   Age mask
-    -   Starting infection histories
-3.  Running MCMC
-4.  Processing outputs and generating plots
+4.  Running MCMC
+5.  MCMC diagnostics
+6.  Interpreting model outputs
 
-## Install serosolver
+## 1. Installation and dependencies
 
 The easiest way to install the development version of `serosolver` is to use the `devtools` package:
 
 ```{r,eval=FALSE}
 devtools::install_github("seroanalytics/serosolver")
-library(serosolver)
-library(plyr)
-library(data.table)
-library(ggplot2)
 ```
 
-## 1: Data Format
+Note, that `serosolver` uses `Rcpp` code, including `RcppArmadillo`. You will therefore need a working C++ compiler such as `clang` or `gcc`. The easiest way to set this up is up for Windows users is the [`Rtools`](https://cran.r-project.org/bin/windows/Rtools/rtools43/rtools.html) package. For Mac users, you will need to install a compiler such as [`Xcode`](https://mac.r-project.org/tools/) or [`clang`](https://cran.r-project.org/bin/macosx/tools/).
+
+There are a number of additional package requirements, all of which can be installed from Cran:
+
+```{r, eval=TRUE}
+packages <- c("ggplot2","plyr","dplyr","data.table")
+```
+
+## 2. Formatting and inputting a serological data set
 
 `serosolver` expects a data frame as input in long format with the following columns:
+
+```{r, eval=TRUE}
+knitr::kable(head(example_antibody_data))
+```
 
 1.  individual: consecutive integer ID of individuals from $1,\dots,N$, where $N$ is the total number of individuals
 2.  sample_time: integer value of the time each sample was collected
@@ -148,29 +158,29 @@ The final inputs required by `serosolver` are starting infection histories for e
 
 ## 3: Run MCMC
 
-`seroslver` uses an Adaptive Metropolis-within-Gibbs algorithm. Given a starting point and the necessary MCMC parameters, `run_MCMC()` performs a random-walk of the posterior space to produce an MCMC chain that can be used to generate MCMC density and iteration plots (see section 4).
+`seroslver` uses an Adaptive Metropolis-within-Gibbs algorithm. Given a starting point and the necessary MCMC parameters, `serosolver()` performs a random-walk of the posterior space to produce an MCMC chain that can be used to generate MCMC density and iteration plots (see section 4).
 
 Using the default options, the MCMC can be run using the following.
 
 ```{r, eval=FALSE}
 # run MCMC  
-  res <- run_MCMC(par_tab = start_tab, titre_dat = titre_dat, antigenic_map = antigenic_map, 
+  res <- serosolver(par_tab = start_tab, titre_dat = titre_dat, antigenic_map = antigenic_map, 
                   start_inf_hist = start_inf, CREATE_POSTERIOR_FUNC = create_posterior_func,
                   version = 2)
 ```
 
-If you want to change any default options, such as increasing or decreasing the number of iterations and the adaptive period you can pass a vector of function argument values to `run_MCMC()`.
+If you want to change any default options, such as increasing or decreasing the number of iterations and the adaptive period you can pass a vector of function argument values to `serosolver()`.
 
 ```{r, eval=FALSE}
-  mcmc_pars <- c("iterations"=50000,"popt"=0.44,"popt_hist"=0.44,
-                "opt_freq"=1000,"thin"=1,
-                "adaptive_period"=10000, "save_block"=1000, 
-                "thin_hist"=10, "hist_sample_prob"=0.5,
-                "switch_sample"=2, "inf_propn"=0.5, 
-                "move_size"=5, "hist_opt"=0,
-                "swap_propn"=0.5,"hist_switch_prob"=0.5,
-                "year_swap_propn"=0.5)
-  res <- run_MCMC(par_tab = start_tab, titre_dat = titre_dat, antigenic_map = antigenic_map, 
+  mcmc_pars <- c("iterations"=50000,"target_acceptance_rate_theta"=0.44,"target_acceptance_rate_inf_hist"=0.44,
+                "adaptive_frequency"=1000,"thin"=1,
+                "adaptive_iterations"=10000, "save_block"=1000, 
+                "thin_inf_hist"=10, "proposal_inf_hist_indiv_prop"=0.5,
+                "proposal_ratio"=2, "proposal_inf_hist_time_prop"=0.5, 
+                "proposal_inf_hist_distance"=5, "proposal_inf_hist_adaptive"=0,
+                "proposal_inf_hist_indiv_swap_ratio"=0.5,"proposal_inf_hist_group_swap_ratio"=0.5,
+                "proposal_inf_hist_group_swap_prop"=0.5)
+  res <- serosolver(par_tab = start_tab, titre_dat = titre_dat, antigenic_map = antigenic_map, 
                 mcmc_pars = mcmc_pars, start_inf_hist = start_inf,
                 CREATE_POSTERIOR_FUNC = create_posterior_func, version = 2)
 ```
@@ -186,7 +196,7 @@ To evaluate model performance, trace and density plots can be produced by plotti
 ```{r,eval=FALSE}
 # Density/trace plots
 chain1 <- read.csv(res$chain_file)
-chain1 <- chain1[chain1$sampno >= (mcmc_pars["adaptive_period"]+mcmc_pars["burnin"]),]
+chain1 <- chain1[chain1$samp_no >= (mcmc_pars["adaptive_iterations"]+mcmc_pars["burnin"]),]
 plot(coda::as.mcmc(chain1[,c("mu","mu_short","wane")]))
 ```
 
@@ -198,7 +208,7 @@ Plot inferred attack rates.
 # Read in infection history file from MCMC output
   inf_chain <- data.table::fread(res$history_file,data.table=FALSE)
 # Remove adaptive period and burn-in
-  inf_chain <- inf_chain[inf_chain$sampno >= (mcmc_pars["adaptive_period"]+mcmc_pars["burnin"]),]
+  inf_chain <- inf_chain[inf_chain$samp_no >= (mcmc_pars["adaptive_iterations"]+mcmc_pars["burnin"]),]
   inf_chain1 <- setDT(inf_chain)
 # Define year range
   xs <- min(strains_isolation_times):max(strains_isolation_times)

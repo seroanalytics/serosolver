@@ -14,7 +14,7 @@ plot_infection_history_chains_indiv(
 \arguments{
 \item{inf_chain}{the data table with infection history samples from \code{\link{serosolver}}}
 
-\item{burnin}{optionally remove all sampno < burnin from the chain}
+\item{burnin}{optionally remove all samp_no < burnin from the chain}
 
 \item{indivs}{vector of integers, if not NULL, only plots a subset of individuals (where 1 is the first individual)}
 

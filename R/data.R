@@ -75,7 +75,7 @@
 #' Outputs of a quick MCMC run corresponding to the example data. See \code{\link{example_theta_chain}} for corresponding theta chain output. Note that this was run with prior version 2
 #' @docType data
 #' @usage data(example_inf_chain)
-#' @format A data table, with entries for each MCMC sample for each individual (i) and time period (j) for which there was an infection inferred (x) for each saved MCMC sample (sampno)
+#' @format A data table, with entries for each MCMC sample for each individual (i) and time period (j) for which there was an infection inferred (x) for each saved MCMC sample (samp_no)
 #' @family example_data
 "example_inf_chain"
 

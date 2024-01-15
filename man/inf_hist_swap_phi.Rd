@@ -9,8 +9,8 @@ inf_hist_swap_phi(
   phis,
   age_mask,
   sample_mask,
-  swap_propn,
-  move_size,
+  proposal_inf_hist_indiv_swap_ratio,
+  proposal_inf_hist_distance,
   n_alive
 )
 }
@@ -23,9 +23,9 @@ inf_hist_swap_phi(
 
 \item{sample_mask}{the last index in infection_history that each individual (row) could be infected in ie. the time of the latest blood sample}
 
-\item{swap_propn}{what proportion of infections should be swapped?}
+\item{proposal_inf_hist_indiv_swap_ratio}{what proportion of infections should be swapped?}
 
-\item{move_size}{How many time points away should be chosen as candidate swaps?}
+\item{proposal_inf_hist_distance}{How many time points away should be chosen as candidate swaps?}
 
 \item{n_alive}{number of individuals alive in each entry of phis}
 }

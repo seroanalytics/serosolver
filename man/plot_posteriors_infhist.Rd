@@ -6,7 +6,7 @@
 \usage{
 plot_posteriors_infhist(
   inf_chain,
-  years,
+  possible_exposure_times,
   n_alive,
   known_ar = NULL,
   known_infection_history = NULL,
@@ -18,13 +18,13 @@ plot_posteriors_infhist(
 \arguments{
 \item{inf_chain}{the data table with infection history samples from \code{\link{serosolver}}}
 
-\item{years}{vector of the epochs of potential circulation}
+\item{possible_exposure_times}{vector of the epochs of potential circulation}
 
 \item{known_ar}{data frame of known attack rates, if known.}
 
 \item{known_infection_history}{data frame of known infection histories.}
 
-\item{burnin}{if not already discarded, discard burn in from chain (takes rows where sampno > burnin)}
+\item{burnin}{if not already discarded, discard burn in from chain (takes rows where samp_no > burnin)}
 
 \item{samples}{how many samples from the chain to take}
 

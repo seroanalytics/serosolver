@@ -4,7 +4,7 @@
 \alias{rm_scale}
 \title{Robins and Monro scaler, thanks to Michael White}
 \usage{
-rm_scale(step_scale, mc, popt, log_prob, N_adapt)
+rm_scale(step_scale, mc, target_acceptance_rate_theta, log_prob, N_adapt)
 }
 \description{
 Robins and Monro scaler, thanks to Michael White
@@ -12,8 +12,8 @@ Robins and Monro scaler, thanks to Michael White
 \seealso{
 Other mcmc: 
 \code{\link{generate_start_tab}()},
-\code{\link{serosolver}()},
 \code{\link{save_infection_history_to_disk}()},
-\code{\link{scaletuning}()}
+\code{\link{scaletuning}()},
+\code{\link{serosolver}()}
 }
 \concept{mcmc}

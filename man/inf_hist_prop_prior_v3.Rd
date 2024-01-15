@@ -9,12 +9,12 @@ inf_hist_prop_prior_v3(
   sampled_indivs,
   age_mask,
   sample_mask,
-  move_sizes,
+  proposal_inf_hist_distances,
   n_infs,
   shape1,
   shape2,
   rand_ns,
-  swap_propn
+  proposal_inf_hist_indiv_swap_ratio
 )
 }
 \arguments{
@@ -24,7 +24,7 @@ inf_hist_prop_prior_v3(
 
 \item{age_mask}{IntegerVector, for each individual gives the first column in the infection history matrix that an individual could have been exposed to indexed from 1. ie. if alive for the whole period, entry would be 1. If alive for the 11th epoch, entry would be 11.}
 
-\item{move_sizes}{IntegerVector, how far can a swap step sample from specified for each individual}
+\item{proposal_inf_hist_distances}{IntegerVector, how far can a swap step sample from specified for each individual}
 
 \item{n_infs}{IntegerVector, how many infections to add/remove/swap with each proposal step for each individual}
 
@@ -40,7 +40,7 @@ inf_hist_prop_prior_v3(
 a matrix of 1s and 0s corresponding to the infection histories for all individuals
 }
 \description{
-Proposes a new matrix of infection histories using a beta binomial proposal distribution. This particular implementation allows for n_infs epoch times to be changed with each function call. Furthermore, the size of the swap step is specified for each individual by move_sizes.
+Proposes a new matrix of infection histories using a beta binomial proposal distribution. This particular implementation allows for n_infs epoch times to be changed with each function call. Furthermore, the size of the swap step is specified for each individual by proposal_inf_hist_distances.
 }
 \seealso{
 Other infection_history_proposal: 

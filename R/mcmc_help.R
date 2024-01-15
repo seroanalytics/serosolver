@@ -22,16 +22,16 @@ generate_start_tab <- function(par_tab){
 #'
 #' Scales the given step size (between 0 and 1) based on the current acceptance rate to get closed to the desired acceptance rate
 #' @param step the current step size
-#' @param popt the desired acceptance rate
+#' @param target_acceptance_rate_theta the desired acceptance rate
 #' @param pcur the current acceptance rate
 #' @return the scaled step size
 #' @export
 #' @family mcmc
 #' @useDynLib serosolver
-scaletuning <- function(step, popt, pcur) {
+scaletuning <- function(step, target_acceptance_rate_theta, pcur) {
   if (pcur == 1) pcur <- 0.99
   if (pcur == 0) pcur <- 0.01
-  step <- (step * qnorm(popt / 2)) / qnorm(pcur / 2)
+  step <- (step * qnorm(target_acceptance_rate_theta / 2)) / qnorm(pcur / 2)
   if (step > 1) step <- 1
   step <- max(0.00001, step)
   return(step)
@@ -40,14 +40,14 @@ scaletuning <- function(step, popt, pcur) {
 #' Robins and Monro scaler, thanks to Michael White
 #' @family mcmc
 #' @export
-rm_scale <- function(step_scale, mc, popt, log_prob, N_adapt) {
+rm_scale <- function(step_scale, mc, target_acceptance_rate_theta, log_prob, N_adapt) {
   dd <- exp(log_prob)
   if (dd < -30) {
     dd <- 0
   }
   dd <- min(dd, 1)
 
-  rm_temp <- (dd - popt) / ((mc + 1) / (0.01 * N_adapt + 1))
+  rm_temp <- (dd - target_acceptance_rate_theta) / ((mc + 1) / (0.01 * N_adapt + 1))
 
   out <- step_scale * exp(rm_temp)
 
@@ -237,17 +237,17 @@ setup_infection_histories <- function(antibody_data, possible_exposure_times, sp
 #'
 #' @param infection_history the infection history matrix
 #' @param file the file location to save to
-#' @param sampno which sample number is this matrix?
+#' @param samp_no which sample number is this matrix?
 #' @param append if TRUE, just adds to the bottom of the file
 #' @param col_names if TRUE, saves column names first (only set to true if append = FALSE)
 #' @return nothing
 #' @family mcmc
 #' @export
-save_infection_history_to_disk <- function(infection_history, file, sampno, append = TRUE, col_names = FALSE) {
+save_infection_history_to_disk <- function(infection_history, file, samp_no, append = TRUE, col_names = FALSE) {
   save_inf_hist <- Matrix::Matrix(infection_history, sparse = TRUE)
   save_inf_hist <- as.data.frame(Matrix::summary(save_inf_hist))
   if (nrow(save_inf_hist) > 0) {
-    save_inf_hist$sampno <- sampno
+    save_inf_hist$samp_no <- samp_no
     try(data.table::fwrite(save_inf_hist, file = file, col.names = col_names, row.names = FALSE, sep = ",", append = append))
   }
 }
@@ -260,11 +260,11 @@ save_infection_history_to_disk <- function(infection_history, file, sampno, appe
 #' @export
 expand_summary_inf_chain <- function(inf_chain, j_vec = NULL) {
   if (is.null(j_vec)) j_vec <- 1:max(inf_chain$j)
-  full_inf_chain <- data.table::CJ(i = min(inf_chain$i):max(inf_chain$i), j = j_vec, sampno = sort(unique(inf_chain$sampno)))
+  full_inf_chain <- data.table::CJ(i = min(inf_chain$i):max(inf_chain$i), j = j_vec, samp_no = sort(unique(inf_chain$samp_no)))
   inf_chain <- data.table::data.table(apply(inf_chain, 2, as.numeric))
-  summary_with_non_infections <- merge(inf_chain, full_inf_chain, by = c("sampno", "j", "i"), all = TRUE)
+  summary_with_non_infections <- merge(inf_chain, full_inf_chain, by = c("samp_no", "j", "i"), all = TRUE)
   summary_with_non_infections[is.na(summary_with_non_infections$x), "x"] <- 0
-  colnames(summary_with_non_infections) <- c("sampno", "j", "individual", "x")
-  expanded_chain <- data.table::dcast(summary_with_non_infections, sampno + individual ~ j, value.var = "x")
+  colnames(summary_with_non_infections) <- c("samp_no", "j", "individual", "x")
+  expanded_chain <- data.table::dcast(summary_with_non_infections, samp_no + individual ~ j, value.var = "x")
   return(expanded_chain)
 }

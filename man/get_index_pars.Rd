@@ -4,12 +4,16 @@
 \alias{get_index_pars}
 \title{Index pars}
 \usage{
-get_index_pars(chain, index)
+get_index_pars(chain, samp_no = NULL, index = NULL, chain_no = NULL)
 }
 \arguments{
 \item{chain}{the MCMC chain}
 
-\item{index}{the index}
+\item{samp_no}{the sample number}
+
+\item{index}{if not using `samp_no`, `index returns the desired row number`}
+
+\item{chain_no}{the chain number to subset}
 }
 \value{
 a named vector of the best parameters
@@ -20,7 +24,7 @@ Given an MCMC chain, returns the parameters at the specified index
 \examples{
 \dontrun{
 mcmc_chains <- load_theta_chains()
-pars <- get_index_pars(mcmc_chains$chain, 1000)
+pars <- get_index_pars(mcmc_chains$chain, index=100)
 }
 }
 \seealso{

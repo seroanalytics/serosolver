@@ -13,5 +13,5 @@ protect(f)
 the protected function
 }
 \description{
-Wrapper function to protect calls to the posterior function. If posterior does not compute correctly, returns -100000.
+Wrapper function to protect calls to a function. If the function does not compute correctly, returns -100000.
 }

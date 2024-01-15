@@ -4,12 +4,12 @@
 \alias{scaletuning}
 \title{Scale step sizes}
 \usage{
-scaletuning(step, popt, pcur)
+scaletuning(step, target_acceptance_rate_theta, pcur)
 }
 \arguments{
 \item{step}{the current step size}
 
-\item{popt}{the desired acceptance rate}
+\item{target_acceptance_rate_theta}{the desired acceptance rate}
 
 \item{pcur}{the current acceptance rate}
 }
@@ -23,7 +23,7 @@ Scales the given step size (between 0 and 1) based on the current acceptance rat
 Other mcmc: 
 \code{\link{generate_start_tab}()},
 \code{\link{rm_scale}()},
-\code{\link{serosolver}()},
-\code{\link{save_infection_history_to_disk}()}
+\code{\link{save_infection_history_to_disk}()},
+\code{\link{serosolver}()}
 }
 \concept{mcmc}

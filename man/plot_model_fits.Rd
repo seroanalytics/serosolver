@@ -9,10 +9,11 @@ plot_model_fits(
   infection_histories,
   antibody_data,
   individuals,
+  par_tab,
   antigenic_map = NULL,
   possible_exposure_times = NULL,
-  par_tab,
   nsamp = 1000,
+  known_infection_history = NULL,
   measurement_indices_by_time = NULL,
   p_ncol = length(individuals)/2,
   data_type = 1,
@@ -30,13 +31,15 @@ plot_model_fits(
 
 \item{individuals}{the subset of individuals to generate credible intervals for}
 
+\item{par_tab}{the table controlling the parameters in the MCMC chain}
+
 \item{antigenic_map}{(optional) a data frame of antigenic x and y coordinates. Must have column names: x_coord; y_coord; inf_times. See \code{\link{example_antigenic_map}}}
 
 \item{possible_exposure_times}{(optional) if no antigenic map is specified, this argument gives the vector of times at which individuals can be infected}
 
-\item{par_tab}{the table controlling the parameters in the MCMC chain}
-
 \item{nsamp}{number of samples to take from posterior}
+
+\item{known_infection_history}{nxm matrix of known infection histories}
 
 \item{measurement_indices_by_time}{default NULL, optional vector giving the index of `measurement_bias` that each strain uses the measurement shift from from. eg. if there's 6 circulation years and 3 strain clusters}
 

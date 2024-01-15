@@ -7,7 +7,7 @@
 calculate_infection_history_statistics(
   inf_chain,
   burnin = 0,
-  years = NULL,
+  possible_exposure_times = NULL,
   n_alive = NULL,
   known_ar = NULL,
   group_ids = NULL,
@@ -18,9 +18,9 @@ calculate_infection_history_statistics(
 \arguments{
 \item{inf_chain}{the data table with infection history samples from \code{\link{serosolver}}}
 
-\item{burnin}{if not already discarded, discard burn in from chain (takes rows where sampno > burnin)}
+\item{burnin}{if not already discarded, discard burn in from chain (takes rows where samp_no > burnin)}
 
-\item{years}{vector of the epochs of potential circulation}
+\item{possible_exposure_times}{vector of the epochs of potential circulation}
 
 \item{known_ar}{data frame of known attack rates, if known.}
 

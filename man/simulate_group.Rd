@@ -27,6 +27,10 @@ simulate_group(
 
 \item{theta}{the named parameter vector}
 
+\item{theta_indices_unique}{which index in par_tab does each element of `theta` correspond to?}
+
+\item{unique_biomarker_groups}{vector of unique measured biomarker types}
+
 \item{infection_histories}{the matrix of 1s and 0s giving presence/absence of infections for each individual}
 
 \item{possible_exposure_times}{(optional) If no antigenic map is specified, this argument gives the vector of times at which individuals can be infected}

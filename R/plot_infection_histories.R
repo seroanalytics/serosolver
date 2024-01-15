@@ -2,11 +2,11 @@
 #'
 #' Plots and calculates many summary statistics from the infection history MCMC chain
 #' @param inf_chain the data table with infection history samples from \code{\link{serosolver}}
-#' @param years vector of the epochs of potential circulation
+#' @param possible_exposure_times vector of the epochs of potential circulation
 #' @param n_alive_group vector with the number of people alive in each year of circulation.
 #' @param known_ar data frame of known attack rates, if known.
 #' @param known_infection_history data frame of known infection histories.
-#' @param burnin if not already discarded, discard burn in from chain (takes rows where sampno > burnin)
+#' @param burnin if not already discarded, discard burn in from chain (takes rows where samp_no > burnin)
 #' @param samples how many samples from the chain to take
 #' @param pad_chain if TRUE, pads the infection history MCMC chain with non-infection events
 #' @return a list of ggplot objects and data frame of posterior estimates
@@ -37,7 +37,7 @@
 #' }
 #' @export
 plot_posteriors_infhist <- function(inf_chain,
-                                    years,
+                                    possible_exposure_times,
                                     n_alive,
                                     known_ar = NULL,
                                     known_infection_history = NULL,
@@ -45,15 +45,15 @@ plot_posteriors_infhist <- function(inf_chain,
                                     samples = 100,
                                     pad_chain = TRUE) {
   ## Discard burn in period if necessary
-  inf_chain <- inf_chain[inf_chain$sampno > burnin, ]
+  inf_chain <- inf_chain[inf_chain$samp_no > burnin, ]
   if (is.null(inf_chain$chain_no)) {
     inf_chain$chain_no <- 1
   }
   if (is.null(inf_chain$population_group)) {
     inf_chain$population_group <- 1
   }
-  if(samples > length(unique(inf_chain$sampno))) {
-    samples <- min(samples, length(unique(inf_chain$sampno)))
+  if(samples > length(unique(inf_chain$samp_no))) {
+    samples <- min(samples, length(unique(inf_chain$samp_no)))
     message("Number of samples requested is greater than number of MCMC samples provided, reducing to maximum number of possible samples")
   }
   
@@ -61,17 +61,17 @@ plot_posteriors_infhist <- function(inf_chain,
   if (pad_chain) inf_chain <- pad_inf_chain(inf_chain)
   
   ## Thin the chain a bit to increase speed for plots
-  thin_chain <- inf_chain[inf_chain$sampno %in% sample(unique(inf_chain$sampno), samples, replace = FALSE), ]
+  thin_chain <- inf_chain[inf_chain$samp_no %in% sample(unique(inf_chain$samp_no), samples, replace = FALSE), ]
   
   ## Trace plot by time
-  time_plot <- plot_infection_history_chains_time(thin_chain, 0, sample(1:length(years), 10), n_alive=NULL, FALSE)
+  time_plot <- plot_infection_history_chains_time(thin_chain, 0, sample(1:length(possible_exposure_times), 10), n_alive=NULL, FALSE)
   ## Trace plot by indiv
   indiv_plot <- plot_infection_history_chains_indiv(thin_chain, 0, sample(unique(inf_chain$i),10,replace=FALSE), FALSE)
   ## Pointrange plot for total number of infections
-  number_plot <- plot_number_infections(thin_chain, FALSE)
+  number_plot <- plot_individual_number_infections(thin_chain, FALSE)
   
   ## Posterior summaries and ESS
-  results <- calculate_infection_history_statistics(inf_chain, 0, years,
+  results <- calculate_infection_history_statistics(inf_chain, 0, possible_exposure_times,
                                                     n_alive, 
                                                     known_ar=known_ar,
                                                     known_infection_history=known_infection_history
@@ -134,7 +134,7 @@ plot_attack_rates <- function(infection_histories, antibody_data, possible_expos
   colnames(infection_histories)[1] <- "individual"
   infection_histories <- merge(infection_histories, data.table(unique(antibody_data[, c("individual", "population_group")])), by = c("individual","population_group"))
   ## Sum infections per year for each MCMC sample
-  data.table::setkey(infection_histories, "sampno", "j", "population_group", "chain_no")
+  data.table::setkey(infection_histories, "samp_no", "j", "population_group", "chain_no")
   tmp <- infection_histories[, list(V1 = sum(x)), by = key(infection_histories)]
   
   if (cumulative & !pad_chain) message("Error - cannot calculate cumulative incidence without pad_chain = TRUE\n")
@@ -144,7 +144,7 @@ plot_attack_rates <- function(infection_histories, antibody_data, possible_expos
   tmp$V1 <- tmp$V1 / tmp$n_alive
   tmp[is.nan(tmp$V1), "V1"] <- 0
   if (cumulative && pad_chain) {
-    data.table::setkey(tmp, "sampno", "population_group", "chain_no")
+    data.table::setkey(tmp, "samp_no", "population_group", "chain_no")
     tmp[, V1 := cumsum(V1), by = key(tmp)]
   }
   quantiles <- ddply(tmp, .(time, population_group), function(x) quantile(x$V1, c(0.025,0.25, 0.5,0.75, 0.975)))
@@ -243,7 +243,7 @@ plot_attack_rates_pointrange <- function(infection_histories, antibody_data, pos
   colnames(infection_histories)[1] <- "individual"
   infection_histories <- merge(infection_histories, data.table(unique(antibody_data[, c("individual", "population_group")])), by = c("individual","population_group"))
   years <- c(possible_exposure_times, max(possible_exposure_times) + 2)
-  data.table::setkey(infection_histories, "sampno", "j", "chain_no", "population_group")
+  data.table::setkey(infection_histories, "samp_no", "j", "chain_no", "population_group")
   tmp <- infection_histories[, list(V1 = sum(x)), by = key(infection_histories)]
   tmp$taken <- years[tmp$j] %in% unique(antibody_data$sample_time)
   tmp$taken <- ifelse(tmp$taken, "Yes", "No")
@@ -260,7 +260,7 @@ plot_attack_rates_pointrange <- function(infection_histories, antibody_data, pos
       prior_dens <- rbeta(10000, alpha1, beta1)
     }
     prior_dens <- data.frame(
-      sampno = 1:length(prior_dens), j = max(tmp$j) + 1,
+      samp_no = 1:length(prior_dens), j = max(tmp$j) + 1,
       chain_no = 1, V1 = prior_dens, taken = "Prior", population_group = 1
     )
     prior_dens_all <- NULL
@@ -387,7 +387,7 @@ plot_attack_rates_pointrange <- function(infection_histories, antibody_data, pos
     p <- p +
       geom_hline(yintercept = 0, linetype = "dashed") +
       scale_y_continuous(limits = c(-1, 1), expand = c(0, 0))
-    p_res <- ggplot(tmp) + geom_density(aes(x = V1), fill = "grey40") +
+    p_res <- ggplot(tmp) + geom_density(aes(x = V1), fill = "grey40",alpha=0.5) +
       facet_wrap(~population_group) +
       geom_vline(xintercept = 0, linetype = "dashed", colour = "blue") +
       scale_x_continuous(limits = c(-1, 1)) +
@@ -402,7 +402,7 @@ plot_attack_rates_pointrange <- function(infection_histories, antibody_data, pos
 #' Plot MCMC trace for infections per year
 #'
 #' @param inf_chain the data table with infection history samples from \code{\link{serosolver}}
-#' @param burnin optionally remove all sampno < burnin from the chain
+#' @param burnin optionally remove all samp_no < burnin from the chain
 #' @param times vector of integers, if not NULL, only plots a subset of years (where 1 is the first year eg. 1968)
 #' @param n_alive if not NULL, then divides number of infections per year by number alive to give attack rates rather than total infections
 #' @param pad_chain if TRUE, pads the infection history MCMC chain to have entries for non-infection events
@@ -422,12 +422,12 @@ plot_attack_rates_pointrange <- function(infection_histories, antibody_data, pos
 #' @export
 plot_infection_history_chains_time <- function(inf_chain, burnin = 0, times = NULL,
                                                n_alive = NULL, pad_chain = TRUE) {
-  inf_chain <- inf_chain[inf_chain$sampno > burnin, ]
+  inf_chain <- inf_chain[inf_chain$samp_no > burnin, ]
   if (is.null(inf_chain$chain_no)) {
     inf_chain$chain_no <- 1
   }
   if (pad_chain) inf_chain <- pad_inf_chain(inf_chain)
-  data.table::setkey(inf_chain, "j", "sampno", "chain_no")
+  data.table::setkey(inf_chain, "j", "samp_no", "chain_no")
   n_inf_chain <- inf_chain[, list(V1 = sum(x)), by = key(inf_chain)]
   
   if (!is.null(n_alive)) {
@@ -438,13 +438,13 @@ plot_infection_history_chains_time <- function(inf_chain, burnin = 0, times = NU
     use_times<- intersect(unique(n_inf_chain$j), times)
     n_inf_chain <- n_inf_chain[n_inf_chain$j %in% use_times, ]
   }
-  
-  inf_chain_p <- ggplot(n_inf_chain) + geom_line(aes(x = sampno, y = V1, col = as.factor(chain_no))) +
+  n_inf_chain$chain_no <- as.factor(n_inf_chain$chain_no)
+  inf_chain_p <- ggplot(n_inf_chain) + geom_line(aes(x = samp_no, y = V1, col = chain_no)) +
     ylab("Estimated attack rate") +
     xlab("MCMC sample") +
     theme_bw() +
     facet_wrap(~j, scales = "free_y")
-  inf_chain_den <- ggplot(n_inf_chain) + geom_density(aes(x = V1, fill = as.factor(chain_no))) +
+  inf_chain_den <- ggplot(n_inf_chain) + geom_density(aes(x = V1, fill = chain_no),alpha=0.5) +
     xlab("Estimated attack rate") +
     ylab("Posterior density") +
     theme_bw() +
@@ -466,24 +466,25 @@ plot_infection_history_chains_time <- function(inf_chain, burnin = 0, times = NU
 #' }
 #' @export
 plot_infection_history_chains_indiv <- function(inf_chain, burnin = 0, indivs = NULL, pad_chain = TRUE) {
-  inf_chain <- inf_chain[inf_chain$sampno > burnin, ]
+  inf_chain <- inf_chain[inf_chain$samp_no > burnin, ]
   if (is.null(inf_chain$chain_no)) {
     inf_chain$chain_no <- 1
   }
   if (pad_chain) inf_chain <- pad_inf_chain(inf_chain)
-  data.table::setkey(inf_chain, "i", "sampno", "chain_no")
+  data.table::setkey(inf_chain, "i", "samp_no", "chain_no")
   n_inf_chain_i <- inf_chain[, list(V1 = sum(x)), by = key(inf_chain)]
   
   if (!is.null(indivs)) {
     use_indivs <- intersect(unique(n_inf_chain_i$i), indivs)
     n_inf_chain_i <- n_inf_chain_i[n_inf_chain_i$i %in% use_indivs, ]
   }
-  inf_chain_p_i <- ggplot(n_inf_chain_i) + geom_line(aes(x = sampno, y = V1, col = as.factor(chain_no))) +
+  n_inf_chain_i$chain_no <- as.factor(n_inf_chain_i$chain_no)
+  inf_chain_p_i <- ggplot(n_inf_chain_i) + geom_line(aes(x = samp_no, y = V1, col = chain_no)) +
     ylab("Estimated total number of infections") +
     xlab("MCMC sample") +
     theme_bw() +
     facet_wrap(~i)
-  inf_chain_den_i <- ggplot(n_inf_chain_i) + geom_histogram(aes(x = V1, fill = as.factor(chain_no)), binwidth = 1) +
+  inf_chain_den_i <- ggplot(n_inf_chain_i) + geom_histogram(aes(x = V1, fill = chain_no), binwidth = 1) +
     xlab("Estimated total number of infections") +
     ylab("Posterior density") +
     theme_bw() +
@@ -509,11 +510,12 @@ plot_total_number_infections <- function(inf_chain, pad_chain = TRUE) {
     inf_chain$chain_no <- 1
   }
   n_inf_chain <- get_total_number_infections(inf_chain, pad_chain)
-  inf_chain_p <- ggplot(n_inf_chain) + geom_line(aes(x = sampno, y = total_infections, col = as.factor(chain_no))) +
+  n_inf_chain$chain_no <- as.factor(n_inf_chain$chain_no)
+  inf_chain_p <- ggplot(n_inf_chain) + geom_line(aes(x = samp_no, y = total_infections, col = chain_no)) +
     ylab("Estimated total number of infections") +
     xlab("MCMC sample") +
     theme_bw()
-  inf_chain_den <- ggplot(n_inf_chain) + geom_density(aes(x = total_infections, fill = as.factor(chain_no))) +
+  inf_chain_den <- ggplot(n_inf_chain) + geom_density(aes(x = total_infections, fill = chain_no),alpha=0.5) +
     xlab("Estimated total number of infections") +
     ylab("Posterior density") +
     theme_bw()
@@ -539,7 +541,7 @@ plot_individual_number_infections <- function(inf_chain, pad_chain = TRUE) {
   
   if (pad_chain) inf_chain <- pad_inf_chain(inf_chain)
   n_strain <- max(inf_chain$j)
-  data.table::setkey(inf_chain, "i", "sampno", "chain_no")
+  data.table::setkey(inf_chain, "i", "samp_no", "chain_no")
   ## For each individual, how many infections did they have in each sample in total?
   n_inf_chain <- inf_chain[, list(V1 = sum(x)), by = key(inf_chain)]
   
@@ -563,7 +565,7 @@ plot_individual_number_infections <- function(inf_chain, pad_chain = TRUE) {
 #'
 #' For each individual requested, plots the median and 95% quantiles on a) the cumulative number of infections over a lifetime and b) the posterior probability that an infection occured in a given time point
 #' @param inf_chain the infection history chain
-#' @param burnin only plot samples where sampno > burnin
+#' @param burnin only plot samples where samp_no > burnin
 #' @param indivs vector of individual ids to plot
 #' @param real_inf_hist if not NULL, adds lines to the plots showing the known true infection times
 #' @param start_inf if not NULL, adds lines to show where the MCMC chain started
@@ -593,25 +595,25 @@ plot_individual_number_infections <- function(inf_chain, pad_chain = TRUE) {
 plot_cumulative_infection_histories <- function(inf_chain, burnin = 0, indivs, real_inf_hist = NULL, start_inf = NULL,
                                                 possible_exposure_times, nsamp = 100, ages = NULL, number_col = 1,
                                                 pad_chain = TRUE, subset_times = NULL, return_data = FALSE) {
-  inf_chain <- inf_chain[inf_chain$sampno > burnin, ]
+  inf_chain <- inf_chain[inf_chain$samp_no > burnin, ]
   inf_chain <- inf_chain[inf_chain$i %in% indivs,]
   if (is.null(inf_chain$chain_no)) {
     inf_chain$chain_no <- 1
   }
   if (pad_chain) inf_chain <- pad_inf_chain(inf_chain)
   
-  samps <- sample(unique(inf_chain$sampno), nsamp)
-  inf_chain <- inf_chain[inf_chain$sampno %in% samps, ]
+  samps <- sample(unique(inf_chain$samp_no), nsamp)
+  inf_chain <- inf_chain[inf_chain$samp_no %in% samps, ]
   
   ## Get number of probability that infected in a given time point per individual and year
   inf_chain1 <- inf_chain[inf_chain$i %in% indivs, ]
   if (!is.null(subset_times)) inf_chain1 <- inf_chain1[inf_chain1$j %in% subset_times, ]
   data.table::setkey(inf_chain1, "i", "j", "chain_no")
-  # max_sampno <- length(unique(inf_chain1$sampno))
-  max_sampno <- nsamp
+  # max_samp_no <- length(unique(inf_chain1$samp_no))
+  max_samp_no <- nsamp
   
   ## Number of samples with a 1 divided by total samples
-  densities <- inf_chain1[, list(V1 = sum(x) / max_sampno), by = key(inf_chain1)]
+  densities <- inf_chain1[, list(V1 = sum(x) / max_samp_no), by = key(inf_chain1)]
   
   ## Convert to real time points
   densities$j <- as.numeric(possible_exposure_times[densities$j])
@@ -638,8 +640,9 @@ plot_cumulative_infection_histories <- function(inf_chain, burnin = 0, indivs, r
     infection_history1$variable <- as.numeric(as.character(infection_history1$variable))
     infection_history1 <- infection_history1[infection_history1$value == 1, ]
   }
+  densities$chain_no <- as.factor(densities$chain_no)
   density_plot <- ggplot() +
-    geom_line(data = densities, aes(x = j, y = V1, col = as.factor(chain_no)))
+    geom_line(data = densities, aes(x = j, y = V1, col = chain_no))
   if (!is.null(real_inf_hist)) {
     density_plot <- density_plot +
       geom_vline(data = infection_history1, aes(xintercept = variable), col = "red")
@@ -654,13 +657,13 @@ plot_cumulative_infection_histories <- function(inf_chain, burnin = 0, indivs, r
   ## Generate lower, upper and median cumulative infection histories from the
   ## MCMC chain
   tmp_inf_chain <- inf_chain[inf_chain$i %in% indivs, ]
-  hist_profiles <- ddply(tmp_inf_chain, .(i, sampno, chain_no), function(x) {
+  hist_profiles <- ddply(tmp_inf_chain, .(i, samp_no, chain_no), function(x) {
     empty <- numeric(length(possible_exposure_times))
     empty[x[x$x == 1, "j"]] <- 1
     cumsum(empty)
   })
   
-  hist_profiles <- hist_profiles[, colnames(hist_profiles) != "sampno"]
+  hist_profiles <- hist_profiles[, colnames(hist_profiles) != "samp_no"]
   
   colnames(hist_profiles) <- c("i", "chain_no", possible_exposure_times)
   hist_profiles_lower <- ddply(hist_profiles, .(i, chain_no), function(x) apply(x, 2, function(y) quantile(y, c(0.025))))
@@ -697,10 +700,10 @@ plot_cumulative_infection_histories <- function(inf_chain, burnin = 0, indivs, r
     start_hist_profiles$individual <- indivs
     start_hist_profiles <- reshape2::melt(start_hist_profiles, id.vars = "individual")
   }
-  
+  quant_hist$chain_no <- as.factor(quant_hist$chain_no)
   p1 <- ggplot(quant_hist[quant_hist$individual %in% indivs, ]) +
-    geom_line(aes(x = as.integer(as.character(variable)), y = median, col = as.factor(chain_no))) +
-    geom_ribbon(aes(x = as.integer(as.character(variable)), ymin = lower, ymax = upper, fill = as.factor(chain_no)), alpha = 0.2)
+    geom_line(aes(x = as.integer(as.character(variable)), y = median, col = chain_no)) +
+    geom_ribbon(aes(x = as.integer(as.character(variable)), ymin = lower, ymax = upper, fill = chain_no), alpha = 0.2)
   
   if (!is.null(real_inf_hist)) {
     p1 <- p1 +

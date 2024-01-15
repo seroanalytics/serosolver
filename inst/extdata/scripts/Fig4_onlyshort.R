@@ -97,9 +97,9 @@ mvrPars <- NULL
 
 unique_indiv <- titre_dat[!duplicated(titre_dat$individual),]
 ageMask <- create_age_mask(unique_indiv$DOB, strain_isolation_times)
-mcmcPars <- c("iterations"=500000,"popt"=0.44,"popt_hist"=0.44,"opt_freq"=1000,"thin"=10,"adaptive_period"=100000, 
-              "save_block"=1000, "thin2"=100,"histSampleProb"=1,"switch_sample"=2, "burnin"=0, "inf_propn"=0.5, 
-              "moveSize"=3,"histOpt"=1,"swapPropn"=0.5,"hist_switch_prob"=0.5,"year_swap_propn"=1)
+mcmcPars <- c("iterations"=500000,"target_acceptance_rate_theta"=0.44,"target_acceptance_rate_inf_hist"=0.44,"adaptive_frequency"=1000,"thin"=10,"adaptive_iterations"=100000, 
+              "save_block"=1000, "thin2"=100,"histSampleProb"=1,"proposal_ratio"=2, "burnin"=0, "proposal_inf_hist_time_prop"=0.5, 
+              "moveSize"=3,"histOpt"=1,"swapPropn"=0.5,"proposal_inf_hist_group_swap_ratio"=0.5,"proposal_inf_hist_group_swap_prop"=1)
 
 ################################
 ## Unvaccinated participants
@@ -228,19 +228,19 @@ myresults
 inf_chain <- all_chains$inf_chain
 is <- unique(titre_dat$individual)
 js <- unique(inf_chain$j)
-sampnos <- unique(inf_chain$sampno)
+samp_nos <- unique(inf_chain$samp_no)
 chain_nos <- unique(inf_chain$chain_no)
 expanded_values <- data.table::CJ(
   i = is,
   j = js,
-  sampno = sampnos,
+  samp_no = samp_nos,
   chain_no = chain_nos
 )
-diff_infs <- fsetdiff(expanded_values, inf_chain[, c("i", "j", "sampno","chain_no")])
+diff_infs <- fsetdiff(expanded_values, inf_chain[, c("i", "j", "samp_no","chain_no")])
 diff_infs$x <- 0
 inf_chain <- rbind(inf_chain, diff_infs)
 
-data.table::setkey(inf_chain, "i", "sampno","chain_no")
+data.table::setkey(inf_chain, "i", "samp_no","chain_no")
 n_inf_chain_i <- inf_chain[, list(V1 = sum(x)), by = key(inf_chain)]
 setkey(n_inf_chain_i, "i")
 n_inf_chain <- n_inf_chain_i[,list(median_infs=median(V1)), 
@@ -362,7 +362,7 @@ titre_pred_p
 inf_chain <- all_chains$inf_chain
 inf_chain <- pad_inf_chain(inf_chain)
 n_alive <- get_n_alive(titre_dat, strain_isolation_times)
-data.table::setkey(inf_chain, "sampno", "j","chain_no")
+data.table::setkey(inf_chain, "samp_no", "j","chain_no")
 tmp <- inf_chain[, list(V1 = sum(x)), by = key(inf_chain)]
 
 quantiles <- ddply(tmp, ~j, function(x) quantile(x$V1, c(0.025, 0.25, 0.5, 0.75,  0.975)))
@@ -377,7 +377,7 @@ inf_chain2 <- all_chains_vac$inf_chain
 inf_chain2 <- inf_chain2[inf_chain2$chain_no == 1,]
 inf_chain2 <- pad_inf_chain(inf_chain2)
 n_alive2 <- get_n_alive(titre_dat2, strain_isolation_times)
-data.table::setkey(inf_chain2, "sampno", "j","chain_no")
+data.table::setkey(inf_chain2, "samp_no", "j","chain_no")
 tmp <- inf_chain2[, list(V1 = sum(x)), by = key(inf_chain2)]
 
 quantiles2 <- ddply(tmp, ~j, function(x) quantile(x$V1, c(0.025, 0.1, 0.5, 0.9,  0.975)))
@@ -460,19 +460,19 @@ inf_chain <- all_chains$inf_chain
 inf_chain <- pad_inf_chain(inf_chain)
 
 inf_chain1 <- inf_chain[inf_chain$i%in%which(age_ids$Age_1=='<19'),]
-data.table::setkey(inf_chain1, "j","sampno","chain_no")
+data.table::setkey(inf_chain1, "j","samp_no","chain_no")
 tmp1 <- inf_chain1[,list(V1=sum(x)),by=key(inf_chain1)]
 quantiles1 <- ddply(tmp1, ~j, function(x) quantile(x$V1, c(0.025,0.1,0.5,0.9,0.975)))
 quantiles1$age_group <- '<19'
 
 inf_chain2 <- inf_chain[inf_chain$i%in%which(age_ids$Age_1=='19-64'),]
-data.table::setkey(inf_chain2, "j","sampno","chain_no")
+data.table::setkey(inf_chain2, "j","samp_no","chain_no")
 tmp2 <- inf_chain2[,list(V1=sum(x)),by=key(inf_chain2)]
 quantiles2 <- ddply(tmp2, ~j, function(x) quantile(x$V1, c(0.025,0.1,0.5,0.9,0.975)))
 quantiles2$age_group <- '19-64'
 
 inf_chain3 <- inf_chain[inf_chain$i%in%which(age_ids$Age_1=='>64'),]
-data.table::setkey(inf_chain3, "j","sampno","chain_no")
+data.table::setkey(inf_chain3, "j","samp_no","chain_no")
 tmp3 <- inf_chain3[,list(V1=sum(x)),by=key(inf_chain3)]
 quantiles3 <- ddply(tmp3, ~j, function(x) quantile(x$V1, c(0.025,0.1,0.5,0.9,0.975)))
 quantiles3$age_group <- '>64'
@@ -562,7 +562,7 @@ p3d <- ggplot(to_use[to_use$individual == 1,])+
   facet_wrap(~individual)
 
 theta_chain <- as.data.frame(all_chains$theta_chain)
-theta_chain <- melt(theta_chain,id.vars=c("sampno","chain_no"))
+theta_chain <- melt(theta_chain,id.vars=c("samp_no","chain_no"))
 theta_chain$variable <- as.character(theta_chain$variable)
 
 #ranges <- data.frame("variable"=c("mu","tau","sigma1"),"lower"=c(1.5,0,0.06),"upper"=c(3,0.1,0.13))

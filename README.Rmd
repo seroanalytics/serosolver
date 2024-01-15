@@ -55,6 +55,7 @@ Additional vignettes:
 
 * [Longitudinal data][c1-vignette-doc]: estimating infection timings using longitudinal data, example of influenza A/H1N1p in Hong Kong
 * [Cross-sectional data][c2-vignette-doc]: estimating life-course infection histories from multi-strain serology, example of influenza A/H3N2 from the [Fluscape cohort](https://pubmed.ncbi.nlm.nih.gov/26875566/)
+* [Overview of optional features]: walkthrough of additional `serosolver` features and use cases, such as inclusion of biomarker-specific measurement offsets
 * [Multiple measurements]: fitting `serosolver` to multiple biomarker types, example of binding avidity and ELISA measurements per sample
 * [Group-level differences]: estimating demographic differences in antibody kinetics and attack rates
 
@@ -68,11 +69,14 @@ Additional vignettes:
 This is a basic example of simulating some serological data and fitting the model using the MCMC framework.
 
 ```{r example_setup, message=FALSE,warning=FALSE}
-devtools::load_all("~/Documents/GitHub/serosolver")
+library(serosolver)
 library(ggplot2)
 library(plyr)
 library(dplyr)
+library(tidyr)
 library(data.table)
+library(doParallel)
+library(coda)
 
 ## Load in example parameter values and antigenic map
 data(example_par_tab)
@@ -87,20 +91,16 @@ plot_antibody_data(example_antibody_data,example_antigenic_map$inf_times,n_indiv
 ```{r example_mcmc, message=FALSE,warning=FALSE}
 ## Run the MCMC
 # This example uses prior version 2 (i.e. beta prior on phi with parameters shape1 and shape2)
-burn_in <- 50000
-res <- serosolver(example_par_tab, example_antibody_data, example_antigenic_map,
-                filename="test", prior_version=2,
-                mcmc_pars=c(adaptive_period=burn_in, iterations=200000,save_block=10000),
-                VERBOSE=FALSE)
-## Read in the MCMC chains and plot posteriors
-chain <- read.csv(res$chain_file) %>% dplyr::filter(sampno > burn_in)
-inf_chain <- data.table::fread(res$history_file) %>% dplyr::filter(sampno > burn_in)
-plot(coda::as.mcmc(chain[,c("boost_long","wane_short","posterior_prob")]))
+output <- serosolver::serosolver(example_par_tab, example_antibody_data, example_antigenic_map,
+                filename="readme", prior_version=2,n_chains=3,parallel=TRUE,
+                mcmc_pars=c(adaptive_iterations=10000, iterations=50000),verbose=FALSE)
 ```
 ```{r example_model_fits, message=FALSE,warning=FALSE}
 # Plot model predicted titres for a subset of individuals
-plot_model_fits(chain = chain,
-                infection_histories = inf_chain,
+chains <- load_mcmc_chains(location=getwd(),par_tab=example_par_tab,burnin = 10000,unfixed=TRUE)
+plot_model_fits(chain = chains$theta_chain,
+                infection_histories = chains$inf_chain,
+                known_infection_history = example_inf_hist,
                 antibody_data = example_antibody_data,individuals=1:4,
                 antigenic_map=example_antigenic_map,
                 par_tab=example_par_tab,

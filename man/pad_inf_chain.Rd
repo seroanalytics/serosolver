@@ -10,7 +10,7 @@ pad_inf_chain(inf_chain)
 \item{inf_chain}{the data table with infection history samples from \code{\link{serosolver}}}
 }
 \value{
-the same inf_chain that was passed in, but with 0s for missing i/j/sampno combinations
+the same inf_chain that was passed in, but with 0s for missing i/j/samp_no combinations
 }
 \description{
 Given that the MCMC sampler only stores present infections (ie. there are no entries for 0s from the infection history matrix), for some summaries we need to add these 0s back in to avoid bias.

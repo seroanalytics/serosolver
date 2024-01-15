@@ -4,9 +4,19 @@
 \alias{check_inf_hist}
 \title{Check infection history matrix}
 \usage{
-check_inf_hist(antibody_data, possible_exposure_times, inf_hist)
+check_inf_hist(
+  antibody_data,
+  possible_exposure_times,
+  inf_hist,
+  verbose = FALSE
+)
 
-check_inf_hist(antibody_data, possible_exposure_times, inf_hist)
+check_inf_hist(
+  antibody_data,
+  possible_exposure_times,
+  inf_hist,
+  verbose = FALSE
+)
 }
 \arguments{
 \item{antibody_data}{the data frame of titer data}
@@ -15,7 +25,7 @@ check_inf_hist(antibody_data, possible_exposure_times, inf_hist)
 
 \item{inf_hist}{the starting infection history matrix}
 
-\item{VERBOSE}{if TRUE, prints warning messages}
+\item{verbose}{if TRUE, prints warning messages}
 }
 \value{
 a single boolean value, FALSE if the check passes, otherwise throws an error

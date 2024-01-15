@@ -51,7 +51,10 @@ Suggests:
     deSolve,
     reshape2,
     ggpubr,
-    viridis
+    viridis,
+    foreach,
+    doParallel,
+    doRNG
 LinkingTo: 
     Rcpp,
     RcppArmadillo,

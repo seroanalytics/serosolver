@@ -46,14 +46,14 @@ inf_chain_gibbs <- all_chain_gibbs$inf_chain
 ## Generate lower, upper and median cumulative infection histories from the
 ## MCMC chain
 tmp_inf_chain <- inf_chain_gibbs[inf_chain_gibbs$i ==1, ]
-hist_profiles <- ddply(tmp_inf_chain, .(i, sampno, chain_no), function(x) {
+hist_profiles <- ddply(tmp_inf_chain, .(i, samp_no, chain_no), function(x) {
   empty <- numeric(length(strain_isolation_times))
   empty[x[x$x == 1, "j"]] <- 1
   cumsum(empty)
 })
 
 
-hist_profiles <- hist_profiles[, colnames(hist_profiles) != "sampno"]
+hist_profiles <- hist_profiles[, colnames(hist_profiles) != "samp_no"]
 colnames(hist_profiles) <- c("i", "chain_no", strain_isolation_times)
 hist_profiles_tmp <- melt(hist_profiles, id.vars=c("i","chain_no"))
 res <- ddply(hist_profiles_tmp, .(i, chain_no, variable), function(x) quantile(x$value,c(0.025,0.25,0.5,0.75,0.975)))
@@ -116,13 +116,13 @@ all_chain_bb <- all_chain_bb$inf_chain
 ## Generate lower, upper and median cumulative infection histories from the
 ## MCMC chain
 tmp_inf_chain <- all_chain_bb[all_chain_bb$i ==1, ]
-hist_profiles <- ddply(tmp_inf_chain, .(i, sampno, chain_no), function(x) {
+hist_profiles <- ddply(tmp_inf_chain, .(i, samp_no, chain_no), function(x) {
   empty <- numeric(length(strain_isolation_times))
   empty[x[x$x == 1, "j"]] <- 1
   cumsum(empty)
 })
 
-hist_profiles <- hist_profiles[, colnames(hist_profiles) != "sampno"]
+hist_profiles <- hist_profiles[, colnames(hist_profiles) != "samp_no"]
 colnames(hist_profiles) <- c("i", "chain_no", strain_isolation_times)
 hist_profiles_tmp <- melt(hist_profiles, id.vars=c("i","chain_no"))
 res <- ddply(hist_profiles_tmp, .(i, chain_no, variable), function(x) quantile(x$value,c(0.025,0.25,0.5,0.75,0.975)))
@@ -186,13 +186,13 @@ all_chain_overall <- all_chain_overall$inf_chain
 ## Generate lower, upper and median cumulative infection histories from the
 ## MCMC chain
 tmp_inf_chain <- all_chain_overall[all_chain_overall$i ==1, ]
-hist_profiles <- ddply(tmp_inf_chain, .(i, sampno, chain_no), function(x) {
+hist_profiles <- ddply(tmp_inf_chain, .(i, samp_no, chain_no), function(x) {
   empty <- numeric(length(strain_isolation_times))
   empty[x[x$x == 1, "j"]] <- 1
   cumsum(empty)
 })
 
-hist_profiles <- hist_profiles[, colnames(hist_profiles) != "sampno"]
+hist_profiles <- hist_profiles[, colnames(hist_profiles) != "samp_no"]
 colnames(hist_profiles) <- c("i", "chain_no", strain_isolation_times)
 hist_profiles_tmp <- melt(hist_profiles, id.vars=c("i","chain_no"))
 res <- ddply(hist_profiles_tmp, .(i, chain_no, variable), function(x) quantile(x$value,c(0.025,0.25,0.5,0.75,0.975)))

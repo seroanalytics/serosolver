@@ -137,10 +137,10 @@
   <span class='no'>sampled_indivs</span>,
   <span class='no'>age_mask</span>,
   <span class='no'>strain_mask</span>,
-  <span class='no'>move_sizes</span>,
+  <span class='no'>proposal_inf_hist_distances</span>,
   <span class='no'>n_infs</span>,
   <span class='no'>rand_ns</span>,
-  <span class='kw'>swap_propn</span> <span class='kw'>=</span> <span class='fl'>0.5</span>
+  <span class='kw'>proposal_inf_hist_indiv_swap_ratio</span> <span class='kw'>=</span> <span class='fl'>0.5</span>
 )</pre>
 
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
@@ -163,7 +163,7 @@
       <td><p>a vector (one value for each individual) giving the last infection epoch that an individual could have been exposed in.</p></td>
     </tr>
     <tr>
-      <th>move_sizes</th>
+      <th>proposal_inf_hist_distances</th>
       <td><p>when performing a move step, how far should two epochs be swapped?</p></td>
     </tr>
     <tr>
@@ -175,7 +175,7 @@
       <td><p>pre-computed random numbers (0-1) for each individual, deciding whether to do a flip or swap</p></td>
     </tr>
     <tr>
-      <th>swap_propn</th>
+      <th>proposal_inf_hist_indiv_swap_ratio</th>
       <td><p>threshold for deciding if swap or add/remove step</p></td>
     </tr>
     </table>
@@ -207,13 +207,13 @@
 <span class='no'>n_indiv</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/r/base/length.html'>length</a></span>(<span class='no'>indivs</span>)
 
 <span class='co'>## Parameters controlling proposal sizes for each individual</span>
-<span class='no'>move_sizes</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/r/base/rep.html'>rep</a></span>(<span class='fl'>3</span>, <span class='no'>n_indiv</span>)
+<span class='no'>proposal_inf_hist_distances</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/r/base/rep.html'>rep</a></span>(<span class='fl'>3</span>, <span class='no'>n_indiv</span>)
 <span class='no'>n_infs</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/r/base/rep.html'>rep</a></span>(<span class='fl'>10</span>, <span class='no'>n_indiv</span>)
 
 <span class='co'>## Pre-compute random numbers</span>
 <span class='no'>rand_ns</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/r/stats/Uniform.html'>runif</a></span>(<span class='no'>n_indiv</span>)
 
-<span class='no'>new_inf_hist</span> <span class='kw'>&lt;-</span> <span class='fu'>infection_history_symmetric</span>(<span class='no'>example_inf_hist</span>, <span class='no'>indivs</span>,<span class='no'>age_mask</span> ,<span class='no'>strain_mask</span>, <span class='no'>move_sizes</span>, <span class='no'>n_infs</span>, <span class='no'>rand_ns</span>, <span class='fl'>0.5</span>)</div><div class='output co'>#&gt; <span class='error'>Error in age_mask[indiv]:strain_mask[indiv]: NA/NaN argument</span></div></pre>
+<span class='no'>new_inf_hist</span> <span class='kw'>&lt;-</span> <span class='fu'>infection_history_symmetric</span>(<span class='no'>example_inf_hist</span>, <span class='no'>indivs</span>,<span class='no'>age_mask</span> ,<span class='no'>strain_mask</span>, <span class='no'>proposal_inf_hist_distances</span>, <span class='no'>n_infs</span>, <span class='no'>rand_ns</span>, <span class='fl'>0.5</span>)</div><div class='output co'>#&gt; <span class='error'>Error in age_mask[indiv]:strain_mask[indiv]: NA/NaN argument</span></div></pre>
   </div>
   <div class="col-md-3 hidden-xs hidden-sm" id="sidebar">
     <h2>Contents</h2>

@@ -36,7 +36,7 @@
 
 
 <meta property="og:title" content="Fast infection history proposal function — inf_hist_prop_prior_v3" />
-<meta property="og:description" content="Proposes a new matrix of infection histories using a beta binomial proposal distribution. This particular implementation allows for n_infs epoch times to be changed with each function call. Furthermore, the size of the swap step is specified for each individual by move_sizes." />
+<meta property="og:description" content="Proposes a new matrix of infection histories using a beta binomial proposal distribution. This particular implementation allows for n_infs epoch times to be changed with each function call. Furthermore, the size of the swap step is specified for each individual by proposal_inf_hist_distances." />
 <meta name="twitter:card" content="summary" />
 
 
@@ -129,7 +129,7 @@
     </div>
 
     <div class="ref-description">
-    <p>Proposes a new matrix of infection histories using a beta binomial proposal distribution. This particular implementation allows for n_infs epoch times to be changed with each function call. Furthermore, the size of the swap step is specified for each individual by move_sizes.</p>
+    <p>Proposes a new matrix of infection histories using a beta binomial proposal distribution. This particular implementation allows for n_infs epoch times to be changed with each function call. Furthermore, the size of the swap step is specified for each individual by proposal_inf_hist_distances.</p>
     </div>
 
     <pre class="usage"><span class='fu'>inf_hist_prop_prior_v3</span>(
@@ -137,12 +137,12 @@
   <span class='no'>sampled_indivs</span>,
   <span class='no'>age_mask</span>,
   <span class='no'>strain_mask</span>,
-  <span class='no'>move_sizes</span>,
+  <span class='no'>proposal_inf_hist_distances</span>,
   <span class='no'>n_infs</span>,
   <span class='no'>alpha</span>,
   <span class='no'>beta</span>,
   <span class='no'>rand_ns</span>,
-  <span class='no'>swap_propn</span>
+  <span class='no'>proposal_inf_hist_indiv_swap_ratio</span>
 )</pre>
 
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
@@ -161,7 +161,7 @@
       <td><p>IntegerVector, for each individual gives the first column in the infection history matrix that an individual could have been exposed to indexed from 1. ie. if alive for the whole period, entry would be 1. If alive for the 11th epoch, entry would be 11.</p></td>
     </tr>
     <tr>
-      <th>move_sizes</th>
+      <th>proposal_inf_hist_distances</th>
       <td><p>IntegerVector, how far can a swap step sample from specified for each individual</p></td>
     </tr>
     <tr>

@@ -9,10 +9,10 @@ infection_history_symmetric(
   sampled_indivs,
   age_mask,
   sample_mask,
-  move_sizes,
+  proposal_inf_hist_distances,
   n_infs,
   rand_ns,
-  swap_propn = 0.5
+  proposal_inf_hist_indiv_swap_ratio = 0.5
 )
 }
 \arguments{
@@ -24,13 +24,13 @@ infection_history_symmetric(
 
 \item{sample_mask}{a vector (one value for each individual) giving the last infection epoch that an individual could have been exposed in.}
 
-\item{move_sizes}{when performing a move step, how far should two epochs be swapped?}
+\item{proposal_inf_hist_distances}{when performing a move step, how far should two epochs be swapped?}
 
 \item{n_infs}{number of infection epochs to flip}
 
 \item{rand_ns}{pre-computed random numbers (0-1) for each individual, deciding whether to do a flip or swap}
 
-\item{swap_propn}{threshold for deciding if swap or add/remove step}
+\item{proposal_inf_hist_indiv_swap_ratio}{threshold for deciding if swap or add/remove step}
 }
 \value{
 a matrix of infection histories matching the input new_inf_hist
@@ -55,13 +55,13 @@ indivs <- 1:nrow(example_inf_hist)
 n_indiv <- length(indivs)
 
 ## Parameters controlling proposal sizes for each individual
-move_sizes <- rep(3, n_indiv)
+proposal_inf_hist_distances <- rep(3, n_indiv)
 n_infs <- rep(10, n_indiv)
 
 ## Pre-compute random numbers
 rand_ns <- runif(n_indiv)
 
-new_inf_hist <- infection_history_symmetric(example_inf_hist, indivs,age_mask ,sample_mask, move_sizes, n_infs, rand_ns, 0.5)
+new_inf_hist <- infection_history_symmetric(example_inf_hist, indivs,age_mask ,sample_mask, proposal_inf_hist_distances, n_infs, rand_ns, 0.5)
 }
 \seealso{
 Other proposals: 

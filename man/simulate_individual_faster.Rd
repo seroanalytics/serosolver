@@ -33,6 +33,8 @@ simulate_individual_faster(
 
 \item{antigenic_distances}{(optional) same dimensions as antigenic_map_long and antigenic_map_short, but gives the raw euclidean antigenic distances}
 
+\item{unique_biomarker_groups}{vector of unique measured biomarker types}
+
 \item{sampling_times}{vector of times at which blood samples were taken}
 
 \item{possible_exposure_times}{(optional) If no antigenic map is specified, this argument gives the vector of times at which individuals can be infected}

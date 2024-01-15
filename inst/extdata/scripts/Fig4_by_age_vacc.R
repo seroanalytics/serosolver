@@ -36,19 +36,19 @@ inf_chain <- all_chains_vac$inf_chain
 inf_chain <- pad_inf_chain(inf_chain)
 
 inf_chain1 <- inf_chain[inf_chain$i%in%which(age_ids$Age_1=='<19'),]
-data.table::setkey(inf_chain1, "j","sampno","chain_no")
+data.table::setkey(inf_chain1, "j","samp_no","chain_no")
 tmp1 <- inf_chain1[,list(V1=sum(x)),by=key(inf_chain1)]
 quantiles1 <- ddply(tmp1, ~j, function(x) quantile(x$V1, c(0.025,0.1,0.5,0.9,0.975)))
 quantiles1$age_group <- '<19'
 
 inf_chain2 <- inf_chain[inf_chain$i%in%which(age_ids$Age_1=='19-64'),]
-data.table::setkey(inf_chain2, "j","sampno","chain_no")
+data.table::setkey(inf_chain2, "j","samp_no","chain_no")
 tmp2 <- inf_chain2[,list(V1=sum(x)),by=key(inf_chain2)]
 quantiles2 <- ddply(tmp2, ~j, function(x) quantile(x$V1, c(0.025,0.1,0.5,0.9,0.975)))
 quantiles2$age_group <- '19-64'
 
 inf_chain3 <- inf_chain[inf_chain$i%in%which(age_ids$Age_1=='>64'),]
-data.table::setkey(inf_chain3, "j","sampno","chain_no")
+data.table::setkey(inf_chain3, "j","samp_no","chain_no")
 tmp3 <- inf_chain3[,list(V1=sum(x)),by=key(inf_chain3)]
 quantiles3 <- ddply(tmp3, ~j, function(x) quantile(x$V1, c(0.025,0.1,0.5,0.9,0.975)))
 quantiles3$age_group <- '>64'

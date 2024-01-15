@@ -20,7 +20,7 @@ simulate_data(
   repeats = 1,
   measurement_indices = NULL,
   obs_dist = NULL,
-  VERBOSE = FALSE
+  verbose = FALSE
 )
 }
 \arguments{
@@ -54,7 +54,7 @@ simulate_data(
 
 \item{obs_dist}{if not NULL, then a vector of data types to use for each biomarker_group}
 
-\item{VERBOSE}{if TRUE, prints additional messages}
+\item{verbose}{if TRUE, prints additional messages}
 }
 \value{
 a list with: 1) the data frame of antibody data as returned by \code{\link{simulate_group}}; 2) a matrix of infection histories as returned by \code{\link{simulate_infection_histories}}; 3) a vector of ages

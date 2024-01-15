@@ -93,9 +93,9 @@ true_inf_hist <- dat$infection_histories
 #setwd("Q:/serosolver_manuscript/case_study_1") # PC path
 x <- filenames
 # default mcmcPars (note: don't need to pass to serosolver unless you want non-default options)
-mcmc_pars <- c("iterations"=1000000,"popt"=0.44,"popt_hist"=0.44,"opt_freq"=1000,"thin"=100,"adaptive_period"=200000, 
-              "save_block"=1000, "thin_hist"=1000,"hist_sample_prob"=0.5,"switch_sample"=2, "burnin"=0, "inf_propn"=1, 
-              "move_size"=3,"hist_opt"=1,"swap_propn"=0.5,"hist_switch_prob"=0.5,"year_swap_propn"=1)
+mcmc_pars <- c("iterations"=1000000,"target_acceptance_rate_theta"=0.44,"target_acceptance_rate_inf_hist"=0.44,"adaptive_frequency"=1000,"thin"=100,"adaptive_iterations"=200000, 
+              "save_block"=1000, "thin_inf_hist"=1000,"proposal_inf_hist_indiv_prop"=0.5,"proposal_ratio"=2, "burnin"=0, "proposal_inf_hist_time_prop"=1, 
+              "proposal_inf_hist_distance"=3,"proposal_inf_hist_adaptive"=1,"proposal_inf_hist_indiv_swap_ratio"=0.5,"proposal_inf_hist_group_swap_ratio"=0.5,"proposal_inf_hist_group_swap_prop"=1)
 
 if(serosolver) {
   #res <- for(j in 1:length(filenames)){
@@ -237,7 +237,7 @@ titre_pred_p
 inf_chain <- all_chains$inf_chain
 inf_chain <- pad_inf_chain(inf_chain)
 n_alive <- get_n_alive(titre_dat, strain_isolation_times)
-data.table::setkey(inf_chain, "sampno", "j","chain_no")
+data.table::setkey(inf_chain, "samp_no", "j","chain_no")
 tmp <- inf_chain[, list(V1 = sum(x)), by = key(inf_chain)]
 
 quantiles <- ddply(tmp, ~j, function(x) quantile(x$V1, c(0.025, 0.1, 0.5, 0.9,  0.975)))
@@ -291,7 +291,7 @@ p
 
 ## Theta plot
 theta_chain <- as.data.frame(all_chains$theta_chain)
-theta_chain <- melt(theta_chain,id.vars=c("sampno","chain_no"))
+theta_chain <- melt(theta_chain,id.vars=c("samp_no","chain_no"))
 theta_chain$variable <- as.character(theta_chain$variable)
 
 #ranges <- data.frame("variable"=c("mu","tau","sigma1"),"lower"=c(1.5,0,0.06),"upper"=c(3,0.1,0.13))

@@ -2,27 +2,24 @@
 % Please edit documentation in R/plots_other.R
 \name{plot_antibody_data}
 \alias{plot_antibody_data}
-\title{Useful plot for looking at simulated data}
+\title{Plot raw data}
 \usage{
 plot_antibody_data(
   antibody_data,
-  infection_histories,
   possible_exposure_times,
   n_indivs,
-  start_inf = NULL,
+  infection_histories = NULL,
   study_design = "multi-antigen"
 )
 }
 \arguments{
 \item{antibody_data}{the data frame of antibody data}
 
-\item{infection_histories}{the infection history matrix}
-
 \item{possible_exposure_times}{the vector of times at which individuals could be infected}
 
-\item{n_indivs}{how many individuals to plot}
+\item{n_indivs}{integer of how many individuals to plot, or vector of which individuals to plot}
 
-\item{start_inf}{if not NULL, plots the infection history matrix used as the starting point in the MCMC chain}
+\item{infection_histories}{the infection history matrix}
 
 \item{study_design}{default "multi-antigen" facets by sample time. "single-antigen" gives sample time on the x-axis and colours by biomarker_id}
 }
@@ -30,7 +27,7 @@ plot_antibody_data(
 a ggplot object
 }
 \description{
-Plots measured titres and known infection histories for all individuals, faceted by sample time (multi-antigen panel) or biomarker_id variable (longitudinal single antigen)
+Plots measured antibody measurements and known infection histories for all individuals, faceted by sample time (multi-antigen panel) or biomarker_id variable (longitudinal single antigen)
 }
 \examples{
 \dontrun{
@@ -38,7 +35,7 @@ data(example_antibody_data)
 data(example_inf_hist)
 data(example_antigenic_map)
 possible_exposure_times <- example_antigenic_map$inf_times
-plot_antibody_data(example_antibody_data, example_inf_hist, possible_exposure_times, 5)
+plot_antibody_data(example_antibody_data, possible_exposure_times, 5, example_inf_hist)
 }
 }
 \seealso{

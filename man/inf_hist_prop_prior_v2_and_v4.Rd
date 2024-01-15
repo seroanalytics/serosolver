@@ -18,7 +18,7 @@ inf_hist_prop_prior_v2_and_v4(
   n_infections,
   n_infected_group,
   prior_lookup,
-  swap_propn,
+  proposal_inf_hist_indiv_swap_ratio,
   swap_distance,
   propose_from_prior,
   shape1,
@@ -81,7 +81,7 @@ inf_hist_prop_prior_v2_and_v4(
 
 \item{prior_lookup}{arma::cube, the pre-computed lookup table for the beta prior on infection histories, dimensions are number of infections, time, and group}
 
-\item{swap_propn}{double, gives the proportion of proposals that will be swap steps (ie. swap contents of two cells in infection_history rather than adding/removing infections)}
+\item{proposal_inf_hist_indiv_swap_ratio}{double, gives the proportion of proposals that will be swap steps (ie. swap contents of two cells in infection_history rather than adding/removing infections)}
 
 \item{swap_distance}{int, in a swap step, how many time steps either side of the chosen time period to swap with}
 

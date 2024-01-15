@@ -55,9 +55,9 @@ par_tab[par_tab$names %in% c("mu_short","sigma2","wane"),"fixed"] <- 1 # mu, tau
 par_tab[par_tab$names %in% c("mu_short","sigma2","wane"),"values"] <- 0 # set value of mu and tau to 0
 par_tab[par_tab$names == "MAX_TITRE","values"] <- 8 # set max titre to 8
 
-mcmc_pars <- c("iterations"=500000,"popt"=0.44,"popt_hist"=0.44,"opt_freq"=1000,"thin"=100,"adaptive_period"=100000, 
-               "save_block"=1000, "thin2"=1000,"hist_sample_prob"=0.5,"switch_sample"=2, "burnin"=0, "inf_propn"=1, 
-               "move_size"=3,"hist_opt"=1,"swap_propn"=0.5,"hist_switch_prob"=0.5,"year_swap_propn"=1)
+mcmc_pars <- c("iterations"=500000,"target_acceptance_rate_theta"=0.44,"target_acceptance_rate_inf_hist"=0.44,"adaptive_frequency"=1000,"thin"=100,"adaptive_iterations"=100000, 
+               "save_block"=1000, "thin2"=1000,"proposal_inf_hist_indiv_prop"=0.5,"proposal_ratio"=2, "burnin"=0, "proposal_inf_hist_time_prop"=1, 
+               "proposal_inf_hist_distance"=3,"proposal_inf_hist_adaptive"=1,"proposal_inf_hist_indiv_swap_ratio"=0.5,"proposal_inf_hist_group_swap_ratio"=0.5,"proposal_inf_hist_group_swap_prop"=1)
 
 
 if(serosolver) {
@@ -108,19 +108,19 @@ mcmc_trace(list_chains1)
 inf_chain <- all_chains$inf_chain
 is <- unique(titre_dat$individual)
 js <- unique(inf_chain$j)
-sampnos <- unique(inf_chain$sampno)
+samp_nos <- unique(inf_chain$samp_no)
 chain_nos <- unique(inf_chain$chain_no)
 expanded_values <- data.table::CJ(
   i = is,
   j = js,
-  sampno = sampnos,
+  samp_no = samp_nos,
   chain_no = chain_nos
 )
-diff_infs <- fsetdiff(expanded_values, inf_chain[, c("i", "j", "sampno","chain_no")])
+diff_infs <- fsetdiff(expanded_values, inf_chain[, c("i", "j", "samp_no","chain_no")])
 diff_infs$x <- 0
 inf_chain <- rbind(inf_chain, diff_infs)
 
-data.table::setkey(inf_chain, "i", "sampno","chain_no")
+data.table::setkey(inf_chain, "i", "samp_no","chain_no")
 n_inf_chain_i <- inf_chain[, list(V1 = sum(x)), by = key(inf_chain)]
 setkey(n_inf_chain_i, "i")
 n_inf_chain <- n_inf_chain_i[,list(median_infs=median(V1)), 
@@ -154,25 +154,25 @@ inf_chain <- all_chains$inf_chain
 
 ## Find samples that were in both theta and inf hist chains
 chain <- as.data.frame(all_chains$theta_chain)
-intersect_samps <- intersect(unique(inf_chain$sampno), unique(chain$sampno))
-chain <- chain[chain$sampno %in% intersect_samps,]
-which_mle <- chain[which.max(chain$lnlike),c("sampno","chain_no")]
+intersect_samps <- intersect(unique(inf_chain$samp_no), unique(chain$samp_no))
+chain <- chain[chain$samp_no %in% intersect_samps,]
+which_mle <- chain[which.max(chain$lnlike),c("samp_no","chain_no")]
 
 ## Take subset of chain, as do not need all samples
-samps <- unique(inf_chain[,c("sampno","chain_no")])
+samps <- unique(inf_chain[,c("samp_no","chain_no")])
 n_samps <- sample(1:nrow(samps), 1000)
 samps <- samps[n_samps,]
 samps <- rbind(samps, which_mle)
-samps$sampno1 <- 1:nrow(samps)
+samps$samp_no1 <- 1:nrow(samps)
 samps$chain_no1 <- 1
-## Append the MLE estimate, note that this is max(sampno)
+## Append the MLE estimate, note that this is max(samp_no)
 
-inf_chain <- merge(inf_chain, samps, by=c("sampno","chain_no"))
-inf_chain <- inf_chain[,c("sampno1","chain_no1","i","j","x")]
-colnames(inf_chain)[1:2] <- c("sampno","chain_no")
+inf_chain <- merge(inf_chain, samps, by=c("samp_no","chain_no"))
+inf_chain <- inf_chain[,c("samp_no1","chain_no1","i","j","x")]
+colnames(inf_chain)[1:2] <- c("samp_no","chain_no")
 inf_chain <- pad_inf_chain(inf_chain)
 ## Rename columns to be more informative
-colnames(inf_chain) <- c("sampno","chain_no","individual","year","infected","group")
+colnames(inf_chain) <- c("samp_no","chain_no","individual","year","infected","group")
 
 ## Data on which strains belong to which cluster
 cluster_file <- system.file("extdata", "fonville_clusters.csv", package = "serosolver")
@@ -201,7 +201,7 @@ inf_chain <- inf_chain[inf_chain$alive,]
 
 ## Find out number of infections per year
 inf_chain$potential_infection <- 1
-setkey(inf_chain, "sampno","chain_no","year")
+setkey(inf_chain, "samp_no","chain_no","year")
 inf_chain_ar <- inf_chain[,list(no_infected=sum(infected),
                                 potential_infection=sum(potential_infection)),
                           by=key(inf_chain)]
@@ -214,7 +214,7 @@ y <- inf_chain_ar[,list(median_ar=median(no_infected/potential_infection),
                         upper_quantile_50=quantile(no_infected/potential_infection,0.8)),
                   by=key(inf_chain_ar)]
 
-inf_chain_mle <- inf_chain_ar[inf_chain_ar$sampno == max(inf_chain_ar$sampno),]
+inf_chain_mle <- inf_chain_ar[inf_chain_ar$samp_no == max(inf_chain_ar$samp_no),]
 
 p_ar <- ggplot(data=y) + 
   geom_ribbon(aes(x=year, ymin=lower_quantile,ymax=upper_quantile), fill="#56B4E9",alpha=0.2) +
@@ -256,14 +256,14 @@ inf_chain$age_at_inf <- inf_chain$year - inf_chain$DOB + 1
 inf_chain$age_group_at_inf <- cut(inf_chain$age_at_inf, breaks = c(0,20,100))
 
 ## Get average age at time of infection for each year
-setkey(inf_chain, "sampno","chain_no","year")
+setkey(inf_chain, "samp_no","chain_no","year")
 average_age <- inf_chain[,list(average_age=mean(age_at_inf)),by=key(inf_chain)]
 
 inf_chain_infected <- inf_chain[inf_chain$infected == 1,]
-setkey(inf_chain_infected, "sampno","chain_no","year")
+setkey(inf_chain_infected, "samp_no","chain_no","year")
 average_age_infected <- inf_chain_infected[,list(average_age_infected=mean(age_at_inf)),by=key(inf_chain_infected)]
 
-all_average_ages <- merge(average_age, average_age_infected, by=c("sampno","chain_no","year"))
+all_average_ages <- merge(average_age, average_age_infected, by=c("samp_no","chain_no","year"))
 all_average_ages$diff <- all_average_ages$average_age_infected - all_average_ages$average_age
 
 average_age_quants <- ddply(all_average_ages, .(year), function(x) quantile(x$diff,c(0.025,0.1, 0.5,0.9,0.975)))
@@ -298,7 +298,7 @@ inf_chain_average <- inf_chain[,list(infected1=sum(infected),
                                by=key(inf_chain)]
 
 ## Get total number of infections per cluster for each individual, keep age at inf
-setkey(inf_chain, "individual","sampno","chain_no","cluster1","age_group_at_inf")
+setkey(inf_chain, "individual","samp_no","chain_no","cluster1","age_group_at_inf")
 inf_chain_cluster <- inf_chain[,list(infected1=sum(infected), 
                                      potential_infection=sum(potential_infection)),
                                by=key(inf_chain)]
@@ -310,12 +310,12 @@ inf_chain_cluster_once[inf_chain_cluster_once$infected1 >=1,"infected1"] <- 1
 inf_chain_cluster_once[inf_chain_cluster_once$potential_infection >=1,"potential_infection"] <- 1
 
 ## Get total number of at least 1 infections per cluster
-setkey(inf_chain_cluster_once, "sampno","chain_no","cluster1","age_group_at_inf")
+setkey(inf_chain_cluster_once, "samp_no","chain_no","cluster1","age_group_at_inf")
 inf_chain_cluster_once <- inf_chain_cluster_once[,list(total_infected=sum(infected1), 
                                                        total_potential_infection=sum(potential_infection)),by=key(inf_chain_cluster_once)]
 
 ## And the same for raw number of infections
-setkey(inf_chain_cluster, "sampno","chain_no","cluster1","age_group_at_inf")
+setkey(inf_chain_cluster, "samp_no","chain_no","cluster1","age_group_at_inf")
 inf_chain_cluster_multiple <- inf_chain_cluster[,list(total_infected=sum(infected1), 
                                                       total_potential_infection=sum(potential_infection)),
                                                 by=key(inf_chain_cluster)]
@@ -426,7 +426,7 @@ titre_pred_p
 ## Posterior densities
 ###########
 theta_chain <- as.data.frame(all_chains$theta_chain)
-theta_chain <- melt(theta_chain,id.vars=c("sampno","chain_no"))
+theta_chain <- melt(theta_chain,id.vars=c("samp_no","chain_no"))
 theta_chain$variable <- as.character(theta_chain$variable)
 
 #ranges <- data.frame("variable"=c("mu","tau","sigma1"),"lower"=c(1.5,0,0.06),"upper"=c(3,0.1,0.13))

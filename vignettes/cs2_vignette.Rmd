@@ -172,9 +172,9 @@ par_tab[par_tab$names %in% c("mu_short","sigma2","wane"),"values"] <- 0 # set th
 
 
 # Running the MCMC
-We are now ready to fit our model. We will fit multiple chains in parallel, though the below analysis could easily be replicated by running chains sequentially. Starting conditions for the MCMC chain must be generated that return a finite likelihood. The user may modify many of the MCMC control parameters, though the defaults are fine for most purposes. We have made some minor tweaks in this case study to improve convergence on infection history estimates. Step sizes for parameters in `par_tab` are tuned automatically, and some automated tuning of the infection history proposals takes place for prior version 3. However, for other attack rate priors, it is necessary for the user to do some manual tuning of a) the number of individuals sampled at each step `hist_sample_prob`; b) the number of time points sampled at each step `inf_propn`; c) the frequency of individual infection history swapping steps (ie. for an individual, choose two time points and swap their contents)`swap_propn`; d) proportion of infection history sampling steps which should be the alternative swapping step, where the contents of infection histories at two time points are swapped `hist_switch_prob`; e) proportion of infection histories to swap with each alternative swapping step `year_swap_propn`. For example, in this case study, we attack rates are likely to be highly correlated in adjacent years (as we have limited data to distinguish between infections in years close in time), and we therefore increase the frequency of the alternative infection history swapping step with `year_swap_propn`. 
+We are now ready to fit our model. We will fit multiple chains in parallel, though the below analysis could easily be replicated by running chains sequentially. Starting conditions for the MCMC chain must be generated that return a finite likelihood. The user may modify many of the MCMC control parameters, though the defaults are fine for most purposes. We have made some minor tweaks in this case study to improve convergence on infection history estimates. Step sizes for parameters in `par_tab` are tuned automatically, and some automated tuning of the infection history proposals takes place for prior version 3. However, for other attack rate priors, it is necessary for the user to do some manual tuning of a) the number of individuals sampled at each step `proposal_inf_hist_indiv_prop`; b) the number of time points sampled at each step `proposal_inf_hist_time_prop`; c) the frequency of individual infection history swapping steps (ie. for an individual, choose two time points and swap their contents)`proposal_inf_hist_indiv_swap_ratio`; d) proportion of infection history sampling steps which should be the alternative swapping step, where the contents of infection histories at two time points are swapped `proposal_inf_hist_group_swap_ratio`; e) proportion of infection histories to swap with each alternative swapping step `proposal_inf_hist_group_swap_prop`. For example, in this case study, we attack rates are likely to be highly correlated in adjacent years (as we have limited data to distinguish between infections in years close in time), and we therefore increase the frequency of the alternative infection history swapping step with `proposal_inf_hist_group_swap_prop`. 
 
-Changing the number of iterations and the length of the adaptive period are often desirable. More crucially, the amount of chain thinning should be specified to ensure that users are not saving a large number of MCMC iterations (as this will rapidly fill disk space!). Thinning should be set such that at least 1000 iterations are saved (ie. `iterations`/`thin` and `thin_hist`). Users are encouraged to pay extra attention to `thin_hist`, which dictates the thinning of the infection history chain, and can generate a very large file if left unchecked.
+Changing the number of iterations and the length of the adaptive period are often desirable. More crucially, the amount of chain thinning should be specified to ensure that users are not saving a large number of MCMC iterations (as this will rapidly fill disk space!). Thinning should be set such that at least 1000 iterations are saved (ie. `iterations`/`thin` and `thin_inf_hist`). Users are encouraged to pay extra attention to `thin_inf_hist`, which dictates the thinning of the infection history chain, and can generate a very large file if left unchecked.
 
 ```{r Run mcmc setup real, eval=TRUE, include=TRUE}
 ## Distinct filename for each chain
@@ -211,10 +211,10 @@ res <- foreach(x = filenames, .packages = c('serosolver','data.table','plyr')) %
                   titre_dat = titre_dat,
                   antigenic_map = antigenic_map,
                   start_inf_hist = start_inf, 
-                  mcmc_pars = c("iterations"=500000,"adaptive_period"=100000,"thin"=1000,
-                                "thin_hist"=1000,"save_block"=1000,
-                                "inf_propn"=1, "hist_sample_prob"=1,
-                                "hist_switch_prob"=0.8, "year_swap_propn"=1),
+                  mcmc_pars = c("iterations"=500000,"adaptive_iterations"=100000,"thin"=1000,
+                                "thin_inf_hist"=1000,"save_block"=1000,
+                                "proposal_inf_hist_time_prop"=1, "proposal_inf_hist_indiv_prop"=1,
+                                "proposal_inf_hist_group_swap_ratio"=0.8, "proposal_inf_hist_group_swap_prop"=1),
                   filename = paste0(chain_path_real,x), 
                   CREATE_POSTERIOR_FUNC = create_posterior_func, 
                   version = prior_version)
@@ -318,7 +318,7 @@ print(p_indiv_inf_hists[[1]])
 print(p_indiv_inf_hists[[2]])
 ```
 
-Mixing can sometimes be very poor for per-time attack rates when adjacent times are highly correlated. This is often the case when the amount of data relatively poor. A cruder time resolution (eg. per two years) may be advisable, and mixing may benefit from increasing the `hist_switch_prob` and `hist_sample_prob` parameters in the `mcmc_pars` list in `serosolver`. `hist_sample_prob` determines how frequently the MCMC sampler uses a proposal step that swaps the a proportion `hist_switch_prob` of individual's infection states between two time points.
+Mixing can sometimes be very poor for per-time attack rates when adjacent times are highly correlated. This is often the case when the amount of data relatively poor. A cruder time resolution (eg. per two years) may be advisable, and mixing may benefit from increasing the `proposal_inf_hist_group_swap_ratio` and `proposal_inf_hist_indiv_prop` parameters in the `mcmc_pars` list in `serosolver`. `proposal_inf_hist_indiv_prop` determines how frequently the MCMC sampler uses a proposal step that swaps the a proportion `proposal_inf_hist_group_swap_ratio` of individual's infection states between two time points.
 
 Users may also easily check the inferred antibody landscapes at the time each sample was taken. Black dots show observations, shaded regions and black line show 95%, 50% credible intervals and posterior median.
 
@@ -370,7 +370,7 @@ inf_chain <- pad_inf_chain(inf_chain)
 
 ## Using data tables to get total number of infections
 ## per individual
-data.table::setkey(inf_chain, "i", "sampno","chain_no")
+data.table::setkey(inf_chain, "i", "samp_no","chain_no")
 n_inf_chain_i <- inf_chain[, list(V1 = sum(x)), by = key(inf_chain)]
 setkey(n_inf_chain_i, "i")
 n_inf_chain <- n_inf_chain_i[,list(median_infs=median(V1)), 
@@ -401,34 +401,34 @@ Given the sparsity of data here, the default attack rate plot is difficult to in
 ```{r setup_infhist}
 ## Find samples that were in both theta and inf hist chains
 chain <- as.data.frame(all_chains$theta_chain)
-intersect_samps <- intersect(unique(inf_chain$sampno), unique(chain$sampno))
-chain <- chain[chain$sampno %in% intersect_samps,]
+intersect_samps <- intersect(unique(inf_chain$samp_no), unique(chain$samp_no))
+chain <- chain[chain$samp_no %in% intersect_samps,]
 
 ## Find the parameter values that gave the highest posterior probability
-which_mle <- chain[which.max(chain$lnlike),c("sampno","chain_no")]
+which_mle <- chain[which.max(chain$lnlike),c("samp_no","chain_no")]
 
 ## Take subset of chain for computational speed, as do not need all samples
-samps <- unique(inf_chain[,c("sampno","chain_no")])
+samps <- unique(inf_chain[,c("samp_no","chain_no")])
 n_samps <- sample(1:nrow(samps), 100)
 samps <- samps[n_samps,]
 samps <- rbind(samps, which_mle) ## Plus MLE estimate
-## Append the MLE estimate, note that this is max(sampno)
+## Append the MLE estimate, note that this is max(samp_no)
 
 ## Create new index variables for simplicity
-samps$sampno1 <- 1:nrow(samps)
+samps$samp_no1 <- 1:nrow(samps)
 samps$chain_no1 <- 1
 
 ## Inner join to return only our subset of samples
-## Reformat sampno and chain_no identifiers so that code
+## Reformat samp_no and chain_no identifiers so that code
 ## sees samples as coming from one chain
-inf_chain <- merge(inf_chain, samps, by=c("sampno","chain_no"))
-inf_chain <- inf_chain[,c("sampno1","chain_no1","i","j","x")]
-colnames(inf_chain)[1:2] <- c("sampno","chain_no")
+inf_chain <- merge(inf_chain, samps, by=c("samp_no","chain_no"))
+inf_chain <- inf_chain[,c("samp_no1","chain_no1","i","j","x")]
+colnames(inf_chain)[1:2] <- c("samp_no","chain_no")
 inf_chain <- pad_inf_chain(inf_chain)
 ## Rename columns to be more informative
 
 ## Column names expected by code below
-colnames(inf_chain) <- c("sampno","chain_no","individual","year","infected","group")
+colnames(inf_chain) <- c("samp_no","chain_no","individual","year","infected","group")
 
 ## Data on which strains belong to which cluster
 cluster_path <- system.file("extdata", "fonville_clusters.csv", package = "serosolver")
@@ -459,7 +459,7 @@ inf_chain <- inf_chain[inf_chain$alive,]
 ```{r attack_rate_plot, echo=FALSE, fig.height=4, fig.width=8, message=FALSE, warning=FALSE}
 ## Find out number of infections per year
 inf_chain$potential_infection <- 1
-setkey(inf_chain, "sampno","chain_no","year")
+setkey(inf_chain, "samp_no","chain_no","year")
 inf_chain_ar <- inf_chain[,list(no_infected=sum(infected),
                                 potential_infection=sum(potential_infection)),
                          by=key(inf_chain)]
@@ -474,7 +474,7 @@ y <- inf_chain_ar[,list(median_ar=median(no_infected/potential_infection),
              by=key(inf_chain_ar)]
 
 ## Extract the MLE attack rate estimates
-inf_chain_mle <- inf_chain_ar[inf_chain_ar$sampno == max(inf_chain_ar$sampno),]
+inf_chain_mle <- inf_chain_ar[inf_chain_ar$samp_no == max(inf_chain_ar$samp_no),]
 
 p_ar <- ggplot(data=y) + 
   geom_ribbon(aes(x=year, ymin=lower_quantile,ymax=upper_quantile), fill=viridis(8)[3],alpha=0.2) +
@@ -495,7 +495,7 @@ print(p_ar)
 Finally, inferring individual infection histories allows us to investigate age-specific patterns of incidence. Here, we show the proportion of individuals that were infected at least once within a single antigenic cluster, finding that clusters that circulate for longer tend to infect a far higher proportion of the population. Furthermore, we see that a far higher proportion of the younger age group is infected in more recent years.
 ```{r age_clusters_plot, echo=FALSE, message=FALSE, warning=FALSE, fig.height=4, fig.width=5}
 ## Find out number of infections per cluster for each individual
-setkey(inf_chain, "individual","sampno","chain_no","cluster1","age_group")
+setkey(inf_chain, "individual","samp_no","chain_no","cluster1","age_group")
 inf_chain_cluster <- inf_chain[,list(infected1=sum(infected), 
                                potential_infection=sum(potential_infection)),
                          by=key(inf_chain)]
@@ -503,7 +503,7 @@ inf_chain_cluster_once <- inf_chain_cluster
 inf_chain_cluster_once[inf_chain_cluster_once$infected1 >=1,"infected1"] <- 1
 inf_chain_cluster_once[inf_chain_cluster_once$potential_infection >=1,"potential_infection"] <- 1
 
-setkey(inf_chain_cluster_once, "sampno","chain_no","cluster1","age_group")
+setkey(inf_chain_cluster_once, "samp_no","chain_no","cluster1","age_group")
 inf_chain_cluster_once <- inf_chain_cluster_once[,list(total_infected=sum(infected1), 
                                total_potential_infection=sum(potential_infection)),
                          by=key(inf_chain_cluster_once)]
@@ -564,20 +564,20 @@ all_chains <- cs2_chains_real_b
 ## Find samples that were in both theta and inf hist chains
 chain <- all_chains$theta_chain
 inf_chain <- all_chains$inf_chain
-intersect_samps <- intersect(unique(inf_chain$sampno), unique(chain$sampno))
-chain <- chain[chain$sampno %in% intersect_samps,]
+intersect_samps <- intersect(unique(inf_chain$samp_no), unique(chain$samp_no))
+chain <- chain[chain$samp_no %in% intersect_samps,]
 
 ## Find the parameter values that gave the highest posterior probability
-which_mle <- chain[which.max(chain$lnlike),c("sampno","chain_no")]
-mle_theta_pars <- chain[chain$sampno == which_mle$sampno & chain$chain_no == which_mle$chain_no,]
+which_mle <- chain[which.max(chain$lnlike),c("samp_no","chain_no")]
+mle_theta_pars <- chain[chain$samp_no == which_mle$samp_no & chain$chain_no == which_mle$chain_no,]
 
 ## Store total infections to compare later
 mle_total_infs <- mle_theta_pars[,"total_infections"]
 mle_theta_pars <- mle_theta_pars[,par_tab$names]
-mle_inf_hist <- inf_chain[inf_chain$sampno == which_mle$sampno & inf_chain$chain_no == which_mle$chain_no,]
+mle_inf_hist <- inf_chain[inf_chain$samp_no == which_mle$samp_no & inf_chain$chain_no == which_mle$chain_no,]
 
 ## Generate full infection history matrix using provided function
-mle_inf_hist <- expand_summary_inf_chain(mle_inf_hist[,c("sampno","j","i","x")])
+mle_inf_hist <- expand_summary_inf_chain(mle_inf_hist[,c("samp_no","j","i","x")])
 ## Find number of infections per year from this infection history
 no_infs <- colSums(mle_inf_hist[,3:ncol(mle_inf_hist)])
 
@@ -668,9 +668,9 @@ res <- foreach(x = filenames, .packages = c('serosolver','data.table','plyr')) %
                   titre_dat = sim_titre_dat,
                   antigenic_map = antigenic_map,
                   start_inf_hist = start_inf, 
-                  mcmc_pars = c("iterations"=500000,"adaptive_period"=100000,"thin"=1000,
-                                "thin_hist"=1000,"save_block"=1000,
-                                "hist_switch_prob"=0.8, "hist_sample_prob"=1),
+                  mcmc_pars = c("iterations"=500000,"adaptive_iterations"=100000,"thin"=1000,
+                                "thin_inf_hist"=1000,"save_block"=1000,
+                                "proposal_inf_hist_group_swap_ratio"=0.8, "proposal_inf_hist_indiv_prop"=1),
                   filename = paste0(chain_path_sim,x), 
                   CREATE_POSTERIOR_FUNC = create_posterior_func, 
                   version = prior_version)
@@ -702,7 +702,7 @@ list_chains1 <- lapply(list_chains, function(x) as.mcmc(x[,c("mu","sigma1","erro
 print(gelman.diag(as.mcmc.list(list_chains1)))
 print(effectiveSize(as.mcmc.list(list_chains1)))
 
-melted_theta_chain <- reshape2::melt(as.data.frame(theta_chain), id.vars=c("sampno","chain_no"))
+melted_theta_chain <- reshape2::melt(as.data.frame(theta_chain), id.vars=c("samp_no","chain_no"))
 estimated_pars <- c(sim_par_tab[sim_par_tab$fixed == 0,"names"],"total_infections")
 melted_theta_chain <- melted_theta_chain[melted_theta_chain$variable %in% estimated_pars,]
 colnames(melted_theta_chain)[3] <- "names"

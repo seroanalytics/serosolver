@@ -16,7 +16,7 @@
 #' @param repeats number of repeat observations for each year
 #' @param measurement_indices default NULL, optional vector giving the index of `measurement_bias` that each antigen/biomarker ID uses the measurement shift from from. eg. if there's 6 circulation years and 3 strain clusters, then this might be c(1,1,2,2,3,3)
 #' @param obs_dist if not NULL, then a vector of data types to use for each biomarker_group
-#' @param VERBOSE if TRUE, prints additional messages
+#' @param verbose if TRUE, prints additional messages
 #' @return a list with: 1) the data frame of antibody data as returned by \code{\link{simulate_group}}; 2) a matrix of infection histories as returned by \code{\link{simulate_infection_histories}}; 3) a vector of ages
 #' @family simulation_functions
 #' @examples
@@ -52,7 +52,7 @@ simulate_data <- function(par_tab,
                           repeats = 1,
                           measurement_indices = NULL,
                           obs_dist = NULL,
-                          VERBOSE=FALSE) {
+                          verbose=FALSE) {
 
     #########################################################
     ## PARAMETER TABLE CHECKS
@@ -60,7 +60,7 @@ simulate_data <- function(par_tab,
     check_par_tab(par_tab)
     
     if (!("biomarker_group" %in% colnames(par_tab))) {
-        if(VERBOSE) message(cat("Note: no biomarker_group detection in par_tab Assuming all biomarker_group as 1. If this was deliberate, you can ignore this message.\n"))
+        if(verbose) message(cat("Note: no biomarker_group detection in par_tab Assuming all biomarker_group as 1. If this was deliberate, you can ignore this message.\n"))
         par_tab$biomarker_group <- 1
     }
     
@@ -75,13 +75,13 @@ simulate_data <- function(par_tab,
     if (!is.null(antigenic_map)) {
         possible_exposure_times_tmp <- unique(antigenic_map$inf_times) # How many antigens are we testing against and what time did they circulate
         if(!is.null(possible_exposure_times) & !identical(possible_exposure_times, possible_exposure_times_tmp)){
-          if(VERBOSE) message(cat("Warning: provided possible_exposure_times argument does not match entries in the antigenic map. Please make sure that there is an entry in the antigenic map for each possible circulation time. Using the antigenic map times.\n"))
+          if(verbose) message(cat("Warning: provided possible_exposure_times argument does not match entries in the antigenic map. Please make sure that there is an entry in the antigenic map for each possible circulation time. Using the antigenic map times.\n"))
         }
         possible_exposure_times <- possible_exposure_times_tmp
         
         ## If no observation types assumed, set all to 1.
         if (!("biomarker_group" %in% colnames(antigenic_map))) {
-          if(VERBOSE) message(cat("Note: no biomarker_group detection in antigenic_map. Aligning antigenic map with par_tab. If this was deliberate, you can ignore this message.\n"))
+          if(verbose) message(cat("Note: no biomarker_group detection in antigenic_map. Aligning antigenic map with par_tab. If this was deliberate, you can ignore this message.\n"))
             antigenic_map_tmp <- replicate(n_biomarker_groups,antigenic_map,simplify=FALSE)
             for(biomarker_group in unique_biomarker_groups){
                 antigenic_map_tmp[[biomarker_group]]$biomarker_group <- biomarker_group
@@ -207,8 +207,8 @@ simulate_data <- function(par_tab,
 #' Simulates a full set of antibody data for n_indiv individuals with known theta and infection_histories. Each individual gets nsamps random samples from sample_times, and infections can occur at any of possible_exposure_times
 #' @inheritParams simulate_data
 #' @param theta the named parameter vector
-#' @param theta_indices_unique
-#' @param unique_biomarker_groups
+#' @param theta_indices_unique which index in par_tab does each element of `theta` correspond to?
+#' @param unique_biomarker_groups vector of unique measured biomarker types
 #' @param infection_histories the matrix of 1s and 0s giving presence/absence of infections for each individual
 #' @param DOBs vector giving the time period of birth (entries corresponding to `possible_exposure_times`)
 #' @return a data frame with columns individual, samples, virus and titre of simulated data

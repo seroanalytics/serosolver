@@ -8,8 +8,8 @@ inf_hist_swap(
   infection_history,
   age_mask,
   sample_mask,
-  swap_propn,
-  move_size,
+  proposal_inf_hist_indiv_swap_ratio,
+  proposal_inf_hist_distance,
   proposal_ratios = NULL
 )
 }
@@ -20,9 +20,9 @@ inf_hist_swap(
 
 \item{sample_mask}{the last index in infection_history that each individual (row) could be infected in ie. the time of the latest blood sample}
 
-\item{swap_propn}{what proportion of infections should be swapped?}
+\item{proposal_inf_hist_indiv_swap_ratio}{what proportion of infections should be swapped?}
 
-\item{move_size}{How many time points away should be chosen as candidate swaps?}
+\item{proposal_inf_hist_distance}{How many time points away should be chosen as candidate swaps?}
 
 \item{proposal_ratios}{optional NULL. Can set the relative sampling weights of the infection state times. Should be an integer vector of length matching nrow(antigenic_map). Otherwise, leave as NULL for uniform sampling.}
 }

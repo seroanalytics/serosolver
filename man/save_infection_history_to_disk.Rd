@@ -7,7 +7,7 @@
 save_infection_history_to_disk(
   infection_history,
   file,
-  sampno,
+  samp_no,
   append = TRUE,
   col_names = FALSE
 )
@@ -17,7 +17,7 @@ save_infection_history_to_disk(
 
 \item{file}{the file location to save to}
 
-\item{sampno}{which sample number is this matrix?}
+\item{samp_no}{which sample number is this matrix?}
 
 \item{append}{if TRUE, just adds to the bottom of the file}
 
@@ -33,7 +33,7 @@ Write given infection history to disk
 Other mcmc: 
 \code{\link{generate_start_tab}()},
 \code{\link{rm_scale}()},
-\code{\link{serosolver}()},
-\code{\link{scaletuning}()}
+\code{\link{scaletuning}()},
+\code{\link{serosolver}()}
 }
 \concept{mcmc}

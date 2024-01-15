@@ -18,7 +18,7 @@ create_posterior_func(
   antibody_level_before_infection = FALSE,
   data_type = 1,
   biomarker_groups_weights = 1,
-  VERBOSE = FALSE,
+  verbose = FALSE,
   ...
 )
 }
@@ -45,7 +45,7 @@ create_posterior_func(
 
 \item{data_type}{integer, currently accepting 1 for discrete or 2 for continuous.}
 
-\item{VERBOSE}{if TRUE, prints warning messages}
+\item{verbose}{if TRUE, prints warning messages}
 
 \item{...}{other arguments to pass to the posterior solving function}
 

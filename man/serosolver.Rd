@@ -11,18 +11,23 @@ serosolver(
   possible_exposure_times = NULL,
   mcmc_pars = c(),
   mvr_pars = NULL,
+  n_chains = 1,
+  parallel = FALSE,
   start_inf_hist = NULL,
   filename = "test",
-  CREATE_POSTERIOR_FUNC = create_posterior_func,
-  CREATE_PRIOR_FUNC = NULL,
+  posterior_func = create_posterior_func,
+  prior_func = NULL,
   prior_version = 1,
   measurement_indices = NULL,
   measurement_random_effects = FALSE,
   proposal_ratios = NULL,
-  OPT_TUNING = 0.1,
   temp = 1,
   solve_likelihood = TRUE,
   n_alive = NULL,
+  OPT_TUNING = 0.1,
+  random_start_parameters = TRUE,
+  verbose = TRUE,
+  verbose_dev = FALSE,
   ...
 )
 }
@@ -43,9 +48,9 @@ serosolver(
 
 \item{filename}{The full filepath at which the MCMC chain should be saved. "_chain.csv" will be appended to the end of this, so filename should have no file extensions}
 
-\item{CREATE_POSTERIOR_FUNC}{Pointer to posterior function used to calculate a likelihood. This will probably be \code{\link{create_posterior_func}}}
+\item{posterior_func}{Pointer to posterior function used to calculate a likelihood. This will probably be \code{\link{create_posterior_func}}}
 
-\item{CREATE_PRIOR_FUNC}{User function of prior for model parameters. Should take parameter values only}
+\item{prior_func}{User function of prior for model parameters. Should take parameter values only}
 
 \item{prior_version}{which infection history assumption prior_version to use? See \code{\link{describe_priors}} for options. Can be 1, 2, 3 or 4}
 
@@ -55,41 +60,48 @@ serosolver(
 
 \item{proposal_ratios}{optional NULL. Can set the relative sampling weights of the infection state times. Should be an integer vector of length matching nrow(antigenic_map). Otherwise, leave as NULL for uniform sampling.}
 
-\item{OPT_TUNING}{Constant describing the amount of leeway when adapting the proposals steps to reach a desired acceptance rate (ie. does not change step size if within OPT_TUNING of the specified acceptance rate)}
-
 \item{temp}{Temperature term for parallel tempering, raises likelihood to this value. Just used for testing at this point}
 
 \item{solve_likelihood}{if FALSE, returns only the prior and does not solve the likelihood. Use this if you wish to sample directly from the prior}
 
 \item{n_alive}{if not NULL, uses this as the number alive for the infection history prior, rather than calculating the number alive based on antibody_data}
 
-\item{...}{Other arguments to pass to CREATE_POSTERIOR_FUNC}
+\item{OPT_TUNING}{Constant describing the amount of leeway when adapting the proposals steps to reach a desired acceptance rate (ie. does not change step size if within OPT_TUNING of the specified acceptance rate)}
+
+\item{random_start_parameters}{if FALSE, uses whatever parameter values were passed in \code{par_tab} as the starting positions for the MCMC chain}
+
+\item{verbose}{if TRUE, prints progress updates during the run}
+
+\item{verbose_dev}{if TRUE, prints additional messages regarding step sizes, acceptance rates etc}
+
+\item{...}{Other arguments to pass to posterior_func}
 }
 \value{
 A list with: 1) relative file path at which the MCMC chain is saved as a .csv file; 2) relative file path at which the infection history chain is saved as a .csv file; 3) the last used covariance matrix if mvr_pars != NULL; 4) the last used scale/step size (if multivariate proposals) or vector of step sizes (if univariate proposals)
 }
 \description{
-The Adaptive Metropolis-within-Gibbs algorithm. Given a starting point and the necessary MCMC parameters as set out below, performs a random-walk of the posterior space to produce an MCMC chain that can be used to generate MCMC density and iteration plots. The algorithm undergoes an adaptive period, where it changes the step size of the random walk for each parameter to approach the desired acceptance rate, popt. The algorithm then uses \code{\link{univ_proposal}} or \code{\link{mvr_proposal}} to explore parameter space, recording the value and posterior value at each step. The MCMC chain is saved in blocks as a .csv file at the location given by filename. This version of the algorithm is also designed to explore posterior densities for infection histories. See the package vignettes for examples.
+The Adaptive Metropolis-within-Gibbs algorithm. Given a starting point and the necessary MCMC parameters as set out below, performs a random-walk of the posterior space to produce an MCMC chain that can be used to generate MCMC density and iteration plots. The algorithm undergoes an adaptive period, where it changes the step size of the random walk for each parameter to approach the desired acceptance rate, target_acceptance_rate_theta. The algorithm then uses \code{\link{univ_proposal}} or \code{\link{mvr_proposal}} to explore parameter space, recording the value and posterior value at each step. The MCMC chain is saved in blocks as a .csv file at the location given by filename. This version of the algorithm is also designed to explore posterior densities for infection histories. See the package vignettes for examples.
 }
 \details{
 The \code{mcmc_pars} argument has the following options:
 \itemize{
 \item iterations (number of post adaptive period iterations to run)
-\item adaptive_period (for this many iterations, change proposal step size adaptively every \code{opt_freq} iterations)
-\item opt_freq (adapt proposal step size every opt_freq iterations)
-\item thin (save every n iterations)
-\item thin_hist (infection history thinning)
-\item hist_sample_prob (proportion of individuals resampled at each iteration)
+\item adaptive_iterations (for this many iterations, change proposal step size adaptively every \code{adaptive_frequency} iterations)
+\item adaptive_frequency (adapt proposal step size every adaptive_frequency iterations)
+\item thin (save every n iterations from theta samples)
+\item thin_inf_hist (save every n iterations from infection history samples)
+\item proposal_inf_hist_indiv_prop (proportion of individuals resampled at each infection history proposal)
 \item save_block (after this many iterations (post thinning), save to disk)
-\item popt (desired acceptance rate for parameters)
-\item popt_hist (desired acceptance rate for infection histories)
-\item switch_sample (ratio of infection history samples to theta samples ie. switch_sample = 2 means sample inf hist twice for every theta sample, switch_sample = 0.5 means sample theta twice for every inf hist sample)
-\item inf_propn (proportion of infection times to resample for each individual at each iteration)
-\item move_size (number of infection years/months to move when performing infection history swap step)
-\item hist_opt (if 1, performs adaptive infection history proposals. If 0, retains the starting infection history proposal parameters. This should ONLY be turned on for prior version 2)
-\item swap_propn (if using gibbs sampling of infection histories, what proportion of proposals should be swap steps)
-\item hist_switch_prob (proportion of infection history proposal steps to swap year_swap_propn of two time periods' contents)
-\item year_swap_propn (when swapping contents of two time points, what proportion of individuals should have their contents swapped)
+\item target_acceptance_rate_theta (desired acceptance rate for theta parameters)
+\item target_acceptance_rate_inf_hist (desired acceptance rate for infection histories)
+\item proposal_ratio (ratio of infection history samples to theta samples ie. proposal_ratio = 2 means sample inf hist twice for every theta sample, proposal_ratio = 0.5 means sample theta twice for every inf hist sample)
+\item proposal_inf_hist_time_prop (proportion of infection times to resample for each individual at each iteration)
+\item proposal_inf_hist_distance (number of infection years/months to move when performing infection history swap step)
+\item proposal_inf_hist_adaptive (if 1, performs adaptive infection history proposals. If 0, retains the starting infection history proposal parameters. This should ONLY be turned on for prior version 2)
+\item proposal_inf_hist_indiv_swap_ratio (if using gibbs sampling of infection histories, what proportion of proposals should be swap steps, between 0 and 1)
+\item proposal_inf_hist_group_swap_ratio (proportion of infection history proposal steps to swap proposal_inf_hist_group_swap_prop of two time periods' contents, between 0 and 1)
+\item proposal_inf_hist_group_swap_prop (when swapping contents of two time points, what proportion of individuals should have their contents swapped, between 0 and 1)
+\item propose_from_prior (set to 1 to sample directly from the infection history prior, or 0 for independent proposals. Sometimes one version works better than the other, so try switching if you are getting poor infection history convergence)
 }
 }
 \examples{

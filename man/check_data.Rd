@@ -4,12 +4,12 @@
 \alias{check_data}
 \title{Checks the entries of data used in serosolver}
 \usage{
-check_data(data, VERBOSE = FALSE)
+check_data(data, verbose = FALSE)
 }
 \arguments{
 \item{data}{the data frame of data to be fitted. Must have columns: group (index of group); individual (integer ID of individual); samples (numeric time of sample taken); virus (numeric time of when the virus was circulating); titre (integer of titre value against the given virus at that sampling time)}
 
-\item{VERBOSE}{if TRUE, prints warning messages}
+\item{verbose}{if TRUE, prints warning messages}
 }
 \value{
 the same data object with corrections if needed
