@@ -47,9 +47,9 @@ knitr::opts_chunk$set(
 devtools::install_github("seroanalytics/serosolver")
 library(serosolver)
 ```
-## Quick start and vignettes
+## Guide and vignettes
 
-Read the [quick start vignette][vignette-doc] to set up and run a simple implementation with a simulation model.
+Read the [guide][vignette-doc] to set up and run a simple implementation with a simulation model.
 
 Additional vignettes:
 

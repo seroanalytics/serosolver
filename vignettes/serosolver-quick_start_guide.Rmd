@@ -1,13 +1,13 @@
 ---
-title: '_serosolver_ quick start guide'
+title: '_serosolver_ guide'
 output: 
   rmarkdown::html_vignette:
     toc: true
-    number_sections: true
+    number_sections: false
 csl: plos.csl
 bibliography: vignette_references.bib
 vignette: |
-  %\VignetteIndexEntry{Serosolver Quick Start Guide} 
+  %\VignetteIndexEntry{_serosolver_ guide} 
   %\VignetteEngine{knitr::rmarkdown} 
   %\VignetteEncoding{UTF-8}
 ---
@@ -19,31 +19,25 @@ knitr::opts_chunk$set(
 )
 ```
 
-### Overview
+## Overview
 
-`serosolver` jointly infers antibody kinetics, infection histories and attack rates from cross-sectional or longitudinal serological data, originally described by Kucharski *et al.* @kucharski2018 and developed further by Hay *et al.* @hay2020 . `serosolver` the predictability of antibody kinetics over time following exposure, using one or more antibody level measurements combined with a parameterised antibody kinetics model to back-calculate (i.e., extrapolate backwards) the timing of individual infections. What distinguishes `serosolver` from other such [*time-since-infection*](https://osf.io/preprints/osf/kqdsn) models is a) jointly inferring an antibody kinetics model and infection histories within the same framework; b) the ability to infer multiple infections per person (though this is not always desirable); and c) supporting multi-antigen pathogen systems as well as single-antigen problems.
+`serosolver` jointly infers antibody kinetics, infection histories and attack rates from cross-sectional or longitudinal serological data, originally described by Kucharski *et al.* @kucharski2018 and developed further by Hay *et al.* @hay2020 . `serosolver` exploits the predictability of antibody kinetics over time following exposure, using one or more antibody level measurements combined with a parameterised antibody kinetics model to back-calculate (i.e., extrapolate backwards) the timing of individual infections.
+
+What distinguishes `serosolver` from other such [*time-since-infection*](https://osf.io/preprints/osf/kqdsn) models is a) jointly inferring an antibody kinetics model and infection histories within the same framework; b) the ability to infer multiple infections per person (though this is not always desirable); and c) supporting multi-antigen pathogen systems as well as single-antigen problems.
 
 The core of the package is the `serosolver` function, which takes all of the data and model assumptions as inputs and saves Markov chain Monte Carlo (MCMC) outputs to disk. `serosolver` implements a flexible, hierarchical model, meaning that users must be aware of a number of model design decisions. In this vignette, we will show how a serological dataset can be cleaned for use in `serosolver`, and walk through the core functionality of the package and post-processing functions.
 
-### Contents
+## Contents
 
-This quick start guide is designed to provide the basic instructions to use `serosolver` on serological data. For more in depth instructions about the different capabilities of `serosolver` see the case study vignettes. The following steps are covered in this guide:
+This guide provides an overview of the key components for fitting a `serosolver` model. For more in depth instructions on specific features, see the case study vignettes. We will discuss the following workflow:
 
-1.  Installation and dependencies
-2.  Formatting and inputting a serological data set
-3.  Specifying model inputs
+```{r fig1, echo=FALSE, fig.cap="Outline of the serosolver workflow", out.width = '100%'}
+knitr::include_graphics("figures/guide_fig1.png")
+```
 
--   Antibody kinetics model parameters
--   Infection history model
--   Antigenic map
+## Installation and dependencies
 
-4.  Running MCMC
-5.  MCMC diagnostics
-6.  Interpreting model outputs
-
-## 1. Installation and dependencies
-
-The easiest way to install the development version of `serosolver` is to use the `devtools` package:
+Install `serosolver` using the `devtools` package:
 
 ```{r,eval=FALSE}
 devtools::install_github("seroanalytics/serosolver")
@@ -51,50 +45,104 @@ devtools::install_github("seroanalytics/serosolver")
 
 Note, that `serosolver` uses `Rcpp` code, including `RcppArmadillo`. You will therefore need a working C++ compiler such as `clang` or `gcc`. The easiest way to set this up is up for Windows users is the [`Rtools`](https://cran.r-project.org/bin/windows/Rtools/rtools43/rtools.html) package. For Mac users, you will need to install a compiler such as [`Xcode`](https://mac.r-project.org/tools/) or [`clang`](https://cran.r-project.org/bin/macosx/tools/).
 
-There are a number of additional package requirements, all of which can be installed from Cran:
+There are a number of additional package requirements, all of which can be installed from cran:
 
-```{r, eval=TRUE}
-packages <- c("ggplot2","plyr","dplyr","data.table")
+```{r, eval=TRUE,warning=FALSE,message=FALSE}
+library(serosolver)
+library(ggplot2)
+library(plyr)
+library(dplyr)
+library(tidyr)
+library(data.table)
+library(doParallel)
+library(coda)
+
 ```
 
-## 2. Formatting and inputting a serological data set
+## 1. Input data
 
-`serosolver` expects a data frame as input in long format with the following columns:
+### 1.1 Required variables
+
+`serosolver` expects a data frame in long format (i.e., there is a row for each observation), referred to as `antibody_data` in most function arguments, giving the individual ID, sample time, biomarkers or antigens measured, serological measurement, and demographic information:
 
 ```{r, eval=TRUE}
+data(example_antibody_data)
 knitr::kable(head(example_antibody_data))
 ```
 
-1.  individual: consecutive integer ID of individuals from $1,\dots,N$, where $N$ is the total number of individuals
-2.  sample_time: integer value of the time each sample was collected
-    -   For annual samples, the sample time is simply the year each sample was collected in. For example, data collected between 2009 and 2011 would have values of 2009, 2010, or 2011.
-    -   For semi-annual samples, the sample time is the year the sample was collected multiplied by 2 (since there are two semesters in every year). For example, data collected between 2009 and 2011 would have values of $(2009 \times 2) + 1 = 4019$, $(2009.5 \times 2) + 1 = 4020$, $(2010 \times 2) + 1 = 4021$, $(2010.5 \times 2) + 1 = 4022$, $(2011 \times 2) + 1 = 4023$, $(2011.5 \times 2) + 1 = 4024$.
-    -   Similarly, for quarterly or monthly samples, the sample time follows the same pattern. For example for a sample collected in July of 2009, the quarterly sample time would be $(2009.75 \times 4) + 1 = 8040$ (because July is in the third quarter of the year) and the monthly sample time would be $(2009.5833 \times 12) + 1 = 24116$ (because July is the seventh month and $7/12=0.5833$).\
-3.  virus: numeric time of when the virus was circulating (should be in the same format as samples)
-4.  titre: integer of titre value against the given virus at that sampling time (needs to be on log scale)
-5.  run: integer value of the repeat number of each sample (if there are no repeat samples, then run should be 1 for every sample)
-6.  DOB: integer value of date of birth (should be in the same format as samples)
-7.  group: integer value giving the population membership of the individual
+Description of variables:
 
-```{r,eval=FALSE}
-  titre_dat <- data.frame(individual=c(rep(1,4),rep(2,4)),
-                          samples=c(8039,8040,8044,8047,8039,8041,8045,8048),
-                          virus=c(rep(8036,8)),
-                          titre=c(0,0,7,7,0,5,6,5),
-                          run=c(rep(1,8)),
-                          DOB=c(rep(8036,8)),
-                          group=c(rep(1,8))
-                         )
-  knitr::kable(head(titre_dat))
+1.  `individual`: *consecutive* integer ID of individuals from $1,\dots,N$, where $N$ is the number of individuals in the sample.
+2.  `sample_time`: integer value of the time period in which a sample was collected.
+3.  `biomarker_id`: integer ID of the measured biomarker or antigen.
+4.  `biomarker_group`: optional, integer ID of the measurement type.
+5.  `measurement`: the measurement for this `individual` against `biomarker_id` at `sample_time`.
+6.  `repeat_number`: integer value starting from 1 where repeat measurements are available per sample and `biomarker_id` combination.
+7.  `population_group`: integer ID separating individuals within a sample into different groups.
+8.  `birth`: integer value giving the time period (matching the supported range of `sample_time`) in which an individual was born.
+
+Data can be cross-sectional samples with multiple biomarkers measured per sample (e.g., multiple influenza strains), such that different `biomarker_id`s correspond to different time periods, or longitidinal samples with one or more biomarkers measured per sample (e.g., measuring measles IgG titers over time).
+
+```{r, eval=TRUE, fig.width=6,fig.height=4,fig.cap="Cross-sectional serology against multiple antigens from multiple serum samples. Plot columns give time periods of sample times, rows give individuals. X-axis gives the time each biomarker ID was assumed to be circulating."}
+plot_antibody_data(example_antibody_data,example_antigenic_map$inf_times,n_indivs=1:3,study_design = "cross-sectional")
 ```
 
-For the remainder of this quick start guide we refer to the input data set as `titre_dat`.
+```{r, eval=TRUE, fig.width=6,fig.height=2.5,fig.cap="Longitudinal serology against multiple antigens from multiple serum samples. Plot columns give individuals, rows give biomarker groups (not biomarker IDs!). Points are coloured by biomarker ID. X-axis gives time of sample collection."}
+plot_antibody_data(example_antibody_data %>% filter(biomarker_id %in% c(1968,2002,2012)),2010:2015,n_indivs=1:3,study_design = "longitudinal")
+```
 
-## 2: Specifying inputs
+### 1.2 Serological data
 
-Along with a data file, serosolver expects several additional inputs namely, a parameter input file for starting values of antibody kinetics parameters, an antigenic map, an age mask, and starting infection histories. The following section will walk the users through creating each of these inputs.
+Most applications of `serosolver` involve fitting to antibody titre or concentration data. Make a note of whether your data are continuous or discrete, and the upper and lower bounds of the assay. These will need to be specified in the model later using the `par-tab` object `serosolver` also supports multiple measurement types per sample, for example, measuring both antibody titre and avidity. These observation types are distinguished by the `biomarker_group` variable --- all observations within a `biomarker_group` are underpinned by their own antibody kinetics model parameters, but arising from the same individual-level infection histories. These will be specified using the `data_type` argument later.
 
-### Parameter values
+### 1.3 Biomarker map
+
+`serosolver` was designed to treat `biomarker_id` as interchangeable with the time variables, such that one antigen ID is assumed to circulate in one time period. For example, `biomarker_id=1968` refers to the antigen assumed to be circulating in 1968. Note that at present, `serosolver` supports only one antigen/biomarker per time period. However, a single `biomarker_id` can be assumed to circulate and dominate for multiple time periods, which can be specified using the `antigenic_map` argument.
+
+The `antigenic_map` object tells `serosolver` how different `biomarker_id`s are related to each other (using coordinates on an antigenic map), as well as the time periods during which the `biomarker_id` is assumed to be circulating. Setting all antigenic coordinates to the same values tells `serosolver` that there are no antigenic differences between `biomarker_id`s. The same thing can be achieved by setting `antigenic_map=NULL` and instead specifying the `possible_exposure_times` vector.
+
+```{r, eval=FALSE}
+data(example_antigenic_map)
+knitr::kable(head(example_antigenic_map))
+```
+
+### 1.4 Covariate data
+
+Individuals can't be infected before they're born, and we can't infer infections which occurred after the final sample from each individual. `serosolver` uses the `birth` and `sample_time` variables to constrain which `biomarker_id`s an individual can have been infected by.
+
+The `population_group` variable is used to split individuals into different groups. These might represent different geographic groups, which can be used to estimate separate attack rates, or demographic groups, which can be used to estimate demographic-specific antibody kinetics (or both). For most models, this variable can be ignored or set to 1 for all individuals. See \<\< PLACEHOLDER \>\> for more details.
+
+## 2 Model decisions
+
+### 2.1 Infection history model and priors
+
+For new users, the most confusing model design decision in `serosolver` is setting the infection history model. First, we need to understand the epidemiological question we seek to address. If our main objective is to estimate attack rates, we need to think about the power/information we have to estimate attack rates and infection histories at a chosen time resolution (e.g., annual attack rates or per month). If instead our main objective is to understand antibody kinetics, we might wish to simplify the infection history model to allow a more complex antibody kinetics model.
+
+\<\< ADD IMAGE ON INFECTION HISTORY VECTOR WITH ATTACK RATES ETC. Could compare prior plot at different time resolutions \>\>
+
+#### 2.1.1 Model time resolution
+
+All time variables in a `serosolver` model must be at the same time resolution, including `sample_time`, `biomarker_id`, `birth`, and `possible_exposure_times`. This can cause confusion, as these variables must be integers, and thus we have to do some transformation before running `serosolver`:
+
+-   For annual samples, the sample time is simply the year each sample was collected in. For example, data collected between 2009 and 2011 would have values of 2009, 2010, or 2011.
+
+-   For semi-annual samples, the sample time is the year the sample was collected multiplied by 2 (since there are two semesters in every year). For example, data collected between 2009 and 2011 would have values of $(2009 \times 2) + 1 = 4019$, $(2009.5 \times 2) + 1 = 4020$, $(2010 \times 2) + 1 = 4021$, $(2010.5 \times 2) + 1 = 4022$, $(2011 \times 2) + 1 = 4023$, $(2011.5 \times 2) + 1 = 4024$.
+
+-   Similarly, for quarterly or monthly samples, the sample time follows the same pattern. For example for a sample collected in July of 2009, the quarterly sample time would be $(2009.75 \times 4) + 1 = 8040$ (because July is in the third quarter of the year) and the monthly sample time would be $(2009.5833 \times 12) + 1 = 24116$ (because July is the seventh month and $7/12=0.5833$).
+
+A very useful feature of `serosolver` is to use *mixed* time resolutions. For example, we might estimate infection histories at an annual resolution up to 2009, and then at a per-quarter resolution thereafter. This can be useful for reducing parameter space when we have limited information to draw inferences about particular time periods, but rich information for others. See \<\< PLACEHOLDER \>\> for more details.
+
+#### 2.1.2 Model time period
+
+How to deal with starting titre?
+
+#### 2.2.3 Infection history priors
+
+Version 1, 2 or 3? Link to paper
+
+### 2.2 Antibody kinetics model and priors
+
+3.  Along with a data file, serosolver expects several additional inputs namely, a parameter input file for starting values of antibody kinetics parameters, an antigenic map, an age mask, and starting infection histories. The following section will walk the users through creating each of these inputs.
 
 Several input files are stored within the `serosolver` package in the 'inputs' directory, however users can create their own. The default parameter file 'parTab_base.csv' is shown below:
 
@@ -111,52 +159,9 @@ Several input files are stored within the `serosolver` package in the 'inputs' d
 
 In the parameter file, the column 'fixed' indicates if each parameter value is fixed or should be estimated. For values that are not fixed, starting values need to be generated. The below code generates a random starting value for unfixed parameter values.
 
-```{r,eval=FALSE}
-# generate starting parameter values
-  start_tab <- par_tab
-    for(i in 1:nrow(start_tab)){
-      if(start_tab[i,"fixed"] == 0){
-        start_tab[i,"values"] <- runif(1,start_tab[i,"lower_start"], 
-                                  start_tab[i,"upper_start"])
-      }
-    }
+### 2.3 Observation model
 
-```
-
-### Antigenic Map
-
-The antigenic map specifies the coordinates of different circulating viruses in antigenic space [@smith2004], informing the model about how antigenically similar these viruses are. Viruses that are further apart in this 2-dimensional space are expected to cross react less than viruses that are close together.
-
-An antigenic map can be created using `generate_antigenic_map()` and input by the user depending on the source of their data. We use the antigenic map created by Fonville *et al.* [@fonville2014] in our analyses.
-
-```{r, eval=FALSE}
-## Read in raw coordinates
-  antigenic_coords_path <- system.file("extdata", "fonville_map_approx.csv", package = "serosolver")
-  antigenic_coords <- read.csv(antigenic_coords_path, stringsAsFactors=FALSE)
-
-## Convert to form expected by serosolver
-  antigenic_map <- generate_antigenic_map(antigenic_coords, buckets = 4)
-
-# unique strain circulation times
-  strains_isolation_times <- unique(antigenic_map$inf_times)
-```
-
-### Age Mask
-
-An age mask is required to indicate when each individual could have had their first infection. For example an individual born in 1997 could not have been infected with a strain that circulated in 1990. The function `create_age_mask()` outputs a vector of indices of the first `strains_isolation_times` that an individual could have been infected with.
-
-```{r, eval=FALSE}
-  unique_indiv <- titre_dat[!duplicated(titre_dat$individual),]
-  ageMask <- create_age_mask(unique_indiv$DOB, strains_isolation_times)
-```
-
-The final inputs required by `serosolver` are starting infection histories for each individual. The function `setup_infection_histories_titre()` creates a matrix of infection histories given a matrix of titre data by looking at an individual's titre against each strain. Where titres are raised, it suggests an infection. In this way, it can propose plausible initial infection histories from which to begin MCMC sampling.
-
-```{r, eval=FALSE}
-  start_inf <- setup_infection_histories_titre(titre_dat, strains_isolation_times)
-```
-
-## 3: Run MCMC
+## 3. Running *serosolver*
 
 `seroslver` uses an Adaptive Metropolis-within-Gibbs algorithm. Given a starting point and the necessary MCMC parameters, `serosolver()` performs a random-walk of the posterior space to produce an MCMC chain that can be used to generate MCMC density and iteration plots (see section 4).
 
@@ -185,84 +190,49 @@ If you want to change any default options, such as increasing or decreasing the 
                 CREATE_POSTERIOR_FUNC = create_posterior_func, version = 2)
 ```
 
-## 4: Processing Outputs
+## 4. Output posteriors
 
 `serosolver` contains numerous plotting functions for visualising results and evaluating model performance. Below are examples of several useful plotting functions.
 
-### Diagnostic plots
+## 5. Output diagnostics
 
 To evaluate model performance, trace and density plots can be produced by plotting the MCMC chains. In the below example the adaptive period and burn-in from the MCMC are excluded in the diagnostic plots.
 
 ```{r,eval=FALSE}
-# Density/trace plots
-chain1 <- read.csv(res$chain_file)
-chain1 <- chain1[chain1$samp_no >= (mcmc_pars["adaptive_iterations"]+mcmc_pars["burnin"]),]
-plot(coda::as.mcmc(chain1[,c("mu","mu_short","wane")]))
+
 ```
 
-### Results plots
+## 6. Output estimates
 
 Plot inferred attack rates.
 
 ```{r,eval=FALSE}
-# Read in infection history file from MCMC output
-  inf_chain <- data.table::fread(res$history_file,data.table=FALSE)
-# Remove adaptive period and burn-in
-  inf_chain <- inf_chain[inf_chain$samp_no >= (mcmc_pars["adaptive_iterations"]+mcmc_pars["burnin"]),]
-  inf_chain1 <- setDT(inf_chain)
-# Define year range
-  xs <- min(strains_isolation_times):max(strains_isolation_times)
-# Plot inferred attack rates
-  arP <- plot_attack_rates(infection_histories = inf_chain1, titre_dat = titre_dat, strain_isolation_times=xs)
+
 ```
 
 Plot inferred infection histories.
 
 ```{r, eval=FALSE}
-# Plot infection histories
-  IH_plot <- plot_infection_histories(chain = chain1, infection_histories = inf_chain, 
-                                      titre_dat = titre_dat, individuals = c(1:5),
-                                      antigenic_map = antigenic_map, par_tab = start_tab1)
+
 ```
 
 Plot inferred antibody titres.
 
 ```{r,eval=FALSE}
-# Plot inferred antibody titres
-  titre_preds <- get_titre_predictions(chain = chain1, infection_histories = inf_chain, 
-                                       titre_dat = titre_dat, individuals = c(1:5),
-                                       antigenic_map = antigenic_map, par_tab = start_tab1)
-  to_use <- titre_preds$predictions
-  
-  titre_pred_p <- ggplot(to_use[to_use$individual %in% 1:5,])+
-                  geom_line(aes(x=samples, y=median))+
-                  geom_point(aes(x=samples, y=titre))+
-                  geom_ribbon(aes(x=samples,ymin=lower, ymax=upper),alpha=0.2,col='red')+
-                  facet_wrap(~individual)
+
 ```
 
 Generate cumulative incidence plots.
 
 ```{r,eval=FALSE}
-  y <- generate_cumulative_inf_plots(inf_chain,burnin = 0,1:5,nsamp=100,
-                                   strain_isolation_times = strain_isolation_times,
-                                   pad_chain=FALSE,number_col = 2,subset_years = NULL)
+
 ```
 
 ### Parameter estimates
 
 The following code produces a table of the parameter estimates.
 
-```{r,eval=FALSE}
-# Table of antibody kinetics parameters
-  myresults <- matrix(c(rep(0,3*7)),nrow=3)
-  rownames(myresults) <- c("mu_short","wane","error")
-  colnames(myresults) <- c("mean","sd","2.5%","25%","50%","75%","97.5%")
-  
-  myresults[,"mean"] <- round(apply(chain1[,c("mu_short","wane","error")],2,mean),3)
-  myresults[,"sd"] <- round(apply(chain1[,c("mu_short","wane","error")],2,sd),3)  
-  myresults[,3:7] <- t(round(apply(chain1[,c("mu_short","wane","error")],2,
-                                   quantile,probs=c(0.025,0.25,0.5,0.75,0.975)),3))  
+```         
 ```
 
 ## References

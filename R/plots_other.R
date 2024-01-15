@@ -21,7 +21,7 @@ plot_antibody_data <- function(antibody_data,
                                possible_exposure_times, 
                                n_indivs,     
                                infection_histories=NULL,                   
-                      study_design="multi-antigen"){
+                      study_design="cross-sectional"){
     indivs <- unique(antibody_data$individual)
     
     if(length(n_indivs) == 1){
@@ -45,17 +45,18 @@ plot_antibody_data <- function(antibody_data,
       geom_rect(ymin=max_measurement,ymax=max_measurement+2,xmin=0,xmax=max_x,fill="grey70") +
       geom_rect(ymin=min_measurement-2,ymax=min_measurement,xmin=0,xmax=max_x,fill="grey70") 
       
-    if (study_design == "multi-antigen") {
+    if (study_design == "cross-sectional") {
         p1 <- p1 + 
             geom_point(aes(x = as.integer(biomarker_id), y = measurement, col=biomarker_group),shape=23, 
                        col="black",size=1)+
-            facet_grid(individual ~ sample_time)
+            facet_grid(individual ~ sample_time) +
+        xlab("Time of antigen circulation")
     } else {
         p1 <- p1 + 
-            geom_point(aes(x = sample_time, y = measurement, col=biomarker_id, col=biomarker_group),shape=23, 
-                       col="black",size=1) +
+            geom_point(aes(x = sample_time, y = measurement, col=as.factor(biomarker_id)),size=1) +
+            xlab("Sample time") +
             theme_bw() +
-            facet_wrap(~individual)
+            facet_grid(biomarker_group~individual)
     }
     
     if(!is.null(infection_histories)) {
@@ -74,9 +75,8 @@ plot_antibody_data <- function(antibody_data,
     }
     
     p1 <- p1 +
-      scale_x_continuous(expand=c(0,0)) +
+      scale_x_continuous(expand=c(0.05,0.05)) +
       ylab("log antibody level") + 
-      xlab("Time of antigen circulation") +
       theme_pubr()+
       theme(
         legend.position="bottom",
@@ -89,7 +89,7 @@ plot_antibody_data <- function(antibody_data,
             plot.margin=margin(r=15,t=5,l=5))+
       coord_cartesian(ylim=c(min_measurement,max_measurement+1),xlim=time_range) +
       scale_y_continuous(breaks=seq(min_measurement,max_measurement+2,by=2)) +
-      scale_color_viridis_d() + 
+      scale_color_viridis_d(name="Biomarker ID") + 
       scale_linetype_manual(name="",values=c("Known infection time"="dashed"))
     return(p1)
 }
