@@ -1,6 +1,15 @@
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
 
+# Update 16/01/2024
+
+`serosolver` is in the midst of an overhaul. Please use the `published`
+branch to ensure continued compatibility with existing projects.
+
+``` r
+devtools::install_github("seroanalytics/serosolver",ref="published")
+```
+
 # serosolver
 
 [![Project Status: Active – The project has reached a stable, usable
@@ -61,10 +70,10 @@ devtools::install_github("seroanalytics/serosolver")
 library(serosolver)
 ```
 
-## Quick start and vignettes
+## Guide and vignettes
 
-Read the [quick start
-vignette](https://seroanalytics.github.io/serosolver/articles/serosolver-quick_start_guide.html)
+Read the
+[guide](https://seroanalytics.github.io/serosolver/articles/serosolver-quick_start_guide.html)
 to set up and run a simple implementation with a simulation model.
 
 Additional vignettes:
@@ -78,9 +87,13 @@ Additional vignettes:
   estimating life-course infection histories from multi-strain serology,
   example of influenza A/H3N2 from the [Fluscape
   cohort](https://pubmed.ncbi.nlm.nih.gov/26875566/)
-- 
-- 
-- 
+- TBC Overview of optional features: walkthrough of additional
+  `serosolver` features and use cases, such as inclusion of
+  biomarker-specific measurement offsets
+- TBC Multiple measurements: fitting `serosolver` to multiple biomarker
+  types, example of binding avidity and ELISA measurements per sample
+- TBC Group-level differences: estimating demographic differences in
+  antibody kinetics and attack rates
 
 ## Example
 
@@ -115,12 +128,12 @@ plot_antibody_data(example_antibody_data,example_antigenic_map$inf_times,n_indiv
 # This example uses prior version 2 (i.e. beta prior on phi with parameters shape1 and shape2)
 output <- serosolver::serosolver(example_par_tab, example_antibody_data, example_antigenic_map,
                 filename="readme", prior_version=2,n_chains=3,parallel=TRUE,
-                mcmc_pars=c(adaptive_iterations=10000, iterations=50000),verbose=FALSE)
+                mcmc_pars=c(adaptive_iterations=100000, iterations=500000),verbose=FALSE)
 ```
 
 ``` r
 # Plot model predicted titres for a subset of individuals
-chains <- load_mcmc_chains(location=getwd(),par_tab=example_par_tab,burnin = 10000,unfixed=TRUE)
+chains <- load_mcmc_chains(location=getwd(),par_tab=example_par_tab,burnin = 100000,unfixed=TRUE)
 plot_model_fits(chain = chains$theta_chain,
                 infection_histories = chains$inf_chain,
                 known_infection_history = example_inf_hist,
