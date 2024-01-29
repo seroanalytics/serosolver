@@ -20,7 +20,23 @@ plot_attack_rates(
 )
 }
 \arguments{
+\item{infection_histories}{the MCMC chain for infection histories}
+
+\item{antibody_data}{the data frame of antibody data}
+
+\item{possible_exposure_times}{vector of the epochs of potential infection}
+
+\item{n_alive}{vector with the number of people alive in each year of possible infection Can be left as NULL, and the `birth` variable in `antibody_data` will be used to calculate the number alive}
+
 \item{ymax}{Numeric. the maximum y value to put on the axis. Default = 1.}
+
+\item{pad_chain}{if TRUE, fills the infection history data table with entries for non-infection events (ie. 0s). Can be switched to FALSE for speed to get a rough idea of what the attack rates look like.}
+
+\item{true_ar}{data frame of true attack rates, with first column `time` matching `possible_exposure_times`, and second column `AR` giving the attack rate. Column names: population_group, time, AR}
+
+\item{by_group}{if TRUE, facets the plot by population_group ID}
+
+\item{group_subset}{if not NULL, plots only this subset of groups eg. 1:5}
 
 \item{cumulative}{if TRUE, plots the cumulative attack rate}
 

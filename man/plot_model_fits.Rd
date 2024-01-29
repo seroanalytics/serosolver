@@ -15,7 +15,7 @@ plot_model_fits(
   nsamp = 1000,
   known_infection_history = NULL,
   measurement_indices_by_time = NULL,
-  p_ncol = length(individuals)/2,
+  p_ncol = max(1, floor(length(individuals)/2)),
   data_type = 1,
   expand_to_all_times = FALSE,
   orientation = "cross-sectional",

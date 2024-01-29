@@ -9,7 +9,7 @@ plot_antibody_data(
   possible_exposure_times,
   n_indivs,
   infection_histories = NULL,
-  study_design = "multi-antigen"
+  study_design = "cross-sectional"
 )
 }
 \arguments{
