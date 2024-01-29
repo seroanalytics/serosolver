@@ -86,7 +86,7 @@ plot_posteriors_infhist <- function(inf_chain,
 #' Plot historical attack rates
 #'
 #' Plots inferred historical attack rates from the MCMC output on infection histories. 
-#' @inheritParams plot_attack_rates
+#' @inheritParams plot_attack_rates_pointrange
 #' @param ymax Numeric. the maximum y value to put on the axis. Default = 1.
 #' @param resolution Integer. How many buckets of time is each year split into? ie. 12 for monthly data, 4 for quarterly etc. Default = 1 for annual.
 #' @param cumulative if TRUE, plots the cumulative attack rate
@@ -349,7 +349,7 @@ plot_attack_rates_pointrange <- function(infection_histories, antibody_data, pos
     }
     
     p <- ggplot(tmp[tmp$population_group %in% group_subset, ]) +
-      geom_violin(aes(x = time, y = V1, fill = taken, group = j),
+      geom_violin(aes(x = time, y = V1, fill = taken, group = time),
                   alpha=0.25,
                   draw_quantiles = c(0.025,0.5,0.975), scale = "width",
                   adjust=2
@@ -358,7 +358,7 @@ plot_attack_rates_pointrange <- function(infection_histories, antibody_data, pos
   if (!is.null(true_ar) & !plot_residuals) {
     p <- p +
       geom_point(
-        data = true_ar[true_ar$population_group %in% group_subset, ], aes(x = time, y = AR,shape="True attack rate"),stroke=1.25,
+        data = true_ar[true_ar$population_group %in% group_subset, ], aes(x = j, y = AR,shape="True attack rate"),stroke=1.25,
         col = "black", size = 2.5
       ) +
       scale_shape_manual(name="",values=c("True attack rate"=1))
