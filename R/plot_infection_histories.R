@@ -621,7 +621,7 @@ plot_cumulative_infection_histories <- function(inf_chain, burnin = 0, indivs, r
   
   ## If someone wasn't infected in a given year at all, then need a 0
   possible_exposure_times1 <- possible_exposure_times
-  if (!is.null(subset_years)) possible_exposure_times1 <- possible_exposure_times[subset_years]
+  if (!is.null(subset_times)) possible_exposure_times1 <- possible_exposure_times[subset_times]
   all_combos <- data.table(expand.grid(i = indivs, j = possible_exposure_times1, chain_no = unique(inf_chain$chain_no)))
   all_combos$j <- as.numeric(all_combos$j)
   all_combos$i <- as.numeric(all_combos$i)
