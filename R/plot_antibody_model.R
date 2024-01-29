@@ -98,6 +98,7 @@ plot_model_fits <- function(chain, infection_histories, antibody_data,
   ## If provided, add true infection histories
   if(!is.null(known_infection_history)){
     known_infection_history <- known_infection_history[individuals,]
+    rownames(known_infection_history) <- 1:nrow(known_infection_history)
     known_infection_history <- reshape2::melt(known_infection_history)
     colnames(known_infection_history) <- c("individual","variable","inf")
     known_infection_history <- known_infection_history[known_infection_history$inf == 1,]
@@ -111,9 +112,9 @@ plot_model_fits <- function(chain, infection_histories, antibody_data,
     titre_pred_p <- ggplot(to_use) +
       geom_rect(data=inf_hist_densities,
                 aes(xmin=xmin,xmax=xmax,fill=value),ymin=min_measurement-1,ymax=max_measurement+2)+
-      geom_ribbon(aes(x=biomarker_id,ymin=lower, ymax=upper),alpha=0.4, fill="#009E73",size=0.2)+
+      geom_ribbon(aes(x=biomarker_id,ymin=lower, ymax=upper),alpha=0.4, fill="#009E73",linewidth=0.2)+
       geom_ribbon(data=model_preds[model_preds$individual %in% individuals,], 
-                  aes(x=biomarker_id,ymin=lower,ymax=upper),alpha=0.7,fill="#009E73",size=0.2) + 
+                  aes(x=biomarker_id,ymin=lower,ymax=upper),alpha=0.7,fill="#009E73",linewidth=0.2) + 
       geom_line(data=model_preds, aes(x=biomarker_id, y=median),linewidth=0.75,color="#009E73")+
       geom_rect(ymin=max_measurement,ymax=max_measurement+2,xmin=0,xmax=max_x,fill="grey70")+
       geom_rect(ymin=min_measurement-2,ymax=min_measurement,xmin=0,xmax=max_x,fill="grey70")
@@ -160,9 +161,9 @@ plot_model_fits <- function(chain, infection_histories, antibody_data,
     titre_pred_p <- ggplot(to_use[to_use$individual %in% individuals,]) +
       geom_rect(data=inf_hist_densities,
                 aes(xmin=xmin,xmax=xmax,alpha=value),ymin=min_measurement-1,ymax=max_measurement+2,fill="orange")+
-      geom_ribbon(aes(x=sample_time,ymin=lower, ymax=upper,fill=biomarker_id,group=biomarker_id),alpha=0.1, size=0.2)+
+      geom_ribbon(aes(x=sample_time,ymin=lower, ymax=upper,fill=biomarker_id,group=biomarker_id),alpha=0.1, linewidth=0.2)+
       geom_ribbon(data=model_preds[model_preds$individual %in% individuals,], 
-                  aes(x=sample_time,ymin=lower,ymax=upper,fill=biomarker_id,group=biomarker_id),alpha=0.25,size=0.2) + 
+                  aes(x=sample_time,ymin=lower,ymax=upper,fill=biomarker_id,group=biomarker_id),alpha=0.25,linewidth=0.2) + 
       geom_line(data=model_preds, aes(x=sample_time, y=median,color=biomarker_id,group=biomarker_id),linewidth=0.75)+
       geom_rect(ymin=max_measurement,ymax=max_measurement+2,xmin=0,xmax=max_x,fill="grey70")+
       geom_rect(ymin=min_measurement-2,ymax=min_measurement,xmin=0,xmax=max_x,fill="grey70")
