@@ -197,7 +197,7 @@ plot_posteriors_theta <- function(chain,par_tab){
 
 #' @export
 plot_mcmc_diagnostics <- function(location, par_tab, burnin){
-  chains <- load_mcmc_chains(location=getwd(),par_tab=par_tab,burnin=burnin,unfixed=TRUE)
+  chains <- load_mcmc_chains(location=location,par_tab=par_tab,burnin=burnin,unfixed=TRUE)
   
   par_medians <- sapply(chains$theta_chain[,!(colnames(chains$theta_chain) %in% c("samp_no","chain_no","posterior_prob","likelihood","prior_prob"))], function(x) median(x))
   par_means <- sapply(chains$theta_chain[,!(colnames(chains$theta_chain) %in% c("samp_no","chain_no","posterior_prob","likelihood","prior_prob"))], function(x) mean(x))
