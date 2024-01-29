@@ -57,7 +57,7 @@ plot_model_fits <- function(chain, infection_histories, antibody_data,
                                           nsamp = 1000,
   known_infection_history=NULL,
                                           measurement_indices_by_time = NULL,
-                            p_ncol=length(individuals)/2,
+                            p_ncol=max(1,floor(length(individuals)/2)),
                             data_type=1,
                             expand_to_all_times=FALSE,
                             orientation="cross-sectional",
@@ -80,14 +80,13 @@ plot_model_fits <- function(chain, infection_histories, antibody_data,
   to_use <- antibody_preds$predicted_observations
   model_preds <- antibody_preds$predictions
   to_use$individual <- individuals[to_use$individual]
-  
+
   inf_hist_densities <- antibody_preds$histories
   inf_hist_densities$xmin <- inf_hist_densities$variable-0.5
   inf_hist_densities$xmax <- inf_hist_densities$variable+0.5
-  
   ## Subset infection history densities to not plot infections before sample time
   inf_hist_densities <- inf_hist_densities %>% 
-    left_join(model_preds[model_preds$individual %in% individuals,c("individual","sample_time")] %>% dplyr::distinct(),by="individual") %>% 
+    left_join(model_preds[model_preds$individual %in% individuals,c("individual","sample_time")] %>% dplyr::distinct(),by="individual",relationship="many-to-many") %>% 
     dplyr::filter(variable <= sample_time)
   
   max_measurement <- max(antibody_data$measurement,na.rm=TRUE)
@@ -105,7 +104,7 @@ plot_model_fits <- function(chain, infection_histories, antibody_data,
     known_infection_history$variable <- possible_exposure_times[known_infection_history$variable]
     known_infection_history$individual <- individuals[known_infection_history$individual]
     expand_samples <- expand_grid(individual=individuals,sample_time=unique(to_use$sample_time))
-    known_infection_history <- known_infection_history %>% left_join(expand_samples,by="individual") %>% filter(variable <= sample_time)
+    known_infection_history <- known_infection_history %>% left_join(expand_samples,by="individual",relationship="many-to-many") %>% filter(variable <= sample_time)
   }
   
   if(orientation=="cross-sectional"){
@@ -159,9 +158,11 @@ plot_model_fits <- function(chain, infection_histories, antibody_data,
     
       
     titre_pred_p <- ggplot(to_use[to_use$individual %in% individuals,]) +
-      geom_ribbon(aes(x=sample_time,ymin=lower, ymax=upper,fill=biomarker_id,group=biomarker_id),alpha=0.25, size=0.2)+
-      #geom_ribbon(data=model_preds[model_preds$individual %in% individuals,], 
-      #            aes(x=sample_time,ymin=lower,ymax=upper,fill=biomarker_id,group=biomarker_id),alpha=0.5,size=0.2) + 
+      geom_rect(data=inf_hist_densities,
+                aes(xmin=xmin,xmax=xmax,alpha=value),ymin=min_measurement-1,ymax=max_measurement+2,fill="orange")+
+      geom_ribbon(aes(x=sample_time,ymin=lower, ymax=upper,fill=biomarker_id,group=biomarker_id),alpha=0.1, size=0.2)+
+      geom_ribbon(data=model_preds[model_preds$individual %in% individuals,], 
+                  aes(x=sample_time,ymin=lower,ymax=upper,fill=biomarker_id,group=biomarker_id),alpha=0.25,size=0.2) + 
       geom_line(data=model_preds, aes(x=sample_time, y=median,color=biomarker_id,group=biomarker_id),linewidth=0.75)+
       geom_rect(ymin=max_measurement,ymax=max_measurement+2,xmin=0,xmax=max_x,fill="grey70")+
       geom_rect(ymin=min_measurement-2,ymax=min_measurement,xmin=0,xmax=max_x,fill="grey70")
@@ -177,6 +178,7 @@ plot_model_fits <- function(chain, infection_histories, antibody_data,
       #scale_fill_gradient(low="white",high="#D55E00",limits=c(0,1),name="Posterior probability of infection")+
      # guides(fill=guide_colourbar(title.position="top",title.hjust=0.5,label.position = "bottom",
       #                            barwidth=10,barheight = 0.5, frame.colour="black",ticks=FALSE)) +
+      scale_alpha_continuous(range=c(0,0.25),name="Posterior probability of infection")+
       scale_fill_viridis_d(name="Biomarker ID") +
       scale_color_viridis_d(name="Biomarker ID") +
       geom_point(data=antibody_data[antibody_data$individual %in% individuals,], aes(x=sample_time, y=measurement,col=biomarker_id),shape=23, 
