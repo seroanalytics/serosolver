@@ -78,6 +78,9 @@ serosolver <- function(par_tab,
                      verbose=TRUE,
                      verbose_dev=FALSE,
                      ...) {
+  
+  ##browser()
+  
 
   on.exit(serosolver::unregister_dopar)
   
@@ -178,6 +181,8 @@ serosolver <- function(par_tab,
     antibody_data <- check_data(antibody_data,verbose=verbose)
     
   ## Sort out which prior_version to run --------------------------------------
+    ##browser()
+    
   prior_on_total <- FALSE
   if (prior_version == 1) { ## Lambda prior_version
     prop_print <- "Infection history prior 1: Using phi prior on infection history, with symmetric proposal probabilities"
@@ -211,6 +216,8 @@ serosolver <- function(par_tab,
   steps <- par_tab$steps # How far to step on unit scale to begin with? "steps" will be added above by check_par_tab
 
   ## If using phi terms, pull their indices out of the parameter table
+  ##browser()
+  
   phi_indices <- NULL
   if ("phi" %in% par_names) {
     phi_indices <- which(par_tab$names == "phi")
@@ -265,6 +272,8 @@ serosolver <- function(par_tab,
   }
   
   ## If using gibbs proposal on infection_history, create here
+  ##browser()
+  
   if (hist_proposal == 2) {
     proposal_gibbs <- protect_posterior(posterior_func(par_tab,
                                              antibody_data,
@@ -287,6 +296,8 @@ serosolver <- function(par_tab,
 
   
   ## Create closure to add extra prior probabilities, to avoid re-typing later
+  ##browser()
+  
   extra_probabilities <- function(prior_pars, prior_infection_history) {
     names(prior_pars) <- par_names
     infection_model_prior_shape1 <- prior_pars["infection_model_prior_shape1"]
@@ -322,6 +333,7 @@ serosolver <- function(par_tab,
   if(parallel){
     writeLines(c(""), log_file)
   }
+  ##browser()
   result <- foreach(chain = 1:n_chains, .packages =c("serosolver","data.table","dplyr","plyr","tidyr")
   ) %execute% {
     if(parallel){
@@ -331,6 +343,8 @@ serosolver <- function(par_tab,
     mcmc_chain_file <- paste0(filename, "_",chain,"_chain.csv")
     infection_history_file <- paste0(filename, "_",chain,"_infection_histories.csv")
 
+    
+    ##browser()
     index <- 1
     total_posterior <- -Inf
     while(!is.finite(total_posterior) & index <= 100){
@@ -472,6 +486,7 @@ serosolver <- function(par_tab,
     ## Record time taken for each block
     t_start <- Sys.time()
     
+    ##browser()
     for (i in 1:(iterations + adaptive_iterations)) {
       
       ## Whether to swap entire year contents or not - only applies to gibbs sampling
@@ -505,6 +520,7 @@ serosolver <- function(par_tab,
       ######################
       ## PROPOSALS
       ######################
+      ##browser()
       ## Keep track of switching between theta and inf hist
       theta_sample <- proposal_ratio_flag[proposal_ratio_i]
       proposal_ratio_i <- proposal_ratio_i + 1
@@ -534,6 +550,7 @@ serosolver <- function(par_tab,
             tempiter <- tempiter + 1
           }
         }
+        ##browser()
         ## Calculate new likelihood for these parameters
         tmp_new_posteriors <- posterior_simp(proposal, infection_histories)
         new_indiv_likelihoods <- tmp_new_posteriors[[1]] / temp # For each individual
@@ -545,6 +562,8 @@ serosolver <- function(par_tab,
   
           ## Otherwise, resample infection history
       } else {
+        ##browser()
+        
           ## Choose a random subset of individuals to update
           indiv_sub_sample <- sample(1:n_indiv, ceiling(proposal_inf_hist_indiv_prop * n_indiv))
           indiv_sub_sample <- indiv_sub_sample[order(indiv_sub_sample)]
@@ -561,6 +580,8 @@ serosolver <- function(par_tab,
           new_likelihoods_calculated <- FALSE ## Flag if we calculate the new likelihoods earlier than anticipated
           ## Which infection history proposal to use?
           ## Explicit phis on infection histories
+          ##browser()
+          
           if (hist_proposal == 1) {
               ## Either swap entire contents or propose new infection history matrix
               if (inf_swap_prob > proposal_inf_hist_group_swap_ratio) {
@@ -582,6 +603,8 @@ serosolver <- function(par_tab,
               }
               ## Gibbs sampler prior_version, integrate out phi
           } else if (hist_proposal == 2) {
+            ##browser()
+            
               ## Swap entire contents or propose new
               if (inf_swap_prob > proposal_inf_hist_group_swap_ratio) {
                   prop_gibbs <- proposal_gibbs(
@@ -655,6 +678,7 @@ serosolver <- function(par_tab,
               new_indiv_likelihoods <- new_post[[1]] / temp
               new_indiv_priors <- new_post[[2]]
           }
+          ##browser()
           
           new_indiv_posteriors <- new_indiv_likelihoods + new_indiv_priors
           new_total_likelihood <- sum(new_indiv_likelihoods)
@@ -666,9 +690,13 @@ serosolver <- function(par_tab,
       #############################
       ## Check that all proposed parameters are in allowable range
       ## Skip if any parameters are outside of the allowable range
+      ##browser()
+      
       log_prob <- new_total_posterior - total_posterior
-      #if(!is.finite(new_total_prior_prob)) browser()
+      #if(!is.finite(new_total_prior_prob)) ##browser()
       if (theta_sample) {
+        ##browser()
+        
         if (!is.na(log_prob) & !is.nan(log_prob) & is.finite(log_prob)) {
           log_prob <- min(log_prob, 0)
           if (log(runif(1)) < log_prob) {
@@ -700,6 +728,8 @@ serosolver <- function(par_tab,
           }
         }
       } else {
+        ##browser()
+        
           ## If normal proposal
           if (inf_swap_prob > proposal_inf_hist_group_swap_ratio) {
               ## MH step for each individual
@@ -779,7 +809,8 @@ serosolver <- function(par_tab,
       ## If current iteration matches with recording frequency, store in the chain.
       ## If we are at the limit of the save block,
       ## save this block of chain to file and reset chain
-  
+      ##browser()
+      
       ## Save theta
       if (i %% thin == 0) {
         save_chain[no_recorded, 1] <- samp_no
@@ -832,6 +863,8 @@ serosolver <- function(par_tab,
         ## }
       }
       if (i <= adaptive_iterations) {
+        ##browser()
+        
         ## Current acceptance rate
         pcur <- tempaccepted / tempiter
         ## Save each step
@@ -949,7 +982,7 @@ serosolver <- function(par_tab,
   serosolver::unregister_dopar()
 
   if(verbose){ message(cat("Generating MCMC diagnostics"))}
-  saved_wd <- normalizePath(paste(getwd(),paste(strsplit(filename, "/")[[1]][-length(strsplit(filename, "/")[[1]])],sep="/"),sep="/"))
+  saved_wd <- normalizePath(paste(strsplit(filename, "/")[[1]][-length(strsplit(filename, "/")[[1]])],sep="/",collapse="/"))
   all_diagnostics <- suppressMessages(plot_mcmc_diagnostics(saved_wd, par_tab, adaptive_iterations))
   
   par_est_table <- all_diagnostics$theta_estimates
