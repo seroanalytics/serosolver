@@ -225,7 +225,7 @@ plot_attack_rates_pointrange <- function(infection_histories, antibody_data, pos
   if (!by_group) {
     antibody_data$population_group <- 1
     infection_histories$population_group <- 1
-    true_ar$population_group <- 1
+    if(!is.null(true_ar)) true_ar$population_group <- 1
   }
   
   

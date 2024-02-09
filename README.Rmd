@@ -91,7 +91,7 @@ data(example_antigenic_map)
 data(example_antibody_data)
 data(example_inf_hist)
 ```
-```{r example_plot, message=FALSE,warning=FALSE}
+```{r example_plot, message=FALSE,warning=FALSE, fig.width=6,fig.height=5}
 plot_antibody_data(example_antibody_data,example_antigenic_map$inf_times,n_indivs=1:4,example_inf_hist)
 ```
 
@@ -102,7 +102,7 @@ output <- serosolver::serosolver(example_par_tab, example_antibody_data, example
                 filename="readme", prior_version=2,n_chains=3,parallel=TRUE,
                 mcmc_pars=c(adaptive_iterations=100000, iterations=500000),verbose=FALSE)
 ```
-```{r example_model_fits, message=FALSE,warning=FALSE}
+```{r example_model_fits, message=FALSE,warning=FALSE, fig.width=6,fig.height=5}
 # Plot model predicted titres for a subset of individuals
 chains <- load_mcmc_chains(location=getwd(),par_tab=example_par_tab,burnin = 100000,unfixed=TRUE)
 plot_model_fits(chain = chains$theta_chain,

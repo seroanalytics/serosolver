@@ -35,6 +35,69 @@ This guide provides an overview of the key components for fitting a `serosolver`
 knitr::include_graphics("figures/guide_fig1.png")
 ```
 
+## Entire workflow
+
+The following code runs the entire pipeline for a simulation-recovery experiment with `serosolver`. We will step through each of these sections in more detail in this guide.
+
+```{r entire_simulation,echo=FALSE}
+
+
+```
+
+```{r}
+
+output <- serosolver::serosolver(example_par_tab, example_antibody_data, 
+                                 example_antigenic_map,
+                filename="readme", prior_version=2,n_chains=3,parallel=TRUE,
+                mcmc_pars=c(adaptive_iterations=100000, iterations=500000),verbose=TRUE)
+
+chains <- load_mcmc_chains(location=getwd(),par_tab=example_par_tab,burnin = 100000,unfixed=TRUE)
+plot_model_fits(chain = chains$theta_chain,
+                infection_histories = chains$inf_chain,
+                known_infection_history = example_inf_hist,
+                antibody_data = example_antibody_data,individuals=1:4,
+                antigenic_map=example_antigenic_map,
+                par_tab=example_par_tab,
+                orientation="cross-sectional")
+```
+
+```{r}
+## Get all possible infection times
+possible_exposure_times <- seq(2000,2024,by=1)
+
+## Vector of antigens that have biomarker measurements (note only one representative antigen per time)
+sampled_antigens <- seq(min(possible_exposure_times), max(possible_exposure_times), by=2)
+
+## Times at which serum samples can be taken
+sampling_times <- 2020:2024
+
+## Number of serum samples taken
+n_samps <- 5
+
+## Simulate some random attack rates
+attack_rates <- runif(length(possible_exposure_times), 0.05, 0.15)
+
+antigenic_map <- example_antigenic_map[1:25,]
+antigenic_map$inf_times <- possible_exposure_times
+
+
+## Simulate a full serosurvey with these parameters
+all_simulated_data <- simulate_data(par_tab=example_par_tab, group=1, n_indiv=50,
+                                    possible_exposure_times=possible_exposure_times,
+                                    measured_biomarker_ids = sampled_antigens,
+                                    sampling_times=sampling_times, nsamps=n_samps,
+                                    antigenic_map=antigenic_map,
+                                    age_min=10,age_max=75,
+                                    attack_rates=attack_rates, repeats=2,
+                                    obs_dist=c(1))
+
+## Pull out the simulated titre data and infection histories
+antibody_data <- all_simulated_data$antibody_data
+true_inf_hist <- all_simulated_data$infection_histories
+plot_antibody_data(antibody_data,possible_exposure_times,1:4,infection_histories = true_inf_hist)
+
+```
+
 ## Installation and dependencies
 
 Install `serosolver` using the `devtools` package:
@@ -130,11 +193,13 @@ All time variables in a `serosolver` model must be at the same time resolution, 
 
 -   Similarly, for quarterly or monthly samples, the sample time follows the same pattern. For example for a sample collected in July of 2009, the quarterly sample time would be $(2009.75 \times 4) + 1 = 8040$ (because July is in the third quarter of the year) and the monthly sample time would be $(2009.5833 \times 12) + 1 = 24116$ (because July is the seventh month and $7/12=0.5833$).
 
-A very useful feature of `serosolver` is to use *mixed* time resolutions. For example, we might estimate infection histories at an annual resolution up to 2009, and then at a per-quarter resolution thereafter. This can be useful for reducing parameter space when we have limited information to draw inferences about particular time periods, but rich information for others. See \<\< PLACEHOLDER \>\> for more details.
+A very useful feature of `serosolver` is to use *mixed* time resolutions. For example, we might estimate infection histories at an annual resolution up to 2009, and then at a per-quarter resolution thereafter. Another example might be to estimate per-cluster infections for historic periods of time to establish long-term infection histories, and then per-quarter or per-year infection histories during the study period to model shorter-term dynamics. This can be useful for reducing parameter space when we have limited information to draw inferences about particular time periods, but rich information for others. See \<\< PLACEHOLDER \>\> for more details.
 
 #### 2.1.2 Model time period
 
-How to deal with starting titre?
+It is possible to estimate infection states just for the duration of the serostudy, or to estimate infection histories for an arbitrary number of time periods prior to the study. For example, we might use serosolver to estimate infections that occurred between two serum sample collection times in the same way we would measure seroconversion rates. Alternatively, we might only have serum samples for recent time periods, but aim to estimate infection histories all the way back to the time of birth.
+
+`serosolver` estimates an infection state for each element of the vector `possible_exposure_times`, which is either passed directly or extract automatically from `antigenic_map$inf_times`. The range and entries of these vectors therefore determines the model time period and resolution of the infection history model.
 
 #### 2.2.3 Infection history priors
 

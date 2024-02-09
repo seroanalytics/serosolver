@@ -50,6 +50,8 @@ create_posterior_func <- function(par_tab,
                                   biomarker_groups_weights =1,
                                   verbose=FALSE,
                                   ...) {
+  #browser()
+  
     check_par_tab(par_tab, TRUE, prior_version,verbose)
     if (!("population_group" %in% colnames(antibody_data))) {
         antibody_data$population_group <- 1
@@ -93,6 +95,8 @@ create_posterior_func <- function(par_tab,
     #########################################################
     ## SETUP ANTIGENIC MAP
     #########################################################
+    #browser()
+    
     ## Check if an antigenic map is provided. If not, then create a dummy map where all pathogens have the same position on the map
     if (!is.null(antigenic_map)) {
         possible_exposure_times_tmp <- unique(antigenic_map$inf_times) # How many strains are we testing against and what time did they circulate
@@ -120,6 +124,8 @@ create_posterior_func <- function(par_tab,
     #########################################################
     ## SETUP DATA
     #########################################################
+    #browser()
+    
     ## Separate out initial readings and repeat readings - we only
     ## want to solve the model once for each unique indiv/sample/biomarker_id year tested
     antibody_data_unique <- antibody_data[antibody_data$repeat_number == 1, ]
@@ -246,6 +252,8 @@ create_posterior_func <- function(par_tab,
     #########################################################
     ## PARAMETER TABLE
     #########################################################
+    #browser()
+    
     ## Extract parameter type indices from par_tab, to split up
     ## similar parameters in model solving functions
     
@@ -274,7 +282,8 @@ create_posterior_func <- function(par_tab,
     expected_indices <- NULL
     measurement_bias <- NULL
     additional_arguments <- NULL
-
+    #browser()
+    
     repeat_data_exist <- nrow(antibody_data_repeats) > 0
     if (use_measurement_bias) {
         if(verbose) message(cat("Using measurement bias\n"))
@@ -290,6 +299,8 @@ create_posterior_func <- function(par_tab,
     }
 
     ## These will be the same for each biomarker_group, as currently only one exposure type
+    #browser()
+    
     phi_indices <- which(par_tab$par_type == 2)
     ## weights_indices <- which(par_tab$par_type == 4) ## For functional form version of FOI
     ## knot_indices <- which(par_tab$par_type == 5) ## For functional form version of FOI
@@ -321,6 +332,8 @@ create_posterior_func <- function(par_tab,
         f <- function(pars, infection_history_mat) {
           
           ## Transmission prob is the part of the likelihood function corresponding to each individual
+          #browser()
+          
           transmission_prob <- rep(0, n_indiv)
           if (explicit_phi) {
             phis <- pars[phi_indices]
@@ -361,6 +374,8 @@ create_posterior_func <- function(par_tab,
               antigenic_distances,
               antibody_level_before_infection
             )
+            #browser()
+            
             if (use_measurement_bias) {
               measurement_bias <- pars[measurement_indices_par_tab]
               antibody_level_shifts <- measurement_bias[expected_indices]
@@ -369,6 +384,8 @@ create_posterior_func <- function(par_tab,
                 ## Calculate likelihood for unique antibody_levels and repeat data
                 ## Sum these for each individual
                 liks <- numeric(n_indivs)
+                #browser()
+                
                 for(biomarker_group in unique_biomarker_groups){
                     ## Need theta for each observation type
                     liks_tmp <- likelihood_func_use[[biomarker_group]](
@@ -445,6 +462,8 @@ create_posterior_func <- function(par_tab,
             n_infections <- sum_infections_by_group(infection_history_mat, group_id_vec, n_groups)
             if (prior_version == 4) n_infected_group <- rowSums(n_infections)
             ## Now pass to the C++ function
+            #browser()
+            
             res <- inf_hist_prop_prior_v2_and_v4(
                 theta,
                 theta_indices_unique, 
