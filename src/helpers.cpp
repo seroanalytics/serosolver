@@ -12,6 +12,21 @@ NumericVector subset_nullable_vector(const Nullable<NumericVector> &x, int index
   }
 }
 
+
+//' @export
+ // [[Rcpp::export]]
+ NumericVector get_starting_antibody_levels(const int n_measurements, 
+                             const double min_measurement, 
+                             const Nullable<NumericVector> &starting_antibody_levels = R_NilValue) {
+   if(starting_antibody_levels.isNotNull()){
+     NumericVector predicted_levels = clone(as<NumericVector>(starting_antibody_levels));
+     return predicted_levels;
+   } else {
+     NumericVector predicted_levels(n_measurements,min_measurement);
+     return predicted_levels;
+   }
+ }
+
 //' Sum likelihoods into buckets
 //' 
 //' Given a large vector of likelihood values and a vector, indices, of length n_indivs, sums the likelihoods to give one value per individual, where indices indicates which individual each index of liks corresponds to.

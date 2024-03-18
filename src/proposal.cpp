@@ -2,7 +2,6 @@
 #include "antibody_models_individual.h"
 #include "likelihood_funcs.h"
 #include "helpers.h"
-// [[Rcpp::depends(RcppArmadillo)]]
 
 //' Infection history proposal function
 //' 

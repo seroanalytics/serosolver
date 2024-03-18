@@ -1,4 +1,3 @@
-// [[Rcpp::depends(RcppArmadillo)]]
 #include <RcppArmadillo.h>
 using namespace Rcpp;
 
@@ -11,6 +10,13 @@ using namespace Rcpp;
 NumericVector subset_nullable_vector(const Nullable<NumericVector> &x, int index1, int index2);
 #endif
 
+#ifndef GET_STARTING_ANTIBODY_LEVELS_H
+#define GET_STARTING_ANTIBODY_LEVELS_H
+NumericVector get_starting_antibody_levels(const int n_measurements, 
+                                           const double min_measurement, 
+                                           const Nullable<NumericVector> &starting_antibody_levels);
+#endif
+  
 #ifndef CREATE_CROSS_REACTIVITY_VECTOR_H
 #define SUBSET_NULLABLE_VECTOR_H
 NumericVector create_cross_reactivity_vector(NumericVector x, double cr_gradient);

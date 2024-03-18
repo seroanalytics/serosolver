@@ -40,7 +40,8 @@ NumericVector antibody_model(const NumericVector &theta,
 			      const IntegerVector &biomarker_id_indices, // For each antibody measurement, corresponding entry in antigenic map
 			      const arma::mat &antigenic_map_long,
 			      const arma::mat &antigenic_map_short,
-			      const NumericVector &antigenic_distances,	// Currently not doing anything, but has uses for model extensions		      
+			      const NumericVector &antigenic_distances,	// Currently not doing anything, but has uses for model extensions
+			      const Nullable<NumericVector> &starting_antibody_levels = R_NilValue,
 			      bool boost_before_infection = false
 			      ){
   // Dimensions of structures
@@ -127,9 +128,7 @@ NumericVector antibody_model(const NumericVector &theta,
       }
   }
 
-  // To store calculated titres
-  NumericVector predicted_antibody_levels(n_measurements, min_measurement);
-
+  NumericVector predicted_antibody_levels = get_starting_antibody_levels(n_measurements,min_measurement,starting_antibody_levels);
  // antigenic_map_long_tmp = antigenic_map_long(_,biomarker_group);
   //antigenic_map_short_tmp = antigenic_map_short(_,biomarker_group);
   
@@ -149,8 +148,7 @@ NumericVector antibody_model(const NumericVector &theta,
       // For each observation type solved for this individual
           for(int index = type_start; index <= type_end; ++index){
               biomarker_group = biomarker_groups(index)-1;
-             //Rcpp::Rcout << "Observation type: " << biomarker_group << std::endl;
-              
+
             start_index_in_samples = sample_data_start(index);
             end_index_in_samples = sample_data_start(index+1) - 1;
             start_index_in_data = antibody_data_start(start_index_in_samples);

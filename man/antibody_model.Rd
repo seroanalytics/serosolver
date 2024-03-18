@@ -21,6 +21,7 @@ antibody_model(
   antigenic_map_long,
   antigenic_map_short,
   antigenic_distances,
+  starting_antibody_levels = NULL,
   boost_before_infection = FALSE
 )
 }

@@ -352,6 +352,7 @@ simulate_individual_faster <- function(theta,
   measured_biomarker_id_indices <- match(rep(rep(measured_biomarker_ids, n_samps), n_biomarker_groups), possible_exposure_times) - 1
   dat <- matrix(nrow = length(measured_biomarker_id_indices) * repeats, ncol = 4) ## To store simulated data
   ## Go into C++ code to solve antibody model
+  
   antibody_levels <- antibody_model(
     theta, 
     unique_theta_indices,
@@ -369,6 +370,7 @@ simulate_individual_faster <- function(theta,
     antigenic_map_long,
     antigenic_map_short,
     antigenic_distances,
+    starting_antibody_levels=NULL,
     FALSE
   )
   ## Repeated each simulated titre per observation repeat
