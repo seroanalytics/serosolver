@@ -49,6 +49,8 @@ create_posterior_func <- function(par_tab,
                                   data_type=1,
                                   biomarker_groups_weights =1,
                                   verbose=FALSE,
+                                  start_level = "other",
+                                  start_level_randomize=FALSE,
                                   ...) {
   #browser()
   
@@ -185,7 +187,17 @@ create_posterior_func <- function(par_tab,
     sample_mask <- setup_dat$sample_mask
     n_indiv <- setup_dat$n_indiv
     DOBs <- setup_dat$DOBs
-
+    
+    ## Starting antibody levels
+    births <- antibody_data_unique$birth
+    start_levels <- create_start_level_data(antibody_data,start_level,start_level_randomize) %>% 
+      arrange(individual, biomarker_group, sample_time, biomarker_id, repeat_number)
+    
+    start_levels <- start_levels %>% filter(repeat_number == 1)
+    #browser()
+    start_level_indices <- start_levels$start_index - 1
+    start_antibody_levels <- start_levels %>% select(individual, biomarker_group,biomarker_id, starting_level) %>% distinct() %>% pull(starting_level)
+    
     ## Which entries of the unique antibody data correspond to each individual? 
     ## Used to summarize into per-individual likelihoods later
     nrows_per_individual_in_data <-  antibody_data_unique %>% group_by(individual, biomarker_group) %>% 
@@ -369,6 +381,11 @@ create_posterior_func <- function(par_tab,
               antibody_data_start,
               nrows_per_sample, 
               biomarker_id_indices, 
+              
+              start_level_indices,
+              start_antibody_levels,
+              births,
+              
               antigenic_map_long,
               antigenic_map_short,
               antigenic_distances,
@@ -552,6 +569,11 @@ create_posterior_func <- function(par_tab,
                 sample_times, type_data_start,biomarker_groups,
                 sample_data_start, antibody_data_start,
                 nrows_per_sample, biomarker_id_indices, 
+                
+                start_level_indices,
+                start_antibody_levels,
+                births,
+                
                 antigenic_map_long,
                 antigenic_map_short,
                 antigenic_distances,

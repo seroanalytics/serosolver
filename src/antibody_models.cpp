@@ -38,10 +38,13 @@ NumericVector antibody_model(const NumericVector &theta,
 			      const IntegerVector &nrows_per_sample, // Split the sample times for each individual
 			      
 			      const IntegerVector &biomarker_id_indices, // For each antibody measurement, corresponding entry in antigenic map
+			      const IntegerVector &start_level_indices, // For each individual/biomarker group/biomarker id combo, we need to know the starting antibody level
+			      const NumericVector &starting_antibody_levels,
+			      const NumericVector &births,
+			      
 			      const arma::mat &antigenic_map_long,
 			      const arma::mat &antigenic_map_short,
 			      const NumericVector &antigenic_distances,	// Currently not doing anything, but has uses for model extensions
-			      const Nullable<NumericVector> &starting_antibody_levels = R_NilValue,
 			      bool boost_before_infection = false
 			      ){
   // Dimensions of structures
@@ -75,25 +78,29 @@ NumericVector antibody_model(const NumericVector &theta,
   // Base model parameters
   NumericVector boost_long_parameters(n_types);
   NumericVector boost_short_parameters(n_types);
-  NumericVector wane_short_short_parameters(n_types);
+  NumericVector boost_delay_parameters(n_types);
+  NumericVector wane_short_parameters(n_types);
+  NumericVector wane_long_parameters(n_types);
   NumericVector obs_sd_parameters(n_types);
   NumericVector antigenic_seniority_parameters(n_types);
   
-  //NumericVector max_measurements(n_types);
-  //NumericVector min_measurements(n_types);
+  NumericVector max_measurements(n_types);
+  NumericVector min_measurements(n_types);
   double min_measurement = 0;
   
   int boost_long_index = unique_theta_indices("boost_long");
   int boost_short_index = unique_theta_indices("boost_short");
+  int boost_delay_index = unique_theta_indices("boost_delay");
   int wane_short_index = unique_theta_indices("wane_short");
+  int wane_long_index = unique_theta_indices("wane_long");
   int antigenic_seniority_index = unique_theta_indices("antigenic_seniority");
   int error_index = unique_theta_indices("obs_sd");
   
   //NumericVector antigenic_map_long_tmp(antigenic_map_long.nrow());
   //NumericVector antigenic_map_short_tmp(antigenic_map_short.nrow());
   
-  //int min_index = unique_theta_indices("min_measurement");
-  //int max_index = unique_theta_indices("max_measurement");
+  int min_index = unique_theta_indices("min_measurement");
+  int max_index = unique_theta_indices("max_measurement");
   
   // Titre-dependent boosting function
   IntegerVector antibody_dependent_boosting(n_types);
@@ -110,7 +117,9 @@ NumericVector antibody_model(const NumericVector &theta,
 
       boost_long_parameters(x) = theta(boost_long_index + x*n_theta);
       boost_short_parameters(x) = theta(boost_short_index + x*n_theta);
-      wane_short_short_parameters(x) = theta(wane_short_index + x*n_theta);
+      boost_delay_parameters(x) = theta(boost_delay_index + x*n_theta);
+      wane_short_parameters(x) = theta(wane_short_index + x*n_theta);
+      wane_long_parameters(x) = theta(wane_long_index + x*n_theta);
       antigenic_seniority_parameters(x) = theta(antigenic_seniority_index + x*n_theta);
       obs_sd_parameters(x) = theta(error_index + x*n_theta);
       
@@ -128,8 +137,8 @@ NumericVector antibody_model(const NumericVector &theta,
       }
   }
 
-  NumericVector predicted_antibody_levels = get_starting_antibody_levels(n_measurements,min_measurement,starting_antibody_levels);
- // antigenic_map_long_tmp = antigenic_map_long(_,biomarker_group);
+  NumericVector predicted_antibody_levels(n_measurements, min_measurement);
+  // antigenic_map_long_tmp = antigenic_map_long(_,biomarker_group);
   //antigenic_map_short_tmp = antigenic_map_short(_,biomarker_group);
   
   // For each individual
@@ -138,7 +147,7 @@ NumericVector antibody_model(const NumericVector &theta,
     
     infection_times = possible_exposure_times[indices];
     // Only solve is this individual has had infections
-    if (infection_times.size() > 0) {
+    // if (infection_times.size() > 0) {
       infection_times_indices_tmp = possible_exposure_times_indices[indices];
     
       // Start end end location of the type_data matrix
@@ -166,7 +175,7 @@ NumericVector antibody_model(const NumericVector &theta,
                 predicted_antibody_levels, 
                 boost_long_parameters(biomarker_group), 
                 boost_short_parameters(biomarker_group),
-	              wane_short_short_parameters(biomarker_group), 
+	              wane_short_parameters(biomarker_group), 
 	              antigenic_seniority_parameters(biomarker_group),
   					    gradients(biomarker_group), 
   					    boost_limits(biomarker_group),
@@ -183,15 +192,21 @@ NumericVector antibody_model(const NumericVector &theta,
   					    antigenic_map_long.colptr(biomarker_group),
   					    boost_before_infection);	
             } else {
-              antibody_data_model_individual(
+              
+              antibody_data_model_individual_new(
             	        predicted_antibody_levels, 
+            	        starting_antibody_levels,
+            	        births,
                       boost_long_parameters(biomarker_group), 
                       boost_short_parameters(biomarker_group),
-            					wane_short_short_parameters(biomarker_group), 
+                      boost_delay_parameters(biomarker_group),
+            					wane_short_parameters(biomarker_group), 
+            					wane_long_parameters(biomarker_group), 
             					antigenic_seniority_parameters(biomarker_group),
             					infection_times,
             					infection_times_indices_tmp,
             					biomarker_id_indices,
+            					start_level_indices,
             					sample_times,
             					start_index_in_samples,
             					end_index_in_samples,
@@ -201,8 +216,31 @@ NumericVector antibody_model(const NumericVector &theta,
             					antigenic_map_short.colptr(biomarker_group),
             					antigenic_map_long.colptr(biomarker_group),
             					boost_before_infection);
+              
+              /*antibody_data_model_individual(
+                predicted_antibody_levels, 
+                boost_long_parameters(biomarker_group), 
+                boost_short_parameters(biomarker_group),
+                boost_delay_parameters(biomarker_group),
+                wane_short_parameters(biomarker_group), 
+                wane_long_parameters(biomarker_group), 
+                antigenic_seniority_parameters(biomarker_group),
+                infection_times,
+                infection_times_indices_tmp,
+                biomarker_id_indices,
+                sample_times,
+                start_index_in_samples,
+                end_index_in_samples,
+                start_index_in_data,
+                nrows_per_sample,
+                number_possible_infections,
+                antigenic_map_short.colptr(biomarker_group),
+                antigenic_map_long.colptr(biomarker_group),
+                boost_before_infection);
+               */
+              
               }
-          }
+         // }
       }
   }
   return(predicted_antibody_levels);

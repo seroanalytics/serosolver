@@ -644,3 +644,67 @@ unregister_dopar <- function() {
   env <- foreach:::.foreachGlobals
   rm(list=ls(name=env), pos=env)
 }
+
+#' Generate starting antibody levels
+#'
+#' Generates either random or data-driven starting antibody levels for each measured biomarker group/id combination per individual. This is mostly used elsewhere in the serosolver model
+#' @param antibody_data the antibody data, see \code{\link{example_antibody_data}}
+#' @param start_level_summary string telling the function how to use the `antibody_data` object to create starting values. One of: min, max, mean, median, full_random.
+#' @param randomize if TRUE and data is discretized, then sets the starting level to a random value between floor(x) and floor(x)+1
+#' @return a list with two objects: 1) a tibble giving the starting antibody level for each individual, biomarker group and biomarker_id combinations; 2) a list of indices (starting at 0) of length matching `nrow(antibody_data)` giving the index of the antibody starting level to use for each measurement
+#' @family antigenic_maps
+#' @examples
+#' \dontrun{
+#' create_start_level_data(example_antibody_data,"min",FALSE)
+#' create_start_level_data(example_antibody_data,"min",TRUE)
+#' create_start_level_data(example_antibody_data,"max",FALSE)
+#' create_start_level_data(example_antibody_data,"max",TRUE)
+#' create_start_level_data(example_antibody_data,"mean",FALSE)
+#' create_start_level_data(example_antibody_data,"mean",TRUE)
+#' create_start_level_data(example_antibody_data,"median",FALSE)
+#' create_start_level_data(example_antibody_data,"median",TRUE)
+#' create_start_level_data(example_antibody_data,"other",FALSE)
+#' create_start_level_data(example_antibody_data,"other",TRUE)
+#' create_start_level_data(example_antibody_data,"full_random",FALSE)
+#' create_start_level_data(example_antibody_data,"full_random",TRUE)
+#' }
+#' @export
+create_start_level_data <- function(antibody_data, start_level_summary = "min", randomize=FALSE){
+  ## Get earliest measurement per biomarker ID as starting level. Need to decide if using min, max, mean or median.
+  starting_levels <- antibody_data %>% 
+    dplyr::select(individual,biomarker_id,biomarker_group, measurement,sample_time) %>% 
+    dplyr::group_by(individual, biomarker_id, biomarker_group) %>% 
+    dplyr::filter(sample_time == min(sample_time)) %>% 
+    dplyr::group_by(individual,biomarker_id, biomarker_group)
+  
+  ## Bounds of data and whether it's continuous or discrete
+  data_controls <- antibody_data %>% 
+    dplyr::mutate(diff_from_self = measurement - floor(measurement)) %>% 
+    dplyr::group_by(biomarker_group) %>% 
+    dplyr::summarize(min_measurement=min(measurement,na.rm=TRUE),max_measurement=max(measurement,na.rm=TRUE),type=if_else(any(diff_from_self != 0),"continuous","discrete")) 
+  
+  if(start_level_summary == "min"){
+    starting_levels <- starting_levels %>% dplyr::summarize(starting_level = min(measurement,na.rm=TRUE)) 
+  }else if(start_level_summary == "max"){
+    starting_levels <- starting_levels %>% dplyr::summarize(starting_level = max(measurement,na.rm=TRUE)) 
+  }else if(start_level_summary == "mean"){
+    starting_levels <- starting_levels %>% dplyr::summarize(starting_level = mean(measurement,na.rm=TRUE)) 
+  }else if(start_level_summary == "median"){
+    starting_levels <- starting_levels %>% dplyr::summarize(starting_level = median(measurement,na.rm=TRUE)) 
+  } else if(start_level_summary == "full_random"){
+    starting_levels <- starting_levels %>% dplyr::select(individual, biomarker_group, biomarker_id) %>% dplyr::distinct() %>% dplyr::left_join(data_controls,by="biomarker_group") %>% dplyr::ungroup() %>% dplyr::mutate(starting_level = runif(n(), min_measurement,max_measurement))
+  } else {
+    starting_levels <- starting_levels %>% dplyr::select(individual, biomarker_group, biomarker_id) %>% dplyr::distinct() %>% dplyr::mutate(starting_level = 0)
+  }
+  starting_levels <- starting_levels %>% dplyr::select(individual, biomarker_id, biomarker_group, starting_level)
+  starting_levels <- starting_levels %>% dplyr::arrange(individual, biomarker_group, biomarker_id) %>% dplyr::ungroup() %>% dplyr::mutate(start_index = 1:n())
+  if(randomize){
+    starting_levels <- starting_levels %>% dplyr::left_join(data_controls,by="biomarker_group") %>% ungroup() %>% dplyr::mutate(starting_level = if_else(type=="discrete",runif(n(),floor(starting_level), floor(starting_level) + 1),starting_level))
+  }
+  
+  start_indices <- left_join(antibody_data, starting_levels, by=c("individual", "biomarker_id", "biomarker_group"))
+  start_indices
+}
+
+
+

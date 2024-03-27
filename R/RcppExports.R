@@ -21,8 +21,8 @@
 #' @return NumericVector of predicted antibody levels for each entry in biomarker_id_indices
 #' @export
 #' @family antibody_models
-antibody_model <- function(theta, unique_theta_indices, unique_biomarker_groups, infection_history_mat, possible_exposure_times, possible_exposure_times_indices, sample_times, type_data_start, biomarker_groups, sample_data_start, antibody_data_start, nrows_per_sample, biomarker_id_indices, antigenic_map_long, antigenic_map_short, antigenic_distances, starting_antibody_levels = NULL, boost_before_infection = FALSE) {
-    .Call('_serosolver_antibody_model', PACKAGE = 'serosolver', theta, unique_theta_indices, unique_biomarker_groups, infection_history_mat, possible_exposure_times, possible_exposure_times_indices, sample_times, type_data_start, biomarker_groups, sample_data_start, antibody_data_start, nrows_per_sample, biomarker_id_indices, antigenic_map_long, antigenic_map_short, antigenic_distances, starting_antibody_levels, boost_before_infection)
+antibody_model <- function(theta, unique_theta_indices, unique_biomarker_groups, infection_history_mat, possible_exposure_times, possible_exposure_times_indices, sample_times, type_data_start, biomarker_groups, sample_data_start, antibody_data_start, nrows_per_sample, biomarker_id_indices, start_level_indices, starting_antibody_levels, births, antigenic_map_long, antigenic_map_short, antigenic_distances, boost_before_infection = FALSE) {
+    .Call('_serosolver_antibody_model', PACKAGE = 'serosolver', theta, unique_theta_indices, unique_biomarker_groups, infection_history_mat, possible_exposure_times, possible_exposure_times_indices, sample_times, type_data_start, biomarker_groups, sample_data_start, antibody_data_start, nrows_per_sample, biomarker_id_indices, start_level_indices, starting_antibody_levels, births, antigenic_map_long, antigenic_map_short, antigenic_distances, boost_before_infection)
 }
 
 #' Takes a subset of a Nullable NumericVector, but only if it isn't NULL

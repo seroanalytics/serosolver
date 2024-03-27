@@ -18,10 +18,12 @@ antibody_model(
   antibody_data_start,
   nrows_per_sample,
   biomarker_id_indices,
+  start_levels_indices,
+  starting_antibody_levels,
+  births,
   antigenic_map_long,
   antigenic_map_short,
   antigenic_distances,
-  starting_antibody_levels = NULL,
   boost_before_infection = FALSE
 )
 }

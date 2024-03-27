@@ -324,7 +324,9 @@ List inf_hist_prop_prior_v2_and_v4(
   // Base model parameters
   NumericVector boost_long_parameters(n_types);
   NumericVector boost_short_parameters(n_types);
+  NumericVector boost_delay_parameters(n_types);
   NumericVector wane_short_parameters(n_types);
+  NumericVector wane_long_parameters(n_types);
   NumericVector antigenic_seniority_parameters(n_types);
   
   NumericVector max_measurements(n_types);
@@ -332,7 +334,9 @@ List inf_hist_prop_prior_v2_and_v4(
 
   int boost_long_index = unique_theta_indices("boost_long");
   int boost_short_index = unique_theta_indices("boost_short");
+  int boost_delay_index = unique_theta_indices("boost_delay");
   int wane_short_index = unique_theta_indices("wane_short");
+  int wane_long_index = unique_theta_indices("wane_long");
   int antigenic_seniority_index = unique_theta_indices("antigenic_seniority");
   int error_index = unique_theta_indices("obs_sd");
   
@@ -352,7 +356,9 @@ List inf_hist_prop_prior_v2_and_v4(
   for(int x = 0; x < n_types; ++x){
     boost_long_parameters(x) = theta(boost_long_index + x*n_theta);
     boost_short_parameters(x) = theta(boost_short_index + x*n_theta);
+    boost_delay_parameters(x) = theta(boost_delay_index + x*n_theta);
     wane_short_parameters(x) = theta(wane_short_index + x*n_theta);
+    wane_long_parameters(x) = theta(wane_long_index + x*n_theta);
     antigenic_seniority_parameters(x) = theta(antigenic_seniority_index + x*n_theta);
       min_measurements(x) = theta(min_index + x*n_theta);
       max_measurements(x) = theta(max_index + x*n_theta);
@@ -613,9 +619,11 @@ List inf_hist_prop_prior_v2_and_v4(
         					      false);	
         	} else {
         	  antibody_data_model_individual(predicted_antibody_levels, 
-                                           boost_long_parameters(biomarker_group), 
-                                           boost_short_parameters(biomarker_group),
-                                           wane_short_parameters(biomarker_group), 
+                                          boost_long_parameters(biomarker_group), 
+                                          boost_short_parameters(biomarker_group),
+                                          boost_delay_parameters(biomarker_group),
+                                          wane_short_parameters(biomarker_group), 
+                                          wane_long_parameters(biomarker_group), 
                                            antigenic_seniority_parameters(biomarker_group),
         					  infection_times,
         					  infection_times_indices_tmp,

@@ -54,5 +54,8 @@ antigenic_map <- generate_antigenic_map_flexible(antigenic_coords, buckets=1,
 }
 \seealso{
 \code{\link{generate_antigenic_map}}
+
+Other antigenic_maps: 
+\code{\link{create_start_level_data}()}
 }
 \concept{antigenic_maps}
