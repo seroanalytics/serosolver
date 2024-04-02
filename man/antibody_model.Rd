@@ -18,7 +18,7 @@ antibody_model(
   antibody_data_start,
   nrows_per_sample,
   biomarker_id_indices,
-  start_levels_indices,
+  start_level_indices,
   starting_antibody_levels,
   births,
   antigenic_map_long,

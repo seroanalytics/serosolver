@@ -53,7 +53,7 @@ create_posterior_func <- function(par_tab,
                                   start_level_randomize=FALSE,
                                   ...) {
   #browser()
-  
+
     check_par_tab(par_tab, TRUE, prior_version,verbose)
     if (!("population_group" %in% colnames(antibody_data))) {
         antibody_data$population_group <- 1
@@ -72,6 +72,10 @@ create_posterior_func <- function(par_tab,
     if (!is.null(measurement_indices_by_time) & !("biomarker_group" %in% colnames(measurement_indices_by_time))) {
       if(verbose) message(cat("Note: no biomarker_group detected in measurement_indices_by_time. Assuming all biomarker_group as 1."))
       measurement_indices_by_time$biomarker_group <- 1
+    }
+  
+    if(verbose){
+      message(cat("Setting starting antibody levels based on data using command:", start_level, ";and randomizing starting antibody levels set to:", start_level_randomize))
     }
   
     ## Check that antibody data is formatted correctly
@@ -515,6 +519,10 @@ create_posterior_func <- function(par_tab,
 
                 group_id_vec,
                 biomarker_id_indices,
+                
+                start_level_indices,
+                start_antibody_levels,
+                births,
                 
                 antigenic_map_long,
                 antigenic_map_short,

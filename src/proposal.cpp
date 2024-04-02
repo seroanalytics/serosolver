@@ -198,6 +198,9 @@ List inf_hist_prop_prior_v2_and_v4(
 				   
 				   const IntegerVector &group_id_vec, // Which group does each individual belong to?
 				   const IntegerVector &biomarker_id_indices, // For each measurement, corresponding entry in antigenic map
+				   const IntegerVector &start_level_indices, // For each individual/biomarker group/biomarker id combo, we need to know the starting antibody level
+				   const NumericVector &starting_antibody_levels,
+				   const NumericVector &births,
 				   
 				   const arma::mat &antigenic_map_long, // Now a matrix of antigenic maps
 				   const arma::mat &antigenic_map_short,
@@ -618,6 +621,31 @@ List inf_hist_prop_prior_v2_and_v4(
         					      antigenic_map_long.colptr(biomarker_group),
         					      false);	
         	} else {
+        	  
+        	  antibody_data_model_individual_new(
+        	    predicted_antibody_levels, 
+        	    starting_antibody_levels,
+        	    births,
+        	    boost_long_parameters(biomarker_group), 
+        	    boost_short_parameters(biomarker_group),
+        	    boost_delay_parameters(biomarker_group),
+        	    wane_short_parameters(biomarker_group), 
+        	    wane_long_parameters(biomarker_group), 
+        	    antigenic_seniority_parameters(biomarker_group),
+        	    infection_times,
+        	    infection_times_indices_tmp,
+        	    biomarker_id_indices,
+        	    start_level_indices,
+        	    sample_times,
+        	    start_index_in_samples,
+        	    end_index_in_samples,
+        	    start_index_in_data,
+        	    nrows_per_sample,
+        	    number_possible_exposures,
+        	    antigenic_map_short.colptr(biomarker_group),
+        	    antigenic_map_long.colptr(biomarker_group),
+        	    false);
+        	  /*
         	  antibody_data_model_individual(predicted_antibody_levels, 
                                           boost_long_parameters(biomarker_group), 
                                           boost_short_parameters(biomarker_group),
@@ -637,6 +665,7 @@ List inf_hist_prop_prior_v2_and_v4(
         					  antigenic_map_short.colptr(biomarker_group),
         					  antigenic_map_long.colptr(biomarker_group),
         					  false);
+        	   */
         	}
         	if(use_measurement_shifts){
         	  add_measurement_shifts(predicted_antibody_levels, measurement_shifts, 

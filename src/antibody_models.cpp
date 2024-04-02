@@ -49,7 +49,7 @@ NumericVector antibody_model(const NumericVector &theta,
 			      ){
   // Dimensions of structures
   int n = infection_history_mat.nrow();
-  int number_possible_infections = infection_history_mat.ncol();
+  int number_possible_exposures = infection_history_mat.ncol();
   int n_measurements = biomarker_id_indices.size();
 
   // To track how far through the larger vectors we move for each individual
@@ -61,7 +61,7 @@ NumericVector antibody_model(const NumericVector &theta,
   int start_index_in_data;
   
   // Only use the infections that actually happened
-  //IntegerVector infection_history(number_possible_infections);
+  //IntegerVector infection_history(number_possible_exposures);
   LogicalVector indices;
   
   NumericVector infection_times;
@@ -187,7 +187,7 @@ NumericVector antibody_model(const NumericVector &theta,
   					    end_index_in_samples,
   					    start_index_in_data,
   					    nrows_per_sample,
-  					    number_possible_infections,
+  					    number_possible_exposures,
   					    antigenic_map_short.colptr(biomarker_group),
   					    antigenic_map_long.colptr(biomarker_group),
   					    boost_before_infection);	
@@ -212,7 +212,7 @@ NumericVector antibody_model(const NumericVector &theta,
             					end_index_in_samples,
             					start_index_in_data,
             					nrows_per_sample,
-            					number_possible_infections,
+            					number_possible_exposures,
             					antigenic_map_short.colptr(biomarker_group),
             					antigenic_map_long.colptr(biomarker_group),
             					boost_before_infection);
@@ -233,7 +233,7 @@ NumericVector antibody_model(const NumericVector &theta,
                 end_index_in_samples,
                 start_index_in_data,
                 nrows_per_sample,
-                number_possible_infections,
+                number_possible_exposures,
                 antigenic_map_short.colptr(biomarker_group),
                 antigenic_map_long.colptr(biomarker_group),
                 boost_before_infection);
