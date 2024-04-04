@@ -95,7 +95,7 @@ void antibody_data_model_individual_new(NumericVector &predicted_antibody_levels
    }
  }
  
- /*
+ // [[Rcpp::export]]
 Rcpp::NumericVector antibody_model_individual_wrapper(const double &boost_long,
                                                       const double &boost_short,
                                                       const double &boost_delay,
@@ -132,7 +132,7 @@ Rcpp::NumericVector antibody_model_individual_wrapper(const double &boost_long,
   
   return(predicted_antibody_levels);
 }
-*/
+
 
 //' Antibody model for one individual
 //' 

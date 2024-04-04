@@ -27,6 +27,56 @@ plot_antibody_dependent_boosting <- function(chain, n, titres = seq(0, 8, by = 0
   return(range)
 }
 
+#' Plot the antibody model
+#' 
+#' Plots the trajectory of the serosolver antibody model using specified parameters and optionally a specified antigenic map and infection history.
+#' @inheritParams simulate_antibody_model
+#' @return a list with two ggplot objects, one showing the simulated antibody kinetics over time, stratified by biomarker ID, the other showing simulated antibody kinetics for each biomarker ID, stratified by sample time
+#' @examples
+#' plot_antibody_model(c("boost_long"=2,"boost_short"=3,"boost_delay"=1,"wane_short"=0.2,"wane_long"=0.01, "antigenic_seniority"=0,"cr_long"=0.1,"cr_short"=0.03), times=seq(1,25,by=1),infection_history=NULL,antigenic_map=example_antigenic_map)
+#'  
+#' @export
+plot_antibody_model <- function(pars, 
+                                times=NULL, 
+                                infection_history=NULL, 
+                                antigenic_map=NULL){
+  y <- simulate_antibody_model(pars,times, infection_history,antigenic_map)
+  y$biomarker_id_label <- paste0("Biomarker ID: ", y$biomarker_ids)
+  y$sample_label <- paste0("Sample time: ", y$sample_times)
+  
+  y$biomarker_id_label <- factor(y$biomarker_id_label, levels=unique(paste0("Biomarker ID: ", y$biomarker_ids)))
+  y$sample_label <- factor(y$sample_label, levels=unique(paste0("Sample time: ", y$sample_times)))
+  
+  if(is.null(infection_history)){
+    infection_history <- 1
+  }
+  
+  p_long <- ggplot(y) + 
+    geom_line(aes(x=sample_times,y=antibody_level)) + 
+    geom_vline(data=data.frame(x=infection_history),linetype="dashed",aes(col="Infection",xintercept=x)) +
+    facet_wrap(~biomarker_id_label) +
+    scale_color_manual(name="",values=c("Infection"="grey40")) +
+    scale_y_continuous(expand=c(0,0)) +
+    scale_x_continuous(expand=c(0,0)) +
+    xlab("Sample time") +
+    ylab("Antibody level") +
+    theme_pubr()+
+    theme(legend.position="bottom")
+  
+  p_cr <- ggplot(y) + 
+    geom_ribbon(aes(x=biomarker_ids,ymax=antibody_level,ymin=0),fill='grey70',col="black") + 
+    geom_vline(data=data.frame(x=infection_history),linetype="dashed",aes(col="Infection",xintercept=x)) +
+    facet_wrap(~sample_label) +
+    scale_color_manual(name="", values=c("Infection"="grey40")) +
+    scale_y_continuous(expand=c(0,0)) +
+    scale_x_continuous(expand=c(0,0)) +
+    xlab("Biomarker ID") +
+    ylab("Antibody level") +
+    theme_pubr()+
+    theme(legend.position="bottom")
+  
+  return(list(p_long,p_cr))
+}
 
 #' Plots infection histories and antibody model 
 #'

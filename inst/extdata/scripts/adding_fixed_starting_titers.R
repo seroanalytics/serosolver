@@ -22,7 +22,18 @@ start_titres <- runif(length(biomarker_ids), 0,2)
 biomarker_ids <- seq(0,24,by=4)
 
 print(start_titres)
-y <- antibody_model_individual_wrapper(3,2,1,0.5,0.02,0.05,3,
+
+plot_antibody_model(c("boost_long"=2,"boost_short"=3,"boost_delay"=1,"wane_short"=0.2,"wane_long"=0.01, "antigenic_seniority"=0,"cr_long"=0.1,"cr_short"=0.03), times=seq(1,25,by=1),infection_history=NULL,
+                    
+                    antigenic_map=example_antigenic_map)
+
+y <- simulate_antibody_model(c("boost_long"=2,"boost_short"=3,"boost_delay"=1,"wane_short"=0.2,"wane_long"=0.01, "antigenic_seniority"=0,"cr_long"=0.1,"cr_short"=0.03), times=seq(1,25,by=1),infection_history=NULL,
+                        
+                        antigenic_map=NULL)
+ggplot(y) + geom_line(aes(x=sample_times,y=antibody_level)) + facet_wrap(~biomarker_ids)
+
+y <- antibody_model_individual_wrapper(3,2,1,0.5,0.02,0.05,
+                                       3,
                                        start_titres,
                                        length(exposure_times),
                                   infection_times,
@@ -46,7 +57,7 @@ example_inf_hist1 <- matrix(0, nrow=50,ncol=48)
 antibody_data <- example_antibody_data #%>% filter(repeat_number == 1)
 antibody_data <- antibody_data %>% arrange(individual, biomarker_group, sample_time, biomarker_id, repeat_number)
 f <- create_posterior_func(par_tab,antibody_data,example_antigenic_map,function_type=4,
-                           start_level="max")
+                           start_level="mean")
 
 antibody_data$y <- f(par_tab$values, example_inf_hist1)
 
@@ -72,13 +83,14 @@ library(coda)
 serosolver(par_tab, example_antibody_data, example_antigenic_map,
                        filename="readme", prior_version=2,n_chains=1,parallel=FALSE,
                        mcmc_pars=c(adaptive_iterations=10000, iterations=50000),verbose=TRUE,
-           start_level="min")
+           start_level="none")
 
-chains <- load_mcmc_chains(location=getwd(),par_tab=example_par_tab,burnin = 100000,unfixed=TRUE)
+chains <- load_mcmc_chains(location=getwd(),par_tab=par_tab,burnin = 10000,unfixed=TRUE)
 plot_model_fits(chain = chains$theta_chain,
                 infection_histories = chains$inf_chain,
-                known_infection_history = example_inf_hist,
-                antibody_data = example_antibody_data,individuals=1:4,
+                known_infection_history = NULL,
+                antibody_data = example_antibody_data,individuals=1:5,
                 antigenic_map=example_antigenic_map,
-                par_tab=example_par_tab,
+                nsamp=100,
+                par_tab=par_tab,
                 orientation="cross-sectional")

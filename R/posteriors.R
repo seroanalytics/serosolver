@@ -14,7 +14,10 @@
 #' @param n_alive if not NULL, uses this as the number alive in a given year rather than calculating from the ages. This is needed if the number of alive individuals is known, but individual birth dates are not
 #' @param function_type integer specifying which version of this function to use. Specify 1 to give a posterior solving function; 2 to give the gibbs sampler for infection history proposals; otherwise just solves the titre model and returns predicted titres. NOTE that this is not the same as the attack rate prior argument, \code{version}!
 #' @param titre_before_infection TRUE/FALSE value. If TRUE, solves titre predictions, but gives the predicted titre at a given time point BEFORE any infection during that time occurs.
-#' @param data_type integer, currently accepting 1 for discrete or 2 for continuous. 
+#' @param data_type integer or vector, with an entry for each unique data type in `antibody_data`. Set to 1 for discrete data (e.g., fold dilution) or 2 for continuous (e.g., ELISA optical density). 
+#' @param biomarker_groups_weights integer or vector, giving a factor to multiply the log-likelihood contribution of this data type towards the overall likelihood.
+#' @param start_level character, to tell the model how to treat initial antibody levels. This uses the observed data to either select starting values for each unique `individual`, `biomarker_id` and `biomarker_group` combination. See \code{\link{create_start_level_data}}. One of "min", "max", "mean", "median", or "full_random". Any other entry assumes all antibody starting levels are set to 0. Can also pass a tibble or data frame of starting levels matching the output of \code{\link{create_start_level_data}}.
+#' @param start_level_randomize if TRUE, and data is discretized, then sets the starting antibody level to a random value between floor(x) and floor(x) + 1. Does nothing if using continuous data.
 #' @param verbose if TRUE, prints warning messages
 #' @param ... other arguments to pass to the posterior solving function
 #' @return a single function pointer that takes only pars and infection_histories as unnamed arguments. This function goes on to return a vector of posterior values for each individual
@@ -48,11 +51,10 @@ create_posterior_func <- function(par_tab,
                                   antibody_level_before_infection=FALSE,
                                   data_type=1,
                                   biomarker_groups_weights =1,
-                                  verbose=FALSE,
                                   start_level = "other",
                                   start_level_randomize=FALSE,
+                                  verbose=FALSE,
                                   ...) {
-  #browser()
 
     check_par_tab(par_tab, TRUE, prior_version,verbose)
     if (!("population_group" %in% colnames(antibody_data))) {
@@ -75,7 +77,7 @@ create_posterior_func <- function(par_tab,
     }
   
     if(verbose){
-      message(cat("Setting starting antibody levels based on data using command:", start_level, ";and randomizing starting antibody levels set to:", start_level_randomize))
+      message(cat("Setting starting antibody levels based on data using command:", start_level, "; and randomizing starting antibody levels set to:", start_level_randomize))
     }
   
     ## Check that antibody data is formatted correctly
@@ -194,8 +196,14 @@ create_posterior_func <- function(par_tab,
     
     ## Starting antibody levels
     births <- antibody_data_unique$birth
-    start_levels <- create_start_level_data(antibody_data,start_level,start_level_randomize) %>% 
-      arrange(individual, biomarker_group, sample_time, biomarker_id, repeat_number)
+    
+    ## If specifying starting levels based on a provided data frame or tibble, set them here. Otherwise, calculate them from the antibody data.
+    if(class(start_level) %in% c("data.frame","tibble")){
+      start_levels <- start_level 
+    } else {
+      start_levels <- create_start_level_data(antibody_data,start_level,start_level_randomize) %>% 
+        arrange(individual, biomarker_group, sample_time, biomarker_id, repeat_number)
+    }
     
     start_levels <- start_levels %>% filter(repeat_number == 1)
     #browser()

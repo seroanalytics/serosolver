@@ -18,9 +18,9 @@ create_posterior_func(
   antibody_level_before_infection = FALSE,
   data_type = 1,
   biomarker_groups_weights = 1,
-  verbose = FALSE,
   start_level = "other",
   start_level_randomize = FALSE,
+  verbose = FALSE,
   ...
 )
 }
@@ -45,7 +45,13 @@ create_posterior_func(
 
 \item{function_type}{integer specifying which version of this function to use. Specify 1 to give a posterior solving function; 2 to give the gibbs sampler for infection history proposals; otherwise just solves the titre model and returns predicted titres. NOTE that this is not the same as the attack rate prior argument, \code{version}!}
 
-\item{data_type}{integer, currently accepting 1 for discrete or 2 for continuous.}
+\item{data_type}{integer or vector, with an entry for each unique data type in `antibody_data`. Set to 1 for discrete data (e.g., fold dilution) or 2 for continuous (e.g., ELISA optical density).}
+
+\item{biomarker_groups_weights}{integer or vector, giving a factor to multiply the log-likelihood contribution of this data type towards the overall likelihood.}
+
+\item{start_level}{character, to tell the model how to treat initial antibody levels. This uses the observed data to either select starting values for each unique `individual`, `biomarker_id` and `biomarker_group` combination. See \code{\link{create_start_level_data}}. One of "min", "max", "mean", "median", or "full_random". Any other entry assumes all antibody starting levels are set to 0. Can also pass a tibble or data frame of starting levels matching the output of \code{\link{create_start_level_data}}.}
+
+\item{start_level_randomize}{if TRUE, and data is discretized, then sets the starting antibody level to a random value between floor(x) and floor(x) + 1. Does nothing if using continuous data.}
 
 \item{verbose}{if TRUE, prints warning messages}
 
