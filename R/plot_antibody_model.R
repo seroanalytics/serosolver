@@ -31,6 +31,7 @@ plot_antibody_dependent_boosting <- function(chain, n, titres = seq(0, 8, by = 0
 #' 
 #' Plots the trajectory of the serosolver antibody model using specified parameters and optionally a specified antigenic map and infection history.
 #' @inheritParams simulate_antibody_model
+#' @param label_parameters if TRUE, labels the model parameters on the plot
 #' @return a list with two ggplot objects, one showing the simulated antibody kinetics over time, stratified by biomarker ID, the other showing simulated antibody kinetics for each biomarker ID, stratified by sample time
 #' @examples
 #' plot_antibody_model(c("boost_long"=2,"boost_short"=3,"boost_delay"=1,"wane_short"=0.2,"wane_long"=0.01, "antigenic_seniority"=0,"cr_long"=0.1,"cr_short"=0.03), times=seq(1,25,by=1),infection_history=NULL,antigenic_map=example_antigenic_map)
@@ -39,7 +40,8 @@ plot_antibody_dependent_boosting <- function(chain, n, titres = seq(0, 8, by = 0
 plot_antibody_model <- function(pars, 
                                 times=NULL, 
                                 infection_history=NULL, 
-                                antigenic_map=NULL){
+                                antigenic_map=NULL,
+                                label_parameters=FALSE){
   y <- simulate_antibody_model(pars,times, infection_history,antigenic_map)
   y$biomarker_id_label <- paste0("Biomarker ID: ", y$biomarker_ids)
   y$sample_label <- paste0("Sample time: ", y$sample_times)
@@ -51,25 +53,50 @@ plot_antibody_model <- function(pars,
     infection_history <- 1
   }
   
+  ## Add some labels and lines to show how the model parameters work
+  parameter_labels_long <- data.frame(names=c("boost_long","boost_short","boost_delay"),
+                                      biomarker_id_label = "Biomarker ID: 0",
+                                      x_label = c(pars["boost_delay"] + 2, pars["boost_delay"] + 2,pars["boost_delay"]/2 + 1 ),
+                                      y_label = c(pars["boost_long"]/2, (pars["boost_long"] + pars["boost_short"] + pars["boost_long"])/2,-0.1),
+                                      
+                                      xmin=c(pars["boost_delay"] + 1,pars["boost_delay"] + 1, 1),
+                                      xmax=c(pars["boost_delay"] + 1,pars["boost_delay"] + 1,1 + pars["boost_delay"]),
+                                      ymin=c(0,pars["boost_long"],0),
+                                      ymax=c(pars["boost_long"],pars["boost_long"] + pars["boost_short"], 0)
+                                      )
+  
   p_long <- ggplot(y) + 
     geom_line(aes(x=sample_times,y=antibody_level)) + 
     geom_vline(data=data.frame(x=infection_history),linetype="dashed",aes(col="Infection",xintercept=x)) +
     facet_wrap(~biomarker_id_label) +
     scale_color_manual(name="",values=c("Infection"="grey40")) +
-    scale_y_continuous(expand=c(0,0)) +
-    scale_x_continuous(expand=c(0,0)) +
+    scale_y_continuous(expand=c(0.03,0.03)) +
+    scale_x_continuous(expand=c(0.03,0.03)) +
     xlab("Sample time") +
     ylab("Antibody level") +
     theme_pubr()+
     theme(legend.position="bottom")
+  
+  if(label_parameters){
+    wane_short_x <- 1 + max(pars["boost_delay"] + (1-0.25/pars["boost_short"])/pars["wane_short"],0)
+    wane_short_y <- pars["boost_short"]*0.25 + pars["boost_long"]
+    wane_long_x <- wane_short_x + 5
+    wane_long_y <- pars["boost_long"]*0.75
+    
+    p_long <- p_long + 
+    geom_segment(data=parameter_labels_long,aes(x=xmin,xend=xmax,y=ymin,yend=ymax,group=names),linetype="dotted")+
+    geom_text(data=parameter_labels_long, aes(label=names,x=x_label, y = y_label)) +
+    geom_text(data=data.frame(label="wane_short", x=wane_short_x, y=wane_short_y,biomarker_id_label="Biomarker ID: 0"),aes(label=label,x=x,y=y)) +
+    geom_text(data=data.frame(label="wane_long", x=wane_long_x, y=wane_long_y,biomarker_id_label="Biomarker ID: 0"),aes(label=label,x=x,y=y))
+  }
   
   p_cr <- ggplot(y) + 
     geom_ribbon(aes(x=biomarker_ids,ymax=antibody_level,ymin=0),fill='grey70',col="black") + 
     geom_vline(data=data.frame(x=infection_history),linetype="dashed",aes(col="Infection",xintercept=x)) +
     facet_wrap(~sample_label) +
     scale_color_manual(name="", values=c("Infection"="grey40")) +
-    scale_y_continuous(expand=c(0,0)) +
-    scale_x_continuous(expand=c(0,0)) +
+    scale_y_continuous(expand=c(0.03,0.03)) +
+    scale_x_continuous(expand=c(0.03,0.03)) +
     xlab("Biomarker ID") +
     ylab("Antibody level") +
     theme_pubr()+
