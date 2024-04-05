@@ -198,6 +198,7 @@ create_posterior_func <- function(par_tab,
     births <- antibody_data_unique$birth
     
     ## If specifying starting levels based on a provided data frame or tibble, set them here. Otherwise, calculate them from the antibody data.
+    #browser()
     if(class(start_level) %in% c("data.frame","tibble")){
       start_levels <- start_level 
     } else {
