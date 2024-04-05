@@ -19,7 +19,8 @@ plot_model_fits(
   data_type = 1,
   expand_to_all_times = FALSE,
   orientation = "cross-sectional",
-  subset_biomarker_ids = NULL
+  subset_biomarker_ids = NULL,
+  start_level = "none"
 )
 }
 \arguments{

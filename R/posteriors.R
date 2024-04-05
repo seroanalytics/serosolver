@@ -111,7 +111,11 @@ create_posterior_func <- function(par_tab,
         if(!is.null(possible_exposure_times) & !identical(possible_exposure_times, possible_exposure_times_tmp)){
           if(verbose) message(cat("Warning: provided possible_exposure_times argument does not match entries in the antigenic map. Please make sure that there is an entry in the antigenic map for each possible circulation time. Using the antigenic map times."))
         }
-      possible_exposure_times <- possible_exposure_times_tmp
+        
+        ## If possible exposure times was not specified, use antigenic map times instead
+        if(is.null(possible_exposure_times)) {
+          possible_exposure_times <- possible_exposure_times_tmp
+        }
       
       ## If no observation types assumed, set all to 1.
       if (!("biomarker_group" %in% colnames(antigenic_map))) {
@@ -129,11 +133,10 @@ create_posterior_func <- function(par_tab,
                                   "inf_times"=rep(possible_exposure_times, n_biomarker_groups), 
                                   "biomarker_group"=rep(unique_biomarker_groups,each=length(possible_exposure_times)))
     }
+   
     #########################################################
     ## SETUP DATA
     #########################################################
-    #browser()
-    
     ## Separate out initial readings and repeat readings - we only
     ## want to solve the model once for each unique indiv/sample/biomarker_id year tested
     antibody_data_unique <- antibody_data[antibody_data$repeat_number == 1, ]
@@ -171,6 +174,8 @@ create_posterior_func <- function(par_tab,
     
     possible_exposure_times <- setup_dat$possible_exposure_times
     exposure_id_indices <- setup_dat$exposure_id_indices
+    possible_biomarker_ids <- setup_dat$possible_biomarker_ids
+    infection_history_mat_indices <- setup_dat$infection_history_mat_indices
     
     ## Sample collection times, entry for each unique individual, observation type and sample
     sample_times <- setup_dat$sample_time
@@ -198,16 +203,14 @@ create_posterior_func <- function(par_tab,
     births <- antibody_data_unique$birth
     
     ## If specifying starting levels based on a provided data frame or tibble, set them here. Otherwise, calculate them from the antibody data.
-    #browser()
     if(class(start_level) %in% c("data.frame","tibble")){
       start_levels <- start_level 
+      start_levels <- antibody_data %>% left_join(start_levels %>% select(individual, biomarker_id, biomarker_group, starting_level, start_index) %>% distinct())
     } else {
       start_levels <- create_start_level_data(antibody_data,start_level,start_level_randomize) %>% 
         arrange(individual, biomarker_group, sample_time, biomarker_id, repeat_number)
     }
-    
     start_levels <- start_levels %>% filter(repeat_number == 1)
-    #browser()
     start_level_indices <- start_levels$start_index - 1
     start_antibody_levels <- start_levels %>% select(individual, biomarker_group,biomarker_id, starting_level) %>% distinct() %>% pull(starting_level)
     
@@ -370,8 +373,8 @@ create_posterior_func <- function(par_tab,
             theta <- pars[theta_indices]
             names(theta) <- par_names_theta_all
             
-            antigenic_map_long <- matrix(nrow=length(possible_exposure_times)^2, ncol=n_biomarker_groups)
-            antigenic_map_short <- matrix(nrow=length(possible_exposure_times)^2, ncol=n_biomarker_groups)
+            antigenic_map_long <- matrix(nrow=length(possible_biomarker_ids)^2, ncol=n_biomarker_groups)
+            antigenic_map_short <- matrix(nrow=length(possible_biomarker_ids)^2, ncol=n_biomarker_groups)
             
             cr_longs <- theta[which(par_names_theta_all=="cr_long")]
             cr_shorts <- theta[which(par_names_theta_all=="cr_short")]
@@ -380,11 +383,14 @@ create_posterior_func <- function(par_tab,
               antigenic_map_long[,biomarker_group] <- create_cross_reactivity_vector(antigenic_map_melted[[biomarker_group]], cr_longs[biomarker_group])
               antigenic_map_short[,biomarker_group] <- create_cross_reactivity_vector(antigenic_map_melted[[biomarker_group]], cr_shorts[biomarker_group])
             }
+            #browser()
+            
             y_new <- antibody_model(
               theta, 
               theta_indices_unique, 
               unique_biomarker_groups,
               infection_history_mat, 
+              infection_history_mat_indices,
               possible_exposure_times, 
               exposure_id_indices,
               sample_times, 
@@ -472,14 +478,15 @@ create_posterior_func <- function(par_tab,
                       propose_from_prior=TRUE) {
             theta <- pars[theta_indices]
             names(theta) <- par_names_theta_all
-
+            browser()
+            
             if (use_measurement_bias) {
                 measurement_bias <- pars[measurement_indices_par_tab]
                 antibody_level_shifts <- measurement_bias[expected_indices]
             }
             
-            antigenic_map_long <- matrix(nrow=length(possible_exposure_times)^2, ncol=n_biomarker_groups)
-            antigenic_map_short <- matrix(nrow=length(possible_exposure_times)^2, ncol=n_biomarker_groups)
+            antigenic_map_long <- matrix(nrow=length(possible_biomarker_ids)^2, ncol=n_biomarker_groups)
+            antigenic_map_short <- matrix(nrow=length(possible_biomarker_ids)^2, ncol=n_biomarker_groups)
             
             cr_longs <- theta[which(par_names_theta_all=="cr_long")]
             cr_shorts <- theta[which(par_names_theta_all=="cr_short")]
@@ -492,13 +499,12 @@ create_posterior_func <- function(par_tab,
             n_infections <- sum_infections_by_group(infection_history_mat, group_id_vec, n_groups)
             if (prior_version == 4) n_infected_group <- rowSums(n_infections)
             ## Now pass to the C++ function
-            #browser()
-            
             res <- inf_hist_prop_prior_v2_and_v4(
                 theta,
                 theta_indices_unique, 
                 unique_biomarker_groups,
                 infection_history_mat,
+                infection_history_mat_indices,
                 probs,
                 sampled_indivs,
                 n_infs,
@@ -568,8 +574,8 @@ create_posterior_func <- function(par_tab,
             theta <- pars[theta_indices]
             names(theta) <- par_names_theta_all
 
-            antigenic_map_long <- matrix(nrow=length(possible_exposure_times)^2, ncol=n_biomarker_groups)
-            antigenic_map_short <- matrix(nrow=length(possible_exposure_times)^2, ncol=n_biomarker_groups)
+            antigenic_map_long <- matrix(nrow=length(possible_biomarker_ids)^2, ncol=n_biomarker_groups)
+            antigenic_map_short <- matrix(nrow=length(possible_biomarker_ids)^2, ncol=n_biomarker_groups)
             
             cr_longs <- theta[which(par_names_theta_all=="cr_long")]
             cr_shorts <- theta[which(par_names_theta_all=="cr_short")]
@@ -578,14 +584,20 @@ create_posterior_func <- function(par_tab,
                 antigenic_map_long[,biomarker_group] <- create_cross_reactivity_vector(antigenic_map_melted[[biomarker_group]], cr_longs[biomarker_group])
                 antigenic_map_short[,biomarker_group] <- create_cross_reactivity_vector(antigenic_map_melted[[biomarker_group]], cr_shorts[biomarker_group])
             }
-
+            #browser()
             y_new <- antibody_model(
                 theta, theta_indices_unique, unique_biomarker_groups,
-                infection_history_mat, possible_exposure_times, 
+                infection_history_mat, 
+                infection_history_mat_indices,
+                possible_exposure_times, 
                 exposure_id_indices,
-                sample_times, type_data_start,biomarker_groups,
-                sample_data_start, antibody_data_start,
-                nrows_per_sample, biomarker_id_indices, 
+                sample_times, 
+                type_data_start,
+                biomarker_groups,
+                sample_data_start, 
+                antibody_data_start,
+                nrows_per_sample, 
+                biomarker_id_indices, 
                 
                 start_level_indices,
                 start_antibody_levels,

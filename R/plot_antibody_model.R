@@ -138,11 +138,22 @@ plot_model_fits <- function(chain, infection_histories, antibody_data,
                             data_type=1,
                             expand_to_all_times=FALSE,
                             orientation="cross-sectional",
-                            subset_biomarker_ids=NULL) {
+                            subset_biomarker_ids=NULL,
+  start_level="none") {
   individuals <- individuals[order(individuals)]
-  if(is.null(possible_exposure_times)){
-    possible_exposure_times <- unique(antigenic_map$inf_times)
- }
+  
+  ## Setup antigenic map and exposure times
+  ## Check if an antigenic map is provided. If not, then create a dummy map where all pathogens have the same position on the map
+  if (!is.null(antigenic_map)) {
+    possible_exposure_times_tmp <- unique(antigenic_map$inf_times) 
+    if(is.null(possible_exposure_times)) {
+      possible_exposure_times <- possible_exposure_times_tmp
+    }
+  } 
+  
+  start_levels <- create_start_level_data(antibody_data %>% filter(individual %in% individuals),start_level,FALSE) %>% 
+    arrange(individual, biomarker_group, sample_time, biomarker_id, repeat_number)
+  
   ## Generate antibody predictions
   antibody_preds <- get_antibody_level_predictions(
     chain, infection_histories, antibody_data, individuals,
@@ -151,7 +162,8 @@ plot_model_fits <- function(chain, infection_histories, antibody_data,
     measurement_indices_by_time,
     expand_antibody_data=TRUE,
     expand_to_all_times=expand_to_all_times,
-    data_type=data_type
+    data_type=data_type,
+    start_level=start_levels
   )
   ## Use these antibody predictions and summary statistics on infection histories
   to_use <- antibody_preds$predicted_observations
@@ -186,6 +198,11 @@ plot_model_fits <- function(chain, infection_histories, antibody_data,
   }
   
   if(orientation=="cross-sectional"){
+    if(!is.null(subset_biomarker_ids)){
+      time_range <- range(subset_biomarker_ids)
+    }
+    
+    
     titre_pred_p <- ggplot(to_use) +
       geom_rect(data=inf_hist_densities,
                 aes(xmin=xmin,xmax=xmax,fill=value),ymin=min_measurement-1,ymax=max_measurement+2)+
@@ -201,7 +218,6 @@ plot_model_fits <- function(chain, infection_histories, antibody_data,
       titre_pred_p <- titre_pred_p + geom_vline(data=known_infection_history,aes(xintercept=variable,linetype="Known infection")) +
         scale_linetype_manual(name="",values=c("Known infection"="dashed"))
     }
-    
     titre_pred_p <- titre_pred_p +
       scale_x_continuous(expand=c(0.01,0.01)) +
       scale_fill_gradient(low="white",high="#D55E00",limits=c(0,1),name="Posterior probability of infection")+

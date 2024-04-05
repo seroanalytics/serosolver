@@ -400,8 +400,14 @@ setup_antibody_data_for_posterior_func <- function(antibody_data, antigenic_map=
       if(!is.null(possible_exposure_times) & !identical(possible_exposure_times, possible_exposure_times_tmp)){
           if(verbose) message(cat("Warning: provided possible_exposure_times argument does not match entries in the antigenic map. Please make sure that there is an entry in the antigenic map for each possible circulation time. Using the antigenic map times.\n"))
       }
+      ## If possible exposure times was not specified, use antigenic map times instead
+      if(is.null(possible_exposure_times)) {
+        infection_history_mat_indices <- match(possible_exposure_times_tmp, possible_exposure_times_tmp)-1
+      } else {
+        infection_history_mat_indices <- match(possible_exposure_times, possible_exposure_times_tmp)-1
+      }
       possible_exposure_times <- possible_exposure_times_tmp
-      
+   
       ## If no observation types assumed, set all to 1.
       if (!("biomarker_group" %in% colnames(antigenic_map))) {
         if(verbose) message(cat("Note: no biomarker_group detection in antigenic_map. Aligning antigenic map with par_tab.\n"))
@@ -417,8 +423,10 @@ setup_antibody_data_for_posterior_func <- function(antibody_data, antigenic_map=
       antigenic_map <- data.frame("x_coord"=1,"y_coord"=1,
                                   "inf_times"=rep(possible_exposure_times, n_biomarker_groups), 
                                   "biomarker_group"=rep(unique_biomarker_groups,each=length(possible_exposure_times)))
+      infection_history_mat_indices <- match(possible_exposure_times, possible_exposure_times)-1
   }
-  possible_exposure_times <- unique(antigenic_map$inf_times)
+  possible_biomarker_ids <- unique(antigenic_map$inf_times)
+  
   
   ## Create a melted antigenic map for each observation type
   antigenic_maps_melted <- lapply(unique_biomarker_groups, function(b){
@@ -426,8 +434,8 @@ setup_antibody_data_for_posterior_func <- function(antibody_data, antigenic_map=
       c(melt_antigenic_coords(tmp[,c("x_coord","y_coord")]))
     })
   
-  biomarker_id_indices <- match(antibody_data$biomarker_id, possible_exposure_times) - 1 ## For each biomarker_id tested, what is its index in the antigenic map?
-  exposure_id_indices <- match(possible_exposure_times, possible_exposure_times) - 1 ## For each biomarker_id that circulated, what is its index in the antigenic map?
+  biomarker_id_indices <- match(antibody_data$biomarker_id, possible_biomarker_ids) - 1 ## For each biomarker_id tested, what is its index in the antigenic map?
+  exposure_id_indices <- match(possible_exposure_times, possible_exposure_times) - 1 ## For each biomarker_id that circulated, what is its index in the possible exposure times vector?
 
   ## Get unique measurement sets for each individual at
   ## each sampling time, for each observation type, for each repeat
@@ -469,7 +477,7 @@ setup_antibody_data_for_posterior_func <- function(antibody_data, antigenic_map=
     "antigenic_map_melted" = antigenic_maps_melted,
     "possible_exposure_times" = possible_exposure_times,
     "exposure_id_indices" = exposure_id_indices,
-    
+    "infection_history_mat_indices" = infection_history_mat_indices,
     "sample_times" = sample_times,
     
     "antibody_data_start"=antibody_data_start,
@@ -481,6 +489,7 @@ setup_antibody_data_for_posterior_func <- function(antibody_data, antigenic_map=
     
     ## This one I need to figure out -- does it need to have a different set of indices for each observation type? Probably not
     "biomarker_id_indices" = biomarker_id_indices,
+    "possible_biomarker_ids" = possible_biomarker_ids,
     "n_indiv" = n_indiv,
     "age_mask" = age_mask,
     "sample_mask" = sample_mask,

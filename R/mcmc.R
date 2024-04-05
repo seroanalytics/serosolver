@@ -4,7 +4,7 @@
 #' @param par_tab The parameter table controlling information such as bounds, initial values etc. See \code{\link{example_par_tab}}
 #' @param antibody_data The data frame of titre data to be fitted. Must have columns: group (index of group); individual (integer ID of individual); samples (numeric time of sample taken); virus (numeric time of when the virus was circulating); titre (integer of titre value against the given virus at that sampling time); run (integer giving the repeated number of this titre); DOB (integer giving date of birth matching time units used in model). See \code{\link{example_antibody_data}}
 #' @param antigenic_map (optional) A data frame of antigenic x and y coordinates. Must have column names: x_coord; y_coord; inf_times. See \code{\link{example_antigenic_map}}
-#' @param possible_exposure_times (optional) If no antigenic map is specified, this argument gives the vector of times at which individuals can be infected
+#' @param possible_exposure_times (optional) this argument gives the vector of times at which individuals can be infected. Defaults to entries in `antigenic_map`.
 #' @param mcmc_pars Named vector named vector with parameters for the MCMC procedure. See details
 #' @param mvr_pars Leave NULL to use univariate proposals. Otherwise, a list of parameters if using a multivariate proposal. Must contain an initial covariance matrix, weighting for adapting cov matrix, and an initial scaling parameter (0-1)
 #' @param start_inf_hist Infection history matrix to start MCMC at. Can be left NULL. See \code{\link{example_inf_hist}}
@@ -156,7 +156,11 @@ serosolver <- function(par_tab,
   proposal_ratio <- mcmc_pars_used["proposal_ratio"] # Resample infection histories every n iterations
   proposal_inf_hist_distance <- mcmc_pars_used["proposal_inf_hist_distance"] # Number of infections to move/remove/add in each proposal step
   proposal_inf_hist_time_prop <- mcmc_pars_used["proposal_inf_hist_time_prop"] # Number of infections to move/remove/add in each proposal step
-  n_infs <- floor(length(antigenic_map$inf_times) * proposal_inf_hist_time_prop)
+  if(!is.null(possible_exposure_times)){
+    n_infs <- floor(length(possible_exposure_times) * proposal_inf_hist_time_prop)
+  } else {
+    n_infs <- floor(length(antigenic_map$inf_times) * proposal_inf_hist_time_prop)
+  }
   proposal_inf_hist_adaptive <- mcmc_pars_used["proposal_inf_hist_adaptive"] # Should infection history proposal step be adaptive?
   proposal_inf_hist_indiv_swap_ratio <- mcmc_pars_used["proposal_inf_hist_indiv_swap_ratio"] # If using gibbs, what proportion of proposals should be swap steps?
   proposal_inf_hist_group_swap_ratio <- mcmc_pars_used["proposal_inf_hist_group_swap_ratio"] # If using gibbs, what proportion of iterations should be swapping contents of two time periods?
@@ -166,9 +170,9 @@ serosolver <- function(par_tab,
   
 
     ## Error checks --------------------------------------
-    if (!is.null(antigenic_map)) {
+    if (!is.null(antigenic_map) & is.null(possible_exposure_times)) {
       possible_exposure_times <- unique(antigenic_map$inf_times) # How many strains are we testing against and what time did they circulate
-    } else {
+    } else if(is.null(antigenic_map)) {
       antigenic_map <- data.frame("x_coord"=1,"y_coord"=1,"inf_times"=possible_exposure_times)
     }
     
@@ -273,8 +277,6 @@ serosolver <- function(par_tab,
   }
   
   ## If using gibbs proposal on infection_history, create here
-  ##browser()
-  
   if (hist_proposal == 2) {
     proposal_gibbs <- protect_posterior(posterior_func(par_tab,
                                              antibody_data,
@@ -298,8 +300,6 @@ serosolver <- function(par_tab,
 
   
   ## Create closure to add extra prior probabilities, to avoid re-typing later
-  ##browser()
-  
   extra_probabilities <- function(prior_pars, prior_infection_history) {
     names(prior_pars) <- par_names
     infection_model_prior_shape1 <- prior_pars["infection_model_prior_shape1"]
@@ -335,7 +335,7 @@ serosolver <- function(par_tab,
   if(parallel){
     writeLines(c(""), log_file)
   }
-  ##browser()
+  
   result <- foreach(chain = 1:n_chains, .packages =c("serosolver","data.table","dplyr","plyr","tidyr")
   ) %execute% {
     if(parallel){
@@ -345,8 +345,6 @@ serosolver <- function(par_tab,
     mcmc_chain_file <- paste0(filename, "_",chain,"_chain.csv")
     infection_history_file <- paste0(filename, "_",chain,"_infection_histories.csv")
 
-    
-    ##browser()
     index <- 1
     total_posterior <- -Inf
     while(!is.finite(total_posterior) & index <= 100){
@@ -379,7 +377,6 @@ serosolver <- function(par_tab,
       total_posterior <- total_likelihood + total_prior_prob
       index <- index + 1
     }
-    
     if(!is.finite(total_prior_prob)) stop(paste("Error: starting prior probability of chain",chain,"is not finite."))
     if(!is.finite(total_likelihood)) stop(paste("Error: starting likelihood of chain",chain,"is not finite."))
     if(!is.finite(total_posterior)) stop(paste("Error: starting posterior probability of chain", chain, "is not finite."))
@@ -992,7 +989,7 @@ serosolver <- function(par_tab,
   
   par_est_table <- all_diagnostics$theta_estimates
   diagnostic_warnings <- list()
-  if("Rhat upper CI" %in% colnames(par_est_table) & any(par_est_table[par_est_table$names != "total_infections","Rhat upper CI"] > 1.1)){
+  if("Rhat upper CI" %in% colnames(par_est_table) && any(par_est_table[par_est_table$names != "total_infections","Rhat upper CI"] > 1.1)){
     diagnostic_warnings <- c(diagnostic_warnings, "Warning - some Rhat values >1.1")
   }
   if(any(par_est_table[par_est_table$names != "total_infections","ess"] < 200)){

@@ -20,7 +20,8 @@ get_antibody_level_predictions(
   expand_to_all_times = FALSE,
   antibody_level_before_infection = FALSE,
   for_regression = FALSE,
-  data_type = 1
+  data_type = 1,
+  start_level = "none"
 )
 }
 \arguments{

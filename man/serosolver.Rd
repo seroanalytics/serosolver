@@ -38,7 +38,7 @@ serosolver(
 
 \item{antigenic_map}{(optional) A data frame of antigenic x and y coordinates. Must have column names: x_coord; y_coord; inf_times. See \code{\link{example_antigenic_map}}}
 
-\item{possible_exposure_times}{(optional) If no antigenic map is specified, this argument gives the vector of times at which individuals can be infected}
+\item{possible_exposure_times}{(optional) this argument gives the vector of times at which individuals can be infected. Defaults to entries in \code{antigenic_map}.}
 
 \item{mcmc_pars}{Named vector named vector with parameters for the MCMC procedure. See details}
 

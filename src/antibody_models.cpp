@@ -27,6 +27,7 @@ NumericVector antibody_model(const NumericVector &theta,
                               const IntegerVector &unique_theta_indices,
                               const IntegerVector &unique_biomarker_groups,
 			      const IntegerMatrix &infection_history_mat, 
+			      const IntegerVector &infection_history_mat_indices,
 			      const NumericVector &possible_exposure_times,
 			      const IntegerVector &possible_exposure_times_indices,
 			      const NumericVector &sample_times,
@@ -66,6 +67,7 @@ NumericVector antibody_model(const NumericVector &theta,
   
   NumericVector infection_times;
   IntegerVector infection_times_indices_tmp;
+  IntegerVector use_indices;
 
   // ====================================================== //
   // =============== SETUP MODEL PARAMETERS =============== //
@@ -145,10 +147,16 @@ NumericVector antibody_model(const NumericVector &theta,
   for (int i = 1; i <= n; ++i) {
     indices = infection_history_mat(i-1,_) > 0;
     
-    infection_times = possible_exposure_times[indices];
+    
+    use_indices =infection_history_mat_indices[indices];
+    infection_times = possible_exposure_times[use_indices];
+    infection_times_indices_tmp = possible_exposure_times_indices[use_indices];	 
+    //Rcpp::Rcout << infection_times << std::endl;
+    //Rcpp::Rcout << infection_times_indices_tmp << std::endl;
+    //infection_times = possible_exposure_times(infection_history_mat_indices[indices]);
     // Only solve is this individual has had infections
     // if (infection_times.size() > 0) {
-      infection_times_indices_tmp = possible_exposure_times_indices[indices];
+    // infection_times_indices_tmp = possible_exposure_times_indices(infection_history_mat_indices[indices]);
     
       // Start end end location of the type_data matrix
       type_start = type_data_start(i-1);

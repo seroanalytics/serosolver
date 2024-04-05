@@ -324,7 +324,7 @@ get_antibody_level_predictions <- function(chain, infection_histories, antibody_
                                            for_res_plot = FALSE, expand_antibody_data = FALSE,
                                            expand_to_all_times=FALSE,
                                            antibody_level_before_infection=FALSE, for_regression=FALSE,
-                                           data_type=1){
+                                           data_type=1,start_level="none"){
   ## Need to align the iterations of the two MCMC chains
   ## and choose some random samples
   samps <- intersect(unique(infection_histories$samp_no), unique(chain$samp_no))
@@ -349,11 +349,19 @@ get_antibody_level_predictions <- function(chain, infection_histories, antibody_
   infection_histories$i <- match(infection_histories$i, individuals)
   
   ## Format the antigenic map to solve the model 
+  ## Check if an antigenic map is provided. If not, then create a dummy map where all pathogens have the same position on the map
   if (!is.null(antigenic_map)) {
-    possible_exposure_times <- unique(antigenic_map$inf_times) # How many strains are we testing against and what time did they circulate
+    possible_exposure_times_tmp <- unique(antigenic_map$inf_times) 
+     ## If possible exposure times was not specified, use antigenic map times instead
+    if(is.null(possible_exposure_times)) {
+      possible_exposure_times <- possible_exposure_times_tmp
+    }
   } else {
+    ## Create a dummy map with entries for each observation type
     antigenic_map <- data.frame("x_coord"=1,"y_coord"=1,"inf_times"=possible_exposure_times)
   }
+  
+  
   nstrain <- length(possible_exposure_times)
   n_indiv <- length(individuals)
   if(!("biomarker_group" %in% colnames(antibody_data))){
@@ -392,7 +400,7 @@ get_antibody_level_predictions <- function(chain, infection_histories, antibody_
                                      prior_version=2,
                                       measurement_indices_by_time = measurement_indices_by_time, function_type = 4,
                                       antibody_level_before_infection=antibody_level_before_infection,
-                                      data_type=data_type
+                                      data_type=data_type,start_level=start_level
   )
   
   predicted_titres <- residuals <- residuals_floor <- 

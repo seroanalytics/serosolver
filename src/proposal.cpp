@@ -168,6 +168,7 @@ List inf_hist_prop_prior_v2_and_v4(
         
         
 				   const IntegerMatrix &infection_history_mat,  // Current infection history
+				   const IntegerVector &infection_history_mat_indices,
 				   const NumericVector &likelihoods_pre_proposal,
 				   const IntegerVector &sampled_indivs,
 				   const IntegerVector &n_times_samp_vec,
@@ -268,7 +269,8 @@ List inf_hist_prop_prior_v2_and_v4(
   LogicalVector indices;
   NumericVector infection_times; // Tmp store infection times for this infection history, combined with indices
   IntegerVector infection_times_indices_tmp; // Tmp store which index in antigenic map these infection times relate to
-
+  IntegerVector use_indices;
+  
    
   // ########################################################################
   // Parameters related to infection history sampling
@@ -568,9 +570,9 @@ List inf_hist_prop_prior_v2_and_v4(
           
     	// Calculate likelihood!
     	indices = new_infection_history > 0;
-    	infection_times = possible_exposure_times[indices];
-    
-    	infection_times_indices_tmp = possible_exposure_times_indices[indices];	  
+      use_indices =infection_history_mat_indices[indices];
+    	infection_times = possible_exposure_times[use_indices];
+    	infection_times_indices_tmp = possible_exposure_times_indices[use_indices];	  
     	
     	
     	// Start end end location of the type_data matrix
