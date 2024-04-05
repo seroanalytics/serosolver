@@ -982,9 +982,12 @@ serosolver <- function(par_tab,
     final
   }
   serosolver::unregister_dopar()
-
   if(verbose){ message(cat("Generating MCMC diagnostics"))}
-  saved_wd <- normalizePath(paste(strsplit(filename, "/")[[1]][-length(strsplit(filename, "/")[[1]])],sep="/",collapse="/"))
+  saved_wd <- paste(strsplit(filename, "/")[[1]][-length(strsplit(filename, "/")[[1]])],sep="/",collapse="/")
+  if(saved_wd == ""){
+    saved_wd <- getwd()
+  }
+  saved_wd <- normalizePath(saved_wd)
   all_diagnostics <- suppressMessages(plot_mcmc_diagnostics(saved_wd, par_tab, adaptive_iterations))
   
   par_est_table <- all_diagnostics$theta_estimates

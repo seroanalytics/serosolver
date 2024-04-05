@@ -8,7 +8,8 @@ plot_antibody_model(
   pars,
   times = NULL,
   infection_history = NULL,
-  antigenic_map = NULL
+  antigenic_map = NULL,
+  label_parameters = FALSE
 )
 }
 \arguments{
@@ -19,6 +20,8 @@ plot_antibody_model(
 \item{infection_history}{the vector of times matching entries in `times` to simulate infections in.}
 
 \item{antigenic_map}{the antigenic map to solve the model with. Can be left to NULL to ssume all biomarker IDs have the same antigenic coordinates.}
+
+\item{label_parameters}{if TRUE, labels the model parameters on the plot}
 }
 \value{
 a list with two ggplot objects, one showing the simulated antibody kinetics over time, stratified by biomarker ID, the other showing simulated antibody kinetics for each biomarker ID, stratified by sample time

@@ -215,7 +215,8 @@ NumericVector antibody_model(const NumericVector &theta,
             					number_possible_exposures,
             					antigenic_map_short.colptr(biomarker_group),
             					antigenic_map_long.colptr(biomarker_group),
-            					boost_before_infection);
+            					boost_before_infection,
+            					min_measurement);
               
               /*antibody_data_model_individual(
                 predicted_antibody_levels, 

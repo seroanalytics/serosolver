@@ -49,7 +49,8 @@ void antibody_data_model_individual_new(NumericVector &predicted_antibody_levels
                                         const int &number_possible_exposures,
                                         const double *antigenic_map_short,
                                         const double *antigenic_map_long,
-                                        bool boost_before_infection
+                                        bool boost_before_infection,
+                                        const double min_level
 );
 #endif
 

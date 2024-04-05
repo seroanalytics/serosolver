@@ -644,7 +644,8 @@ List inf_hist_prop_prior_v2_and_v4(
         	    number_possible_exposures,
         	    antigenic_map_short.colptr(biomarker_group),
         	    antigenic_map_long.colptr(biomarker_group),
-        	    false);
+        	    false,
+        	    min_measurements(biomarker_group));
         	  /*
         	  antibody_data_model_individual(predicted_antibody_levels, 
                                           boost_long_parameters(biomarker_group), 

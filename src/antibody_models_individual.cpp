@@ -29,7 +29,8 @@ void antibody_data_model_individual_new(NumericVector &predicted_antibody_levels
                                          const int &number_possible_exposures,
                                          const double *antigenic_map_short,
                                          const double *antigenic_map_long,
-                                         bool boost_before_infection = false
+                                         bool boost_before_infection = false,
+                                         const double min_level = 0
  ){
    double sampling_time;
    double time;
@@ -59,14 +60,13 @@ void antibody_data_model_individual_new(NumericVector &predicted_antibody_levels
      // Time elapsed since birth/first time
      // Assume that first entry for birth does not change
      time = sampling_time - births[start_index_in_data];
-     wane_long_amount= MAX(0, 1.0 - (wane_long*time)); 
+     wane_long_amount= wane_long*boost_long*time;//MAX(0, 1.0 - (wane_long*time)); 
      
-
      // For each measured marker, find the biomarker id index which will match an entry in start_antibody_levels
      // Add this to the predicted antibody level, with waning
      for(int k = 0; k < n_measurements; ++k){
        index = start_level_indices[tmp_measurement_index + k];
-       predicted_antibody_levels[tmp_measurement_index + k] += start_antibody_levels[index]*wane_long_amount;
+       predicted_antibody_levels[tmp_measurement_index + k] += MAX(0, start_antibody_levels[index] - wane_long_amount);
      }
      
      // Sum all infections that would contribute towards observed antibody levels at this time
