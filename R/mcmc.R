@@ -982,12 +982,16 @@ serosolver <- function(par_tab,
   serosolver::unregister_dopar()
 
   if(verbose){ message(cat("Generating MCMC diagnostics"))}
-  saved_wd <- normalizePath(paste(strsplit(filename, "/")[[1]][-length(strsplit(filename, "/")[[1]])],sep="/",collapse="/"))
+  saved_wd <- paste(strsplit(filename, "/")[[1]][-length(strsplit(filename, "/")[[1]])],sep="/",collapse="/")
+  if(saved_wd == ""){
+    saved_wd <- getwd()
+  }
+  saved_wd <- normalizePath(saved_wd)
   all_diagnostics <- suppressMessages(plot_mcmc_diagnostics(saved_wd, par_tab, adaptive_iterations))
   
   par_est_table <- all_diagnostics$theta_estimates
   diagnostic_warnings <- list()
-  if("Rhat upper CI" %in% colnames(par_est_table) & any(par_est_table[par_est_table$names != "total_infections","Rhat upper CI"] > 1.1)){
+  if("Rhat upper CI" %in% colnames(par_est_table) && any(par_est_table[par_est_table$names != "total_infections","Rhat upper CI"] > 1.1)){
     diagnostic_warnings <- c(diagnostic_warnings, "Warning - some Rhat values >1.1")
   }
   if(any(par_est_table[par_est_table$names != "total_infections","ess"] < 200)){
