@@ -347,7 +347,9 @@ get_antibody_level_predictions <- function(chain, infection_histories, antibody_
   
   antibody_data$individual <- match(antibody_data$individual, individuals)
   infection_histories$i <- match(infection_histories$i, individuals)
-  
+  if(class(start_level) %in% c("data.frame","tibble")){
+    start_level$individual <- match(start_level$individual, individuals)
+  }
   ## Format the antigenic map to solve the model 
   ## Check if an antigenic map is provided. If not, then create a dummy map where all pathogens have the same position on the map
   if (!is.null(antigenic_map)) {

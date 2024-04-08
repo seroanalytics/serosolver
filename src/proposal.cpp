@@ -245,7 +245,7 @@ List inf_hist_prop_prior_v2_and_v4(
   bool lik_changed = false;
   
   // These quantities can be pre-computed
-  int number_possible_exposures = infection_history_mat.ncol(); // How many possible years are we interested in?
+  int number_possible_exposures = possible_exposure_times.size(); // infection_history_mat.ncol(); // How many possible years are we interested in?
   int n_sampled = sampled_indivs.size(); // How many individuals are we actually investigating?
   
   // Using prior version 2 or 4?
@@ -573,7 +573,8 @@ List inf_hist_prop_prior_v2_and_v4(
       use_indices =infection_history_mat_indices[indices];
     	infection_times = possible_exposure_times[use_indices];
     	infection_times_indices_tmp = possible_exposure_times_indices[use_indices];	  
-    	
+
+    	//Rcpp::Rcout << infection_times_indices_tmp << std::endl;
     	
     	// Start end end location of the type_data matrix
     	type_start = type_data_start(indiv);

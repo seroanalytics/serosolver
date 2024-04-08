@@ -28,6 +28,7 @@ attack_rates <- runif(length(possible_exposure_times), 0.05, 0.15)
 antigenic_map <- example_antigenic_map[1:25,]
 antigenic_map$inf_times <- possible_exposure_times
 
+devtools::load_all("~/Documents/GitHub/serosolver")
 
 ## Simulate a full serosurvey with these parameters
 all_simulated_data <- simulate_data(par_tab=example_par_tab, group=1, n_indiv=50,

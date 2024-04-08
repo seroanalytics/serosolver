@@ -50,7 +50,7 @@ NumericVector antibody_model(const NumericVector &theta,
 			      ){
   // Dimensions of structures
   int n = infection_history_mat.nrow();
-  int number_possible_exposures = infection_history_mat.ncol();
+  int number_possible_exposures = possible_exposure_times.size();
   int n_measurements = biomarker_id_indices.size();
 
   // To track how far through the larger vectors we move for each individual
@@ -151,6 +151,8 @@ NumericVector antibody_model(const NumericVector &theta,
     use_indices =infection_history_mat_indices[indices];
     infection_times = possible_exposure_times[use_indices];
     infection_times_indices_tmp = possible_exposure_times_indices[use_indices];	 
+    //Rcpp::Rcout << infection_times_indices_tmp << std::endl;
+    //Rcpp::Rcout << number_possible_exposures << std::endl;
     //Rcpp::Rcout << infection_times << std::endl;
     //Rcpp::Rcout << infection_times_indices_tmp << std::endl;
     //infection_times = possible_exposure_times(infection_history_mat_indices[indices]);

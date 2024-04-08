@@ -29,11 +29,13 @@ generate_start_tab <- function(par_tab){
 #' @family mcmc
 #' @useDynLib serosolver
 scaletuning <- function(step, target_acceptance_rate_theta, pcur) {
-  if (pcur == 1) pcur <- 0.99
-  if (pcur == 0) pcur <- 0.01
-  step <- (step * qnorm(target_acceptance_rate_theta / 2)) / qnorm(pcur / 2)
-  if (step > 1) step <- 1
-  step <- max(0.00001, step)
+  if(is.finite(pcur)){
+    if (pcur == 1) pcur <- 0.99
+    if (pcur == 0) pcur <- 0.01
+    step <- (step * qnorm(target_acceptance_rate_theta / 2)) / qnorm(pcur / 2)
+    if (step > 1) step <- 1
+    step <- max(0.00001, step)
+  }
   return(step)
 }
 

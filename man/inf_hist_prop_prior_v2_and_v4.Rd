@@ -9,6 +9,7 @@ inf_hist_prop_prior_v2_and_v4(
   unique_theta_indices,
   unique_biomarker_groups,
   infection_history_mat,
+  infection_history_mat_indices,
   likelihoods_pre_proposal,
   sampled_indivs,
   n_times_samp_vec,

@@ -9,6 +9,7 @@ antibody_model(
   unique_theta_indices,
   unique_biomarker_groups,
   infection_history_mat,
+  infection_history_mat_indices,
   possible_exposure_times,
   possible_exposure_times_indices,
   sample_times,

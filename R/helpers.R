@@ -394,37 +394,12 @@ setup_antibody_data_for_posterior_func <- function(antibody_data, antigenic_map=
   unique_biomarker_groups <- unique(antibody_data$biomarker_group)
   n_biomarker_groups <- length(unique_biomarker_groups)
   
-  ## Check if an antigenic map is provided. If not, then create a dummy map where all pathogens have the same position on the map
-  if (!is.null(antigenic_map)) {
-      possible_exposure_times_tmp <- unique(antigenic_map$inf_times) # How many strains are we testing against and what time did they circulate
-      if(!is.null(possible_exposure_times) & !identical(possible_exposure_times, possible_exposure_times_tmp)){
-          if(verbose) message(cat("Warning: provided possible_exposure_times argument does not match entries in the antigenic map. Please make sure that there is an entry in the antigenic map for each possible circulation time. Using the antigenic map times.\n"))
-      }
-      ## If possible exposure times was not specified, use antigenic map times instead
-      if(is.null(possible_exposure_times)) {
-        infection_history_mat_indices <- match(possible_exposure_times_tmp, possible_exposure_times_tmp)-1
-      } else {
-        infection_history_mat_indices <- match(possible_exposure_times, possible_exposure_times_tmp)-1
-      }
-      possible_exposure_times <- possible_exposure_times_tmp
-   
-      ## If no observation types assumed, set all to 1.
-      if (!("biomarker_group" %in% colnames(antigenic_map))) {
-        if(verbose) message(cat("Note: no biomarker_group detection in antigenic_map. Aligning antigenic map with par_tab.\n"))
-          antigenic_map_tmp <- replicate(n_biomarker_groups,antigenic_map,simplify=FALSE)
-          for(biomarker_group in unique_biomarker_groups){
-              antigenic_map_tmp[[biomarker_group]]$biomarker_group <- biomarker_group
-          }
-          antigenic_map <- do.call(rbind,antigenic_map_tmp)
-      }
-      
-  } else {
-      ## Create a dummy map with entries for each observation type
-      antigenic_map <- data.frame("x_coord"=1,"y_coord"=1,
-                                  "inf_times"=rep(possible_exposure_times, n_biomarker_groups), 
-                                  "biomarker_group"=rep(unique_biomarker_groups,each=length(possible_exposure_times)))
-      infection_history_mat_indices <- match(possible_exposure_times, possible_exposure_times)-1
-  }
+ 
+  antigenic_map_tmp <- setup_antigenic_map(antigenic_map, possible_exposure_times, n_biomarker_groups,unique_biomarker_groups,verbose)
+  antigenic_map <- antigenic_map_tmp$antigenic_map
+  possible_exposure_times <- antigenic_map_tmp$possible_exposure_times
+  infection_history_mat_indices <- antigenic_map_tmp$infection_history_mat_indices
+  
   possible_biomarker_ids <- unique(antigenic_map$inf_times)
   
   
@@ -464,12 +439,12 @@ setup_antibody_data_for_posterior_func <- function(antibody_data, antigenic_map=
     DOBs <- rep(min(possible_exposure_times), n_indiv)
     antibody_data$DOB <- min(possible_exposure_times)
   }
-  age_mask <- create_age_mask(DOBs, possible_exposure_times)
-  sample_mask <- create_sample_mask(antibody_data, possible_exposure_times)
+  age_mask <- create_age_mask(DOBs, possible_exposure_times[infection_history_mat_indices+1])
+  sample_mask <- create_sample_mask(antibody_data, possible_exposure_times[infection_history_mat_indices+1])
   masks <- data.frame(cbind(age_mask, sample_mask))
 
   if (is.null(n_alive)) {
-    n_alive <- get_n_alive_group(antibody_data, possible_exposure_times)
+    n_alive <- get_n_alive_group(antibody_data, possible_exposure_times[infection_history_mat_indices+1])
   }
 
   return(list(
@@ -716,4 +691,38 @@ create_start_level_data <- function(antibody_data, start_level_summary = "min", 
 }
 
 
+setup_antigenic_map <- function(antigenic_map=NULL, possible_exposure_times=NULL, n_biomarker_groups=1,unique_biomarker_groups=c(1), verbose=TRUE){
+  ## Check if an antigenic map is provided. If not, then create a dummy map where all pathogens have the same position on the map
+  if (!is.null(antigenic_map)) {
+    possible_exposure_times_tmp <- unique(antigenic_map$inf_times) # How many strains are we testing against and what time did they circulate
+    if(!is.null(possible_exposure_times) & !identical(possible_exposure_times, possible_exposure_times_tmp)){
+      if(verbose) message(cat("Warning: provided possible_exposure_times argument does not match entries in the antigenic map. Please make sure that there is an entry in the antigenic map for each possible circulation time. Using the antigenic map times.\n"))
+    }
+    ## If possible exposure times was not specified, use antigenic map times instead
+    if(is.null(possible_exposure_times)) {
+      infection_history_mat_indices <- match(possible_exposure_times_tmp, possible_exposure_times_tmp)-1
+    } else {
+      infection_history_mat_indices <- match(possible_exposure_times, possible_exposure_times_tmp)-1
+    }
+    possible_exposure_times <- possible_exposure_times_tmp
+    
+    ## If no observation types assumed, set all to 1.
+    if (!("biomarker_group" %in% colnames(antigenic_map))) {
+      if(verbose) message(cat("Note: no biomarker_group detection in antigenic_map. Aligning antigenic map with par_tab.\n"))
+      antigenic_map_tmp <- replicate(n_biomarker_groups,antigenic_map,simplify=FALSE)
+      for(biomarker_group in unique_biomarker_groups){
+        antigenic_map_tmp[[biomarker_group]]$biomarker_group <- biomarker_group
+      }
+      antigenic_map <- do.call(rbind,antigenic_map_tmp)
+    }
+    
+  } else {
+    ## Create a dummy map with entries for each observation type
+    antigenic_map <- data.frame("x_coord"=1,"y_coord"=1,
+                                "inf_times"=rep(possible_exposure_times, n_biomarker_groups), 
+                                "biomarker_group"=rep(unique_biomarker_groups,each=length(possible_exposure_times)))
+    infection_history_mat_indices <- match(possible_exposure_times, possible_exposure_times)-1
+  }
+  return(list(antigenic_map=antigenic_map, possible_exposure_times=possible_exposure_times, infection_history_mat_indices=infection_history_mat_indices))
+}
 

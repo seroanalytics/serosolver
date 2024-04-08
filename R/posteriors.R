@@ -63,21 +63,21 @@ create_posterior_func <- function(par_tab,
    
     ## Add a dummy observation type variable if not provided
     if (!("biomarker_group" %in% colnames(antibody_data))) {
-        if(verbose) message(cat("Note: no biomarker_group detected in antibody_data. Assuming all biomarker_group as 1."))
+        if(verbose) message(cat("Note: no biomarker_group detected in antibody_data. Assuming all biomarker_group as 1.\n"))
         antibody_data$biomarker_group <- 1
     }
     
     if (!("biomarker_group" %in% colnames(par_tab))) {
-      if(verbose) message(cat("Note: no biomarker_group detected in par_tab. Assuming all biomarker_group as 1."))
+      if(verbose) message(cat("Note: no biomarker_group detected in par_tab. Assuming all biomarker_group as 1.\n"))
         par_tab$biomarker_group <- 1
     }
     if (!is.null(measurement_indices_by_time) & !("biomarker_group" %in% colnames(measurement_indices_by_time))) {
-      if(verbose) message(cat("Note: no biomarker_group detected in measurement_indices_by_time. Assuming all biomarker_group as 1."))
+      if(verbose) message(cat("Note: no biomarker_group detected in measurement_indices_by_time. Assuming all biomarker_group as 1.\n"))
       measurement_indices_by_time$biomarker_group <- 1
     }
   
     if(verbose){
-      message(cat("Setting starting antibody levels based on data using command:", start_level, "; and randomizing starting antibody levels set to:", start_level_randomize))
+      message(cat("Setting starting antibody levels based on data using command:", start_level, "; and randomizing starting antibody levels set to:", start_level_randomize, "\n"))
     }
   
     ## Check that antibody data is formatted correctly
@@ -99,40 +99,13 @@ create_posterior_func <- function(par_tab,
     if(length(biomarker_groups_weights) ==1 & n_biomarker_groups > 1){
         biomarker_groups_weights <- rep(1, n_biomarker_groups)
     }
-    
     #########################################################
     ## SETUP ANTIGENIC MAP
     #########################################################
-    #browser()
-    
-    ## Check if an antigenic map is provided. If not, then create a dummy map where all pathogens have the same position on the map
-    if (!is.null(antigenic_map)) {
-        possible_exposure_times_tmp <- unique(antigenic_map$inf_times) # How many strains are we testing against and what time did they circulate
-        if(!is.null(possible_exposure_times) & !identical(possible_exposure_times, possible_exposure_times_tmp)){
-          if(verbose) message(cat("Warning: provided possible_exposure_times argument does not match entries in the antigenic map. Please make sure that there is an entry in the antigenic map for each possible circulation time. Using the antigenic map times."))
-        }
-        
-        ## If possible exposure times was not specified, use antigenic map times instead
-        if(is.null(possible_exposure_times)) {
-          possible_exposure_times <- possible_exposure_times_tmp
-        }
-      
-      ## If no observation types assumed, set all to 1.
-      if (!("biomarker_group" %in% colnames(antigenic_map))) {
-        if(verbose) message(cat("Note: no biomarker_group detection in antigenic_map. Aligning antigenic map with par_tab."))
-          antigenic_map_tmp <- replicate(n_biomarker_groups,antigenic_map,simplify=FALSE)
-          for(biomarker_group in unique_biomarker_groups){
-              antigenic_map_tmp[[biomarker_group]]$biomarker_group <- biomarker_group
-          }
-          antigenic_map <- do.call(rbind,antigenic_map_tmp)
-      }
-      
-    } else {
-        ## Create a dummy map with entries for each observation type
-      antigenic_map <- data.frame("x_coord"=1,"y_coord"=1,
-                                  "inf_times"=rep(possible_exposure_times, n_biomarker_groups), 
-                                  "biomarker_group"=rep(unique_biomarker_groups,each=length(possible_exposure_times)))
-    }
+    antigenic_map_tmp <- setup_antigenic_map(antigenic_map, possible_exposure_times, n_biomarker_groups, unique_biomarker_groups,FALSE)
+    antigenic_map <- antigenic_map_tmp$antigenic_map
+    possible_exposure_times <- antigenic_map_tmp$possible_exposure_times
+    infection_history_mat_indices <- antigenic_map_tmp$infection_history_mat_indices
    
     #########################################################
     ## SETUP DATA
@@ -154,7 +127,6 @@ create_posterior_func <- function(par_tab,
         antibody_data[, c("individual", "sample_time", "biomarker_group","biomarker_id")],
         antibody_data_unique[, c("individual", "sample_time", "biomarker_group","biomarker_id")]
     )
-
     ## Setup data vectors and extract
     setup_dat <- setup_antibody_data_for_posterior_func(
         antibody_data_unique, antigenic_map, 
@@ -280,8 +252,6 @@ create_posterior_func <- function(par_tab,
     #########################################################
     ## PARAMETER TABLE
     #########################################################
-    #browser()
-    
     ## Extract parameter type indices from par_tab, to split up
     ## similar parameters in model solving functions
     
@@ -310,8 +280,7 @@ create_posterior_func <- function(par_tab,
     expected_indices <- NULL
     measurement_bias <- NULL
     additional_arguments <- NULL
-    #browser()
-    
+
     repeat_data_exist <- nrow(antibody_data_repeats) > 0
     if (use_measurement_bias) {
         if(verbose) message(cat("Using measurement bias\n"))
@@ -327,8 +296,6 @@ create_posterior_func <- function(par_tab,
     }
 
     ## These will be the same for each biomarker_group, as currently only one exposure type
-    #browser()
-    
     phi_indices <- which(par_tab$par_type == 2)
     ## weights_indices <- which(par_tab$par_type == 4) ## For functional form version of FOI
     ## knot_indices <- which(par_tab$par_type == 5) ## For functional form version of FOI
@@ -360,8 +327,6 @@ create_posterior_func <- function(par_tab,
         f <- function(pars, infection_history_mat) {
           
           ## Transmission prob is the part of the likelihood function corresponding to each individual
-          #browser()
-          
           transmission_prob <- rep(0, n_indiv)
           if (explicit_phi) {
             phis <- pars[phi_indices]
@@ -383,8 +348,7 @@ create_posterior_func <- function(par_tab,
               antigenic_map_long[,biomarker_group] <- create_cross_reactivity_vector(antigenic_map_melted[[biomarker_group]], cr_longs[biomarker_group])
               antigenic_map_short[,biomarker_group] <- create_cross_reactivity_vector(antigenic_map_melted[[biomarker_group]], cr_shorts[biomarker_group])
             }
-            #browser()
-            
+        browser()
             y_new <- antibody_model(
               theta, 
               theta_indices_unique, 
@@ -410,8 +374,7 @@ create_posterior_func <- function(par_tab,
               antigenic_distances,
               antibody_level_before_infection
             )
-            #browser()
-            
+
             if (use_measurement_bias) {
               measurement_bias <- pars[measurement_indices_par_tab]
               antibody_level_shifts <- measurement_bias[expected_indices]
@@ -447,7 +410,7 @@ create_posterior_func <- function(par_tab,
             return(list(liks, transmission_prob))
         }
     } else if (function_type == 2) {
-        
+
       if(verbose) message(cat("Creating infection history proposal function\n"))
         if (prior_version == 4) {
             n_alive_total <- rowSums(n_alive)
@@ -458,7 +421,7 @@ create_posterior_func <- function(par_tab,
         infection_model_prior_shape2 <- par_tab[par_tab$names == "infection_model_prior_shape2","values"]
         n_infected_group <- c(0, 0)
         ## Generate prior lookup table
-        lookup_tab <- create_prior_lookup_groups(antibody_data, possible_exposure_times, infection_model_prior_shape1, infection_model_prior_shape2, n_alive)
+        lookup_tab <- create_prior_lookup_groups(antibody_data, possible_exposure_times[infection_history_mat_indices+1], infection_model_prior_shape1, infection_model_prior_shape2, n_alive)
         
         ## Use the original gibbs proposal function if no antibody_level immunity
         f <- function(pars, infection_history_mat,
@@ -478,8 +441,7 @@ create_posterior_func <- function(par_tab,
                       propose_from_prior=TRUE) {
             theta <- pars[theta_indices]
             names(theta) <- par_names_theta_all
-            browser()
-            
+
             if (use_measurement_bias) {
                 measurement_bias <- pars[measurement_indices_par_tab]
                 antibody_level_shifts <- measurement_bias[expected_indices]
@@ -498,6 +460,7 @@ create_posterior_func <- function(par_tab,
 
             n_infections <- sum_infections_by_group(infection_history_mat, group_id_vec, n_groups)
             if (prior_version == 4) n_infected_group <- rowSums(n_infections)
+
             ## Now pass to the C++ function
             res <- inf_hist_prop_prior_v2_and_v4(
                 theta,
@@ -584,7 +547,6 @@ create_posterior_func <- function(par_tab,
                 antigenic_map_long[,biomarker_group] <- create_cross_reactivity_vector(antigenic_map_melted[[biomarker_group]], cr_longs[biomarker_group])
                 antigenic_map_short[,biomarker_group] <- create_cross_reactivity_vector(antigenic_map_melted[[biomarker_group]], cr_shorts[biomarker_group])
             }
-            #browser()
             y_new <- antibody_model(
                 theta, theta_indices_unique, unique_biomarker_groups,
                 infection_history_mat, 
