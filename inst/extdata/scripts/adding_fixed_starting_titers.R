@@ -44,7 +44,7 @@ par_tab[par_tab$names == "wane_long","fixed"] <- 1
 if(rerun){
 #  devtools::load_all("~/Documents/GitHub/serosolver")
   
-res <- serosolver(par_tab, antibody_data %>% filter(individual == 1), example_antigenic_map,
+res <- serosolver(par_tab, antibody_data %>% filter(individual == 1, sample_time==2010), example_antigenic_map,
                   possible_exposure_times=NULL,
                        filename="chains/readme", prior_version=2,n_chains=3,parallel=FALSE,
                        mcmc_pars=c(adaptive_iterations=10000, iterations=5000,proposal_ratio=2),verbose=TRUE,

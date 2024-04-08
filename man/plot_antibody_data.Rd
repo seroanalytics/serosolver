@@ -21,7 +21,7 @@ plot_antibody_data(
 
 \item{infection_histories}{the infection history matrix}
 
-\item{study_design}{default "multi-antigen" facets by sample time. "single-antigen" gives sample time on the x-axis and colours by biomarker_id}
+\item{study_design}{default "cross-sectional" facets by sample time. "longitudinal" gives sample time on the x-axis and colours by biomarker_id}
 }
 \value{
 a ggplot object

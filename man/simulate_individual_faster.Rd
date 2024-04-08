@@ -8,6 +8,7 @@ simulate_individual_faster(
   theta,
   unique_theta_indices = NULL,
   infection_history,
+  infection_history_mat_indices,
   antigenic_map_long,
   antigenic_map_short,
   antigenic_distances = NULL,

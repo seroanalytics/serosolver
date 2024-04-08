@@ -5,7 +5,7 @@
 #' @param possible_exposure_times the vector of times at which individuals could be infected
 #' @param n_indivs integer of how many individuals to plot, or vector of which individuals to plot
 #' @param infection_histories the infection history matrix
-#' @param study_design default "multi-antigen" facets by sample time. "single-antigen" gives sample time on the x-axis and colours by biomarker_id
+#' @param study_design default "cross-sectional" facets by sample time. "longitudinal" gives sample time on the x-axis and colours by biomarker_id
 #' @return a ggplot object
 #' @family infection_history_plots
 #' @examples
