@@ -47,8 +47,8 @@ plot_antibody_data <- function(antibody_data,
         antibody_data$biomarker_group <- 1
     }
     p1 <- ggplot(antibody_data[antibody_data$individual %in% samps, ]) +
-      geom_rect(data=measurement_ranges,aes(ymin=max_measurement,ymax=max_measurement+2),xmin=0,xmax=max_x,fill="grey70") +
-      geom_rect(data=measurement_ranges,aes(ymin=min_measurement-2,ymax=min_measurement),xmin=0,xmax=max_x,fill="grey70") 
+      geom_rect(data=measurement_ranges,aes(ymin=max_measurement,ymax=max_measurement+1),xmin=0,xmax=max_x,fill="grey70") +
+      geom_rect(data=measurement_ranges,aes(ymin=min_measurement-1,ymax=min_measurement),xmin=0,xmax=max_x,fill="grey70") 
       
     if (study_design == "cross-sectional") {
         p1 <- p1 + 
@@ -61,7 +61,7 @@ plot_antibody_data <- function(antibody_data,
             geom_point(aes(x = sample_time, y = measurement, col=as.factor(biomarker_id)),size=1) +
             xlab("Sample time") +
             theme_bw() +
-            facet_grid(biomarker_group~individual)
+            facet_grid(biomarker_group~individual,scales="free_y")
     }
     
     if(!is.null(infection_histories)) {
@@ -78,7 +78,7 @@ plot_antibody_data <- function(antibody_data,
                             aes(xintercept = variable,linetype="Known infection time"), 
                             col = "orange",linetype="dashed")
     }
-    
+    breaks <- seq(floor(min(measurement_ranges$min_measurement)), ceiling(max(measurement_ranges$max_measurement)),by=2)
     p1 <- p1 +
       scale_x_continuous(expand=c(0.05,0.05)) +
       ylab("log antibody level") + 
@@ -93,7 +93,7 @@ plot_antibody_data <- function(antibody_data,
             axis.text.y=element_text(size=8),
             plot.margin=margin(r=15,t=5,l=5))+
       coord_cartesian(xlim=time_range) +
-      scale_y_continuous(expand=c(0,0)) + 
+      scale_y_continuous(expand=c(0,0),breaks=breaks) + 
       scale_color_viridis_d(name="Biomarker ID") + 
       scale_linetype_manual(name="",values=c("Known infection time"="dashed"))
     return(p1)

@@ -20,6 +20,7 @@ plot_model_fits(
   expand_to_all_times = FALSE,
   orientation = "cross-sectional",
   subset_biomarker_ids = NULL,
+  subset_biomarker_groups = NULL,
   start_level = "none",
   settings = NULL
 )

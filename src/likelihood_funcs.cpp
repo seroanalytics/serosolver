@@ -140,18 +140,19 @@ NumericVector likelihood_func_fast(const NumericVector &theta, const NumericVect
   const double sd = theta["obs_sd"];
   const double den = sd*M_SQRT2;
   const double max_measurement = theta["max_measurement"];
+  const double min_measurement = theta["min_measurement"];
   const double log_const = log(0.5);
 
   for(int i = 0; i < total_measurements; ++i){
     // Most antibody levels are between 0 and max_measurement, this is the difference in normal cdfs
-    if(obs[i] < max_measurement && obs[i] >= 1.0){
+    if(obs[i] < max_measurement && obs[i] >= (min_measurement + 1)){
       ret[i] = log_const + log((erf((obs[i] + 1.0 - predicted_antibody_levels[i]) / den) -
 				erf((obs[i]     - predicted_antibody_levels[i]) / den)));    
       // For antibody levels above the maximum, 
     } else if(obs[i] >= max_measurement) {
       ret[i] = log_const + log(erfc((max_measurement - predicted_antibody_levels[i])/den));
     } else {
-      ret[i] = log_const + log(1.0 + erf((1.0 - predicted_antibody_levels[i])/den));
+      ret[i] = log_const + log(1.0 + erf(((min_measurement + 1) - predicted_antibody_levels[i])/den));
     }
   }
   return(ret);
@@ -178,7 +179,7 @@ NumericVector likelihood_func_fast_continuous(const NumericVector &theta, const 
  const double max_measurement = theta["max_measurement"];
  const double min_measurement = theta["min_measurement"];
  const double log_const = log(0.5);
- 
+
  for(int i = 0; i < total_measurements; ++i){
    // Most antibody levels are between 0 and max_measurement, this is the difference in normal cdfs
    if(obs[i] < max_measurement && obs[i] > min_measurement){
@@ -187,7 +188,7 @@ NumericVector likelihood_func_fast_continuous(const NumericVector &theta, const 
    } else if(obs[i] >= max_measurement) {
      ret[i] = log_const + log(erfc((max_measurement - predicted_antibody_levels[i])/den));
    } else {
-     ret[i] = log_const + log(1.0 + erf((theta["min_measurement"] - predicted_antibody_levels[i])/den));
+     ret[i] = log_const + log(1.0 + erf((min_measurement - predicted_antibody_levels[i])/den));
    }
  }
  return(ret);
@@ -206,18 +207,19 @@ void proposal_likelihood_func(double &new_prob,
 			      const double &log_const,
 			      const double &den,
 			      const double &max_measurement,
+			      const double &min_measurement,
 			      const bool &repeat_data_exist,
 			      const double &obs_weight = 1.0){
   for(int x = cum_nrows_per_individual_in_data[indiv]; x < cum_nrows_per_individual_in_data[indiv+1]; ++x){
 
       
-    if(data[x] < max_measurement && data[x] >= 1.0){
+    if(data[x] < max_measurement && data[x] >= (min_measurement + 1)){
       new_prob += log_const + log((erf((data[x] + 1.0 - predicted_antibody_levels[x]) / den) -
 				   erf((data[x]     - predicted_antibody_levels[x]) / den)));    
     } else if(data[x] >= max_measurement) {
       new_prob += log_const + log(erfc((max_measurement - predicted_antibody_levels[x])/den));
     } else {
-      new_prob += log_const + log(1.0 + erf((1.0 - predicted_antibody_levels[x])/den));
+      new_prob += log_const + log(1.0 + erf(((min_measurement + 1) - predicted_antibody_levels[x])/den));
     }
   }
 
@@ -225,13 +227,13 @@ void proposal_likelihood_func(double &new_prob,
   // Do something for repeat data here
   if(repeat_data_exist){
     for(int x = cum_nrows_per_individual_in_repeat_data[indiv]; x < cum_nrows_per_individual_in_repeat_data[indiv+1]; ++x){
-      if(repeat_data[x] < max_measurement && repeat_data[x] >= 1.0){
+      if(repeat_data[x] < max_measurement && repeat_data[x] >= (min_measurement + 1)){
 	new_prob += log_const + log((erf((repeat_data[x] + 1.0 - predicted_antibody_levels[repeat_indices[x]]) / den) -
 				     erf((repeat_data[x]     - predicted_antibody_levels[repeat_indices[x]]) / den)));    
       } else if(repeat_data[x] >= max_measurement) {
 	new_prob += log_const + log(erfc((max_measurement - predicted_antibody_levels[repeat_indices[x]])/den));
       } else {
-	new_prob += log_const + log(1.0 + erf((1.0 - predicted_antibody_levels[repeat_indices[x]])/den));
+	new_prob += log_const + log(1.0 + erf(((min_measurement + 1) - predicted_antibody_levels[repeat_indices[x]])/den));
       }
     }
   }
@@ -265,7 +267,6 @@ void proposal_likelihood_func_continuous(double &new_prob,
                               const double &min_measurement,
                               const bool &repeat_data_exist,
                               const double &obs_weight = 1.0){
-  
   for(int x = cum_nrows_per_individual_in_data[indiv]; x < cum_nrows_per_individual_in_data[indiv+1]; ++x){
     if(data[x] < max_measurement && data[x] > min_measurement){
       new_prob += -0.5*(pow((data[x]-predicted_antibody_levels[x])/sd, 2)) - den2;

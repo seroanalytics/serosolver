@@ -57,18 +57,18 @@ void antibody_data_model_individual_new(NumericVector &predicted_antibody_levels
      tmp_measurement_index = start_index_in_data;
      
      // Include starting titre contributions
-     // Time elapsed since birth/first time
+     // Time elapsed since first sample time
      // Assume that first entry for birth does not change
      time = sampling_time - births[start_index_in_data];
-     wane_long_amount= wane_long*boost_long*time;//MAX(0, 1.0 - (wane_long*time)); 
-     
+     wane_long_amount= wane_long*wane_short*boost_short*time;//MAX(0, 1.0 - (wane_long*time)); 
      // For each measured marker, find the biomarker id index which will match an entry in start_antibody_levels
      // Add this to the predicted antibody level, with waning
      for(int k = 0; k < n_measurements; ++k){
        index = start_level_indices[tmp_measurement_index + k];
+       predicted_antibody_levels[tmp_measurement_index + k] += min_level;
        predicted_antibody_levels[tmp_measurement_index + k] += MAX(0, start_antibody_levels[index] - wane_long_amount);
      }
-     
+   
      // Sum all infections that would contribute towards observed antibody levels at this time
      for(int x = 0; x < max_infections; ++x){
        // Only go further if this sample happened after the infection
@@ -76,7 +76,7 @@ void antibody_data_model_individual_new(NumericVector &predicted_antibody_levels
           (!boost_before_infection && sampling_time >= (possible_exposure_times[x] + boost_delay))){
          time = sampling_time - (possible_exposure_times[x] + boost_delay); // Time between sample and infection + boost
          wane_short_amount= MAX(0, 1.0 - (wane_short*time)); // Waning of the short-term response
-         wane_long_amount= MAX(0, 1.0 - (wane_long*time)); // Waning of the long-term response
+         wane_long_amount= MAX(0, 1.0 - (wane_long*wane_short*time)); // Waning of the long-term response
          
          seniority = MAX(0, 1.0 - antigenic_seniority*(n_inf - 1.0)); // Antigenic seniority
          inf_map_index = exposure_indices[x]; // Index of this infecting antigen in antigenic map

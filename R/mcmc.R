@@ -260,6 +260,8 @@ serosolver <- function(par_tab,
                                            measurement_indices_by_time = measurement_indices,
                                            n_alive = n_alive,
                                            function_type = 1,
+                                           data_type=data_type,
+                                           start_level=start_level,
                                            verbose=verbose,
                                            ...
   ))
@@ -280,6 +282,8 @@ serosolver <- function(par_tab,
                                              measurement_indices_by_time = measurement_indices,
                                              n_alive = n_alive,
                                              function_type = 2,
+                                             data_type=data_type,
+                                             start_level=start_level,
                                              verbose=verbose,
                                              ...
     ))

@@ -133,19 +133,19 @@ plot_model_fits <- function(chain, infection_histories,
                             individuals, 
                             par_tab=NULL,
                             antigenic_map=NULL, 
-                                          possible_exposure_times=NULL,
-                                          nsamp = 1000,
-  known_infection_history=NULL,
-                                          measurement_indices_by_time = NULL,
+                            possible_exposure_times=NULL,
+                            nsamp = 1000,
+                            known_infection_history=NULL,
+                            measurement_indices_by_time = NULL,
                             p_ncol=max(1,floor(length(individuals)/2)),
                             data_type=1,
                             expand_to_all_times=FALSE,
                             orientation="cross-sectional",
                             subset_biomarker_ids=NULL,
-  start_level="none",
-  settings=NULL
+                            subset_biomarker_groups = NULL,
+                            start_level="none",
+                            settings=NULL
 ) {
-  
   ## If the list of serosolver settings was included, use these rather than passing each one by one
   if(!is.null(settings)){
     message("Using provided serosolver settings list")
@@ -155,8 +155,8 @@ plot_model_fits <- function(chain, infection_histories,
     if(is.null(antibody_data)) antibody_data <- settings$antibody_data
     if(is.null(par_tab)) par_tab <- settings$par_tab
     if(is.null(start_level) | start_level == "none") start_level <- settings$start_level
+    if(missing(data_type)) data_type <- settings$data_type
   }
-  
   
   individuals <- individuals[order(individuals)]
   
@@ -172,7 +172,6 @@ plot_model_fits <- function(chain, infection_histories,
   start_levels <- create_start_level_data(antibody_data %>% 
                                             dplyr::filter(individual %in% individuals),start_level,FALSE) %>% 
                                             dplyr::arrange(individual, biomarker_group, sample_time, biomarker_id, repeat_number)
-  
   ## Generate antibody predictions
   antibody_preds <- get_antibody_level_predictions(
     chain, infection_histories, antibody_data, individuals,
@@ -184,6 +183,7 @@ plot_model_fits <- function(chain, infection_histories,
     data_type=data_type,
     start_level=start_levels
   )
+
   ## Use these antibody predictions and summary statistics on infection histories
   to_use <- antibody_preds$predicted_observations
   model_preds <- antibody_preds$predictions
@@ -198,11 +198,12 @@ plot_model_fits <- function(chain, infection_histories,
     dplyr::filter(variable <= sample_time)
   
   if(is.null(par_tab)){
-    max_measurement <- max(antibody_data$measurement,na.rm=TRUE)
-    min_measurement <- min(antibody_data$measurement,na.rm=TRUE)
+    measurement_ranges <- antibody_data %>% group_by(biomarker_group) %>% dplyr::summarize(min_measurement=min(measurement,na.rm=TRUE),
+                                                                                           max_measurement=max(measurement,na.rm=TRUE))
   } else{
-    max_measurement <- par_tab[par_tab$names == "max_measurement","values"]
-    min_measurement <- par_tab[par_tab$names == "min_measurement","values"]
+    if(!"biomarker_group" %in% colnames(par_tab)) par_tab$biomarker_group <- 1
+    measurement_ranges <- par_tab %>% dplyr::filter(names %in% c("min_measurement","max_measurement")) %>% dplyr::select(names,values,biomarker_group) %>%
+      pivot_wider(names_from=names,values_from=values)
   }
   
   max_x <- max(inf_hist_densities$variable) + 5
@@ -221,103 +222,118 @@ plot_model_fits <- function(chain, infection_histories,
     known_infection_history <- known_infection_history %>% left_join(expand_samples,by="individual",relationship="many-to-many") %>% filter(variable <= sample_time)
   }
   
-  if(orientation=="cross-sectional"){
-    if(!is.null(subset_biomarker_ids)){
-      time_range <- range(subset_biomarker_ids)
-    }
-    
-    
-    titre_pred_p <- ggplot(to_use) +
-      geom_rect(data=inf_hist_densities,
-                aes(xmin=xmin,xmax=xmax,fill=value),ymin=min_measurement-1,ymax=max_measurement+2)+
-      geom_ribbon(aes(x=biomarker_id,ymin=lower, ymax=upper),alpha=0.4, fill="#009E73",linewidth=0.2)+
-      geom_ribbon(data=model_preds[model_preds$individual %in% individuals,], 
-                  aes(x=biomarker_id,ymin=lower,ymax=upper),alpha=0.7,fill="#009E73",linewidth=0.2) + 
-      geom_line(data=model_preds, aes(x=biomarker_id, y=median),linewidth=0.75,color="#009E73")+
-      geom_rect(ymin=max_measurement,ymax=max_measurement+2,xmin=0,xmax=max_x,fill="grey70")+
-      geom_rect(ymin=min_measurement-2,ymax=min_measurement,xmin=0,xmax=max_x,fill="grey70")
-    
-    
-    if(!is.null(known_infection_history)){
-      titre_pred_p <- titre_pred_p + geom_vline(data=known_infection_history,aes(xintercept=variable,linetype="Known infection")) +
-        scale_linetype_manual(name="",values=c("Known infection"="dashed"))
-    }
-    titre_pred_p <- titre_pred_p +
-      scale_x_continuous(expand=c(0.01,0.01)) +
-      scale_fill_gradient(low="white",high="#D55E00",limits=c(0,1),name="Posterior probability of infection")+
-      guides(fill=guide_colourbar(title.position="top",title.hjust=0.5,label.position = "bottom",
-                                  barwidth=10,barheight = 0.5, frame.colour="black",ticks=FALSE)) +
-      geom_point(data=antibody_data[antibody_data$individual %in% individuals,], aes(x=biomarker_id, y=measurement),shape=23, 
-                 col="black",size=1)+
-      ylab("log antibody level") +
-      xlab("Time of antigen circulation") +
-      theme_pubr()+
-      theme(legend.title=element_text(size=7),
-            legend.text=element_text(size=7),
-            legend.margin = margin(-1,-1,-3,-1),
-            axis.title=element_text(size=10),
-            axis.text.x=element_text(angle=45,hjust=1,size=8),
-            axis.text.y=element_text(size=8),
-            plot.margin=margin(r=15,t=5,l=5))+
-      coord_cartesian(ylim=c(min_measurement,max_measurement+1),xlim=time_range) +
-      scale_y_continuous(breaks=seq(min_measurement,max_measurement+2,by=2)) +
-      facet_grid(individual~sample_time)
+  if(is.null(subset_biomarker_groups)){
+    subset_biomarker_groups_use <- 1
   } else {
-    
-    if(!is.null(subset_biomarker_ids)){
-      to_use <- to_use %>% dplyr::filter(biomarker_id %in% subset_biomarker_ids)
-      model_preds <- model_preds %>% dplyr::filter(biomarker_id %in% subset_biomarker_ids)
-      antibody_data <- antibody_data %>% dplyr::filter(biomarker_id %in% subset_biomarker_ids)
-    }
-      
-    to_use$biomarker_id <- as.factor(to_use$biomarker_id)
-    model_preds$biomarker_id <- as.factor(to_use$biomarker_id)
-    antibody_data$biomarker_id <- as.factor(antibody_data$biomarker_id)
-    
-      
-    titre_pred_p <- ggplot(to_use[to_use$individual %in% individuals,]) +
-      geom_rect(data=inf_hist_densities,
-                aes(xmin=xmin,xmax=xmax,alpha=value),ymin=min_measurement-1,ymax=max_measurement+2,fill="orange")+
-      geom_ribbon(aes(x=sample_time,ymin=lower, ymax=upper,fill=biomarker_id,group=biomarker_id),alpha=0.1, linewidth=0.2)+
-      geom_ribbon(data=model_preds[model_preds$individual %in% individuals,], 
-                  aes(x=sample_time,ymin=lower,ymax=upper,fill=biomarker_id,group=biomarker_id),alpha=0.25,linewidth=0.2) + 
-      geom_line(data=model_preds, aes(x=sample_time, y=median,color=biomarker_id,group=biomarker_id),linewidth=0.75)+
-      geom_rect(ymin=max_measurement,ymax=max_measurement+2,xmin=0,xmax=max_x,fill="grey70")+
-      geom_rect(ymin=min_measurement-2,ymax=min_measurement,xmin=0,xmax=max_x,fill="grey70")
-    
-    
-    if(!is.null(known_infection_history)){
-      titre_pred_p <- titre_pred_p + geom_vline(data=known_infection_history,aes(xintercept=variable,linetype="Known infection")) +
-        scale_linetype_manual(name="",values=c("Known infection"="dashed"))
-    }
-    
-    titre_pred_p <- titre_pred_p +
-      scale_x_continuous(expand=c(0.01,0.01)) +
-      #scale_fill_gradient(low="white",high="#D55E00",limits=c(0,1),name="Posterior probability of infection")+
-     # guides(fill=guide_colourbar(title.position="top",title.hjust=0.5,label.position = "bottom",
-      #                            barwidth=10,barheight = 0.5, frame.colour="black",ticks=FALSE)) +
-      scale_alpha_continuous(range=c(0,0.25),name="Posterior probability of infection")+
-      scale_fill_viridis_d(name="Biomarker ID") +
-      scale_color_viridis_d(name="Biomarker ID") +
-      geom_point(data=antibody_data[antibody_data$individual %in% individuals,], aes(x=sample_time, y=measurement,col=biomarker_id),shape=23, 
-                 size=1)+
-      ylab("log antibody level") +
-      xlab("Time of antigen circulation") +
-      theme_pubr()+
-      theme(legend.title=element_text(size=7),
-            legend.text=element_text(size=7),
-            legend.margin = margin(-1,-1,-3,-1),
-            axis.title=element_text(size=10),
-            axis.text.x=element_text(angle=45,hjust=1,size=8),
-            axis.text.y=element_text(size=8),
-            plot.margin=margin(r=15,t=5,l=5),
-            legend.position="bottom")+
-      coord_cartesian(ylim=c(min_measurement,max_measurement+1),xlim=range(to_use$sample_time)) +
-      scale_y_continuous(breaks=seq(min_measurement,max_measurement+2,by=2)) +
-      facet_wrap(~individual,ncol=p_ncol)
+    subset_biomarker_groups_use <- subset_biomarker_groups
   }
-
-  
+  titre_pred_p <- NULL
+  for(biomarker_group_use in subset_biomarker_groups_use){
+    if(orientation=="cross-sectional"){
+      if(!is.null(subset_biomarker_ids)){
+        time_range <- range(subset_biomarker_ids)
+      }
+      
+      p_tmp <- ggplot(to_use %>% dplyr::filter(biomarker_group == biomarker_group_use)) +
+        geom_rect(data=inf_hist_densities%>% dplyr::cross_join(measurement_ranges)%>% dplyr::filter(biomarker_group == biomarker_group_use),
+                  aes(xmin=xmin,xmax=xmax,fill=value,ymin=min_measurement-1,ymax=max_measurement+1))+
+        geom_ribbon(aes(x=biomarker_id,ymin=lower, ymax=upper),alpha=0.4, fill="#009E73",linewidth=0.2)+
+        geom_ribbon(data=model_preds[model_preds$individual %in% individuals,]%>% dplyr::filter(biomarker_group == biomarker_group_use), 
+                    aes(x=biomarker_id,ymin=lower,ymax=upper),alpha=0.7,fill="#009E73",linewidth=0.2) + 
+        geom_line(data=model_preds%>% dplyr::filter(biomarker_group == biomarker_group_use), aes(x=biomarker_id, y=median),linewidth=0.75,color="#009E73")+
+        geom_rect(data=measurement_ranges,aes(ymin=max_measurement,ymax=max_measurement+1),xmin=0,xmax=max_x,fill="grey70")+
+        geom_rect(data=measurement_ranges, aes(ymin=min_measurement-1,ymax=min_measurement),xmin=0,xmax=max_x,fill="grey70")
+      
+      
+      if(!is.null(known_infection_history)){
+        p_tmp <- p_tmp + geom_vline(data=known_infection_history,aes(xintercept=variable,linetype="Known infection")) +
+          scale_linetype_manual(name="",values=c("Known infection"="dashed"))
+      }
+      min_measurement <- measurement_ranges %>% dplyr::filter(biomarker_group == biomarker_group_use) %>% dplyr::pull(min_measurement)
+      max_measurement <- measurement_ranges %>% dplyr::filter(biomarker_group == biomarker_group_use) %>% dplyr::pull(max_measurement)
+      breaks <- seq(floor(min_measurement), floor(max_measurement),by=2)
+      
+      p_tmp <- p_tmp +
+        scale_x_continuous(expand=c(0.01,0.01)) +
+        scale_fill_gradient(low="white",high="#D55E00",limits=c(0,1),name="Posterior probability of infection")+
+        guides(fill=guide_colourbar(title.position="top",title.hjust=0.5,label.position = "bottom",
+                                    barwidth=10,barheight = 0.5, frame.colour="black",ticks=FALSE)) +
+        geom_point(data=antibody_data %>% dplyr::filter(individual %in% individuals) %>%
+                     dplyr::filter(biomarker_group == biomarker_group_use), aes(x=biomarker_id, y=measurement),shape=23, 
+                   col="black",size=1)+
+        ylab("log antibody level") +
+        xlab("Time of antigen circulation") +
+        theme_pubr()+
+        theme(legend.title=element_text(size=7),
+              legend.text=element_text(size=7),
+              legend.margin = margin(-1,-1,-3,-1),
+              axis.title=element_text(size=10),
+              axis.text.x=element_text(angle=45,hjust=1,size=8),
+              axis.text.y=element_text(size=8),
+              plot.margin=margin(r=15,t=5,l=5))+
+        coord_cartesian(xlim=time_range,ylim=c(min(breaks)-1, max(breaks)+1)) +
+        scale_y_continuous(expand=c(0,0),breaks=breaks) +
+        facet_grid(individual~sample_time)
+    } else {
+      
+      if(!is.null(subset_biomarker_ids)){
+        to_use <- to_use %>% dplyr::filter(biomarker_id %in% subset_biomarker_ids)
+        model_preds <- model_preds %>% dplyr::filter(biomarker_id %in% subset_biomarker_ids)
+        antibody_data <- antibody_data %>% dplyr::filter(biomarker_id %in% subset_biomarker_ids)
+      }
+        
+      to_use$biomarker_id <- as.factor(to_use$biomarker_id)
+      model_preds$biomarker_id <- as.factor(to_use$biomarker_id)
+      antibody_data$biomarker_id <- as.factor(antibody_data$biomarker_id)
+      
+      p_tmp <- ggplot(to_use[to_use$individual %in% individuals,]%>% dplyr::filter(biomarker_group == biomarker_group_use)) +
+        geom_rect(data=inf_hist_densities %>% dplyr::cross_join(measurement_ranges)%>% dplyr::filter(biomarker_group == biomarker_group_use),
+                  aes(xmin=xmin,xmax=xmax,alpha=value,ymin=min_measurement-1,ymax=max_measurement+1),fill="orange")+
+        geom_ribbon(aes(x=sample_time,ymin=lower, ymax=upper,fill=biomarker_id,group=biomarker_id),alpha=0.1, linewidth=0.2)+
+        geom_ribbon(data=model_preds[model_preds$individual %in% individuals,]%>% dplyr::filter(biomarker_group == biomarker_group_use), 
+                    aes(x=sample_time,ymin=lower,ymax=upper,fill=biomarker_id,group=biomarker_id),alpha=0.25,linewidth=0.2) + 
+        geom_line(data=model_preds%>% dplyr::filter(biomarker_group == biomarker_group_use), aes(x=sample_time, y=median,color=biomarker_id,group=biomarker_id),linewidth=0.75)+
+        geom_rect(data=measurement_ranges%>% dplyr::filter(biomarker_group == biomarker_group_use),aes(ymin=max_measurement,ymax=max_measurement+1),xmin=0,xmax=max_x,fill="grey70")+
+        geom_rect(data=measurement_ranges%>% dplyr::filter(biomarker_group == biomarker_group_use),aes(ymin=min_measurement-1,ymax=min_measurement),xmin=0,xmax=max_x,fill="grey70")
+      
+      
+      if(!is.null(known_infection_history)){
+        p_tmp <- p_tmp + geom_vline(data=known_infection_history,aes(xintercept=variable,linetype="Known infection")) +
+          scale_linetype_manual(name="",values=c("Known infection"="dashed"))
+      }
+      
+      min_measurement <- measurement_ranges %>% dplyr::filter(biomarker_group == biomarker_group_use) %>% dplyr::pull(min_measurement)
+      max_measurement <- measurement_ranges %>% dplyr::filter(biomarker_group == biomarker_group_use) %>% dplyr::pull(max_measurement)
+      breaks <- seq(floor(min_measurement), floor(max_measurement),by=2)
+      
+      p_tmp <- p_tmp +
+        scale_x_continuous(expand=c(0.01,0.01)) +
+        scale_alpha_continuous(range=c(0,0.25),name="Posterior probability of infection")+
+        scale_fill_viridis_d(name="Biomarker ID") +
+        scale_color_viridis_d(name="Biomarker ID") +
+        geom_point(data=antibody_data %>% dplyr::filter(individual %in% individuals) %>%
+                     dplyr::filter(biomarker_group == biomarker_group_use), aes(x=sample_time, y=measurement,col=biomarker_id),shape=23, 
+                   size=1)+
+        ylab("log antibody level") +
+        xlab("Time of antigen circulation") +
+        theme_pubr()+
+        theme(legend.title=element_text(size=7),
+              legend.text=element_text(size=7),
+              legend.margin = margin(-1,-1,-3,-1),
+              axis.title=element_text(size=10),
+              axis.text.x=element_text(angle=45,hjust=1,size=8),
+              axis.text.y=element_text(size=8),
+              plot.margin=margin(r=15,t=5,l=5),
+              legend.position="bottom")+
+        coord_cartesian(xlim=range(to_use$sample_time),ylim=c(min(breaks)-1, max(breaks)+1)) +
+        scale_y_continuous(expand=c(0,0),breaks=breaks) +
+        facet_wrap(~individual,ncol=p_ncol)
+    }
+    titre_pred_p[[biomarker_group_use]] <- p_tmp
+  }
+  if(is.null(subset_biomarker_groups)){
+    titre_pred_p <- titre_pred_p[[1]]
+  }
   titre_pred_p
 }
 

@@ -276,7 +276,7 @@ simulate_group <- function(n_indiv,
     ## Combine data
     dat <- rbind(dat, y[, c("individual", "sample_time", "biomarker_id", "biomarker_group","measurement")])
   }
-  dat <- dat %>% group_by(individual,sample_time,biomarker_id,biomarker_group) %>% mutate(repeat_number = 1:n()) %>% ungroup() %>% as.data.frame()
+  dat <- dat %>% dplyr::group_by(individual,sample_time,biomarker_id,biomarker_group) %>% dplyr::mutate(repeat_number = 1:n()) %>% ungroup() %>% as.data.frame()
   return(list(antibody_data = dat, infection_history = infection_histories))
 }
 #' Simulate individual data quickly
@@ -567,7 +567,7 @@ add_noise <- function(y, theta, measurement_bias = NULL, indices = NULL,data_typ
     }
   
     ## If outside of bounds, truncate
-    noise_y[noise_y < 0] <- 0
+    noise_y[noise_y < theta["min_measurement"]] <- theta["min_measurement"]
     noise_y[noise_y > theta["max_measurement"]] <- theta["max_measurement"]
   }
   return(noise_y)

@@ -325,6 +325,7 @@ get_antibody_level_predictions <- function(chain, infection_histories, antibody_
                                            expand_to_all_times=FALSE,
                                            antibody_level_before_infection=FALSE, for_regression=FALSE,
                                            data_type=1,start_level="none"){
+
   ## Need to align the iterations of the two MCMC chains
   ## and choose some random samples
   samps <- intersect(unique(infection_histories$samp_no), unique(chain$samp_no))
@@ -393,10 +394,7 @@ get_antibody_level_predictions <- function(chain, infection_histories, antibody_
     )
     antibody_data2 <- unique(antibody_data[, c("individual", "biomarker_id", "population_group", "birth")])
     antibody_data1 <- merge(antibody_data1, antibody_data2)
-    antibody_data1 <- antibody_data1[
-      order(antibody_data1$population_group, antibody_data1$individual, antibody_data1$sample_time, antibody_data1$biomarker_id),
-      c("individual", "sample_time","biomarker_group", "biomarker_id", "measurement", "repeat_number", "population_group", "birth")
-    ]
+    antibody_data1 <- antibody_data %>% arrange(individual, biomarker_group, sample_time, biomarker_id, repeat_number)
   }
   model_func <- create_posterior_func(par_tab, antibody_data1, antigenic_map, possible_exposure_times,
                                      prior_version=2,
@@ -418,7 +416,7 @@ get_antibody_level_predictions <- function(chain, infection_histories, antibody_
     pars <- pars[!(names(pars) %in% c("posterior_prob", "likelihood", "prior_prob",
                                       "samp_no", "total_infections", "chain_no"
     ))]
-    ## pars <- pars[names(pars) %in% par_tab$names]
+    names(pars) <- par_tab$names
     tmp_inf_hist <- infection_histories[infection_histories$samp_no == index, ]
     tmp_inf_hist <- as.matrix(Matrix::sparseMatrix(i = tmp_inf_hist$i, j = tmp_inf_hist$j, x = tmp_inf_hist$x, dims = c(n_indiv, nstrain)))
     predicted_titres[, i] <- model_func(pars, tmp_inf_hist)
@@ -432,7 +430,6 @@ get_antibody_level_predictions <- function(chain, infection_histories, antibody_
     samp_record[i] <- index
   }
   colnames(predicted_titres) <- tmp_samp
-  
   ## If generating for residual plot, can return now
   if (for_res_plot) {
     return(list(residuals, samp_record, antibody_data1,

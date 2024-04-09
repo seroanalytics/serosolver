@@ -15,11 +15,11 @@ r_likelihood <- function(expected, data, theta, expected_indices = NULL, measure
   ## Vectorise, calculate boundaries separately
   liks <- numeric(length(expected))
   large_i <- data >= theta["max_measurement"]
-  small_i <- data < 1
-  rest_i <- data >= 1 & data < theta["max_measurement"]
+  small_i <- data < theta["min_measurement"] + 1
+  rest_i <- data >= theta["min_measurement"] + 1 & data < theta["max_measurement"]
   
   liks[large_i] <- pnorm(theta["max_measurement"], expected[large_i], theta["obs_sd"], lower.tail = FALSE, log.p = TRUE)
-  liks[small_i] <- pnorm(1, expected[small_i], theta["obs_sd"], lower.tail = TRUE, log.p = TRUE)
+  liks[small_i] <- pnorm((theta["min_measurement"]+1), expected[small_i], theta["obs_sd"], lower.tail = TRUE, log.p = TRUE)
   liks[rest_i] <- log(pnorm(data[rest_i] + 1, expected[rest_i], theta["obs_sd"], lower.tail = TRUE, log.p = FALSE) -
                         pnorm(data[rest_i], expected[rest_i], theta["obs_sd"], lower.tail = TRUE, log.p = FALSE))
   return(liks)

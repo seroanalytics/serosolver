@@ -14,6 +14,7 @@ void proposal_likelihood_func(double &new_prob,
                               const double &log_const,
                               const double &den,
                               const double &max_measurement,
+                              const double &min_measurement,
                               const bool &repeat_data_exist,
                               const double &obs_weight);
 #endif

@@ -185,6 +185,7 @@ create_posterior_func <- function(par_tab,
         arrange(individual, biomarker_group, sample_time, biomarker_id, repeat_number)
     }
     start_levels <- start_levels %>% filter(repeat_number == 1)
+
     start_level_indices <- start_levels$start_index - 1
     start_antibody_levels <- start_levels %>% select(individual, biomarker_group,biomarker_id, starting_level) %>% distinct() %>% pull(starting_level)
     
@@ -327,7 +328,6 @@ create_posterior_func <- function(par_tab,
     if (function_type == 1) {
       if(verbose) message(cat("Creating posterior solving function...\n"))
         f <- function(pars, infection_history_mat) {
-          
           ## Transmission prob is the part of the likelihood function corresponding to each individual
           transmission_prob <- rep(0, n_indiv)
           if (explicit_phi) {
@@ -548,6 +548,8 @@ create_posterior_func <- function(par_tab,
                 antigenic_map_long[,biomarker_group] <- create_cross_reactivity_vector(antigenic_map_melted[[biomarker_group]], cr_longs[biomarker_group])
                 antigenic_map_short[,biomarker_group] <- create_cross_reactivity_vector(antigenic_map_melted[[biomarker_group]], cr_shorts[biomarker_group])
             }
+            
+
             y_new <- antibody_model(
                 theta, theta_indices_unique, unique_biomarker_groups,
                 infection_history_mat, 

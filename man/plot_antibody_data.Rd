@@ -9,7 +9,8 @@ plot_antibody_data(
   possible_exposure_times,
   n_indivs,
   infection_histories = NULL,
-  study_design = "cross-sectional"
+  study_design = "cross-sectional",
+  measurement_ranges = NULL
 )
 }
 \arguments{
@@ -21,7 +22,9 @@ plot_antibody_data(
 
 \item{infection_histories}{the infection history matrix}
 
-\item{study_design}{default "cross-sectional" facets by sample time. "longitudinal" gives sample time on the x-axis and colours by biomarker_id}
+\item{study_design}{default "cross-sectional" facets by sample time. "longitudinal" gives sample time on the x-axis and colours by `biomarker_id`}
+
+\item{measurement_ranges}{data frame or tibble stating for each `biomarker_group` the `min_measurement` and `max_measurement`. If NULL, this is extracted from `antibody_data`}
 }
 \value{
 a ggplot object

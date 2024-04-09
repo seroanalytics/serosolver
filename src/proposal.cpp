@@ -624,7 +624,7 @@ List inf_hist_prop_prior_v2_and_v4(
         					      antigenic_map_long.colptr(biomarker_group),
         					      false);	
         	} else {
-        	  
+        	  //Rcpp::Rcout << "Min measurement: " << min_measurements(biomarker_group) << std::endl;
         	  antibody_data_model_individual_new(
         	    predicted_antibody_levels, 
         	    starting_antibody_levels,
@@ -706,6 +706,7 @@ List inf_hist_prop_prior_v2_and_v4(
                                          log_const, 
                                          dens(biomarker_group), 
                                          max_measurements(biomarker_group), 
+                                         min_measurements(biomarker_group), 
                                          repeat_data_exist,
                                          obs_weight);
               }
