@@ -66,7 +66,7 @@ serosolver <- function(par_tab,
                      filename = "test",
                      posterior_func = create_posterior_func,
                      prior_func = NULL,
-                     prior_version = 1,
+                     prior_version = 2,
                      measurement_indices = NULL,
                      measurement_random_effects = FALSE,
                      proposal_ratios = NULL,
@@ -75,10 +75,11 @@ serosolver <- function(par_tab,
                      n_alive = NULL,
                      OPT_TUNING = 0.1,
                      random_start_parameters=TRUE,
+                     start_level="none",
+                     data_type=1,
                      verbose=TRUE,
                      verbose_dev=FALSE,
                      ...) {
-  
   on.exit(serosolver::unregister_dopar)
   
   ###################################################################
@@ -92,7 +93,7 @@ serosolver <- function(par_tab,
       `%execute%` <- `%dorng%`
       if(verbose) {
         message(cat("Requested", n_chains, "MCMC chains in parallel, setting up parallel session using doParallel package\n",sep=" "))
-        message(cat("Progress messages will be piped to", filename, "_log.txt when `parallel` is set to true"))
+        message(cat("Progress messages will be piped to", filename, "_log.txt when `parallel` is set to true\n"))
       } else {
         message(cat("\n",sep=" "))
       }
@@ -183,21 +184,21 @@ serosolver <- function(par_tab,
 
   prior_on_total <- FALSE
   if (prior_version == 1) { ## Lambda prior_version
-    prop_print <- "Infection history prior 1: Using phi prior on infection history, with symmetric proposal probabilities"
+    prop_print <- "Infection history prior 1: Using phi prior on infection history, with symmetric proposal probabilities.\n"
     hist_proposal <- 1
   } else if (prior_version == 2) { ## Gibbs prior_version
-    prop_print <- "Infection history prior 2: Using integrated FOI prior on infection history, with gibbs sampling of infections"
+    prop_print <- "Infection history prior 2: Using integrated FOI prior on infection history, with gibbs sampling of infections.\n"
     hist_proposal <- 2
   } else if (prior_version == 3) { ## Beta binomial prior_version
-    prop_print <- "Infection history prior 3: Using beta prior on total number of infections for an individual, with proposals from this prior"
+    prop_print <- "Infection history prior 3: Using beta prior on total number of infections for an individual, with proposals from this prior.\n"
     proposal_inf_hist_group_swap_ratio <- 0
     hist_proposal <- 3
   } else if (prior_version == 4) {
-    prop_print <- "Infection history prior 4: Using beta prior on total number of infections across all years and all individuals, with gibbs sampling of infections"
+    prop_print <- "Infection history prior 4: Using beta prior on total number of infections across all years and all individuals, with gibbs sampling of infections.\n"
     hist_proposal <- 2
     prior_on_total <- TRUE
   } else { ## By default, use phi prior_version
-    stop("Invalid version specified - must be 1 (phi), 2 (beta on times), 3 (beta on individual) or 4 (beta on overall)")
+    stop("Invalid version specified - must be 1 (phi), 2 (beta on times), 3 (beta on individual) or 4 (beta on overall).\n")
   }
   if(verbose) message(cat(prop_print, "\n"))
 
@@ -326,6 +327,18 @@ serosolver <- function(par_tab,
   if(parallel){
     writeLines(c(""), log_file)
   }
+  
+  ## Save MCMC settings
+  serosolver_settings <- list(par_tab=par_tab,
+                              antibody_data=antibody_data,
+                              prior_version=prior_version,
+                              possible_exposure_times=possible_exposure_times,
+                              antigenic_map=antigenic_map,
+                              start_levels=start_level,
+                              measurement_indices=measurement_indices,
+                              data_type=data_type)
+
+  save(serosolver_settings,file=paste0(filename,"_serosolver_settings.RData"))
   
   result <- foreach(chain = 1:n_chains, .packages =c("serosolver","data.table","dplyr","plyr","tidyr")) %execute% {
     if(parallel){
@@ -946,7 +959,7 @@ serosolver <- function(par_tab,
     final
   }
   serosolver::unregister_dopar()
-  if(verbose){ message(cat("Generating MCMC diagnostics"))}
+  if(verbose){ message(cat("Generating MCMC diagnostics\n"))}
   saved_wd <- paste(strsplit(filename, "/")[[1]][-length(strsplit(filename, "/")[[1]])],sep="/",collapse="/")
   if(saved_wd == ""){
     saved_wd <- getwd()
@@ -960,15 +973,15 @@ serosolver <- function(par_tab,
     diagnostic_warnings <- c(diagnostic_warnings, "Warning - some Rhat values >1.1")
   }
   if(any(par_est_table[par_est_table$names != "total_infections","ess"] < 200)){
-    diagnostic_warnings <- c(diagnostic_warnings, "Warning - some effective sample sizes <200")
+    diagnostic_warnings <- c(diagnostic_warnings, "Warning - some effective sample sizes <200\n")
   }  
 
 
   chain_files <- c(sapply(result,function(x) x[1]))
   infection_history_files <- c(sapply(result,function(x) x[2]))
   
-  if(verbose){ message(cat("Done!"))}
+  if(verbose){ message(cat("Done!\n"))}
   
   return(list(chain_files=chain_files, infection_history_files=infection_history_files,all_diagnostics=all_diagnostics,
-              diagnostic_warnings=diagnostic_warnings))
+              diagnostic_warnings=diagnostic_warnings, settings=serosolver_settings))
 }

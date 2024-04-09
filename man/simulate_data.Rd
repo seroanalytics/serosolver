@@ -19,7 +19,7 @@ simulate_data(
   attack_rates,
   repeats = 1,
   measurement_indices = NULL,
-  obs_dist = NULL,
+  data_type = NULL,
   verbose = FALSE
 )
 }
@@ -52,7 +52,7 @@ simulate_data(
 
 \item{measurement_indices}{default NULL, optional vector giving the index of `measurement_bias` that each antigen/biomarker ID uses the measurement shift from from. eg. if there's 6 circulation years and 3 strain clusters, then this might be c(1,1,2,2,3,3)}
 
-\item{obs_dist}{if not NULL, then a vector of data types to use for each biomarker_group}
+\item{data_type}{if not NULL, then a vector of data types to use for each biomarker_group}
 
 \item{verbose}{if TRUE, prints additional messages}
 }

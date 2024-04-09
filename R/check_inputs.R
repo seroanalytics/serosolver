@@ -60,10 +60,10 @@ check_par_tab <- function(par_tab, mcmc = FALSE, version = NULL,possible_exposur
     ## Checks that should happen in simulate_data and serosolver
     essential_names <- c("names","values","fixed","lower_bound","upper_bound","lower_start","upper_start","par_type")
     if (!all(essential_names %in% colnames(par_tab))) {
-        message(paste(c("Some column names missing from par_tab: ", setdiff(essential_names,colnames(par_tab))),collapse=" "))
+        message(paste(c("Some column names missing from par_tab: ", setdiff(essential_names,colnames(par_tab)),"\n"),collapse=" "))
      
         if(!("type" %in% colnames(par_tab))){
-          if(verbose) message("Adding \"par_type\" to par_tab variables.")
+          if(verbose) message("Adding \"par_type\" to par_tab variables.\n")
           par_tab$par_type <- 1
         }
     }
@@ -76,7 +76,7 @@ check_par_tab <- function(par_tab, mcmc = FALSE, version = NULL,possible_exposur
     if (mcmc == TRUE) {
       
       if(!("steps" %in% colnames(par_tab))){
-        if(verbose) message("Adding \"steps\" to par_tab variables.")
+        if(verbose) message("Adding \"steps\" to par_tab variables.\n")
         par_tab$steps <- 0.1
       }
       
@@ -91,11 +91,11 @@ check_par_tab <- function(par_tab, mcmc = FALSE, version = NULL,possible_exposur
         if (version == 1) {
             ## Check that the correct number of phis are present
             if(!explicit_phi){
-                if(verbose) message(cat("Prior version 1 is specified, but there are no entries for phi in par_tab. Note that there must be one phi entry per entry in possible_exposure_times"))
+                if(verbose) message(cat("Prior version 1 is specified, but there are no entries for phi in par_tab. Note that there must be one phi entry per entry in possible_exposure_times.\n"))
             }
           
             if(!is.null(possible_exposure_times) & no_phi < length(possible_exposure_times)){
-              if(verbose) message(cat("Padding par_tab with phis, as number of phi parameters does not match possible_exposure_times")) ## Should we remove them?
+              if(verbose) message(cat("Padding par_tab with phis, as number of phi parameters does not match possible_exposure_times.\n")) ## Should we remove them?
               par_tab_phi <- data.frame(names="phi",values=0.1,fixed=0,lower_bound=0,upper_bound=1,lower_start=0,upper_start=1,par_type=2,steps=0.1)
               n_missing <- length(possible_exposure_times) - no_phi
               for(i in 1:n_missing){
@@ -105,25 +105,25 @@ check_par_tab <- function(par_tab, mcmc = FALSE, version = NULL,possible_exposur
         }
         
         if (all(par_tab$fixed == 1)) {
-            stop("All parameters are set to be fixed. The MCMC procedure will not work. Please set at least the entry for error to be fixed <- 0")
+            stop("All parameters are set to be fixed. The MCMC procedure will not work. Please set at least the entry for error to be fixed <- 0.\n")
         }
 
         
         if (version %in% c(2, 3, 4)) {
             if (explicit_phi){
-              if(verbose) message(cat("Phis are not required for versions 2, 3 or 4 but par_tab contains phi(s). Removing all entries named phi")) ## Should we remove them?
+              if(verbose) message(cat("Phis are not required for versions 2, 3 or 4 but par_tab contains phi(s). Removing all entries named phi.\n")) ## Should we remove them?
               par_tab <- par_tab[par_tab$names != "phi",]
             }
         }
         ## Check bounds are equal to starting bounds
         if (any(par_tab$upper_start > par_tab$upper_bound) | any(par_tab$lower_start < par_tab$lower_bound)) {
-            warning("lower_start and upper_start are not equal to the starting lower_bound and upper_bound. If par_tab was used to create starting values, starting values may be out of bounds. ")
+            warning("lower_start and upper_start are not equal to the starting lower_bound and upper_bound. If par_tab was used to create starting values, starting values may be out of bounds.\n ")
         }
     }
     ## Check that alpha and beta there for beta distribution
     ## If there, Pull out alpha and beta for beta binomial proposals
     if (!("infection_model_prior_shape1" %in% par_tab$names) | !("infection_model_prior_shape2" %in% par_tab$names)) {
-        stop("par_tab must have entries for `infection_model_prior_shape1` and `infection_model_prior_shape2` for infection history prior")
+        stop("par_tab must have entries for `infection_model_prior_shape1` and `infection_model_prior_shape2` for infection history prior.\n")
     }
     par_tab
 }

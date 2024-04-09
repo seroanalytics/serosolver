@@ -73,11 +73,11 @@ load_antigenic_map_file <- function(location = getwd()) {
 #' @return a list of the concatenated and individual chains (4 elements, either data frames of coda::mcmc objects)
 #' @family load_data_functions
 #' @examples
-#' \dontrun{load_mcmc_chains(par_tab=par_tab, unfixed=TRUE,thin=10,burnin=5000,convert_mcmc=TRUE)}
+#' \dontrun{load_mcmc_chains(par_tab=par_tab, estimated_only=TRUE,thin=10,burnin=5000,convert_mcmc=TRUE)}
 #' @export
-load_mcmc_chains <- function(location = getwd(), par_tab = NULL, unfixed = TRUE, thin = 1, burnin = 0, convert_mcmc = FALSE) {
+load_mcmc_chains <- function(location = getwd(), par_tab = NULL, estimated_only = FALSE, thin = 1, burnin = 0, convert_mcmc = FALSE) {
     ## Load in theta chains
-    theta_chains <- load_theta_chains(location, par_tab, unfixed, thin, burnin)
+    theta_chains <- load_theta_chains(location, par_tab, estimated_only, thin, burnin)
     ## Load in infection history chains
     inf_chains <- load_infection_chains(location, thin, burnin)
 
@@ -115,16 +115,16 @@ load_mcmc_chains <- function(location = getwd(), par_tab = NULL, unfixed = TRUE,
 #' Searches the given working directory for MCMC outputs from \code{\link{serosolver}}, loads these in, subsets for burn in and thinning, and formats as both lists and a combined data frame.
 #' @param location defaults to current working directory. Gives relative file path to look for files ending in "_chain.csv"
 #' @param par_tab if not NULL, can use this to only extract free model parameters
-#' @param unfixed if TRUE, only returns free model parameters (par_tab$fixed == 0) if par_tab specified
+#' @param estimated_only if TRUE, only returns free model parameters (par_tab$fixed == 0) if par_tab specified
 #' @param thin thin the chains by every thin'th sample
 #' @param burnin discard the first burnin samples from the MCMC chain
 #' @param convert_mcmc if TRUE, converts everything to MCMC objects (from the `coda` R package)
 #' @return a list with a) a list of each chain separately; b) a combined data frame, indexing each iteration by which chain it comes from
 #' @family load_data_functions
 #' @examples
-#' \dontrun{load_theta_chains(par_tab=par_tab, unfixed=TRUE,thin=10,burnin=5000,convert_mcmc=TRUE)}
+#' \dontrun{load_theta_chains(par_tab=par_tab, estimated_only=TRUE,thin=10,burnin=5000,convert_mcmc=TRUE)}
 #' @export
-load_theta_chains <- function(location = getwd(), par_tab = NULL, unfixed = TRUE, thin = 1, burnin = 0, convert_mcmc = TRUE) {
+load_theta_chains <- function(location = getwd(), par_tab = NULL, estimated_only = TRUE, thin = 1, burnin = 0, convert_mcmc = TRUE) {
   chains <- Sys.glob(file.path(location, "*_chain.csv"))
   message("Chains detected: ", length(chains), sep = "\t")
   if (length(chains) < 1) {
@@ -150,7 +150,7 @@ load_theta_chains <- function(location = getwd(), par_tab = NULL, unfixed = TRUE
   for (i in 1:length(read_chains)) read_chains[[i]]$chain_no <- i
 
   ## Get the estimated parameters only
-  if (unfixed & !is.null(par_tab)) {
+  if (estimated_only & !is.null(par_tab)) {
     fixed <- par_tab$fixed
     use_colnames <- intersect(c("samp_no", par_tab$names[which(fixed == 0)], "posterior_prob", "likelihood", "prior_prob", "chain_no"), colnames(read_chains[[1]]))
     read_chains <- lapply(read_chains, function(x) x[, use_colnames])

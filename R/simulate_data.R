@@ -15,7 +15,7 @@
 #' @param attack_rates a vector of attack_rates for each entry in possible_exposure_times to be used in the simulation (between 0 and 1)
 #' @param repeats number of repeat observations for each year
 #' @param measurement_indices default NULL, optional vector giving the index of `measurement_bias` that each antigen/biomarker ID uses the measurement shift from from. eg. if there's 6 circulation years and 3 strain clusters, then this might be c(1,1,2,2,3,3)
-#' @param obs_dist if not NULL, then a vector of data types to use for each biomarker_group
+#' @param data_type if not NULL, then a vector of data types to use for each biomarker_group
 #' @param verbose if TRUE, prints additional messages
 #' @return a list with: 1) the data frame of antibody data as returned by \code{\link{simulate_group}}; 2) a matrix of infection histories as returned by \code{\link{simulate_infection_histories}}; 3) a vector of ages
 #' @family simulation_functions
@@ -51,7 +51,7 @@ simulate_data <- function(par_tab,
                           attack_rates,
                           repeats = 1,
                           measurement_indices = NULL,
-                          obs_dist = NULL,
+                          data_type = NULL,
                           verbose=FALSE) {
 
     #########################################################
@@ -149,7 +149,7 @@ simulate_data <- function(par_tab,
         repeats,
         measurement_bias,
         measurement_indices, 
-        obs_dist, 
+        data_type, 
         DOBs
     )
     y <- sim_dat$antibody_data
@@ -207,7 +207,7 @@ simulate_group <- function(n_indiv,
                            repeats = 1,
                            measurement_bias = NULL,
                            measurement_indices = NULL,
-                           obs_dist = NULL,
+                           data_type = NULL,
                            DOBs=NULL) {
     n_biomarker_groups <- length(unique_biomarker_groups)
     
@@ -245,7 +245,7 @@ simulate_group <- function(n_indiv,
     if (length(sample_times_tmp) == 1) {
       samps <- rep(sample_times_tmp, nsamps)
     } else {
-      samps <- sample(sample_times_tmp, nsamps)
+      samps <- sample(sample_times_tmp, min(nsamps,length(sample_times_tmp)))
       samps <- samps[order(samps)]
     }
 
@@ -268,7 +268,7 @@ simulate_group <- function(n_indiv,
       measured_biomarker_ids,
       measurement_bias,
       measurement_indices,
-      obs_dist, repeats, DOB
+      data_type, repeats, DOB
     ))
     ## Record individual ID
     y$indiv <- i
@@ -304,7 +304,7 @@ simulate_individual_faster <- function(theta,
                                        possible_exposure_times,
                                        measured_biomarker_ids,
                                        measurement_bias = NULL, measurement_indices = NULL,
-                                       obs_dist = NULL, 
+                                       data_type = NULL, 
                                        repeats = 1,
                                        DOB = NULL) {
 
@@ -391,7 +391,7 @@ simulate_individual_faster <- function(theta,
   
   dat[, 3] <- biomarker_groups_data
   ## Add observation noise, including measurement bias if selected
-  if (!is.null(obs_dist)) {
+  if (!is.null(data_type)) {
       for(biomarker_group in unique_biomarker_groups){
         if (!is.null(measurement_indices)) {
             indices_tmp <- measurement_indices$biomarker_group == biomarker_group
@@ -399,11 +399,11 @@ simulate_individual_faster <- function(theta,
           dat[biomarker_groups_data == biomarker_group, 4] <- add_noise(antibody_levels[biomarker_groups_data == biomarker_group], 
                                                                           theta[(unique_theta_indices+1) + n_pars*(biomarker_group-1)], 
                                                                           measurement_bias,use_measurement_indices,
-                                                          data_type=obs_dist[biomarker_group])
+                                                          data_type=data_type[biomarker_group])
         } else {
           dat[biomarker_groups_data == biomarker_group, 4] <- add_noise(antibody_levels[biomarker_groups_data == biomarker_group], 
                                                                           theta[(unique_theta_indices+1) + n_pars*(biomarker_group-1)], 
-                                                                          NULL, NULL,data_type=obs_dist[biomarker_group])
+                                                                          NULL, NULL,data_type=data_type[biomarker_group])
         }
       }
   } else {

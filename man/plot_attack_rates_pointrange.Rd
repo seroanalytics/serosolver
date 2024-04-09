@@ -6,8 +6,8 @@
 \usage{
 plot_attack_rates_pointrange(
   infection_histories,
-  antibody_data,
-  possible_exposure_times,
+  antibody_data = NULL,
+  possible_exposure_times = NULL,
   n_alive = NULL,
   pointsize = 1,
   fatten = 1,
@@ -21,7 +21,8 @@ plot_attack_rates_pointrange(
   colour_by_taken = TRUE,
   by_val = 5,
   min_time = min(possible_exposure_times),
-  max_time = max(possible_exposure_times)
+  max_time = max(possible_exposure_times),
+  settings = NULL
 )
 }
 \arguments{

@@ -17,6 +17,9 @@ devtools::document("~/Documents/GitHub/serosolver")
 devtools::load_all("~/Documents/GitHub/serosolver")
 
 ## Get all possible infection times
+antigenic_map <- read.csv("~/Documents/GitHub/serosolver/inst/extdata/antigenic_maps/antigenicMap_vietnam.csv")
+par_tab <- read.csv("~/Documents/GitHub/serosolver/inst/extdata/par_tab_base.csv")
+
 possible_exposure_times <- seq(2000,2024,by=1)
 
 ## Vector of antigens that have biomarker measurements (note only one representative antigen per time)
@@ -31,11 +34,9 @@ n_samps <- 5
 ## Simulate some random attack rates
 attack_rates <- runif(length(possible_exposure_times), 0.05, 0.15)
 
-antigenic_map <- NULL
-par_tab <- read.csv("~/Documents/GitHub/serosolver/inst/extdata/par_tab_base.csv")
 
 devtools::load_all("~/Documents/GitHub/serosolver")
-par_tab[par_tab$names == "wane_long","fixed"] <- 0
+par_tab[par_tab$names == "wane_long","fixed"] <- 1
 par_tab[par_tab$names == "wane_long","values"] <- 0
 ## Simulate a full serosurvey with these parameters
 all_simulated_data <- simulate_data(par_tab=par_tab, group=1, n_indiv=50,
@@ -45,7 +46,7 @@ all_simulated_data <- simulate_data(par_tab=par_tab, group=1, n_indiv=50,
                                     antigenic_map=antigenic_map,
                                     age_min=10,age_max=75,
                                     attack_rates=attack_rates, repeats=1,
-                                    obs_dist=c(2))
+                                    data_type=c(2))
 
 ## Pull out the simulated titre data and infection histories
 antibody_data <- all_simulated_data$antibody_data
@@ -66,14 +67,26 @@ par_tab[par_tab$names == "cr_long","fixed"] <- 1
 par_tab[par_tab$names == "cr_long","values"] <- 1
 par_tab[par_tab$names == "cr_short","fixed"] <- 1
 par_tab[par_tab$names == "cr_short","values"] <- 1
+par_tab[par_tab$names == "boost_long","values"] <- 0
+par_tab[par_tab$names == "boost_long","fixed"] <- 1
 antibody_data1 <- antibody_data %>% group_by(individual) %>% mutate(birth=min(sample_time)) %>% as.data.frame()
 res <- serosolver(par_tab, antibody_data1, NULL,
                   possible_exposure_times=2010:max(possible_exposure_times),
-                  filename="test_long/readme", prior_version=2,n_chains=3,parallel=TRUE,
+                  filename="test_long/readme", prior_version=2,n_chains=1,parallel=FALSE,
                   mcmc_pars=c(adaptive_iterations=20000, iterations=50000,proposal_ratio=2),verbose=TRUE,
-                  obs_dist=2,
+                  data_type=2,
                   start_level="mean")
 chains <- load_mcmc_chains(location="test_long",par_tab=par_tab,burnin = 20000,unfixed=FALSE)
+
+plot_model_fits(chain = chains$theta_chain,
+                infection_histories = chains$inf_chain,
+                known_infection_history = true_inf_hist[,match(2010:max(possible_exposure_times),possible_exposure_times)],
+                individuals=indiv_plots[i]:indiv_plots_bot[i],
+                antibody_data=antibody_data1,
+                orientation="longitudinal",
+                subset_biomarker_ids = NULL,
+                expand_to_all_times=FALSE,p_ncol=1,
+                settings=res$settings) 
 
 indiv_plots <- seq(1,max(antibody_data$individual)-5,by=4)
 indiv_plots_bot <- indiv_plots[2:length(indiv_plots)]

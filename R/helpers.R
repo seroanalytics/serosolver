@@ -676,7 +676,8 @@ create_start_level_data <- function(antibody_data, start_level_summary = "min", 
   }else if(start_level_summary == "median"){
     starting_levels <- starting_levels %>% dplyr::summarize(starting_level = median(measurement,na.rm=TRUE)) 
   } else if(start_level_summary == "full_random"){
-    starting_levels <- starting_levels %>% dplyr::select(individual, biomarker_group, biomarker_id) %>% dplyr::distinct() %>% dplyr::left_join(data_controls,by="biomarker_group") %>% dplyr::ungroup() %>% dplyr::mutate(starting_level = runif(n(), min_measurement,max_measurement))
+    starting_levels <- starting_levels %>% dplyr::select(individual, biomarker_group, biomarker_id) %>% dplyr::distinct() %>% 
+      dplyr::left_join(data_controls,by="biomarker_group") %>% dplyr::ungroup() %>% dplyr::mutate(starting_level = runif(n(), min_measurement,max_measurement))
   } else {
     starting_levels <- starting_levels %>% dplyr::select(individual, biomarker_group, biomarker_id) %>% dplyr::distinct() %>% dplyr::mutate(starting_level = 0)
   }
@@ -685,7 +686,6 @@ create_start_level_data <- function(antibody_data, start_level_summary = "min", 
   if(randomize){
     starting_levels <- starting_levels %>% dplyr::left_join(data_controls,by="biomarker_group") %>% ungroup() %>% dplyr::mutate(starting_level = if_else(type=="discrete",runif(n(),floor(starting_level), floor(starting_level) + 1),starting_level))
   }
-  
   start_indices <- left_join(antibody_data, starting_levels, by=c("individual", "biomarker_id", "biomarker_group"))
   start_indices
 }

@@ -17,7 +17,7 @@ serosolver(
   filename = "test",
   posterior_func = create_posterior_func,
   prior_func = NULL,
-  prior_version = 1,
+  prior_version = 2,
   measurement_indices = NULL,
   measurement_random_effects = FALSE,
   proposal_ratios = NULL,
@@ -26,6 +26,8 @@ serosolver(
   n_alive = NULL,
   OPT_TUNING = 0.1,
   random_start_parameters = TRUE,
+  start_level = "none",
+  data_type = 1,
   verbose = TRUE,
   verbose_dev = FALSE,
   ...

@@ -90,18 +90,27 @@ plot_posteriors_infhist <- function(inf_chain,
 #' @param ymax Numeric. the maximum y value to put on the axis. Default = 1.
 #' @param resolution Integer. How many buckets of time is each year split into? ie. 12 for monthly data, 4 for quarterly etc. Default = 1 for annual.
 #' @param cumulative if TRUE, plots the cumulative attack rate
+#' @param settings
 #' @return a ggplot2 object with the inferred attack rates for each potential epoch of circulation
 #' @export
-plot_attack_rates <- function(infection_histories, antibody_data, possible_exposure_times,
-                                      n_alive = NULL, ymax = 1, buckets = 1,
+plot_attack_rates <- function(infection_histories, antibody_data=NULL, possible_exposure_times=NULL,
+                                      n_alive = NULL, ymax = 1, resolution = 1,
                                       pad_chain = TRUE, true_ar = NULL, by_group = FALSE, group_subset = NULL,
-                                      cumulative = FALSE,add_box=FALSE) {
+                                      cumulative = FALSE,add_box=FALSE,settings=NULL) {
   if (is.null(infection_histories$chain_no)) {
     infection_histories$chain_no <- 1
   }
   if (is.null(infection_histories$population_group)) {
     infection_histories$population_group <- 1
   }
+  
+  ## If the list of serosolver settings was included, use these rather than passing each one by one
+  if(!is.null(settings)){
+    message("Using provided serosolver settings list")
+    if(is.null(possible_exposure_times)) possible_exposure_times <- settings$possible_exposure_times
+    if(is.null(antibody_data)) antibody_data <- settings$antibody_data
+  }
+  
   ## Some year/sample combinations might have no infections there.
   ## Need to make sure that these get considered
   if (pad_chain) infection_histories <- pad_inf_chain(infection_histories)
@@ -162,6 +171,7 @@ plot_attack_rates <- function(infection_histories, antibody_data, possible_expos
     geom_ribbon(aes(x = time, ymin = lower2, ymax = upper2), fill = "red", alpha = 0.4) +
     geom_line(aes(x = time, y = median), col = "red")
   if (!is.null(true_ar)) {
+    if(is.null(true_ar$population_group)) true_ar$population_group <- 1
     p <- p +
       geom_line(
         data = true_ar[true_ar$population_group %in% group_subset, ], aes(x = time, y = AR),
@@ -199,9 +209,10 @@ plot_attack_rates <- function(infection_histories, antibody_data, possible_expos
 #' @param plot_residuals if TRUE, plots the residuals between inferred and true attack rate
 #' @param colour_by_taken if TRUE, then colours the attack rates by whether or not titres against the circulating antigen at that time were measured
 #' @param by_val frequency of x-axis labels
+#' @param settings
 #' @return a ggplot2 object with the inferred attack rates for each potential epoch of circulation
 #' @export
-plot_attack_rates_pointrange <- function(infection_histories, antibody_data, possible_exposure_times, 
+plot_attack_rates_pointrange <- function(infection_histories, antibody_data=NULL, possible_exposure_times=NULL, 
                               n_alive = NULL,
                               pointsize = 1, fatten = 1,
                               pad_chain = TRUE, prior_pars = NULL,
@@ -209,11 +220,23 @@ plot_attack_rates_pointrange <- function(infection_histories, antibody_data, pos
                               true_ar = NULL, by_group = FALSE,
                               group_subset = NULL, plot_residuals = FALSE,
                               colour_by_taken = TRUE, by_val = 5,
-                              min_time=min(possible_exposure_times),max_time=max(possible_exposure_times)) {
+                              min_time=min(possible_exposure_times),max_time=max(possible_exposure_times),
+                              settings=NULL) {
   ## Some year/sample combinations might have no infections there.
   ## Need to make sure that these get considered
   if (is.null(infection_histories$chain_no)) {
     infection_histories$chain_no <- 1
+  }
+  
+  ## If the list of serosolver settings was included, use these rather than passing each one by one
+  if(!is.null(settings)){
+    message("Using provided serosolver settings list")
+    if(is.null(possible_exposure_times)){
+      possible_exposure_times <- settings$possible_exposure_times
+      min_time<-min(possible_exposure_times)
+      max_time<-max(possible_exposure_times) 
+    }
+    if(is.null(antibody_data)) antibody_data <- settings$antibody_data
   }
   
   if (pad_chain) infection_histories <- pad_inf_chain(infection_histories)
@@ -358,7 +381,7 @@ plot_attack_rates_pointrange <- function(infection_histories, antibody_data, pos
   if (!is.null(true_ar) & !plot_residuals) {
     p <- p +
       geom_point(
-        data = true_ar[true_ar$population_group %in% group_subset, ], aes(x = j, y = AR,shape="True attack rate"),stroke=1.25,
+        data = true_ar[true_ar$population_group %in% group_subset, ], aes(x = time, y = AR,shape="True attack rate"),stroke=1.25,
         col = "black", size = 2.5
       ) +
       scale_shape_manual(name="",values=c("True attack rate"=1))

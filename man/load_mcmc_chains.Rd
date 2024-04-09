@@ -7,7 +7,7 @@
 load_mcmc_chains(
   location = getwd(),
   par_tab = NULL,
-  unfixed = TRUE,
+  estimated_only = FALSE,
   thin = 1,
   burnin = 0,
   convert_mcmc = FALSE
@@ -18,7 +18,7 @@ load_mcmc_chains(
 
 \item{par_tab}{if not NULL, can use this to only extract free model parameters}
 
-\item{unfixed}{if TRUE, only returns free model parameters (par_tab$fixed == 0) if par_tab specified}
+\item{estimated_only}{if TRUE, only returns free model parameters (par_tab$fixed == 0) if par_tab specified}
 
 \item{thin}{thin the chains by every thin'th sample}
 
@@ -33,7 +33,7 @@ a list of the concatenated and individual chains (4 elements, either data frames
 Reads in all MCMC chains for theta and infection histories from the specified directory, adding in the total number of infections
 }
 \examples{
-\dontrun{load_mcmc_chains(par_tab=par_tab, unfixed=TRUE,thin=10,burnin=5000,convert_mcmc=TRUE)}
+\dontrun{load_mcmc_chains(par_tab=par_tab, estimated_only=TRUE,thin=10,burnin=5000,convert_mcmc=TRUE)}
 }
 \seealso{
 Other load_data_functions: 

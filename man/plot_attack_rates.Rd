@@ -6,17 +6,18 @@
 \usage{
 plot_attack_rates(
   infection_histories,
-  antibody_data,
-  possible_exposure_times,
+  antibody_data = NULL,
+  possible_exposure_times = NULL,
   n_alive = NULL,
   ymax = 1,
-  buckets = 1,
+  resolution = 1,
   pad_chain = TRUE,
   true_ar = NULL,
   by_group = FALSE,
   group_subset = NULL,
   cumulative = FALSE,
-  add_box = FALSE
+  add_box = FALSE,
+  settings = NULL
 )
 }
 \arguments{
@@ -30,6 +31,8 @@ plot_attack_rates(
 
 \item{ymax}{Numeric. the maximum y value to put on the axis. Default = 1.}
 
+\item{resolution}{Integer. How many buckets of time is each year split into? ie. 12 for monthly data, 4 for quarterly etc. Default = 1 for annual.}
+
 \item{pad_chain}{if TRUE, fills the infection history data table with entries for non-infection events (ie. 0s). Can be switched to FALSE for speed to get a rough idea of what the attack rates look like.}
 
 \item{true_ar}{data frame of true attack rates, with first column `time` matching `possible_exposure_times`, and second column `AR` giving the attack rate. Column names: population_group, time, AR}
@@ -39,8 +42,6 @@ plot_attack_rates(
 \item{group_subset}{if not NULL, plots only this subset of groups eg. 1:5}
 
 \item{cumulative}{if TRUE, plots the cumulative attack rate}
-
-\item{resolution}{Integer. How many buckets of time is each year split into? ie. 12 for monthly data, 4 for quarterly etc. Default = 1 for annual.}
 }
 \value{
 a ggplot2 object with the inferred attack rates for each potential epoch of circulation

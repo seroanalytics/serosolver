@@ -177,7 +177,9 @@ create_posterior_func <- function(par_tab,
     ## If specifying starting levels based on a provided data frame or tibble, set them here. Otherwise, calculate them from the antibody data.
     if(class(start_level) %in% c("data.frame","tibble")){
       start_levels <- start_level 
-      start_levels <- antibody_data %>% left_join(start_levels %>% select(individual, biomarker_id, biomarker_group, starting_level, start_index) %>% distinct())
+      start_levels <- antibody_data %>% 
+        left_join(start_levels %>% select(individual, biomarker_id, biomarker_group, starting_level, start_index) %>%distinct(),
+                  by=c("individual","biomarker_group","biomarker_id"))
     } else {
       start_levels <- create_start_level_data(antibody_data,start_level,start_level_randomize) %>% 
         arrange(individual, biomarker_group, sample_time, biomarker_id, repeat_number)

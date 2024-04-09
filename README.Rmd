@@ -99,19 +99,18 @@ plot_antibody_data(example_antibody_data,example_antigenic_map$inf_times,n_indiv
 ## Run the MCMC
 # This example uses prior version 2 (i.e. beta prior on phi with parameters shape1 and shape2)
 output <- serosolver::serosolver(example_par_tab, example_antibody_data, example_antigenic_map,
-                filename="readme", prior_version=2,n_chains=3,parallel=TRUE,
-                mcmc_pars=c(adaptive_iterations=100000, iterations=500000),verbose=FALSE)
+                filename="readme", n_chains=3,parallel=TRUE,
+                mcmc_pars=c(adaptive_iterations=10000, iterations=50000),verbose=TRUE)
 ```
 ```{r example_model_fits, message=FALSE,warning=FALSE, fig.width=6,fig.height=5}
 # Plot model predicted titres for a subset of individuals
-chains <- load_mcmc_chains(location=getwd(),par_tab=example_par_tab,burnin = 100000,unfixed=TRUE)
+chains <- load_mcmc_chains(location=getwd(),par_tab=example_par_tab,burnin = 10000)
 plot_model_fits(chain = chains$theta_chain,
                 infection_histories = chains$inf_chain,
                 known_infection_history = example_inf_hist,
-                antibody_data = example_antibody_data,individuals=1:4,
-                antigenic_map=example_antigenic_map,
-                par_tab=example_par_tab,
-                orientation="cross-sectional")
+                individuals=1:4,
+                orientation="cross-sectional",
+                settings=output$settings)
 
 ```
 

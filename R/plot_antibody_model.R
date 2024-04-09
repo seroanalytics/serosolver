@@ -113,6 +113,7 @@ plot_antibody_model <- function(pars,
 #' @param p_ncol integer giving the number of columns of subplots to create if using orientation = "longitudinal"
 #' @param orientation either "cross-sectional" or "longitudinal"
 #' @param subset_biomarker_ids if not NULL, then a vector giving the entries of biomarker_id to include in the longitudinal plot
+#' @param settings
 #' @return a ggplot2 object
 #' @family infection_history_plots
 #' @examples
@@ -127,8 +128,10 @@ plot_antibody_model <- function(pars,
 #'                                            1:10, example_antigenic_map, example_par_tab,orientation="longitudinal")
 #' }
 #' @export
-plot_model_fits <- function(chain, infection_histories, antibody_data,
-                                          individuals, par_tab,
+plot_model_fits <- function(chain, infection_histories, 
+                            antibody_data=NULL,       
+                            individuals, 
+                            par_tab=NULL,
                             antigenic_map=NULL, 
                                           possible_exposure_times=NULL,
                                           nsamp = 1000,
@@ -139,7 +142,22 @@ plot_model_fits <- function(chain, infection_histories, antibody_data,
                             expand_to_all_times=FALSE,
                             orientation="cross-sectional",
                             subset_biomarker_ids=NULL,
-  start_level="none") {
+  start_level="none",
+  settings=NULL
+) {
+  
+  ## If the list of serosolver settings was included, use these rather than passing each one by one
+  if(!is.null(settings)){
+    message("Using provided serosolver settings list")
+    if(is.null(antigenic_map)) antigenic_map <- settings$antigenic_map
+    if(is.null(possible_exposure_times)) possible_exposure_times <- settings$possible_exposure_times
+    if(is.null(measurement_indices_by_time)) measurement_indices_by_time <- settings$measurement_indices_by_time
+    if(is.null(antibody_data)) antibody_data <- settings$antibody_data
+    if(is.null(par_tab)) par_tab <- settings$par_tab
+    if(is.null(start_level) | start_level == "none") start_level <- settings$start_level
+  }
+  
+  
   individuals <- individuals[order(individuals)]
   
   ## Setup antigenic map and exposure times
@@ -151,8 +169,9 @@ plot_model_fits <- function(chain, infection_histories, antibody_data,
     }
   } 
   
-  start_levels <- create_start_level_data(antibody_data %>% filter(individual %in% individuals),start_level,FALSE) %>% 
-    arrange(individual, biomarker_group, sample_time, biomarker_id, repeat_number)
+  start_levels <- create_start_level_data(antibody_data %>% 
+                                            dplyr::filter(individual %in% individuals),start_level,FALSE) %>% 
+                                            dplyr::arrange(individual, biomarker_group, sample_time, biomarker_id, repeat_number)
   
   ## Generate antibody predictions
   antibody_preds <- get_antibody_level_predictions(
@@ -178,8 +197,13 @@ plot_model_fits <- function(chain, infection_histories, antibody_data,
     left_join(model_preds[model_preds$individual %in% individuals,c("individual","sample_time")] %>% dplyr::distinct(),by="individual",relationship="many-to-many") %>% 
     dplyr::filter(variable <= sample_time)
   
-  max_measurement <- max(antibody_data$measurement,na.rm=TRUE)
-  min_measurement <- min(antibody_data$measurement,na.rm=TRUE)
+  if(is.null(par_tab)){
+    max_measurement <- max(antibody_data$measurement,na.rm=TRUE)
+    min_measurement <- min(antibody_data$measurement,na.rm=TRUE)
+  } else{
+    max_measurement <- par_tab[par_tab$names == "max_measurement","values"]
+    min_measurement <- par_tab[par_tab$names == "min_measurement","values"]
+  }
   
   max_x <- max(inf_hist_densities$variable) + 5
   time_range <- range(inf_hist_densities$variable)

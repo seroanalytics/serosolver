@@ -18,7 +18,7 @@ simulate_individual_faster(
   measured_biomarker_ids,
   measurement_bias = NULL,
   measurement_indices = NULL,
-  obs_dist = NULL,
+  data_type = NULL,
   repeats = 1,
   DOB = NULL
 )
@@ -44,7 +44,7 @@ simulate_individual_faster(
 
 \item{measurement_indices}{default NULL, optional vector giving the index of `measurement_bias` that each antigen/biomarker ID uses the measurement shift from from. eg. if there's 6 circulation years and 3 strain clusters, then this might be c(1,1,2,2,3,3)}
 
-\item{obs_dist}{if not NULL, then a vector of data types to use for each biomarker_group}
+\item{data_type}{if not NULL, then a vector of data types to use for each biomarker_group}
 
 \item{repeats}{number of repeat observations for each year}
 }

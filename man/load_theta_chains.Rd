@@ -7,7 +7,7 @@
 load_theta_chains(
   location = getwd(),
   par_tab = NULL,
-  unfixed = TRUE,
+  estimated_only = TRUE,
   thin = 1,
   burnin = 0,
   convert_mcmc = TRUE
@@ -18,7 +18,7 @@ load_theta_chains(
 
 \item{par_tab}{if not NULL, can use this to only extract free model parameters}
 
-\item{unfixed}{if TRUE, only returns free model parameters (par_tab$fixed == 0) if par_tab specified}
+\item{estimated_only}{if TRUE, only returns free model parameters (par_tab$fixed == 0) if par_tab specified}
 
 \item{thin}{thin the chains by every thin'th sample}
 
@@ -33,7 +33,7 @@ a list with a) a list of each chain separately; b) a combined data frame, indexi
 Searches the given working directory for MCMC outputs from \code{\link{serosolver}}, loads these in, subsets for burn in and thinning, and formats as both lists and a combined data frame.
 }
 \examples{
-\dontrun{load_theta_chains(par_tab=par_tab, unfixed=TRUE,thin=10,burnin=5000,convert_mcmc=TRUE)}
+\dontrun{load_theta_chains(par_tab=par_tab, estimated_only=TRUE,thin=10,burnin=5000,convert_mcmc=TRUE)}
 }
 \seealso{
 Other load_data_functions: 

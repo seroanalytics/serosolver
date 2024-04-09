@@ -7,9 +7,9 @@
 plot_model_fits(
   chain,
   infection_histories,
-  antibody_data,
+  antibody_data = NULL,
   individuals,
-  par_tab,
+  par_tab = NULL,
   antigenic_map = NULL,
   possible_exposure_times = NULL,
   nsamp = 1000,
@@ -20,7 +20,8 @@ plot_model_fits(
   expand_to_all_times = FALSE,
   orientation = "cross-sectional",
   subset_biomarker_ids = NULL,
-  start_level = "none"
+  start_level = "none",
+  settings = NULL
 )
 }
 \arguments{

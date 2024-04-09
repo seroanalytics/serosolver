@@ -5,7 +5,8 @@
 #' @param possible_exposure_times the vector of times at which individuals could be infected
 #' @param n_indivs integer of how many individuals to plot, or vector of which individuals to plot
 #' @param infection_histories the infection history matrix
-#' @param study_design default "cross-sectional" facets by sample time. "longitudinal" gives sample time on the x-axis and colours by biomarker_id
+#' @param study_design default "cross-sectional" facets by sample time. "longitudinal" gives sample time on the x-axis and colours by `biomarker_id`
+#' @param measurement_ranges data frame or tibble stating for each `biomarker_group` the `min_measurement` and `max_measurement`. If NULL, this is extracted from `antibody_data`
 #' @return a ggplot object
 #' @family infection_history_plots
 #' @examples
@@ -21,7 +22,8 @@ plot_antibody_data <- function(antibody_data,
                                possible_exposure_times, 
                                n_indivs,     
                                infection_histories=NULL,                   
-                      study_design="cross-sectional"){
+                      study_design="cross-sectional",
+                      measurement_ranges=NULL){
     indivs <- unique(antibody_data$individual)
     
     if(length(n_indivs) == 1){
@@ -30,8 +32,11 @@ plot_antibody_data <- function(antibody_data,
       samps <- n_indivs
     }
 
-    max_measurement <- max(antibody_data$measurement)
-    min_measurement <- min(antibody_data$measurement)
+    ## Note that this might not be the actual range
+    if(is.null(measurement_ranges)){
+      measurement_ranges <- antibody_data %>% group_by(biomarker_group) %>% dplyr::summarize(min_measurement=min(measurement,na.rm=TRUE),
+                                                                                            max_measurement=max(measurement,na.rm=TRUE))
+    }
     
     max_x <- max(possible_exposure_times)
     time_range <- range(possible_exposure_times)
@@ -42,8 +47,8 @@ plot_antibody_data <- function(antibody_data,
         antibody_data$biomarker_group <- 1
     }
     p1 <- ggplot(antibody_data[antibody_data$individual %in% samps, ]) +
-      geom_rect(ymin=max_measurement,ymax=max_measurement+2,xmin=0,xmax=max_x,fill="grey70") +
-      geom_rect(ymin=min_measurement-2,ymax=min_measurement,xmin=0,xmax=max_x,fill="grey70") 
+      geom_rect(data=measurement_ranges,aes(ymin=max_measurement,ymax=max_measurement+2),xmin=0,xmax=max_x,fill="grey70") +
+      geom_rect(data=measurement_ranges,aes(ymin=min_measurement-2,ymax=min_measurement),xmin=0,xmax=max_x,fill="grey70") 
       
     if (study_design == "cross-sectional") {
         p1 <- p1 + 
@@ -87,8 +92,8 @@ plot_antibody_data <- function(antibody_data,
             axis.text.x=element_text(angle=45,hjust=1,size=8),
             axis.text.y=element_text(size=8),
             plot.margin=margin(r=15,t=5,l=5))+
-      coord_cartesian(ylim=c(min_measurement,max_measurement+1),xlim=time_range) +
-      scale_y_continuous(breaks=seq(min_measurement,max_measurement+2,by=2)) +
+      coord_cartesian(xlim=time_range) +
+      scale_y_continuous(expand=c(0,0)) + 
       scale_color_viridis_d(name="Biomarker ID") + 
       scale_linetype_manual(name="",values=c("Known infection time"="dashed"))
     return(p1)
@@ -197,7 +202,7 @@ plot_posteriors_theta <- function(chain,par_tab){
 
 #' @export
 plot_mcmc_diagnostics <- function(location, par_tab, burnin){
-  chains <- load_mcmc_chains(location=location,par_tab=par_tab,burnin=burnin,unfixed=TRUE)
+  chains <- load_mcmc_chains(location=location,par_tab=par_tab,burnin=burnin,estimated_only=TRUE)
   
   par_medians <- sapply(chains$theta_chain[,!(colnames(chains$theta_chain) %in% c("samp_no","chain_no","posterior_prob","likelihood","prior_prob"))], function(x) median(x))
   par_means <- sapply(chains$theta_chain[,!(colnames(chains$theta_chain) %in% c("samp_no","chain_no","posterior_prob","likelihood","prior_prob"))], function(x) mean(x))
