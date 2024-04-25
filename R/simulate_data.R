@@ -55,7 +55,6 @@ simulate_data <- function(par_tab,
                           mu_indices = NULL,
                           measurement_indices = NULL,
                           add_noise = TRUE) {
-
     if (!is.null(antigenic_map)) {
       strain_isolation_times <- unique(antigenic_map$inf_times) # How many strains are we testing against and what time did they circulate
     } else {
@@ -174,7 +173,6 @@ simulate_group <- function(n_indiv,
                            measurement_indices = NULL,
                            add_noise = TRUE,
                            DOBs=NULL) {
-
   ## Create antigenic map for short and long term boosting
   antigenic_map_melted <- melt_antigenic_coords(antigenic_map[, c("x_coord", "y_coord")])
   antigenic_map_long <- create_cross_reactivity_vector(antigenic_map_melted, theta["sigma1"])
@@ -192,9 +190,9 @@ simulate_group <- function(n_indiv,
           sample_times_tmp <- DOB
       }
     if (length(sample_times_tmp) == 1) {
-      samps <- rep(sample_times_tmp, nsamps)
+      samps <- rep(sample_times_tmp, min(nsamps,length(sample_times_tmp)))
     } else {
-      samps <- sample(sample_times_tmp, nsamps)
+      samps <- sample(sample_times_tmp,min(nsamps,length(sample_times_tmp)))
       samps <- samps[order(samps)]
     }
 
