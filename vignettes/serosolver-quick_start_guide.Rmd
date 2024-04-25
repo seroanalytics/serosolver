@@ -39,29 +39,11 @@ knitr::include_graphics("figures/guide_fig1.png")
 
 The following code runs the entire pipeline for a simulation-recovery experiment with `serosolver`. We will step through each of these sections in more detail in this guide.
 
-```{r entire_simulation,echo=FALSE}
+```{r entire_simulation,echo=FALSE,eval=FALSE}
+library(serosolver)
+library(tidyverse)
+library(doParallel)
 
-
-```
-
-```{r}
-
-output <- serosolver::serosolver(example_par_tab, example_antibody_data, 
-                                 example_antigenic_map,
-                filename="readme", prior_version=2,n_chains=3,parallel=TRUE,
-                mcmc_pars=c(adaptive_iterations=100000, iterations=500000),verbose=TRUE)
-
-chains <- load_mcmc_chains(location=getwd(),par_tab=example_par_tab,burnin = 100000,unfixed=TRUE)
-plot_model_fits(chain = chains$theta_chain,
-                infection_histories = chains$inf_chain,
-                known_infection_history = example_inf_hist,
-                antibody_data = example_antibody_data,individuals=1:4,
-                antigenic_map=example_antigenic_map,
-                par_tab=example_par_tab,
-                orientation="cross-sectional")
-```
-
-```{r}
 ## Get all possible infection times
 possible_exposure_times <- seq(2000,2024,by=1)
 
@@ -77,9 +59,9 @@ n_samps <- 5
 ## Simulate some random attack rates
 attack_rates <- runif(length(possible_exposure_times), 0.05, 0.15)
 
+## Use example antigenic map (can also be left as NULL)
 antigenic_map <- example_antigenic_map[1:25,]
 antigenic_map$inf_times <- possible_exposure_times
-
 
 ## Simulate a full serosurvey with these parameters
 all_simulated_data <- simulate_data(par_tab=example_par_tab, group=1, n_indiv=50,
@@ -89,13 +71,29 @@ all_simulated_data <- simulate_data(par_tab=example_par_tab, group=1, n_indiv=50
                                     antigenic_map=antigenic_map,
                                     age_min=10,age_max=75,
                                     attack_rates=attack_rates, repeats=2,
-                                    obs_dist=c(1))
+                                    data_type=c(1))
 
 ## Pull out the simulated titre data and infection histories
 antibody_data <- all_simulated_data$antibody_data
 true_inf_hist <- all_simulated_data$infection_histories
 plot_antibody_data(antibody_data,possible_exposure_times,1:4,infection_histories = true_inf_hist)
 
+output <- serosolver::serosolver(example_par_tab, antibody_data, 
+                                 antigenic_map,
+                filename="readme", n_chains=3,parallel=TRUE,
+                mcmc_pars=c(adaptive_iterations=100000, iterations=500000),verbose=TRUE)
+
+chains <- load_mcmc_chains(location=getwd(),par_tab=example_par_tab,burnin = 100000,unfixed=TRUE)
+plot_model_fits(chain = chains$theta_chain,
+                infection_histories = chains$inf_chain,
+                known_infection_history = true_inf_hist,
+                antibody_data = antibody_data,individuals=1:4,
+                antigenic_map=antigenic_map,
+                par_tab=example_par_tab,
+                orientation="cross-sectional")
+```
+
+```         
 ```
 
 ## Installation and dependencies
@@ -108,7 +106,7 @@ devtools::install_github("seroanalytics/serosolver")
 
 Note, that `serosolver` uses `Rcpp` code, including `RcppArmadillo`. You will therefore need a working C++ compiler such as `clang` or `gcc`. The easiest way to set this up is up for Windows users is the [`Rtools`](https://cran.r-project.org/bin/windows/Rtools/rtools43/rtools.html) package. For Mac users, you will need to install a compiler such as [`Xcode`](https://mac.r-project.org/tools/) or [`clang`](https://cran.r-project.org/bin/macosx/tools/).
 
-There are a number of additional package requirements, all of which can be installed from cran:
+There are a number of additional package requirements, all of which can be installed from `cran`:
 
 ```{r, eval=TRUE,warning=FALSE,message=FALSE}
 library(serosolver)
@@ -156,17 +154,43 @@ plot_antibody_data(example_antibody_data %>% filter(biomarker_id %in% c(1968,200
 
 ### 1.2 Serological data
 
-Most applications of `serosolver` involve fitting to antibody titre or concentration data. Make a note of whether your data are continuous or discrete, and the upper and lower bounds of the assay. These will need to be specified in the model later using the `par-tab` object `serosolver` also supports multiple measurement types per sample, for example, measuring both antibody titre and avidity. These observation types are distinguished by the `biomarker_group` variable --- all observations within a `biomarker_group` are underpinned by their own antibody kinetics model parameters, but arising from the same individual-level infection histories. These will be specified using the `data_type` argument later.
+Most applications of `serosolver` involve fitting to antibody titre or concentration data. Make a note of whether your data are continuous or discrete, and the upper and lower bounds of the assay. These will need to be specified in the model later using the `par_tab` object. `serosolver` also supports multiple measurement types per sample, for example, measuring both antibody titre and avidity. These observation types are distinguished by the `biomarker_group` variable --- all observations within a `biomarker_group` are underpinned by their own antibody kinetics model parameters, but arising from the same individual-level infection histories. These will be specified using the `data_type` argument later.
 
-### 1.3 Biomarker map
+```{r,eval=FALSE}
+## Example of two biomarker_groups, one has discrete data one has continuous data
+## Set bounds of the assay
+par_tab[par_tab$names=="min_measurement" & par_tab$biomarker_group == 1,values] <- lower_bound1
+par_tab[par_tab$names=="max_measurement" & par_tab$biomarker_group == 1,values] <- upper_bound1
+
+par_tab[par_tab$names=="min_measurement" & par_tab$biomarker_group == 2,values] <- lower_bound2
+par_tab[par_tab$names=="max_measurement" & par_tab$biomarker_group == 2,values] <- upper_bound2
+
+## Set observation type, discrete = 1, continuous = 2
+data_type <- c(1,2) ## used in `serosolver::serosolver`, `serosolver::simulate_data` etc
+```
+
+### 1.3 Antigenic map
 
 `serosolver` was designed to treat `biomarker_id` as interchangeable with the time variables, such that one antigen ID is assumed to circulate in one time period. For example, `biomarker_id=1968` refers to the antigen assumed to be circulating in 1968. Note that at present, `serosolver` supports only one antigen/biomarker per time period. However, a single `biomarker_id` can be assumed to circulate and dominate for multiple time periods, which can be specified using the `antigenic_map` argument.
 
 The `antigenic_map` object tells `serosolver` how different `biomarker_id`s are related to each other (using coordinates on an antigenic map), as well as the time periods during which the `biomarker_id` is assumed to be circulating. Setting all antigenic coordinates to the same values tells `serosolver` that there are no antigenic differences between `biomarker_id`s. The same thing can be achieved by setting `antigenic_map=NULL` and instead specifying the `possible_exposure_times` vector.
 
 ```{r, eval=FALSE}
+## Example antigenic map
 data(example_antigenic_map)
 knitr::kable(head(example_antigenic_map))
+
+## Antigenic map with no antigenic variation
+data.frame(x_coord=1,y_coord=1,inf_times=1:10)
+
+## Antigenic map with clusters
+data.frame(x_coord = rep(seq(1,3,by=1),each=3), y_coord=rep(seq(1,3,by=1),each=3),inf_times=1:9)
+
+## Antigenic map with just one biomarker ID
+data.frame(x_coord=1,y_coord=1,inf_times=1)
+
+## Antigenic map with two biomarker groups
+data.frame(x_coord=1,y_coord=1,inf_times=rep(1:10,2),biomarker_group=rep(c(1,2),each=10))
 ```
 
 ### 1.4 Covariate data
@@ -193,7 +217,7 @@ All time variables in a `serosolver` model must be at the same time resolution, 
 
 -   Similarly, for quarterly or monthly samples, the sample time follows the same pattern. For example for a sample collected in July of 2009, the quarterly sample time would be $(2009.75 \times 4) + 1 = 8040$ (because July is in the third quarter of the year) and the monthly sample time would be $(2009.5833 \times 12) + 1 = 24116$ (because July is the seventh month and $7/12=0.5833$).
 
-A very useful feature of `serosolver` is to use *mixed* time resolutions. For example, we might estimate infection histories at an annual resolution up to 2009, and then at a per-quarter resolution thereafter. Another example might be to estimate per-cluster infections for historic periods of time to establish long-term infection histories, and then per-quarter or per-year infection histories during the study period to model shorter-term dynamics. This can be useful for reducing parameter space when we have limited information to draw inferences about particular time periods, but rich information for others. See \<\< PLACEHOLDER \>\> for more details.
+A useful feature of `serosolver` is to use *mixed* time resolutions. For example, we might estimate infection histories at an annual resolution up to 2009, and then at a per-quarter resolution thereafter. Another example might be to estimate per-cluster infections for historic periods of time to establish long-term infection histories, and then per-quarter or per-year infection histories during the study period to model shorter-term dynamics. This can be useful for reducing parameter space when we have limited information to draw inferences about particular time periods, but rich information for others. See \<\< PLACEHOLDER \>\> for more details.
 
 #### 2.1.2 Model time period
 
