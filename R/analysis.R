@@ -394,7 +394,7 @@ get_antibody_level_predictions <- function(chain, infection_histories, antibody_
     )
     antibody_data2 <- unique(antibody_data[, c("individual", "biomarker_id", "population_group", "birth")])
     antibody_data1 <- merge(antibody_data1, antibody_data2)
-    antibody_data1 <- antibody_data %>% arrange(individual, biomarker_group, sample_time, biomarker_id, repeat_number)
+    antibody_data1 <- antibody_data1 %>% arrange(individual, biomarker_group, sample_time, biomarker_id, repeat_number)
   }
   model_func <- create_posterior_func(par_tab, antibody_data1, antigenic_map, possible_exposure_times,
                                      prior_version=2,
