@@ -256,9 +256,9 @@ simulate_group <- function(n_indiv,
           sample_times_tmp <- DOB
       }
     if (length(sample_times_tmp) == 1) {
-      samps <- rep(sample_times_tmp, nsamps)
+      samps <- rep(sample_times_tmp, min(length(sample_times_tmp),nsamps))
     } else {
-      samps <- sample(sample_times_tmp, nsamps)
+      samps <- sample(sample_times_tmp, min(length(sample_times_tmp),nsamps))
       samps <- samps[order(samps)]
     }
 

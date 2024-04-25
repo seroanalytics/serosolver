@@ -225,7 +225,9 @@ plot_attack_rates_pointrange <- function(infection_histories, antibody_data, pos
   if (!by_group) {
     antibody_data$population_group <- 1
     infection_histories$population_group <- 1
-    true_ar$population_group <- 1
+    if(!is.null(true_ar)){
+      true_ar$population_group <- 1
+    }
   }
   
   
@@ -358,7 +360,7 @@ plot_attack_rates_pointrange <- function(infection_histories, antibody_data, pos
   if (!is.null(true_ar) & !plot_residuals) {
     p <- p +
       geom_point(
-        data = true_ar[true_ar$population_group %in% group_subset, ], aes(x = j, y = AR,shape="True attack rate"),stroke=1.25,
+        data = true_ar[true_ar$population_group %in% group_subset, ], aes(x = time, y = AR,shape="True attack rate"),stroke=1.25,
         col = "black", size = 2.5
       ) +
       scale_shape_manual(name="",values=c("True attack rate"=1))
