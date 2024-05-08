@@ -21,14 +21,13 @@ antigenic_map <- read.csv("~/Documents/GitHub/serosolver/inst/extdata/antigenic_
 par_tab <- read.csv("~/Documents/GitHub/serosolver/inst/extdata/par_tab_base.csv")
 
 possible_exposure_times <- seq(2000,2024,by=1)
-
-possible_exposure_times <- c(seq(2000,2020,by=4),seq(2021,2024,by=1))
+#possible_exposure_times <- c(seq(2000,2020,by=4),seq(2021,2024,by=1))
 
 ## Vector of antigens that have biomarker measurements (note only one representative antigen per time)
 sampled_antigens <- max(possible_exposure_times)
 
 ## Times at which serum samples can be taken
-sampling_times <- 2020:2024
+sampling_times <- possible_exposure_times# 2020:2024
 
 ## Number of serum samples taken
 n_samps <- 5
@@ -69,25 +68,25 @@ par_tab[par_tab$names == "cr_long","fixed"] <- 1
 par_tab[par_tab$names == "cr_long","values"] <- 1
 par_tab[par_tab$names == "cr_short","fixed"] <- 1
 par_tab[par_tab$names == "cr_short","values"] <- 1
-par_tab[par_tab$names == "boost_long","values"] <- 0
-par_tab[par_tab$names == "boost_long","fixed"] <- 1
+#par_tab[par_tab$names == "boost_long","values"] <- 2
+#par_tab[par_tab$names == "boost_long","fixed"] <- 0
 antibody_data1 <- antibody_data %>% group_by(individual) %>% mutate(birth=min(sample_time)) %>% as.data.frame()
 res <- serosolver(par_tab, antibody_data1, NULL,
-                  possible_exposure_times=possible_exposure_times,#2010:max(possible_exposure_times),
+                  possible_exposure_times=2010:max(possible_exposure_times),
                   filename="test_long/readme", prior_version=2,n_chains=1,parallel=FALSE,
                   mcmc_pars=c(adaptive_iterations=20000, iterations=50000,proposal_ratio=2),verbose=TRUE,verbose_dev = TRUE,
                   data_type=2,
                   start_level="mean")
-chains <- load_mcmc_chains(location="test_long",par_tab=par_tab,burnin = 20000,unfixed=FALSE)
+chains <- load_mcmc_chains(location="test_long",par_tab=par_tab,burnin = 20000,estimated_only = FALSE)
 
 plot_model_fits(chain = chains$theta_chain,
                 infection_histories = chains$inf_chain,
-                known_infection_history = true_inf_hist[,match(2010:max(possible_exposure_times),possible_exposure_times)],
-                individuals=indiv_plots[i]:indiv_plots_bot[i],
+                known_infection_history = true_inf_hist,
+                individuals=1:25,
                 antibody_data=antibody_data1,
                 orientation="longitudinal",
                 subset_biomarker_ids = NULL,
-                expand_to_all_times=FALSE,p_ncol=1,
+                expand_to_all_times=FALSE,p_ncol=5,
                 settings=res$settings) 
 
 indiv_plots <- seq(1,max(antibody_data$individual)-5,by=4)

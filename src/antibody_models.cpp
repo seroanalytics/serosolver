@@ -94,10 +94,6 @@ NumericVector antibody_model(const NumericVector &theta,
   int wane_long_index = unique_theta_indices("wane_long");
   int antigenic_seniority_index = unique_theta_indices("antigenic_seniority");
   int error_index = unique_theta_indices("obs_sd");
-  
-  //NumericVector antigenic_map_long_tmp(antigenic_map_long.nrow());
-  //NumericVector antigenic_map_short_tmp(antigenic_map_short.nrow());
-  
   int min_index = unique_theta_indices("min_measurement");
   
   // Titre-dependent boosting function
@@ -143,7 +139,8 @@ NumericVector antibody_model(const NumericVector &theta,
     infection_times_indices_tmp = possible_exposure_times_indices[use_indices];	 
    
     // Only solve is this individual has had infections or if there is long-term waning
-     if (wane_long_parameters(biomarker_group) > 0 || infection_times.size() > 0) {
+    // if (wane_long_parameters(biomarker_group) > 0 || infection_times.size() > 0) {
+    if(true){
 
       // Start end end location of the type_data matrix
       type_start = type_data_start(i-1);

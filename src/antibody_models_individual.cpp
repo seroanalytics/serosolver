@@ -61,6 +61,8 @@ void antibody_data_model_individual_new(NumericVector &predicted_antibody_levels
      // Assume that first entry for birth does not change
      time = sampling_time - births[start_index_in_data];
      wane_long_amount= wane_long*wane_short*boost_short*time;//MAX(0, 1.0 - (wane_long*time)); 
+     wane_long_amount = MAX(0, wane_long_amount);
+     //Rcpp::Rcout << "wane_long_amount: " << wane_long_amount << std::endl;
      // For each measured marker, find the biomarker id index which will match an entry in start_antibody_levels
      // Add this to the predicted antibody level, with waning
      for(int k = 0; k < n_measurements; ++k){
