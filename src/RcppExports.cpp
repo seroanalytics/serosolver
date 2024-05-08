@@ -12,15 +12,16 @@ Rcpp::Rostream<false>& Rcpp::Rcerr = Rcpp::Rcpp_cerr_get();
 #endif
 
 // antibody_model
-NumericVector antibody_model(const NumericVector& theta, const IntegerVector& unique_theta_indices, const IntegerVector& unique_biomarker_groups, const IntegerMatrix& infection_history_mat, const IntegerVector& infection_history_mat_indices, const NumericVector& possible_exposure_times, const IntegerVector& possible_exposure_times_indices, const NumericVector& sample_times, const IntegerVector& type_data_start, const IntegerVector& biomarker_groups, const IntegerVector& sample_data_start, const IntegerVector& antibody_data_start, const IntegerVector& nrows_per_sample, const IntegerVector& biomarker_id_indices, const IntegerVector& start_level_indices, const NumericVector& starting_antibody_levels, const NumericVector& births, const arma::mat& antigenic_map_long, const arma::mat& antigenic_map_short, const NumericVector& antigenic_distances, bool boost_before_infection);
-RcppExport SEXP _serosolver_antibody_model(SEXP thetaSEXP, SEXP unique_theta_indicesSEXP, SEXP unique_biomarker_groupsSEXP, SEXP infection_history_matSEXP, SEXP infection_history_mat_indicesSEXP, SEXP possible_exposure_timesSEXP, SEXP possible_exposure_times_indicesSEXP, SEXP sample_timesSEXP, SEXP type_data_startSEXP, SEXP biomarker_groupsSEXP, SEXP sample_data_startSEXP, SEXP antibody_data_startSEXP, SEXP nrows_per_sampleSEXP, SEXP biomarker_id_indicesSEXP, SEXP start_level_indicesSEXP, SEXP starting_antibody_levelsSEXP, SEXP birthsSEXP, SEXP antigenic_map_longSEXP, SEXP antigenic_map_shortSEXP, SEXP antigenic_distancesSEXP, SEXP boost_before_infectionSEXP) {
+NumericVector antibody_model(const NumericMatrix theta, const IntegerVector& unique_theta_indices, const IntegerVector& unique_biomarker_groups, const IntegerMatrix& infection_history_mat, const IntegerVector& infection_history_mat_indices, const IntegerVector& indiv_theta_groups, const NumericVector& possible_exposure_times, const IntegerVector& possible_exposure_times_indices, const NumericVector& sample_times, const IntegerVector& type_data_start, const IntegerVector& biomarker_groups, const IntegerVector& sample_data_start, const IntegerVector& antibody_data_start, const IntegerVector& nrows_per_sample, const IntegerVector& biomarker_id_indices, const IntegerVector& start_level_indices, const NumericVector& starting_antibody_levels, const NumericVector& births, const arma::cube& antigenic_map_long, const arma::cube& antigenic_map_short, const NumericVector& antigenic_distances, bool boost_before_infection);
+RcppExport SEXP _serosolver_antibody_model(SEXP thetaSEXP, SEXP unique_theta_indicesSEXP, SEXP unique_biomarker_groupsSEXP, SEXP infection_history_matSEXP, SEXP infection_history_mat_indicesSEXP, SEXP indiv_theta_groupsSEXP, SEXP possible_exposure_timesSEXP, SEXP possible_exposure_times_indicesSEXP, SEXP sample_timesSEXP, SEXP type_data_startSEXP, SEXP biomarker_groupsSEXP, SEXP sample_data_startSEXP, SEXP antibody_data_startSEXP, SEXP nrows_per_sampleSEXP, SEXP biomarker_id_indicesSEXP, SEXP start_level_indicesSEXP, SEXP starting_antibody_levelsSEXP, SEXP birthsSEXP, SEXP antigenic_map_longSEXP, SEXP antigenic_map_shortSEXP, SEXP antigenic_distancesSEXP, SEXP boost_before_infectionSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
-    Rcpp::traits::input_parameter< const NumericVector& >::type theta(thetaSEXP);
+    Rcpp::traits::input_parameter< const NumericMatrix >::type theta(thetaSEXP);
     Rcpp::traits::input_parameter< const IntegerVector& >::type unique_theta_indices(unique_theta_indicesSEXP);
     Rcpp::traits::input_parameter< const IntegerVector& >::type unique_biomarker_groups(unique_biomarker_groupsSEXP);
     Rcpp::traits::input_parameter< const IntegerMatrix& >::type infection_history_mat(infection_history_matSEXP);
     Rcpp::traits::input_parameter< const IntegerVector& >::type infection_history_mat_indices(infection_history_mat_indicesSEXP);
+    Rcpp::traits::input_parameter< const IntegerVector& >::type indiv_theta_groups(indiv_theta_groupsSEXP);
     Rcpp::traits::input_parameter< const NumericVector& >::type possible_exposure_times(possible_exposure_timesSEXP);
     Rcpp::traits::input_parameter< const IntegerVector& >::type possible_exposure_times_indices(possible_exposure_times_indicesSEXP);
     Rcpp::traits::input_parameter< const NumericVector& >::type sample_times(sample_timesSEXP);
@@ -33,11 +34,11 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< const IntegerVector& >::type start_level_indices(start_level_indicesSEXP);
     Rcpp::traits::input_parameter< const NumericVector& >::type starting_antibody_levels(starting_antibody_levelsSEXP);
     Rcpp::traits::input_parameter< const NumericVector& >::type births(birthsSEXP);
-    Rcpp::traits::input_parameter< const arma::mat& >::type antigenic_map_long(antigenic_map_longSEXP);
-    Rcpp::traits::input_parameter< const arma::mat& >::type antigenic_map_short(antigenic_map_shortSEXP);
+    Rcpp::traits::input_parameter< const arma::cube& >::type antigenic_map_long(antigenic_map_longSEXP);
+    Rcpp::traits::input_parameter< const arma::cube& >::type antigenic_map_short(antigenic_map_shortSEXP);
     Rcpp::traits::input_parameter< const NumericVector& >::type antigenic_distances(antigenic_distancesSEXP);
     Rcpp::traits::input_parameter< bool >::type boost_before_infection(boost_before_infectionSEXP);
-    rcpp_result_gen = Rcpp::wrap(antibody_model(theta, unique_theta_indices, unique_biomarker_groups, infection_history_mat, infection_history_mat_indices, possible_exposure_times, possible_exposure_times_indices, sample_times, type_data_start, biomarker_groups, sample_data_start, antibody_data_start, nrows_per_sample, biomarker_id_indices, start_level_indices, starting_antibody_levels, births, antigenic_map_long, antigenic_map_short, antigenic_distances, boost_before_infection));
+    rcpp_result_gen = Rcpp::wrap(antibody_model(theta, unique_theta_indices, unique_biomarker_groups, infection_history_mat, infection_history_mat_indices, indiv_theta_groups, possible_exposure_times, possible_exposure_times_indices, sample_times, type_data_start, biomarker_groups, sample_data_start, antibody_data_start, nrows_per_sample, biomarker_id_indices, start_level_indices, starting_antibody_levels, births, antigenic_map_long, antigenic_map_short, antigenic_distances, boost_before_infection));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -336,7 +337,7 @@ END_RCPP
 }
 
 static const R_CallMethodDef CallEntries[] = {
-    {"_serosolver_antibody_model", (DL_FUNC) &_serosolver_antibody_model, 21},
+    {"_serosolver_antibody_model", (DL_FUNC) &_serosolver_antibody_model, 22},
     {"_serosolver_antibody_model_individual_wrapper", (DL_FUNC) &_serosolver_antibody_model_individual_wrapper, 15},
     {"_serosolver_subset_nullable_vector", (DL_FUNC) &_serosolver_subset_nullable_vector, 3},
     {"_serosolver_get_starting_antibody_levels", (DL_FUNC) &_serosolver_get_starting_antibody_levels, 3},
