@@ -116,7 +116,8 @@ arma::mat inf_hist_prop_prior_v3(arma::mat infection_history_mat,
 //' Infection history gibbs proposal
 //'
 //' Generates a new infection history matrix and corresponding individual likelihoods, using a gibbs sampler from the infection history prior. See \code{\link{inf_hist_prop_prior_v3}}, as inputs are very similar.
-//' @param theta NumericVector, the named model parameters used to solve the model
+//' @param theta NumericMatrix, the named model parameters used to solve the model
+//' @param indiv_group_indices IntegerVector, for each individual, which unique group (for the kinetics parameters) do they belong to?
 //' @param infection_history_mat IntegerMatrix the matrix of 1s and 0s corresponding to individual infection histories
 //' @param likelihoods_pre_proposal NumericVector, the current likelihoods for each individual before proposing new infection histories
 //' @param sampled_indivs IntegerVector, indices of sampled individuals
@@ -138,7 +139,7 @@ arma::mat inf_hist_prop_prior_v3(arma::mat infection_history_mat,
 //' @param cum_nrows_per_individual_in_data IntegerVector, How many rows in the antibody data correspond to each individual?
 //' @param cum_nrows_per_individual_in_repeat_data IntegerVector, For the repeat data (ie. already calculated these antibody levels), how many rows in the antibody data correspond to each individual?
 //' @param nrows_per_blood_sample IntegerVector, Split the sample times and runs for each individual
-//' @param group_id_vec IntegerVector, vector with 1 entry per individual, giving the group ID of that individual
+//' @param popn_group_id_vec IntegerVector, vector with 1 entry per individual, giving the group ID of that individual
 //' @param biomarker_id_indices IntegerVector, For each antibody measurement, corresponding entry in antigenic map
 //' @param antigenic_map_long arma::mat, the collapsed cross reactivity map for long term boosting, after multiplying by sigma1, see \code{\link{create_cross_reactivity_vector}}
 //' @param antigenic_map_short arma::mat, the collapsed cross reactivity map for short term boosting, after multiplying by sigma2, see \code{\link{create_cross_reactivity_vector}}
@@ -162,9 +163,10 @@ arma::mat inf_hist_prop_prior_v3(arma::mat infection_history_mat,
 List inf_hist_prop_prior_v2_and_v4(
         
         
-        const NumericVector &theta, //All model parameters
+        const NumericMatrix &theta, //All model parameters
         const IntegerVector &unique_theta_indices, //Indices for each model parameter type
         const IntegerVector &unique_biomarker_groups, // Vector of unique observation types
+        const IntegerVector &indiv_group_indices,
         
         
 				   const IntegerMatrix &infection_history_mat,  // Current infection history
@@ -197,14 +199,14 @@ List inf_hist_prop_prior_v2_and_v4(
 				   const IntegerVector &cum_nrows_per_individual_in_data, // How many rows in the antibody data correspond to each individual? By biomarker_group
 				   const IntegerVector &cum_nrows_per_individual_in_repeat_data, // How many rows in the repeat antibody data correspond to each individual? By biomarker_group
 				   
-				   const IntegerVector &group_id_vec, // Which group does each individual belong to?
+				   const IntegerVector &popn_group_id_vec, // Which group does each individual belong to?
 				   const IntegerVector &biomarker_id_indices, // For each measurement, corresponding entry in antigenic map
 				   const IntegerVector &start_level_indices, // For each individual/biomarker group/biomarker id combo, we need to know the starting antibody level
 				   const NumericVector &starting_antibody_levels,
 				   const NumericVector &births,
 				   
-				   const arma::mat &antigenic_map_long, // Now a matrix of antigenic maps
-				   const arma::mat &antigenic_map_short,
+				   const arma::cube &antigenic_map_long, // Now a cube of antigenic maps
+				   const arma::cube &antigenic_map_short,
 				   
 				   const NumericVector &antigenic_distances,
 				   
@@ -247,12 +249,12 @@ List inf_hist_prop_prior_v2_and_v4(
   // These quantities can be pre-computed
   int number_possible_exposures = possible_exposure_times.size(); // infection_history_mat.ncol(); // How many possible years are we interested in?
   int n_sampled = sampled_indivs.size(); // How many individuals are we actually investigating?
-  
   // Using prior version 2 or 4?
   bool prior_on_total = total_alive(0) > 0;
 
   // To track how far through the larger vectors we move for each individual
   int biomarker_group=0;
+  int group = 0;
   double obs_weight=1.0;
   int data_type = 1;
   int type_start;
@@ -262,7 +264,7 @@ List inf_hist_prop_prior_v2_and_v4(
   int start_index_in_data;
   int end_index_in_data;
 
-  int group_id; // Vector of group IDs for each individual
+  int popn_group_id; // Vector of group IDs for each individual
  
   IntegerVector new_infection_history(number_possible_exposures); // New proposed infection history
   IntegerVector infection_history(number_possible_exposures); // Old infection history
@@ -319,23 +321,24 @@ List inf_hist_prop_prior_v2_and_v4(
   // Pull out model parameters so only need to allocate once
   int n_types = unique_biomarker_groups.size();
   int n_theta = unique_theta_indices.size();
+  int n_groups = theta.nrow();
   
   // For likelihood functions
-  NumericVector sds(n_types);
-  NumericVector dens(n_types);
+  NumericMatrix sds(n_groups,n_types);
+  NumericMatrix dens(n_groups,n_types);
   const double log_const = log(0.5);
-  NumericVector den2s(n_types);
+  NumericMatrix den2s(n_groups,n_types);
   
   // Base model parameters
-  NumericVector boost_long_parameters(n_types);
-  NumericVector boost_short_parameters(n_types);
-  NumericVector boost_delay_parameters(n_types);
-  NumericVector wane_short_parameters(n_types);
-  NumericVector wane_long_parameters(n_types);
-  NumericVector antigenic_seniority_parameters(n_types);
+  NumericMatrix boost_long_parameters(n_groups,n_types);
+  NumericMatrix boost_short_parameters(n_groups,n_types);
+  NumericMatrix boost_delay_parameters(n_groups,n_types);
+  NumericMatrix wane_short_parameters(n_groups,n_types);
+  NumericMatrix wane_long_parameters(n_groups,n_types);
+  NumericMatrix antigenic_seniority_parameters(n_groups,n_types);
   
-  NumericVector max_measurements(n_types);
-  NumericVector min_measurements(n_types);
+  NumericMatrix max_measurements(n_groups,n_types);
+  NumericMatrix min_measurements(n_groups,n_types);
 
   int boost_long_index = unique_theta_indices("boost_long");
   int boost_short_index = unique_theta_indices("boost_short");
@@ -349,41 +352,44 @@ List inf_hist_prop_prior_v2_and_v4(
   int max_index = unique_theta_indices("max_measurement");
   
   // Antibody-dependent boosting function
-  IntegerVector antibody_dependent_boosting(n_types);
-  NumericVector gradients(n_types); 
-  NumericVector boost_limits(n_types);   
+  IntegerMatrix antibody_dependent_boosting(n_groups,n_types);
+  NumericMatrix gradients(n_groups,n_types); 
+  NumericMatrix boost_limits(n_groups,n_types);   
   
   int antibody_dependent_boosting_index = unique_theta_indices("antibody_dependent_boosting");
   int gradient_index = -1;
   int boost_limit_index = -1;
   
   // Create vectors of model parameters for each of the observation types
-  for(int x = 0; x < n_types; ++x){
-    boost_long_parameters(x) = theta(boost_long_index + x*n_theta);
-    boost_short_parameters(x) = theta(boost_short_index + x*n_theta);
-    boost_delay_parameters(x) = theta(boost_delay_index + x*n_theta);
-    wane_short_parameters(x) = theta(wane_short_index + x*n_theta);
-    wane_long_parameters(x) = theta(wane_long_index + x*n_theta);
-    antigenic_seniority_parameters(x) = theta(antigenic_seniority_index + x*n_theta);
-      min_measurements(x) = theta(min_index + x*n_theta);
-      max_measurements(x) = theta(max_index + x*n_theta);
-      
-      // For likelihood functions
-      sds(x) = theta(error_index + x*n_theta);
-      dens(x) = sds(x)*M_SQRT2; // Constant for the discretized normal distribution
-      den2s(x) = log(sds(x)*2.50662827463); // Constant for the normal distribution
-      
-      // Titre dependent boosting
-      antibody_dependent_boosting(x) = theta(antibody_dependent_boosting_index+ x*n_theta);
-      //Rcpp::Rcout << "Titre dependent: " << antibody_dependent_boosting(x) << std::endl;
-      if(antibody_dependent_boosting(x) == 1) {
-          gradient_index = unique_theta_indices("gradient");
-          boost_limit_index = unique_theta_indices("boost_limit");  
-          gradients(x) = theta(gradient_index + x*n_theta);
-          boost_limits(x) = theta(boost_limit_index + x*n_theta);
+      for(int g = 0; g < n_groups; ++g){
+      for(int x = 0; x < n_types; ++x){
+        
+        // For likelihood functions
+        sds(g,x) = theta(g,error_index + x*n_theta);
+        dens(g,x) = sds(g,x)*M_SQRT2; // Constant for the discretized normal distribution
+        den2s(g,x) = log(sds(g,x)*2.50662827463); // Constant for the normal distribution
+        
+        min_measurements(g,x) = theta(g,min_index + x*n_theta);
+        max_measurements(g,x) = theta(g,max_index + x*n_theta);
+        
+        boost_long_parameters(g,x) = theta(g,boost_long_index + x*n_theta);
+        boost_short_parameters(g,x) = theta(g,boost_short_index + x*n_theta);
+        boost_delay_parameters(g,x) = theta(g,boost_delay_index + x*n_theta);
+        wane_short_parameters(g,x) = theta(g,wane_short_index + x*n_theta);
+        wane_long_parameters(g,x) = theta(g,wane_long_index + x*n_theta);
+        antigenic_seniority_parameters(g,x) = theta(g,antigenic_seniority_index + x*n_theta);
+       
+          // Titre dependent boosting
+          antibody_dependent_boosting(g,x) = theta(g,antibody_dependent_boosting_index+ x*n_theta);
+          //Rcpp::Rcout << "Titre dependent: " << antibody_dependent_boosting(x) << std::endl;
+          if(antibody_dependent_boosting(g,x) == 1) {
+              gradient_index = unique_theta_indices("gradient");
+              boost_limit_index = unique_theta_indices("boost_limit");  
+              gradients(g,x) = theta(g,gradient_index + x*n_theta);
+              boost_limits(g,x) = theta(g,boost_limit_index + x*n_theta);
+          }
       }
   }
-
   // 4. Extra titre shifts
   bool use_measurement_shifts = false;
   if(measurement_shifts.size() == n_measurements_total) use_measurement_shifts = true;
@@ -396,9 +402,11 @@ List inf_hist_prop_prior_v2_and_v4(
     
     // Get index, group and current likelihood of individual under consideration
     indiv = sampled_indivs(i)-1;
+    group = indiv_group_indices[indiv];
+    
     //Rcpp::Rcout << "indiv: " << indiv+1 << std::endl << std::endl;
     
-    group_id = group_id_vec(indiv);
+    popn_group_id = popn_group_id_vec(indiv);
     old_prob = likelihoods_pre_proposal(indiv);
     //Rcpp::Rcout << "Old prob: " << old_prob << std::endl << std::endl;
     
@@ -476,28 +484,28 @@ List inf_hist_prop_prior_v2_and_v4(
     	  proposal_swap(indiv) += 1;
     	  if(!prior_on_total){
     	    // Number of infections in that group in that time
-    	      m_1_old = n_infections(group_id,loc1);      
-    	      m_2_old = n_infections(group_id,loc2);
+    	      m_1_old = n_infections(popn_group_id,loc1);      
+    	      m_2_old = n_infections(popn_group_id,loc2);
     	  
     	      // Swap contents
     	      new_infection_history(loc1) = new_infection_history(loc2);
     	      new_infection_history(loc2) = loc1_val_old;
     	  
     	      // Number alive is number alive overall in that time and group
-    	      //n_1 = n_alive(group_id, loc1);
-    	      //n_2 = n_alive(group_id, loc2);
+    	      //n_1 = n_alive(popn_group_id, loc1);
+    	      //n_2 = n_alive(popn_group_id, loc2);
     	    
     	      // Prior for new state
     	      m_1_new = m_1_old - loc1_val_old + loc2_val_old;
     	      m_2_new = m_2_old - loc2_val_old + loc1_val_old;
     
     	      
-    	      prior_1_old = prior_lookup(m_1_old, loc1, group_id);
-    	      prior_2_old = prior_lookup(m_2_old, loc2, group_id);
+    	      prior_1_old = prior_lookup(m_1_old, loc1, popn_group_id);
+    	      prior_2_old = prior_lookup(m_2_old, loc2, popn_group_id);
     	      prior_old = prior_1_old + prior_2_old;
     	      
-    	      prior_1_new = prior_lookup(m_1_new, loc1, group_id);
-    	      prior_2_new = prior_lookup(m_2_new, loc2, group_id);
+    	      prior_1_new = prior_lookup(m_1_new, loc1, popn_group_id);
+    	      prior_2_new = prior_lookup(m_2_new, loc2, popn_group_id);
     	      prior_new = prior_1_new + prior_2_new;
     	      
     	    } else {
@@ -517,11 +525,11 @@ List inf_hist_prop_prior_v2_and_v4(
     	  // Get number of individuals that were alive and/or infected in that year,
     	  // less the current individual
     	  // Number of infections in this year, less infection status of this individual in this year
-    	  m = n_infections(group_id, year) - old_entry;
-    	  n = n_alive(group_id, year) - 1;
+    	  m = n_infections(popn_group_id, year) - old_entry;
+    	  n = n_alive(popn_group_id, year) - 1;
     	} else {
-    	  m = n_infected_group(group_id) - old_entry;
-    	  n = total_alive(group_id) - 1;
+    	  m = n_infected_group(popn_group_id) - old_entry;
+    	  n = total_alive(popn_group_id) - 1;
     	}
 
     	if(propose_from_prior){
@@ -550,8 +558,8 @@ List inf_hist_prop_prior_v2_and_v4(
     	  m_1_old = m + old_entry;
     	  m_1_new = m + new_entry;
     	  
-    	  prior_old = prior_lookup(m_1_old, year, group_id);
-    	  prior_new = prior_lookup(m_1_new, year, group_id);
+    	  prior_old = prior_lookup(m_1_old, year, popn_group_id);
+    	  prior_new = prior_lookup(m_1_new, year, popn_group_id);
     	}
     	
     	if(new_entry != old_entry){
@@ -603,14 +611,14 @@ List inf_hist_prop_prior_v2_and_v4(
     	    end_index_in_data = antibody_data_start(end_index_in_samples+1)-1;
     	    
     	    
-        	if (antibody_dependent_boosting(biomarker_group)) {
+        	if (antibody_dependent_boosting(group,biomarker_group)) {
         	  antibody_dependent_boosting_model_individual(predicted_antibody_levels, 
-                                               boost_long_parameters(biomarker_group), 
-                                               boost_short_parameters(biomarker_group),
-                                               wane_short_parameters(biomarker_group), 
-                                               antigenic_seniority_parameters(biomarker_group),
-                                               gradients(biomarker_group), 
-                                               boost_limits(biomarker_group),
+                                               boost_long_parameters(group,biomarker_group), 
+                                               boost_short_parameters(group,biomarker_group),
+                                               wane_short_parameters(group,biomarker_group), 
+                                               antigenic_seniority_parameters(group,biomarker_group),
+                                               gradients(group,biomarker_group), 
+                                               boost_limits(group,biomarker_group),
         					      infection_times,
         					      infection_times_indices_tmp,
         					      biomarker_id_indices,
@@ -620,8 +628,8 @@ List inf_hist_prop_prior_v2_and_v4(
         					      start_index_in_data,
         					      nrows_per_sample,
         					      number_possible_exposures,
-        					      antigenic_map_short.colptr(biomarker_group),
-        					      antigenic_map_long.colptr(biomarker_group),
+        					      antigenic_map_short.slice(group).colptr(biomarker_group),
+        					      antigenic_map_long.slice(group).colptr(biomarker_group),
         					      false);	
         	} else {
         	  //Rcpp::Rcout << "Min measurement: " << min_measurements(biomarker_group) << std::endl;
@@ -629,12 +637,12 @@ List inf_hist_prop_prior_v2_and_v4(
         	    predicted_antibody_levels, 
         	    starting_antibody_levels,
         	    births,
-        	    boost_long_parameters(biomarker_group), 
-        	    boost_short_parameters(biomarker_group),
-        	    boost_delay_parameters(biomarker_group),
-        	    wane_short_parameters(biomarker_group), 
-        	    wane_long_parameters(biomarker_group), 
-        	    antigenic_seniority_parameters(biomarker_group),
+        	    boost_long_parameters(group,biomarker_group), 
+        	    boost_short_parameters(group,biomarker_group),
+        	    boost_delay_parameters(group,biomarker_group),
+        	    wane_short_parameters(group,biomarker_group), 
+        	    wane_long_parameters(group,biomarker_group), 
+        	    antigenic_seniority_parameters(group,biomarker_group),
         	    infection_times,
         	    infection_times_indices_tmp,
         	    biomarker_id_indices,
@@ -645,10 +653,10 @@ List inf_hist_prop_prior_v2_and_v4(
         	    start_index_in_data,
         	    nrows_per_sample,
         	    number_possible_exposures,
-        	    antigenic_map_short.colptr(biomarker_group),
-        	    antigenic_map_long.colptr(biomarker_group),
+        	    antigenic_map_short.slice(group).colptr(biomarker_group),
+        	    antigenic_map_long.slice(group).colptr(biomarker_group),
         	    false,
-        	    min_measurements(biomarker_group));
+        	    min_measurements(group,biomarker_group));
         	  /*
         	  antibody_data_model_individual(predicted_antibody_levels, 
                                           boost_long_parameters(biomarker_group), 
@@ -688,9 +696,9 @@ List inf_hist_prop_prior_v2_and_v4(
                                                     cum_nrows_per_individual_in_data, 
                                                     cum_nrows_per_individual_in_repeat_data,
                                                     log_const, 
-                                                    sds(biomarker_group), dens(biomarker_group), den2s(biomarker_group), 
-                                                    max_measurements(biomarker_group), 
-                                                    min_measurements(biomarker_group), 
+                                                    sds(group,biomarker_group), dens(group,biomarker_group), den2s(group,biomarker_group), 
+                                                    max_measurements(group,biomarker_group), 
+                                                    min_measurements(group,biomarker_group), 
                                                     repeat_data_exist,
                                                     obs_weight);
             	
@@ -704,9 +712,9 @@ List inf_hist_prop_prior_v2_and_v4(
                                          cum_nrows_per_individual_in_data, 
                                          cum_nrows_per_individual_in_repeat_data,
                                          log_const, 
-                                         dens(biomarker_group), 
-                                         max_measurements(biomarker_group), 
-                                         min_measurements(biomarker_group), 
+                                         dens(group,biomarker_group), 
+                                         max_measurements(group,biomarker_group), 
+                                         min_measurements(group,biomarker_group), 
                                          repeat_data_exist,
                                          obs_weight);
               }
@@ -739,8 +747,8 @@ List inf_hist_prop_prior_v2_and_v4(
 	  
     	  // Update number of infections in the two swapped times
     	  if(!prior_on_total){
-    	    n_infections(group_id, loc1) = m_1_new;
-    	    n_infections(group_id, loc2) = m_2_new;
+    	    n_infections(popn_group_id, loc1) = m_1_new;
+    	    n_infections(popn_group_id, loc2) = m_2_new;
     	  }
 	  // Don't need to update group infections if prior_on_total, as infections
 	  // only move within an individual (so number in group stays same)
@@ -750,10 +758,10 @@ List inf_hist_prop_prior_v2_and_v4(
     	    new_infection_history_mat(indiv,year) = new_entry;	
     	  // Update total number of infections in group/time
     	    if(!prior_on_total){
-    	        n_infections(group_id, year) -= old_entry;
-    	        n_infections(group_id, year) += new_entry;
+    	        n_infections(popn_group_id, year) -= old_entry;
+    	        n_infections(popn_group_id, year) += new_entry;
     	    } else {
-    	        n_infected_group(group_id) = n_infected_group(group_id) - old_entry + new_entry;
+    	        n_infected_group(popn_group_id) = n_infected_group(popn_group_id) - old_entry + new_entry;
     	    }
     	}
       }

@@ -383,11 +383,12 @@ row.match <- function(x, table, nomatch = NA) {
 #' Note that this should be `antibody_data` after subsetting to only `run==1`, as we will figure out elsewhere which solves to use as repeats
 #' @inheritParams create_posterior_func
 #' @param verbose if TRUE, brings warning messages
+#' @param use_demographic_groups vector of variable names in `antibody_data` which should form the stratification for the antibody kinetics model
 #' @return a very long list. See source code directly.
 #' @seealso \code{\link{create_posterior_func}}
 #' @export
 setup_antibody_data_for_posterior_func <- function(antibody_data, antigenic_map=NULL, possible_exposure_times=NULL,
-                                              age_mask = NULL, n_alive = NULL,verbose=FALSE) {
+                                              age_mask = NULL, n_alive = NULL,verbose=FALSE,use_demographic_groups=NULL) {
   essential_colnames <- c("individual", "sample_time", "measurement", "biomarker_id", "biomarker_group","population_group")
   ## How many observation types are there?
   n_indiv <- length(unique(antibody_data$individual))
@@ -428,11 +429,26 @@ setup_antibody_data_for_posterior_func <- function(antibody_data, antigenic_map=
   nrows_per_sample <- plyr::ddply(antibody_data, .(individual,biomarker_group, sample_time), nrow)$V1
   antibody_data_start <- cumsum(c(0,nrows_per_sample))
 
-    ## Get unique groups
-  groups <- unique(antibody_data$population_group)
-  group_table <- unique(antibody_data[, c("individual", "population_group")])
-  group_id_vec <- group_table$population_group - 1
+    ## Get unique population groups -- these correspond to populations under different FOIs
+  population_groups <- unique(antibody_data$population_group)
+  population_group_table <- unique(antibody_data[, c("individual", "population_group")])
+  population_group_id_vec <- population_group_table$population_group - 1
 
+  ## Get unique demographic groups -- these correspond to different groupings for the antibody kinetics model and can be different to the population group
+  ## If no demographic groups requested, and no labeling is included in antibody data, assume all individuals in the same grouping
+  if(is.null(use_demographic_groups) & !("demographic_group" %in% colnames(antibody_data))){
+    antibody_data$demographic_group <- 1
+  } else {
+    if(!is.null(use_demographic_groups)){
+      demographics <- antibody_data %>% dplyr::select(all_of(use_demographic_groups)) %>% distinct() %>% dplyr::mutate(demographic_group = 1:n())
+      antibody_data <- antibody_data %>% left_join(demographics)
+    }
+  }
+  indiv_group_indices <- antibody_data %>% select(individual, demographic_group) %>% distinct() %>% pull(demographic_group)
+  indiv_group_indices <- indiv_group_indices - 1
+  n_demographic_groups <- length(unique(indiv_group_indices))
+
+  
   if (!is.null(antibody_data$birth)) {
     DOBs <- unique(antibody_data[, c("individual", "birth")])[, 2]
   } else {
@@ -460,7 +476,10 @@ setup_antibody_data_for_posterior_func <- function(antibody_data, antigenic_map=
     "sample_data_start"=sample_data_start,
     "type_data_start"=type_data_start,
     
-    "group_id_vec" = group_id_vec,
+    "demographics"=demographics,
+    "population_group_id_vec" = population_group_id_vec,
+    "indiv_group_indices" = indiv_group_indices,
+    "n_demographic_groups"=n_demographic_groups,
     
     ## This one I need to figure out -- does it need to have a different set of indices for each observation type? Probably not
     "biomarker_id_indices" = biomarker_id_indices,

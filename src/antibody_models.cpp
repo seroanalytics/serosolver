@@ -52,7 +52,6 @@ NumericVector antibody_model(const NumericMatrix theta,
 			      const NumericVector &antigenic_distances,	// Currently not doing anything, but has uses for model extensions
 			      bool boost_before_infection = false
 			      ){
-  Rcpp::Rcout << "In function" << std::endl;
   // Dimensions of structures
   int n = infection_history_mat.nrow();
   int number_possible_exposures = possible_exposure_times.size();
