@@ -403,6 +403,7 @@ create_posterior_func <- function(par_tab,
                                                     y_new[biomarker_group_indices[[biomarker_group]]])
                     
                     liks <- liks + biomarker_groups_weights[biomarker_group]*sum_buckets(liks_tmp, nrows_per_individual_in_data[,biomarker_group])
+              
                     if (repeat_data_exist) {
                         ## Need theta for each observation type
                         

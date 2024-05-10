@@ -96,7 +96,7 @@ check_par_tab <- function(par_tab, mcmc = FALSE, version = NULL,possible_exposur
           
             if(!is.null(possible_exposure_times) & no_phi < length(possible_exposure_times)){
               if(verbose) message(cat("Padding par_tab with phis, as number of phi parameters does not match possible_exposure_times.\n")) ## Should we remove them?
-              par_tab_phi <- data.frame(names="phi",values=0.1,fixed=0,lower_bound=0,upper_bound=1,lower_start=0,upper_start=1,par_type=2,steps=0.1)
+              par_tab_phi <- data.frame(names="phi",values=0.1,fixed=0,lower_bound=0,upper_bound=1,lower_start=0,upper_start=1,par_type=2,steps=0.1,stratification=NA,biomarker_group=NA)
               n_missing <- length(possible_exposure_times) - no_phi
               for(i in 1:n_missing){
                 par_tab <- rbind(par_tab, par_tab_phi)

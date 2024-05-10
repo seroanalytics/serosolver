@@ -718,7 +718,9 @@ List inf_hist_prop_prior_v2_and_v4(
                                                     cum_nrows_per_individual_in_data, 
                                                     cum_nrows_per_individual_in_repeat_data,
                                                     log_const, 
-                                                    sds(group,biomarker_group), dens(group,biomarker_group), den2s(group,biomarker_group), 
+                                                    sds(group,biomarker_group), 
+                                                    dens(group,biomarker_group), 
+                                                    den2s(group,biomarker_group), 
                                                     max_measurements(group,biomarker_group), 
                                                     min_measurements(group,biomarker_group), 
                                                     repeat_data_exist,
@@ -726,13 +728,6 @@ List inf_hist_prop_prior_v2_and_v4(
             	
               } else {
                 // Data_type 1 is discretized, bounded data
-                /*Rcpp::Rcout << "Pre likelihood: " << old_prob << std::endl;
-                Rcpp::Rcout << "Density: " << dens(group,biomarker_group) << std::endl;
-                Rcpp::Rcout << "max_measurements: " << max_measurements(group,biomarker_group) << std::endl;
-                Rcpp::Rcout << "min_measurements: " << min_measurements(group,biomarker_group) << std::endl;
-                 */
-                //usleep(50);
-                //usleep(100);
                 proposal_likelihood_func(new_prob, predicted_antibody_levels, 
                                          index, 
                                          antibody_data, 
@@ -747,8 +742,6 @@ List inf_hist_prop_prior_v2_and_v4(
                                          repeat_data_exist,
                                          obs_weight);
               }
-              //usleep(50);
-              //Rcpp::Rcout << "Post likelihood" << new_prob << std::endl;
               
     	}
       } else {
