@@ -80,6 +80,21 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// transform_parameters_cpp
+NumericMatrix transform_parameters_cpp(NumericVector pars, List scale_table, IntegerVector theta_indices, IntegerVector scale_par_indices, NumericMatrix demographics);
+RcppExport SEXP _serosolver_transform_parameters_cpp(SEXP parsSEXP, SEXP scale_tableSEXP, SEXP theta_indicesSEXP, SEXP scale_par_indicesSEXP, SEXP demographicsSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< NumericVector >::type pars(parsSEXP);
+    Rcpp::traits::input_parameter< List >::type scale_table(scale_tableSEXP);
+    Rcpp::traits::input_parameter< IntegerVector >::type theta_indices(theta_indicesSEXP);
+    Rcpp::traits::input_parameter< IntegerVector >::type scale_par_indices(scale_par_indicesSEXP);
+    Rcpp::traits::input_parameter< NumericMatrix >::type demographics(demographicsSEXP);
+    rcpp_result_gen = Rcpp::wrap(transform_parameters_cpp(pars, scale_table, theta_indices, scale_par_indices, demographics));
+    return rcpp_result_gen;
+END_RCPP
+}
 // get_starting_antibody_levels
 NumericVector get_starting_antibody_levels(const int n_measurements, const double min_measurement, const Nullable<NumericVector>& starting_antibody_levels);
 RcppExport SEXP _serosolver_get_starting_antibody_levels(SEXP n_measurementsSEXP, SEXP min_measurementSEXP, SEXP starting_antibody_levelsSEXP) {
@@ -341,6 +356,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_serosolver_antibody_model", (DL_FUNC) &_serosolver_antibody_model, 22},
     {"_serosolver_antibody_model_individual_wrapper", (DL_FUNC) &_serosolver_antibody_model_individual_wrapper, 15},
     {"_serosolver_subset_nullable_vector", (DL_FUNC) &_serosolver_subset_nullable_vector, 3},
+    {"_serosolver_transform_parameters_cpp", (DL_FUNC) &_serosolver_transform_parameters_cpp, 5},
     {"_serosolver_get_starting_antibody_levels", (DL_FUNC) &_serosolver_get_starting_antibody_levels, 3},
     {"_serosolver_sum_likelihoods", (DL_FUNC) &_serosolver_sum_likelihoods, 3},
     {"_serosolver_create_cross_reactivity_vector", (DL_FUNC) &_serosolver_create_cross_reactivity_vector, 2},
