@@ -325,7 +325,8 @@ get_antibody_level_predictions <- function(chain, infection_histories, antibody_
                                            expand_to_all_times=FALSE,
                                            antibody_level_before_infection=FALSE, for_regression=FALSE,
                                            data_type=1,start_level="none"){
-
+  par_tab <- add_scale_pars(par_tab,antibody_data)
+  
   ## Need to align the iterations of the two MCMC chains
   ## and choose some random samples
   samps <- intersect(unique(infection_histories$samp_no), unique(chain$samp_no))
@@ -343,6 +344,7 @@ get_antibody_level_predictions <- function(chain, infection_histories, antibody_
   nsamp <- min(nsamp, length(unique(chain$samp_no)))
   
   ## Take subset of individuals
+  antibody_data2 <- antibody_data %>% dplyr::select(-c(sample_time,measurement,repeat_number)) %>% distinct()
   antibody_data <- antibody_data[antibody_data$individual %in% individuals, ]
   infection_histories <- infection_histories[infection_histories$i %in% individuals, ]
   
@@ -392,7 +394,7 @@ get_antibody_level_predictions <- function(chain, infection_histories, antibody_
       biomarker_group=unique(antibody_data$biomarker_group),
       measurement = 0, repeat_number = 1
     )
-    antibody_data2 <- unique(antibody_data[, c("individual", "biomarker_id", "population_group", "birth")])
+    antibody_data2 <- antibody_data %>% dplyr::select(-c(sample_time,measurement,repeat_number)) %>% distinct()
     antibody_data1 <- merge(antibody_data1, antibody_data2)
     antibody_data1 <- antibody_data1 %>% arrange(individual, biomarker_group, sample_time, biomarker_id, repeat_number)
   }

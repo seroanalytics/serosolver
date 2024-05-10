@@ -64,9 +64,11 @@ plot_posteriors_infhist <- function(inf_chain,
   thin_chain <- inf_chain[inf_chain$samp_no %in% sample(unique(inf_chain$samp_no), samples, replace = FALSE), ]
   
   ## Trace plot by time
+  n_time_sample <-  min(length(possible_exposure_times),10)
   time_plot <- plot_infection_history_chains_time(thin_chain, 0, sample(1:length(possible_exposure_times), 10), n_alive=NULL, FALSE)
   ## Trace plot by indiv
-  indiv_plot <- plot_infection_history_chains_indiv(thin_chain, 0, sample(unique(inf_chain$i),10,replace=FALSE), FALSE)
+  n_indiv_sample <- min(length(unique(inf_chain$i)),10)
+  indiv_plot <- plot_infection_history_chains_indiv(thin_chain, 0, sample(unique(inf_chain$i),n_indiv_sample,replace=FALSE), FALSE)
   ## Pointrange plot for total number of infections
   number_plot <- plot_individual_number_infections(thin_chain, FALSE)
   

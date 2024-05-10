@@ -1,5 +1,7 @@
 #include "likelihood_funcs.h"
 
+#include <iostream>
+#include <fstream>
 //' Marginal prior probability (p(Z)) of a particular infection history matrix single prior
 //'  Prior is independent contribution from each year
 //' @param infection_history IntegerMatrix, the infection history matrix
@@ -210,9 +212,8 @@ void proposal_likelihood_func(double &new_prob,
 			      const double &min_measurement,
 			      const bool &repeat_data_exist,
 			      const double &obs_weight = 1.0){
+  
   for(int x = cum_nrows_per_individual_in_data[indiv]; x < cum_nrows_per_individual_in_data[indiv+1]; ++x){
-
-      
     if(data[x] < max_measurement && data[x] >= (min_measurement + 1)){
       new_prob += log_const + log((erf((data[x] + 1.0 - predicted_antibody_levels[x]) / den) -
 				   erf((data[x]     - predicted_antibody_levels[x]) / den)));    

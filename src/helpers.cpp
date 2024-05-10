@@ -12,6 +12,45 @@ NumericVector subset_nullable_vector(const Nullable<NumericVector> &x, int index
   }
 }
 
+// [[Rcpp::export]]
+NumericMatrix transform_parameters_cpp(NumericVector pars, List scale_table, 
+                                        IntegerVector theta_indices, IntegerVector scale_par_indices, 
+                                        NumericMatrix demographics) {
+  
+  // Extract scale parameters
+  NumericVector scale_pars(scale_par_indices.size() + 1);
+  
+  // Extract theta parameters
+  NumericVector theta_pars = pars[theta_indices];
+  
+  int n_demographic_groups = demographics.nrow();
+  int n_strats = demographics.ncol();
+  int n_theta_pars = theta_indices.size();
+  
+  NumericMatrix theta(n_demographic_groups, n_theta_pars);
+  //return theta;
+  scale_pars(0) = 0; // First element is always 0
+  for (int i = 0; i < scale_par_indices.size(); ++i) {
+    scale_pars[i + 1] = pars[scale_par_indices[i]];
+  }
+  
+  double scales;
+  int tmp_strat;
+  int par_index;
+  for (int i = 0; i < n_theta_pars; ++i) {
+    for (int j = 0; j < n_demographic_groups; ++j) {
+      scales = 0;
+      for (int x = 0; x < n_strats; ++x) {
+        tmp_strat = demographics(j, x)-1;
+        IntegerMatrix tmp_scale_table = scale_table[x];
+        par_index = tmp_scale_table(tmp_strat, i)-1;
+        scales += scale_pars[par_index];
+      }
+      theta(j, i) = exp(log(theta_pars[i]) + scales);
+    }
+  }
+  return theta;
+}
 
 //' @export
  // [[Rcpp::export]]

@@ -53,7 +53,6 @@ create_posterior_func <- function(par_tab,
                                   biomarker_groups_weights =1,
                                   start_level = "other",
                                   start_level_randomize=FALSE,
-                                  use_demographic_groups=NULL,
                                   verbose=FALSE,
                                   ...) {
 
@@ -128,6 +127,9 @@ create_posterior_func <- function(par_tab,
         antibody_data_unique[, c("individual", "sample_time", "biomarker_group","biomarker_id")]
     )
     ## Setup data vectors and extract
+    demographic_groups <- create_demographic_table(antibody_data,par_tab)
+    use_demographic_groups <- colnames(demographic_groups)
+    if(length(use_demographic_groups) == 1 && use_demographic_groups == "all") use_demographic_groups <- NULL
     setup_dat <- setup_antibody_data_for_posterior_func(
         antibody_data_unique, antigenic_map, 
         possible_exposure_times,
@@ -141,7 +143,6 @@ create_posterior_func <- function(par_tab,
     population_group_id_vec <- setup_dat$population_group_id_vec
     indiv_group_indices <- setup_dat$indiv_group_indices
     n_demographic_groups <- setup_dat$n_demographic_groups
-    unique_groups <- 1:n_demographic_groups 
     demographics <- setup_dat$demographics
     ## List of melted antigenic maps, one entry for each observation type
     antigenic_map_melted <- setup_dat$antigenic_map_melted
@@ -175,7 +176,7 @@ create_posterior_func <- function(par_tab,
     
     ## Starting antibody levels
     births <- antibody_data_unique$birth
-    
+    #browser()
     ## If specifying starting levels based on a provided data frame or tibble, set them here. Otherwise, calculate them from the antibody data.
     if(class(start_level) %in% c("data.frame","tibble")){
       start_levels <- start_level 
@@ -257,20 +258,25 @@ create_posterior_func <- function(par_tab,
     #########################################################
     ## PARAMETER TABLE
     #########################################################
+    stratification_pars <- setup_stratification_table(par_tab, demographic_groups)
+    scale_table <- stratification_pars[[1]]
+    unique_groups <- 1:nrow(demographic_groups)
+    
     ## Extract parameter type indices from par_tab, to split up
     ## similar parameters in model solving functions
-    
     ## In general we are just going to use the indices for a single observation type
     par_tab_unique <- par_tab[!is.na(par_tab$biomarker_group) & par_tab$biomarker_group == min(par_tab$biomarker_group),]
 
     ## These will be different for each biomarker_group
     theta_indices <- which(par_tab$par_type %in% c(0, 1))
+    scale_par_indices <- which(par_tab$par_type == 4)
     measurement_indices_par_tab <- which(par_tab$par_type == 3)
 
     theta_indices_unique <- which(par_tab_unique$par_type %in% c(0, 1))
     
     ## Each biomarker_group must have the same vector of parameters in the same order
     par_names_theta <- par_tab_unique[theta_indices_unique, "names"]
+    par_names <- par_tab$names
     theta_indices_unique <- seq_along(theta_indices_unique) - 1
     names(theta_indices_unique) <- par_names_theta
     
@@ -338,11 +344,9 @@ create_posterior_func <- function(par_tab,
               age_mask, sample_mask)
           }
           if (solve_likelihood) {
-            theta <- matrix(rep(pars[theta_indices],n_demographic_groups),nrow=n_demographic_groups,byrow = TRUE)
-            colnames(theta) <- par_names_theta_all
-            theta <- matrix(rep(pars[theta_indices],n_demographic_groups),nrow=n_demographic_groups,byrow = TRUE)
-            colnames(theta) <- par_names_theta_all
-            
+            names(pars) <- par_names
+            theta <- transform_parameters_cpp(pars, scale_table, theta_indices-1, scale_par_indices-1,as.matrix(demographic_groups))
+            colnames(theta) <- names(pars[theta_indices])
             antigenic_map_long <- array(dim=c(length(possible_biomarker_ids)^2,n_biomarker_groups,n_demographic_groups))
             antigenic_map_short <- array(dim=c(length(possible_biomarker_ids)^2,n_biomarker_groups,n_demographic_groups))
             
@@ -416,7 +420,6 @@ create_posterior_func <- function(par_tab,
             return(list(liks, transmission_prob))
         }
     } else if (function_type == 2) {
-
       if(verbose) message(cat("Creating infection history proposal function\n"))
         if (prior_version == 4) {
             n_alive_total <- rowSums(n_alive)
@@ -428,6 +431,7 @@ create_posterior_func <- function(par_tab,
         n_infected_group <- c(0, 0)
         ## Generate prior lookup table
         lookup_tab <- create_prior_lookup_groups(antibody_data, possible_exposure_times[infection_history_mat_indices+1], infection_model_prior_shape1, infection_model_prior_shape2, n_alive)
+        save(list=ls(),file="debug1.Rda")
         
         ## Use the original gibbs proposal function if no antibody_level immunity
         f <- function(pars, infection_history_mat,
@@ -445,9 +449,9 @@ create_posterior_func <- function(par_tab,
                       proposal_ratios,
                       temp=1,
                       propose_from_prior=TRUE) {
-          
-          theta <- matrix(rep(pars[theta_indices],n_demographic_groups),nrow=n_demographic_groups,byrow = TRUE)
-          colnames(theta) <- par_names_theta_all
+          names(pars) <- par_names
+          theta <- transform_parameters_cpp(pars, scale_table, theta_indices-1, scale_par_indices-1,as.matrix(demographic_groups))
+          colnames(theta) <- names(pars[theta_indices])
           
       
 
@@ -470,7 +474,6 @@ create_posterior_func <- function(par_tab,
           
             n_infections <- sum_infections_by_group(infection_history_mat, population_group_id_vec, n_groups)
             if (prior_version == 4) n_infected_group <- rowSums(n_infections)
-
             ## Now pass to the C++ function
             res <- inf_hist_prop_prior_v2_and_v4(
                 theta,
@@ -546,18 +549,10 @@ create_posterior_func <- function(par_tab,
         ## Final version is just the model solving function
         f <- function(pars, infection_history_mat) {
           ## Need to create demographic-specific parameter transformations here
-            theta <- matrix(rep(pars[theta_indices],n_demographic_groups),nrow=n_demographic_groups,byrow = TRUE)
-           
-            if(n_demographic_groups > 1){
-            theta[2,] <- 2*theta[2,]
-            if(n_demographic_groups > 2){
-            theta[3,] <- 0.5*theta[3,]
-            }
-            }
-           # theta <- transform_parameters_groups(theta, pars)
-            
-            colnames(theta) <- par_names_theta_all
-
+          names(pars) <- par_names
+          theta <- transform_parameters_cpp(pars, scale_table, theta_indices-1, scale_par_indices-1,as.matrix(demographic_groups))
+          colnames(theta) <- names(pars[theta_indices])
+          
             antigenic_map_long <- array(dim=c(length(possible_biomarker_ids)^2,n_biomarker_groups,n_demographic_groups))
             antigenic_map_short <- array(dim=c(length(possible_biomarker_ids)^2,n_biomarker_groups,n_demographic_groups))
             

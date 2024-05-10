@@ -438,6 +438,7 @@ setup_antibody_data_for_posterior_func <- function(antibody_data, antigenic_map=
   ## If no demographic groups requested, and no labeling is included in antibody data, assume all individuals in the same grouping
   if(is.null(use_demographic_groups) & !("demographic_group" %in% colnames(antibody_data))){
     antibody_data$demographic_group <- 1
+    demographics <- NULL
   } else {
     if(!is.null(use_demographic_groups)){
       demographics <- antibody_data %>% dplyr::select(all_of(use_demographic_groups)) %>% distinct() %>% dplyr::mutate(demographic_group = 1:n())
@@ -745,3 +746,133 @@ setup_antigenic_map <- function(antigenic_map=NULL, possible_exposure_times=NULL
   return(list(antigenic_map=antigenic_map, possible_exposure_times=possible_exposure_times, infection_history_mat_indices=infection_history_mat_indices))
 }
 
+
+create_demographic_table <- function(antibody_data, par_tab){
+  strsplit1 <- function(x){
+    if(!is.na(x)){
+      return(strsplit(x,", "))
+    } else {
+      return(NA)
+    }
+  }
+  ## Creates an estimated parameter entry for each 
+  stratifications <- unique(unlist(sapply(par_tab$stratification,function(x) strsplit1(x))))
+  stratifications <- stratifications[!is.na(stratifications)]
+  
+  if(length(stratifications) == 0){
+    demographics <- data.frame(all=1)
+  } else {
+    demographics <- antibody_data %>% select(all_of(stratifications)) %>% distinct()
+  }
+  return(demographics)
+}
+
+
+setup_stratification_table <- function(par_tab, demographics){
+  n_pars <- nrow(par_tab[par_tab$par_type == 1,])
+  
+  ## Creates an estimated parameter entry for each 
+  strsplit1 <- function(x){
+    if(!is.na(x)){
+      return(strsplit(x,", "))
+    } else {
+      return(NA)
+    }
+  }
+  ## Creates an estimated parameter entry for each 
+  stratifications <- unique(unlist(sapply(par_tab$stratification,function(x) strsplit1(x))))
+  stratifications <- stratifications[!is.na(stratifications)]
+  
+  scale_table <- vector(mode="list",length=length(stratifications))
+  
+  ## If no stratifications, create dummy table
+  if(nrow(demographics) == 1){
+    scale_table[[1]] <- matrix(1, nrow=1,ncol=n_pars)
+    scale_pars <- NULL
+  } else {
+    for(i in seq_along(stratifications)){
+      stratification <- stratifications[i]
+      scale_table[[i]] <- matrix(1, nrow=length(unique(demographics[,stratification])),ncol=n_pars)
+    }
+    names(scale_table) <- stratifications
+    
+    ## First row is base case
+    ## Subsequent rows, check if they are estimated. If so, flag as estimated. Otherwise, is fixed
+    index <- 2
+    strat_par_names <- NULL
+    for(j in 1:nrow(par_tab[par_tab$par_type == 1,])){
+      stratification_par <- par_tab$stratification[j]
+      if(!is.na(stratification_par)){
+        strats <- strsplit(stratification_par,", ")[[1]]
+        for(strat in strats){
+          n_groups <- length(unique(demographics[,strat]))
+          for(x in 2:n_groups){
+            scale_table[[strat]][x,j] <- index
+            strat_par_names[[index]] <- paste0(par_tab$names[j],"_biomarker_",par_tab$biomarker_group[j],"_coef_",strat,"_",x)
+            index <- index + 1
+          }
+        }
+      }
+    }
+    scale_pars <- c(rnorm(index-2,0,0.1))
+    names(scale_pars) <- unlist(strat_par_names)
+  }
+  return(list(scale_table, scale_pars))
+}
+
+
+transform_parameters <- function(pars, scale_table, theta_indices,scale_par_indices,demographics){
+  scale_pars <- c(0,pars[scale_par_indices])
+  theta_pars <- pars[theta_indices]
+  
+  n_demographic_groups <- nrow(demographics)
+  n_strats <- ncol(demographics)
+  
+  theta <- matrix(0, nrow=n_demographic_groups,ncol=length(theta_pars))
+  ## For each parameter
+  for(i in seq_along(theta_pars)){
+    ## Need to calculate the value for each demographic group
+    for(j in 1:n_demographic_groups){
+      ## Each demographic group has its own values for each stratification -- sum contribution of all of these
+      scales <- 0
+      ## For each stratification
+      for(x in 1:n_strats){
+        ## Get value of variable for this stratification
+        tmp_strat <- demographics[j,x]
+        ## Get index in scale_table for this stratification level for this parameter
+        par_index <- scale_table[[x]][tmp_strat,i]
+        scales <- scales + scale_pars[par_index]
+      }
+      theta[j,i] <- exp(log(theta_pars[i]) + scales)
+    }
+  }
+  colnames(theta) <- names(pars[theta_indices])
+  theta
+}
+
+
+add_scale_pars <- function(par_tab, antibody_data){
+  demographics <- create_demographic_table(antibody_data,par_tab)
+  stratification_pars <- setup_stratification_table(par_tab, demographics)
+  scale_table <- stratification_pars[[1]]
+  scale_pars <- stratification_pars[[2]]
+  
+  ## If stratifying by anything
+  if(length(scale_pars) > 0){
+    ## Creates an estimated parameter entry for each 
+    strsplit1 <- function(x){
+      if(!is.na(x)){
+        return(strsplit(x,"_"))
+      } else {
+        return(NA)
+      }
+    }
+    
+    names_split <- lapply(names(scale_pars), function(x) strsplit1(x))
+    biomarker_groups <- unlist(lapply(names_split, function(x) as.numeric(x[[1]][which(x[[1]] == "biomarker") + 1])))
+  
+    tmp_par_tab <- data.frame(names=names(scale_pars), values=rnorm(length(scale_pars),0,0.1),fixed=0,lower_bound=-25,upper_bound=25,lower_start=-0.25,upper_start=0.25,par_type=4,biomarker_group=biomarker_groups,stratification=NA)
+    par_tab <- bind_rows(par_tab, tmp_par_tab)
+  }
+  return(par_tab)
+}

@@ -81,7 +81,6 @@ serosolver <- function(par_tab,
                      verbose_dev=FALSE,
                      ...) {
   on.exit(serosolver::unregister_dopar)
-  
   ###################################################################
   ## Sort out MCMC parameters --------------------------------------
   ## Set up parallel cluster if requests
@@ -172,13 +171,18 @@ serosolver <- function(par_tab,
   } else if(is.null(antigenic_map)) {
     antigenic_map <- data.frame("x_coord"=1,"y_coord"=1,"inf_times"=possible_exposure_times)
   }
-    par_tab <- check_par_tab(par_tab, TRUE,possible_exposure_times=possible_exposure_times, version=prior_version,verbose)
+  
+  ## Check the antibody_data input
+  antibody_data <- check_data(antibody_data,verbose=verbose)
+  
+  ## Add stratifications to par_tab
+  par_tab <- add_scale_pars(par_tab,antibody_data)
+  par_tab <- check_par_tab(par_tab, TRUE,possible_exposure_times=possible_exposure_times, version=prior_version,verbose)
     
     if(!is.null(start_inf_hist)){
       check_inf_hist(antibody_data, possible_exposure_times, start_inf_hist,verbose=verbose)
     }
-    ## Check the antibody_data input
-    antibody_data <- check_data(antibody_data,verbose=verbose)
+    
     
   ## Sort out which prior_version to run --------------------------------------
 
@@ -250,7 +254,8 @@ serosolver <- function(par_tab,
   ##############
  
   ## Create posterior calculating function
-  posterior_simp <- protect_posterior(posterior_func(par_tab,
+  posterior_simp <- protect_posterior(
+    posterior_func(par_tab,
                                            antibody_data,
                                            antigenic_map,
                                            possible_exposure_times,
@@ -264,7 +269,8 @@ serosolver <- function(par_tab,
                                            start_level=start_level,
                                            verbose=verbose,
                                            ...
-  ))
+ )
+  )
   
   if (!is.null(prior_func)) {
     prior_func <- prior_func(par_tab)
@@ -272,7 +278,8 @@ serosolver <- function(par_tab,
   
   ## If using gibbs proposal on infection_history, create here
   if (hist_proposal == 2) {
-    proposal_gibbs <- protect_posterior(posterior_func(par_tab,
+    proposal_gibbs <- protect_posterior(
+      posterior_func(par_tab,
                                              antibody_data,
                                              antigenic_map,
                                              possible_exposure_times,
@@ -286,7 +293,8 @@ serosolver <- function(par_tab,
                                              start_level=start_level,
                                              verbose=verbose,
                                              ...
-    ))
+   )
+    )
   }
   
   if (measurement_random_effects) {
@@ -333,7 +341,7 @@ serosolver <- function(par_tab,
   }
   
   ## Save MCMC settings
-  serosolver_settings <- list(par_tab=par_tab,
+  serosolver_settings <- list(par_tab=par_tab %>% dplyr::filter(par_type != 4),
                               antibody_data=antibody_data,
                               prior_version=prior_version,
                               possible_exposure_times=possible_exposure_times,
@@ -489,7 +497,6 @@ serosolver <- function(par_tab,
     t_start <- Sys.time()
     
     for (i in 1:(iterations + adaptive_iterations)) {
-      
       ## Whether to swap entire year contents or not - only applies to gibbs sampling
       inf_swap_prob <- runif(1)
       if (i %% save_block == 0){
@@ -550,8 +557,10 @@ serosolver <- function(par_tab,
             tempiter <- tempiter + 1
           }
         }
+
         ## Calculate new likelihood for these parameters
         tmp_new_posteriors <- posterior_simp(proposal, infection_histories)
+        
         new_indiv_likelihoods <- tmp_new_posteriors[[1]] / temp # For each individual
         new_indiv_priors <- tmp_new_posteriors[[2]]
         new_indiv_posteriors <- new_indiv_likelihoods + new_indiv_priors
@@ -618,7 +627,7 @@ serosolver <- function(par_tab,
                       temp,
                       propose_from_prior
                   )
-                  
+
                   histiter <- prop_gibbs$proposal_iter
                   histaccepted <- prop_gibbs$accepted_iter
                   new_indiv_likelihoods <- prop_gibbs$likelihoods_pre_proposal_tmp

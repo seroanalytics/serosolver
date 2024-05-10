@@ -8,6 +8,7 @@ inf_hist_prop_prior_v2_and_v4(
   theta,
   unique_theta_indices,
   unique_biomarker_groups,
+  indiv_group_indices,
   infection_history_mat,
   infection_history_mat_indices,
   likelihoods_pre_proposal,
@@ -34,7 +35,7 @@ inf_hist_prop_prior_v2_and_v4(
   nrows_per_sample,
   cum_nrows_per_individual_in_data,
   cum_nrows_per_individual_in_repeat_data,
-  group_id_vec,
+  popn_group_id_vec,
   biomarker_id_indices,
   start_level_indices,
   starting_antibody_levels,
@@ -63,7 +64,9 @@ inf_hist_prop_prior_v2_and_v4(
 )
 }
 \arguments{
-\item{theta}{NumericVector, the named model parameters used to solve the model}
+\item{theta}{NumericMatrix, the named model parameters used to solve the model}
+
+\item{indiv_group_indices}{IntegerVector, for each individual, which unique group (for the kinetics parameters) do they belong to?}
 
 \item{infection_history_mat}{IntegerMatrix the matrix of 1s and 0s corresponding to individual infection histories}
 
@@ -103,7 +106,7 @@ inf_hist_prop_prior_v2_and_v4(
 
 \item{cum_nrows_per_individual_in_repeat_data}{IntegerVector, For the repeat data (ie. already calculated these antibody levels), how many rows in the antibody data correspond to each individual?}
 
-\item{group_id_vec}{IntegerVector, vector with 1 entry per individual, giving the group ID of that individual}
+\item{popn_group_id_vec}{IntegerVector, vector with 1 entry per individual, giving the group ID of that individual}
 
 \item{biomarker_id_indices}{IntegerVector, For each antibody measurement, corresponding entry in antigenic map}
 

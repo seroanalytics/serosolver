@@ -49,6 +49,10 @@ subset_nullable_vector <- function(x, index1, index2) {
     .Call('_serosolver_subset_nullable_vector', PACKAGE = 'serosolver', x, index1, index2)
 }
 
+transform_parameters_cpp <- function(pars, scale_table, theta_indices, scale_par_indices, demographics) {
+    .Call('_serosolver_transform_parameters_cpp', PACKAGE = 'serosolver', pars, scale_table, theta_indices, scale_par_indices, demographics)
+}
+
 #' @export
 get_starting_antibody_levels <- function(n_measurements, min_measurement, starting_antibody_levels = NULL) {
     .Call('_serosolver_get_starting_antibody_levels', PACKAGE = 'serosolver', n_measurements, min_measurement, starting_antibody_levels)
@@ -225,7 +229,6 @@ inf_hist_prop_prior_v3 <- function(infection_history_mat, sampled_indivs, age_ma
 #' @param infection_history_mat IntegerMatrix the matrix of 1s and 0s corresponding to individual infection histories
 #' @param likelihoods_pre_proposal NumericVector, the current likelihoods for each individual before proposing new infection histories
 #' @param sampled_indivs IntegerVector, indices of sampled individuals
-#' @param n_times_samp_vec int, for each individual, how many time periods to resample infections for?
 #' @param age_mask IntegerVector, length of the number of individuals, with indices specifying first time period that an individual can be infected (indexed from 1, such that a value of 1 allows an individual to be infected in any time period)
 #' @param sample_mask IntegerVector, length of the number of individuals, with indices specifying last time period that an individual can be infected (ie. last time a sample was taken)
 #' @param n_alive IntegerMatrix, number of columns is the number of time periods that an individual could be infected, giving the number of individual alive in each time period. Number of rows is the number of distinct groups.

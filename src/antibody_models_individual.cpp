@@ -32,6 +32,7 @@ void antibody_data_model_individual_new(NumericVector &predicted_antibody_levels
                                          bool boost_before_infection = false,
                                          const double min_level = 0
  ){
+  
    double sampling_time;
    double time;
    double n_inf;
@@ -45,7 +46,7 @@ void antibody_data_model_individual_new(NumericVector &predicted_antibody_levels
    int start_index_in_data = start_index_in_data1;
    int inf_map_index;
    int index;
-   
+
    // For each sample this individual has
    for(int j = index_in_samples; j <= end_index_in_samples; ++j){
      sampling_time = sample_times[j];
@@ -65,6 +66,7 @@ void antibody_data_model_individual_new(NumericVector &predicted_antibody_levels
      //Rcpp::Rcout << "wane_long_amount: " << wane_long_amount << std::endl;
      // For each measured marker, find the biomarker id index which will match an entry in start_antibody_levels
      // Add this to the predicted antibody level, with waning
+    
      for(int k = 0; k < n_measurements; ++k){
        index = start_level_indices[tmp_measurement_index + k];
        predicted_antibody_levels[tmp_measurement_index + k] += min_level;

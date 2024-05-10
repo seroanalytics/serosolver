@@ -13,7 +13,6 @@
 #' @useDynLib serosolver
 univ_proposal <- function(values, lower_bounds, upper_bounds, steps, index, gaussian_proposal=FALSE) {
   rtn <- values
-
   ## If using simple gaussian proposals
   if(gaussian_proposal){
     rtn[index] <- rnorm(1,values[index],steps[index])

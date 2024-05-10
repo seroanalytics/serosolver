@@ -204,16 +204,16 @@ setup_infection_histories <- function(antibody_data, possible_exposure_times, sp
       biomarker_id <- biomarker_ids[i] ## Get current biomarker_id of interest
       dist <- 0
       antibody_level <- max(dat[dat$biomarker_id == biomarker_id, "measurement"]) ## Get max measurement against this biomarker_id
-      if (measurement >= antibody_cutoff) { ## If elevated against this biomarker_id, assume an infection
+      if (antibody_level >= antibody_cutoff) { ## If elevated against this biomarker_id, assume an infection
         new_inf <- biomarker_id
         ## Begin counting up distance
         while (dist < space & i < length(biomarker_ids)) {
           i <- i + 1
           biomarker_id <- biomarker_ids[i]
           dist <- biomarker_id - new_inf ## How many years since last infection?
-          new_measurement <- max(dat[dat$virus == biomarker_id, "measurement"]) ## Get max measurement against next biomarker_id along
+          new_measurement <- max(dat[dat$biomarker_id == biomarker_id, "measurement"]) ## Get max measurement against next biomarker_id along
           ## If this one is better, replace and reset distance
-          if (new_measurement > measurement) {
+          if (new_measurement > antibody_level) {
             new_measurement <- biomarker_id
             titre <- new_measurement
             dist <- 0

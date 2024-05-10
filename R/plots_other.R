@@ -141,7 +141,7 @@ plot_samples_distances <- function(antibody_data) {
 #' @export
 plot_posteriors_theta <- function(chain,par_tab){
   par_tab_tmp <- par_tab[par_tab$fixed == 0,]
-  par_indices <- c("samp_no","chain_no",par_tab_tmp[par_tab_tmp$par_type == 1,"names"],"total_infections","likelihood","prior_prob","posterior_prob")
+  par_indices <- c("samp_no","chain_no",par_tab_tmp[par_tab_tmp$par_type %in% c(1,4),"names"],"total_infections","likelihood","prior_prob","posterior_prob")
 
   chain <- chain %>% as_tibble()
   chain$chain_no <- as.factor(chain$chain_no)
