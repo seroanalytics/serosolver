@@ -281,7 +281,7 @@ void proposal_likelihood_func_continuous(double &new_prob,
   if(repeat_data_exist){
     for(int x = cum_nrows_per_individual_in_repeat_data[indiv]; x < cum_nrows_per_individual_in_repeat_data[indiv+1]; ++x){
       if(repeat_data[x] < max_measurement && repeat_data[x] > min_measurement){
-        new_prob += -0.5*(pow((repeat_data[x]-predicted_antibody_levels[x])/sd, 2)) - den2;
+        new_prob += -0.5*(pow((repeat_data[x]-predicted_antibody_levels[repeat_indices[x]])/sd, 2)) - den2;
       } else if(repeat_data[x] >= max_measurement) {
         new_prob += log_const + log(erfc((max_measurement - predicted_antibody_levels[repeat_indices[x]])/den));
       } else {
