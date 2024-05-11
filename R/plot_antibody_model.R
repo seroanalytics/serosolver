@@ -372,3 +372,126 @@ theme_pubr <- function (base_size = 12, base_family = "", border = FALSE, margin
                                                         hjust = xhjust))
   .theme
 }
+
+
+#' Plots model predicted titers against observations
+#'
+#' @inheritParams plot_model_fits
+#' @return a list with: 
+#' \itemize{
+#' \item a data frame with all posterior estimates for each observation; 
+#' \item the proportion of observations captured by the 95% prediction intervals; 
+#' \item a histogram comparing posterior median estimates to the observed data (note, this can be misleading for continuous data due to the zero-inflated observation model); 
+#' \item a histogram comparing random posterior draws to the observed data (can be more reliable than posterior medians);
+#' \item comparison of observations and all posterior medians and 95% prediction intervals
+#' }
+#' @family infection_history_plots
+#' @examples
+#' @export
+plot_antibody_predictions <- function(chain, infection_histories, 
+                                      antibody_data, par_tab=NULL,
+                                      antigenic_map=NULL, 
+                                      possible_exposure_times=NULL,
+                                      nsamp = 1000,
+                                      measurement_indices_by_time = NULL,
+                                      data_type=1,
+                                      start_level="none",
+                                      settings=NULL){
+  ## If the list of serosolver settings was included, use these rather than passing each one by one
+  if(!is.null(settings)){
+    message("Using provided serosolver settings list")
+    if(is.null(antigenic_map)) antigenic_map <- settings$antigenic_map
+    if(is.null(measurement_indices_by_time)) measurement_indices_by_time <- settings$measurement_indices_by_time
+    if(is.null(antibody_data)) antibody_data <- settings$antibody_data
+    if(is.null(par_tab)) par_tab <- settings$par_tab
+    if(is.null(start_level) | start_level == "none") start_level <- settings$start_level
+    if(missing(data_type)) data_type <- settings$data_type
+  }
+  
+  ## Setup antigenic map and exposure times
+  ## Check if an antigenic map is provided. If not, then create a dummy map where all pathogens have the same position on the map
+  if (!is.null(antigenic_map)) {
+    possible_exposure_times_tmp <- unique(antigenic_map$inf_times) 
+    if(is.null(possible_exposure_times)) {
+      possible_exposure_times <- possible_exposure_times_tmp
+    }
+  } 
+  
+  start_levels <- create_start_level_data(antibody_data,start_level,FALSE) %>% 
+    dplyr::arrange(individual, biomarker_group, sample_time, biomarker_id, repeat_number)
+  ## Generate antibody predictions
+  x <- get_antibody_level_predictions(
+    chain, infection_histories, antibody_data, individuals=unique(antibody_data$individual),
+    antigenic_map, possible_exposure_times, 
+    par_tab, nsamp, FALSE, 
+    measurement_indices_by_time,
+    expand_antibody_data=FALSE,
+    expand_to_all_times=FALSE,
+    data_type=data_type,
+    start_level=start_levels,
+    for_regression = TRUE
+  )
+  
+  ## Use these antibody predictions and summary statistics on infection histories
+  ## Find proportion of measurements within the 95% prediction intervals
+  prop_correct <- x$predicted_observations %>% 
+    mutate(correct = measurement >= lower & measurement <= upper) %>% group_by(correct) %>% tally() %>%
+    pivot_wider(names_from=correct,values_from=n) %>%
+    mutate(prop_correct = `TRUE`/(`FALSE` + `TRUE`)) %>% 
+    pull(prop_correct)
+  
+  
+  ## Plot data against 95% prediction intervals and posterior medians
+  p_compare_pointrange <- x$predicted_observations %>% arrange(measurement) %>%mutate(i=1:n()) %>% ggplot() + 
+    geom_pointrange(aes(x=i,y=median,ymin=lower,ymax=upper,col="Predicted observation"),linewidth=0.25,size=0.25,alpha=0.5) + 
+    geom_point(aes(x=i,y=measurement,col="Observation"),size=0.25) + 
+    theme_minimal() + 
+    scale_color_manual(name="",values=c("Predicted observation"="blue","Observation"="black")) +
+    ylab("Antibody level") + 
+    xlab("Measurement ID\n(ascending measurement value)") +
+    theme(legend.position="bottom") +
+    ggtitle("Comparison of observations to posterior median and 95% prediction intervals")
+  
+  ## Histograms of observations against predictions
+  ## Posterior median
+  p_hist_median <- ggplot(x$predicted_observations %>% mutate(i=1:n()) %>%
+                            dplyr::select(i,measurement,median) %>%
+                            rename(`Posterior median`=median,`Observation`=measurement) %>%
+                            pivot_longer(-i)) +
+    geom_histogram(aes(x=value,fill=name),position="dodge")+
+    theme_minimal() + 
+    scale_fill_manual(name="",values=c("Posterior median"="blue","Observation"="black")) +
+    theme(legend.position="bottom") +
+    xlab("Antibody level") +
+    ylab("Count") +
+    ggtitle("Distribution of measurements vs. posterior median predictions")
+  
+  ## Some random draws
+  rand_draws <- sample(1:ncol(x$all_predictions_obs),min(9, ncol(x$all_predictions_obs)))
+  tmp_pred_obs <- x$all_predictions_obs[,rand_draws]
+  colnames(tmp_pred_obs) <- rand_draws
+  p_hist_draws <- x$predicted_observations %>% select(measurement) %>% bind_cols(tmp_pred_obs) %>%
+    mutate(i=1:n()) %>%
+    pivot_longer(-c(i,measurement)) %>%
+    mutate(name=paste0("Posterior draw: ", name)) %>%
+    ggplot() + 
+    geom_histogram(aes(x=measurement,fill="Observation"),alpha=0.5,col="grey10",
+                   linewidth=0.1) + 
+    geom_histogram(aes(x=value,fill="Predicted"),alpha=0.5,col="grey10",linewidth=0.1) +
+    scale_fill_manual(name="",values=c("Predicted"="blue","Observation"="black")) +
+    
+    facet_wrap(~name) +
+    theme_minimal() +
+    theme(legend.position="none") +
+    xlab("Antibody level") +
+    ylab("Count") +
+    ggtitle("Predicted observations vs. measurements from random posterior draws")
+  
+  
+  return(list("all_predictions"=x$predicted_observations,
+              "proportion_correct"=paste0("Proportion of observations within 95% prediction intervals: ", signif(prop_correct,5)),
+              "p_hist_median"=p_hist_median,
+              "p_hist_draws"=p_hist_draws,
+              "p_pointrange"=p_compare_pointrange))
+  
+}

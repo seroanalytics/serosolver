@@ -427,10 +427,11 @@ get_antibody_level_predictions <- function(chain, infection_histories, antibody_
     }
     inf_hist_all[[i]] <- tmp_inf_hist
     ## Get residuals between observations and predictions
-    residuals[, i] <- antibody_data1$measurement - floor(predicted_titres[, i])
+    residuals[, i] <- antibody_data1$measurement - predicted_titres[, i]
     residuals_floor[,i] <- antibody_data1$measurement - observed_predicted_titres[,i]
     samp_record[i] <- index
   }
+
   colnames(predicted_titres) <- tmp_samp
   ## If generating for residual plot, can return now
   if (for_res_plot) {
@@ -440,16 +441,17 @@ get_antibody_level_predictions <- function(chain, infection_histories, antibody_
                 residuals_floor))
   }
   
-  #residuals <- cbind(antibody_data1, residuals)
-  
   ## Get 95% credible interval and means
-  dat2 <- t(apply(predicted_titres, 1, function(x) quantile(x, c(0.025, 0.25, 0.5, 0.75, 0.975))))
+  dat2 <- t(apply(predicted_titres, 1, function(x) c(mean(x), quantile(x, c(0.025, 0.25, 0.5, 0.75, 0.975)))))
   
   ## Get 95% credible interval and means of observations
-  obs_dat <- t(apply(observed_predicted_titres, 1, function(x) quantile(x, c(0.025, 0.25, 0.5, 0.75, 0.975))))
+  obs_dat <- t(apply(observed_predicted_titres, 1, function(x) c(mean(x), quantile(x, c(0.025, 0.25, 0.5, 0.75, 0.975)))))
   
-  residuals <- t(apply(residuals, 1, function(x) quantile(x, c(0.025, 0.5, 0.975))))
+  residuals <- t(apply(residuals, 1, function(x) c(mean(x), quantile(x, c(0.025, 0.5, 0.975)))))
   residuals <- cbind(antibody_data1, residuals)
+  
+  residuals_obs <- t(apply(residuals_floor, 1, function(x) c(mean(x), quantile(x, c(0.025, 0.5, 0.975)))))
+  residuals_obs <- cbind(antibody_data1, residuals_obs)
   
   ## Find multivariate posterior mode estimate from the chain
   best_pars <- get_best_pars(chain)
@@ -464,12 +466,12 @@ get_antibody_level_predictions <- function(chain, infection_histories, antibody_
   
   ## Generate trajectory for best parameters
   best_traj <- model_func(best_pars, best_inf)
-  best_residuals <- antibody_data1$measurement - floor(best_traj)
+  best_residuals <- antibody_data1$measurement - best_traj
   best_residuals <- cbind(antibody_data1, best_residuals, "samp_no" = best_I)
   dat2 <- as.data.frame(dat2)
   obs_dat <- as.data.frame(obs_dat)
   
-  colnames(dat2) <- colnames(obs_dat) <- c("lower", "lower_50", "median", "upper_50", "upper")
+  colnames(dat2) <- colnames(obs_dat) <- c("mean","lower", "lower_50", "median", "upper_50", "upper")
   dat2$max <- best_traj
   dat2 <- cbind(antibody_data1, dat2)
   obs_dat <- cbind(antibody_data1, obs_dat)
@@ -488,7 +490,8 @@ get_antibody_level_predictions <- function(chain, infection_histories, antibody_
   dat2$individual <- individuals[dat2$individual]
   infection_history_final$individual <- individuals[infection_history_final$individual]
   if(for_regression){
-    return(list("all_predictions"=predicted_titres, "all_inf_hist"=inf_hist_all,
+    return(list("all_predictions"=predicted_titres, "all_predictions_obs"=observed_predicted_titres,
+    "all_inf_hist"=inf_hist_all,
                 "summary_titres"=dat2,"best_inf_hist"=best_inf, "predicted_observations"=obs_dat)) 
   }
   

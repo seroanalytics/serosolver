@@ -44,6 +44,7 @@ plot_antibody_data(example_antibody_data, possible_exposure_times, 5, example_in
 \seealso{
 Other infection_history_plots: 
 \code{\link{calculate_infection_history_statistics}()},
+\code{\link{plot_antibody_predictions}()},
 \code{\link{plot_cumulative_infection_histories}()},
 \code{\link{plot_individual_number_infections}()},
 \code{\link{plot_infection_history_chains_indiv}()},

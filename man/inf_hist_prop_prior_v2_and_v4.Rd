@@ -74,8 +74,6 @@ inf_hist_prop_prior_v2_and_v4(
 
 \item{sampled_indivs}{IntegerVector, indices of sampled individuals}
 
-\item{n_times_samp_vec}{int, for each individual, how many time periods to resample infections for?}
-
 \item{age_mask}{IntegerVector, length of the number of individuals, with indices specifying first time period that an individual can be infected (indexed from 1, such that a value of 1 allows an individual to be infected in any time period)}
 
 \item{sample_mask}{IntegerVector, length of the number of individuals, with indices specifying last time period that an individual can be infected (ie. last time a sample was taken)}

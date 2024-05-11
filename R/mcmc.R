@@ -92,7 +92,7 @@ serosolver <- function(par_tab,
       `%execute%` <- `%dorng%`
       if(verbose) {
         message(cat("Requested", n_chains, "MCMC chains in parallel, setting up parallel session using doParallel package\n",sep=" "))
-        message(cat("Progress messages will be piped to", filename, "_log.txt when `parallel` is set to true\n"))
+        message(cat("Progress messages will be piped to ", filename, "_log.txt when `parallel` is set to true\n",sep=""))
       } else {
         message(cat("\n",sep=" "))
       }

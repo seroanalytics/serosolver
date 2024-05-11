@@ -68,6 +68,7 @@ plot_cumulative_infection_histories(example_inf_chain, 0, indivs, example_inf_hi
 Other infection_history_plots: 
 \code{\link{calculate_infection_history_statistics}()},
 \code{\link{plot_antibody_data}()},
+\code{\link{plot_antibody_predictions}()},
 \code{\link{plot_individual_number_infections}()},
 \code{\link{plot_infection_history_chains_indiv}()},
 \code{\link{plot_infection_history_chains_time}()},

@@ -67,6 +67,7 @@ all_plots <- plot_posteriors_infhist(example_inf_chain, possible_exposure_times,
 Other infection_history_plots: 
 \code{\link{calculate_infection_history_statistics}()},
 \code{\link{plot_antibody_data}()},
+\code{\link{plot_antibody_predictions}()},
 \code{\link{plot_cumulative_infection_histories}()},
 \code{\link{plot_individual_number_infections}()},
 \code{\link{plot_infection_history_chains_indiv}()},
