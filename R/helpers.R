@@ -442,7 +442,7 @@ setup_antibody_data_for_posterior_func <- function(antibody_data, antigenic_map=
   } else {
     if(!is.null(use_demographic_groups)){
       demographics <- antibody_data %>% dplyr::select(all_of(use_demographic_groups)) %>% distinct() %>% dplyr::mutate(demographic_group = 1:n())
-      antibody_data <- antibody_data %>% left_join(demographics)
+      antibody_data <- antibody_data %>% left_join(demographics,by=use_demographic_groups)
     }
   }
   indiv_group_indices <- antibody_data %>% select(individual, demographic_group) %>% distinct() %>% pull(demographic_group)

@@ -209,7 +209,8 @@ create_posterior_func <- function(par_tab,
     
     ## Some additional setup for the repeat data
     ## Used to summarize into per-individual likelihoods later
-    nrows_per_individual_in_data_repeats <-  antibody_data_repeats %>% group_by(individual, biomarker_group) %>% 
+    nrows_per_individual_in_data_repeats <-  antibody_data_repeats %>% 
+      group_by(individual, biomarker_group) %>% 
         tally() %>% 
         tidyr::pivot_wider(id_cols=individual,values_from=n,names_from=biomarker_group,values_fill=0) %>%
         ungroup()
@@ -222,9 +223,15 @@ create_posterior_func <- function(par_tab,
     nrows_per_individual_in_data_repeats <- nrows_per_individual_in_data_repeats %>% 
         select(order(colnames(nrows_per_individual_in_data_repeats)))
     nrows_per_individual_in_data_repeats <- as.matrix(nrows_per_individual_in_data_repeats)
-    
-    tmp <- antibody_data_repeats %>% group_by(individual, biomarker_group) %>% 
-        tally() %>% pull(n)
+    tmp <- antibody_data_repeats %>% 
+      group_by(individual, biomarker_group) %>% 
+        tally() %>%
+      bind_rows(expand_grid(individual=unique(antibody_data$individual),
+                            biomarker_group=unique(antibody_data$biomarker_group),
+                            n=0)) %>%
+      group_by(individual,biomarker_group) %>%
+      dplyr::summarize(n=sum(n)) %>%
+      pull(n)
     cum_nrows_per_individual_in_data_repeats <- cumsum(c(0,tmp))
     
     biomarker_group_indices <- lapply(unique_biomarker_groups, function(x) which(antibody_data_unique$biomarker_group == x))
@@ -394,7 +401,6 @@ create_posterior_func <- function(par_tab,
                 ## Calculate likelihood for unique antibody_levels and repeat data
                 ## Sum these for each individual
                 liks <- numeric(n_indivs)
-
                 for(biomarker_group in unique_biomarker_groups){
                     ## Need theta for each observation type
                     liks_tmp <- likelihood_func_use[[biomarker_group]](
