@@ -436,9 +436,16 @@ plot_antibody_predictions <- function(chain, infection_histories,
   ## Find proportion of measurements within the 95% prediction intervals
   prop_correct <- x$predicted_observations %>% 
     mutate(correct = measurement >= lower & measurement <= upper) %>% group_by(correct) %>% tally() %>%
-    pivot_wider(names_from=correct,values_from=n) %>%
-    mutate(prop_correct = `TRUE`/(`FALSE` + `TRUE`)) %>% 
-    pull(prop_correct)
+    pivot_wider(names_from=correct,values_from=n)
+  if(!("FALSE" %in% colnames(prop_correct))) {
+    prop_correct$`FALSE` <- 0
+  }
+  if(!("TRUE" %in% colnames(prop_correct))) {
+    prop_correct$`TRUE` <- 0
+  }
+  prop_correct <- prop_correct %>%
+    mutate(prop_correct1 = `TRUE`/(`FALSE` + `TRUE`)) %>% 
+    pull(prop_correct1)
   
   
   ## Plot data against 95% prediction intervals and posterior medians
