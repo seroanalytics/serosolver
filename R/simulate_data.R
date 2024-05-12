@@ -57,13 +57,13 @@ simulate_data <- function(par_tab,
     #########################################################
     ## PARAMETER TABLE CHECKS
     #########################################################
-    check_par_tab(par_tab)
+  par_tab <- check_par_tab(par_tab)
     
     if (!("biomarker_group" %in% colnames(par_tab))) {
         if(verbose) message(cat("Note: no biomarker_group detection in par_tab Assuming all biomarker_group as 1. If this was deliberate, you can ignore this message.\n"))
         par_tab$biomarker_group <- 1
     }
-    
+
     ## Get unique observation types
     unique_biomarker_groups <- unique(par_tab$biomarker_group)
     n_biomarker_groups <- length(unique_biomarker_groups)
@@ -172,10 +172,10 @@ simulate_data <- function(par_tab,
     y <- merge(y, ages)
     n_alive <- get_n_alive(y,times = possible_exposure_times)
     ARs <- colSums(infection_history) / n_alive
-    attack_rates <- data.frame("time" = possible_exposure_times, "AR" = ARs)
+    attack_rates_obs <- data.frame("time" = possible_exposure_times, "AR" = ARs)
     return(list(
         antibody_data = y, infection_histories = infection_history,
-        ages = ages, attack_rates = attack_rates, phis = attack_rates
+        ages = ages, attack_rates = attack_rates_obs, phis = attack_rates
     ))
 }
 
@@ -434,15 +434,32 @@ simulate_individual_faster <- function(theta,
 #'                          possible_exposure_times,possible_exposure_times,add_noise=FALSE)
 simulate_individual <- function(theta,
                                 infection_history,
-                                antigenic_map,
-                                sampling_times,
-                                possible_exposure_times,
-                                measured_biomarker_ids,
-                                measurement_bias = NULL, measurement_indices = NULL,
+                                antigenic_map=NULL,
+                                sampling_times=NULL,
+                                possible_exposure_times=NULL,
+                                measured_biomarker_ids=NULL,
+                                measurement_bias = NULL, 
+                                measurement_indices = NULL,
                                 add_noise = TRUE, repeats = 1,
                                 DOB = NULL) {
 
   ## Create antigenic map for short and long term boosting
+  ## Default arguments/NULL arguments
+  if(is.null(antigenic_map)){
+    if(is.null(possible_exposure_times)) stop("Error - must provide one of possible_exposure_times or antigenic_map")
+    antigenic_map <- data.frame(inf_times=possible_exposure_times,x_coord=1,y_coord=1)
+  } else {
+    if(is.null(possible_exposure_times)){
+      possible_exposure_times <- antigenic_map$inf_times
+    }
+  }
+  if(is.null(measured_biomarker_ids)){
+    measured_biomarker_ids <- possible_exposure_times
+  }
+  if(is.null(sampling_times)){
+    sampling_times <- possible_exposure_times
+  } 
+  
   antigenic_map_melted <- melt_antigenic_coords(antigenic_map[, c("x_coord", "y_coord")])
   antigenic_map_long <- create_cross_reactivity_vector(antigenic_map_melted, theta["cr_long"])
   antigenic_map_short <- create_cross_reactivity_vector(antigenic_map_melted, theta["cr_short"])
@@ -475,22 +492,22 @@ simulate_individual <- function(theta,
   
   ## Entries in the antigenic map for each measured strain
   measured_biomarker_id_indices <- match(rep(measured_biomarker_ids, n_samps), possible_exposure_times) - 1
-  dat <- matrix(nrow = length(measured_biomarker_ids) * repeats, ncol = 4) ## To store simulated data
+  dat <- matrix(nrow = length(measured_biomarker_id_indices) * repeats, ncol = 4) ## To store simulated data
 
-  start_antibody_levels <- rep(0, length(measured_biomarker_ids))
-  start_level_indices <- seq_along(measured_biomarker_ids)-1
+  start_antibody_levels <- rep(0, length(measured_biomarker_id_indices))
+  start_level_indices <- seq_along(measured_biomarker_id_indices)-1
 
   theta_indices_unique <- seq_along(theta) - 1
   names(theta_indices_unique) <- names(theta)
   unique_biomarker_groups <- 1
-  
   ## Go into C++ code to solve the antibody model
   antibody_levels <- antibody_model(
-    theta, 
+    matrix(theta,nrow=1), 
     theta_indices_unique, 
     1,
     inf_hist, 
     infection_history_mat_indices,
+    0,
     possible_exposure_times, 
     exposure_time_indices,
     sampling_times, 
@@ -505,11 +522,10 @@ simulate_individual <- function(theta,
     start_level_indices,
     start_antibody_levels,
     births,
-    matrix(antigenic_map_long,ncol=1), 
-    matrix(antigenic_map_short,ncol=1), 
+    array(antigenic_map_long,dim=c(length(antigenic_map_long),1,1)), 
+    array(antigenic_map_short,dim=c(length(antigenic_map_short),1,1)), 
     antigenic_distances
   )
-
   ## Repeated each simulated titre per observation repeat
   antibody_levels <- rep(antibody_levels, repeats)
   ## Housekeeping for return data
