@@ -748,6 +748,8 @@ setup_antigenic_map <- function(antigenic_map=NULL, possible_exposure_times=NULL
 
 
 create_demographic_table <- function(antibody_data, par_tab){
+  
+  
   strsplit1 <- function(x){
     if(!is.na(x)){
       return(strsplit(x,", "))
@@ -763,6 +765,9 @@ create_demographic_table <- function(antibody_data, par_tab){
     demographics <- data.frame(all=1)
   } else {
     demographics <- antibody_data %>% select(all_of(stratifications)) %>% distinct()
+  }
+  if(any(apply(demographics, 2, function(x) length(unique(x))) < 2)){
+    message("Error - trying to stratify by variable in par_tab, but <2 levels for this variable in antibody_data")
   }
   return(demographics)
 }
