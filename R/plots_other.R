@@ -46,7 +46,12 @@ plot_antibody_data <- function(antibody_data,
     } else {
         antibody_data$biomarker_group <- 1
     }
-    p1 <- ggplot(antibody_data[antibody_data$individual %in% samps, ]) +
+    
+    ## For birth dates
+    DOBs <- unique(antibody_data[antibody_data$individual %in% samps, c("individual","birth")])
+    
+    p1 <- ggplot(antibody_data[antibody_data$individual %in% samps, ]) + 
+      geom_vline(data = DOBs, aes(xintercept = birth,linetype="Birth"),col = "purple") +
       geom_rect(data=measurement_ranges,aes(ymin=max_measurement,ymax=max_measurement+1),xmin=0,xmax=max_x,fill="grey70") +
       geom_rect(data=measurement_ranges,aes(ymin=min_measurement-1,ymax=min_measurement),xmin=0,xmax=max_x,fill="grey70") 
       
@@ -76,7 +81,7 @@ plot_antibody_data <- function(antibody_data,
       
       p1 <- p1 + geom_vline(data = melted_inf_hist[melted_inf_hist$individual %in% samps, ], 
                             aes(xintercept = variable,linetype="Known infection time"), 
-                            col = "orange",linetype="dashed")
+                            col = "orange")
     }
     breaks <- seq(floor(min(measurement_ranges$min_measurement)), ceiling(max(measurement_ranges$max_measurement)),by=2)
     p1 <- p1 +
@@ -95,7 +100,7 @@ plot_antibody_data <- function(antibody_data,
       coord_cartesian(xlim=time_range) +
       scale_y_continuous(expand=c(0,0),breaks=breaks) + 
       scale_color_viridis_d(name="Biomarker ID") + 
-      scale_linetype_manual(name="",values=c("Known infection time"="dashed"))
+      scale_linetype_manual(name="",values=c("Known infection time"="dashed","Birth"="solid"))
     return(p1)
 }
 

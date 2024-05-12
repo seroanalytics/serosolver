@@ -356,8 +356,8 @@ create_posterior_func <- function(par_tab,
             antigenic_map_long <- array(dim=c(length(possible_biomarker_ids)^2,n_biomarker_groups,n_demographic_groups))
             antigenic_map_short <- array(dim=c(length(possible_biomarker_ids)^2,n_biomarker_groups,n_demographic_groups))
             
-            cr_longs <- as.matrix(theta[,which(par_names_theta_all=="cr_long")])
-            cr_shorts <- as.matrix(theta[,which(par_names_theta_all=="cr_short")])
+            cr_longs <- matrix(theta[,which(par_names_theta_all=="cr_long")],nrow=length(unique_groups))
+            cr_shorts <- matrix(theta[,which(par_names_theta_all=="cr_short")],nrow=length(unique_groups))
             for(group in unique_groups){
               for(biomarker_group in unique_biomarker_groups){
                 antigenic_map_long[,biomarker_group,group] <- create_cross_reactivity_vector(antigenic_map_melted[[biomarker_group]], cr_longs[group,biomarker_group])
@@ -467,9 +467,9 @@ create_posterior_func <- function(par_tab,
           antigenic_map_long <- array(dim=c(length(possible_biomarker_ids)^2,n_biomarker_groups,n_demographic_groups))
           antigenic_map_short <- array(dim=c(length(possible_biomarker_ids)^2,n_biomarker_groups,n_demographic_groups))
           
-          cr_longs <- as.matrix(theta[,which(par_names_theta_all=="cr_long")])
-          cr_shorts <- as.matrix(theta[,which(par_names_theta_all=="cr_short")])
-            
+          cr_longs <- matrix(theta[,which(par_names_theta_all=="cr_long")],nrow=length(unique_groups))
+          cr_shorts <- matrix(theta[,which(par_names_theta_all=="cr_short")],nrow=length(unique_groups))
+          
           for(group in unique_groups){
             for(biomarker_group in unique_biomarker_groups){
               antigenic_map_long[,biomarker_group,group] <- create_cross_reactivity_vector(antigenic_map_melted[[biomarker_group]], cr_longs[group,biomarker_group])
@@ -561,8 +561,8 @@ create_posterior_func <- function(par_tab,
             antigenic_map_long <- array(dim=c(length(possible_biomarker_ids)^2,n_biomarker_groups,n_demographic_groups))
             antigenic_map_short <- array(dim=c(length(possible_biomarker_ids)^2,n_biomarker_groups,n_demographic_groups))
             
-            cr_longs <- as.matrix(theta[,which(par_names_theta_all=="cr_long")])
-            cr_shorts <- as.matrix(theta[,which(par_names_theta_all=="cr_short")])
+            cr_longs <- matrix(theta[,which(par_names_theta_all=="cr_long")],nrow=length(unique_groups))
+            cr_shorts <- matrix(theta[,which(par_names_theta_all=="cr_short")],nrow=length(unique_groups))
             for(group in unique_groups){
               for(biomarker_group in unique_biomarker_groups){
                   antigenic_map_long[,biomarker_group,group] <- create_cross_reactivity_vector(antigenic_map_melted[[biomarker_group]], cr_longs[group,biomarker_group])
