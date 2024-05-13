@@ -327,8 +327,6 @@ plot_attack_rates_pointrange <- function(infection_histories, antibody_data=NULL
     colnames(quantiles)[which(colnames(quantiles) == "tested")]  <- "Biomarker tested"
     
     p <- ggplot(quantiles[quantiles$population_group %in% group_subset, ]) +
-      scale_y_continuous(expand = c(0, 0)) +
-      scale_x_continuous(breaks = year_breaks, labels = year_labels) +
       coord_cartesian(ylim=c(0,1)) +
       theme_classic() +
       ylab("Estimated attack rate") +
@@ -389,8 +387,7 @@ plot_attack_rates_pointrange <- function(infection_histories, antibody_data=NULL
   }
   if (!plot_residuals) {
     p <- p +
-      scale_y_continuous(expand = c(0, 0)) +
-      coord_cartesian(ylim=c(0,1))
+      scale_y_continuous(expand = c(0, 0)) 
   }
   
   if (by_group) {
