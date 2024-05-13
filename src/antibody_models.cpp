@@ -161,11 +161,20 @@ NumericVector antibody_model(const NumericMatrix theta,
     // If trying to solve how demographic groups change over time, then need to extract the demographic group indices for this individuals
     if(timevarying_groups){
       // Treat the indiv_theta_groups vector as a flattened matrix -- this individual's demography vector is from [i-1,2] to [i-1, number_possible_exposures + 1] (the +1 is for birth group) 
-      groups = indiv_theta_groups[Range((number_possible_exposures+1)*(i-1)+1, (number_possible_exposures+1)*i - 1)];
+      groups = indiv_theta_groups[Range((number_possible_exposures+1)*(i-1) + 1, (number_possible_exposures+1)*i - 1)];
+      //Rcpp::Rcout << "Indiv: " << i << std::endl;
+      //Rcpp::Rcout << "Groups: " << groups << std::endl;
+      
       // Then subset to groups with infections
       groups = groups[use_indices];
+      
+      //Rcpp::Rcout << "Groups subset: " << groups << std::endl;
       // Birth group is [i-1, 1]
       birth_group = indiv_theta_groups[(number_possible_exposures+1)*(i-1)];
+      //Rcpp::Rcout << "Infection times: " << infection_times << std::endl;
+      
+      //Rcpp::Rcout << "Birth group: " << birth_group << std::endl;
+      //Rcpp::Rcout << "Theta: " << theta << std::endl;
     } else {
       // Otherwise, the individual's group is unchanged
       group = indiv_theta_groups[i-1];

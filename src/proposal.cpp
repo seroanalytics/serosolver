@@ -416,10 +416,14 @@ List inf_hist_prop_prior_v2_and_v4(
     // If trying to solve how demographic groups change over time, then need to extract the demographic group indices for this individuals
     if(timevarying_groups){
       // Treat the indiv_group_indices vector as a flattened matrix -- this individual's demography vector is from [i-1,2] to [i-1, number_possible_exposures + 1] (the +1 is for birth group) 
-      groups = indiv_group_indices[Range((number_possible_exposures+1)*(indiv)+1, (number_possible_exposures+1)*(indiv+1) - 1)];
+      groups = indiv_group_indices[Range((number_possible_exposures+1)*(indiv) + 1, (number_possible_exposures+1)*(indiv+1) - 1)];
 
       // Birth group is [i-1, 1]
       birth_group = indiv_group_indices[(number_possible_exposures+1)*(indiv)];
+      
+      //Rcpp::Rcout << "Indiv (prop): " << indiv << std::endl;
+      //Rcpp::Rcout << "Groups (prop): " << groups << std::endl;
+      //Rcpp::Rcout << "Birth group (prop): " << birth_group << std::endl;
     } else {
       // Otherwise, the individual's group is unchanged
       group = indiv_group_indices[indiv];
@@ -614,30 +618,30 @@ List inf_hist_prop_prior_v2_and_v4(
         //if(TRUE){
          //Rcpp::Rcout << "Infection history after change: " << new_infection_history<< std::endl;
           
-    	// Calculate likelihood!
-    	indices = new_infection_history > 0;
-      use_indices =infection_history_mat_indices[indices];
-    	infection_times = possible_exposure_times[use_indices];
-    	infection_times_indices_tmp = possible_exposure_times_indices[use_indices];	  
-    	
-    	// Subset group indices to those times with infections
-    	if(timevarying_groups){
-    	  groups_subset = groups[use_indices];
-    	}
-    	//Rcpp::Rcout << infection_times_indices_tmp << std::endl;
-    	
-    	// Start end end location of the type_data matrix
-    	type_start = type_data_start(indiv);
-    	type_end = type_data_start(indiv+1)-1;
-    	
-    	//Rcpp::Rcout << "Type start: " << type_start << std::endl;
-    	//Rcpp::Rcout << "Type end: " << type_end << std::endl << std::endl;
-    	
-    	// ====================================================== //
-    	// =============== CHOOSE MODEL TO SOLVE =============== //
-    	// ====================================================== //
-    	// For each observation type solved for this individual
-	    new_prob = 0;
+      	// Calculate likelihood!
+      	indices = new_infection_history > 0;
+        use_indices =infection_history_mat_indices[indices];
+      	infection_times = possible_exposure_times[use_indices];
+      	infection_times_indices_tmp = possible_exposure_times_indices[use_indices];	  
+      	
+      	// Subset group indices to those times with infections
+      	if(timevarying_groups){
+      	  groups_subset = groups[use_indices];
+      	}
+      	//Rcpp::Rcout << infection_times_indices_tmp << std::endl;
+      	
+      	// Start end end location of the type_data matrix
+      	type_start = type_data_start(indiv);
+      	type_end = type_data_start(indiv+1)-1;
+      	
+      	//Rcpp::Rcout << "Type start: " << type_start << std::endl;
+      	//Rcpp::Rcout << "Type end: " << type_end << std::endl << std::endl;
+      	
+      	// ====================================================== //
+      	// =============== CHOOSE MODEL TO SOLVE =============== //
+      	// ====================================================== //
+      	// For each observation type solved for this individual
+  	    new_prob = 0;
 
     	for(int index = type_start; index <= type_end; ++index){
     	    //Rcpp::Rcout << "index: " << index << std::endl;
@@ -686,7 +690,7 @@ List inf_hist_prop_prior_v2_and_v4(
         	    wane_long_parameters, 
         	    antigenic_seniority_parameters,
         	    infection_times,
-        	    groups,
+        	    groups_subset,
         	    birth_group,
         	    infection_times_indices_tmp,
         	    biomarker_id_indices,

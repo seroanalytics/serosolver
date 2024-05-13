@@ -131,8 +131,10 @@ create_posterior_func <- function(par_tab,
         antibody_data[, c("individual", "sample_time", "biomarker_group","biomarker_id")],
         antibody_data_unique[, c("individual", "sample_time", "biomarker_group","biomarker_id")]
     )
+    
     ## Setup data vectors and extract
     if(!is.null(demographics)){
+      demographics <- demographics %>% arrange(individual, time)
       demographics <- as.data.frame(demographics)
       timevarying_demographics <- TRUE
       demographic_groups <- create_demographic_table(demographics,par_tab)
@@ -158,9 +160,7 @@ create_posterior_func <- function(par_tab,
     population_group_id_vec <- setup_dat$population_group_id_vec
     indiv_group_indices <- setup_dat$indiv_group_indices
     n_demographic_groups <- setup_dat$n_demographic_groups
-    demographics <- setup_dat$demographics
-    
-   
+    demographics_groups <- setup_dat$demographics
     
     ## List of melted antigenic maps, one entry for each observation type
     antigenic_map_melted <- setup_dat$antigenic_map_melted
