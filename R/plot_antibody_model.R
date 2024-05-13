@@ -136,7 +136,7 @@ plot_model_fits <- function(chain, infection_histories,
                             possible_exposure_times=NULL,
                             nsamp = 1000,
                             known_infection_history=NULL,
-                            measurement_indices_by_time = NULL,
+                            measurement_bias = NULL,
                             p_ncol=max(1,floor(length(individuals)/2)),
                             data_type=1,
                             expand_to_all_times=FALSE,
@@ -151,7 +151,7 @@ plot_model_fits <- function(chain, infection_histories,
     message("Using provided serosolver settings list")
     if(is.null(antigenic_map)) antigenic_map <- settings$antigenic_map
     if(is.null(possible_exposure_times)) possible_exposure_times <- settings$possible_exposure_times
-    if(is.null(measurement_indices_by_time)) measurement_indices_by_time <- settings$measurement_indices_by_time
+    if(is.null(measurement_bias)) measurement_bias <- settings$measurement_bias
     if(is.null(antibody_data)) antibody_data <- settings$antibody_data
     if(is.null(demographics)) demographics <- settings$demographics
     if(is.null(par_tab)) par_tab <- settings$par_tab
@@ -180,7 +180,7 @@ plot_model_fits <- function(chain, infection_histories,
     individuals,
     antigenic_map, possible_exposure_times, 
     par_tab, nsamp, FALSE, 
-    measurement_indices_by_time,
+    measurement_bias,
     expand_antibody_data=TRUE,
     expand_to_all_times=expand_to_all_times,
     data_type=data_type,
@@ -397,7 +397,7 @@ plot_antibody_predictions <- function(chain, infection_histories,
                                       antigenic_map=NULL, 
                                       possible_exposure_times=NULL,
                                       nsamp = 1000,
-                                      measurement_indices_by_time = NULL,
+                                      measurement_bias = NULL,
                                       data_type=1,
                                       start_level="none",
                                       settings=NULL){
@@ -405,7 +405,7 @@ plot_antibody_predictions <- function(chain, infection_histories,
   if(!is.null(settings)){
     message("Using provided serosolver settings list")
     if(is.null(antigenic_map)) antigenic_map <- settings$antigenic_map
-    if(is.null(measurement_indices_by_time)) measurement_indices_by_time <- settings$measurement_indices_by_time
+    if(is.null(measurement_bias)) measurement_bias <- settings$measurement_bias
     if(is.null(antibody_data)) antibody_data <- settings$antibody_data
     if(is.null(demographics)) demographics <- settings$demographics
     if(is.null(par_tab)) par_tab <- settings$par_tab
@@ -429,7 +429,7 @@ plot_antibody_predictions <- function(chain, infection_histories,
     chain, infection_histories, antibody_data, individuals=unique(antibody_data$individual),
     antigenic_map, possible_exposure_times, 
     par_tab, nsamp, FALSE, 
-    measurement_indices_by_time,
+    measurement_bias,
     expand_antibody_data=FALSE,
     expand_to_all_times=FALSE,
     data_type=data_type,
@@ -495,7 +495,7 @@ plot_antibody_predictions <- function(chain, infection_histories,
     
     facet_wrap(~name) +
     theme_minimal() +
-    theme(legend.position="none") +
+    theme(legend.position="bottom") +
     xlab("Antibody level") +
     ylab("Count") +
     ggtitle("Predicted observations vs. measurements from random posterior draws")

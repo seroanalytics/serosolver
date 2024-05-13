@@ -185,7 +185,12 @@ plot_posteriors_theta <- function(chain,par_tab){
   p_trace_rho <- p_density_rho <- NULL
   if("rho" %in% par_tab$names& "rho" %in% colnames(chain)){
     rho_indices <- 1:nrow(par_tab_tmp[par_tab_tmp$names == "rho",])
-    rho_indices <- c("samp_no","chain_no",c("rho",paste0("rho.",rho_indices[1:(length(rho_indices)-1)])))
+    if(length(rho_indices) > 1){
+      additional <- paste0("rho.",rho_indices[1:(length(rho_indices)-1)])
+    } else {
+      additional <- NULL
+    }
+    rho_indices <- c("samp_no","chain_no",c("rho",additional))
     p_trace_rho <- chain[,rho_indices] %>%
       pivot_longer(-c(samp_no, chain_no)) %>%
       ggplot() + 

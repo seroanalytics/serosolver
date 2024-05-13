@@ -10,7 +10,7 @@
 #' @param prior_version which infection history assumption version to use? See \code{\link{describe_priors}} for options. Can be 1, 2, 3 or 4
 #' @param solve_likelihood usually set to TRUE. If FALSE, does not solve the likelihood and instead just samples/solves based on the model prior
 #' @param age_mask see \code{\link{create_age_mask}} - a vector with one entry for each individual specifying the first epoch of circulation in which an individual could have been exposed
-#' @param measurement_indices_by_time if not NULL, then use these indices to specify which measurement bias parameter index corresponds to which time
+#' @param measurement_bias if not NULL, then use these indices to specify which measurement bias parameter index corresponds to which time
 #' @param n_alive if not NULL, uses this as the number alive in a given year rather than calculating from the ages. This is needed if the number of alive individuals is known, but individual birth dates are not
 #' @param function_type integer specifying which version of this function to use. Specify 1 to give a posterior solving function; 2 to give the gibbs sampler for infection history proposals; otherwise just solves the titre model and returns predicted titres. NOTE that this is not the same as the attack rate prior argument, \code{version}!
 #' @param titre_before_infection TRUE/FALSE value. If TRUE, solves titre predictions, but gives the predicted titre at a given time point BEFORE any infection during that time occurs.
@@ -46,7 +46,7 @@ create_posterior_func <- function(par_tab,
                                   prior_version = 1,
                                   solve_likelihood = TRUE,
                                   age_mask = NULL,
-                                  measurement_indices_by_time = NULL,
+                                  measurement_bias = NULL,
                                   n_alive = NULL,
                                   function_type = 1,
                                   antibody_level_before_infection=FALSE,
@@ -72,9 +72,9 @@ create_posterior_func <- function(par_tab,
       if(verbose) message(cat("Note: no biomarker_group detected in par_tab. Assuming all biomarker_group as 1.\n"))
         par_tab$biomarker_group <- 1
     }
-    if (!is.null(measurement_indices_by_time) & !("biomarker_group" %in% colnames(measurement_indices_by_time))) {
-      if(verbose) message(cat("Note: no biomarker_group detected in measurement_indices_by_time. Assuming all biomarker_group as 1.\n"))
-      measurement_indices_by_time$biomarker_group <- 1
+    if (!is.null(measurement_bias) & !("biomarker_group" %in% colnames(measurement_bias))) {
+      if(verbose) message(cat("Note: no biomarker_group detected in measurement_bias Assuming all biomarker_group as 1.\n"))
+      measurement_bias$biomarker_group <- 1
     }
   
     if(verbose){
@@ -309,17 +309,17 @@ create_posterior_func <- function(par_tab,
     n_pars <- length(theta_indices_unique)
     
     ## Sort out any assumptions for measurement bias
-    use_measurement_bias <- (length(measurement_indices_par_tab) > 0) & !is.null(measurement_indices_by_time)
+    use_measurement_bias <- (length(measurement_indices_par_tab) > 0) & !is.null(measurement_bias)
     
     antibody_level_shifts <- c(0)
     expected_indices <- NULL
-    measurement_bias <- NULL
+    measurement_bias_indices <- NULL
     additional_arguments <- NULL
 
     repeat_data_exist <- nrow(antibody_data_repeats) > 0
     if (use_measurement_bias) {
         if(verbose) message(cat("Using measurement bias\n"))
-        expected_indices <- antibody_data_unique %>% left_join(measurement_indices_by_time,by = c("biomarker_id", "biomarker_group")) %>% pull(rho_index)
+        expected_indices <- antibody_data_unique %>% left_join(measurement_bias,by = c("biomarker_id", "biomarker_group")) %>% pull(rho_index)
     } else {
         expected_indices <- c(-1)
     }
@@ -347,7 +347,6 @@ create_posterior_func <- function(par_tab,
         if(data_type[biomarker_group] == 1){
           likelihood_func_use[[biomarker_group]] <- likelihood_func_fast
           if(verbose) message(cat("Setting to discretized, bounded observations\n"))
-          
         } else if(data_type[biomarker_group] == 2){
           if(verbose) message(cat("Setting to continuous, bounded observations\n"))
           likelihood_func_use[[biomarker_group]] <- likelihood_func_fast_continuous
@@ -412,8 +411,8 @@ create_posterior_func <- function(par_tab,
             )
 
             if (use_measurement_bias) {
-              measurement_bias <- pars[measurement_indices_par_tab]
-              antibody_level_shifts <- measurement_bias[expected_indices]
+              measurement_bias_indices <- pars[measurement_indices_par_tab]
+              antibody_level_shifts <- measurement_bias_indices[expected_indices]
               y_new <- y_new + antibody_level_shifts
             }
                 ## Calculate likelihood for unique antibody_levels and repeat data
@@ -481,8 +480,8 @@ create_posterior_func <- function(par_tab,
       
 
             if (use_measurement_bias) {
-                measurement_bias <- pars[measurement_indices_par_tab]
-                antibody_level_shifts <- measurement_bias[expected_indices]
+              measurement_bias_indices <- pars[measurement_indices_par_tab]
+                antibody_level_shifts <- measurement_bias_indices[expected_indices]
             }
           antigenic_map_long <- array(dim=c(length(possible_biomarker_ids)^2,n_biomarker_groups,n_demographic_groups))
           antigenic_map_short <- array(dim=c(length(possible_biomarker_ids)^2,n_biomarker_groups,n_demographic_groups))
@@ -617,8 +616,8 @@ create_posterior_func <- function(par_tab,
                 antibody_level_before_infection
             )
             if (use_measurement_bias) {
-                measurement_bias <- pars[measurement_indices_par_tab]
-                antibody_level_shifts <- measurement_bias[expected_indices]
+              measurement_bias_indices <- pars[measurement_indices_par_tab]
+                antibody_level_shifts <- measurement_bias_indices[expected_indices]
                 y_new <- y_new + antibody_level_shifts
             }
             y_new[overall_indices]

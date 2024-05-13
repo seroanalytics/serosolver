@@ -13,7 +13,7 @@
 #' @param posterior_func Pointer to posterior function used to calculate a likelihood. This will probably be \code{\link{create_posterior_func}}
 #' @param prior_func User function of prior for model parameters. Should take parameter values only
 #' @param prior_version which infection history assumption prior_version to use? See \code{\link{describe_priors}} for options. Can be 1, 2, 3 or 4
-#' @param measurement_indices optional NULL. For measurement bias function. Vector of indices of length equal to number of circulation times. For each year, gives the index of parameters named "rho" that correspond to each time period
+#' @param measurement_bias optional NULL. For measurement bias function. Vector of indices of length equal to number of circulation times. For each year, gives the index of parameters named "rho" that correspond to each time period
 #' @param measurement_random_effects optional FALSE. Boolean indicating if measurement bias is a random effects term. If TRUE adds a component to the posterior calculation that calculates the probability of a set of measurement shifts "rho", given a mean and standard deviation
 #' @param proposal_ratios optional NULL. Can set the relative sampling weights of the infection state times. Should be an integer vector of length matching nrow(antigenic_map). Otherwise, leave as NULL for uniform sampling.
 #' @param random_start_parameters if FALSE, uses whatever parameter values were passed in `par_tab` as the starting positions for the MCMC chain
@@ -69,7 +69,7 @@ serosolver <- function(par_tab,
                      posterior_func = create_posterior_func,
                      prior_func = NULL,
                      prior_version = 2,
-                     measurement_indices = NULL,
+                     measurement_bias = NULL,
                      measurement_random_effects = FALSE,
                      proposal_ratios = NULL,
                      temp = 1,
@@ -264,7 +264,7 @@ serosolver <- function(par_tab,
                                            prior_version=prior_version,
                                            solve_likelihood,
                                            age_mask,
-                                           measurement_indices_by_time = measurement_indices,
+                   measurement_bias = measurement_bias,
                                            n_alive = n_alive,
                                            function_type = 1,
                                            data_type=data_type,
@@ -289,7 +289,7 @@ serosolver <- function(par_tab,
                                              prior_version=prior_version,
                                              solve_likelihood,
                                              age_mask,
-                                             measurement_indices_by_time = measurement_indices,
+                     measurement_bias = measurement_bias,
                                              n_alive = n_alive,
                                              function_type = 2,
                                              data_type=data_type,
@@ -352,7 +352,7 @@ serosolver <- function(par_tab,
                               possible_exposure_times=possible_exposure_times,
                               antigenic_map=antigenic_map,
                               start_levels=start_level,
-                              measurement_indices=measurement_indices,
+                              measurement_bias=measurement_bias,
                               data_type=data_type)
 
   save(serosolver_settings,file=paste0(filename,"_serosolver_settings.RData"))
@@ -984,7 +984,6 @@ serosolver <- function(par_tab,
   }
   saved_wd <- normalizePath(saved_wd)
   all_diagnostics <- suppressMessages(plot_mcmc_diagnostics(saved_wd, par_tab, adaptive_iterations))
-  
   par_est_table <- all_diagnostics$theta_estimates
   diagnostic_warnings <- list()
   if("Rhat upper CI" %in% colnames(par_est_table) && any(par_est_table[par_est_table$names != "total_infections","Rhat upper CI"] > 1.1)){
