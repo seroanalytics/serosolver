@@ -16,6 +16,7 @@ simulate_data(
   missing_data = 0,
   age_min = 5,
   age_max = 80,
+  age_group_bounds = NULL,
   attack_rates,
   repeats = 1,
   measurement_indices = NULL,

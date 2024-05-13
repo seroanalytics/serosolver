@@ -49,6 +49,7 @@ simulate_data <- function(par_tab,
                           nsamps = 2,
                           missing_data = 0,
                           age_min = 5, age_max = 80,
+                          age_group_bounds = NULL,
                           attack_rates,
                           repeats = 1,
                           measurement_indices = NULL,
@@ -108,10 +109,20 @@ simulate_data <- function(par_tab,
                                  measurement=0)
     
     antibody_data <- as.data.frame(antibody_data)
+    
+    ## If we've specified age_group_bounds, then we want to have timevarying age groups
+    timevarying_demographics <- NULL
+    if(!is.null(age_group_bounds)){
+      timevarying_demographics <- demographics %>% expand_grid(time=possible_exposure_times)
+      timevarying_demographics$age <- timevarying_demographics$time - timevarying_demographics$birth
+      timevarying_demographics$age_group <- as.numeric(cut(timevarying_demographics$age, breaks=c(0, age_group_bounds)))
+    }
     #########################################################
     ## PARAMETER TABLE CHECKS
     #########################################################
-    par_tab <- add_scale_pars(par_tab,antibody_data)
+    if(!(4 %in% unique(par_tab$par_type))){
+      par_tab <- add_scale_pars(par_tab,antibody_data, timevarying_demographics)
+    }
     par_tab <- check_par_tab(par_tab)
     #########################################################
     ## SIMULATE DATA
@@ -149,6 +160,7 @@ simulate_data <- function(par_tab,
       arrange(individual, biomarker_group, sample_time, biomarker_id, repeat_number)
     f <- create_posterior_func(par_tab,antibody_data,antigenic_map,function_type=3,
                                possible_exposure_times = possible_exposure_times,
+                               demographics=timevarying_demographics,
                                start_level="none")
     antibody_data$measurement <- f(par_tab$values, infection_history)
    

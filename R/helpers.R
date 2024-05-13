@@ -882,6 +882,7 @@ transform_parameters <- function(pars, scale_table, theta_indices,scale_par_indi
 
 add_scale_pars <- function(par_tab, antibody_data, timevarying_demographics=NULL){
   if(!is.null(timevarying_demographics)){
+    timevarying_demographics <- as.data.frame(timevarying_demographics)
     demographics <- create_demographic_table(timevarying_demographics,par_tab)
     stratification_pars <- setup_stratification_table(par_tab, demographics)
   } else {

@@ -20,6 +20,7 @@ create_posterior_func(
   biomarker_groups_weights = 1,
   start_level = "other",
   start_level_randomize = FALSE,
+  demographics = NULL,
   verbose = FALSE,
   ...
 )
