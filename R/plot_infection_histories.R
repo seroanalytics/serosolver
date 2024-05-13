@@ -49,9 +49,6 @@ plot_posteriors_infhist <- function(inf_chain,
   if (is.null(inf_chain$chain_no)) {
     inf_chain$chain_no <- 1
   }
-  if (is.null(inf_chain$population_group)) {
-    inf_chain$population_group <- 1
-  }
   if(samples > length(unique(inf_chain$samp_no))) {
     samples <- min(samples, length(unique(inf_chain$samp_no)))
     message("Number of samples requested is greater than number of MCMC samples provided, reducing to maximum number of possible samples")
@@ -265,7 +262,7 @@ plot_attack_rates_pointrange <- function(infection_histories, antibody_data=NULL
   n_groups <- length(unique(antibody_data$population_group))
   n_alive_tot <- get_n_alive(antibody_data, possible_exposure_times)
   colnames(infection_histories)[1] <- "individual"
-  infection_histories <- merge(infection_histories, data.table(unique(antibody_data[, c("individual", "population_group")])), by = c("individual","population_group"))
+  infection_histories <- merge(infection_histories, data.table(unique(antibody_data[, c("individual", "population_group")])), by = c("individual"))
   years <- c(possible_exposure_times, max(possible_exposure_times) + 2)
   data.table::setkey(infection_histories, "samp_no", "j", "chain_no", "population_group")
   tmp <- infection_histories[, list(V1 = sum(x)), by = key(infection_histories)]
@@ -391,7 +388,7 @@ plot_attack_rates_pointrange <- function(infection_histories, antibody_data=NULL
   }
   
   if (by_group) {
-    p <- p + facet_wrap(~population_group, ncol = 2)
+    p <- p + facet_wrap(~population_group, ncol = 1)
   }
   if (!is.null(prior_dens)) {
     max_time <- max_time + 2.5

@@ -122,8 +122,8 @@ inf_mat_prior_cpp_vector <- function(infection_history, n_alive, shape1s, shape2
 #'  Prior is independent contribution from each year and group
 #' @param n_infections IntegerMatrix, the total number of infections in each time point/group
 #' @param n_alive IntegerMatrix, matrix giving the number of individuals alive in each time unit in each group
-#' @param shape1 double, shape1 (alpha) parameter for beta distribution prior
-#' @param shape2 double, shape2 (beta) parameter for beta distribution prior
+#' @param shape1 NumericVector, shape1 (alpha) parameters for beta distribution prior, one entry for each unique group
+#' @param shape2 NumericVector, shape2 (beta) parameters for beta distribution prior, one entry for each unique group
 #' @return a single prior probability
 #' @export
 #' @family inf_mat_prior

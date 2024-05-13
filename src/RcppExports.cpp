@@ -176,15 +176,15 @@ BEGIN_RCPP
 END_RCPP
 }
 // inf_mat_prior_group_cpp
-double inf_mat_prior_group_cpp(const IntegerMatrix& n_infections, const IntegerMatrix& n_alive, double shape1, double shape2);
+double inf_mat_prior_group_cpp(const IntegerMatrix& n_infections, const IntegerMatrix& n_alive, const double shape1, const double shape2);
 RcppExport SEXP _serosolver_inf_mat_prior_group_cpp(SEXP n_infectionsSEXP, SEXP n_aliveSEXP, SEXP shape1SEXP, SEXP shape2SEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< const IntegerMatrix& >::type n_infections(n_infectionsSEXP);
     Rcpp::traits::input_parameter< const IntegerMatrix& >::type n_alive(n_aliveSEXP);
-    Rcpp::traits::input_parameter< double >::type shape1(shape1SEXP);
-    Rcpp::traits::input_parameter< double >::type shape2(shape2SEXP);
+    Rcpp::traits::input_parameter< const double >::type shape1(shape1SEXP);
+    Rcpp::traits::input_parameter< const double >::type shape2(shape2SEXP);
     rcpp_result_gen = Rcpp::wrap(inf_mat_prior_group_cpp(n_infections, n_alive, shape1, shape2));
     return rcpp_result_gen;
 END_RCPP

@@ -55,13 +55,13 @@ double inf_mat_prior_cpp_vector(const IntegerMatrix& infection_history, const In
 //'  Prior is independent contribution from each year and group
 //' @param n_infections IntegerMatrix, the total number of infections in each time point/group
 //' @param n_alive IntegerMatrix, matrix giving the number of individuals alive in each time unit in each group
-//' @param shape1 double, shape1 (alpha) parameter for beta distribution prior
-//' @param shape2 double, shape2 (beta) parameter for beta distribution prior
+//' @param shape1 NumericVector, shape1 (alpha) parameters for beta distribution prior, one entry for each unique group
+//' @param shape2 NumericVector, shape2 (beta) parameters for beta distribution prior, one entry for each unique group
 //' @return a single prior probability
 //' @export
 //' @family inf_mat_prior
 // [[Rcpp::export]]
-double inf_mat_prior_group_cpp(const IntegerMatrix& n_infections, const IntegerMatrix& n_alive, double shape1, double shape2){
+double inf_mat_prior_group_cpp(const IntegerMatrix& n_infections, const IntegerMatrix& n_alive, const double shape1,  const double shape2){
   // Prior on each time
   double m, n;
   double lik=0;
@@ -72,7 +72,7 @@ double inf_mat_prior_group_cpp(const IntegerMatrix& n_infections, const IntegerM
       n = n_alive(j,i); // Number of individuals alive in that time
       // Only solve if n > 0
       if(n > 0){
-	lik += R::lbeta(m+shape1,n-m+shape2)-lbeta_const; // Contribution of augmented data and prior for that time
+        	lik += R::lbeta(m+shape1,n-m+shape2)-lbeta_const; // Contribution of augmented data and prior for that time
       }
     }
   }

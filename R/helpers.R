@@ -636,11 +636,11 @@ generate_antigenic_map_flexible <- function(antigenic_distances, buckets = 1, cl
 #' @param inf_chain the data table with infection history samples from \code{\link{serosolver}}
 #' @return the same inf_chain that was passed in, but with 0s for missing i/j/samp_no combinations
 #' @export
-pad_inf_chain <- function(inf_chain) {
+pad_inf_chain <- function(inf_chain, pad_by_group=FALSE) {
   if (is.null(inf_chain$chain_no)) {
     inf_chain$chain_no <- 1
   }
-  if (is.null(inf_chain$population_group)) {
+  if (pad_by_group & is.null(inf_chain$population_group)) {
     inf_chain$population_group <- 1
   }
   
@@ -649,15 +649,27 @@ pad_inf_chain <- function(inf_chain) {
   
   samp_nos <- unique(inf_chain$samp_no)
   chain_nos <- unique(inf_chain$chain_no)
-  groups <- unique(inf_chain$population_group)
-  expanded_values <- data.table::CJ(
-    i = is,
-    j = js,
-    samp_no = samp_nos,
-    chain_no = chain_nos,
-    population_group = groups
-  )
-  diff_infs <- fsetdiff(expanded_values, inf_chain[, c("i", "j", "samp_no", "chain_no", "population_group")])
+  
+  if(pad_by_group){
+    groups <- unique(inf_chain$population_group)
+    expanded_values <- data.table::CJ(
+      i = is,
+      j = js,
+      samp_no = samp_nos,
+      population_group=groups,
+      chain_no = chain_nos
+    )
+    diff_infs <- fsetdiff(expanded_values, inf_chain[, c("i", "j", "samp_no", "chain_no", "population_group")])
+  } else {
+    expanded_values <- data.table::CJ(
+      i = is,
+      j = js,
+      samp_no = samp_nos,
+      chain_no = chain_nos
+    )
+    diff_infs <- fsetdiff(expanded_values, inf_chain[, c("i", "j", "samp_no", "chain_no")])
+  }
+
   diff_infs$x <- 0
   inf_chain <- rbind(inf_chain, diff_infs)
   return(inf_chain)
