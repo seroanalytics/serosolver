@@ -51,6 +51,7 @@ NumericVector antibody_model(const NumericMatrix theta,
 			      const arma::cube &antigenic_map_long,
 			      const arma::cube &antigenic_map_short,
 			      const NumericVector &antigenic_distances,	// Currently not doing anything, but has uses for model extensions
+			      const bool timevarying_groups = false,
 			      bool boost_before_infection = false
 			      ){
   // Dimensions of structures
@@ -63,7 +64,12 @@ NumericVector antibody_model(const NumericMatrix theta,
   
   // To track how far through the larger vectors we move for each individual
   int biomarker_group=0;
+  
+  // Tracking an individual's demographic group
+  IntegerVector groups;
   int group = 0;
+  int birth_group=0;
+  
   int type_start;
   int type_end;
   int start_index_in_samples;
@@ -146,13 +152,24 @@ NumericVector antibody_model(const NumericMatrix theta,
 
   // For each individual
   for (int i = 1; i <= n; ++i) {
-    group = indiv_theta_groups[i-1];
-      
     indices = infection_history_mat(i-1,_) > 0;
     
     use_indices =infection_history_mat_indices[indices];
     infection_times = possible_exposure_times[use_indices];
     infection_times_indices_tmp = possible_exposure_times_indices[use_indices];	 
+    
+    // If trying to solve how demographic groups change over time, then need to extract the demographic group indices for this individuals
+    if(timevarying_groups){
+      // Treat the indiv_theta_groups vector as a flattened matrix -- this individual's demography vector is from [i-1,2] to [i-1, number_possible_exposures + 1] (the +1 is for birth group) 
+      groups = indiv_theta_groups[Range((number_possible_exposures+1)*(i-1)+1, (number_possible_exposures+1)*i - 1)];
+      // Then subset to groups with infections
+      groups = groups[use_indices];
+      // Birth group is [i-1, 1]
+      birth_group = indiv_theta_groups[(number_possible_exposures+1)*(i-1)];
+    } else {
+      // Otherwise, the individual's group is unchanged
+      group = indiv_theta_groups[i-1];
+    }
    
     // Only solve is this individual has had infections or if there is long-term waning
     // if (wane_long_parameters(biomarker_group) > 0 || infection_times.size() > 0) {
@@ -198,15 +215,15 @@ NumericVector antibody_model(const NumericMatrix theta,
                 predicted_antibody_levels, 
                 starting_antibody_levels,
                 births,
-                boost_long_parameters(_,biomarker_group), 
-                boost_short_parameters(_,biomarker_group),
-                boost_delay_parameters(_,biomarker_group),
-                wane_short_parameters(_,biomarker_group), 
-                wane_long_parameters(_,biomarker_group), 
-                antigenic_seniority_parameters(_,biomarker_group),
+                boost_long_parameters, 
+                boost_short_parameters,
+                boost_delay_parameters,
+                wane_short_parameters, 
+                wane_long_parameters, 
+                antigenic_seniority_parameters,
                 infection_times,
-                indiv_groups,
-                indiv_birth_group,
+                groups,
+                birth_group,
                 infection_times_indices_tmp,
                 biomarker_id_indices,
                 start_level_indices,
@@ -216,10 +233,11 @@ NumericVector antibody_model(const NumericMatrix theta,
                 start_index_in_data,
                 nrows_per_sample,
                 number_possible_exposures,
-                antigenic_map_short.colptr(biomarker_group),
-                antigenic_map_long.colptr(biomarker_group),
-                boost_before_infection,
-                min_measurements(group,biomarker_group));
+                antigenic_map_short,
+                antigenic_map_long,
+                biomarker_group,
+                min_measurements,
+                boost_before_infection);
               
             } else {
               antibody_data_model_individual_new(

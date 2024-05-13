@@ -59,12 +59,12 @@ void antibody_data_model_individual_new(NumericVector &predicted_antibody_levels
 void antibody_data_model_individual_timevarying(NumericVector &predicted_antibody_levels,
                                                 const NumericVector &start_antibody_levels,
                                                 const NumericVector &births,
-                                                const NumericVector &boost_long,
-                                                const NumericVector &boost_short,
-                                                const NumericVector &boost_delay,
-                                                const NumericVector &wane_short,
-                                                const NumericVector &wane_long,
-                                                const NumericVector &antigenic_seniority,
+                                                const NumericMatrix &boost_long,
+                                                const NumericMatrix &boost_short,
+                                                const NumericMatrix &boost_delay,
+                                                const NumericMatrix &wane_short,
+                                                const NumericMatrix &wane_long,
+                                                const NumericMatrix &antigenic_seniority,
                                                 const NumericVector &infection_times,
                                                 const IntegerVector &groups,
                                                 const int &birth_group,
@@ -77,10 +77,11 @@ void antibody_data_model_individual_timevarying(NumericVector &predicted_antibod
                                                 const int &start_index_in_data1,
                                                 const IntegerVector &nrows_per_blood_sample,
                                                 const int &number_possible_exposures,
-                                                const arma::mat &antigenic_map_short,
-                                                const arma::mat &antigenic_map_long,
-                                                bool boost_before_infection = false,
-                                                const double min_level = 0
+                                                const arma::cube &antigenic_map_short,
+                                                const arma::cube &antigenic_map_long,
+                                                const int &biomarker_group,
+                                                const NumericMatrix &min_level,
+                                                bool boost_before_infection
 );
 #endif
 

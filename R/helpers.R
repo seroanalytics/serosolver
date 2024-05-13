@@ -384,11 +384,13 @@ row.match <- function(x, table, nomatch = NA) {
 #' @inheritParams create_posterior_func
 #' @param verbose if TRUE, brings warning messages
 #' @param use_demographic_groups vector of variable names in `antibody_data` which should form the stratification for the antibody kinetics model
+#' @param timevarying_demographics if not NULL, then calculates an individual's demographic group over the entire time period of the simulation rather than assuming fixed demographics
 #' @return a very long list. See source code directly.
 #' @seealso \code{\link{create_posterior_func}}
 #' @export
 setup_antibody_data_for_posterior_func <- function(antibody_data, antigenic_map=NULL, possible_exposure_times=NULL,
-                                              age_mask = NULL, n_alive = NULL,verbose=FALSE,use_demographic_groups=NULL) {
+                                              age_mask = NULL, n_alive = NULL,verbose=FALSE,use_demographic_groups=NULL,
+                                              timevarying_demographics=NULL) {
   essential_colnames <- c("individual", "sample_time", "measurement", "biomarker_id", "biomarker_group","population_group")
   ## How many observation types are there?
   n_indiv <- length(unique(antibody_data$individual))
@@ -441,11 +443,33 @@ setup_antibody_data_for_posterior_func <- function(antibody_data, antigenic_map=
     demographics <- NULL
   } else {
     if(!is.null(use_demographic_groups)){
-      demographics <- antibody_data %>% dplyr::select(all_of(use_demographic_groups)) %>% distinct() %>% dplyr::mutate(demographic_group = 1:n())
+      if(!is.null(timevarying_demographics)){
+        demographics <- timevarying_demographics %>% dplyr::select(all_of(use_demographic_groups)) %>% distinct() %>% dplyr::mutate(demographic_group = 1:n())
+        timevarying_demographics <- timevarying_demographics  %>% left_join(demographics,by=use_demographic_groups)
+      } else {
+        demographics <- antibody_data %>% dplyr::select(all_of(use_demographic_groups)) %>% distinct() %>% dplyr::mutate(demographic_group = 1:n())
+      }
       antibody_data <- antibody_data %>% left_join(demographics,by=use_demographic_groups)
     }
   }
-  indiv_group_indices <- antibody_data %>% select(individual, demographic_group) %>% distinct() %>% pull(demographic_group)
+  if(!is.null(timevarying_demographics)){
+    indiv_group_indices <- timevarying_demographics %>% select(individual, time, demographic_group) %>% distinct() %>% pull(demographic_group)
+    ## Get demographic group at birth. If isn't there, get the demographic group at the earliest time
+    
+    ## Demographic group at earliest time
+    demographics_start <- timevarying_demographics %>% group_by(individual) %>% filter(time == min(time)) %>% pull(demographic_group)
+    
+    ## See if birth demographic groups available
+    birth_demographics <- timevarying_demographics %>% group_by(individual) %>% 
+      select(individual, time, birth, demographic_group) %>% 
+      filter(time == birth) %>% 
+      select(individual,demographic_group) %>%
+      ungroup()
+    demographics_start[birth_demographics$individual] <- birth_demographics$demographic_group
+    indiv_group_indices <- c(rbind(demographics_start, matrix(indiv_group_indices, ncol = n_indiv)))
+  } else {
+    indiv_group_indices <- antibody_data %>% select(individual, demographic_group) %>% distinct() %>% pull(demographic_group)
+  }
   indiv_group_indices <- indiv_group_indices - 1
   n_demographic_groups <- length(unique(indiv_group_indices))
 
@@ -765,17 +789,17 @@ create_demographic_table <- function(antibody_data, par_tab){
     demographics <- data.frame(all=1)
   } else {
     demographics <- antibody_data %>% select(all_of(stratifications)) %>% distinct()
+    if(any(apply(demographics, 2, function(x) length(unique(x))) < 2)){
+      message("Error - trying to stratify by variable in par_tab, but <2 levels for this variable in antibody_data")
+    }
   }
-  if(any(apply(demographics, 2, function(x) length(unique(x))) < 2)){
-    message("Error - trying to stratify by variable in par_tab, but <2 levels for this variable in antibody_data")
-  }
+ 
   return(demographics)
 }
 
 
 setup_stratification_table <- function(par_tab, demographics){
   n_pars <- nrow(par_tab[par_tab$par_type == 1,])
-  
   ## Creates an estimated parameter entry for each 
   strsplit1 <- function(x){
     if(!is.na(x)){
@@ -856,9 +880,14 @@ transform_parameters <- function(pars, scale_table, theta_indices,scale_par_indi
 }
 
 
-add_scale_pars <- function(par_tab, antibody_data){
-  demographics <- create_demographic_table(antibody_data,par_tab)
-  stratification_pars <- setup_stratification_table(par_tab, demographics)
+add_scale_pars <- function(par_tab, antibody_data, timevarying_demographics=NULL){
+  if(!is.null(timevarying_demographics)){
+    demographics <- create_demographic_table(timevarying_demographics,par_tab)
+    stratification_pars <- setup_stratification_table(par_tab, demographics)
+  } else {
+    demographics <- create_demographic_table(antibody_data,par_tab)
+    stratification_pars <- setup_stratification_table(par_tab, demographics)
+  }
   scale_table <- stratification_pars[[1]]
   scale_pars <- stratification_pars[[2]]
   

@@ -53,6 +53,7 @@ create_posterior_func <- function(par_tab,
                                   biomarker_groups_weights =1,
                                   start_level = "other",
                                   start_level_randomize=FALSE,
+                                  demographics=NULL,
                                   verbose=FALSE,
                                   ...) {
 
@@ -78,6 +79,8 @@ create_posterior_func <- function(par_tab,
     if(verbose){
       message(cat("Setting starting antibody levels based on data using command:", start_level, "; and randomizing starting antibody levels set to:", start_level_randomize, "\n"))
     }
+  
+    
   
     ## Check that antibody data is formatted correctly
     check_data(antibody_data,verbose)
@@ -127,13 +130,23 @@ create_posterior_func <- function(par_tab,
         antibody_data_unique[, c("individual", "sample_time", "biomarker_group","biomarker_id")]
     )
     ## Setup data vectors and extract
-    demographic_groups <- create_demographic_table(antibody_data,par_tab)
+    if(!is.null(demographics)){
+      demographics <- as.data.frame(demographics)
+      timevarying_demographics <- TRUE
+      demographic_groups <- create_demographic_table(demographics,par_tab)
+    } else {
+      timevarying_demographics <- FALSE
+      demographic_groups <- create_demographic_table(antibody_data,par_tab)
+    }
+    
     use_demographic_groups <- colnames(demographic_groups)
     if(length(use_demographic_groups) == 1 && use_demographic_groups == "all") use_demographic_groups <- NULL
+
     setup_dat <- setup_antibody_data_for_posterior_func(
         antibody_data_unique, antigenic_map, 
         possible_exposure_times,
-        age_mask, n_alive, verbose,use_demographic_groups
+        age_mask, n_alive, verbose,use_demographic_groups,
+        demographics
     )
     ## Vector of observation types matching the unique samples
     biomarker_groups <- setup_dat$biomarker_groups
@@ -144,6 +157,9 @@ create_posterior_func <- function(par_tab,
     indiv_group_indices <- setup_dat$indiv_group_indices
     n_demographic_groups <- setup_dat$n_demographic_groups
     demographics <- setup_dat$demographics
+    
+   
+    
     ## List of melted antigenic maps, one entry for each observation type
     antigenic_map_melted <- setup_dat$antigenic_map_melted
     antigenic_distances <- antigenic_map_melted[[1]]
@@ -152,6 +168,7 @@ create_posterior_func <- function(par_tab,
     exposure_id_indices <- setup_dat$exposure_id_indices
     possible_biomarker_ids <- setup_dat$possible_biomarker_ids
     infection_history_mat_indices <- setup_dat$infection_history_mat_indices
+    
     ## Sample collection times, entry for each unique individual, observation type and sample
     sample_times <- setup_dat$sample_time
     ## Indices related to entries in sample_data
@@ -388,6 +405,7 @@ create_posterior_func <- function(par_tab,
               antigenic_map_long,
               antigenic_map_short,
               antigenic_distances,
+              timevarying_demographics,
               antibody_level_before_infection
             )
 
@@ -592,6 +610,7 @@ create_posterior_func <- function(par_tab,
                 antigenic_map_long,
                 antigenic_map_short,
                 antigenic_distances,
+                timevarying_demographics,
                 antibody_level_before_infection
             )
             if (use_measurement_bias) {

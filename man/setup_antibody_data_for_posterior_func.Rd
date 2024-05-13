@@ -11,7 +11,8 @@ setup_antibody_data_for_posterior_func(
   age_mask = NULL,
   n_alive = NULL,
   verbose = FALSE,
-  use_demographic_groups = NULL
+  use_demographic_groups = NULL,
+  timevarying_demographics = NULL
 )
 }
 \arguments{
@@ -28,6 +29,8 @@ setup_antibody_data_for_posterior_func(
 \item{verbose}{if TRUE, brings warning messages}
 
 \item{use_demographic_groups}{vector of variable names in `antibody_data` which should form the stratification for the antibody kinetics model}
+
+\item{timevarying_demographics}{if not NULL, then calculates an individual's demographic group over the entire time period of the simulation rather than assuming fixed demographics}
 }
 \value{
 a very long list. See source code directly.
