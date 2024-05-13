@@ -317,6 +317,7 @@ generate_quantiles <- function(x, sig_f = 3, qs = c(0.025, 0.5, 0.975), as_text 
 #' }
 #' @export
 get_antibody_level_predictions <- function(chain, infection_histories, antibody_data,
+                                           demographics=NULL,
                                            individuals, antigenic_map=NULL,
                                            possible_exposure_times=NULL, par_tab,
                                            nsamp = 1000, add_residuals = FALSE,
@@ -325,7 +326,7 @@ get_antibody_level_predictions <- function(chain, infection_histories, antibody_
                                            expand_to_all_times=FALSE,
                                            antibody_level_before_infection=FALSE, for_regression=FALSE,
                                            data_type=1,start_level="none"){
-  par_tab <- add_scale_pars(par_tab,antibody_data)
+  par_tab <- add_scale_pars(par_tab,antibody_data,demographics)
   
   ## Need to align the iterations of the two MCMC chains
   ## and choose some random samples
@@ -346,9 +347,14 @@ get_antibody_level_predictions <- function(chain, infection_histories, antibody_
   ## Take subset of individuals
   antibody_data2 <- antibody_data %>% dplyr::select(-c(sample_time,measurement,repeat_number)) %>% distinct()
   antibody_data <- antibody_data[antibody_data$individual %in% individuals, ]
-  infection_histories <- infection_histories[infection_histories$i %in% individuals, ]
+  if(!is.null(demographics)){
+    demographics <- demographics[demographics$individual %in% individuals,]
+    demographics$individual <- match(demographics$individual, individuals)
+  }
   
+  infection_histories <- infection_histories[infection_histories$i %in% individuals, ]
   antibody_data$individual <- match(antibody_data$individual, individuals)
+  
   infection_histories$i <- match(infection_histories$i, individuals)
   if(class(start_level) %in% c("data.frame","tibble")){
     start_level$individual <- match(start_level$individual, individuals)
@@ -402,7 +408,8 @@ get_antibody_level_predictions <- function(chain, infection_histories, antibody_
                                      prior_version=2,
                                       measurement_indices_by_time = measurement_indices_by_time, function_type = 4,
                                       antibody_level_before_infection=antibody_level_before_infection,
-                                      data_type=data_type,start_level=start_level
+                                      data_type=data_type,start_level=start_level,
+                                     demographics=demographics
   )
   
   predicted_titres <- residuals <- residuals_floor <- 
@@ -463,7 +470,6 @@ get_antibody_level_predictions <- function(chain, infection_histories, antibody_
   best_I <- chain$samp_no[which.max(chain$posterior_prob)]
   best_inf <- infection_histories[infection_histories$samp_no == best_I, ]
   best_inf <- as.matrix(Matrix::sparseMatrix(i = best_inf$i, j = best_inf$j, x = best_inf$x, dims = c(n_indiv, nstrain)))
-  
   ## Generate trajectory for best parameters
   best_traj <- model_func(best_pars, best_inf)
   best_residuals <- antibody_data1$measurement - best_traj

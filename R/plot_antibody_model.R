@@ -128,7 +128,8 @@ plot_antibody_model <- function(pars,
 #' }
 #' @export
 plot_model_fits <- function(chain, infection_histories, 
-                            antibody_data=NULL,       
+                            antibody_data=NULL,  
+                            demographics=NULL,
                             individuals, 
                             par_tab=NULL,
                             antigenic_map=NULL, 
@@ -152,6 +153,7 @@ plot_model_fits <- function(chain, infection_histories,
     if(is.null(possible_exposure_times)) possible_exposure_times <- settings$possible_exposure_times
     if(is.null(measurement_indices_by_time)) measurement_indices_by_time <- settings$measurement_indices_by_time
     if(is.null(antibody_data)) antibody_data <- settings$antibody_data
+    if(is.null(demographics)) demographics <- settings$demographics
     if(is.null(par_tab)) par_tab <- settings$par_tab
     if(is.null(start_level) | start_level == "none") start_level <- settings$start_level
     if(missing(data_type)) data_type <- settings$data_type
@@ -173,7 +175,9 @@ plot_model_fits <- function(chain, infection_histories,
                                             dplyr::arrange(individual, biomarker_group, sample_time, biomarker_id, repeat_number)
   ## Generate antibody predictions
   antibody_preds <- get_antibody_level_predictions(
-    chain, infection_histories, antibody_data, individuals,
+    chain, infection_histories, antibody_data, 
+    demographics,
+    individuals,
     antigenic_map, possible_exposure_times, 
     par_tab, nsamp, FALSE, 
     measurement_indices_by_time,
@@ -387,7 +391,9 @@ theme_pubr <- function (base_size = 12, base_family = "", border = FALSE, margin
 #' @family infection_history_plots
 #' @export
 plot_antibody_predictions <- function(chain, infection_histories, 
-                                      antibody_data, par_tab=NULL,
+                                      antibody_data=NULL, 
+                                      demographics=NULL,
+                                      par_tab=NULL,
                                       antigenic_map=NULL, 
                                       possible_exposure_times=NULL,
                                       nsamp = 1000,
@@ -401,6 +407,7 @@ plot_antibody_predictions <- function(chain, infection_histories,
     if(is.null(antigenic_map)) antigenic_map <- settings$antigenic_map
     if(is.null(measurement_indices_by_time)) measurement_indices_by_time <- settings$measurement_indices_by_time
     if(is.null(antibody_data)) antibody_data <- settings$antibody_data
+    if(is.null(demographics)) demographics <- settings$demographics
     if(is.null(par_tab)) par_tab <- settings$par_tab
     if(is.null(start_level) | start_level == "none") start_level <- settings$start_level
     if(missing(data_type)) data_type <- settings$data_type
@@ -427,6 +434,7 @@ plot_antibody_predictions <- function(chain, infection_histories,
     expand_to_all_times=FALSE,
     data_type=data_type,
     start_level=start_levels,
+    demographics=demographics,
     for_regression = TRUE
   )
   

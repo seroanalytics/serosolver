@@ -18,6 +18,7 @@
 #' @param biomarker_groups_weights integer or vector, giving a factor to multiply the log-likelihood contribution of this data type towards the overall likelihood.
 #' @param start_level character, to tell the model how to treat initial antibody levels. This uses the observed data to either select starting values for each unique `individual`, `biomarker_id` and `biomarker_group` combination. See \code{\link{create_start_level_data}}. One of "min", "max", "mean", "median", or "full_random". Any other entry assumes all antibody starting levels are set to 0. Can also pass a tibble or data frame of starting levels matching the output of \code{\link{create_start_level_data}}.
 #' @param start_level_randomize if TRUE, and data is discretized, then sets the starting antibody level to a random value between floor(x) and floor(x) + 1. Does nothing if using continuous data.
+#' @param demographics if not NULL, then a tibble for each individual (1:n_indiv) giving demographic variable entries. Most importantly must include "birth" as the birth time. This is used if, for example, you have a stratification grouping in `par_tab`
 #' @param verbose if TRUE, prints warning messages
 #' @param ... other arguments to pass to the posterior solving function
 #' @return a single function pointer that takes only pars and infection_histories as unnamed arguments. This function goes on to return a vector of posterior values for each individual
@@ -80,6 +81,7 @@ create_posterior_func <- function(par_tab,
       message(cat("Setting starting antibody levels based on data using command:", start_level, "; and randomizing starting antibody levels set to:", start_level_randomize, "\n"))
     }
   
+    if(verbose & !is.null(demographics)) message("Using time-varying demographic groupings for parameter stratification\n")
     
   
     ## Check that antibody data is formatted correctly
@@ -562,6 +564,7 @@ create_posterior_func <- function(par_tab,
                 n_alive_total,
                 data_type,
                 biomarker_groups_weights,
+                timevarying_demographics,
                 temp,
                 solve_likelihood
             )

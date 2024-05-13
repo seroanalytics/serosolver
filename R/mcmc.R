@@ -3,6 +3,7 @@
 #' The Adaptive Metropolis-within-Gibbs algorithm. Given a starting point and the necessary MCMC parameters as set out below, performs a random-walk of the posterior space to produce an MCMC chain that can be used to generate MCMC density and iteration plots. The algorithm undergoes an adaptive period, where it changes the step size of the random walk for each parameter to approach the desired acceptance rate, target_acceptance_rate_theta. The algorithm then uses \code{\link{univ_proposal}} or \code{\link{mvr_proposal}} to explore parameter space, recording the value and posterior value at each step. The MCMC chain is saved in blocks as a .csv file at the location given by filename. This version of the algorithm is also designed to explore posterior densities for infection histories. See the package vignettes for examples. 
 #' @param par_tab The parameter table controlling information such as bounds, initial values etc. See \code{\link{example_par_tab}}
 #' @param antibody_data The data frame of titre data to be fitted. Must have columns: group (index of group); individual (integer ID of individual); samples (numeric time of sample taken); virus (numeric time of when the virus was circulating); titre (integer of titre value against the given virus at that sampling time); run (integer giving the repeated number of this titre); DOB (integer giving date of birth matching time units used in model). See \code{\link{example_antibody_data}}
+#' #' @param demographics if not NULL, then a tibble for each individual (1:n_indiv) giving demographic variable entries. Most importantly must include "birth" as the birth time. This is used if, for example, you have a stratification grouping in `par_tab`
 #' @param antigenic_map (optional) A data frame of antigenic x and y coordinates. Must have column names: x_coord; y_coord; inf_times. See \code{\link{example_antigenic_map}}
 #' @param possible_exposure_times (optional) this argument gives the vector of times at which individuals can be infected. Defaults to entries in `antigenic_map`.
 #' @param mcmc_pars Named vector named vector with parameters for the MCMC procedure. See details
@@ -56,6 +57,7 @@
 #' @export
 serosolver <- function(par_tab,
                      antibody_data,
+                     demographics=NULL,
                      antigenic_map=NULL,
                      possible_exposure_times=NULL,
                      mcmc_pars = c(),
@@ -176,7 +178,7 @@ serosolver <- function(par_tab,
   antibody_data <- check_data(antibody_data,verbose=verbose)
   
   ## Add stratifications to par_tab
-  par_tab <- add_scale_pars(par_tab,antibody_data)
+  par_tab <- add_scale_pars(par_tab,antibody_data, demographics)
   par_tab <- check_par_tab(par_tab, TRUE,possible_exposure_times=possible_exposure_times, version=prior_version,verbose)
     
     if(!is.null(start_inf_hist)){
@@ -267,6 +269,7 @@ serosolver <- function(par_tab,
                                            function_type = 1,
                                            data_type=data_type,
                                            start_level=start_level,
+                                          demographics=demographics,
                                            verbose=verbose,
                                            ...
  )
@@ -291,6 +294,7 @@ serosolver <- function(par_tab,
                                              function_type = 2,
                                              data_type=data_type,
                                              start_level=start_level,
+                     demographics=demographics,
                                              verbose=verbose,
                                              ...
    )
@@ -343,6 +347,7 @@ serosolver <- function(par_tab,
   ## Save MCMC settings
   serosolver_settings <- list(par_tab=par_tab %>% dplyr::filter(par_type != 4),
                               antibody_data=antibody_data,
+                              demographics=demographics,
                               prior_version=prior_version,
                               possible_exposure_times=possible_exposure_times,
                               antigenic_map=antigenic_map,

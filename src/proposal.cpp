@@ -232,6 +232,7 @@ List inf_hist_prop_prior_v2_and_v4(
 				   
 				   const IntegerVector &data_types,
 				   const NumericVector &obs_weights,
+				   const bool timevarying_groups = false,
 				   const double temp=1,
 				   bool solve_likelihood=true){
   // ########################################################################
@@ -255,7 +256,13 @@ List inf_hist_prop_prior_v2_and_v4(
 
   // To track how far through the larger vectors we move for each individual
   int biomarker_group=0;
+  
+  // Tracking an individual's demographic group
+  IntegerVector groups;
+  IntegerVector groups_subset;
   int group = 0;
+  int birth_group=0;
+  
   double obs_weight=1.0;
   int data_type = 1;
   int type_start;
@@ -405,7 +412,18 @@ List inf_hist_prop_prior_v2_and_v4(
     
     // Get index, group and current likelihood of individual under consideration
     indiv = sampled_indivs(i)-1;
-    group = indiv_group_indices[indiv];
+
+    // If trying to solve how demographic groups change over time, then need to extract the demographic group indices for this individuals
+    if(timevarying_groups){
+      // Treat the indiv_group_indices vector as a flattened matrix -- this individual's demography vector is from [i-1,2] to [i-1, number_possible_exposures + 1] (the +1 is for birth group) 
+      groups = indiv_group_indices[Range((number_possible_exposures+1)*(indiv)+1, (number_possible_exposures+1)*(indiv+1) - 1)];
+
+      // Birth group is [i-1, 1]
+      birth_group = indiv_group_indices[(number_possible_exposures+1)*(indiv)];
+    } else {
+      // Otherwise, the individual's group is unchanged
+      group = indiv_group_indices[indiv];
+    }
     
     //Rcpp::Rcout << "indiv: " << indiv+1 << std::endl << std::endl;
     
@@ -601,7 +619,11 @@ List inf_hist_prop_prior_v2_and_v4(
       use_indices =infection_history_mat_indices[indices];
     	infection_times = possible_exposure_times[use_indices];
     	infection_times_indices_tmp = possible_exposure_times_indices[use_indices];	  
-
+    	
+    	// Subset group indices to those times with infections
+    	if(timevarying_groups){
+    	  groups_subset = groups[use_indices];
+    	}
     	//Rcpp::Rcout << infection_times_indices_tmp << std::endl;
     	
     	// Start end end location of the type_data matrix
@@ -652,9 +674,35 @@ List inf_hist_prop_prior_v2_and_v4(
         					      antigenic_map_short.slice(group).colptr(biomarker_group),
         					      antigenic_map_long.slice(group).colptr(biomarker_group),
         					      false);	
+        	} else if(timevarying_groups){
+        	  antibody_data_model_individual_timevarying(
+        	    predicted_antibody_levels, 
+        	    starting_antibody_levels,
+        	    births,
+        	    boost_long_parameters, 
+        	    boost_short_parameters,
+        	    boost_delay_parameters,
+        	    wane_short_parameters, 
+        	    wane_long_parameters, 
+        	    antigenic_seniority_parameters,
+        	    infection_times,
+        	    groups,
+        	    birth_group,
+        	    infection_times_indices_tmp,
+        	    biomarker_id_indices,
+        	    start_level_indices,
+        	    sample_times,
+        	    start_index_in_samples,
+        	    end_index_in_samples,
+        	    start_index_in_data,
+        	    nrows_per_sample,
+        	    number_possible_exposures,
+        	    antigenic_map_short,
+        	    antigenic_map_long,
+        	    biomarker_group,
+        	    min_measurements,
+        	    false);
         	} else {
-        	  //Rcpp::Rcout << "Here!" << std::endl;
-        	  //Rcpp::Rcout << "Min measurement: " << min_measurements(biomarker_group) << std::endl;
         	  antibody_data_model_individual_new(
         	    predicted_antibody_levels, 
         	    starting_antibody_levels,
@@ -679,27 +727,7 @@ List inf_hist_prop_prior_v2_and_v4(
         	    antigenic_map_long.slice(group).colptr(biomarker_group),
         	    false,
         	    min_measurements(group,biomarker_group));
-        	  /*
-        	  antibody_data_model_individual(predicted_antibody_levels, 
-                                          boost_long_parameters(biomarker_group), 
-                                          boost_short_parameters(biomarker_group),
-                                          boost_delay_parameters(biomarker_group),
-                                          wane_short_parameters(biomarker_group), 
-                                          wane_long_parameters(biomarker_group), 
-                                           antigenic_seniority_parameters(biomarker_group),
-        					  infection_times,
-        					  infection_times_indices_tmp,
-        					  biomarker_id_indices,
-        					  sample_times,
-        					  start_index_in_samples,
-        					  end_index_in_samples,
-        					  start_index_in_data,
-        					  nrows_per_sample,
-        					  number_possible_exposures,
-        					  antigenic_map_short.colptr(biomarker_group),
-        					  antigenic_map_long.colptr(biomarker_group),
-        					  false);
-        	   */
+        
         	}
         	if(use_measurement_shifts){
         	  add_measurement_shifts(predicted_antibody_levels, measurement_shifts, 
