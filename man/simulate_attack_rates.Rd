@@ -32,9 +32,6 @@ Given a number of possible infection years, simulates attack rates from a log no
 \seealso{
 Other simulation_functions: 
 \code{\link{simulate_data}()},
-\code{\link{simulate_group}()},
-\code{\link{simulate_individual_faster}()},
-\code{\link{simulate_individual}()},
 \code{\link{simulate_infection_histories}()}
 }
 \concept{simulation_functions}

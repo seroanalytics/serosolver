@@ -36,6 +36,8 @@ plot_antibody_predictions(
 \item{measurement_indices_by_time}{default NULL, optional vector giving the index of `measurement_bias` that each strain uses the measurement shift from from. eg. if there's 6 circulation years and 3 strain clusters}
 
 \item{data_type}{integer, currently accepting 1 or 2. Set to 1 for discretized, bounded data, or 2 for continuous, bounded data.}
+
+\item{settings}{if not NULL, list of serosolver settings as returned from the main serosolver function}
 }
 \value{
 a list with: 

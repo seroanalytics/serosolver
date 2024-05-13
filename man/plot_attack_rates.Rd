@@ -42,6 +42,8 @@ plot_attack_rates(
 \item{group_subset}{if not NULL, plots only this subset of groups eg. 1:5}
 
 \item{cumulative}{if TRUE, plots the cumulative attack rate}
+
+\item{settings}{if not NULL, list of serosolver settings as returned from the main serosolver function}
 }
 \value{
 a ggplot2 object with the inferred attack rates for each potential epoch of circulation

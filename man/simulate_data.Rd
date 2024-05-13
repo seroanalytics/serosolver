@@ -20,6 +20,7 @@ simulate_data(
   repeats = 1,
   measurement_indices = NULL,
   data_type = NULL,
+  demographics = NULL,
   verbose = FALSE
 )
 }
@@ -54,6 +55,8 @@ simulate_data(
 
 \item{data_type}{if not NULL, then a vector of data types to use for each biomarker_group}
 
+\item{demographics}{if not NULL, then a tibble for each individual (1:n_indiv) giving demographic variable entries. Most importantly must include "birth" as the birth time. This is used if, for example, you have a stratification grouping in `par_tab`}
+
 \item{verbose}{if TRUE, prints additional messages}
 }
 \value{
@@ -84,9 +87,6 @@ antibody_data <- merge(antibody_data, all_simulated_data$ages)
 \seealso{
 Other simulation_functions: 
 \code{\link{simulate_attack_rates}()},
-\code{\link{simulate_group}()},
-\code{\link{simulate_individual_faster}()},
-\code{\link{simulate_individual}()},
 \code{\link{simulate_infection_histories}()}
 }
 \concept{simulation_functions}

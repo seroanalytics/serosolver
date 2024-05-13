@@ -56,6 +56,8 @@ plot_attack_rates_pointrange(
 
 \item{by_val}{frequency of x-axis labels}
 
+\item{settings}{if not NULL, list of serosolver settings as returned from the main serosolver function}
+
 \item{resolution}{divides `possible_exposure_times` by this number for x axis labels}
 }
 \value{

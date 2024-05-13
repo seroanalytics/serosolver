@@ -4,6 +4,7 @@
 
 //' Overall model function, fast implementation
 //'
+//' 
 //' @param theta NumericVector, the named vector of model parameters
 //' @param infection_history_mat IntegerMatrix, the matrix of 1s and 0s showing presence/absence of infection for each possible time for each individual. 
 //' @param possible_exposure_times NumericVector, the time periods that the infection history vector corresponds to
@@ -155,8 +156,6 @@ NumericVector antibody_model(const NumericMatrix theta,
    
     // Only solve is this individual has had infections or if there is long-term waning
     // if (wane_long_parameters(biomarker_group) > 0 || infection_times.size() > 0) {
-    if(true){
-
       // Start end end location of the type_data matrix
       type_start = type_data_start(i-1);
       type_end = type_data_start(i)-1;
@@ -193,7 +192,35 @@ NumericVector antibody_model(const NumericMatrix theta,
   					    number_possible_exposures,
   					    antigenic_map_short.slice(group).colptr(biomarker_group),
   					    antigenic_map_long.slice(group).colptr(biomarker_group),
-  					    boost_before_infection);	
+  					    boost_before_infection);
+            } else if(timevarying_groups){
+              antibody_data_model_individual_timevarying(
+                predicted_antibody_levels, 
+                starting_antibody_levels,
+                births,
+                boost_long_parameters(_,biomarker_group), 
+                boost_short_parameters(_,biomarker_group),
+                boost_delay_parameters(_,biomarker_group),
+                wane_short_parameters(_,biomarker_group), 
+                wane_long_parameters(_,biomarker_group), 
+                antigenic_seniority_parameters(_,biomarker_group),
+                infection_times,
+                indiv_groups,
+                indiv_birth_group,
+                infection_times_indices_tmp,
+                biomarker_id_indices,
+                start_level_indices,
+                sample_times,
+                start_index_in_samples,
+                end_index_in_samples,
+                start_index_in_data,
+                nrows_per_sample,
+                number_possible_exposures,
+                antigenic_map_short.colptr(biomarker_group),
+                antigenic_map_long.colptr(biomarker_group),
+                boost_before_infection,
+                min_measurements(group,biomarker_group));
+              
             } else {
               antibody_data_model_individual_new(
             	        predicted_antibody_levels, 
@@ -221,7 +248,6 @@ NumericVector antibody_model(const NumericMatrix theta,
             					min_measurements(group,biomarker_group));
               }
          }
-      }
   }
   return(predicted_antibody_levels);
   

@@ -35,7 +35,6 @@ plot_antibody_dependent_boosting <- function(chain, n, titres = seq(0, 8, by = 0
 #' @return a list with two ggplot objects, one showing the simulated antibody kinetics over time, stratified by biomarker ID, the other showing simulated antibody kinetics for each biomarker ID, stratified by sample time
 #' @examples
 #' plot_antibody_model(c("boost_long"=2,"boost_short"=3,"boost_delay"=1,"wane_short"=0.2,"wane_long"=0.01, "antigenic_seniority"=0,"cr_long"=0.1,"cr_short"=0.03), times=seq(1,25,by=1),infection_history=NULL,antigenic_map=example_antigenic_map)
-#'  
 #' @export
 plot_antibody_model <- function(pars, 
                                 times=NULL, 
@@ -107,13 +106,13 @@ plot_antibody_model <- function(pars,
 
 #' Plots infection histories and antibody model 
 #'
-#' Given outputs from an MCMC run and the data used for fitting, generates an NxM matrix of plots where N is the number of individuals to be plotted and M is the range of sampling times. Where data are available, plots the observed antibody measurements and model predicted trajectories. Unlike plot_infection_histories_cross_sectional, places biomarker_id on the x-axis and facets by sample time and individual.
+#' Given outputs from an MCMC run and the data used for fitting, generates an NxM matrix of plots where N is the number of individuals to be plotted and M is the range of sampling times. Where data are available, plots the observed antibody measurements and model predicted trajectories. Unlike plot_infection_histories_cross_sectional, places biomarker\_id on the x-axis and facets by sample time and individual.
 #' @inheritParams get_antibody_level_predictions
 #' @param known_infection_history nxm matrix of known infection histories
 #' @param p_ncol integer giving the number of columns of subplots to create if using orientation = "longitudinal"
 #' @param orientation either "cross-sectional" or "longitudinal"
 #' @param subset_biomarker_ids if not NULL, then a vector giving the entries of biomarker_id to include in the longitudinal plot
-#' @param settings
+#' @param settings if not NULL, list of serosolver settings as returned from the main serosolver function
 #' @return a ggplot2 object
 #' @family infection_history_plots
 #' @examples
@@ -386,7 +385,6 @@ theme_pubr <- function (base_size = 12, base_family = "", border = FALSE, margin
 #' \item comparison of observations and all posterior medians and 95% prediction intervals
 #' }
 #' @family infection_history_plots
-#' @examples
 #' @export
 plot_antibody_predictions <- function(chain, infection_histories, 
                                       antibody_data, par_tab=NULL,

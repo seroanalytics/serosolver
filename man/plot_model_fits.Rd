@@ -55,12 +55,14 @@ plot_model_fits(
 \item{orientation}{either "cross-sectional" or "longitudinal"}
 
 \item{subset_biomarker_ids}{if not NULL, then a vector giving the entries of biomarker_id to include in the longitudinal plot}
+
+\item{settings}{if not NULL, list of serosolver settings as returned from the main serosolver function}
 }
 \value{
 a ggplot2 object
 }
 \description{
-Given outputs from an MCMC run and the data used for fitting, generates an NxM matrix of plots where N is the number of individuals to be plotted and M is the range of sampling times. Where data are available, plots the observed antibody measurements and model predicted trajectories. Unlike plot_infection_histories_cross_sectional, places biomarker_id on the x-axis and facets by sample time and individual.
+Given outputs from an MCMC run and the data used for fitting, generates an NxM matrix of plots where N is the number of individuals to be plotted and M is the range of sampling times. Where data are available, plots the observed antibody measurements and model predicted trajectories. Unlike plot_infection_histories_cross_sectional, places biomarker\_id on the x-axis and facets by sample time and individual.
 }
 \examples{
 \dontrun{

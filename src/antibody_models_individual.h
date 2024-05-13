@@ -37,7 +37,7 @@ void antibody_data_model_individual_new(NumericVector &predicted_antibody_levels
                                         const double &wane_short,
                                         const double &wane_long,
                                         const double &antigenic_seniority,
-                                        const NumericVector &possible_exposure_times,
+                                        const NumericVector &infection_times,
                                         const IntegerVector &exposure_indices,
                                         const IntegerVector &biomarker_id_indices,
                                         const IntegerVector &start_level_indices,
@@ -51,6 +51,36 @@ void antibody_data_model_individual_new(NumericVector &predicted_antibody_levels
                                         const double *antigenic_map_long,
                                         bool boost_before_infection,
                                         const double min_level
+);
+#endif
+
+#ifndef ANTIBODY_DATA_MODEL_INDIVIDUAL_TIMEVARYING_H
+#define ANTIBODY_DATA_MODEL_INDIVIDUAL_TIMEVARYING_H
+void antibody_data_model_individual_timevarying(NumericVector &predicted_antibody_levels,
+                                                const NumericVector &start_antibody_levels,
+                                                const NumericVector &births,
+                                                const NumericVector &boost_long,
+                                                const NumericVector &boost_short,
+                                                const NumericVector &boost_delay,
+                                                const NumericVector &wane_short,
+                                                const NumericVector &wane_long,
+                                                const NumericVector &antigenic_seniority,
+                                                const NumericVector &infection_times,
+                                                const IntegerVector &groups,
+                                                const int &birth_group,
+                                                const IntegerVector &exposure_indices,
+                                                const IntegerVector &biomarker_id_indices,
+                                                const IntegerVector &start_level_indices,
+                                                const NumericVector &sample_times,
+                                                const int &index_in_samples,
+                                                const int &end_index_in_samples,
+                                                const int &start_index_in_data1,
+                                                const IntegerVector &nrows_per_blood_sample,
+                                                const int &number_possible_exposures,
+                                                const arma::mat &antigenic_map_short,
+                                                const arma::mat &antigenic_map_long,
+                                                bool boost_before_infection = false,
+                                                const double min_level = 0
 );
 #endif
 

@@ -29,17 +29,14 @@ Given a vector of infection probabilities and potential infection times, simulat
 \examples{
 p_inf <- runif(40,0.1,0.4)
 possible_exposure_times <- seq_len(40) + 1967
-n_indivs <- 100
-sampling_times <- rep(max(possible_exposure_times), n_indivs)
-DOBs <- rep(min(possible_exposure_times), n_indivs)
+n_indiv <- 100
+sampling_times <- rep(max(possible_exposure_times), n_indiv)
+DOBs <- rep(min(possible_exposure_times), n_indiv)
 inf_hist <- simulate_infection_histories(p_inf, possible_exposure_times, sampling_times, DOBs)
 }
 \seealso{
 Other simulation_functions: 
 \code{\link{simulate_attack_rates}()},
-\code{\link{simulate_data}()},
-\code{\link{simulate_group}()},
-\code{\link{simulate_individual_faster}()},
-\code{\link{simulate_individual}()}
+\code{\link{simulate_data}()}
 }
 \concept{simulation_functions}

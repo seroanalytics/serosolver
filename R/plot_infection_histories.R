@@ -92,7 +92,6 @@ plot_posteriors_infhist <- function(inf_chain,
 #' @param ymax Numeric. the maximum y value to put on the axis. Default = 1.
 #' @param resolution Integer. How many buckets of time is each year split into? ie. 12 for monthly data, 4 for quarterly etc. Default = 1 for annual.
 #' @param cumulative if TRUE, plots the cumulative attack rate
-#' @param settings
 #' @return a ggplot2 object with the inferred attack rates for each potential epoch of circulation
 #' @export
 plot_attack_rates <- function(infection_histories, antibody_data=NULL, possible_exposure_times=NULL,
@@ -211,7 +210,7 @@ plot_attack_rates <- function(infection_histories, antibody_data=NULL, possible_
 #' @param plot_residuals if TRUE, plots the residuals between inferred and true attack rate
 #' @param colour_by_taken if TRUE, then colours the attack rates by whether or not titres against the circulating antigen at that time were measured
 #' @param by_val frequency of x-axis labels
-#' @param settings
+#' @param settings if not NULL, list of serosolver settings as returned from the main serosolver function
 #' @return a ggplot2 object with the inferred attack rates for each potential epoch of circulation
 #' @export
 plot_attack_rates_pointrange <- function(infection_histories, antibody_data=NULL, possible_exposure_times=NULL, 

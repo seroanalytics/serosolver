@@ -42,31 +42,6 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
-// antibody_model_individual_wrapper
-Rcpp::NumericVector antibody_model_individual_wrapper(const double& boost_long, const double& boost_short, const double& boost_delay, const double& wane_short, const double& wane_long, const double& antigenic_seniority, const int& birth, const NumericVector& start_antibody_levels, const int number_possible_exposures, const NumericVector& possible_exposure_times, const IntegerVector& exposure_indices, const IntegerVector& biomarker_id_indices, const NumericVector& sample_times, const arma::mat& antigenic_map_long, const arma::mat& antigenic_map_short);
-RcppExport SEXP _serosolver_antibody_model_individual_wrapper(SEXP boost_longSEXP, SEXP boost_shortSEXP, SEXP boost_delaySEXP, SEXP wane_shortSEXP, SEXP wane_longSEXP, SEXP antigenic_senioritySEXP, SEXP birthSEXP, SEXP start_antibody_levelsSEXP, SEXP number_possible_exposuresSEXP, SEXP possible_exposure_timesSEXP, SEXP exposure_indicesSEXP, SEXP biomarker_id_indicesSEXP, SEXP sample_timesSEXP, SEXP antigenic_map_longSEXP, SEXP antigenic_map_shortSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< const double& >::type boost_long(boost_longSEXP);
-    Rcpp::traits::input_parameter< const double& >::type boost_short(boost_shortSEXP);
-    Rcpp::traits::input_parameter< const double& >::type boost_delay(boost_delaySEXP);
-    Rcpp::traits::input_parameter< const double& >::type wane_short(wane_shortSEXP);
-    Rcpp::traits::input_parameter< const double& >::type wane_long(wane_longSEXP);
-    Rcpp::traits::input_parameter< const double& >::type antigenic_seniority(antigenic_senioritySEXP);
-    Rcpp::traits::input_parameter< const int& >::type birth(birthSEXP);
-    Rcpp::traits::input_parameter< const NumericVector& >::type start_antibody_levels(start_antibody_levelsSEXP);
-    Rcpp::traits::input_parameter< const int >::type number_possible_exposures(number_possible_exposuresSEXP);
-    Rcpp::traits::input_parameter< const NumericVector& >::type possible_exposure_times(possible_exposure_timesSEXP);
-    Rcpp::traits::input_parameter< const IntegerVector& >::type exposure_indices(exposure_indicesSEXP);
-    Rcpp::traits::input_parameter< const IntegerVector& >::type biomarker_id_indices(biomarker_id_indicesSEXP);
-    Rcpp::traits::input_parameter< const NumericVector& >::type sample_times(sample_timesSEXP);
-    Rcpp::traits::input_parameter< const arma::mat& >::type antigenic_map_long(antigenic_map_longSEXP);
-    Rcpp::traits::input_parameter< const arma::mat& >::type antigenic_map_short(antigenic_map_shortSEXP);
-    rcpp_result_gen = Rcpp::wrap(antibody_model_individual_wrapper(boost_long, boost_short, boost_delay, wane_short, wane_long, antigenic_seniority, birth, start_antibody_levels, number_possible_exposures, possible_exposure_times, exposure_indices, biomarker_id_indices, sample_times, antigenic_map_long, antigenic_map_short));
-    return rcpp_result_gen;
-END_RCPP
-}
 // subset_nullable_vector
 NumericVector subset_nullable_vector(const Nullable<NumericVector>& x, int index1, int index2);
 RcppExport SEXP _serosolver_subset_nullable_vector(SEXP xSEXP, SEXP index1SEXP, SEXP index2SEXP) {
@@ -354,7 +329,6 @@ END_RCPP
 
 static const R_CallMethodDef CallEntries[] = {
     {"_serosolver_antibody_model", (DL_FUNC) &_serosolver_antibody_model, 22},
-    {"_serosolver_antibody_model_individual_wrapper", (DL_FUNC) &_serosolver_antibody_model_individual_wrapper, 15},
     {"_serosolver_subset_nullable_vector", (DL_FUNC) &_serosolver_subset_nullable_vector, 3},
     {"_serosolver_transform_parameters_cpp", (DL_FUNC) &_serosolver_transform_parameters_cpp, 5},
     {"_serosolver_get_starting_antibody_levels", (DL_FUNC) &_serosolver_get_starting_antibody_levels, 3},

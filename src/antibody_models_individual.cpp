@@ -8,6 +8,103 @@
 #define MIN(a,b) ((a) < (b) ? (a) : (b)) // define MAX function for use later
 #endif
 
+
+void antibody_data_model_individual_timevarying(NumericVector &predicted_antibody_levels,
+                                        const NumericVector &start_antibody_levels,
+                                        const NumericVector &births,
+                                        const NumericVector &boost_long,
+                                        const NumericVector &boost_short,
+                                        const NumericVector &boost_delay,
+                                        const NumericVector &wane_short,
+                                        const NumericVector &wane_long,
+                                        const NumericVector &antigenic_seniority,
+                                        const NumericVector &infection_times,
+                                        const IntegerVector &groups,
+                                        const int &birth_group,
+                                        const IntegerVector &exposure_indices,
+                                        const IntegerVector &biomarker_id_indices,
+                                        const IntegerVector &start_level_indices,
+                                        const NumericVector &sample_times,
+                                        const int &index_in_samples,
+                                        const int &end_index_in_samples,
+                                        const int &start_index_in_data1,
+                                        const IntegerVector &nrows_per_blood_sample,
+                                        const int &number_possible_exposures,
+                                        const arma::mat &antigenic_map_short,
+                                        const arma::mat &antigenic_map_long,
+                                        bool boost_before_infection = false,
+                                        const double min_level = 0
+){
+  
+  double sampling_time;
+  double time;
+  double n_inf;
+  double wane_short_amount;
+  double wane_long_amount;
+  double seniority;
+  int n_measurements;
+  int max_infections = infection_times.size();
+  int end_index_in_data;
+  int tmp_measurement_index;
+  int start_index_in_data = start_index_in_data1;
+  int inf_map_index;
+  int index;
+  
+  // For each sample this individual has
+  for(int j = index_in_samples; j <= end_index_in_samples; ++j){
+    sampling_time = sample_times[j];
+    n_inf = 1.0;
+    // Find number of measurements in the predicted_antibody_levels vector that correspond to this sample
+    n_measurements = nrows_per_blood_sample[j];
+    // Only iterate through indices for this sample
+    end_index_in_data = start_index_in_data + n_measurements;
+    tmp_measurement_index = start_index_in_data;
+    
+    // Include starting titre contributions
+    // Time elapsed since first sample time
+    // Assume that first entry for birth does not change
+    time = sampling_time - births[start_index_in_data];
+    wane_long_amount= wane_long[birth_group]*wane_short[birth_group]*boost_short[birth_group]*time;//MAX(0, 1.0 - (wane_long*time)); 
+    wane_long_amount = MAX(0, wane_long_amount);
+    //Rcpp::Rcout << "wane_long_amount: " << wane_long_amount << std::endl;
+    // For each measured marker, find the biomarker id index which will match an entry in start_antibody_levels
+    // Add this to the predicted antibody level, with waning
+    
+    for(int k = 0; k < n_measurements; ++k){
+      index = start_level_indices[tmp_measurement_index + k];
+      predicted_antibody_levels[tmp_measurement_index + k] += min_level;
+      predicted_antibody_levels[tmp_measurement_index + k] += MAX(0, start_antibody_levels[index] - wane_long_amount);
+    }
+    
+    // Sum all infections that would contribute towards observed antibody levels at this time
+    for(int x = 0; x < max_infections; ++x){
+      // Only go further if this sample happened after the infection
+      if((boost_before_infection && sampling_time > (infection_times[x] + boost_delay[groups[x]])) ||
+         (!boost_before_infection && sampling_time >= (infection_times[x] + boost_delay[groups[x]]))){
+        time = sampling_time - (infection_times[x] + boost_delay[groups[x]]); // Time between sample and infection + boost
+        wane_short_amount= MAX(0, 1.0 - (wane_short[groups[x]]*time)); // Waning of the short-term response
+        wane_long_amount= MAX(0, 1.0 - (wane_long[groups[x]]*wane_short[groups[x]]*time)); // Waning of the long-term response
+        
+        seniority = MAX(0, 1.0 - antigenic_seniority[groups[x]]*(n_inf - 1.0)); // Antigenic seniority
+        inf_map_index = exposure_indices[x]; // Index of this infecting antigen in antigenic map
+        
+        // Find contribution to each measured antibody level from this infection
+        for(int k = 0; k < n_measurements; ++k){
+          index = biomarker_id_indices[tmp_measurement_index + k]*number_possible_exposures + inf_map_index;
+          predicted_antibody_levels[tmp_measurement_index + k] += seniority[groups[x]] *
+            ((boost_long[groups[x]]*antigenic_map_long[groups[x],index])*wane_long_amount + 
+            (boost_short[groups[x]]*antigenic_map_short[groups[x],index])*wane_short_amount);
+        }
+        
+        ++n_inf;
+      }
+    }
+    start_index_in_data = end_index_in_data;
+  }
+}
+
+
+
 void antibody_data_model_individual_new(NumericVector &predicted_antibody_levels,
                                          const NumericVector &start_antibody_levels,
                                          const NumericVector &births,
@@ -17,7 +114,7 @@ void antibody_data_model_individual_new(NumericVector &predicted_antibody_levels
                                          const double &wane_short,
                                          const double &wane_long,
                                          const double &antigenic_seniority,
-                                         const NumericVector &possible_exposure_times,
+                                         const NumericVector &infection_times,
                                          const IntegerVector &exposure_indices,
                                          const IntegerVector &biomarker_id_indices,
                                          const IntegerVector &start_level_indices,
@@ -40,7 +137,7 @@ void antibody_data_model_individual_new(NumericVector &predicted_antibody_levels
    double wane_long_amount;
    double seniority;
    int n_measurements;
-   int max_infections = possible_exposure_times.size();
+   int max_infections = infection_times.size();
    int end_index_in_data;
    int tmp_measurement_index;
    int start_index_in_data = start_index_in_data1;
@@ -76,9 +173,9 @@ void antibody_data_model_individual_new(NumericVector &predicted_antibody_levels
      // Sum all infections that would contribute towards observed antibody levels at this time
      for(int x = 0; x < max_infections; ++x){
        // Only go further if this sample happened after the infection
-       if((boost_before_infection && sampling_time > (possible_exposure_times[x] + boost_delay)) ||
-          (!boost_before_infection && sampling_time >= (possible_exposure_times[x] + boost_delay))){
-         time = sampling_time - (possible_exposure_times[x] + boost_delay); // Time between sample and infection + boost
+       if((boost_before_infection && sampling_time > (infection_times[x] + boost_delay)) ||
+          (!boost_before_infection && sampling_time >= (infection_times[x] + boost_delay))){
+         time = sampling_time - (infection_times[x] + boost_delay); // Time between sample and infection + boost
          wane_short_amount= MAX(0, 1.0 - (wane_short*time)); // Waning of the short-term response
          wane_long_amount= MAX(0, 1.0 - (wane_long*wane_short*time)); // Waning of the long-term response
          
@@ -99,7 +196,6 @@ void antibody_data_model_individual_new(NumericVector &predicted_antibody_levels
    }
  }
  
-// [[Rcpp::export]]
 Rcpp::NumericVector antibody_model_individual_wrapper(const double &boost_long,
                                                       const double &boost_short,
                                                       const double &boost_delay,
@@ -142,7 +238,6 @@ Rcpp::NumericVector antibody_model_individual_wrapper(const double &boost_long,
 //' 
 //' A fast implementation of the basic boosting function, giving predicted antibody_levels for a number of samples for one individual. Note that this version attempts to minimise memory allocations.
 //' @family antibody_models
-//' @export
 //' @seealso \code{\link{antibody_model}}
 void antibody_data_model_individual(
     NumericVector &predicted_antibody_levels,
