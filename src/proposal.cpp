@@ -405,8 +405,6 @@ List inf_hist_prop_prior_v2_and_v4(
   // ########################################################################
   // For each individual
   for(int i = 0; i < n_sampled; ++i){
-    //Rcpp::Rcout << "Indiv: " << i << std::endl;
-    //usleep(10);
     // Which proposal step to take and do we need to calculate the likelihood    
     swap_step_option = R::runif(0,1) < proposal_inf_hist_indiv_swap_ratio;
     
@@ -421,20 +419,14 @@ List inf_hist_prop_prior_v2_and_v4(
       // Birth group is [i-1, 1]
       birth_group = indiv_group_indices[(number_possible_exposures+1)*(indiv)];
       
-      //Rcpp::Rcout << "Indiv (prop): " << indiv << std::endl;
-      //Rcpp::Rcout << "Groups (prop): " << groups << std::endl;
-      //Rcpp::Rcout << "Birth group (prop): " << birth_group << std::endl;
     } else {
       // Otherwise, the individual's group is unchanged
       group = indiv_group_indices[indiv];
     }
     
-    //Rcpp::Rcout << "indiv: " << indiv+1 << std::endl << std::endl;
-    
     popn_group_id = popn_group_id_vec(indiv);
     old_prob = likelihoods_pre_proposal(indiv);
-    //Rcpp::Rcout << "Old prob: " << old_prob << std::endl << std::endl;
-    
+
     // Time sampling control
     n_times_samp = n_times_samp_vec(indiv); // How many times are we intending to resample for this individual?
     n_samp_length  = sample_mask(indiv) - age_mask(indiv) + 1; // How many times maximum can we sample from?
@@ -456,20 +448,15 @@ List inf_hist_prop_prior_v2_and_v4(
     tmp_loc_sample_probs = time_sample_probs[samps_shifted];
     // Re-normalise
     tmp_loc_sample_probs = tmp_loc_sample_probs/sum(tmp_loc_sample_probs);
-    //Rcpp::Rcout << "Possible time samples: " << samps << std::endl;
     locs = RcppArmadillo::sample(samps, n_samp_max, false, tmp_loc_sample_probs);
 
-    //Rcpp::Rcout << "Sampled locations: " << locs << std::endl;
-    
     // For each selected infection history entry
     for(int j = 0; j < n_samp_max; ++j){
-        //Rcpp::Rcout << "Updating infection history entry: " << j << std::endl;
       // Assume that proposal hasn't changed likelihood until shown otherwise
       lik_changed = false;
       // Infection history to update
       new_infection_history = new_infection_history_mat(indiv,_);
-      //Rcpp::Rcout << "Infection history before: " << new_infection_history<< std::endl;
-      
+
       ///////////////////////////////////////////////////////
       // OPTION 1: Swap contents of a year for an individual
       ///////////////////////////////////////////////////////
@@ -513,8 +500,7 @@ List inf_hist_prop_prior_v2_and_v4(
       	    // Number of infections in that group in that time
       	      m_1_old = n_infections(popn_group_id,loc1);      
       	      m_2_old = n_infections(popn_group_id,loc2);
-      	      //Rcpp::Rcout << "popn_group_id: " << popn_group_id << "; loc2: " << loc2<< "; popn_group_id: 1" << std::endl;
-      	      
+      	 
       	      // Swap contents
       	      new_infection_history(loc1) = new_infection_history(loc2);
       	      new_infection_history(loc2) = loc1_val_old;
@@ -527,16 +513,10 @@ List inf_hist_prop_prior_v2_and_v4(
       	      m_1_new = m_1_old - loc1_val_old + loc2_val_old;
       	      m_2_new = m_2_old - loc2_val_old + loc1_val_old;
       
-      	      //Rcpp::Rcout << "Prior lookup" << std::endl;
-      	      //Rcpp::Rcout << "m_1_old: " << m_1_old << "; loc1: " << loc1<< "; popn_group_id: 1" << std::endl;
-      	      //Rcpp::Rcout << "m_2_old: " << m_2_old << "; loc2: " << loc2<< "; popn_group_id: 1" << std::endl;
-      	      
       	      prior_1_old = prior_lookup(m_1_old, loc1, popn_group_id);
       	      prior_2_old = prior_lookup(m_2_old, loc2, popn_group_id);
       	      prior_old = prior_1_old + prior_2_old;
       	      
-      	      //Rcpp::Rcout << "m_1_new: " << m_1_new << "; loc1: " << loc1<< "; popn_group_id: 1" << std::endl;
-      	      //Rcpp::Rcout << "m_2_new: " << m_2_new << "; loc2: " << loc2<< "; popn_group_id: 1" << std::endl;
       	      prior_1_new = prior_lookup(m_1_new, loc1, popn_group_id);
       	      prior_2_new = prior_lookup(m_2_new, loc2, popn_group_id);
       	      prior_new = prior_1_new + prior_2_new;
@@ -553,15 +533,11 @@ List inf_hist_prop_prior_v2_and_v4(
     	///////////////////////////////////////////////////////
       } else {
         
-       // Rcpp::Rcout << "Age mask: " << age_mask(indiv) << std::endl;
-        //Rcpp::Rcout << "Sample mask: " << sample_mask(indiv) << std::endl;
         
       	year = locs(j) + age_mask(indiv) - 1;
       	old_entry = new_infection_history(year);
       	overall_add_proposals(indiv,year)++;
       	
-      //	Rcpp::Rcout << "Old entry: " << old_entry << std::endl;
-      	//Rcpp::Rcout << "Year: " << year << std::endl;
       	//usleep(10);
       	if(!prior_on_total){	
       	  // Get number of individuals that were alive and/or infected in that year,
@@ -615,8 +591,6 @@ List inf_hist_prop_prior_v2_and_v4(
       ////////////////////////
       
       if(solve_likelihood && lik_changed){
-        //if(TRUE){
-         //Rcpp::Rcout << "Infection history after change: " << new_infection_history<< std::endl;
           
       	// Calculate likelihood!
       	indices = new_infection_history > 0;
@@ -628,14 +602,11 @@ List inf_hist_prop_prior_v2_and_v4(
       	if(timevarying_groups){
       	  groups_subset = groups[use_indices];
       	}
-      	//Rcpp::Rcout << infection_times_indices_tmp << std::endl;
       	
       	// Start end end location of the type_data matrix
       	type_start = type_data_start(indiv);
       	type_end = type_data_start(indiv+1)-1;
       	
-      	//Rcpp::Rcout << "Type start: " << type_start << std::endl;
-      	//Rcpp::Rcout << "Type end: " << type_end << std::endl << std::endl;
       	
       	// ====================================================== //
       	// =============== CHOOSE MODEL TO SOLVE =============== //
@@ -644,8 +615,6 @@ List inf_hist_prop_prior_v2_and_v4(
   	    new_prob = 0;
 
     	for(int index = type_start; index <= type_end; ++index){
-    	    //Rcpp::Rcout << "index: " << index << std::endl;
-    	  //usleep(10);
     	    biomarker_group = biomarker_groups(index)-1;
     	    data_type = data_types(biomarker_group);
     	    obs_weight = obs_weights(biomarker_group);
@@ -787,7 +756,6 @@ List inf_hist_prop_prior_v2_and_v4(
 	      log_prob = std::min<double>(0.0, (new_prob+prior_new) - (old_prob+prior_old));
       } else {
 	      log_prob = std::min<double>(0.0, (new_prob+prior_new) - (old_prob+prior_old));
-        //Rcpp::Rcout << log_prob << std::endl;
       }
       
       rand1 = R::runif(0,1);
@@ -798,7 +766,6 @@ List inf_hist_prop_prior_v2_and_v4(
     
     	// Carry out the swap
     	if(swap_step_option){
-    	  //Rcpp::Rcout <<"Swap step" << std::endl;
     	  accepted_swap(indiv) += 1;
     	  tmp = new_infection_history_mat(indiv,loc1);
     	  new_infection_history_mat(indiv,loc1) = new_infection_history_mat(indiv,loc2);
@@ -808,15 +775,11 @@ List inf_hist_prop_prior_v2_and_v4(
     	  if(!prior_on_total){
     	    n_infections(popn_group_id, loc1) = m_1_new;
     	    n_infections(popn_group_id, loc2) = m_2_new;
-    	    //if(m_1_new < 0) Rcpp::Rcout << "m_1_new < 0!" << std::endl;
-    	    //if(m_2_new < 0) Rcpp::Rcout << "m_2_new < 0!" << std::endl;
     	    
     	  }
 	  // Don't need to update group infections if prior_on_total, as infections
 	  // only move within an individual (so number in group stays same)
     	} else {
-    	  //Rcpp::Rcout <<"Add/remove step" << std::endl;
-    	  
     	    accepted_iter(indiv) += 1;
     	    new_infection_history_mat(indiv,year) = new_entry;	
     	  // Update total number of infections in group/time
@@ -827,7 +790,6 @@ List inf_hist_prop_prior_v2_and_v4(
     	        
     	        n_infected_group(popn_group_id) = n_infected_group(popn_group_id) - old_entry + new_entry;
     	    }
-    	    //Rcpp::Rcout << n_infections(popn_group_id, 44) << std::endl;
     	}
       }
     }
