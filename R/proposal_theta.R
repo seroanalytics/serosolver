@@ -11,7 +11,7 @@
 #' @family proposals
 #' @export
 #' @useDynLib serosolver
-univ_proposal <- function(values, lower_bounds, upper_bounds, steps, index, gaussian_proposal=FALSE) {
+univ_proposal <- function(values, lower_bounds, upper_bounds, steps, index, gaussian_proposal=TRUE) {
   rtn <- values
   ## If using simple gaussian proposals
   if(gaussian_proposal){

@@ -56,9 +56,31 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// logistic_transform
+double logistic_transform(double p);
+RcppExport SEXP _serosolver_logistic_transform(SEXP pSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< double >::type p(pSEXP);
+    rcpp_result_gen = Rcpp::wrap(logistic_transform(p));
+    return rcpp_result_gen;
+END_RCPP
+}
+// logit_transform
+double logit_transform(double p);
+RcppExport SEXP _serosolver_logit_transform(SEXP pSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< double >::type p(pSEXP);
+    rcpp_result_gen = Rcpp::wrap(logit_transform(p));
+    return rcpp_result_gen;
+END_RCPP
+}
 // transform_parameters_cpp
-NumericMatrix transform_parameters_cpp(NumericVector pars, List scale_table, IntegerVector theta_indices, IntegerVector scale_par_indices, NumericMatrix demographics);
-RcppExport SEXP _serosolver_transform_parameters_cpp(SEXP parsSEXP, SEXP scale_tableSEXP, SEXP theta_indicesSEXP, SEXP scale_par_indicesSEXP, SEXP demographicsSEXP) {
+NumericMatrix transform_parameters_cpp(NumericVector pars, List scale_table, IntegerVector theta_indices, IntegerVector scale_par_indices, NumericMatrix demographics, IntegerVector transforms);
+RcppExport SEXP _serosolver_transform_parameters_cpp(SEXP parsSEXP, SEXP scale_tableSEXP, SEXP theta_indicesSEXP, SEXP scale_par_indicesSEXP, SEXP demographicsSEXP, SEXP transformsSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -67,7 +89,8 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< IntegerVector >::type theta_indices(theta_indicesSEXP);
     Rcpp::traits::input_parameter< IntegerVector >::type scale_par_indices(scale_par_indicesSEXP);
     Rcpp::traits::input_parameter< NumericMatrix >::type demographics(demographicsSEXP);
-    rcpp_result_gen = Rcpp::wrap(transform_parameters_cpp(pars, scale_table, theta_indices, scale_par_indices, demographics));
+    Rcpp::traits::input_parameter< IntegerVector >::type transforms(transformsSEXP);
+    rcpp_result_gen = Rcpp::wrap(transform_parameters_cpp(pars, scale_table, theta_indices, scale_par_indices, demographics, transforms));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -122,15 +145,16 @@ BEGIN_RCPP
 END_RCPP
 }
 // sum_infections_by_group
-IntegerMatrix sum_infections_by_group(IntegerMatrix inf_hist, IntegerVector group_ids_vec, int n_groups);
-RcppExport SEXP _serosolver_sum_infections_by_group(SEXP inf_histSEXP, SEXP group_ids_vecSEXP, SEXP n_groupsSEXP) {
+IntegerMatrix sum_infections_by_group(IntegerMatrix inf_hist, IntegerVector group_ids_vec, int n_groups, bool timevarying_groups);
+RcppExport SEXP _serosolver_sum_infections_by_group(SEXP inf_histSEXP, SEXP group_ids_vecSEXP, SEXP n_groupsSEXP, SEXP timevarying_groupsSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< IntegerMatrix >::type inf_hist(inf_histSEXP);
     Rcpp::traits::input_parameter< IntegerVector >::type group_ids_vec(group_ids_vecSEXP);
     Rcpp::traits::input_parameter< int >::type n_groups(n_groupsSEXP);
-    rcpp_result_gen = Rcpp::wrap(sum_infections_by_group(inf_hist, group_ids_vec, n_groups));
+    Rcpp::traits::input_parameter< bool >::type timevarying_groups(timevarying_groupsSEXP);
+    rcpp_result_gen = Rcpp::wrap(sum_infections_by_group(inf_hist, group_ids_vec, n_groups, timevarying_groups));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -332,12 +356,14 @@ END_RCPP
 static const R_CallMethodDef CallEntries[] = {
     {"_serosolver_antibody_model", (DL_FUNC) &_serosolver_antibody_model, 23},
     {"_serosolver_subset_nullable_vector", (DL_FUNC) &_serosolver_subset_nullable_vector, 3},
-    {"_serosolver_transform_parameters_cpp", (DL_FUNC) &_serosolver_transform_parameters_cpp, 5},
+    {"_serosolver_logistic_transform", (DL_FUNC) &_serosolver_logistic_transform, 1},
+    {"_serosolver_logit_transform", (DL_FUNC) &_serosolver_logit_transform, 1},
+    {"_serosolver_transform_parameters_cpp", (DL_FUNC) &_serosolver_transform_parameters_cpp, 6},
     {"_serosolver_get_starting_antibody_levels", (DL_FUNC) &_serosolver_get_starting_antibody_levels, 3},
     {"_serosolver_sum_likelihoods", (DL_FUNC) &_serosolver_sum_likelihoods, 3},
     {"_serosolver_create_cross_reactivity_vector", (DL_FUNC) &_serosolver_create_cross_reactivity_vector, 2},
     {"_serosolver_sum_buckets", (DL_FUNC) &_serosolver_sum_buckets, 2},
-    {"_serosolver_sum_infections_by_group", (DL_FUNC) &_serosolver_sum_infections_by_group, 3},
+    {"_serosolver_sum_infections_by_group", (DL_FUNC) &_serosolver_sum_infections_by_group, 4},
     {"_serosolver_add_measurement_shifts", (DL_FUNC) &_serosolver_add_measurement_shifts, 4},
     {"_serosolver_inf_mat_prior_cpp", (DL_FUNC) &_serosolver_inf_mat_prior_cpp, 4},
     {"_serosolver_inf_mat_prior_cpp_vector", (DL_FUNC) &_serosolver_inf_mat_prior_cpp_vector, 4},

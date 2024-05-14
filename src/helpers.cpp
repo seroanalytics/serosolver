@@ -13,9 +13,21 @@ NumericVector subset_nullable_vector(const Nullable<NumericVector> &x, int index
 }
 
 // [[Rcpp::export]]
+double logistic_transform(double p){
+  return 1.0/(1.0 + exp(-p));
+}
+
+// [[Rcpp::export]]
+double logit_transform(double p){
+  return log(p/(1 - p));
+}
+
+// [[Rcpp::export]]
 NumericMatrix transform_parameters_cpp(NumericVector pars, List scale_table, 
-                                        IntegerVector theta_indices, IntegerVector scale_par_indices, 
-                                        NumericMatrix demographics) {
+                                        IntegerVector theta_indices, 
+                                        IntegerVector scale_par_indices, 
+                                        NumericMatrix demographics,
+                                        IntegerVector transforms) {
   
   // Extract scale parameters
   NumericVector scale_pars(scale_par_indices.size() + 1);
@@ -46,7 +58,13 @@ NumericMatrix transform_parameters_cpp(NumericVector pars, List scale_table,
         par_index = tmp_scale_table(tmp_strat, i)-1;
         scales += scale_pars[par_index];
       }
-      theta(j, i) = exp(log(theta_pars[i]) + scales);
+      if(transforms[i] == 0){ 
+        theta(j, i) = exp(log(theta_pars[i]) + scales);
+      } else if(transforms[i] == 1){
+        theta(j, i) = logistic_transform(logit_transform(theta_pars[i]) + scales);
+      } else {
+        theta(j, i) = theta_pars[i] + scales;
+      }
     }
   }
   return theta;
@@ -126,14 +144,23 @@ NumericVector sum_buckets(NumericVector a, NumericVector buckets){
 //'
 //' @export
 //[[Rcpp::export]]
-IntegerMatrix sum_infections_by_group(IntegerMatrix inf_hist, IntegerVector group_ids_vec, int n_groups){
+IntegerMatrix sum_infections_by_group(IntegerMatrix inf_hist, IntegerVector group_ids_vec, int n_groups, bool timevarying_groups){
   int n_times = inf_hist.ncol();
+  int n_indivs = inf_hist.nrow();
   IntegerMatrix n_infections(n_groups, n_times);
 
-  for(int i = 0; i < n_times; ++i){
-    for(int j = 0; j < group_ids_vec.size(); ++j){
-      n_infections(group_ids_vec[j], i) += inf_hist(j, i);
-    }   
+  if(!timevarying_groups){
+    for(int t = 0; t < n_times; ++t){
+      for(int i = 0; i < group_ids_vec.size(); ++i){
+        n_infections(group_ids_vec[i], t) += inf_hist(i, t);
+      }   
+    }
+  } else {
+    for(int i = 0; i < n_indivs; ++i){
+      for(int t = 0; t < n_times; ++t){
+        n_infections(group_ids_vec[i*n_times + t], t) += inf_hist(i, t);
+      }   
+    }
   }
   return(n_infections);
 }

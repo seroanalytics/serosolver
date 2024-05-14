@@ -158,7 +158,6 @@ plot_model_fits <- function(chain, infection_histories,
     if(is.null(start_level) | start_level == "none") start_level <- settings$start_level
     if(missing(data_type)) data_type <- settings$data_type
   }
-  
   individuals <- individuals[order(individuals)]
   
   ## Setup antigenic map and exposure times

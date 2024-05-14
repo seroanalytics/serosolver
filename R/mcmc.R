@@ -174,17 +174,13 @@ serosolver <- function(par_tab,
     antigenic_map <- data.frame("x_coord"=1,"y_coord"=1,"inf_times"=possible_exposure_times)
   }
   
-  ## Check the antibody_data input
-  antibody_data <- check_data(antibody_data,verbose=verbose)
-  
-  ## Add stratifications to par_tab
+  ## Add stratifications to par_tab based on what's available in antibody_data or demographics
   par_tab <- add_scale_pars(par_tab,antibody_data, demographics)
   par_tab <- check_par_tab(par_tab, TRUE,possible_exposure_times=possible_exposure_times, version=prior_version,verbose)
     
-    if(!is.null(start_inf_hist)){
-      check_inf_hist(antibody_data, possible_exposure_times, start_inf_hist,verbose=verbose)
-    }
-    
+  if(!is.null(start_inf_hist)){
+    check_inf_hist(antibody_data, possible_exposure_times, start_inf_hist,verbose=verbose)
+  }
     
   ## Sort out which prior_version to run --------------------------------------
 
@@ -232,6 +228,8 @@ serosolver <- function(par_tab,
   ###############
   ## Extract antibody_data parameters
   ##############
+  ## Check the antibody_data input
+  antibody_data <- check_data(antibody_data,verbose=verbose)
   n_indiv <- length(unique(antibody_data$individual)) # How many individuals in the antibody_data?
   
   ## Create age mask
@@ -245,18 +243,29 @@ serosolver <- function(par_tab,
   ## Create strain mask
   sample_mask <- create_sample_mask(antibody_data, possible_exposure_times)
   masks <- data.frame(cbind(age_mask, sample_mask))
+  ## Add stratifying variables to antibody_data and demographics
+  ## Setup data vectors and extract
+  tmp <- get_demographic_groups(par_tab,antibody_data,demographics, NULL)
+  use_demographic_groups <- tmp$use_demographic_groups
+  use_timevarying_groups <- tmp$timevarying_demographics
+  tmp <- add_stratifying_variables(antibody_data, demographics, par_tab, use_demographic_groups)
+  group_ids_vec <- tmp$indiv_pop_group_indices
   
-  group_ids_vec <- unique(antibody_data[, c("individual", "population_group")])[, "population_group"] - 1
+  antibody_data_updated <- tmp$antibody_data
+  demographics_updated <- tmp$timevarying_demographics
+  demographic_groups <- tmp$demographics
+  population_groups <- tmp$population_groups
+  
+  if (is.null(n_alive)) {
+    n_alive <- get_n_alive_group(antibody_data_updated, possible_exposure_times, demographics_updated)
+  }
+
   n_groups <- length(unique(group_ids_vec))
   ## Number of people that were born before each year and have had a sample taken since that year happened
   
-  if (is.null(n_alive)) {
-    n_alive <- get_n_alive_group(antibody_data, possible_exposure_times)
-  }
-  ##############
- 
+
   ## Create posterior calculating function
-  posterior_simp <- protect_posterior(
+  posterior_simp <- #protect_posterior(
     posterior_func(par_tab,
                                            antibody_data,
                                            antigenic_map,
@@ -272,8 +281,8 @@ serosolver <- function(par_tab,
                                           demographics=demographics,
                                            verbose=verbose,
                                            ...
- )
-  )
+ #)
+)
   
   if (!is.null(prior_func)) {
     prior_func <- prior_func(par_tab)
@@ -281,7 +290,7 @@ serosolver <- function(par_tab,
   
   ## If using gibbs proposal on infection_history, create here
   if (hist_proposal == 2) {
-    proposal_gibbs <- protect_posterior(
+    proposal_gibbs <- #protect_posterior(
       posterior_func(par_tab,
                                              antibody_data,
                                              antigenic_map,
@@ -297,8 +306,8 @@ serosolver <- function(par_tab,
                      demographics=demographics,
                                              verbose=verbose,
                                              ...
-   )
-    )
+   #)
+ )
   }
   
   if (measurement_random_effects) {
@@ -306,26 +315,24 @@ serosolver <- function(par_tab,
   }
   ######################
 
-  
   ## Create closure to add extra prior probabilities, to avoid re-typing later
   extra_probabilities <- function(prior_pars, prior_infection_history) {
     names(prior_pars) <- par_names
     infection_model_prior_shape1 <- prior_pars["infection_model_prior_shape1"]
     infection_model_prior_shape2 <- prior_pars["infection_model_prior_shape2"]
     prior_probab <- 0
-    
     ## If prior prior_version 2 or 4
     if (hist_proposal == 2) {
       ## Prior prior_version 4
       if (prior_on_total) {
-        n_infections <- sum_infections_by_group(prior_infection_history, group_ids_vec, n_groups)
+        n_infections <- sum_infections_by_group(prior_infection_history, group_ids_vec, n_groups,use_timevarying_groups)
         n_infections_group <- rowSums(n_infections)
         prior_probab <- prior_probab + inf_mat_prior_total_group_cpp(
           n_infections_group,
           n_alive_tot, infection_model_prior_shape1, infection_model_prior_shape2
         )
       } else {
-        n_infections <- sum_infections_by_group(prior_infection_history, group_ids_vec, n_groups)
+        n_infections <- sum_infections_by_group(prior_infection_history, group_ids_vec, n_groups, use_timevarying_groups)
         if (any(n_infections > n_alive)){
           prior_probab <- -Inf
         } else {
@@ -348,6 +355,8 @@ serosolver <- function(par_tab,
   serosolver_settings <- list(par_tab=par_tab %>% dplyr::filter(par_type != 4),
                               antibody_data=antibody_data,
                               demographics=demographics,
+                              demographic_groups=demographic_groups,
+                              population_groups=population_groups,
                               prior_version=prior_version,
                               possible_exposure_times=possible_exposure_times,
                               antigenic_map=antigenic_map,

@@ -328,6 +328,13 @@ get_antibody_level_predictions <- function(chain, infection_histories, antibody_
                                            data_type=1,start_level="none"){
   par_tab <- add_scale_pars(par_tab,antibody_data,demographics)
   
+  ## Get unique demographic groups from full data set, not just the subset
+  if(!is.null(demographics)){
+    demographic_groups <- create_demographic_table(demographics,par_tab)
+  } else {
+    demographic_groups <- create_demographic_table(antibody_data,par_tab)
+  }
+  
   ## Need to align the iterations of the two MCMC chains
   ## and choose some random samples
   samps <- intersect(unique(infection_histories$samp_no), unique(chain$samp_no))
@@ -409,7 +416,7 @@ get_antibody_level_predictions <- function(chain, infection_histories, antibody_
                                      measurement_bias = measurement_bias, function_type = 4,
                                       antibody_level_before_infection=antibody_level_before_infection,
                                       data_type=data_type,start_level=start_level,
-                                     demographics=demographics
+                                     demographics=demographics,demographic_groups=demographic_groups
   )
   
   predicted_titres <- residuals <- residuals_floor <- 

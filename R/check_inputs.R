@@ -139,7 +139,7 @@ check_par_tab <- function(par_tab, mcmc = FALSE, version = NULL,possible_exposur
 #' @export
 check_data <- function(data,verbose=FALSE) {
     ## Check that all columns are present
-    col.names <- c("individual", "sample_time", "biomarker_id","biomarker_group", "measurement", "repeat_number","population_group","birth")
+    col.names <- c("individual", "sample_time", "biomarker_id","biomarker_group", "measurement", "repeat_number","birth")
     ## If there are any missing columns (NOTE: not checking if group or run are present)
     if (all(col.names %in% colnames(data)) != TRUE) {
         missing.cols <- col.names[which(col.names %in% colnames(data) == FALSE)] ## Find the missing column names
@@ -150,10 +150,7 @@ check_data <- function(data,verbose=FALSE) {
           if(verbose) message("Adding \"biomarker_group\" to data variables.")
           data$biomarker_group <- 1
         }
-        if(!("population_group" %in% colnames(data))){
-          if(verbose) message("Adding \"population_group\" to data variables.")
-          data$population_group <- 1
-        }
+    
         if(!("repeat_number" %in% colnames(data))){
           if(verbose) message("Adding \"repeat_number\" to data variables.")
           data$repeat_number <- 1

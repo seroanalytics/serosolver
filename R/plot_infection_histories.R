@@ -210,7 +210,11 @@ plot_attack_rates <- function(infection_histories, antibody_data=NULL, possible_
 #' @param settings if not NULL, list of serosolver settings as returned from the main serosolver function
 #' @return a ggplot2 object with the inferred attack rates for each potential epoch of circulation
 #' @export
-plot_attack_rates_pointrange <- function(infection_histories, antibody_data=NULL, possible_exposure_times=NULL, 
+plot_attack_rates_pointrange <- function(infection_histories, 
+                                         antibody_data=NULL, 
+                                         demographics = NULL,
+                                         par_tab=NULL,
+                                         possible_exposure_times=NULL, 
                               n_alive = NULL,
                               pointsize = 1, fatten = 1,
                               pad_chain = TRUE, prior_pars = NULL,
@@ -235,7 +239,22 @@ plot_attack_rates_pointrange <- function(infection_histories, antibody_data=NULL
       max_time<-max(possible_exposure_times) 
     }
     if(is.null(antibody_data)) antibody_data <- settings$antibody_data
+    if(is.null(par_tab)) par_tab <- settings$par_tab
+    if(is.null(demographics)) demographics <- settings$demographics
   }
+  
+  ## Add stratifying variables to antibody_data and demographics
+  ## Setup data vectors and extract
+  tmp <- get_demographic_groups(par_tab,antibody_data,demographics, NULL)
+  use_demographic_groups <- tmp$use_demographic_groups
+  use_timevarying_groups <- tmp$timevarying_demographics
+  tmp <- add_stratifying_variables(antibody_data, demographics, par_tab, use_demographic_groups)
+  group_ids_vec <- tmp$indiv_pop_group_indices
+  
+  antibody_data <- tmp$antibody_data
+  demographics <- tmp$timevarying_demographics
+  demographic_groups <- tmp$demographics
+  population_groups <- tmp$population_groups
   
   if (pad_chain) infection_histories <- pad_inf_chain(infection_histories)
   
@@ -254,7 +273,7 @@ plot_attack_rates_pointrange <- function(infection_histories, antibody_data=NULL
   ## Scale by number of individuals that were alive in each epoch
   ## and generate quantiles
   if (is.null(n_alive)) {
-    n_alive <- get_n_alive_group(antibody_data, possible_exposure_times)
+    n_alive <- get_n_alive_group(antibody_data, possible_exposure_times,demographics)
   }
   n_alive <- as.data.frame(n_alive)
   n_alive$population_group <- 1:nrow(n_alive)
@@ -270,6 +289,7 @@ plot_attack_rates_pointrange <- function(infection_histories, antibody_data=NULL
   tmp$taken <- ifelse(tmp$taken, "Yes", "No")
   prior_dens <- NULL
   n_alive1 <- n_alive
+  
   if (!is.null(prior_pars)) {
     n_alive$Prior <- 1
     prior_ver <- prior_pars[["prior_version"]]
@@ -295,6 +315,7 @@ plot_attack_rates_pointrange <- function(infection_histories, antibody_data=NULL
   n_alive_tmp$variable <- as.numeric(n_alive_tmp$variable)
   colnames(n_alive_tmp) <- c("population_group", "j", "n_alive")
   tmp <- merge(tmp, data.table(n_alive_tmp), by = c("population_group", "j"))
+  tmp <- tmp %>% filter(n_alive > 0)
   tmp$V1 <- tmp$V1 / tmp$n_alive
   
   year_breaks <- c(min_time, seq(by_val * round(min_time / by_val), max_time, by = by_val))

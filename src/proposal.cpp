@@ -389,7 +389,6 @@ List inf_hist_prop_prior_v2_and_v4(
        
           // Titre dependent boosting
           antibody_dependent_boosting(g,x) = theta(g,antibody_dependent_boosting_index+ x*n_theta);
-          //Rcpp::Rcout << "Titre dependent: " << antibody_dependent_boosting(x) << std::endl;
           if(antibody_dependent_boosting(g,x) == 1) {
               gradient_index = unique_theta_indices("gradient");
               boost_limit_index = unique_theta_indices("boost_limit");  
@@ -520,8 +519,7 @@ List inf_hist_prop_prior_v2_and_v4(
       	      prior_1_new = prior_lookup(m_1_new, loc1, popn_group_id);
       	      prior_2_new = prior_lookup(m_2_new, loc2, popn_group_id);
       	      prior_new = prior_1_new + prior_2_new;
-      	      //Rcpp::Rcout << "Prior lookup done" << std::endl;
-      	      
+
       	    } else {
       	      // Prior version 4
       	      prior_old = prior_new = 0;

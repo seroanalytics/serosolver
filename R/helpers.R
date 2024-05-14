@@ -48,23 +48,35 @@ get_DOBs <- function(antibody_data){
 #' times <- unique(example_antigenic_map$inf_times)
 #' get_n_alive_group(example_antibody_data, times)
 #' @export
-get_n_alive_group <- function(antibody_data, times, melt_data = FALSE) {
+get_n_alive_group <- function(antibody_data, times, demographics=NULL, melt_data = FALSE) {
   DOBs <- unique(antibody_data[, c("individual", "population_group", "birth")])
   age_mask <- create_age_mask(DOBs[, "birth"], times)
   sample_mask <- create_sample_mask(antibody_data, times)
   masks <- data.frame(cbind(age_mask, sample_mask))
   DOBs <- cbind(DOBs, masks)
-  n_alive <- plyr::ddply(DOBs, ~population_group, function(y) sapply(seq(1, length(times)), function(x)
-      nrow(y[y$age_mask <= x & y$sample_mask >= x, ])))
-  n_alive <- as.matrix(n_alive[, 2:ncol(n_alive)])
-  colnames(n_alive) <- times
+  
+  if(!is.null(demographics)){
+    n_alive <- demographics %>% 
+      dplyr::select(individual,population_group,time) %>%
+      left_join(DOBs %>% dplyr::select(-population_group),by=c("individual")) %>% 
+      filter(time >= age_mask & time <= sample_mask) %>% 
+      group_by(population_group,time) %>% 
+      tally() %>% 
+      pivot_wider(id_cols=population_group,names_from=time,values_from=n) %>% 
+      as.data.frame()
+  } else {
+    n_alive <- plyr::ddply(DOBs, ~population_group, function(y) sapply(seq(1, length(times)), function(x)
+        nrow(y[y$age_mask <= x & y$sample_mask >= x, ])))
+  }
+    n_alive <- as.matrix(n_alive[, 2:ncol(n_alive)])
+    colnames(n_alive) <- times
   if (melt_data) {
-    n_alive <- data.frame(n_alive)
-    n_alive$population_group <- 1:nrow(n_alive)
-    n_alive <- reshape2::melt(n_alive, id.vars = c("population_group"))
-    colnames(n_alive)[2] <- "j"
-    n_alive$j <- times[n_alive$j]
-    colnames(n_alive)[3] <- "n_alive"
+      n_alive <- data.frame(n_alive)
+      n_alive$population_group <- 1:nrow(n_alive)
+      n_alive <- reshape2::melt(n_alive, id.vars = c("population_group"))
+      colnames(n_alive)[2] <- "j"
+      n_alive$j <- times[n_alive$j]
+      colnames(n_alive)[3] <- "n_alive"
   }
   n_alive
 }
@@ -88,9 +100,9 @@ create_prior_lookup <- function(antibody_data, possible_exposure_times, infectio
 }
 
 #' @export
-create_prior_lookup_groups <- function(antibody_data, possible_exposure_times, infection_model_prior_shape1, beta1, n_alive=NULL){
+create_prior_lookup_groups <- function(antibody_data, demographics=NULL, possible_exposure_times, infection_model_prior_shape1, beta1, n_alive=NULL){
     if(is.null(n_alive)){
-        n_alive <- get_n_alive_group(antibody_data, possible_exposure_times)
+        n_alive <- get_n_alive_group(antibody_data, demographics, possible_exposure_times)
     }
     lookup_tab <- array(-100000, dim=c(max(n_alive)+1,length(possible_exposure_times),nrow(n_alive)))
     max_alive <- max(n_alive)
@@ -388,9 +400,10 @@ row.match <- function(x, table, nomatch = NA) {
 #' @return a very long list. See source code directly.
 #' @seealso \code{\link{create_posterior_func}}
 #' @export
-setup_antibody_data_for_posterior_func <- function(antibody_data, antigenic_map=NULL, possible_exposure_times=NULL,
-                                              age_mask = NULL, n_alive = NULL,verbose=FALSE,use_demographic_groups=NULL,
-                                              timevarying_demographics=NULL) {
+setup_antibody_data_for_posterior_func <- function(
+    par_tab,antibody_data, antigenic_map=NULL, possible_exposure_times=NULL,
+                                              age_mask = NULL, n_alive = NULL,verbose=FALSE,
+    use_demographic_groups=NULL,timevarying_demographics=NULL) {
   essential_colnames <- c("individual", "sample_time", "measurement", "biomarker_id", "biomarker_group","population_group")
   ## How many observation types are there?
   n_indiv <- length(unique(antibody_data$individual))
@@ -404,7 +417,6 @@ setup_antibody_data_for_posterior_func <- function(antibody_data, antigenic_map=
   infection_history_mat_indices <- antigenic_map_tmp$infection_history_mat_indices
   
   possible_biomarker_ids <- unique(antigenic_map$inf_times)
-  
   
   ## Create a melted antigenic map for each observation type
   antigenic_maps_melted <- lapply(unique_biomarker_groups, function(b){
@@ -430,47 +442,15 @@ setup_antibody_data_for_posterior_func <- function(antibody_data, antigenic_map=
   ## ie. each element of this vector corresponds to one set of antibodies that need to be predicted
   nrows_per_sample <- plyr::ddply(antibody_data, .(individual,biomarker_group, sample_time), nrow)$V1
   antibody_data_start <- cumsum(c(0,nrows_per_sample))
-
-    ## Get unique population groups -- these correspond to populations under different FOIs
-  population_groups <- unique(antibody_data$population_group)
-  population_group_table <- unique(antibody_data[, c("individual", "population_group")])
-  population_group_id_vec <- population_group_table$population_group - 1
-
-  ## Get unique demographic groups -- these correspond to different groupings for the antibody kinetics model and can be different to the population group
-  ## If no demographic groups requested, and no labeling is included in antibody data, assume all individuals in the same grouping
-  if(is.null(use_demographic_groups) & !("demographic_group" %in% colnames(antibody_data))){
-    antibody_data$demographic_group <- 1
-    demographics <- NULL
-  } else {
-    if(!is.null(use_demographic_groups)){
-      if(!is.null(timevarying_demographics)){
-        demographics <- timevarying_demographics %>% dplyr::select(all_of(use_demographic_groups)) %>% distinct() %>% dplyr::mutate(demographic_group = 1:n())
-        timevarying_demographics <- timevarying_demographics  %>% left_join(demographics,by=use_demographic_groups)
-      } else {
-        demographics <- antibody_data %>% dplyr::select(all_of(use_demographic_groups)) %>% distinct() %>% dplyr::mutate(demographic_group = 1:n())
-      }
-      antibody_data <- antibody_data %>% left_join(demographics,by=use_demographic_groups)
-    }
-  }
-  if(!is.null(timevarying_demographics)){
-    indiv_group_indices <- timevarying_demographics %>% select(individual, time, demographic_group) %>% distinct() %>% pull(demographic_group)
-    ## Get demographic group at birth. If isn't there, get the demographic group at the earliest time
-    
-    ## Demographic group at earliest time
-    demographics_start <- timevarying_demographics %>% group_by(individual) %>% filter(time == min(time)) %>% pull(demographic_group)
-    
-    ## See if birth demographic groups available
-    birth_demographics <- timevarying_demographics %>% group_by(individual) %>% 
-      select(individual, time, birth, demographic_group) %>% 
-      filter(time == birth) %>% 
-      select(individual,demographic_group) %>%
-      ungroup()
-    demographics_start[birth_demographics$individual] <- birth_demographics$demographic_group
-    indiv_group_indices <- c(rbind(demographics_start, matrix(indiv_group_indices, ncol = n_indiv)))
-  } else {
-    indiv_group_indices <- antibody_data %>% select(individual, demographic_group) %>% distinct() %>% pull(demographic_group)
-  }
-  indiv_group_indices <- indiv_group_indices - 1
+  
+  tmp <- add_stratifying_variables(antibody_data, timevarying_demographics, par_tab, use_demographic_groups)
+  timevarying_demographics <- tmp$timevarying_demographics
+  antibody_data <- tmp$antibody_data
+  demographics <- tmp$demographics
+  population_group_strats <- tmp$population_group_strats
+  indiv_group_indices <- tmp$indiv_group_indices
+  indiv_pop_group_indices <- tmp$indiv_pop_group_indices
+ 
   n_demographic_groups <- length(unique(indiv_group_indices))
 
   
@@ -483,9 +463,8 @@ setup_antibody_data_for_posterior_func <- function(antibody_data, antigenic_map=
   age_mask <- create_age_mask(DOBs, possible_exposure_times[infection_history_mat_indices+1])
   sample_mask <- create_sample_mask(antibody_data, possible_exposure_times[infection_history_mat_indices+1])
   masks <- data.frame(cbind(age_mask, sample_mask))
-
   if (is.null(n_alive)) {
-    n_alive <- get_n_alive_group(antibody_data, possible_exposure_times[infection_history_mat_indices+1])
+    n_alive <- get_n_alive_group(antibody_data, possible_exposure_times[infection_history_mat_indices+1],timevarying_demographics)
   }
 
   return(list(
@@ -501,9 +480,10 @@ setup_antibody_data_for_posterior_func <- function(antibody_data, antigenic_map=
     "sample_data_start"=sample_data_start,
     "type_data_start"=type_data_start,
     
-    "demographics"=demographics,
-    "population_group_id_vec" = population_group_id_vec,
+    "demographics_groups"=demographics,
+    "demographics"=timevarying_demographics,
     "indiv_group_indices" = indiv_group_indices,
+    "indiv_pop_group_indices"=indiv_pop_group_indices,
     "n_demographic_groups"=n_demographic_groups,
     
     ## This one I need to figure out -- does it need to have a different set of indices for each observation type? Probably not
@@ -517,7 +497,124 @@ setup_antibody_data_for_posterior_func <- function(antibody_data, antigenic_map=
   ))
 }
 
+get_demographic_groups <- function(par_tab, antibody_data, demographics,demographic_groups=NULL){
+  ## Setup data vectors and extract
+  if(!is.null(demographics)){
+    demographics <- demographics %>% arrange(individual, time)
+    demographics <- as.data.frame(demographics)
+    timevarying_demographics <- TRUE
+    if(is.null(demographic_groups)){
+      demographic_groups <- create_demographic_table(demographics,par_tab)
+    }
+  } else {
+    timevarying_demographics <- FALSE
+    if(is.null(demographic_groups)){
+      demographic_groups <- create_demographic_table(antibody_data,par_tab)
+    }
+  }
+  use_demographic_groups <- colnames(demographic_groups)
+  if(length(use_demographic_groups) == 1 && use_demographic_groups == "all") use_demographic_groups <- NULL
+  
+  return(list(use_demographic_groups=use_demographic_groups, demographic_groups=demographic_groups,timevarying_demographics=timevarying_demographics))
+}
 
+
+add_stratifying_variables <- function(antibody_data, timevarying_demographics=NULL, par_tab, use_demographic_groups=NULL){
+  ## Any stratification of population attack rates?
+  ## Pull out any parameters related to attack rates
+  population_group_strats <- par_tab %>% filter(names %like% "infection_model_prior" | names == "phi") %>% pull(stratification) %>% unique()
+  if(length(population_group_strats) > 1){
+    stop("Error - trying to stratify infection model parameters by different variables")
+  }
+  ## Get unique demographic groups -- these correspond to different groupings for the antibody kinetics model and can be different to the population group
+  ## If no demographic groups requested, and no labeling is included in antibody data, assume all individuals in the same grouping
+  
+  ## If not demographic groups supplied, set all to 1
+  if(is.null(use_demographic_groups) & !("demographic_group" %in% colnames(antibody_data))){
+    antibody_data$demographic_group <- 1
+    if(!is.null(timevarying_demographics)){
+      timevarying_demographics$demographic_group <- 1
+    }
+    demographics <- NULL
+  } else {
+    ## Otherwise, check if timevarying demographics used and update
+    ## If timevarying demography is used, then set the demographic groups for each time
+    if(!is.null(timevarying_demographics)){
+      ## Get unique demographic group combinations
+        demographics <- timevarying_demographics %>% 
+          dplyr::select(all_of(use_demographic_groups)) %>% 
+          distinct() %>% 
+          dplyr::mutate(demographic_group = 1:n())
+        
+        ## Assign to timevarying demographics
+        timevarying_demographics <- timevarying_demographics  %>% left_join(demographics,by=use_demographic_groups)
+    } else {
+      ## Otherwise, set demographic_group just based on antibody_data
+      demographics <- antibody_data %>% dplyr::select(all_of(use_demographic_groups)) %>% distinct() %>% dplyr::mutate(demographic_group = 1:n())
+    }
+    ## Merge into antibody data to get correct demographic groups at sample times
+    antibody_data <- antibody_data %>% left_join(demographics,by=use_demographic_groups)
+  }
+  
+  ## Now check for population group (attack rate stratifying variable)
+  ## If nothing specified, set all to 1
+  if(is.na(population_group_strats) & !("population_group" %in% colnames(antibody_data))){
+    antibody_data$population_group <- 1
+    population_groups <- NULL
+    if(!is.null(timevarying_demographics)){
+      timevarying_demographics$population_group <- 1
+    }
+  } else {
+    ## Otherwise, check it it's timevarying
+    if(!is.null(timevarying_demographics)){
+      ## It it is, assign unique combinations a unique population_group ID
+      population_groups <- timevarying_demographics %>% 
+        dplyr::select(all_of(population_group_strats))%>% 
+        distinct() %>% 
+        dplyr::mutate(population_group = 1:n())
+      ## Merge into timevarying_demographics
+      timevarying_demographics <- timevarying_demographics  %>% left_join(population_groups,by=population_group_strats)
+    } else {
+      ## If not timevarying, then unique combinations are just based on antibody_data
+      population_groups <- antibody_data %>% 
+        dplyr::select(all_of(population_group_strats))%>% 
+        distinct() %>% 
+        dplyr::mutate(population_group = 1:n())
+    }
+    antibody_data <- antibody_data %>% left_join(population_groups,by=population_group_strats)
+  }
+  
+  if(!is.null(timevarying_demographics)){
+    indiv_group_indices <- timevarying_demographics %>% select(individual, time, demographic_group) %>% distinct() %>% pull(demographic_group)
+    indiv_pop_group_indices <- timevarying_demographics %>% select(individual, time, population_group) %>% distinct() %>% pull(population_group)
+    ## Get demographic group at birth. If isn't there, get the demographic group at the earliest time
+    ## Demographic group at earliest time
+    demographics_start <- timevarying_demographics %>% group_by(individual) %>% filter(time == min(time)) %>% pull(demographic_group)
+    
+    ## See if birth demographic groups available
+    birth_demographics <- timevarying_demographics %>% group_by(individual) %>% 
+      select(individual, time, birth, demographic_group) %>% 
+      filter(time == birth) %>% 
+      select(individual,demographic_group) %>%
+      ungroup()
+    demographics_start[birth_demographics$individual] <- birth_demographics$demographic_group
+    indiv_group_indices <- c(rbind(demographics_start, matrix(indiv_group_indices, ncol = n_indiv)))
+  } else {
+    indiv_group_indices <- antibody_data %>% select(individual, demographic_group) %>% distinct() %>% pull(demographic_group)
+    indiv_pop_group_indices <- antibody_data %>% select(individual, population_group) %>% distinct() %>% pull(population_group)
+  }
+  
+  indiv_group_indices <- indiv_group_indices - 1
+  indiv_pop_group_indices <- indiv_pop_group_indices - 1
+  return(list(antibody_data=antibody_data,
+              timevarying_demographics=timevarying_demographics,
+              demographics=demographics,
+              population_groups=population_groups,
+              population_group_strats=population_group_strats,
+              indiv_group_indices=indiv_group_indices,
+              indiv_pop_group_indices=indiv_pop_group_indices
+              ))
+}
 #' @export
 euc_distance <- function(i1, i2, fit_data) {
   return(sqrt((fit_data[i1, "x_coord"] - fit_data[i2, "x_coord"])^2 + (fit_data[i1, "y_coord"] - fit_data[i2, "y_coord"])^2))
@@ -784,8 +881,6 @@ setup_antigenic_map <- function(antigenic_map=NULL, possible_exposure_times=NULL
 
 
 create_demographic_table <- function(antibody_data, par_tab){
-  
-  
   strsplit1 <- function(x){
     if(!is.na(x)){
       return(strsplit(x,", "))
@@ -793,8 +888,11 @@ create_demographic_table <- function(antibody_data, par_tab){
       return(NA)
     }
   }
+  ## Skip any infection history prior parameters
+  skip_pars <- c("infection_model_prior_shape1","infection_model_prior_shape2")
+  
   ## Creates an estimated parameter entry for each 
-  stratifications <- unique(unlist(sapply(par_tab$stratification,function(x) strsplit1(x))))
+  stratifications <- unique(unlist(sapply(par_tab[!(par_tab$names %in% skip_pars),"stratification"],function(x) strsplit1(x))))
   stratifications <- stratifications[!is.na(stratifications)]
   
   if(length(stratifications) == 0){
@@ -811,6 +909,7 @@ create_demographic_table <- function(antibody_data, par_tab){
 
 
 setup_stratification_table <- function(par_tab, demographics){
+  demographics <- as.data.frame(demographics)
   n_pars <- nrow(par_tab[par_tab$par_type == 1,])
   ## Creates an estimated parameter entry for each 
   strsplit1 <- function(x){
@@ -841,9 +940,13 @@ setup_stratification_table <- function(par_tab, demographics){
     ## Subsequent rows, check if they are estimated. If so, flag as estimated. Otherwise, is fixed
     index <- 2
     strat_par_names <- NULL
+    
+    ## Skip any infection history prior parameters
+    skip_pars <- c("infection_model_prior_shape1","infection_model_prior_shape2")
+    
     for(j in 1:nrow(par_tab[par_tab$par_type == 1,])){
       stratification_par <- par_tab$stratification[j]
-      if(!is.na(stratification_par)){
+      if(!is.na(stratification_par) & !(par_tab$names[j] %in% skip_pars)){
         strats <- strsplit(stratification_par,", ")[[1]]
         for(strat in strats){
           n_groups <- length(unique(demographics[,strat]))
@@ -892,7 +995,7 @@ transform_parameters <- function(pars, scale_table, theta_indices,scale_par_indi
 }
 
 
-add_scale_pars <- function(par_tab, antibody_data, timevarying_demographics=NULL){
+add_scale_pars <- function(par_tab, antibody_data, timevarying_demographics=NULL, scale_par_lower=-25,scale_par_upper=25){
   if(!is.null(timevarying_demographics)){
     timevarying_demographics <- timevarying_demographics %>% arrange(individual, time)
     timevarying_demographics <- as.data.frame(timevarying_demographics)
@@ -919,7 +1022,10 @@ add_scale_pars <- function(par_tab, antibody_data, timevarying_demographics=NULL
     names_split <- lapply(names(scale_pars), function(x) strsplit1(x))
     biomarker_groups <- unlist(lapply(names_split, function(x) as.numeric(x[[1]][which(x[[1]] == "biomarker") + 1])))
   
-    tmp_par_tab <- data.frame(names=names(scale_pars), values=rnorm(length(scale_pars),0,0.1),fixed=0,lower_bound=-25,upper_bound=25,lower_start=-0.25,upper_start=0.25,par_type=4,biomarker_group=biomarker_groups,stratification=NA)
+    tmp_par_tab <- data.frame(names=names(scale_pars), values=rnorm(length(scale_pars),0,0.1),fixed=0,
+                              lower_bound=scale_par_lower,upper_bound=scale_par_upper,
+                              lower_start=-0.25,upper_start=0.25,
+                              par_type=4,biomarker_group=biomarker_groups,stratification=NA)
     par_tab <- bind_rows(par_tab, tmp_par_tab)
   }
   return(par_tab)

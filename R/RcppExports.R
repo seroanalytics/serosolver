@@ -31,8 +31,16 @@ subset_nullable_vector <- function(x, index1, index2) {
     .Call('_serosolver_subset_nullable_vector', PACKAGE = 'serosolver', x, index1, index2)
 }
 
-transform_parameters_cpp <- function(pars, scale_table, theta_indices, scale_par_indices, demographics) {
-    .Call('_serosolver_transform_parameters_cpp', PACKAGE = 'serosolver', pars, scale_table, theta_indices, scale_par_indices, demographics)
+logistic_transform <- function(p) {
+    .Call('_serosolver_logistic_transform', PACKAGE = 'serosolver', p)
+}
+
+logit_transform <- function(p) {
+    .Call('_serosolver_logit_transform', PACKAGE = 'serosolver', p)
+}
+
+transform_parameters_cpp <- function(pars, scale_table, theta_indices, scale_par_indices, demographics, transforms) {
+    .Call('_serosolver_transform_parameters_cpp', PACKAGE = 'serosolver', pars, scale_table, theta_indices, scale_par_indices, demographics, transforms)
 }
 
 #' @export
@@ -75,8 +83,8 @@ sum_buckets <- function(a, buckets) {
 #' Count infections by group and time
 #'
 #' @export
-sum_infections_by_group <- function(inf_hist, group_ids_vec, n_groups) {
-    .Call('_serosolver_sum_infections_by_group', PACKAGE = 'serosolver', inf_hist, group_ids_vec, n_groups)
+sum_infections_by_group <- function(inf_hist, group_ids_vec, n_groups, timevarying_groups) {
+    .Call('_serosolver_sum_infections_by_group', PACKAGE = 'serosolver', inf_hist, group_ids_vec, n_groups, timevarying_groups)
 }
 
 #' Add measurement shifts to predictions
