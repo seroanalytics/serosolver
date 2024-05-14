@@ -919,8 +919,11 @@ setup_stratification_table <- function(par_tab, demographics){
       return(NA)
     }
   }
+  
+  ## Skip any infection history prior parameters
+  skip_pars <- c("infection_model_prior_shape1","infection_model_prior_shape2")
   ## Creates an estimated parameter entry for each 
-  stratifications <- unique(unlist(sapply(par_tab$stratification,function(x) strsplit1(x))))
+  stratifications <- unique(unlist(sapply(par_tab[!(par_tab$names %in% skip_pars),"stratification"],function(x) strsplit1(x))))
   stratifications <- stratifications[!is.na(stratifications)]
   
   scale_table <- vector(mode="list",length=length(stratifications))
