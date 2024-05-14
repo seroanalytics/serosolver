@@ -281,7 +281,11 @@ plot_attack_rates_pointrange <- function(infection_histories,
   n_groups <- length(unique(antibody_data$population_group))
   n_alive_tot <- get_n_alive(antibody_data, possible_exposure_times)
   colnames(infection_histories)[1] <- "individual"
-  infection_histories <- merge(infection_histories, data.table(unique(antibody_data[, c("individual", "population_group")])), by = c("individual"))
+  if (!by_group) {
+    infection_histories <- merge(infection_histories, data.table(unique(antibody_data[, c("individual", "population_group")])), by = c("individual","population_group"))
+  } else {
+    infection_histories <- merge(infection_histories, data.table(unique(antibody_data[, c("individual", "population_group")])), by = c("individual"))
+  }
   years <- c(possible_exposure_times, max(possible_exposure_times) + 2)
   data.table::setkey(infection_histories, "samp_no", "j", "chain_no", "population_group")
   tmp <- infection_histories[, list(V1 = sum(x)), by = key(infection_histories)]

@@ -60,7 +60,7 @@ create_posterior_func <- function(par_tab,
                                   ...) {
 
     check_par_tab(par_tab, TRUE, prior_version,verbose)
-
+    antibody_data <- as.data.frame(antibody_data)
     ## Add a dummy observation type variable if not provided
     if (!("biomarker_group" %in% colnames(antibody_data))) {
         if(verbose) message(cat("Note: no biomarker_group detected in antibody_data. Assuming all biomarker_group as 1.\n"))

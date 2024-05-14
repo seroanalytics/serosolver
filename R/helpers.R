@@ -544,6 +544,7 @@ add_stratifying_variables <- function(antibody_data, timevarying_demographics=NU
         demographics <- timevarying_demographics %>% 
           dplyr::select(all_of(use_demographic_groups)) %>% 
           distinct() %>% 
+          arrange(across(everything())) %>%
           dplyr::mutate(demographic_group = 1:n())
         
         ## Assign to timevarying demographics
@@ -555,7 +556,6 @@ add_stratifying_variables <- function(antibody_data, timevarying_demographics=NU
     ## Merge into antibody data to get correct demographic groups at sample times
     antibody_data <- antibody_data %>% left_join(demographics,by=use_demographic_groups)
   }
-  
   ## Now check for population group (attack rate stratifying variable)
   ## If nothing specified, set all to 1
   if(is.na(population_group_strats) & !("population_group" %in% colnames(antibody_data))){
@@ -571,6 +571,7 @@ add_stratifying_variables <- function(antibody_data, timevarying_demographics=NU
       population_groups <- timevarying_demographics %>% 
         dplyr::select(all_of(population_group_strats))%>% 
         distinct() %>% 
+        arrange(across(everything())) %>%
         dplyr::mutate(population_group = 1:n())
       ## Merge into timevarying_demographics
       timevarying_demographics <- timevarying_demographics  %>% left_join(population_groups,by=population_group_strats)
@@ -583,7 +584,6 @@ add_stratifying_variables <- function(antibody_data, timevarying_demographics=NU
     }
     antibody_data <- antibody_data %>% left_join(population_groups,by=population_group_strats)
   }
-  
   if(!is.null(timevarying_demographics)){
     indiv_group_indices <- timevarying_demographics %>% select(individual, time, demographic_group) %>% distinct() %>% pull(demographic_group)
     indiv_pop_group_indices <- timevarying_demographics %>% select(individual, time, population_group) %>% distinct() %>% pull(population_group)
@@ -598,7 +598,7 @@ add_stratifying_variables <- function(antibody_data, timevarying_demographics=NU
       select(individual,demographic_group) %>%
       ungroup()
     demographics_start[birth_demographics$individual] <- birth_demographics$demographic_group
-    indiv_group_indices <- c(rbind(demographics_start, matrix(indiv_group_indices, ncol = n_indiv)))
+    indiv_group_indices <- c(rbind(demographics_start, matrix(indiv_group_indices, ncol = length(unique(antibody_data$individual)))))
   } else {
     indiv_group_indices <- antibody_data %>% select(individual, demographic_group) %>% distinct() %>% pull(demographic_group)
     indiv_pop_group_indices <- antibody_data %>% select(individual, population_group) %>% distinct() %>% pull(population_group)
@@ -902,8 +902,9 @@ create_demographic_table <- function(antibody_data, par_tab){
     if(any(apply(demographics, 2, function(x) length(unique(x))) < 2)){
       message("Error - trying to stratify by variable in par_tab, but <2 levels for this variable in antibody_data")
     }
-  }
- 
+  }  
+
+  demographics <- demographics %>% arrange(across(everything()))
   return(demographics)
 }
 

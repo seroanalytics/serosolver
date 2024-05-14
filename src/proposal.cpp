@@ -272,7 +272,10 @@ List inf_hist_prop_prior_v2_and_v4(
   int start_index_in_data;
   int end_index_in_data;
 
-  int popn_group_id; // Vector of group IDs for each individual
+ // Vector of group IDs for each individual
+  int popn_group_id;
+  int popn_group_id_loc1; // For timevarying population groups
+  int popn_group_id_loc2;
  
   IntegerVector new_infection_history(number_possible_exposures); // New proposed infection history
   IntegerVector infection_history(number_possible_exposures); // Old infection history
@@ -423,7 +426,9 @@ List inf_hist_prop_prior_v2_and_v4(
       group = indiv_group_indices[indiv];
     }
     
-    popn_group_id = popn_group_id_vec(indiv);
+    if(!timevarying_groups){
+      popn_group_id = popn_group_id_loc1 = popn_group_id_loc2 = popn_group_id_vec(indiv);
+    }
     old_prob = likelihoods_pre_proposal(indiv);
 
     // Time sampling control
@@ -496,9 +501,16 @@ List inf_hist_prop_prior_v2_and_v4(
       	  lik_changed = true;
       	  proposal_swap(indiv) += 1;
       	  if(!prior_on_total){
+      	    
+      	    // Might be moving groups, so need to shift group IDs
+      	    if(timevarying_groups){
+      	      popn_group_id_loc1 = popn_group_id_vec((number_possible_exposures)*(indiv) + loc1);
+      	      popn_group_id_loc2 = popn_group_id_vec((number_possible_exposures)*(indiv) + loc2);
+      	    }
+      	    
       	    // Number of infections in that group in that time
-      	      m_1_old = n_infections(popn_group_id,loc1);      
-      	      m_2_old = n_infections(popn_group_id,loc2);
+      	      m_1_old = n_infections(popn_group_id_loc1,loc1);      
+      	      m_2_old = n_infections(popn_group_id_loc2,loc2);
       	 
       	      // Swap contents
       	      new_infection_history(loc1) = new_infection_history(loc2);
@@ -512,12 +524,12 @@ List inf_hist_prop_prior_v2_and_v4(
       	      m_1_new = m_1_old - loc1_val_old + loc2_val_old;
       	      m_2_new = m_2_old - loc2_val_old + loc1_val_old;
       
-      	      prior_1_old = prior_lookup(m_1_old, loc1, popn_group_id);
-      	      prior_2_old = prior_lookup(m_2_old, loc2, popn_group_id);
+      	      prior_1_old = prior_lookup(m_1_old, loc1, popn_group_id_loc1);
+      	      prior_2_old = prior_lookup(m_2_old, loc2, popn_group_id_loc2);
       	      prior_old = prior_1_old + prior_2_old;
       	      
-      	      prior_1_new = prior_lookup(m_1_new, loc1, popn_group_id);
-      	      prior_2_new = prior_lookup(m_2_new, loc2, popn_group_id);
+      	      prior_1_new = prior_lookup(m_1_new, loc1, popn_group_id_loc1);
+      	      prior_2_new = prior_lookup(m_2_new, loc2, popn_group_id_loc2);
       	      prior_new = prior_1_new + prior_2_new;
 
       	    } else {
@@ -541,6 +553,11 @@ List inf_hist_prop_prior_v2_and_v4(
       	  // Get number of individuals that were alive and/or infected in that year,
       	  // less the current individual
       	  // Number of infections in this year, less infection status of this individual in this year
+      	  // Might be moving groups, so need to shift group IDs
+      	  if(timevarying_groups){
+      	    popn_group_id = popn_group_id_vec((number_possible_exposures)*(indiv) + year);
+      	  }
+      	  
       	  m = n_infections(popn_group_id, year) - old_entry;
       	  n = n_alive(popn_group_id, year) - 1;
       	} else {
@@ -761,6 +778,8 @@ List inf_hist_prop_prior_v2_and_v4(
     	// Update the entry in the new matrix Z1
     	old_prob = new_prob;
     	likelihoods_pre_proposal_tmp(indiv) = new_prob;
+
+    
     
     	// Carry out the swap
     	if(swap_step_option){
@@ -771,8 +790,8 @@ List inf_hist_prop_prior_v2_and_v4(
 	  
     	  // Update number of infections in the two swapped times
     	  if(!prior_on_total){
-    	    n_infections(popn_group_id, loc1) = m_1_new;
-    	    n_infections(popn_group_id, loc2) = m_2_new;
+    	    n_infections(popn_group_id_loc1, loc1) = m_1_new;
+    	    n_infections(popn_group_id_loc2, loc2) = m_2_new;
     	    
     	  }
 	  // Don't need to update group infections if prior_on_total, as infections
