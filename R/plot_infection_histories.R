@@ -229,7 +229,7 @@ plot_attack_rates_pointrange <- function(infection_histories,
   if (is.null(infection_histories$chain_no)) {
     infection_histories$chain_no <- 1
   }
-  
+
   ## If the list of serosolver settings was included, use these rather than passing each one by one
   if(!is.null(settings)){
     message("Using provided serosolver settings list")
@@ -257,7 +257,6 @@ plot_attack_rates_pointrange <- function(infection_histories,
   population_groups <- tmp$population_groups
   
   if (pad_chain) infection_histories <- pad_inf_chain(infection_histories)
-  
   ## Subset of groups to plot
   if (is.null(group_subset)) {
     group_subset <- unique(antibody_data$population_group)
@@ -278,13 +277,21 @@ plot_attack_rates_pointrange <- function(infection_histories,
   n_alive <- as.data.frame(n_alive)
   n_alive$population_group <- 1:nrow(n_alive)
   
-  n_groups <- length(unique(antibody_data$population_group))
+  unique_groups1 <- unique(antibody_data$population_group)
+  n_groups <- length(unique_groups1[!is.na(unique_groups1)])
   n_alive_tot <- get_n_alive(antibody_data, possible_exposure_times)
   colnames(infection_histories)[1] <- "individual"
   if (!by_group) {
     infection_histories <- merge(infection_histories, data.table(unique(antibody_data[, c("individual", "population_group")])), by = c("individual","population_group"))
   } else {
-    infection_histories <- merge(infection_histories, data.table(unique(antibody_data[, c("individual", "population_group")])), by = c("individual"))
+    if(!is.null(demographics)){
+      infection_histories <- merge(infection_histories, 
+                                   demographics %>% select(individual, time, population_group) %>% distinct() %>%
+                                     rename(j = time) %>%
+                                     data.table(), by = c("individual","j"))
+    } else { 
+      infection_histories <- merge(infection_histories, data.table(unique(antibody_data[, c("individual", "population_group")])), by = c("individual"))
+    }
   }
   years <- c(possible_exposure_times, max(possible_exposure_times) + 2)
   data.table::setkey(infection_histories, "samp_no", "j", "chain_no", "population_group")

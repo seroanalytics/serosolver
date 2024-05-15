@@ -145,13 +145,13 @@ BEGIN_RCPP
 END_RCPP
 }
 // sum_infections_by_group
-IntegerMatrix sum_infections_by_group(IntegerMatrix inf_hist, IntegerVector group_ids_vec, int n_groups, bool timevarying_groups);
+IntegerMatrix sum_infections_by_group(IntegerMatrix inf_hist, NumericVector group_ids_vec, int n_groups, bool timevarying_groups);
 RcppExport SEXP _serosolver_sum_infections_by_group(SEXP inf_histSEXP, SEXP group_ids_vecSEXP, SEXP n_groupsSEXP, SEXP timevarying_groupsSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< IntegerMatrix >::type inf_hist(inf_histSEXP);
-    Rcpp::traits::input_parameter< IntegerVector >::type group_ids_vec(group_ids_vecSEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type group_ids_vec(group_ids_vecSEXP);
     Rcpp::traits::input_parameter< int >::type n_groups(n_groupsSEXP);
     Rcpp::traits::input_parameter< bool >::type timevarying_groups(timevarying_groupsSEXP);
     rcpp_result_gen = Rcpp::wrap(sum_infections_by_group(inf_hist, group_ids_vec, n_groups, timevarying_groups));

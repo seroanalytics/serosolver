@@ -506,6 +506,7 @@ List inf_hist_prop_prior_v2_and_v4(
       	    if(timevarying_groups){
       	      popn_group_id_loc1 = popn_group_id_vec((number_possible_exposures)*(indiv) + loc1);
       	      popn_group_id_loc2 = popn_group_id_vec((number_possible_exposures)*(indiv) + loc2);
+      	      //Rcpp::Rcout << "Indiv: " << indiv << "; group id t1: " << popn_group_id_loc1 << "; group id t2: " << popn_group_id_loc2 << std::endl;
       	    }
       	    
       	    // Number of infections in that group in that time

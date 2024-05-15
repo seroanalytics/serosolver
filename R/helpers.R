@@ -54,7 +54,6 @@ get_n_alive_group <- function(antibody_data, times, demographics=NULL, melt_data
   sample_mask <- create_sample_mask(antibody_data, times)
   masks <- data.frame(cbind(age_mask, sample_mask))
   DOBs <- cbind(DOBs, masks)
-  
   if(!is.null(demographics)){
     n_alive <- demographics %>% 
       dplyr::select(individual,population_group,time) %>%
@@ -62,7 +61,8 @@ get_n_alive_group <- function(antibody_data, times, demographics=NULL, melt_data
       filter(time >= age_mask & time <= sample_mask) %>% 
       group_by(population_group,time) %>% 
       tally() %>% 
-      pivot_wider(id_cols=population_group,names_from=time,values_from=n) %>% 
+      complete(time=times,fill=list(n=0)) %>%
+      pivot_wider(id_cols=population_group,names_from=time,values_from=n,values_fill=0) %>% 
       as.data.frame()
   } else {
     n_alive <- plyr::ddply(DOBs, ~population_group, function(y) sapply(seq(1, length(times)), function(x)
@@ -572,7 +572,8 @@ add_stratifying_variables <- function(antibody_data, timevarying_demographics=NU
         dplyr::select(all_of(population_group_strats))%>% 
         distinct() %>% 
         arrange(across(everything())) %>%
-        dplyr::mutate(population_group = 1:n())
+        dplyr::mutate(population_group = 1:n()) %>%
+        drop_na()
       ## Merge into timevarying_demographics
       timevarying_demographics <- timevarying_demographics  %>% left_join(population_groups,by=population_group_strats)
     } else {
@@ -580,7 +581,8 @@ add_stratifying_variables <- function(antibody_data, timevarying_demographics=NU
       population_groups <- antibody_data %>% 
         dplyr::select(all_of(population_group_strats))%>% 
         distinct() %>% 
-        dplyr::mutate(population_group = 1:n())
+        dplyr::mutate(population_group = 1:n()) %>%
+        drop_na()
     }
     antibody_data <- antibody_data %>% left_join(population_groups,by=population_group_strats)
   }
@@ -953,7 +955,8 @@ setup_stratification_table <- function(par_tab, demographics){
       if(!is.na(stratification_par) & !(par_tab$names[j] %in% skip_pars)){
         strats <- strsplit(stratification_par,", ")[[1]]
         for(strat in strats){
-          n_groups <- length(unique(demographics[,strat]))
+          unique_demo_strats <- unique(demographics[,strat])
+          n_groups <- length(unique_demo_strats[!is.na(unique_demo_strats)])
           for(x in 2:n_groups){
             scale_table[[strat]][x,j] <- index
             strat_par_names[[index]] <- paste0(par_tab$names[j],"_biomarker_",par_tab$biomarker_group[j],"_coef_",strat,"_",x)

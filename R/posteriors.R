@@ -151,7 +151,8 @@ create_posterior_func <- function(par_tab,
     demographics <- setup_dat$demographics
 
     indiv_pop_group_indices <- setup_dat$indiv_pop_group_indices
-    n_groups <- length(unique(indiv_pop_group_indices))
+    unique_indiv_pop_group_indices1 <- unique(indiv_pop_group_indices)
+    n_groups <- length(unique_indiv_pop_group_indices1[!is.na(unique_indiv_pop_group_indices1)])
     indiv_group_indices <- setup_dat$indiv_group_indices
     n_demographic_groups <- nrow(demographic_groups)
     demographics_groups <- setup_dat$demographics_groups

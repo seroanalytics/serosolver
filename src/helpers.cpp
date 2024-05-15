@@ -144,7 +144,7 @@ NumericVector sum_buckets(NumericVector a, NumericVector buckets){
 //'
 //' @export
 //[[Rcpp::export]]
-IntegerMatrix sum_infections_by_group(IntegerMatrix inf_hist, IntegerVector group_ids_vec, int n_groups, bool timevarying_groups){
+IntegerMatrix sum_infections_by_group(IntegerMatrix inf_hist, NumericVector group_ids_vec, int n_groups, bool timevarying_groups){
   int n_times = inf_hist.ncol();
   int n_indivs = inf_hist.nrow();
   IntegerMatrix n_infections(n_groups, n_times);
@@ -158,7 +158,9 @@ IntegerMatrix sum_infections_by_group(IntegerMatrix inf_hist, IntegerVector grou
   } else {
     for(int i = 0; i < n_indivs; ++i){
       for(int t = 0; t < n_times; ++t){
-        n_infections(group_ids_vec[i*n_times + t], t) += inf_hist(i, t);
+        if(R_IsNA(group_ids_vec[i*n_times + t]) == 0){
+          n_infections(group_ids_vec[i*n_times + t], t) += inf_hist(i, t);
+        }
       }   
     }
   }

@@ -260,7 +260,7 @@ serosolver <- function(par_tab,
     n_alive <- get_n_alive_group(antibody_data_updated, possible_exposure_times, demographics_updated)
   }
 
-  n_groups <- length(unique(group_ids_vec))
+  n_groups <- length(unique(group_ids_vec[!is.na(group_ids_vec)]))
   ## Number of people that were born before each year and have had a sample taken since that year happened
   
 
