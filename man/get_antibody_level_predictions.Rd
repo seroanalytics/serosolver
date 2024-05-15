@@ -8,13 +8,14 @@ get_antibody_level_predictions(
   chain,
   infection_histories,
   antibody_data,
+  demographics = NULL,
   individuals,
   antigenic_map = NULL,
   possible_exposure_times = NULL,
   par_tab,
   nsamp = 1000,
   add_residuals = FALSE,
-  measurement_indices_by_time = NULL,
+  measurement_bias = NULL,
   for_res_plot = FALSE,
   expand_antibody_data = FALSE,
   expand_to_all_times = FALSE,
@@ -43,7 +44,7 @@ get_antibody_level_predictions(
 
 \item{add_residuals}{if true, returns an extra output summarising residuals between the model prediction and data}
 
-\item{measurement_indices_by_time}{default NULL, optional vector giving the index of `measurement_bias` that each strain uses the measurement shift from from. eg. if there's 6 circulation years and 3 strain clusters}
+\item{measurement_bias}{default NULL, optional data frame giving the index of `rho` that each biomarker_id and biomarker_group which uses the measurement shift from from. eg. if there's 6 circulation years and 3 strain clusters}
 
 \item{for_res_plot}{TRUE/FALSE value. If using the output of this for plotting of residuals, returns the actual data points rather than summary statistics}
 

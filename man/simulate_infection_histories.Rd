@@ -6,9 +6,8 @@
 \usage{
 simulate_infection_histories(
   p_inf,
-  possible_exposure_times,
-  sampling_times,
-  DOBs
+  possible_exposure_times = 1:ncol(p_inf),
+  demographics
 )
 }
 \arguments{
@@ -16,9 +15,7 @@ simulate_infection_histories(
 
 \item{possible_exposure_times}{the vector of possible infection times}
 
-\item{sampling_times}{vector of potential sampling times}
-
-\item{DOBs}{a vector of ages for each individual}
+\item{demographics}{data frame giving the population group, birth and last_sample time for each individual. Optionally can set these values for all "time"}
 }
 \value{
 a list with a matrix of infection histories for each individual in ages and the true attack rate for each epoch
@@ -27,12 +24,11 @@ a list with a matrix of infection histories for each individual in ages and the 
 Given a vector of infection probabilities and potential infection times, simulates infections for each element of ages (ie. each element is an individual age. Only adds infections for alive individuals)
 }
 \examples{
-p_inf <- runif(40,0.1,0.4)
-possible_exposure_times <- seq_len(40) + 1967
+possible_exposure_times <- seq_len(25)
+p_inf <- simulate_attack_rates(possible_exposure_times,n_groups=2)
 n_indiv <- 100
-sampling_times <- rep(max(possible_exposure_times), n_indiv)
-DOBs <- rep(min(possible_exposure_times), n_indiv)
-inf_hist <- simulate_infection_histories(p_inf, possible_exposure_times, sampling_times, DOBs)
+demographics <- data.frame(individual = 1:n_indiv,birth=sample(1:5,n_indiv,replace=TRUE),population_group=c(rep(1,n_indiv/2),rep(2,n_indiv/2)))
+inf_hist <- simulate_infection_histories(p_inf, possible_exposure_times, demographics)
 }
 \seealso{
 Other simulation_functions: 

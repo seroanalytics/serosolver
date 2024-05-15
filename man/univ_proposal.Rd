@@ -10,7 +10,7 @@ univ_proposal(
   upper_bounds,
   steps,
   index,
-  gaussian_proposal = FALSE
+  gaussian_proposal = TRUE
 )
 }
 \arguments{

@@ -7,6 +7,8 @@
 plot_attack_rates_pointrange(
   infection_histories,
   antibody_data = NULL,
+  demographics = NULL,
+  par_tab = NULL,
   possible_exposure_times = NULL,
   n_alive = NULL,
   pointsize = 1,

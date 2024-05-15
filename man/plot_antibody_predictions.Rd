@@ -7,12 +7,13 @@
 plot_antibody_predictions(
   chain,
   infection_histories,
-  antibody_data,
+  antibody_data = NULL,
+  demographics = NULL,
   par_tab = NULL,
   antigenic_map = NULL,
   possible_exposure_times = NULL,
   nsamp = 1000,
-  measurement_indices_by_time = NULL,
+  measurement_bias = NULL,
   data_type = 1,
   start_level = "none",
   settings = NULL
@@ -33,7 +34,7 @@ plot_antibody_predictions(
 
 \item{nsamp}{number of samples to take from posterior}
 
-\item{measurement_indices_by_time}{default NULL, optional vector giving the index of `measurement_bias` that each strain uses the measurement shift from from. eg. if there's 6 circulation years and 3 strain clusters}
+\item{measurement_bias}{default NULL, optional data frame giving the index of `rho` that each biomarker_id and biomarker_group which uses the measurement shift from from. eg. if there's 6 circulation years and 3 strain clusters}
 
 \item{data_type}{integer, currently accepting 1 or 2. Set to 1 for discretized, bounded data, or 2 for continuous, bounded data.}
 

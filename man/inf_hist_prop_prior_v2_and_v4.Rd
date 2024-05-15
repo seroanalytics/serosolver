@@ -59,6 +59,7 @@ inf_hist_prop_prior_v2_and_v4(
   total_alive,
   data_types,
   obs_weights,
+  timevarying_groups = FALSE,
   temp = 1,
   solve_likelihood = TRUE
 )

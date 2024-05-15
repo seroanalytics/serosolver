@@ -4,7 +4,7 @@
 \alias{get_n_alive_group}
 \title{Get number alive by location}
 \usage{
-get_n_alive_group(antibody_data, times, melt_data = FALSE)
+get_n_alive_group(antibody_data, times, demographics = NULL, melt_data = FALSE)
 }
 \arguments{
 \item{antibody_data}{the data frame of antibody data. See \code{\link{example_antibody_data}}}

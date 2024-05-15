@@ -50,14 +50,21 @@ get_DOBs <- function(antibody_data){
 #' @export
 get_n_alive_group <- function(antibody_data, times, demographics=NULL, melt_data = FALSE) {
   DOBs <- unique(antibody_data[, c("individual", "population_group", "birth")])
-  age_mask <- create_age_mask(DOBs[, "birth"], times)
-  sample_mask <- create_sample_mask(antibody_data, times)
+  DOBs_unique <- unique(antibody_data[, c("individual", "birth")])
+  age_mask <- times[create_age_mask(DOBs_unique[, "birth"], times)]
+  sample_mask <- times[create_sample_mask(antibody_data, times)]
   masks <- data.frame(cbind(age_mask, sample_mask))
-  DOBs <- cbind(DOBs, masks)
+  DOBs <- cbind(DOBs_unique, masks)
   if(!is.null(demographics)){
+    DOBs <- unique(antibody_data[, c("individual", "birth")])
+    age_mask <- times[create_age_mask(DOBs[, "birth"], times)]
+    sample_mask <- times[create_sample_mask(antibody_data, times)]
+    masks <- data.frame(cbind(age_mask, sample_mask))
+    DOBs <- cbind(DOBs, masks)
+    
     n_alive <- demographics %>% 
       dplyr::select(individual,population_group,time) %>%
-      left_join(DOBs %>% dplyr::select(-population_group),by=c("individual")) %>% 
+      left_join(DOBs,by=c("individual")) %>% 
       filter(time >= age_mask & time <= sample_mask) %>% 
       group_by(population_group,time) %>% 
       tally() %>% 
@@ -65,6 +72,11 @@ get_n_alive_group <- function(antibody_data, times, demographics=NULL, melt_data
       pivot_wider(id_cols=population_group,names_from=time,values_from=n,values_fill=0) %>% 
       as.data.frame()
   } else {
+    DOBs <- unique(antibody_data[, c("individual", "population_group", "birth")])
+    age_mask <- times[create_age_mask(DOBs[, "birth"], times)]
+    sample_mask <- times[create_sample_mask(antibody_data, times)]
+    masks <- data.frame(cbind(age_mask, sample_mask))
+    DOBs <- cbind(DOBs, masks)
     n_alive <- plyr::ddply(DOBs, ~population_group, function(y) sapply(seq(1, length(times)), function(x)
         nrow(y[y$age_mask <= x & y$sample_mask >= x, ])))
   }
@@ -514,17 +526,31 @@ get_demographic_groups <- function(par_tab, antibody_data, demographics,demograp
   }
   use_demographic_groups <- colnames(demographic_groups)
   if(length(use_demographic_groups) == 1 && use_demographic_groups == "all") use_demographic_groups <- NULL
-  
+  demographic_groups <- demographic_groups %>% arrange(across(everything()))
   return(list(use_demographic_groups=use_demographic_groups, demographic_groups=demographic_groups,timevarying_demographics=timevarying_demographics))
 }
 
+align_antibody_demographic_dat <- function(antibody_data, demographics){
+  if("time" %in% colnames(demographics)){
+    antibody_data <- suppressMessages(antibody_data %>% left_join(demographics %>% rename(sample_time = time)))
+  } else {
+    antibody_data <- suppressMessages(antibody_data %>% left_join(demographics))
+  }
+  antibody_data
+}
 
 add_stratifying_variables <- function(antibody_data, timevarying_demographics=NULL, par_tab, use_demographic_groups=NULL){
-  ## Any stratification of population attack rates?
+  # Any stratification of population attack rates?
   ## Pull out any parameters related to attack rates
-  population_group_strats <- par_tab %>% filter(names %like% "infection_model_prior" | names == "phi") %>% pull(stratification) %>% unique()
+  population_group_strats <- par_tab %>% filter(names %like% "infection_model_prior" | names == "phi") %>% 
+    pull(stratification) %>% unique()
+  
   if(length(population_group_strats) > 1){
     stop("Error - trying to stratify infection model parameters by different variables")
+  }
+  
+  if(!is.null(timevarying_demographics)){
+    antibody_data <- align_antibody_demographic_dat(antibody_data, timevarying_demographics)
   }
   ## Get unique demographic groups -- these correspond to different groupings for the antibody kinetics model and can be different to the population group
   ## If no demographic groups requested, and no labeling is included in antibody data, assume all individuals in the same grouping
@@ -537,6 +563,7 @@ add_stratifying_variables <- function(antibody_data, timevarying_demographics=NU
     }
     demographics <- NULL
   } else {
+   
     ## Otherwise, check if timevarying demographics used and update
     ## If timevarying demography is used, then set the demographic groups for each time
     if(!is.null(timevarying_demographics)){
@@ -585,6 +612,7 @@ add_stratifying_variables <- function(antibody_data, timevarying_demographics=NU
         drop_na()
     }
     antibody_data <- antibody_data %>% left_join(population_groups,by=population_group_strats)
+    
   }
   if(!is.null(timevarying_demographics)){
     indiv_group_indices <- timevarying_demographics %>% select(individual, time, demographic_group) %>% distinct() %>% pull(demographic_group)

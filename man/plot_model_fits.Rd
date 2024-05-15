@@ -8,13 +8,14 @@ plot_model_fits(
   chain,
   infection_histories,
   antibody_data = NULL,
+  demographics = NULL,
   individuals,
   par_tab = NULL,
   antigenic_map = NULL,
   possible_exposure_times = NULL,
   nsamp = 1000,
   known_infection_history = NULL,
-  measurement_indices_by_time = NULL,
+  measurement_bias = NULL,
   p_ncol = max(1, floor(length(individuals)/2)),
   data_type = 1,
   expand_to_all_times = FALSE,
@@ -44,7 +45,7 @@ plot_model_fits(
 
 \item{known_infection_history}{nxm matrix of known infection histories}
 
-\item{measurement_indices_by_time}{default NULL, optional vector giving the index of `measurement_bias` that each strain uses the measurement shift from from. eg. if there's 6 circulation years and 3 strain clusters}
+\item{measurement_bias}{default NULL, optional data frame giving the index of `rho` that each biomarker_id and biomarker_group which uses the measurement shift from from. eg. if there's 6 circulation years and 3 strain clusters}
 
 \item{p_ncol}{integer giving the number of columns of subplots to create if using orientation = "longitudinal"}
 

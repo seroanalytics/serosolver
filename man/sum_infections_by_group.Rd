@@ -4,7 +4,7 @@
 \alias{sum_infections_by_group}
 \title{Count infections by group and time}
 \usage{
-sum_infections_by_group(inf_hist, group_ids_vec, n_groups)
+sum_infections_by_group(inf_hist, group_ids_vec, n_groups, timevarying_groups)
 }
 \description{
 Count infections by group and time

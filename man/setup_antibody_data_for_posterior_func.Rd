@@ -5,6 +5,7 @@
 \title{Setup antibody data indices}
 \usage{
 setup_antibody_data_for_posterior_func(
+  par_tab,
   antibody_data,
   antigenic_map = NULL,
   possible_exposure_times = NULL,
@@ -16,6 +17,8 @@ setup_antibody_data_for_posterior_func(
 )
 }
 \arguments{
+\item{par_tab}{the parameter table controlling information such as bounds, initial values etc. See \code{\link{example_par_tab}}}
+
 \item{antibody_data}{the data frame of data to be fitted. Must have columns: group (index of group); individual (integer ID of individual); samples (numeric time of sample taken); virus (numeric time of when the virus was circulating); biomarker_group (integer of the observation group type, using a unique value for each distinctive type of observation underpinned by the same generative model); titre (integer of titre value against the given virus at that sampling time). See \code{\link{example_antibody_data}}}
 
 \item{antigenic_map}{(optional) a data frame of antigenic x and y coordinates. Must have column names: x_coord; y_coord; inf_times. See \code{\link{example_antigenic_map}}}

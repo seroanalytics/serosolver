@@ -12,7 +12,7 @@ create_posterior_func(
   prior_version = 1,
   solve_likelihood = TRUE,
   age_mask = NULL,
-  measurement_indices_by_time = NULL,
+  measurement_bias = NULL,
   n_alive = NULL,
   function_type = 1,
   antibody_level_before_infection = FALSE,
@@ -21,6 +21,7 @@ create_posterior_func(
   start_level = "other",
   start_level_randomize = FALSE,
   demographics = NULL,
+  demographic_groups = NULL,
   verbose = FALSE,
   ...
 )
@@ -40,7 +41,7 @@ create_posterior_func(
 
 \item{age_mask}{see \code{\link{create_age_mask}} - a vector with one entry for each individual specifying the first epoch of circulation in which an individual could have been exposed}
 
-\item{measurement_indices_by_time}{if not NULL, then use these indices to specify which measurement bias parameter index corresponds to which time}
+\item{measurement_bias}{if not NULL, then use these indices to specify which measurement bias parameter index corresponds to which time}
 
 \item{n_alive}{if not NULL, uses this as the number alive in a given year rather than calculating from the ages. This is needed if the number of alive individuals is known, but individual birth dates are not}
 
@@ -53,6 +54,8 @@ create_posterior_func(
 \item{start_level}{character, to tell the model how to treat initial antibody levels. This uses the observed data to either select starting values for each unique `individual`, `biomarker_id` and `biomarker_group` combination. See \code{\link{create_start_level_data}}. One of "min", "max", "mean", "median", or "full_random". Any other entry assumes all antibody starting levels are set to 0. Can also pass a tibble or data frame of starting levels matching the output of \code{\link{create_start_level_data}}.}
 
 \item{start_level_randomize}{if TRUE, and data is discretized, then sets the starting antibody level to a random value between floor(x) and floor(x) + 1. Does nothing if using continuous data.}
+
+\item{demographics}{if not NULL, then a tibble for each individual (1:n_indiv) giving demographic variable entries. Most importantly must include "birth" as the birth time. This is used if, for example, you have a stratification grouping in `par_tab`}
 
 \item{verbose}{if TRUE, prints warning messages}
 

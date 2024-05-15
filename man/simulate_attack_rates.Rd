@@ -9,7 +9,8 @@ simulate_attack_rates(
   mean_par = 0.15,
   sd_par = 0.5,
   large_first_year = FALSE,
-  big_year_mean = 0.5
+  big_year_mean = 0.5,
+  n_groups = 1
 )
 }
 \arguments{
@@ -22,9 +23,11 @@ simulate_attack_rates(
 \item{large_first_year}{simulate an extra large attach rate in the first year?}
 
 \item{big_year_mean}{if large first year, what mean to use?}
+
+\item{n_groups}{defaults to 1, otherwise gives an attack rate vector for each group}
 }
 \value{
-a vector of attack rates
+a matrix of attack rates for each group
 }
 \description{
 Given a number of possible infection years, simulates attack rates from a log normal distribution with specified mean and standard deviation.

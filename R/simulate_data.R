@@ -76,9 +76,7 @@ simulate_data <- function(par_tab,
     antigenic_map <- antigenic_map_tmp$antigenic_map
     possible_exposure_times <- antigenic_map_tmp$possible_exposure_times
     infection_history_mat_indices <- antigenic_map_tmp$infection_history_mat_indices
-    ## Check attack_rates entry
-    check_attack_rates(attack_rates, possible_exposure_times)
-    
+
     ## Which biomarkers were measured
     if (is.null(measured_biomarker_ids)) {
       measured_biomarker_ids <- possible_exposure_times
@@ -88,35 +86,49 @@ simulate_data <- function(par_tab,
     ## BUILD ANTIBODY DATA OBJECT
     #########################################################
     ## Create sampling times and birth dates
+    ## If no demographics provided, simulate random birth times
     if(is.null(demographics)){
-      birth_dates <- tibble(individual=1:n_indiv,
+      demographics <- tibble(individual=1:n_indiv,
                             birth=max(sampling_times) - floor(runif(n_indiv, age_min,age_max + 1)))
+    } 
+    
+    ## If we've specified age_group_bounds, then we want to have timevarying age groups
+    if("time" %in% colnames(demographics)){
+      timevarying_demographics <- demographics
     } else {
-       birth_dates <- demographics
+      if(!is.null(age_group_bounds) ){
+        timevarying_demographics <- demographics %>% expand_grid(time=possible_exposure_times)
+        timevarying_demographics$age <- timevarying_demographics$time - timevarying_demographics$birth
+        timevarying_demographics$age_group <- as.numeric(cut(timevarying_demographics$age, breaks=c(0, age_group_bounds)))
+      } else {
+        timevarying_demographics <- NULL
+      }
     }
+    
+    ## Simulate sampling times after birth for each individual
     sampling_times_data <- expand_grid(individual=1:n_indiv,sample_time=sampling_times) %>%
-      left_join(birth_dates,by="individual") %>%
+      left_join(demographics,by="individual") %>%
       ## Ensure only sampling after birth
       filter(sample_time >= birth) %>% 
       group_by(individual) %>%
       ## Ensure not sampling more than there are time periods to sample from
       sample_n(pmin(n(),nsamps))
     
+    ## Find the last sample time for each individual -- this will be used to censor infection history simulations
+    final_sample_times <- sampling_times_data %>% 
+      group_by(individual) %>% 
+      filter(sample_time == max(sample_time)) %>% 
+      select(individual,sample_time) %>% 
+      distinct() %>% 
+      rename(last_sample = sample_time)
+    
     ## Expand out with measured biomarkers and repeats
     antibody_data <- expand_grid(sampling_times_data,repeat_number=1:repeats,
                                  biomarker_id = measured_biomarker_ids,
                                  biomarker_group=unique_biomarker_groups,
                                  measurement=0)
-    
     antibody_data <- as.data.frame(antibody_data)
-    
-    ## If we've specified age_group_bounds, then we want to have timevarying age groups
-    timevarying_demographics <- NULL
-    if(!is.null(age_group_bounds)){
-      timevarying_demographics <- demographics %>% expand_grid(time=possible_exposure_times)
-      timevarying_demographics$age <- timevarying_demographics$time - timevarying_demographics$birth
-      timevarying_demographics$age_group <- as.numeric(cut(timevarying_demographics$age, breaks=c(0, age_group_bounds)))
-    }
+
     #########################################################
     ## PARAMETER TABLE CHECKS
     #########################################################
@@ -124,46 +136,68 @@ simulate_data <- function(par_tab,
       par_tab <- add_scale_pars(par_tab,antibody_data, timevarying_demographics)
     }
     par_tab <- check_par_tab(par_tab)
+    
+    ## Find unique demographic and population groups
+    tmp <- add_stratifying_variables(antibody_data, timevarying_demographics, par_tab)
+    ## Unique population groups key
+    population_groups <- tmp$population_groups
+    
+    ## Unique demographics group key
+    demographic_groups <- get_demographic_groups(par_tab, antibody_data, timevarying_demographics)$demographic_groups %>% 
+      mutate(demographic_group = 1:n())
+    
     #########################################################
     ## SIMULATE DATA
     #########################################################
     message("Simulating data\n")    
-    
+
     measurement_bias <- NULL
     if (!is.null(measurement_indices)) {
         message(cat("Measurement bias\n"))
         #measurement_bias <- pars[measurement_indices_par_tab]
     }
+    
     ## Simulate infection histories
-    DOBs <- antibody_data %>% dplyr::select(individual,birth) %>% distinct() %>% pull(birth)
+    ## If timevarying demographics, then use this. Otherwise, use the fixed demographics
+    if(!is.null(timevarying_demographics)){
+      use_demo <- timevarying_demographics
+    } else {
+      use_demo <-  demographics
+    }
+    ## Merge with final sample time and any relevant population group keys
+    use_demo <- use_demo %>% left_join(final_sample_times,by="individual")
+    use_demo <- suppressMessages(use_demo %>% left_join(population_groups))
+    
+    ## Get simulated infection histories and attack rates
     tmp <- simulate_infection_histories(
-        attack_rates, possible_exposure_times,
-        sampling_times, DOBs
+        attack_rates, possible_exposure_times,use_demo
     )
     infection_history <- tmp[[1]]
     ARs <- tmp[[2]]
    
-    ## Need to update attack rate estimate based on strain mask, which is corrected in simulate_group
+    ## Check - can't be exposed or infected after the last sampling time
+    DOBs <- antibody_data %>% dplyr::select(individual,birth) %>% distinct() %>% pull(birth)
     age_mask <- create_age_mask(DOBs, possible_exposure_times)
     sample_mask <- create_sample_mask(antibody_data, possible_exposure_times)
-    ## Can't be exposed or infected after the last sampling time
     for (i in 1:nrow(infection_history)) {
-      if (sample_mask[i] < ncol(infection_history)) {
-        infection_history[i, (sample_mask[i] + 1):ncol(infection_history)] <- 0
-      }
+      tmp_inf_hist <- infection_history[i,]
+      if(age_mask[i] > 1 & any(tmp_inf_hist[1:(age_mask[i]-1)]) >0) print("Error - infection before birth")
+      if(sample_mask[i] < ncol(infection_history) & any(tmp_inf_hist[(sample_mask[i]+1):ncol(infection_history)]) >0) print("Error - infection after last sample")
     }
     
     ## Create model solving function
     ## Check that antibody data is formatted correctly
     check_data(antibody_data,verbose)
+    ## Correct arrangement
     antibody_data <- antibody_data %>% 
       arrange(individual, biomarker_group, sample_time, biomarker_id, repeat_number)
+    
+    ## Simulate data!
     f <- create_posterior_func(par_tab,antibody_data,antigenic_map,function_type=3,
                                possible_exposure_times = possible_exposure_times,
                                demographics=timevarying_demographics,
                                start_level="none")
     antibody_data$measurement <- f(par_tab$values, infection_history)
-   
     ## Add noise, but need to be specific to the data type
     for(i in seq_along(unique_biomarker_groups)){
       ## Find indices for each unique biomarker group
@@ -177,13 +211,12 @@ simulate_data <- function(par_tab,
      }
     ## Randomly censor titre values
     antibody_data <- antibody_data %>% mutate(measurement=if_else(runif(n())<missing_data,NA,measurement))
-    antibody_data$population_group <- group
-  n_alive <- get_n_alive(antibody_data,times = possible_exposure_times)
-    ARs <- colSums(infection_history) / n_alive
-    attack_rates_obs <- data.frame("time" = possible_exposure_times, "AR" = ARs)
+
     return(list(
         antibody_data = antibody_data, infection_histories = infection_history,
-        attack_rates = attack_rates_obs, phis = attack_rates,par_tab=par_tab
+        attack_rates = ARs, phis = attack_rates,par_tab=par_tab,
+        population_groups=population_groups,
+        demographic_groups=demographic_groups
     ))
 }
 
@@ -236,14 +269,37 @@ add_noise <- function(y, theta, measurement_bias = NULL, indices = NULL,data_typ
 #' @param sd_par the sd of the log normal
 #' @param large_first_year simulate an extra large attach rate in the first year?
 #' @param big_year_mean if large first year, what mean to use?
-#' @return a vector of attack rates
+#' @param n_groups defaults to 1, otherwise gives an attack rate vector for each group
+#' @return a matrix of attack rates for each group
 #' @family simulation_functions
 #' @export
 simulate_attack_rates <- function(infection_years, mean_par = 0.15, sd_par = 0.5,
-                                  large_first_year = FALSE, big_year_mean = 0.5) {
-  attack_year <- rlnorm(infection_years, meanlog = log(mean_par) - sd_par^2 / 2, sdlog = sd_par)
-  if (large_first_year) attack_year[1] <- rlnorm(1, meanlog = log(big_year_mean) - (sd_par / 2)^2 / 2, sdlog = sd_par / 2)
-  return(attack_year)
+                                  large_first_year = FALSE, big_year_mean = 0.5,n_groups=1) {
+  ars <- matrix(0, nrow=n_groups,ncol=length(infection_years))
+  
+  if(length(mean_par) != n_groups){
+    mean_par <- rep(mean_par[1], n_groups)
+  }
+  if(length(sd_par) != n_groups){
+    sd_par <- rep(sd_par[1], n_groups)
+  }
+  if(length(large_first_year) != n_groups){
+    large_first_year <- rep(large_first_year[1], n_groups)
+  }
+  if(length(big_year_mean) != n_groups){
+    big_year_mean <- rep(big_year_mean[1], n_groups)
+  }
+  
+  for(g in 1:n_groups){
+    ars[g,] <- rlnorm(infection_years, meanlog = log(mean_par[g]) - sd_par[g]^2 / 2, sdlog = sd_par[g])
+    if (large_first_year[g]) ars[g,1] <- rlnorm(1, meanlog = log(big_year_mean[g]) - (sd_par[g] / 2)^2 / 2, sdlog = sd_par[g] / 2)
+  }
+  ars <- as.data.frame(ars)
+  ars$population_group <- 1:n_groups
+  ars <- ars %>% pivot_longer(-population_group) %>% rename(time=name, prob_infection=value)
+  ars$time <- as.numeric(as.factor(ars$time))
+  ars$time <- infection_years[ars$time]
+  return(ars)
 }
 
 #' Simulate infection histories
@@ -251,52 +307,55 @@ simulate_attack_rates <- function(infection_years, mean_par = 0.15, sd_par = 0.5
 #' Given a vector of infection probabilities and potential infection times, simulates infections for each element of ages (ie. each element is an individual age. Only adds infections for alive individuals)
 #' @param p_inf a vector of attack rates (infection probabilities) for each year
 #' @param possible_exposure_times the vector of possible infection times
-#' @param sampling_times vector of potential sampling times
-#' @param DOBs a vector of ages for each individual
+#' @param demographics data frame giving the population group, birth and last_sample time for each individual. Optionally can set these values for all "time"
 #' @return a list with a matrix of infection histories for each individual in ages and the true attack rate for each epoch
 #' @family simulation_functions
 #' @examples
-#' p_inf <- runif(40,0.1,0.4)
-#' possible_exposure_times <- seq_len(40) + 1967
+#' possible_exposure_times <- seq_len(25)
+#' p_inf <- simulate_attack_rates(possible_exposure_times,n_groups=2)
 #' n_indiv <- 100
-#' sampling_times <- rep(max(possible_exposure_times), n_indiv)
-#' DOBs <- rep(min(possible_exposure_times), n_indiv)
-#' inf_hist <- simulate_infection_histories(p_inf, possible_exposure_times, sampling_times, DOBs)
+#' demographics <- data.frame(individual = 1:n_indiv,birth=sample(1:5,n_indiv,replace=TRUE),population_group=c(rep(1,n_indiv/2),rep(2,n_indiv/2)))
+#' inf_hist <- simulate_infection_histories(p_inf, possible_exposure_times, demographics)
 #' @export
-simulate_infection_histories <- function(p_inf, possible_exposure_times, sampling_times, DOBs) {
-  n_strains <- length(p_inf) # How many strains
-  n_indiv <- length(DOBs) # How many individuals
-  indivs <- 1:n_indiv
-  ## Empty matrix
-  infection_histories <- matrix(0, ncol = n_strains, nrow = n_indiv)
-
-  ## Simulate attack rates
-  attack_rates <- p_inf
-
-  ## Should this be necessary?
-  attack_rates[attack_rates > 1] <- 1
-  ARs <- numeric(n_strains)
-
-  age_mask <- create_age_mask(DOBs, possible_exposure_times)
-
-  ## For each strain (ie. each infection year)
-  for (i in 1:n_strains) {
-    ## If there are strains circulating beyond the max sampling times, then alive==0
-    if (max(sampling_times) >= possible_exposure_times[i]) {
-      ## Find who was alive (all we need sampling_times for is its max value)
-      alive <- which(age_mask <= i)
-
-      ## Sample a number of infections for the alive individuals, and set these entries to 1
-      y <- round(length(indivs[alive]) * attack_rates[i])
-      # y <- rbinom(1, length(indivs[alive]),attack_rates[i])
-      ARs[i] <- y / length(indivs[alive])
-      x <- sample(indivs[alive], y)
-      infection_histories[x, i] <- 1
-    } else {
-      ARs[i] <- 0
-    }
+simulate_infection_histories <- function(p_inf, possible_exposure_times=1:ncol(p_inf), demographics) {
+  ## If not timevarying demographics, then assume same groups for all time
+  if(!("time" %in% colnames(demographics))){
+    demographics <- demographics %>% expand_grid(time = possible_exposure_times)
   }
-  return(list(infection_histories, ARs))
+  ## If no last sample time provided, then set to last possible exposure time
+  if(!("last_sample" %in% colnames(demographics))) demographics$last_sample <- max(possible_exposure_times)
+  
+  ## If p_inf is stratified by group but demographics is not, set demographics population group to minimum group
+  if("population_group" %in% colnames(p_inf) & !("population_group" %in% colnames(demographics))){
+    demographics$population_group <- min(p_inf$population_group)
+  }
+  if(!("population_group" %in% colnames(p_inf))){
+    p_inf$population_group <- 1
+  }
+  ## If we don't have enough population_group entries in p_inf for the demographics, then need to enumerate
+  if(length(unique(p_inf$population_group)) < length(unique(demographics$population_group))){
+    p_inf <- p_inf %>% filter(population_group == min(population_group)) %>% select(-population_group)
+    p_inf <- expand_grid(p_inf, population_group = unique(demographics$population_group))
+  }
+  
+  demographics <- demographics %>% mutate(alive = time >= birth & time <= last_sample)
+  demographics <- demographics %>% left_join(p_inf,by=c("population_group","time"))
+  demographics <- demographics %>% mutate(infected = rbinom(n(), 1, prob_infection*as.numeric(alive)))
+  
+  ## Get infection history matrix
+  infection_history <- demographics %>% 
+    dplyr::select(individual, time, infected) %>% 
+    pivot_wider(names_from=time,values_from=infected,values_fill=0) %>% 
+    dplyr::select(-individual) %>% as.matrix()  
+  
+  ## Get empirical ARs
+  ARs <- demographics %>% 
+    group_by(population_group,time) %>% 
+    dplyr::summarize(n_alive = sum(alive),n_infected=sum(infected)) %>% 
+    mutate(AR = n_infected/n_alive) %>% left_join(p_inf,by=c("population_group","time"))
+  return(list(infection_history,ARs))
+ 
+  #return(list(infection_histories, ARs))
 }
 
 #' Simulate the antibody model
@@ -360,61 +419,4 @@ simulate_antibody_model <- function(pars,
                                          antigenic_map_long,
                                          antigenic_map_short)
   data.frame(sample_times = rep(sample_times,each=length(biomarker_ids)),biomarker_ids = rep(biomarker_ids,length(sample_times)),antibody_level=y)
-}
-
-#' Generates attack rates from an SIR model with fixed beta/gamma, specified final attack rate and the number of time "buckets" to solve over ie. buckets=12 returns attack rates for 12 time periods
-generate_ar_annual <- function(AR, buckets) {
-  SIR_odes <- function(t, x, params) {
-    S <- x[1]
-    I <- x[2]
-    R <- x[3]
-    inc <- x[4]
-
-    beta <- params[1]
-    gamma <- params[2]
-    dS <- -beta * S * I
-    dI <- beta * S * I - gamma * I
-    dR <- gamma * I
-    dinc <- beta * S * I
-    list(c(dS, dI, dR, dinc))
-  }
-  R0 <- 1.2
-  gamma <- 1 / 5
-  beta <- R0 * gamma
-  t <- seq(0, 360, by = 0.1)
-  results <- as.data.frame(deSolve::ode(
-    y = c(S = 1, I = 0.0001, R = 0, inc = 0),
-    times = t, func = SIR_odes,
-    parms = c(beta, gamma)
-  ))
-  incidence <- diff(results$inc)
-  incidence <- incidence * AR / sum(incidence)
-  group <- 360 * 10 / buckets
-  monthly_risk <- colSums(matrix(incidence, nrow = group))
-  return(monthly_risk)
-}
-
-
-simulate_ars_buckets <- function(infection_years, buckets, mean_par = 0.15, sd_par = 0.5,
-                                 large_first_year = FALSE, big_year_mean = 0.5) {
-  n <- ceiling(length(infection_years) / buckets)
-  attack_year <- rlnorm(n, meanlog = log(mean_par) - sd_par^2 / 2, sdlog = sd_par)
-  if (large_first_year) attack_year[1] <- rlnorm(1, meanlog = log(big_year_mean) - (sd_par / 2)^2 / 2, sdlog = sd_par / 2)
-  ars <- NULL
-
-  for (i in seq_along(attack_year)) {
-    ars <- c(ars, generate_ar_annual(attack_year[i], buckets))
-  }
-
-  ars <- ars[1:length(infection_years)]
-  return(ars)
-}
-
-simulate_ars_spline <- function(infection_years, buckets, mean_par = 0.15, sd_par = 0.5, large_first_year = FALSE, big_year_mean = 0.5, knots, theta) {
-  infection_years <- infection_years[seq(1, length(infection_years), by = buckets)] / buckets
-  n <- length(infection_years)
-  attack_year <- rlnorm(n, meanlog = log(mean_par) - sd_par^2 / 2, sdlog = sd_par)
-  if (large_first_year) attack_year[1] <- rlnorm(1, meanlog = log(big_year_mean) - (sd_par / 2)^2 / 2, sdlog = sd_par / 2)
-  ars <- generate_phis(attack_year, knots, theta, n, buckets)
-  return(ars)
 }

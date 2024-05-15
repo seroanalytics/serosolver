@@ -7,6 +7,7 @@
 serosolver(
   par_tab,
   antibody_data,
+  demographics = NULL,
   antigenic_map = NULL,
   possible_exposure_times = NULL,
   mcmc_pars = c(),
@@ -18,7 +19,7 @@ serosolver(
   posterior_func = create_posterior_func,
   prior_func = NULL,
   prior_version = 2,
-  measurement_indices = NULL,
+  measurement_bias = NULL,
   measurement_random_effects = FALSE,
   proposal_ratios = NULL,
   temp = 1,
@@ -36,7 +37,8 @@ serosolver(
 \arguments{
 \item{par_tab}{The parameter table controlling information such as bounds, initial values etc. See \code{\link{example_par_tab}}}
 
-\item{antibody_data}{The data frame of titre data to be fitted. Must have columns: group (index of group); individual (integer ID of individual); samples (numeric time of sample taken); virus (numeric time of when the virus was circulating); titre (integer of titre value against the given virus at that sampling time); run (integer giving the repeated number of this titre); DOB (integer giving date of birth matching time units used in model). See \code{\link{example_antibody_data}}}
+\item{antibody_data}{The data frame of titre data to be fitted. Must have columns: group (index of group); individual (integer ID of individual); samples (numeric time of sample taken); virus (numeric time of when the virus was circulating); titre (integer of titre value against the given virus at that sampling time); run (integer giving the repeated number of this titre); DOB (integer giving date of birth matching time units used in model). See \code{\link{example_antibody_data}}
+#' @param demographics if not NULL, then a tibble for each individual (1:n_indiv) giving demographic variable entries. Most importantly must include "birth" as the birth time. This is used if, for example, you have a stratification grouping in \code{par_tab}}
 
 \item{antigenic_map}{(optional) A data frame of antigenic x and y coordinates. Must have column names: x_coord; y_coord; inf_times. See \code{\link{example_antigenic_map}}}
 
@@ -56,7 +58,7 @@ serosolver(
 
 \item{prior_version}{which infection history assumption prior_version to use? See \code{\link{describe_priors}} for options. Can be 1, 2, 3 or 4}
 
-\item{measurement_indices}{optional NULL. For measurement bias function. Vector of indices of length equal to number of circulation times. For each year, gives the index of parameters named "rho" that correspond to each time period}
+\item{measurement_bias}{optional NULL. For measurement bias function. Vector of indices of length equal to number of circulation times. For each year, gives the index of parameters named "rho" that correspond to each time period}
 
 \item{measurement_random_effects}{optional FALSE. Boolean indicating if measurement bias is a random effects term. If TRUE adds a component to the posterior calculation that calculates the probability of a set of measurement shifts "rho", given a mean and standard deviation}
 

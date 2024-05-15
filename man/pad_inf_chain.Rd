@@ -4,7 +4,7 @@
 \alias{pad_inf_chain}
 \title{Pad infection history chain}
 \usage{
-pad_inf_chain(inf_chain)
+pad_inf_chain(inf_chain, pad_by_group = FALSE)
 }
 \arguments{
 \item{inf_chain}{the data table with infection history samples from \code{\link{serosolver}}}

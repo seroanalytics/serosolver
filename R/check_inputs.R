@@ -170,7 +170,9 @@ check_data <- function(data,verbose=FALSE) {
 #' check_attack_rates(attack_rates, possible_exposure_times)
 #' @export
 check_attack_rates <- function(attack_rates, possible_exposure_times) {
-    if (length(attack_rates) != length(possible_exposure_times)) stop("attack_rates is not the same length as possible_exposure_times")
+    if(class(attack_rates) == "matrix") test_n <- ncol(attack_rates)
+    else test_n <- length(attack_rates)
+    if (test_n != length(possible_exposure_times)) stop("attack_rates is not the same length as possible_exposure_times")
     if (any(attack_rates < 0) || any(attack_rates > 1)) stop("attack_rates must be between 0 and 1")
 }
 #' Checks if the multivariate proposal is being used with the FOI proposal

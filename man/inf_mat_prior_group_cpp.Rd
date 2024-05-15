@@ -12,9 +12,9 @@ inf_mat_prior_group_cpp(n_infections, n_alive, shape1, shape2)
 
 \item{n_alive}{IntegerMatrix, matrix giving the number of individuals alive in each time unit in each group}
 
-\item{shape1}{double, shape1 (alpha) parameter for beta distribution prior}
+\item{shape1}{NumericVector, shape1 (alpha) parameters for beta distribution prior, one entry for each unique group}
 
-\item{shape2}{double, shape2 (beta) parameter for beta distribution prior}
+\item{shape2}{NumericVector, shape2 (beta) parameters for beta distribution prior, one entry for each unique group}
 }
 \value{
 a single prior probability
