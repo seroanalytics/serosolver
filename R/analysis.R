@@ -394,7 +394,6 @@ get_antibody_level_predictions <- function(chain, infection_histories, antibody_
   ## See the function in posteriors.R
   antibody_data1 <- antibody_data
   
-  
   if (expand_antibody_data) {
     if(expand_to_all_times){
       expand_times <- possible_exposure_times

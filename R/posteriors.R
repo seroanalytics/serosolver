@@ -56,6 +56,7 @@ create_posterior_func <- function(par_tab,
                                   start_level_randomize=FALSE,
                                   demographics=NULL,
                                   demographic_groups=NULL,
+                                  fixed_inf_hists=NULL,
                                   verbose=FALSE,
                                   ...) {
 
@@ -146,7 +147,7 @@ create_posterior_func <- function(par_tab,
     )
     ## Vector of observation types matching the unique samples
     biomarker_groups <- setup_dat$biomarker_groups
-    
+    antibody_data_demo_index <- setup_dat$antibody_data_demo_group_index
     ## Number of unique groups
     demographics <- setup_dat$demographics
 
@@ -289,18 +290,17 @@ create_posterior_func <- function(par_tab,
 
     ## These will be different for each biomarker_group
     theta_indices <- which(par_tab$par_type %in% c(0, 1))
+
+    scale_par_indices <- which(par_tab$par_type == 4)
+    measurement_indices_par_tab <- which(par_tab$par_type == 3)
+    theta_indices_unique <- which(par_tab_unique$par_type %in% c(0, 1))
     
     ## Find parameter transforms
-    transforms <- par_tab[theta_indices,] %>% mutate(transform=case_when(
+    transforms <- par_tab[c(theta_indices,measurement_indices_par_tab),] %>% mutate(transform=case_when(
       lower_bound == 0 & upper_bound > 1 ~ 0, ## Log link
       lower_bound == 0 & upper_bound == 1 ~ 1, ## Logit link
       .default = 2  ## Otherwise no link
     )) %>% pull(transform)
-
-    scale_par_indices <- which(par_tab$par_type == 4)
-    measurement_indices_par_tab <- which(par_tab$par_type == 3)
-
-    theta_indices_unique <- which(par_tab_unique$par_type %in% c(0, 1))
     
     ## Each biomarker_group must have the same vector of parameters in the same order
     par_names_theta <- par_tab_unique[theta_indices_unique, "names"]
@@ -308,12 +308,14 @@ create_posterior_func <- function(par_tab,
     theta_indices_unique <- seq_along(theta_indices_unique) - 1
     names(theta_indices_unique) <- par_names_theta
     
+    ## Same thing for rho parameters
+    rho_indices_unique <- which(par_names[c(theta_indices, measurement_indices_par_tab)] == "rho")
+    
     par_names_theta_all <- par_tab[theta_indices,"names"]
     n_pars <- length(theta_indices_unique)
     
     ## Sort out any assumptions for measurement bias
     use_measurement_bias <- (length(measurement_indices_par_tab) > 0) & !is.null(measurement_bias)
-    
     antibody_level_shifts <- c(0)
     expected_indices <- NULL
     measurement_bias_indices <- NULL
@@ -373,8 +375,8 @@ create_posterior_func <- function(par_tab,
           }
           if (solve_likelihood) {
             names(pars) <- par_names
-            theta <- transform_parameters_cpp(pars, scale_table, theta_indices-1, scale_par_indices-1,as.matrix(demographic_groups), transforms)
-            colnames(theta) <- names(pars[theta_indices])
+            theta <- transform_parameters_cpp(pars, scale_table, c(theta_indices,measurement_indices_par_tab)-1, scale_par_indices-1,as.matrix(demographic_groups), transforms)
+            colnames(theta) <- names(pars[c(theta_indices, measurement_indices_par_tab)])
             antigenic_map_long <- array(dim=c(length(possible_biomarker_ids)^2,n_biomarker_groups,n_demographic_groups))
             antigenic_map_short <- array(dim=c(length(possible_biomarker_ids)^2,n_biomarker_groups,n_demographic_groups))
             
@@ -413,10 +415,9 @@ create_posterior_func <- function(par_tab,
               use_timevarying_demographics,
               antibody_level_before_infection
             )
-
             if (use_measurement_bias) {
-              measurement_bias_indices <- pars[measurement_indices_par_tab]
-              antibody_level_shifts <- measurement_bias_indices[expected_indices]
+              measurement_bias_indices <- matrix(theta[,rho_indices_unique])
+              antibody_level_shifts <- measurement_bias_indices[cbind(antibody_data_demo_index, expected_indices)]
               y_new <- y_new + antibody_level_shifts
             }
                 ## Calculate likelihood for unique antibody_levels and repeat data
@@ -448,6 +449,43 @@ create_posterior_func <- function(par_tab,
             return(list(liks, transmission_prob))
         }
     } else if (function_type == 2) {
+      ## Enumerate out times each individual is able to be infected during
+      indiv_possible_exposure_times <- tibble(
+        individual = seq_along(age_mask),
+        t_index = mapply(function(x, y) seq(x, y), age_mask, sample_mask, SIMPLIFY = FALSE)
+      ) %>%
+        unnest(cols = c(t_index)) %>%
+        arrange(individual, t_index) %>%
+        mutate(t_index = t_index - 1) %>%
+        as.data.frame()
+      ## Mask known infection states from estimation
+      if(!is.null(fixed_inf_hists)) {
+        if(verbose) message(cat("Fixing infection states given by fixed_inf_hists\n"))
+        indiv_possible_exposure_times <- indiv_possible_exposure_times %>% 
+          left_join(fixed_inf_hists %>% rename(t_index=time) %>% mutate(t_index =t_index - 1),
+                    by=c("individual","t_index"))
+        indiv_possible_exposure_times <- indiv_possible_exposure_times %>% filter(is.na(value))
+      }
+      
+      ## Merge in any fixed infection states and remove these from consideration
+      indiv_possible_exposure_times_indices <- indiv_possible_exposure_times %>% pull(t_index)
+      ## Get start and end index in this vector for each individual
+    indiv_poss_exp_times_start <- indiv_possible_exposure_times %>% 
+      mutate(i=1:n() - 1) %>%
+      group_by(individual) %>%
+      filter(t_index == min(t_index)) %>% 
+      ungroup() %>%
+      complete(individual=1:n_indivs, fill=list(t_index=-1,i=-1,value=NA)) %>%
+      pull(i)
+      
+    indiv_poss_exp_times_end <- indiv_possible_exposure_times %>% 
+      mutate(i=1:n() - 1) %>%
+      group_by(individual) %>%
+      filter(t_index == max(t_index)) %>% 
+      ungroup() %>%
+      complete(individual=1:n_indivs, fill=list(t_index=-1,i=-1,value=NA)) %>%
+      pull(i)
+      
       if(verbose) message(cat("Creating infection history proposal function\n"))
         if (prior_version == 4) {
             n_alive_total <- rowSums(n_alive)
@@ -479,14 +517,12 @@ create_posterior_func <- function(par_tab,
                       temp=1,
                       propose_from_prior=TRUE) {
           names(pars) <- par_names
-          theta <- transform_parameters_cpp(pars, scale_table, theta_indices-1, scale_par_indices-1,as.matrix(demographic_groups), transforms)
-          colnames(theta) <- names(pars[theta_indices])
-          
+          theta <- transform_parameters_cpp(pars, scale_table, c(theta_indices,measurement_indices_par_tab)-1, scale_par_indices-1,as.matrix(demographic_groups), transforms)
+          colnames(theta) <- names(pars[c(theta_indices, measurement_indices_par_tab)])
       
-
             if (use_measurement_bias) {
-              measurement_bias_indices <- pars[measurement_indices_par_tab]
-                antibody_level_shifts <- measurement_bias_indices[expected_indices]
+              measurement_bias_indices <- matrix(theta[,rho_indices_unique])
+              antibody_level_shifts <- measurement_bias_indices[cbind(antibody_data_demo_index, expected_indices)]
             }
           antigenic_map_long <- array(dim=c(length(possible_biomarker_ids)^2,n_biomarker_groups,n_demographic_groups))
           antigenic_map_short <- array(dim=c(length(possible_biomarker_ids)^2,n_biomarker_groups,n_demographic_groups))
@@ -567,6 +603,9 @@ create_posterior_func <- function(par_tab,
                 n_alive_total,
                 data_type,
                 biomarker_groups_weights,
+                indiv_possible_exposure_times_indices,
+                indiv_poss_exp_times_start,
+                indiv_poss_exp_times_end,
                 use_timevarying_demographics,
                 temp,
                 solve_likelihood
@@ -579,8 +618,8 @@ create_posterior_func <- function(par_tab,
         f <- function(pars, infection_history_mat) {
           ## Need to create demographic-specific parameter transformations here
           names(pars) <- par_names
-          theta <- transform_parameters_cpp(pars, scale_table, theta_indices-1, scale_par_indices-1,as.matrix(demographic_groups), transforms)
-          colnames(theta) <- names(pars[theta_indices])
+          theta <- transform_parameters_cpp(pars, scale_table, c(theta_indices,measurement_indices_par_tab)-1, scale_par_indices-1,as.matrix(demographic_groups), transforms)
+          colnames(theta) <- names(pars[c(theta_indices, measurement_indices_par_tab)])
           
             antigenic_map_long <- array(dim=c(length(possible_biomarker_ids)^2,n_biomarker_groups,n_demographic_groups))
             antigenic_map_short <- array(dim=c(length(possible_biomarker_ids)^2,n_biomarker_groups,n_demographic_groups))
@@ -619,10 +658,11 @@ create_posterior_func <- function(par_tab,
                 use_timevarying_demographics,
                 antibody_level_before_infection
             )
+
             if (use_measurement_bias) {
-              measurement_bias_indices <- pars[measurement_indices_par_tab]
-                antibody_level_shifts <- measurement_bias_indices[expected_indices]
-                y_new <- y_new + antibody_level_shifts
+              measurement_bias_indices <- matrix(theta[,rho_indices_unique])
+              antibody_level_shifts <- measurement_bias_indices[cbind(antibody_data_demo_index, expected_indices)]
+              y_new <- y_new + antibody_level_shifts
             }
             y_new[overall_indices]
         }

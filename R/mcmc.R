@@ -65,6 +65,7 @@ serosolver <- function(par_tab,
                      n_chains=1,
                      parallel=FALSE,
                      start_inf_hist = NULL,
+                     fixed_inf_hists = NULL,
                      filename = "test",
                      posterior_func = create_posterior_func,
                      prior_func = NULL,
@@ -243,6 +244,20 @@ serosolver <- function(par_tab,
   ## Create strain mask
   sample_mask <- create_sample_mask(antibody_data, possible_exposure_times)
   masks <- data.frame(cbind(age_mask, sample_mask))
+
+  ## Mask infection times we shouldn't sample
+  inf_hist_masks <- matrix(1, nrow=n_indiv,ncol=length(possible_exposure_times))
+  for(iii in 1:n_indiv){
+    inf_hist_masks[iii,1:age_mask[iii]] <- 0
+    inf_hist_masks[iii,sample_mask[iii]:ncol(inf_hist_masks)] <- 0
+    if(!is.null(fixed_inf_hists)){
+      if(iii %in% fixed_inf_hists$individual){
+        mask_indices <- fixed_inf_hists[fixed_inf_hists$individual == iii, "time"]
+        inf_hist_masks[iii, mask_indices] <- 0
+      }
+    }
+  }
+  
   ## Add stratifying variables to antibody_data and demographics
   ## Setup data vectors and extract
   tmp <- get_demographic_groups(par_tab,antibody_data,demographics, NULL)
@@ -279,9 +294,10 @@ serosolver <- function(par_tab,
                                            data_type=data_type,
                                            start_level=start_level,
                                           demographics=demographics,
+                   fixed_inf_hists=fixed_inf_hists,
                                            verbose=verbose,
                                            ...
- #)
+#)
 )
   
   if (!is.null(prior_func)) {
@@ -304,6 +320,7 @@ serosolver <- function(par_tab,
                                              data_type=data_type,
                                              start_level=start_level,
                      demographics=demographics,
+                     fixed_inf_hists=fixed_inf_hists,
                                              verbose=verbose,
                                              ...
    #)
@@ -367,6 +384,7 @@ serosolver <- function(par_tab,
   save(serosolver_settings,file=paste0(filename,"_serosolver_settings.RData"))
   
   result <- foreach(chain = 1:n_chains, .packages =c("serosolver","data.table","dplyr","plyr","tidyr")) %execute% {
+  #for(chain in 1:n_chains){
     if(parallel){
       sink(log_file,append=TRUE)                    
     }
@@ -380,6 +398,13 @@ serosolver <- function(par_tab,
       infection_histories <- start_inf_hist
       if (is.null(start_inf_hist)) {
         infection_histories <- setup_infection_histories_antibody_level(antibody_data, possible_exposure_times, space = 5, antibody_cutoff = 3,sample_prob=0.1)
+      }
+      
+      ## Fix infection states if specified
+      if(!is.null(fixed_inf_hists)){
+        for(iii in 1:nrow(fixed_inf_hists)){
+          infection_histories[fixed_inf_hists$individual[iii], fixed_inf_hists$time[iii]] <- fixed_inf_hists$value[iii]
+        }
       }
       
       if (random_start_parameters){
@@ -654,7 +679,7 @@ serosolver <- function(par_tab,
               } else {
                   tmp <- inf_hist_swap(
                       infection_histories,
-                      age_mask, sample_mask,
+                      inf_hist_masks,
                       proposal_inf_hist_group_swap_prop, proposal_inf_hist_distance
                   )
                   new_infection_histories <- tmp[[1]]

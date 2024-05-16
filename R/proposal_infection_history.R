@@ -2,8 +2,7 @@
 #'
 #' Swaps the entire contents of two columns of the infection history matrix, adhering to age and sample time limitations.
 #' @param infection_history matrix of 1s and 0s to swap around representing the infection history
-#' @param age_mask the first index in infection_history that each individual (row) could be infected in
-#' @param sample_mask the last index in infection_history that each individual (row) could be infected in ie. the time of the latest blood sample
+#' @param inf_hist_masks matrix of 1s and 0s corresponding to infection_history, with a 1 where the infection state is eligible to be updated and a 0 otherwise
 #' @param proposal_inf_hist_indiv_swap_ratio what proportion of infections should be swapped?
 #' @param proposal_inf_hist_distance How many time points away should be chosen as candidate swaps?
 #' @param proposal_ratios optional NULL. Can set the relative sampling weights of the infection state times. Should be an integer vector of length matching nrow(antigenic_map). Otherwise, leave as NULL for uniform sampling.
@@ -19,7 +18,7 @@
 #' sample_mask <- create_sample_mask(example_antibody_data, times)
 #' new_inf_hist <- inf_hist_swap(example_inf_hist, age_mask,sample_mask, 1,3)[[1]]
 #' @export
-inf_hist_swap <- function(infection_history, age_mask, sample_mask, proposal_inf_hist_indiv_swap_ratio, proposal_inf_hist_distance, proposal_ratios=NULL) {
+inf_hist_swap <- function(infection_history, inf_hist_masks, proposal_inf_hist_indiv_swap_ratio, proposal_inf_hist_distance, proposal_ratios=NULL) {
     use_ratios <- NULL
     if(!is.null(proposal_ratios)){
         use_ratios <- proposal_ratios/sum(proposal_ratios)
@@ -46,9 +45,10 @@ inf_hist_swap <- function(infection_history, age_mask, sample_mask, proposal_inf
 
     ## Find individuals that are alive/sampled in both years and choose the lesser of proposal_inf_hist_indiv_swap_ratio*n_indivs and
     ## the number that are actually able to be infected in both years
-    indivs <- 1:nrow(infection_history)
-    alive_indivs <- indivs[intersect(which(age_mask <= small_year), which(sample_mask >= big_year))]
-    samp_indivs <- sample(alive_indivs, floor(length(alive_indivs) * proposal_inf_hist_indiv_swap_ratio))
+    eligible_indivs <- which(inf_hist_masks[,small_year] == 1 & inf_hist_masks[,big_year] == 1)
+    #indivs <- 1:nrow(infection_history)
+    #alive_indivs <- indivs[intersect(which(age_mask <= small_year), which(sample_mask >= big_year))]
+    samp_indivs <- sample(eligible_indivs, floor(length(eligible_indivs) * proposal_inf_hist_indiv_swap_ratio))
 
     ## Swap contents
     tmp <- infection_history[samp_indivs, y1]

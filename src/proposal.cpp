@@ -232,6 +232,11 @@ List inf_hist_prop_prior_v2_and_v4(
 				   
 				   const IntegerVector &data_types,
 				   const NumericVector &obs_weights,
+				   
+				   const IntegerVector &indiv_possible_exposure_times_indices,
+				   const IntegerVector &indiv_poss_exp_times_start,
+				   const IntegerVector &indiv_poss_exp_times_end,
+				   
 				   const bool timevarying_groups = false,
 				   const double temp=1,
 				   bool solve_likelihood=true){
@@ -290,10 +295,13 @@ List inf_hist_prop_prior_v2_and_v4(
   int indiv; // Index of the individual under consideration
   IntegerVector samps; // Variable vector to sample from
   IntegerVector samps_shifted;
+  IntegerVector samp_indices;
+  IntegerVector jh_new_samps_shifted;
   IntegerVector locs; // Vector of locations that were sampled
   // As each individual has a different number of years to sample from,
   // need to extract relative proportions and re-weight
   NumericVector tmp_loc_sample_probs;
+  int min_mask;
   int year; // Index of year being updated
   int n_samp_max; // Maximum number of years to sample for individual
   int n_samp_length; // Number of years that COULD be sampled for this individual
@@ -433,27 +441,47 @@ List inf_hist_prop_prior_v2_and_v4(
 
     // Time sampling control
     n_times_samp = n_times_samp_vec(indiv); // How many times are we intending to resample for this individual?
-    n_samp_length  = sample_mask(indiv) - age_mask(indiv) + 1; // How many times maximum can we sample from?
+    // n_samp_length  = sample_mask(indiv) - age_mask(indiv) + 1; // How many times maximum can we sample from?
     
-    // If swap step, only doing one proposal for this individual
-    if(swap_step_option){
-      n_samp_max = 1;
-      // Get this individual's infection history
-      new_infection_history = new_infection_history_mat(indiv,_);
-    } else {
-      // Sample n_samp_length. Ths will be used to pull years from sample_years
-      n_samp_max = std::min(n_times_samp, n_samp_length); // Use the smaller of these two numbers
-    }
-    samps = seq(0, n_samp_length-1);    // Create vector from 0:length of alive years
+    // So here, I could pull out the vector of times directly instead
+    // samps = seq(0, n_samp_length-1);    // Create vector from 0:length of alive years
 
     // Extract time sampling probabilities and re-normalise
-    samps_shifted = samps + age_mask(indiv) - 1;
+    // samps_shifted = samps + age_mask(indiv) - 1;
+   
+   // Vector of possible exposure indices to sample from
+   if(indiv_poss_exp_times_start[indiv] < 0 || indiv_poss_exp_times_end[indiv] < 0){
+     continue;
+   }
+    min_mask = indiv_possible_exposure_times_indices(indiv_poss_exp_times_start[indiv]);
+  // min_mask = age_mask(indiv) - 1;
+   samps_shifted = indiv_possible_exposure_times_indices[Range(indiv_poss_exp_times_start(indiv), indiv_poss_exp_times_end(indiv))];
+   samps = samps_shifted - min_mask;
+  
+   n_samp_length  = samps_shifted.size(); // How many times maximum can we sample from?
+   // Make a sequence of indices? Sample from this instead?
+   samp_indices = seq(0, n_samp_length-1);
+   
+   // If swap step, only doing one proposal for this individual
+   if(swap_step_option){
+     n_samp_max = 1;
+     // Get this individual's infection history
+     new_infection_history = new_infection_history_mat(indiv,_);
+   } else {
+     // Sample n_samp_length. Ths will be used to pull years from sample_years
+     n_samp_max = std::min(n_times_samp, n_samp_length); // Use the smaller of these two numbers   
+    }
    
     tmp_loc_sample_probs = time_sample_probs[samps_shifted];
     // Re-normalise
     tmp_loc_sample_probs = tmp_loc_sample_probs/sum(tmp_loc_sample_probs);
-    locs = RcppArmadillo::sample(samps, n_samp_max, false, tmp_loc_sample_probs);
-
+    
+    // Note that samps is being used to generate the samples rather than samps_shifted
+    // locs = RcppArmadillo::sample(samps, n_samp_max, false, tmp_loc_sample_probs);
+    // Randomly choose from the available time indices
+    locs = RcppArmadillo::sample(samp_indices, n_samp_max, false, tmp_loc_sample_probs);
+    
+    //Rcpp::Rcout << "Indiv: " << indiv << ", " << locs << std::endl;
     // For each selected infection history entry
     for(int j = 0; j < n_samp_max; ++j){
       // Assume that proposal hasn't changed likelihood until shown otherwise
@@ -466,9 +494,14 @@ List inf_hist_prop_prior_v2_and_v4(
       ///////////////////////////////////////////////////////
       // If swap step
       prior_old = prior_new = 0;
+      
       if(swap_step_option){
-      	loc1 = locs(j); // Choose a location from age_mask to sample_mask
-      	loc2 = loc1 + floor(R::runif(-swap_distance,swap_distance+1));
+      	loc1 = samps[locs(j)]; // Pull out the time index of this chosen sample
+      	//loc1= locs(j);
+      	// loc2 = loc1 + floor(R::runif(-swap_distance,swap_distance+1));
+      	
+      	// loc2 will be some distance along the sample vector away
+      	loc2 = locs(j) + floor(R::runif(-swap_distance,swap_distance+1));
       
       	// If we have gone too far left or right, reflect at the boundaries
       	
@@ -480,14 +513,20 @@ List inf_hist_prop_prior_v2_and_v4(
       	while(loc2 >= n_samp_length){
       	  loc2 -= n_samp_length;
       	}
-  	
+      	
+      	// Move back to correct scale
+      	loc2 = samps[loc2];
       	// Try bounce rather than reflect to other side
       	//if(loc2 < 0) loc2 = -loc2;
       	//if(loc2 >= n_samp_length) loc2 = n_samp_length - loc2 + n_samp_length - 2;
       	
       	// Get onto right scale (starting at age mask)
-      	loc1 += age_mask(indiv) - 1;
-      	loc2 += age_mask(indiv) - 1;
+      	// loc1 += age_mask(indiv) - 1;
+      	// loc2 += age_mask(indiv) - 1;
+      	
+      	// Shift to actual time scale
+      	loc1 += min_mask;
+      	loc2 += min_mask;
       	  
       	loc1_val_old = new_infection_history(loc1);
       	loc2_val_old = new_infection_history(loc2);
@@ -545,7 +584,9 @@ List inf_hist_prop_prior_v2_and_v4(
       } else {
         
         
-      	year = locs(j) + age_mask(indiv) - 1;
+      	//year = locs(j) + age_mask(indiv) - 1;
+      	// loc1 = samps[locs(j)];
+        year = samps[locs(j)] + min_mask;
       	old_entry = new_infection_history(year);
       	overall_add_proposals(indiv,year)++;
       	

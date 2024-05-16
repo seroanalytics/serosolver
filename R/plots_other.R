@@ -146,8 +146,16 @@ plot_samples_distances <- function(antibody_data) {
 #' @export
 plot_posteriors_theta <- function(chain,par_tab){
   par_tab_tmp <- par_tab[par_tab$fixed == 0,]
-  par_indices <- c("samp_no","chain_no",par_tab_tmp[par_tab_tmp$par_type %in% c(1,4),"names"],"total_infections","likelihood","prior_prob","posterior_prob")
-
+  ## Parameters of model
+  par_indices <- c("samp_no","chain_no",par_tab_tmp[par_tab_tmp$par_type == 1,"names"],"total_infections","likelihood","prior_prob","posterior_prob")
+  
+  ## Parameters for stratification variables
+  if(any(par_tab_tmp$par_type == 4)){
+    par_indices_strat <-  c("samp_no","chain_no",par_tab_tmp[par_tab_tmp$par_type == 4,"names"])
+  } else {
+    par_indices_strat <- NULL
+  }
+  
   chain <- chain %>% as_tibble()
   chain$chain_no <- as.factor(chain$chain_no)
   
@@ -164,6 +172,24 @@ plot_posteriors_theta <- function(chain,par_tab){
     geom_density(aes(x=value,fill=chain_no),alpha=0.25) +
     facet_wrap(~name,scales="free") +
     theme_bw()
+  
+  if(!is.null(par_indices_strat)){
+    p_trace_strat <- chain[,par_indices_strat] %>%
+      pivot_longer(-c(samp_no, chain_no)) %>%
+      ggplot() + 
+      geom_line(aes(x=samp_no,y=value,col=chain_no)) + 
+      facet_wrap(~name,scales="free_y") +
+      theme_bw()
+    
+    p_density_strat <- chain[,par_indices_strat] %>%
+      pivot_longer(-c(samp_no, chain_no)) %>%
+      ggplot() + 
+      geom_density(aes(x=value,fill=chain_no),alpha=0.25) +
+      facet_wrap(~name,scales="free") +
+      theme_bw()
+  } else {
+    p_trace_strat <- p_density_strat <- NULL
+  }
   
   p_trace_phi <- p_density_phi <- NULL
   if("phi" %in% par_tab$names & "phi" %in% colnames(chain)){
@@ -207,7 +233,8 @@ plot_posteriors_theta <- function(chain,par_tab){
     
   list(p_trace_par, p_density_par,
        p_trace_phi,p_density_phi,
-       p_trace_rho,p_density_rho)
+       p_trace_rho,p_density_rho,
+       p_trace_strat, p_density_strat)
 }
 
 #' @export

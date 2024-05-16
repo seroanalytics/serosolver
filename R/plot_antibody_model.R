@@ -210,7 +210,6 @@ plot_model_fits <- function(chain, infection_histories,
   
   max_x <- max(inf_hist_densities$variable) + 5
   time_range <- range(inf_hist_densities$variable)
-  
   ## If provided, add true infection histories
   if(!is.null(known_infection_history)){
     known_infection_history <- known_infection_history[individuals,]
@@ -287,9 +286,8 @@ plot_model_fits <- function(chain, infection_histories,
       to_use$biomarker_id <- as.factor(to_use$biomarker_id)
       model_preds$biomarker_id <- as.factor(to_use$biomarker_id)
       antibody_data$biomarker_id <- as.factor(antibody_data$biomarker_id)
-      
       p_tmp <- ggplot(to_use[to_use$individual %in% individuals,]%>% dplyr::filter(biomarker_group == biomarker_group_use)) +
-        geom_rect(data=inf_hist_densities %>% dplyr::cross_join(measurement_ranges)%>% dplyr::filter(biomarker_group == biomarker_group_use),
+        geom_rect(data=inf_hist_densities %>% dplyr::cross_join(measurement_ranges)%>% dplyr::filter(biomarker_group == biomarker_group_use) %>% select(-sample_time) %>% distinct(),
                   aes(xmin=xmin,xmax=xmax,alpha=value,ymin=min_measurement-1,ymax=max_measurement+1),fill="orange")+
         geom_ribbon(aes(x=sample_time,ymin=lower, ymax=upper,fill=biomarker_id,group=biomarker_id),alpha=0.1, linewidth=0.2)+
         geom_ribbon(data=model_preds[model_preds$individual %in% individuals,]%>% dplyr::filter(biomarker_group == biomarker_group_use), 
@@ -310,7 +308,7 @@ plot_model_fits <- function(chain, infection_histories,
       
       p_tmp <- p_tmp +
         scale_x_continuous(expand=c(0.01,0.01)) +
-        scale_alpha_continuous(range=c(0,0.25),name="Posterior probability of infection")+
+        scale_alpha_continuous(range=c(0,1),name="Posterior probability of infection")+
         scale_fill_viridis_d(name="Biomarker ID") +
         scale_color_viridis_d(name="Biomarker ID") +
         geom_point(data=antibody_data %>% dplyr::filter(individual %in% individuals) %>%
@@ -507,3 +505,157 @@ plot_antibody_predictions <- function(chain, infection_histories,
               "p_pointrange"=p_compare_pointrange))
   
 }
+
+#' Plots estimated antibody kinetics model
+#'
+#' @inheritParams plot_model_fits
+#' @param solve_times vector of times to solve model over
+#' @return a ggplot2 object giving model-predicted antibody level and predicted observations over time since infection
+#' @family infection_history_plots
+#' @export
+plot_estimated_antibody_model <- function(chain, 
+                                          antibody_data=NULL, 
+                                          demographics = NULL,
+                                          antigenic_map=NULL,
+                                          possible_exposure_times=NULL, 
+                                          par_tab=NULL,
+                                          nsamp = 1000, 
+                                          measurement_bias = NULL,
+                                          solve_times = seq(1,30,by=1),
+                                          data_type=1,
+                                          settings=NULL){
+  ## If the list of serosolver settings was included, use these rather than passing each one by one
+  if(!is.null(settings)){
+    message("Using provided serosolver settings list")
+    if(is.null(antigenic_map)) antigenic_map <- settings$antigenic_map
+    if(is.null(possible_exposure_times)) possible_exposure_times <- settings$possible_exposure_times
+    if(is.null(measurement_bias)) measurement_bias <- settings$measurement_bias
+    if(is.null(antibody_data)) antibody_data <- settings$antibody_data
+    if(is.null(demographics)) demographics <- settings$demographics
+    if(is.null(par_tab)) par_tab <- settings$par_tab
+    if(missing(data_type)) data_type <- settings$data_type
+  }
+  
+  par_tab <- add_scale_pars(par_tab,antibody_data,demographics)
+  
+  ## Get unique demographic groups from full data set, not just the subset
+  if(!is.null(demographics)){
+    demographic_groups <- create_demographic_table(demographics,par_tab)
+  } else {
+    demographic_groups <- create_demographic_table(antibody_data,par_tab)
+  }
+  
+  ## Need to align the iterations of the two MCMC chains
+  ## and choose some random samples
+  
+  ## Convert samp_no and chainno to a single samp_no index
+  if(!("chain_no" %in% colnames(chain))){
+    chain$chain_no <- 1
+  }
+  
+  chain <- chain %>% dplyr::group_by(chain_no,samp_no) %>% 
+    dplyr::mutate(samp_no = cur_group_id()) %>% dplyr::ungroup() %>% 
+    dplyr::mutate(chain_no = 1) %>% arrange(samp_no)
+  
+  samps <- unique(chain$samp_no)
+  nsamp <- min(nsamp, length(unique(chain$samp_no)))
+  
+  labels <- rep("", nrow(demographic_groups))
+  for(i in 1:nrow(demographic_groups)) 
+    for(j in 1:ncol(demographic_groups)) 
+      labels[i] <- paste0(labels[i], paste0(colnames(demographic_groups)[j], ":", demographic_groups[i,j],";"))
+  
+  demographic_groups_plot <- demographic_groups %>% mutate(individual = 1:n())
+  demographic_groups_plot$label <- labels
+  
+  ## Create fake antibody data for all individuals and times
+  full_antibody_data <- antibody_data %>% 
+    select(biomarker_group,biomarker_id) %>% distinct() %>% 
+    cross_join(demographic_groups_plot) %>% 
+    expand_grid(sample_time=solve_times) %>% 
+    mutate(birth = 1, repeat_number=1,measurement=0)
+  n_indiv <- length(unique(full_antibody_data$individual))
+  unique_biomarker_groups <- unique(full_antibody_data$biomarker_group)
+  
+  ## Format the antigenic map to solve the model 
+  ## Check if an antigenic map is provided. If not, then create a dummy map where all pathogens have the same position on the map
+  if (!is.null(antigenic_map)) {
+    possible_exposure_times_tmp <- unique(antigenic_map$inf_times) 
+    ## If possible exposure times was not specified, use antigenic map times instead
+    if(is.null(possible_exposure_times)) {
+      possible_exposure_times <- possible_exposure_times_tmp
+    }
+  } else {
+    ## Create a dummy map with entries for each observation type
+    antigenic_map <- data.frame("x_coord"=1,"y_coord"=1,"inf_times"=possible_exposure_times)
+  }
+  
+  tmp_samp <- sample(samps, nsamp)
+  ## See the function in posteriors.R
+  model_func <- create_posterior_func(par_tab, full_antibody_data, antigenic_map, possible_exposure_times,
+                                      prior_version=2,
+                                      measurement_bias = measurement_bias, function_type = 4,
+                                      antibody_level_before_infection=FALSE,
+                                      data_type=data_type,start_level="none",
+                                      demographics=demographics,demographic_groups=demographic_groups
+  )
+  
+  predicted_titres <- observed_predicted_titres <- matrix(nrow = nrow(full_antibody_data), ncol = nsamp)
+  samp_record <- numeric(nsamp)
+  
+  inf_hist_test <- matrix(0, nrow=n_indiv, ncol = length(possible_exposure_times))
+  inf_hist_test[,1] <- 1
+  ## For each sample, take values for theta and infection histories and simulate titres
+  for (i in 1:nsamp) {
+    index <- tmp_samp[i]
+    pars <- get_index_pars(chain, samp_no=index,chain_no=1)
+    pars <- pars[!(names(pars) %in% c("posterior_prob", "likelihood", "prior_prob",
+                                      "samp_no", "total_infections", "chain_no"
+    ))]
+    names(pars) <- par_tab$names
+    
+    predicted_titres[, i] <- model_func(pars, inf_hist_test)
+    for(biomarker_group in unique_biomarker_groups){
+      observed_predicted_titres[which(full_antibody_data$biomarker_group == biomarker_group),i] <- add_noise(predicted_titres[which(full_antibody_data$biomarker_group == biomarker_group),i], pars, NULL, NULL,data_type=data_type[biomarker_group])
+    }
+    samp_record[i] <- index
+  }
+  
+  colnames(predicted_titres) <- tmp_samp
+  
+  ## Get 95% credible interval and means
+  dat2 <- t(apply(predicted_titres, 1, function(x) c(mean(x), quantile(x, c(0.025, 0.25, 0.5, 0.75, 0.975)))))
+  
+  ## Get 95% credible interval and means of observations
+  obs_dat <- t(apply(observed_predicted_titres, 1, function(x) c(mean(x), quantile(x, c(0.025, 0.25, 0.5, 0.75, 0.975)))))
+  
+  dat2 <- as.data.frame(dat2)
+  obs_dat <- as.data.frame(obs_dat)
+  
+  colnames(dat2) <- colnames(obs_dat) <- c("mean","lower", "lower_50", "median", "upper_50", "upper")
+  dat2 <- cbind(full_antibody_data, dat2)
+  obs_dat <- cbind(full_antibody_data, obs_dat)
+  
+  ## Get blanks for ranges
+  ranges <- par_tab[par_tab$names %in% c("min_measurement","max_measurement"),c("names","values","biomarker_group")] %>% pivot_wider(names_from=names,values_from=values)  
+  p1 <- ggplot(dat2) + 
+    
+    geom_hline(data=ranges, aes(yintercept=min_measurement),linetype="dotted",linewidth=0.25) +
+    geom_hline(data=ranges, aes(yintercept=max_measurement),linetype="dotted",linewidth=0.25) +
+    geom_ribbon(data=obs_dat, aes(x=sample_time,ymin=lower,ymax=upper,y=mean,fill=label,group=label),alpha=0.1) +
+    geom_ribbon(aes(x=sample_time,ymin=lower,ymax=upper,y=mean,fill=label,group=label),alpha=0.5) +
+    geom_line(aes(x=sample_time,y=mean,group=label,col=label)) + 
+    scale_y_continuous(expand=c(0.03,0.03)) +
+    scale_x_continuous(expand=c(0.03,0.03),limits=range(solve_times)) +
+    facet_grid(biomarker_id~biomarker_group) +
+    scale_fill_viridis_d(name="Group: ") +
+    scale_color_viridis_d(name="Group: ") +
+    xlab("Time since infection") +
+    ylab("Antibody level") +
+    theme_pubr()+
+    theme(legend.position="bottom")
+  
+  
+  return(p1)
+}
+

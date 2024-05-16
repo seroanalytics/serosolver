@@ -454,10 +454,10 @@ setup_antibody_data_for_posterior_func <- function(
   ## ie. each element of this vector corresponds to one set of antibodies that need to be predicted
   nrows_per_sample <- plyr::ddply(antibody_data, .(individual,biomarker_group, sample_time), nrow)$V1
   antibody_data_start <- cumsum(c(0,nrows_per_sample))
-  
   tmp <- add_stratifying_variables(antibody_data, timevarying_demographics, par_tab, use_demographic_groups)
   timevarying_demographics <- tmp$timevarying_demographics
   antibody_data <- tmp$antibody_data
+  antibody_data_demo_group_index <- antibody_data$demographic_group
   demographics <- tmp$demographics
   population_group_strats <- tmp$population_group_strats
   indiv_group_indices <- tmp$indiv_group_indices
@@ -501,6 +501,7 @@ setup_antibody_data_for_posterior_func <- function(
     ## This one I need to figure out -- does it need to have a different set of indices for each observation type? Probably not
     "biomarker_id_indices" = biomarker_id_indices,
     "possible_biomarker_ids" = possible_biomarker_ids,
+    "antibody_data_demo_group_index"=antibody_data_demo_group_index,
     "n_indiv" = n_indiv,
     "age_mask" = age_mask,
     "sample_mask" = sample_mask,
@@ -941,7 +942,8 @@ create_demographic_table <- function(antibody_data, par_tab){
 
 setup_stratification_table <- function(par_tab, demographics){
   demographics <- as.data.frame(demographics)
-  n_pars <- nrow(par_tab[par_tab$par_type == 1,])
+  use_par_tab <- par_tab[par_tab$par_type %in% c(1,3),]
+  n_pars <- nrow(use_par_tab)
   ## Creates an estimated parameter entry for each 
   strsplit1 <- function(x){
     if(!is.na(x)){
@@ -978,16 +980,16 @@ setup_stratification_table <- function(par_tab, demographics){
     ## Skip any infection history prior parameters
     skip_pars <- c("infection_model_prior_shape1","infection_model_prior_shape2")
     
-    for(j in 1:nrow(par_tab[par_tab$par_type == 1,])){
-      stratification_par <- par_tab$stratification[j]
-      if(!is.na(stratification_par) & !(par_tab$names[j] %in% skip_pars)){
+    for(j in 1:nrow(use_par_tab)){
+      stratification_par <- use_par_tab$stratification[j]
+      if(!is.na(stratification_par) & !(use_par_tab$names[j] %in% skip_pars)){
         strats <- strsplit(stratification_par,", ")[[1]]
         for(strat in strats){
           unique_demo_strats <- unique(demographics[,strat])
           n_groups <- length(unique_demo_strats[!is.na(unique_demo_strats)])
           for(x in 2:n_groups){
             scale_table[[strat]][x,j] <- index
-            strat_par_names[[index]] <- paste0(par_tab$names[j],"_biomarker_",par_tab$biomarker_group[j],"_coef_",strat,"_",x)
+            strat_par_names[[index]] <- paste0(use_par_tab$names[j],"_biomarker_",use_par_tab$biomarker_group[j],"_coef_",strat,"_",x)
             index <- index + 1
           }
         }
@@ -996,6 +998,7 @@ setup_stratification_table <- function(par_tab, demographics){
     scale_pars <- c(rnorm(index-2,0,0.1))
     names(scale_pars) <- unlist(strat_par_names)
   }
+
   return(list(scale_table, scale_pars))
 }
 
