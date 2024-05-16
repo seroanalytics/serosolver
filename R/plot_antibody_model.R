@@ -523,7 +523,8 @@ plot_estimated_antibody_model <- function(chain,
                                           measurement_bias = NULL,
                                           solve_times = seq(1,30,by=1),
                                           data_type=1,
-                                          settings=NULL){
+                                          settings=NULL,
+                                          by_group=TRUE){
   ## If the list of serosolver settings was included, use these rather than passing each one by one
   if(!is.null(settings)){
     message("Using provided serosolver settings list")
@@ -566,7 +567,7 @@ plot_estimated_antibody_model <- function(chain,
       labels[i] <- paste0(labels[i], paste0(colnames(demographic_groups)[j], ":", demographic_groups[i,j],";"))
   
   demographic_groups_plot <- demographic_groups %>% mutate(individual = 1:n())
-  demographic_groups_plot$label <- labels
+  demographic_groups_plot$Group <- labels
   
   ## Create fake antibody data for all individuals and times
   full_antibody_data <- antibody_data %>% 
@@ -638,22 +639,44 @@ plot_estimated_antibody_model <- function(chain,
   
   ## Get blanks for ranges
   ranges <- par_tab[par_tab$names %in% c("min_measurement","max_measurement"),c("names","values","biomarker_group")] %>% pivot_wider(names_from=names,values_from=values)  
-  p1 <- ggplot(dat2) + 
+
+  
+  if(by_group){
+    dat2$biomarker_id <- as.factor(dat2$biomarker_id)
+    obs_dat$biomarker_id <- as.factor(obs_dat$biomarker_id)
     
-    geom_hline(data=ranges, aes(yintercept=min_measurement),linetype="dotted",linewidth=0.25) +
-    geom_hline(data=ranges, aes(yintercept=max_measurement),linetype="dotted",linewidth=0.25) +
-    geom_ribbon(data=obs_dat, aes(x=sample_time,ymin=lower,ymax=upper,y=mean,fill=label,group=label),alpha=0.1) +
-    geom_ribbon(aes(x=sample_time,ymin=lower,ymax=upper,y=mean,fill=label,group=label),alpha=0.5) +
-    geom_line(aes(x=sample_time,y=mean,group=label,col=label)) + 
-    scale_y_continuous(expand=c(0.03,0.03)) +
-    scale_x_continuous(expand=c(0.03,0.03),limits=range(solve_times)) +
-    facet_grid(biomarker_id~biomarker_group) +
-    scale_fill_viridis_d(name="Group: ") +
-    scale_color_viridis_d(name="Group: ") +
-    xlab("Time since infection") +
-    ylab("Antibody level") +
-    theme_pubr()+
-    theme(legend.position="bottom")
+    p1 <- ggplot(dat2) + 
+      geom_hline(data=ranges, aes(yintercept=min_measurement),linetype="dotted",linewidth=0.25) +
+      geom_hline(data=ranges, aes(yintercept=max_measurement),linetype="dotted",linewidth=0.25) +
+      geom_ribbon(data=obs_dat, aes(x=sample_time,ymin=lower,ymax=upper,y=mean,fill=biomarker_id,group=biomarker_id),alpha=0.1) +
+      geom_ribbon(aes(x=sample_time,ymin=lower,ymax=upper,y=mean,fill=biomarker_id,group=biomarker_id),alpha=0.5) +
+      geom_line(aes(x=sample_time,y=mean,group=biomarker_id,col=biomarker_id)) + 
+      scale_y_continuous(expand=c(0.03,0.03)) +
+      scale_x_continuous(expand=c(0.03,0.03),limits=range(solve_times)) +
+      scale_fill_viridis_d(name="Biomarker ID: ") +
+      scale_color_viridis_d(name="Biomarker ID: ") +
+      xlab("Time since infection") +
+      ylab("Antibody level") +
+      theme_pubr()+
+      theme(legend.position="bottom") +
+      facet_wrap(paste0("Biomarker group: ", biomarker_group)~Group)
+  } else {
+    p1 <- ggplot(dat2) + 
+      geom_hline(data=ranges, aes(yintercept=min_measurement),linetype="dotted",linewidth=0.25) +
+      geom_hline(data=ranges, aes(yintercept=max_measurement),linetype="dotted",linewidth=0.25) +
+      geom_ribbon(data=obs_dat, aes(x=sample_time,ymin=lower,ymax=upper,y=mean,fill=Group,group=Group),alpha=0.1) +
+      geom_ribbon(aes(x=sample_time,ymin=lower,ymax=upper,y=mean,fill=Group,group=Group),alpha=0.5) +
+      geom_line(aes(x=sample_time,y=mean,group=Group,col=Group)) + 
+      scale_y_continuous(expand=c(0.03,0.03)) +
+      scale_x_continuous(expand=c(0.03,0.03),limits=range(solve_times)) +
+      scale_fill_viridis_d() +
+      scale_color_viridis_d() +
+      xlab("Time since infection") +
+      ylab("Antibody level") +
+      theme_pubr()+
+      theme(legend.position="bottom") +
+      facet_grid(paste0("Biomarker ID: ", biomarker_id)~paste0("Biomarker group: ", biomarker_group))
+  }
   
   
   return(p1)
