@@ -77,7 +77,7 @@ get_n_alive_group <- function(antibody_data, times, demographics=NULL, melt_data
     sample_mask <- times[create_sample_mask(antibody_data, times)]
     masks <- data.frame(cbind(age_mask, sample_mask))
     DOBs <- cbind(DOBs, masks)
-    n_alive <- plyr::ddply(DOBs, ~population_group, function(y) sapply(seq(1, length(times)), function(x)
+    n_alive <- plyr::ddply(DOBs, ~population_group, function(y) sapply(times, function(x)
         nrow(y[y$age_mask <= x & y$sample_mask >= x, ])))
   }
     n_alive <- as.matrix(n_alive[, 2:ncol(n_alive)])

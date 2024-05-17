@@ -52,7 +52,7 @@ simulate_data <- function(par_tab,
                           age_group_bounds = NULL,
                           attack_rates,
                           repeats = 1,
-                          measurement_indices = NULL,
+                          measurement_bias = NULL,
                           data_type = NULL,
                           demographics=NULL,
                           verbose=FALSE) {
@@ -100,6 +100,7 @@ simulate_data <- function(par_tab,
         timevarying_demographics <- demographics %>% expand_grid(time=possible_exposure_times)
         timevarying_demographics$age <- timevarying_demographics$time - timevarying_demographics$birth
         timevarying_demographics$age_group <- as.numeric(cut(timevarying_demographics$age, breaks=c(0, age_group_bounds)))
+        timevarying_demographics$age_group <- as.numeric(as.factor(timevarying_demographics$age_group))
       } else {
         timevarying_demographics <- NULL
       }
@@ -151,10 +152,8 @@ simulate_data <- function(par_tab,
     #########################################################
     message("Simulating data\n")    
 
-    measurement_bias <- NULL
-    if (!is.null(measurement_indices)) {
+    if (!is.null(measurement_bias)) {
         message(cat("Measurement bias\n"))
-        #measurement_bias <- pars[measurement_indices_par_tab]
     }
     
     ## Simulate infection histories
@@ -166,7 +165,11 @@ simulate_data <- function(par_tab,
     }
     ## Merge with final sample time and any relevant population group keys
     use_demo <- use_demo %>% left_join(final_sample_times,by="individual")
-    use_demo <- suppressMessages(use_demo %>% left_join(population_groups))
+    if(is.null(population_groups)){
+      use_demo$population_group <- 1
+    } else {
+      use_demo <- suppressMessages(use_demo %>% left_join(population_groups))
+    }
     
     ## Get simulated infection histories and attack rates
     tmp <- simulate_infection_histories(
@@ -191,11 +194,11 @@ simulate_data <- function(par_tab,
     ## Correct arrangement
     antibody_data <- antibody_data %>% 
       arrange(individual, biomarker_group, sample_time, biomarker_id, repeat_number)
-    
     ## Simulate data!
     f <- create_posterior_func(par_tab,antibody_data,antigenic_map,function_type=3,
                                possible_exposure_times = possible_exposure_times,
                                demographics=timevarying_demographics,
+                               measurement_bias=measurement_bias,
                                start_level="none")
     antibody_data$measurement <- f(par_tab$values, infection_history)
     ## Add noise, but need to be specific to the data type

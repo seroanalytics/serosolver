@@ -207,7 +207,6 @@ plot_model_fits <- function(chain, infection_histories,
     measurement_ranges <- par_tab %>% dplyr::filter(names %in% c("min_measurement","max_measurement")) %>% dplyr::select(names,values,biomarker_group) %>%
       pivot_wider(names_from=names,values_from=values)
   }
-  
   max_x <- max(inf_hist_densities$variable) + 5
   time_range <- range(inf_hist_densities$variable)
   ## If provided, add true infection histories
@@ -217,7 +216,7 @@ plot_model_fits <- function(chain, infection_histories,
     known_infection_history <- reshape2::melt(known_infection_history)
     colnames(known_infection_history) <- c("individual","variable","inf")
     known_infection_history <- known_infection_history[known_infection_history$inf == 1,]
-    known_infection_history$variable <- possible_exposure_times[known_infection_history$variable]
+    known_infection_history$variable <- possible_exposure_times[as.numeric(as.factor(known_infection_history$variable))]
     known_infection_history$individual <- individuals[known_infection_history$individual]
     expand_samples <- expand_grid(individual=individuals,sample_time=unique(to_use$sample_time))
     known_infection_history <- known_infection_history %>% left_join(expand_samples,by="individual",relationship="many-to-many") %>% filter(variable <= sample_time)

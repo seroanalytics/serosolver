@@ -36,12 +36,12 @@ devtools::install_github("seroanalytics/serosolver",ref="published")
 * Moving more options and inputs behind the scenes to streamline the user interface
 * Generalization to consider multiple biomarker types per sample (e.g., antibody titre and avidity)
 * Support for continuous as well as discrete observations (e.g., can now fit to ELISA data as well as HAI titres)
+* Model infection histories and antibody kinetics as a function of demographic variables
+* Allow some infection states to be fixed during fitting
+* Ways to fix or estimate starting/baseline titres
 * _IN PROGRESS_ Some small improvements to the MCMC sampler and parameter transformations
 * _IN PROGRESS_ Improved guidance and support for using priors
-* _IN PROGRESS_ Model infection histories and antibody kinetics as a function of demographic variables
-* _IN PROGRESS_ Allow some infection states to be fixed during fitting
 * _IN PROGRESS_ Inclusion of explicit immunity model
-* _IN PROGRESS_ Ways to fix or estimate starting/baseline titres
 * _IN PROGRESS_ Added tests
 </details>
 
