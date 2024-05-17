@@ -247,17 +247,20 @@ serosolver <- function(par_tab,
 
   ## Mask infection times we shouldn't sample
   inf_hist_masks <- matrix(1, nrow=n_indiv,ncol=length(possible_exposure_times))
+  fixed_inf_hists1 <- fixed_inf_hists
+  if(!is.null(fixed_inf_hists)){
+    fixed_inf_hists1$time <- match(fixed_inf_hists1$time, possible_exposure_times)
+  }
   for(iii in 1:n_indiv){
     inf_hist_masks[iii,1:age_mask[iii]] <- 0
     inf_hist_masks[iii,sample_mask[iii]:ncol(inf_hist_masks)] <- 0
     if(!is.null(fixed_inf_hists)){
-      if(iii %in% fixed_inf_hists$individual){
-        mask_indices <- fixed_inf_hists[fixed_inf_hists$individual == iii, "time"]
+      if(iii %in% fixed_inf_hists1$individual){
+        mask_indices <- fixed_inf_hists1[fixed_inf_hists1$individual == iii, "time"]
         inf_hist_masks[iii, mask_indices] <- 0
       }
     }
   }
-  
   ## Add stratifying variables to antibody_data and demographics
   ## Setup data vectors and extract
   tmp <- get_demographic_groups(par_tab,antibody_data,demographics, NULL)
@@ -402,8 +405,8 @@ serosolver <- function(par_tab,
       
       ## Fix infection states if specified
       if(!is.null(fixed_inf_hists)){
-        for(iii in 1:nrow(fixed_inf_hists)){
-          infection_histories[fixed_inf_hists$individual[iii], fixed_inf_hists$time[iii]] <- fixed_inf_hists$value[iii]
+        for(iii in 1:nrow(fixed_inf_hists1)){
+          infection_histories[fixed_inf_hists1$individual[iii], fixed_inf_hists1$time[iii]] <- fixed_inf_hists1$value[iii]
         }
       }
       

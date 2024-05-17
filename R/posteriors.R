@@ -461,6 +461,7 @@ create_posterior_func <- function(par_tab,
       ## Mask known infection states from estimation
       if(!is.null(fixed_inf_hists)) {
         if(verbose) message(cat("Fixing infection states given by fixed_inf_hists\n"))
+        fixed_inf_hists$time <- match(fixed_inf_hists$time, possible_exposure_times)
         indiv_possible_exposure_times <- indiv_possible_exposure_times %>% 
           left_join(fixed_inf_hists %>% rename(t_index=time) %>% mutate(t_index =t_index - 1),
                     by=c("individual","t_index"))
