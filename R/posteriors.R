@@ -76,8 +76,7 @@ create_posterior_func <- function(par_tab,
       if(verbose) message(cat("Note: no biomarker_group detected in measurement_bias Assuming all biomarker_group as 1.\n"))
       measurement_bias$biomarker_group <- 1
     }
-  
-    if(verbose){
+    if(verbose & any(class(start_level) == "character")){
       message(cat("Setting starting antibody levels based on data using command:", start_level, "; and randomizing starting antibody levels set to:", start_level_randomize, "\n"))
     }
   

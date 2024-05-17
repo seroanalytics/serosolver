@@ -168,10 +168,15 @@ plot_model_fits <- function(chain, infection_histories,
       possible_exposure_times <- possible_exposure_times_tmp
     }
   } 
-  
+  if(class(start_level) == "character"){
   start_levels <- create_start_level_data(antibody_data %>% 
                                             dplyr::filter(individual %in% individuals),start_level,FALSE) %>% 
                                             dplyr::arrange(individual, biomarker_group, sample_time, biomarker_id, repeat_number)
+  } else if(class(start_level) %in% c("tibble","data.frame")){
+    start_levels <- start_levels
+  } else {
+    start_levels <- NULL
+  }
   ## Generate antibody predictions
   antibody_preds <- get_antibody_level_predictions(
     chain, infection_histories, antibody_data, 
@@ -417,9 +422,14 @@ plot_antibody_predictions <- function(chain, infection_histories,
       possible_exposure_times <- possible_exposure_times_tmp
     }
   } 
-  
-  start_levels <- create_start_level_data(antibody_data,start_level,FALSE) %>% 
+  if(class(start_level) == "character"){
+    start_levels <- create_start_level_data(antibody_data,start_level,FALSE) %>% 
     dplyr::arrange(individual, biomarker_group, sample_time, biomarker_id, repeat_number)
+  } else if(class(start_level) %in% c("tibble","data.frame")){
+    start_levels <- start_levels
+  } else {
+    start_levels <- NULL
+  }
   ## Generate antibody predictions
   x <- get_antibody_level_predictions(
     chain, infection_histories, antibody_data, individuals=unique(antibody_data$individual),
