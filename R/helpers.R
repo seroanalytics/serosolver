@@ -1032,7 +1032,7 @@ transform_parameters <- function(pars, scale_table, theta_indices,scale_par_indi
   theta
 }
 
-
+#' @export
 add_scale_pars <- function(par_tab, antibody_data, timevarying_demographics=NULL, scale_par_lower=-25,scale_par_upper=25){
   if(!is.null(timevarying_demographics)){
     timevarying_demographics <- timevarying_demographics %>% arrange(individual, time)
