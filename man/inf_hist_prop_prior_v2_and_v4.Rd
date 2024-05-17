@@ -59,6 +59,9 @@ inf_hist_prop_prior_v2_and_v4(
   total_alive,
   data_types,
   obs_weights,
+  indiv_possible_exposure_times_indices,
+  indiv_poss_exp_times_start,
+  indiv_poss_exp_times_end,
   timevarying_groups = FALSE,
   temp = 1,
   solve_likelihood = TRUE

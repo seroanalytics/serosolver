@@ -15,6 +15,7 @@ serosolver(
   n_chains = 1,
   parallel = FALSE,
   start_inf_hist = NULL,
+  fixed_inf_hists = NULL,
   filename = "test",
   posterior_func = create_posterior_func,
   prior_func = NULL,

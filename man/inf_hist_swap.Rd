@@ -6,8 +6,7 @@
 \usage{
 inf_hist_swap(
   infection_history,
-  age_mask,
-  sample_mask,
+  inf_hist_masks,
   proposal_inf_hist_indiv_swap_ratio,
   proposal_inf_hist_distance,
   proposal_ratios = NULL
@@ -16,9 +15,7 @@ inf_hist_swap(
 \arguments{
 \item{infection_history}{matrix of 1s and 0s to swap around representing the infection history}
 
-\item{age_mask}{the first index in infection_history that each individual (row) could be infected in}
-
-\item{sample_mask}{the last index in infection_history that each individual (row) could be infected in ie. the time of the latest blood sample}
+\item{inf_hist_masks}{matrix of 1s and 0s corresponding to infection_history, with a 1 where the infection state is eligible to be updated and a 0 otherwise}
 
 \item{proposal_inf_hist_indiv_swap_ratio}{what proportion of infections should be swapped?}
 

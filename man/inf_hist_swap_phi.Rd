@@ -19,10 +19,6 @@ inf_hist_swap_phi(
 
 \item{phis}{vector of force of infection parameters for each column}
 
-\item{age_mask}{the first index in infection_history that each individual (row) could be infected in}
-
-\item{sample_mask}{the last index in infection_history that each individual (row) could be infected in ie. the time of the latest blood sample}
-
 \item{proposal_inf_hist_indiv_swap_ratio}{what proportion of infections should be swapped?}
 
 \item{proposal_inf_hist_distance}{How many time points away should be chosen as candidate swaps?}

@@ -19,7 +19,7 @@ simulate_data(
   age_group_bounds = NULL,
   attack_rates,
   repeats = 1,
-  measurement_indices = NULL,
+  measurement_bias = NULL,
   data_type = NULL,
   demographics = NULL,
   verbose = FALSE
@@ -52,13 +52,13 @@ simulate_data(
 
 \item{repeats}{number of repeat observations for each year}
 
-\item{measurement_indices}{default NULL, optional vector giving the index of `measurement_bias` that each antigen/biomarker ID uses the measurement shift from from. eg. if there's 6 circulation years and 3 strain clusters, then this might be c(1,1,2,2,3,3)}
-
 \item{data_type}{if not NULL, then a vector of data types to use for each biomarker_group}
 
 \item{demographics}{if not NULL, then a tibble for each individual (1:n_indiv) giving demographic variable entries. Most importantly must include "birth" as the birth time. This is used if, for example, you have a stratification grouping in `par_tab`}
 
 \item{verbose}{if TRUE, prints additional messages}
+
+\item{measurement_indices}{default NULL, optional vector giving the index of `measurement_bias` that each antigen/biomarker ID uses the measurement shift from from. eg. if there's 6 circulation years and 3 strain clusters, then this might be c(1,1,2,2,3,3)}
 }
 \value{
 a list with: 1) the data frame of antibody data as returned by \code{\link{simulate_group}}; 2) a matrix of infection histories as returned by \code{\link{simulate_infection_histories}}; 3) a vector of ages

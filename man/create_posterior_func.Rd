@@ -9,7 +9,7 @@ create_posterior_func(
   antibody_data,
   antigenic_map = NULL,
   possible_exposure_times = NULL,
-  prior_version = 1,
+  prior_version = 2,
   solve_likelihood = TRUE,
   age_mask = NULL,
   measurement_bias = NULL,
@@ -22,6 +22,7 @@ create_posterior_func(
   start_level_randomize = FALSE,
   demographics = NULL,
   demographic_groups = NULL,
+  fixed_inf_hists = NULL,
   verbose = FALSE,
   ...
 )
