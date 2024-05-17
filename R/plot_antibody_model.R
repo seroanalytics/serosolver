@@ -190,7 +190,6 @@ plot_model_fits <- function(chain, infection_histories,
     data_type=data_type,
     start_level=start_levels
   )
-
   ## Use these antibody predictions and summary statistics on infection histories
   to_use <- antibody_preds$predicted_observations
   model_preds <- antibody_preds$predictions
@@ -213,15 +212,15 @@ plot_model_fits <- function(chain, infection_histories,
       pivot_wider(names_from=names,values_from=values)
   }
   max_x <- max(inf_hist_densities$variable) + 5
-  time_range <- range(inf_hist_densities$variable)
+  time_range <- range(possible_exposure_times)
   ## If provided, add true infection histories
   if(!is.null(known_infection_history)){
     known_infection_history <- known_infection_history[individuals,]
     rownames(known_infection_history) <- 1:nrow(known_infection_history)
     known_infection_history <- reshape2::melt(known_infection_history)
     colnames(known_infection_history) <- c("individual","variable","inf")
-    known_infection_history <- known_infection_history[known_infection_history$inf == 1,]
     known_infection_history$variable <- possible_exposure_times[as.numeric(as.factor(known_infection_history$variable))]
+    known_infection_history <- known_infection_history[known_infection_history$inf == 1,]
     known_infection_history$individual <- individuals[known_infection_history$individual]
     expand_samples <- expand_grid(individual=individuals,sample_time=unique(to_use$sample_time))
     known_infection_history <- known_infection_history %>% left_join(expand_samples,by="individual",relationship="many-to-many") %>% filter(variable <= sample_time)
@@ -533,7 +532,8 @@ plot_estimated_antibody_model <- function(chain,
                                           solve_times = seq(1,30,by=1),
                                           data_type=1,
                                           settings=NULL,
-                                          by_group=TRUE){
+                                          by_group=TRUE,
+                                          add_prediction_intervals=FALSE){
   ## If the list of serosolver settings was included, use these rather than passing each one by one
   if(!is.null(settings)){
     message("Using provided serosolver settings list")
@@ -583,7 +583,9 @@ plot_estimated_antibody_model <- function(chain,
     select(biomarker_group,biomarker_id) %>% distinct() %>% 
     cross_join(demographic_groups_plot) %>% 
     expand_grid(sample_time=solve_times) %>% 
-    mutate(birth = 1, repeat_number=1,measurement=0)
+    mutate(birth = 1, repeat_number=1,measurement=0) %>% 
+    arrange(individual, biomarker_group, sample_time, biomarker_id, repeat_number)
+  
   n_indiv <- length(unique(full_antibody_data$individual))
   unique_biomarker_groups <- unique(full_antibody_data$biomarker_group)
   
@@ -599,7 +601,6 @@ plot_estimated_antibody_model <- function(chain,
     ## Create a dummy map with entries for each observation type
     antigenic_map <- data.frame("x_coord"=1,"y_coord"=1,"inf_times"=possible_exposure_times)
   }
-  
   tmp_samp <- sample(samps, nsamp)
   ## See the function in posteriors.R
   model_func <- create_posterior_func(par_tab, full_antibody_data, antigenic_map, possible_exposure_times,
@@ -612,7 +613,6 @@ plot_estimated_antibody_model <- function(chain,
   
   predicted_titres <- observed_predicted_titres <- matrix(nrow = nrow(full_antibody_data), ncol = nsamp)
   samp_record <- numeric(nsamp)
-  
   inf_hist_test <- matrix(0, nrow=n_indiv, ncol = length(possible_exposure_times))
   inf_hist_test[,1] <- 1
   ## For each sample, take values for theta and infection histories and simulate titres
@@ -656,8 +656,11 @@ plot_estimated_antibody_model <- function(chain,
     
     p1 <- ggplot(dat2) + 
       geom_hline(data=ranges, aes(yintercept=min_measurement),linetype="dotted",linewidth=0.25) +
-      geom_hline(data=ranges, aes(yintercept=max_measurement),linetype="dotted",linewidth=0.25) +
-      geom_ribbon(data=obs_dat, aes(x=sample_time,ymin=lower,ymax=upper,y=mean,fill=biomarker_id,group=biomarker_id),alpha=0.1) +
+      geom_hline(data=ranges, aes(yintercept=max_measurement),linetype="dotted",linewidth=0.25)
+    if(add_prediction_intervals){
+      p1 <- p1 +  geom_ribbon(data=obs_dat, aes(x=sample_time,ymin=lower,ymax=upper,y=mean,fill=biomarker_id,group=biomarker_id),alpha=0.1)
+    }
+     p1 <- p1 + 
       geom_ribbon(aes(x=sample_time,ymin=lower,ymax=upper,y=mean,fill=biomarker_id,group=biomarker_id),alpha=0.5) +
       geom_line(aes(x=sample_time,y=mean,group=biomarker_id,col=biomarker_id)) + 
       scale_y_continuous(expand=c(0.03,0.03)) +
@@ -672,8 +675,10 @@ plot_estimated_antibody_model <- function(chain,
   } else {
     p1 <- ggplot(dat2) + 
       geom_hline(data=ranges, aes(yintercept=min_measurement),linetype="dotted",linewidth=0.25) +
-      geom_hline(data=ranges, aes(yintercept=max_measurement),linetype="dotted",linewidth=0.25) +
-      geom_ribbon(data=obs_dat, aes(x=sample_time,ymin=lower,ymax=upper,y=mean,fill=Group,group=Group),alpha=0.1) +
+      geom_hline(data=ranges, aes(yintercept=max_measurement),linetype="dotted",linewidth=0.25)
+    if(add_prediction_intervals){
+      p1 <- p1 + geom_ribbon(data=obs_dat, aes(x=sample_time,ymin=lower,ymax=upper,y=mean,fill=Group,group=Group),alpha=0.1)     }
+    p1 <- p1 + 
       geom_ribbon(aes(x=sample_time,ymin=lower,ymax=upper,y=mean,fill=Group,group=Group),alpha=0.5) +
       geom_line(aes(x=sample_time,y=mean,group=Group,col=Group)) + 
       scale_y_continuous(expand=c(0.03,0.03)) +
