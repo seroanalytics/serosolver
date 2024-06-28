@@ -198,6 +198,7 @@ plot_model_fits <- function(chain, infection_histories,
   inf_hist_densities <- antibody_preds$histories
   inf_hist_densities$xmin <- inf_hist_densities$variable-0.5
   inf_hist_densities$xmax <- inf_hist_densities$variable+0.5
+  browser()
   ## Subset infection history densities to not plot infections before sample time
   inf_hist_densities <- inf_hist_densities %>% 
     left_join(model_preds[model_preds$individual %in% individuals,c("individual","sample_time")] %>% dplyr::distinct(),by="individual",relationship="many-to-many") %>% 
