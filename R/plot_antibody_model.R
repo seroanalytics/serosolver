@@ -155,7 +155,7 @@ plot_model_fits <- function(chain, infection_histories,
     if(is.null(antibody_data)) antibody_data <- settings$antibody_data
     if(is.null(demographics)) demographics <- settings$demographics
     if(is.null(par_tab)) par_tab <- settings$par_tab
-    if(is.null(start_level) | start_level == "none") start_level <- settings$start_level
+    if(is.null(start_level) | start_level == "none") start_level <- settings$start_levels
     if(missing(data_type)) data_type <- settings$data_type
   }
   individuals <- individuals[order(individuals)]
@@ -173,7 +173,7 @@ plot_model_fits <- function(chain, infection_histories,
                                             dplyr::filter(individual %in% individuals),start_level,FALSE) %>% 
                                             dplyr::arrange(individual, biomarker_group, sample_time, biomarker_id, repeat_number)
   } else if(class(start_level) %in% c("tibble","data.frame")){
-    start_levels <- start_levels
+    start_levels <- start_level
   } else {
     start_levels <- NULL
   }
@@ -198,7 +198,6 @@ plot_model_fits <- function(chain, infection_histories,
   inf_hist_densities <- antibody_preds$histories
   inf_hist_densities$xmin <- inf_hist_densities$variable-0.5
   inf_hist_densities$xmax <- inf_hist_densities$variable+0.5
-  browser()
   ## Subset infection history densities to not plot infections before sample time
   inf_hist_densities <- inf_hist_densities %>% 
     left_join(model_preds[model_preds$individual %in% individuals,c("individual","sample_time")] %>% dplyr::distinct(),by="individual",relationship="many-to-many") %>% 
@@ -410,7 +409,7 @@ plot_antibody_predictions <- function(chain, infection_histories,
     if(is.null(antibody_data)) antibody_data <- settings$antibody_data
     if(is.null(demographics)) demographics <- settings$demographics
     if(is.null(par_tab)) par_tab <- settings$par_tab
-    if(is.null(start_level) | start_level == "none") start_level <- settings$start_level
+    if(is.null(start_level) | start_level == "none") start_level <- settings$start_levels
     if(missing(data_type)) data_type <- settings$data_type
   }
   
@@ -426,7 +425,7 @@ plot_antibody_predictions <- function(chain, infection_histories,
     start_levels <- create_start_level_data(antibody_data,start_level,FALSE) %>% 
     dplyr::arrange(individual, biomarker_group, sample_time, biomarker_id, repeat_number)
   } else if(class(start_level) %in% c("tibble","data.frame")){
-    start_levels <- start_levels
+    start_levels <- start_level
   } else {
     start_levels <- NULL
   }
