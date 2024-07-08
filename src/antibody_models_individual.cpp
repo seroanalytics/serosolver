@@ -159,7 +159,11 @@ void antibody_data_model_individual_new(NumericVector &predicted_antibody_levels
      // Time elapsed since first sample time
      // Assume that first entry for birth does not change
      time = sampling_time - births[start_index_in_data];
-     wane_long_amount= wane_long*wane_short*boost_short*time;//MAX(0, 1.0 - (wane_long*time)); 
+     wane_long_amount= wane_long*boost_long*time;//MAX(0, 1.0 - (wane_long*time)); 
+     /*Rcpp::Rcout << "Wane long: " << wane_long << std::endl;
+     Rcpp::Rcout << "Elapsed time: " << time << std::endl;
+     Rcpp::Rcout << "Wane long amount: " << wane_long_amount << std::endl;
+      */
      wane_long_amount = MAX(0, wane_long_amount);
      //Rcpp::Rcout << "wane_long_amount: " << wane_long_amount << std::endl;
      // For each measured marker, find the biomarker id index which will match an entry in start_antibody_levels
@@ -178,7 +182,7 @@ void antibody_data_model_individual_new(NumericVector &predicted_antibody_levels
           (!boost_before_infection && sampling_time >= (infection_times[x] + boost_delay))){
          time = sampling_time - (infection_times[x] + boost_delay); // Time between sample and infection + boost
          wane_short_amount= MAX(0, 1.0 - (wane_short*time)); // Waning of the short-term response
-         wane_long_amount= MAX(0, 1.0 - (wane_long*wane_short*time)); // Waning of the long-term response
+         wane_long_amount= MAX(0, 1.0 - (wane_long*time)); // Waning of the long-term response
          
          seniority = MAX(0, 1.0 - antigenic_seniority*(n_inf - 1.0)); // Antigenic seniority
          inf_map_index = exposure_indices[x]; // Index of this infecting antigen in antigenic map
