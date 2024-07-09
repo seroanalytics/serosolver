@@ -53,6 +53,7 @@ get_n_alive_group <- function(antibody_data, times, demographics=NULL, melt_data
   DOBs_unique <- unique(antibody_data[, c("individual", "birth")])
   age_mask <- times[create_age_mask(DOBs_unique[, "birth"], times)]
   sample_mask <- times[create_sample_mask(antibody_data, times)]
+  
   masks <- data.frame(cbind(age_mask, sample_mask))
   DOBs <- cbind(DOBs_unique, masks)
   if(!is.null(demographics)){
@@ -75,6 +76,7 @@ get_n_alive_group <- function(antibody_data, times, demographics=NULL, melt_data
     DOBs <- unique(antibody_data[, c("individual", "population_group", "birth")])
     age_mask <- times[create_age_mask(DOBs[, "birth"], times)]
     sample_mask <- times[create_sample_mask(antibody_data, times)]
+
     masks <- data.frame(cbind(age_mask, sample_mask))
     DOBs <- cbind(DOBs, masks)
     n_alive <- plyr::ddply(DOBs, ~population_group, function(y) sapply(times, function(x)

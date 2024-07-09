@@ -519,7 +519,6 @@ create_posterior_func <- function(par_tab,
           names(pars) <- par_names
           theta <- transform_parameters_cpp(pars, scale_table, c(theta_indices,measurement_indices_par_tab)-1, scale_par_indices-1,as.matrix(demographic_groups), transforms)
           colnames(theta) <- names(pars[c(theta_indices, measurement_indices_par_tab)])
-      
             if (use_measurement_bias) {
               measurement_bias_indices <- matrix(theta[,rho_indices_unique])
               antibody_level_shifts <- measurement_bias_indices[cbind(antibody_data_demo_index, expected_indices)]

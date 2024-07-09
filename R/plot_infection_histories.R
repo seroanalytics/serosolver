@@ -280,6 +280,7 @@ plot_attack_rates_pointrange <- function(infection_histories,
   unique_groups1 <- unique(antibody_data$population_group)
   n_groups <- length(unique_groups1[!is.na(unique_groups1)])
   n_alive_tot <- get_n_alive(antibody_data, possible_exposure_times)
+  infection_histories$j <- possible_exposure_times[infection_histories$j]
   colnames(infection_histories)[1] <- "individual"
   if (!by_group) {
     infection_histories <- merge(infection_histories, data.table(unique(antibody_data[, c("individual", "population_group")])), by = c("individual","population_group"))
@@ -296,7 +297,7 @@ plot_attack_rates_pointrange <- function(infection_histories,
   years <- c(possible_exposure_times, max(possible_exposure_times) + 2)
   data.table::setkey(infection_histories, "samp_no", "j", "chain_no", "population_group")
   tmp <- infection_histories[, list(V1 = sum(x)), by = key(infection_histories)]
-  tmp$taken <- years[tmp$j] %in% unique(antibody_data$sample_time)
+  tmp$taken <- tmp$j %in% unique(antibody_data$sample_time)
   tmp$taken <- ifelse(tmp$taken, "Yes", "No")
   prior_dens <- NULL
   n_alive1 <- n_alive
@@ -325,6 +326,8 @@ plot_attack_rates_pointrange <- function(infection_histories,
   n_alive_tmp <- reshape2::melt(n_alive, id.vars = "population_group")
   n_alive_tmp$variable <- as.numeric(n_alive_tmp$variable)
   colnames(n_alive_tmp) <- c("population_group", "j", "n_alive")
+  n_alive_tmp$j <- possible_exposure_times[n_alive_tmp$j]
+
   tmp <- merge(tmp, data.table(n_alive_tmp), by = c("population_group", "j"))
   tmp <- tmp %>% filter(n_alive > 0)
   tmp$V1 <- tmp$V1 / tmp$n_alive
@@ -336,12 +339,11 @@ plot_attack_rates_pointrange <- function(infection_histories,
     year_breaks <- c(year_breaks, max_time + 2)
     year_labels <- c(year_labels, "Prior")
   }
-  
   if (!plot_den) {
     quantiles <- ddply(tmp, .(j, population_group), function(x) quantile(x$V1, c(0.025, 0.5, 0.975)))
     colnames(quantiles) <- c("j", "population_group", "lower", "median", "upper")
     # quantiles[c("lower", "median", "upper")] <- quantiles[c("lower", "median", "upper")]# / n_alive1[quantiles$j]
-    quantiles$j <- years[quantiles$j]
+    #quantiles$j <- years[quantiles$j]
     quantiles$taken <- quantiles$j %in% unique(antibody_data$sample_time)
     quantiles$taken <- ifelse(quantiles$taken, "Yes", "No")
     
@@ -384,7 +386,7 @@ plot_attack_rates_pointrange <- function(infection_histories,
         scale_color_manual(name="Biomarker tested",values=c("No"="darkorange","Yes"="blue","Prior"="grey40"))
     }
   } else {
-    tmp$j <- years[tmp$j]
+    #tmp$j <- years[tmp$j]
     colnames(tmp)[which(colnames(tmp) == "j")] <- "time"
     if (plot_residuals) {
       true_ar <- true_ar[, c("population_group", "time", "AR")]

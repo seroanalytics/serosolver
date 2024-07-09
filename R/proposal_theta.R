@@ -14,10 +14,10 @@
 univ_proposal <- function(values, lower_bounds, upper_bounds, steps, index, gaussian_proposal=TRUE) {
   rtn <- values
   ## If using simple gaussian proposals
-  if(gaussian_proposal){
-    rtn[index] <- rnorm(1,values[index],steps[index])
-    return(rtn)
-  }
+  ##if(gaussian_proposal){
+  ##  rtn[index] <- rnorm(1,values[index],steps[index])
+  ##  return(rtn)
+  ##}
   ## Otherwise, using uniform proposals after convertion to a unit scale
 
   mn <- lower_bounds[index]

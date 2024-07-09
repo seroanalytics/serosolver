@@ -577,7 +577,6 @@ plot_estimated_antibody_model <- function(chain,
   
   demographic_groups_plot <- demographic_groups %>% mutate(individual = 1:n())
   demographic_groups_plot$Group <- labels
-  
   ## Create fake antibody data for all individuals and times
   full_antibody_data <- antibody_data %>% 
     select(biomarker_group,biomarker_id) %>% distinct() %>% 

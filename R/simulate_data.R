@@ -105,10 +105,10 @@ simulate_data <- function(par_tab,
         timevarying_demographics <- NULL
       }
     }
-    
+
     ## Simulate sampling times after birth for each individual
     sampling_times_data <- expand_grid(individual=1:n_indiv,sample_time=sampling_times) %>%
-      left_join(demographics,by="individual") %>%
+      left_join(demographics %>% select(individual, birth) %>% distinct(),by="individual") %>%
       ## Ensure only sampling after birth
       filter(sample_time >= birth) %>% 
       group_by(individual) %>%
@@ -129,8 +129,6 @@ simulate_data <- function(par_tab,
                                  biomarker_group=unique_biomarker_groups,
                                  measurement=0)
     antibody_data <- as.data.frame(antibody_data)
-
-    #########################################################
     ## PARAMETER TABLE CHECKS
     #########################################################
     if(!(4 %in% unique(par_tab$par_type))){
@@ -155,7 +153,6 @@ simulate_data <- function(par_tab,
     if (!is.null(measurement_bias)) {
         message(cat("Measurement bias\n"))
     }
-    
     ## Simulate infection histories
     ## If timevarying demographics, then use this. Otherwise, use the fixed demographics
     if(!is.null(timevarying_demographics)){
