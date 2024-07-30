@@ -16,7 +16,8 @@ plot_estimated_antibody_model(
   solve_times = seq(1, 30, by = 1),
   data_type = 1,
   settings = NULL,
-  by_group = TRUE
+  by_group = TRUE,
+  add_prediction_intervals = FALSE
 )
 }
 \arguments{
