@@ -512,6 +512,7 @@ setup_antibody_data_for_posterior_func <- function(
   ))
 }
 
+#' @export
 get_demographic_groups <- function(par_tab, antibody_data, demographics,demographic_groups=NULL){
   ## Setup data vectors and extract
   if(!is.null(demographics)){
