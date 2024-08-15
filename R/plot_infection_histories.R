@@ -264,6 +264,7 @@ plot_attack_rates_pointrange <- function(infection_histories,
   if (!by_group) {
     antibody_data$population_group <- 1
     infection_histories$population_group <- 1
+    demographics$population_group <- 1
     if(!is.null(true_ar)) true_ar$population_group <- 1
   }
   
@@ -339,6 +340,7 @@ plot_attack_rates_pointrange <- function(infection_histories,
     year_breaks <- c(year_breaks, max_time + 2)
     year_labels <- c(year_labels, "Prior")
   }
+  
   if (!plot_den) {
     quantiles <- ddply(tmp, .(j, population_group), function(x) quantile(x$V1, c(0.025, 0.5, 0.975)))
     colnames(quantiles) <- c("j", "population_group", "lower", "median", "upper")
