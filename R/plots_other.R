@@ -267,8 +267,8 @@ plot_mcmc_diagnostics <- function(location, par_tab, burnin){
   }
   
   
-  
-  p_inf_hists <- plot_posteriors_infhist(chains$inf_chain,example_antigenic_map$inf_times,n_alive=NULL)
+  browser()
+  p_inf_hists <- plot_posteriors_infhist(chains$inf_chain,unique(chains$inf_chain$j),n_alive=NULL)
   p_thetas <- plot_posteriors_theta(chains$theta_chain,par_tab)
   
   list(
