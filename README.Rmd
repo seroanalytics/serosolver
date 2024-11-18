@@ -25,7 +25,7 @@ knitr::opts_chunk$set(
 2. Install the development version of serosolver from [GitHub](https://github.com/seroanalytics/serosolver):
 
 ```{r installation,eval=FALSE}
-devtools::install_github("seroanalytics/serosolver")
+devtools::install_github("seroanalytics/serosolver",ref="published")
 library(serosolver)
 ```
 ## Quick start and vignettes
@@ -89,14 +89,14 @@ example_titre_dat <- merge(titre_dat, ages)
 par_tab <- example_par_tab[example_par_tab$names != "phi",]
 res <- run_MCMC(par_tab, example_titre_dat, example_antigenic_map, 
                 filename="test", version=2,
-                mcmc_pars=c(adaptive_period=20000, iterations=80000, 
+                mcmc_pars=c(adaptive_period=2000, iterations=8000, 
                             inf_propn=0.5,hist_sample_prob=0.5,
                             save_block=10000,thin=10,thin_hist=100))
 
 ## Read in the MCMC chains and plot posteriors
 chain <- read.csv(res$chain_file)
 inf_chain <- data.table::fread(res$history_file)
-plot(coda::as.mcmc(chain[chain$sampno > 20000,c("mu","wane","lnlike")]))
+plot(coda::as.mcmc(chain[chain$sampno > 2000,c("mu","wane","lnlike")]))
 
 # Plot model predicted titres for a subset of individuals
 plot_infection_histories_long(chain = chain,infection_histories = inf_chain,
