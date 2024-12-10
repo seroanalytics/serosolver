@@ -265,6 +265,18 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// likelihood_func_fast_continuous_fp
+NumericVector likelihood_func_fast_continuous_fp(const NumericVector& theta, const NumericVector& obs, const NumericVector& predicted_antibody_levels);
+RcppExport SEXP _serosolver_likelihood_func_fast_continuous_fp(SEXP thetaSEXP, SEXP obsSEXP, SEXP predicted_antibody_levelsSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::traits::input_parameter< const NumericVector& >::type theta(thetaSEXP);
+    Rcpp::traits::input_parameter< const NumericVector& >::type obs(obsSEXP);
+    Rcpp::traits::input_parameter< const NumericVector& >::type predicted_antibody_levels(predicted_antibody_levelsSEXP);
+    rcpp_result_gen = Rcpp::wrap(likelihood_func_fast_continuous_fp(theta, obs, predicted_antibody_levels));
+    return rcpp_result_gen;
+END_RCPP
+}
 // inf_hist_prop_prior_v3
 arma::mat inf_hist_prop_prior_v3(arma::mat infection_history_mat, const IntegerVector& sampled_indivs, const IntegerVector& age_mask, const IntegerVector& sample_mask, const IntegerVector& proposal_inf_hist_distances, const IntegerVector& n_infs, double shape1, double shape2, const NumericVector& rand_ns, const double& proposal_inf_hist_indiv_swap_ratio);
 RcppExport SEXP _serosolver_inf_hist_prop_prior_v3(SEXP infection_history_matSEXP, SEXP sampled_indivsSEXP, SEXP age_maskSEXP, SEXP sample_maskSEXP, SEXP proposal_inf_hist_distancesSEXP, SEXP n_infsSEXP, SEXP shape1SEXP, SEXP shape2SEXP, SEXP rand_nsSEXP, SEXP proposal_inf_hist_indiv_swap_ratioSEXP) {
@@ -375,6 +387,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_serosolver_inf_mat_prior_total_group_cpp", (DL_FUNC) &_serosolver_inf_mat_prior_total_group_cpp, 4},
     {"_serosolver_likelihood_func_fast", (DL_FUNC) &_serosolver_likelihood_func_fast, 3},
     {"_serosolver_likelihood_func_fast_continuous", (DL_FUNC) &_serosolver_likelihood_func_fast_continuous, 3},
+    {"_serosolver_likelihood_func_fast_continuous_fp", (DL_FUNC) &_serosolver_likelihood_func_fast_continuous_fp, 3},
     {"_serosolver_inf_hist_prop_prior_v3", (DL_FUNC) &_serosolver_inf_hist_prop_prior_v3, 10},
     {"_serosolver_inf_hist_prop_prior_v2_and_v4", (DL_FUNC) &_serosolver_inf_hist_prop_prior_v2_and_v4, 60},
     {NULL, NULL, 0}

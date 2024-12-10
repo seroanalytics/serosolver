@@ -225,7 +225,7 @@ simulate_data <- function(par_tab,
 #' Adds truncated noise to antibody data
 #' @param y the titre
 #' @param theta a vector with max_measurement and error parameters
-#' @param data_type integer, currently accepting 1 or 2. Set to 1 for discretized, bounded data, or 2 for continuous, bounded data. Note that with 2, min_measurement must be set.
+#' @param data_type integer, currently accepting 1 or 2. Set to 1 for discretized, bounded data, or 2 for continuous, bounded data. 3 is for continuous data assuming that true negatives follow a different distribution -- the vast majority return the min_measurement, but with a rate fp_rate, a random draw from a uniform distribution within the limits of detection is generated.
 #' @return a noisy titre
 #' @export
 #' @examples
@@ -246,6 +246,30 @@ add_noise <- function(y, theta, measurement_bias = NULL, indices = NULL,data_typ
     ## If outside of bounds, truncate
     noise_y[noise_y < theta["min_measurement"]] <- theta["min_measurement"]
     noise_y[noise_y > theta["max_measurement"]] <- theta["max_measurement"]
+    
+  } else if(data_type == 3){
+    ## If true 0, then exponentially distributed
+    negative_predictions <- which(y == 0)
+    positive_predictions <- which(y > 0)
+    noise_y <- y
+    
+    if (!is.null(measurement_bias)) {
+      noise_y[negative_predictions] <- theta["min_measurement"] + rbernoulli(length(noise_y[negative_predictions]),theta["fp_rate"])*runif(length(noise_y[negative_predictions]), 0,theta["max_measurement"]-theta["min_measurement"]) + measurement_bias[indices[negative_predictions]]
+      noise_y[positive_predictions] <- rnorm(length(y[positive_predictions]), 
+                                             mean = y[positive_predictions] + measurement_bias[indices[positive_predictions]], 
+                                             sd = theta["obs_sd"])
+    } else {
+      noise_y[negative_predictions] <- theta["min_measurement"] + rbernoulli(length(noise_y[negative_predictions]),theta["fp_rate"])*runif(length(noise_y[negative_predictions]), 0,theta["max_measurement"]-theta["min_measurement"]) 
+      
+      noise_y[positive_predictions] <- rnorm(length(y[positive_predictions]), 
+                                             mean = y[positive_predictions], 
+                                             sd = theta["obs_sd"])
+    }
+    
+    ## If outside of bounds, truncate
+    noise_y[noise_y < theta["min_measurement"]] <- theta["min_measurement"]
+    noise_y[noise_y > theta["max_measurement"]] <- theta["max_measurement"]
+
   } else {
   ## Draw from normal
     if (!is.null(measurement_bias)) {

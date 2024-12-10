@@ -354,6 +354,9 @@ create_posterior_func <- function(par_tab,
         } else if(data_type[biomarker_group] == 2){
           if(verbose) message(cat("Setting to continuous, bounded observations\n"))
           likelihood_func_use[[biomarker_group]] <- likelihood_func_fast_continuous
+        } else if(data_type[biomarker_group] == 3){
+          if(verbose) message(cat("Setting to continuous, bounded observations with false positives\n"))
+          likelihood_func_use[[biomarker_group]] <- likelihood_func_fast_continuous_fp
         } else {
           if(verbose) message(cat("Assuming discretized, bounded observations\n"))
           likelihood_func_use[[biomarker_group]] <- likelihood_func_fast

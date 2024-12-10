@@ -11,7 +11,7 @@ add_noise(y, theta, measurement_bias = NULL, indices = NULL, data_type = 1)
 
 \item{theta}{a vector with max_measurement and error parameters}
 
-\item{data_type}{integer, currently accepting 1 or 2. Set to 1 for discretized, bounded data, or 2 for continuous, bounded data. Note that with 2, min_measurement must be set.}
+\item{data_type}{integer, currently accepting 1 or 2. Set to 1 for discretized, bounded data, or 2 for continuous, bounded data. 3 is for continuous data assuming that true negatives follow a different distribution -- the vast majority return the min_measurement, but with a rate fp_rate, a random draw from a uniform distribution within the limits of detection is generated.}
 }
 \value{
 a noisy titre

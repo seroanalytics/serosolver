@@ -196,6 +196,57 @@ NumericVector likelihood_func_fast_continuous(const NumericVector &theta, const 
  return(ret);
 } 
 
+
+//' Fast observation error function continuous with false positives
+ //'  Calculate the probability of a set of observed antibody levels given a corresponding set of predicted antibody levels assuming continuous, bounded observations. 
+ //'  For true negatives (i.e., model predicts no infections), then the majority of the PDF is at min_measurement. 
+ //'  There is a probability, fp_rate, of observing a value within the detectable range.
+ //' @name Fast observation error function continuous
+ //' @param theta NumericVector, a named parameter vector giving the normal distribution standard deviation and the max observable antibody level. 
+ //' Also a parameter fp_rate, giving the probability of a (uniformly distributed) false positive given true negative.
+ //' @param obs NumericVector, the vector of observed log antibody levels
+ //' @param predicted_antibody_levels NumericVector, the vector of predicted log antibody levels
+ //' @param a vector of same length as the input data giving the probability of observing each observation given the predictions
+ //' @return a likelihood for each observed antibody level
+ //' @export
+ //' @family likelihood_functions
+ // [[Rcpp::export(rng = false)]]
+ NumericVector likelihood_func_fast_continuous_fp(const NumericVector &theta, const NumericVector &obs, const NumericVector &predicted_antibody_levels){
+   int total_measurements = predicted_antibody_levels.size();
+   NumericVector ret(total_measurements);
+   
+   const double sd = theta["obs_sd"];
+   const double den = sd*M_SQRT2;
+   const double den2 = log(sd*2.50662827463);
+   const double max_measurement = theta["max_measurement"];
+   const double min_measurement = theta["min_measurement"];
+   const double log_const = log(0.5);
+   const double fp_rate = theta["fp_rate"];
+   const double true_neg_prob = log(1.0 - fp_rate);
+   const double false_pos_prob = log(fp_rate);
+   const double unif_pdf = log(1.0/(max_measurement-min_measurement));
+   for(int i = 0; i < total_measurements; ++i){
+     // Most antibody levels are between min_measurement and max_measurement, this is the difference in normal cdfs
+     if(predicted_antibody_levels[i] > min_measurement){
+       if(obs[i] < max_measurement && obs[i] > min_measurement){
+         ret[i] = -0.5*(pow((obs[i]-predicted_antibody_levels[i])/sd, 2)) - den2;
+         // For antibody levels above the maximum, 
+       } else if(obs[i] >= max_measurement) {
+         ret[i] = log_const + log(erfc((max_measurement - predicted_antibody_levels[i])/den));
+       } else {
+         ret[i] = log_const + log(1.0 + erf((min_measurement - predicted_antibody_levels[i])/den));
+       }
+     } else {
+       if(obs[i] <= min_measurement){
+         ret[i] = true_neg_prob;
+       } else {
+         ret[i] = false_pos_prob + unif_pdf;
+       }
+     }
+   }
+   return(ret);
+ } 
+
 // Likelihood calculation for infection history proposal
 // Not really to be used elsewhere other than in \code{\link{inf_hist_prop_prior_v2_and_v4}}, as requires correct indexing for the predicted antibody levels vector. Also, be very careful, as predicted_antibody_levels is set to 0 at the end!
 void proposal_likelihood_func(double &new_prob,
@@ -288,6 +339,76 @@ void proposal_likelihood_func_continuous(double &new_prob,
         new_prob += log_const + log(erfc((max_measurement - predicted_antibody_levels[repeat_indices[x]])/den));
       } else {
         new_prob += log_const + log(1.0 + erf((min_measurement - predicted_antibody_levels[repeat_indices[x]])/den));
+      }
+    }
+  }
+  // Re-weight likelihood
+  new_prob = new_prob*obs_weight;
+  
+  // Need to erase the predicted antibody level data...
+  for(int x = cum_nrows_per_individual_in_data[indiv]; x < cum_nrows_per_individual_in_data[indiv+1]; ++x){
+    predicted_antibody_levels[x] = 0;
+  }
+}
+
+
+// Likelihood calculation for infection history proposal for continuous, bounded data with false positives
+// Not really to be used elsewhere other than in \code{\link{inf_hist_prop_prior_v2_and_v4}}, as requires correct indexing for the predicted antibody levels vector. Also, be very careful, as predicted_antibody_levels is set to 0 at the end!
+void proposal_likelihood_func_continuous_fp(double &new_prob,
+                                         NumericVector &predicted_antibody_levels,
+                                         const int &indiv,
+                                         const NumericVector &data,
+                                         const NumericVector &repeat_data,
+                                         const IntegerVector &repeat_indices,
+                                         const IntegerVector &cum_nrows_per_individual_in_data,
+                                         const IntegerVector &cum_nrows_per_individual_in_repeat_data,
+                                         const double &log_const,
+                                         const double &sd,
+                                         const double &den,
+                                         const double &den2,
+                                         const double &log_fp_rate,
+                                         const double &log_fp_rate_compliment,
+                                         const double &log_unif_pdf,
+                                         const double &max_measurement,
+                                         const double &min_measurement,
+                                         const bool &repeat_data_exist,
+                                         const double &obs_weight = 1.0){
+  for(int x = cum_nrows_per_individual_in_data[indiv]; x < cum_nrows_per_individual_in_data[indiv+1]; ++x){
+    if(predicted_antibody_levels[x] > min_measurement){
+      if(data[x] < max_measurement && data[x] > min_measurement){
+        new_prob += -0.5*(pow((data[x]-predicted_antibody_levels[x])/sd, 2)) - den2;
+      } else if(data[x] >= max_measurement) {
+        new_prob += log_const + log(erfc((max_measurement - predicted_antibody_levels[x])/den));
+      } else {
+        new_prob += log_const + log(1.0 + erf((min_measurement - predicted_antibody_levels[x])/den));
+      }
+    } else {
+      if(data[x] <= min_measurement){
+        new_prob += log_fp_rate_compliment;
+      } else {
+        new_prob += log_fp_rate + log_unif_pdf;
+      }
+    }
+  }
+  
+  // =====================
+  // Do something for repeat data here
+  if(repeat_data_exist){
+    for(int x = cum_nrows_per_individual_in_repeat_data[indiv]; x < cum_nrows_per_individual_in_repeat_data[indiv+1]; ++x){
+      if(predicted_antibody_levels[repeat_indices[x]] > min_measurement){
+        if(repeat_data[x] < max_measurement && repeat_data[x] > min_measurement){
+          new_prob += -0.5*(pow((repeat_data[x]-predicted_antibody_levels[repeat_indices[x]])/sd, 2)) - den2;
+        } else if(repeat_data[x] >= max_measurement) {
+          new_prob += log_const + log(erfc((max_measurement - predicted_antibody_levels[repeat_indices[x]])/den));
+        } else {
+          new_prob += log_const + log(1.0 + erf((min_measurement - predicted_antibody_levels[repeat_indices[x]])/den));
+        }
+      } else {
+        if(repeat_data[x] <= min_measurement){
+          new_prob += log_fp_rate_compliment;
+        } else {
+          new_prob += log_fp_rate + log_unif_pdf;
+        }
       }
     }
   }

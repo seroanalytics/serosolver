@@ -100,6 +100,9 @@ add_measurement_shifts <- function(predicted_antibody_levels, to_add, start_inde
     invisible(.Call('_serosolver_add_measurement_shifts', PACKAGE = 'serosolver', predicted_antibody_levels, to_add, start_index_in_data, end_index_in_data))
 }
 
+#' Fast observation error function continuous with false positives
+NULL
+
 #' Marginal prior probability (p(Z)) of a particular infection history matrix single prior
 #'  Prior is independent contribution from each year
 #' @param infection_history IntegerMatrix, the infection history matrix
@@ -190,6 +193,10 @@ likelihood_func_fast <- function(theta, obs, predicted_antibody_levels) {
 #' @family likelihood_functions
 likelihood_func_fast_continuous <- function(theta, obs, predicted_antibody_levels) {
     .Call('_serosolver_likelihood_func_fast_continuous', PACKAGE = 'serosolver', theta, obs, predicted_antibody_levels)
+}
+
+likelihood_func_fast_continuous_fp <- function(theta, obs, predicted_antibody_levels) {
+    .Call('_serosolver_likelihood_func_fast_continuous_fp', PACKAGE = 'serosolver', theta, obs, predicted_antibody_levels)
 }
 
 #' Infection history proposal function

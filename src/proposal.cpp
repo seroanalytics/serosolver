@@ -348,6 +348,11 @@ List inf_hist_prop_prior_v2_and_v4(
   const double log_const = log(0.5);
   NumericMatrix den2s(n_groups,n_types);
   
+  NumericMatrix true_neg_probs(n_groups,n_types);
+  NumericMatrix false_pos_probs(n_groups,n_types);
+  NumericMatrix unif_pdfs(n_groups,n_types);
+  
+  
   // Base model parameters
   NumericMatrix boost_long_parameters(n_groups,n_types);
   NumericMatrix boost_short_parameters(n_groups,n_types);
@@ -366,6 +371,7 @@ List inf_hist_prop_prior_v2_and_v4(
   int wane_long_index = unique_theta_indices("wane_long");
   int antigenic_seniority_index = unique_theta_indices("antigenic_seniority");
   int error_index = unique_theta_indices("obs_sd");
+  int fp_rate_index = unique_theta_indices("fp_rate");
   
   int min_index = unique_theta_indices("min_measurement");
   int max_index = unique_theta_indices("max_measurement");
@@ -390,6 +396,9 @@ List inf_hist_prop_prior_v2_and_v4(
         
         min_measurements(g,x) = theta(g,min_index + x*n_theta);
         max_measurements(g,x) = theta(g,max_index + x*n_theta);
+        true_neg_probs(g,x) = log(1.0 - theta(g,fp_rate_index + x*n_theta));
+        false_pos_probs(g,x) = log(theta(g,fp_rate_index + x*n_theta));
+        unif_pdfs(g,x) = log(1.0/(max_measurements(g,x)-min_measurements(g,x)));
         
         boost_long_parameters(g,x) = theta(g,boost_long_index + x*n_theta);
         boost_short_parameters(g,x) = theta(g,boost_short_index + x*n_theta);
@@ -784,6 +793,25 @@ List inf_hist_prop_prior_v2_and_v4(
                                                     repeat_data_exist,
                                                     obs_weight);
             	
+              } else if(data_type==3){
+                proposal_likelihood_func_continuous_fp(new_prob, predicted_antibody_levels, 
+                                                    index, 
+                                                    antibody_data, 
+                                                    antibody_data_repeats, 
+                                                    repeat_indices,
+                                                    cum_nrows_per_individual_in_data, 
+                                                    cum_nrows_per_individual_in_repeat_data,
+                                                    log_const, 
+                                                    sds(group,biomarker_group), 
+                                                    dens(group,biomarker_group), 
+                                                    den2s(group,biomarker_group), 
+                                                    false_pos_probs(group,biomarker_group),
+                                                    true_neg_probs(group,biomarker_group),
+                                                    unif_pdfs(group,biomarker_group),
+                                                    max_measurements(group,biomarker_group), 
+                                                    min_measurements(group,biomarker_group), 
+                                                    repeat_data_exist,
+                                                    obs_weight);
               } else {
                 // Data_type 1 is discretized, bounded data
                 proposal_likelihood_func(new_prob, predicted_antibody_levels, 
