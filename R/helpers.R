@@ -516,7 +516,7 @@ setup_antibody_data_for_posterior_func <- function(
 get_demographic_groups <- function(par_tab, antibody_data, demographics,demographic_groups=NULL){
   ## Setup data vectors and extract
   if(!is.null(demographics)){
-    demographics <- demographics %>% arrange(individual, time)
+    demographics <- demographics %>% dplyr::arrange(individual, time)
     demographics <- as.data.frame(demographics)
     timevarying_demographics <- TRUE
     if(is.null(demographic_groups)){
@@ -530,7 +530,7 @@ get_demographic_groups <- function(par_tab, antibody_data, demographics,demograp
   }
   use_demographic_groups <- colnames(demographic_groups)
   if(length(use_demographic_groups) == 1 && use_demographic_groups == "all") use_demographic_groups <- NULL
-  demographic_groups <- demographic_groups %>% arrange(across(everything()))
+  demographic_groups <- demographic_groups %>% dplyr::arrange(dplyr::across(everything()))
   return(list(use_demographic_groups=use_demographic_groups, demographic_groups=demographic_groups,timevarying_demographics=timevarying_demographics))
 }
 
@@ -576,7 +576,7 @@ add_stratifying_variables <- function(antibody_data, timevarying_demographics=NU
         demographics <- timevarying_demographics %>% 
           dplyr::select(all_of(use_demographic_groups)) %>% 
           distinct() %>% 
-          arrange(across(everything())) %>%
+          dplyr::arrange(dplyr::across(everything())) %>%
           dplyr::mutate(demographic_group = 1:n())
         
         ## Assign to timevarying demographics
@@ -603,7 +603,7 @@ add_stratifying_variables <- function(antibody_data, timevarying_demographics=NU
       population_groups <- timevarying_demographics %>% 
         dplyr::select(all_of(population_group_strats))%>% 
         distinct() %>% 
-        arrange(across(everything())) %>%
+        dplyr::arrange(dplyr::across(everything())) %>%
         dplyr::mutate(population_group = 1:n()) %>%
         drop_na()
       ## Merge into timevarying_demographics
@@ -939,7 +939,7 @@ create_demographic_table <- function(antibody_data, par_tab){
     }
   }  
 
-  demographics <- demographics %>% arrange(across(everything()))
+  demographics <- demographics %>% dplyr::arrange(dplyr::across(everything()))
   return(demographics)
 }
 
@@ -1039,7 +1039,7 @@ transform_parameters <- function(pars, scale_table, theta_indices,scale_par_indi
 #' @export
 add_scale_pars <- function(par_tab, antibody_data, timevarying_demographics=NULL, scale_par_lower=-25,scale_par_upper=25){
   if(!is.null(timevarying_demographics)){
-    timevarying_demographics <- timevarying_demographics %>% arrange(individual, time)
+    timevarying_demographics <- timevarying_demographics %>% dplyr::arrange(individual, time)
     timevarying_demographics <- as.data.frame(timevarying_demographics)
     demographics <- create_demographic_table(timevarying_demographics,par_tab)
     stratification_pars <- setup_stratification_table(par_tab, demographics)
