@@ -159,6 +159,55 @@ check_data <- function(data,verbose=FALSE) {
     return(data)
 }
 
+#' Checks the entries of demographics data frame used for parameter stratification
+#' @param demographics the data frame of demographics data. Must have columns: individual (integer ID of individual); birth (numeric time of birth); any other columns also in par_tab$stratification will be checked.
+#' @param par_tab Optional: the parameter table controlling information such as bounds, initial values etc. If included, this will be used to check that the demographics data is consistent with the data.
+#' @param verbose if TRUE, prints warning messages
+#' @return the same data object with corrections if needed
+#' @family check_inputs
+#' @examples
+#' data(example_antibody_data)
+#' check_data(example_antibody_data)
+#' @export
+check_demographics <- function(demographics, par_tab=NULL, verbose=FALSE) {
+  ## Check that all columns are present
+  col.names <- c("individual", "birth")
+  actual_colnames <- colnames(demographics)
+  
+  if (all(col.names %in% actual_colnames) != TRUE) {
+    missing.cols <- col.names[which(col.names %in% actual_colnames == FALSE)] ## Find the missing column names
+    if(verbose) message(paste(c("The following column(s) are missing from demographics: ", missing.cols), collapse = " "))
+  }
+  
+  if(!is.null(par_tab)){
+    strsplit1 <- function(x){
+      if(!is.na(x)){
+        return(strsplit(x,", "))
+      } else {
+        return(NA)
+      }
+    }
+    
+    ## Creates an estimated parameter entry for each 
+    stratifications <- unique(unlist(sapply(par_tab[,"stratification"],function(x) strsplit1(x))))
+    stratifications <- stratifications[!is.na(stratifications)]
+    
+    if (all(stratifications %in% actual_colnames) != TRUE) {
+      missing.cols <- stratifications[which(stratifications %in% actual_colnames == FALSE)] ## Find the missing column names
+      if(verbose) message(paste(c("The following column(s) are missing from demographics but requested in par_tab: ", stratifications), collapse = " "))
+    }
+  }  
+  test_colnames <- actual_colnames[!(actual_colnames %in% c(col.names,"time","age"))]
+  for(col in test_colnames){
+    unique_levels <- unique(as.data.frame(demographics)[,col])
+    if(min(unique_levels) != 0) warning(paste("Column ",col," in demographics should start at 0."))
+    if(max(unique_levels) != length(unique_levels)-1) warning(paste("Column ",col," in demographics should be a sequence starting at 0."))
+  }
+  
+  return(demographics)
+}
+
+
 #' Checks the attack_rates supplied in simulate_data
 #' @param attack_rates a vector of attack_rates to be used in the simulation
 #' @param possible_exposure_times vector of strain circulation times
@@ -202,3 +251,5 @@ check_inf_hist <- function(antibody_data,possible_exposure_times, inf_hist,verbo
     }
     return(correct_dob)
 }
+
+
