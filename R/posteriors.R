@@ -520,8 +520,10 @@ create_posterior_func <- function(par_tab,
                       temp=1,
                       propose_from_prior=TRUE) {
           names(pars) <- par_names
+          #print(pars)
           theta <- transform_parameters_cpp(pars, scale_table, c(theta_indices,measurement_indices_par_tab)-1, scale_par_indices-1,as.matrix(demographic_groups), transforms)
           colnames(theta) <- names(pars[c(theta_indices, measurement_indices_par_tab)])
+          #print(theta)
             if (use_measurement_bias) {
               measurement_bias_indices <- matrix(theta[,rho_indices_unique])
               antibody_level_shifts <- measurement_bias_indices[cbind(antibody_data_demo_index, expected_indices)]
@@ -620,9 +622,9 @@ create_posterior_func <- function(par_tab,
         f <- function(pars, infection_history_mat) {
           ## Need to create demographic-specific parameter transformations here
           names(pars) <- par_names
+        
           theta <- transform_parameters_cpp(pars, scale_table, c(theta_indices,measurement_indices_par_tab)-1, scale_par_indices-1,as.matrix(demographic_groups), transforms)
           colnames(theta) <- names(pars[c(theta_indices, measurement_indices_par_tab)])
-          
             antigenic_map_long <- array(dim=c(length(possible_biomarker_ids)^2,n_biomarker_groups,n_demographic_groups))
             antigenic_map_short <- array(dim=c(length(possible_biomarker_ids)^2,n_biomarker_groups,n_demographic_groups))
             
