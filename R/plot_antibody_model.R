@@ -577,16 +577,7 @@ plot_estimated_antibody_model <- function(chain,
   
   demographic_groups_plot <- demographic_groups %>% mutate(individual = 1:n())
   demographic_groups_plot$Group <- labels
-  ## Create fake antibody data for all individuals and times
-  full_antibody_data <- antibody_data %>% 
-    select(biomarker_group,biomarker_id) %>% distinct() %>% 
-    cross_join(demographic_groups_plot) %>% 
-    expand_grid(sample_time=solve_times) %>% 
-    mutate(birth = 1, repeat_number=1,measurement=0) %>% 
-    arrange(individual, biomarker_group, sample_time, biomarker_id, repeat_number)
-  
-  n_indiv <- length(unique(full_antibody_data$individual))
-  unique_biomarker_groups <- unique(full_antibody_data$biomarker_group)
+ 
   
   ## Format the antigenic map to solve the model 
   ## Check if an antigenic map is provided. If not, then create a dummy map where all pathogens have the same position on the map
@@ -600,6 +591,22 @@ plot_estimated_antibody_model <- function(chain,
     ## Create a dummy map with entries for each observation type
     antigenic_map <- data.frame("x_coord"=1,"y_coord"=1,"inf_times"=possible_exposure_times)
   }
+  ## Create fake antibody data for all individuals and times
+  full_antibody_data <- antibody_data %>% 
+    select(biomarker_group,biomarker_id) %>% distinct() %>% 
+    cross_join(demographic_groups_plot) %>% 
+    expand_grid(sample_time=solve_times) %>% 
+    mutate(birth = min(possible_exposure_times), repeat_number=1,measurement=0) %>% 
+    arrange(individual, biomarker_group, sample_time, biomarker_id, repeat_number)
+  
+  n_indiv <- length(unique(full_antibody_data$individual))
+  unique_biomarker_groups <- unique(full_antibody_data$biomarker_group)
+  
+  ## Create fake demographics data for all individuals and times
+  full_demographics <- full_antibody_data[,colnames(full_antibody_data) %in% c("individual","birth",colnames(demographic_groups))] %>%
+    distinct() %>%
+    expand_grid(time=possible_exposure_times) %>% mutate(age=time-birth)
+  
   tmp_samp <- sample(samps, nsamp)
   ## See the function in posteriors.R
   model_func <- create_posterior_func(par_tab, full_antibody_data, antigenic_map, possible_exposure_times,
@@ -607,7 +614,7 @@ plot_estimated_antibody_model <- function(chain,
                                       measurement_bias = measurement_bias, function_type = 4,
                                       antibody_level_before_infection=FALSE,
                                       data_type=data_type,start_level="none",
-                                      demographics=demographics,demographic_groups=demographic_groups
+                                      demographics=full_demographics,demographic_groups=demographic_groups
   )
   
   predicted_titres <- observed_predicted_titres <- matrix(nrow = nrow(full_antibody_data), ncol = nsamp)

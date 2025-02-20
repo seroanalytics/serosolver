@@ -990,10 +990,11 @@ setup_stratification_table <- function(par_tab, demographics){
         strats <- strsplit(stratification_par,", ")[[1]]
         for(strat in strats){
           unique_demo_strats <- unique(demographics[,strat])
-          n_groups <- length(unique_demo_strats[!is.na(unique_demo_strats)])
+          unique_demo_strats_names <- unique_demo_strats[!is.na(unique_demo_strats)]
+          n_groups <- length(unique_demo_strats_names)
           for(x in 2:n_groups){
             scale_table[[strat]][x,j] <- index
-            strat_par_names[[index]] <- paste0(use_par_tab$names[j],"_biomarker_",use_par_tab$biomarker_group[j],"_coef_",strat,"_",x)
+            strat_par_names[[index]] <- paste0(use_par_tab$names[j],"_biomarker_",use_par_tab$biomarker_group[j],"_coef_",strat,"_",unique_demo_strats_names[x])
             index <- index + 1
           }
         }

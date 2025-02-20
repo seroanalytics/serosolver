@@ -624,7 +624,6 @@ create_posterior_func <- function(par_tab,
         ## Final version is just the model solving function
         f <- function(pars, infection_history_mat) {
           ## Need to create demographic-specific parameter transformations here
-          #browser()
           names(pars) <- par_names
           theta <- transform_parameters_cpp(pars, scale_table, c(theta_indices,measurement_indices_par_tab)-1, scale_par_indices-1,as.matrix(demographic_groups), transforms)
           colnames(theta) <- names(pars[c(theta_indices, measurement_indices_par_tab)])
