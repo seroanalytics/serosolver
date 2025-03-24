@@ -81,113 +81,6 @@ plot_posteriors_infhist <- function(inf_chain,
   ))
 }
 
-
-#' Plot historical attack rates
-#'
-#' Plots inferred historical attack rates from the MCMC output on infection histories. 
-#' @inheritParams plot_attack_rates_pointrange
-#' @param ymax Numeric. the maximum y value to put on the axis. Default = 1.
-#' @param resolution Integer. How many buckets of time is each year split into? ie. 12 for monthly data, 4 for quarterly etc. Default = 1 for annual.
-#' @param cumulative if TRUE, plots the cumulative attack rate
-#' @return a ggplot2 object with the inferred attack rates for each potential epoch of circulation
-#' @export
-plot_attack_rates <- function(infection_histories, antibody_data=NULL, possible_exposure_times=NULL,
-                                      n_alive = NULL, ymax = 1, resolution = 1,
-                                      pad_chain = TRUE, true_ar = NULL, by_group = FALSE, group_subset = NULL,
-                                      cumulative = FALSE,add_box=FALSE,settings=NULL) {
-  if (is.null(infection_histories$chain_no)) {
-    infection_histories$chain_no <- 1
-  }
-  if (is.null(infection_histories$population_group)) {
-    infection_histories$population_group <- 1
-  }
-  
-  ## If the list of serosolver settings was included, use these rather than passing each one by one
-  if(!is.null(settings)){
-    message("Using provided serosolver settings list")
-    if(is.null(possible_exposure_times)) possible_exposure_times <- settings$possible_exposure_times
-    if(is.null(antibody_data)) antibody_data <- settings$antibody_data
-  }
-  
-  ## Some year/sample combinations might have no infections there.
-  ## Need to make sure that these get considered
-  if (pad_chain) infection_histories <- pad_inf_chain(infection_histories)
-  ## Subset of groups to plot
-  if (is.null(group_subset)) {
-    group_subset <- unique(antibody_data$population_group)
-  }
-  if (!by_group) antibody_data$population_group <- 1
-  
-  ## Find inferred total number of infections from the MCMC output
-  ## Scale by number of individuals that were alive in each epoch
-  ## and generate quantiles
-  months <- 1:resolution
-  years <- possible_exposure_times
-  years <- range(floor(years / resolution))
-  years <- years[1]:years[2]
-  labels <- c(sapply(years, function(x) paste0(months, "/", x)))
-  labels1 <- labels[1:length(possible_exposure_times)]
-  labels1 <- labels1[seq(1, length(labels1), by = 1)]
-  year_break <- possible_exposure_times[seq(1, length(possible_exposure_times), by = 1)]
-  
-  if (is.null(n_alive)) {
-    n_alive <- as.data.frame(get_n_alive_group(antibody_data, possible_exposure_times))
-    n_alive$population_group <- 1:nrow(n_alive)
-  }
-  n_alive_tmp <- reshape2::melt(n_alive, id.vars = "population_group")
-  n_alive_tmp$variable <- as.numeric(n_alive_tmp$variable)
-  colnames(n_alive_tmp) <- c("population_group", "j", "n_alive")
-  
-  colnames(infection_histories)[1] <- "individual"
-  infection_histories <- merge(infection_histories, data.table(unique(antibody_data[, c("individual", "population_group")])), by = c("individual","population_group"))
-  ## Sum infections per year for each MCMC sample
-  data.table::setkey(infection_histories, "samp_no", "j", "population_group", "chain_no")
-  tmp <- infection_histories[, list(V1 = sum(x)), by = key(infection_histories)]
-  
-  if (cumulative & !pad_chain) message("Error - cannot calculate cumulative incidence without pad_chain = TRUE\n")
-  
-  tmp <- merge(tmp, data.table(n_alive_tmp), by = c("population_group", "j"))
-  tmp$time <- possible_exposure_times[tmp$j]
-  tmp$V1 <- tmp$V1 / tmp$n_alive
-  tmp[is.nan(tmp$V1), "V1"] <- 0
-  if (cumulative && pad_chain) {
-    data.table::setkey(tmp, "samp_no", "population_group", "chain_no")
-    tmp[, V1 := cumsum(V1), by = key(tmp)]
-  }
-  quantiles <- plyr::ddply(tmp, plyr::.(time, population_group), function(x) quantile(x$V1, c(0.025,0.25, 0.5,0.75, 0.975)))
-  colnames(quantiles) <- c("time", "population_group", "lower","lower2", "median", "upper2","upper")
-  
-  
-  
-  p <- ggplot(quantiles[quantiles$population_group %in% group_subset, ])
-  if(add_box){
-    x_box_min <- min(antibody_data$sample_time)
-    p <- p +geom_rect(xmin=x_box_min, xmax=max(quantiles$time),ymin=-1,ymax=2,fill="gray90",alpha=0.1)
-  }
-  p <- p +
-    geom_ribbon(aes(x = time, ymin = lower, ymax = upper), fill = "red", alpha = 0.2) +
-    geom_ribbon(aes(x = time, ymin = lower2, ymax = upper2), fill = "red", alpha = 0.4) +
-    geom_line(aes(x = time, y = median), col = "red")
-  if (!is.null(true_ar)) {
-    if(is.null(true_ar$population_group)) true_ar$population_group <- 1
-    p <- p +
-      geom_line(
-        data = true_ar[true_ar$population_group %in% group_subset, ], aes(x = time, y = AR),
-        col = "purple", size = 0.5
-      )
-  }
-  p <- p +
-    ## geom_point(aes(x = year, y = median), col = "purple", size = 0.5) +
-    facet_wrap(~population_group, ncol = 2) +
-    scale_y_continuous(expand = c(0, 0)) +
-    # #scale_x_continuous(expand = c(0, 0), breaks = year_break, labels = labels1) +
-    theme_bw() +
-    theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
-    ylab("Estimated per capita incidence") +
-    xlab("Date")
-  return(p)
-}
-
 #' Plot historical attack rates with pointrange plots
 #'
 #' Plots inferred historical attack rates from the MCMC output on infection histories, with pointrange plots for per-time incidence estimates
@@ -201,6 +94,7 @@ plot_attack_rates <- function(infection_histories, antibody_data=NULL, possible_
 #' @param pad_chain if TRUE, fills the infection history data table with entries for non-infection events (ie. 0s). Can be switched to FALSE for speed to get a rough idea of what the attack rates look like.
 #' @param prior_pars if not NULL, a list of parameters for the attack rate prior, giving the assumed prior_version along with infection_model_prior_shape1 and infection_model_prior_shape2
 #' @param plot_den if TRUE, produces a violin plot of attack rates rather than pointrange
+#' @param plot_ribbon if TRUE, plots a ribbon over time for the attack rate estimates, otherwise plots a pointrange plot
 #' @param true_ar data frame of true attack rates, with first column `time` matching `possible_exposure_times`, and second column `AR` giving the attack rate. Column names: population_group, time, AR
 #' @param by_group if TRUE, facets the plot by population_group ID
 #' @param group_subset if not NULL, plots only this subset of groups eg. 1:5
@@ -210,7 +104,7 @@ plot_attack_rates <- function(infection_histories, antibody_data=NULL, possible_
 #' @param settings if not NULL, list of serosolver settings as returned from the main serosolver function
 #' @return a ggplot2 object with the inferred attack rates for each potential epoch of circulation
 #' @export
-plot_attack_rates_pointrange <- function(infection_histories, 
+plot_attack_rates <- function(infection_histories, 
                                          antibody_data=NULL, 
                                          demographics = NULL,
                                          par_tab=NULL,
@@ -219,6 +113,7 @@ plot_attack_rates_pointrange <- function(infection_histories,
                               pointsize = 1, fatten = 1,
                               pad_chain = TRUE, prior_pars = NULL,
                               plot_den = FALSE,
+                              plot_ribbon=FALSE,
                               true_ar = NULL, by_group = FALSE,
                               group_subset = NULL, plot_residuals = FALSE,
                               colour_by_taken = TRUE, by_val = 5,
@@ -255,7 +150,6 @@ plot_attack_rates_pointrange <- function(infection_histories,
   demographics <- tmp$timevarying_demographics
   demographic_groups <- tmp$demographics
   population_groups <- tmp$population_groups
-  
   if (pad_chain) infection_histories <- pad_inf_chain(infection_histories)
   ## Subset of groups to plot
   if (is.null(group_subset)) {
@@ -340,13 +234,9 @@ plot_attack_rates_pointrange <- function(infection_histories,
     year_breaks <- c(year_breaks, max_time + 2)
     year_labels <- c(year_labels, "Prior")
   }
-  
   if (!plot_den) {
-    quantiles <- plyr::ddply(tmp, plyr::.(j, population_group), function(x) quantile(x$V1, c(0.025, 0.5, 0.975)))
-    colnames(quantiles) <- c("j", "population_group", "lower", "median", "upper")
-    # quantiles[c("lower", "median", "upper")] <- quantiles[c("lower", "median", "upper")]# / n_alive1[quantiles$j]
-    #quantiles$j <- years[quantiles$j]
-    quantiles$taken <- quantiles$j %in% unique(antibody_data$sample_time)
+    quantiles <- tmp %>% group_by(population_group,j) %>% dplyr::summarise(lower=quantile(V1, 0.025),median=quantile(V1,0.5),upper=quantile(V1,0.975)) %>% ungroup()
+      quantiles$taken <- quantiles$j %in% unique(antibody_data$sample_time)
     quantiles$taken <- ifelse(quantiles$taken, "Yes", "No")
     
     quantiles$tested <- quantiles$j %in% unique(antibody_data$biomarker_id)
@@ -358,7 +248,7 @@ plot_attack_rates_pointrange <- function(infection_histories,
     
     colnames(quantiles)[which(colnames(quantiles) == "taken")] <- "Sample taken"
     colnames(quantiles)[which(colnames(quantiles) == "tested")]  <- "Biomarker tested"
-    
+    quantiles$population_group <- as.factor(quantiles$population_group)
     p <- ggplot(quantiles[quantiles$population_group %in% group_subset, ]) +
       coord_cartesian(ylim=c(0,1)) +
       theme_classic() +
@@ -366,27 +256,38 @@ plot_attack_rates_pointrange <- function(infection_histories,
       xlab("Year")
     
     ## Colour depending on whether or not titres were taken in each year
-    if (colour_by_taken == TRUE) {
-      p <- p + geom_pointrange(aes(
-        x = j, y = median, ymin = lower, ymax = upper,
-        col = `Sample taken`
-      ),
-      size = pointsize,
-      fatten = fatten
-      )  +
-        scale_fill_manual(name="Samples taken",values=c("No"="darkorange","Yes"="blue","Prior"="grey40"))+
-        scale_color_manual(name="Samples taken",values=c("No"="darkorange","Yes"="blue","Prior"="grey40"))
+    if(!plot_ribbon){
+      if (colour_by_taken == TRUE) {
+        p <- p + geom_pointrange(aes(
+          x = j, y = median, ymin = lower, ymax = upper,
+          col = `Sample taken`
+        ),
+        size = pointsize,
+        fatten = fatten
+        )  +
+          scale_fill_manual(name="Samples taken",values=c("No"="darkorange","Yes"="blue","Prior"="grey40"))+
+          scale_color_manual(name="Samples taken",values=c("No"="darkorange","Yes"="blue","Prior"="grey40"))
+      } else {
+        p <- p + geom_pointrange(aes(
+          x = j, y = median, ymin = lower, ymax = upper,
+          col = `Biomarker tested`
+        ),
+        size = pointsize,
+        fatten = fatten
+        )+
+          scale_fill_manual(name="Biomarker tested",values=c("No"="darkorange","Yes"="blue","Prior"="grey40"))+
+          scale_color_manual(name="Biomarker tested",values=c("No"="darkorange","Yes"="blue","Prior"="grey40"))
+      }
     } else {
-      p <- p + geom_pointrange(aes(
-        x = j, y = median, ymin = lower, ymax = upper,
-        col = `Biomarker tested`
-      ),
-      size = pointsize,
-      fatten = fatten
-      )+
-        scale_fill_manual(name="Biomarker tested",values=c("No"="darkorange","Yes"="blue","Prior"="grey40"))+
-        scale_color_manual(name="Biomarker tested",values=c("No"="darkorange","Yes"="blue","Prior"="grey40"))
-    }
+      if(!by_group){
+      p <- p + geom_ribbon(aes(x = j, ymin = lower, ymax = upper), alpha = 0.25) +
+        geom_line(aes(x = j, y = median), linewidth = 0.75)
+      } else {
+          p <- p + geom_ribbon(aes(x = j, ymin = lower, ymax = upper,fill=population_group,group=population_group), alpha = 0.25) +  geom_line(aes(x = j, y = median,col=population_group,group=population_group), linewidth = 0.75) +
+            scale_fill_viridis_d(name="Population group") +
+            scale_color_viridis_d(name="Population group")
+      }
+      }
   } else {
     #tmp$j <- years[tmp$j]
     colnames(tmp)[which(colnames(tmp) == "j")] <- "time"
@@ -423,8 +324,8 @@ plot_attack_rates_pointrange <- function(infection_histories,
       scale_y_continuous(expand = c(0, 0)) 
   }
   
-  if (by_group) {
-    p <- p + facet_wrap(~population_group, ncol = 1)
+  if (by_group & !plot_ribbon) {
+      p <- p + facet_wrap(~population_group, ncol = 1)
   }
   if (!is.null(prior_dens)) {
     max_time <- max_time + 2.5

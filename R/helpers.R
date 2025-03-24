@@ -795,8 +795,8 @@ pad_inf_chain <- function(inf_chain, pad_by_group=FALSE) {
       i = is,
       j = js,
       samp_no = samp_nos,
-      population_group=groups,
-      chain_no = chain_nos
+      chain_no = chain_nos,
+      population_group=groups
     )
     diff_infs <- fsetdiff(expanded_values, inf_chain[, c("i", "j", "samp_no", "chain_no", "population_group")])
   } else {
