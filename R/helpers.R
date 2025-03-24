@@ -79,7 +79,7 @@ get_n_alive_group <- function(antibody_data, times, demographics=NULL, melt_data
 
     masks <- data.frame(cbind(age_mask, sample_mask))
     DOBs <- cbind(DOBs, masks)
-    
+   
     n_alive <- DOBs %>% expand_grid(year = times) %>% 
       mutate(alive = year >= age_mask & year <= sample_mask) %>% 
       filter(alive==TRUE) %>% 
@@ -461,8 +461,9 @@ setup_antibody_data_for_posterior_func <- function(
   
   ## How many rows in the antibody data correspond to each unique individual, sample, observation type?
   ## ie. each element of this vector corresponds to one set of antibodies that need to be predicted
-  nrows_per_sample <- c(0,antibody_data %>% group_by(individual,biomarker_group, sample_time) %>% 
-                          tally() %>% pull(n) %>% cumsum())
+ 
+  nrows_per_sample <- antibody_data %>% group_by(individual,biomarker_group, sample_time) %>% 
+                          tally() %>% pull(n)
   antibody_data_start <- cumsum(c(0,nrows_per_sample))
   tmp <- add_stratifying_variables(antibody_data, timevarying_demographics, par_tab, use_demographic_groups)
   timevarying_demographics <- tmp$timevarying_demographics
@@ -552,7 +553,6 @@ align_antibody_demographic_dat <- function(antibody_data, demographics){
 }
 
 add_stratifying_variables <- function(antibody_data, timevarying_demographics=NULL, par_tab, use_demographic_groups=NULL){
-#browser()
     # Any stratification of population attack rates?
   ## Pull out any parameters related to attack rates
   population_group_strats <- par_tab %>% filter(names %like% "infection_model_prior" | names == "phi") %>% 
