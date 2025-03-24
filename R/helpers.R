@@ -447,7 +447,7 @@ setup_antibody_data_for_posterior_func <- function(
   sample_data <- unique(antibody_data[, c("individual", "sample_time", "biomarker_group")])
   sample_data_start <- cumsum(c(0,plyr::ddply(sample_data, plyr::.(individual, biomarker_group), nrow)$V1))
   sample_times <- sample_data$sample_time ## What were the times that these samples were taken?
-  
+  # Change
   type_data <- unique(antibody_data[,c("individual","biomarker_group")])
   type_data_start <- cumsum(c(0, plyr::ddply(type_data, plyr::.(individual), nrow)$V1))
   biomarker_groups <- type_data$biomarker_group
