@@ -584,7 +584,7 @@ calculate_infection_history_statistics <- function(inf_chain, burnin = 0, possib
   }
   data.table::setkey(n_inf_chain, "population_group", "samp_no", "chain_no")
   n_inf_chain[, cumu_infs := cumsum(total_infs), by = key(n_inf_chain)]
-  
+
   if(length(unique(n_inf_chain$chain_no)) > 1){
     gelman_res_j <- plyr::ddply(n_inf_chain, plyr::.(population_group,j), function(tmp_chain){
       tmp_chain_mcmc <- split(as.data.table(tmp_chain), by=c("chain_no"))

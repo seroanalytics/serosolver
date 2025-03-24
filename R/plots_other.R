@@ -132,14 +132,9 @@ plot_2d_density <- function(chain, par1, par2) {
 #' @export
 plot_samples_distances <- function(antibody_data) {
     sample_times <- unique(antibody_data[, c("individual", "sample_time")])
-    distances <- plyr::ddply(sample_times, ~individual, function(x) {
-        if (nrow(x) < 2) {
-            y <- 0
-        } else {
-            y <- diff(x$sample_time)
-        }
-        y
-    })
+    y <- sample_times %>% group_by(individual) %>% mutate(diff_time = sample_time - lag(sample_time,1)) %>% drop_na() %>% pull(diff_time)
+    distances <- data.frame(V1=y)
+   
     ggplot(distances) + geom_histogram(aes(x = V1), binwidth = 1) + theme_bw() + xlab("Time points between samples")
 }
 

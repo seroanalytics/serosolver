@@ -501,8 +501,7 @@ plot_individual_number_infections <- function(inf_chain, pad_chain = TRUE) {
   n_inf_chain <- inf_chain[, list(V1 = sum(x)), by = key(inf_chain)]
   
   ## Get quantiles on total number of infections per indiv across all samples
-  indiv_hist <- plyr::ddply(n_inf_chain, plyr::.(i), function(x) quantile(x$V1, c(0.025, 0.5, 0.975)))
-  colnames(indiv_hist) <- c("individual", "lower", "median", "upper")
+  indiv_hist <- n_inf_chain %>% group_by(i) %>% summarize(lower=quantile(V1,0.025),median=quantile(V1,0.5),upper=quantile(V1,0.975)) %>% ungroup() %>% rename(individual=i)
   indiv_hist <- indiv_hist[order(indiv_hist$median), ]
   indiv_hist$individual <- 1:nrow(indiv_hist)
   p <- ggplot(indiv_hist) +
@@ -555,7 +554,7 @@ plot_cumulative_infection_histories <- function(inf_chain, burnin = 0, indivs, r
   if (is.null(inf_chain$chain_no)) {
     inf_chain$chain_no <- 1
   }
-  if (pad_chain) inf_chain <- pad_inf_chain(inf_chain)
+  if (pad_chain) inf_chain <- pad_inf_chain(inf_chain,times=seq_along(possible_exposure_times),indivs=indivs)
   
   samps <- sample(unique(inf_chain$samp_no), nsamp)
   inf_chain <- inf_chain[inf_chain$samp_no %in% samps, ]
@@ -612,30 +611,8 @@ plot_cumulative_infection_histories <- function(inf_chain, burnin = 0, indivs, r
   ## Generate lower, upper and median cumulative infection histories from the
   ## MCMC chain
   tmp_inf_chain <- inf_chain[inf_chain$i %in% indivs, ]
-  hist_profiles <- plyr::ddply(tmp_inf_chain, plyr::.(i, samp_no, chain_no), function(x) {
-    empty <- numeric(length(possible_exposure_times))
-    empty[x[x$x == 1, "j"]] <- 1
-    cumsum(empty)
-  })
-  
-  hist_profiles <- hist_profiles[, colnames(hist_profiles) != "samp_no"]
-  
-  colnames(hist_profiles) <- c("i", "chain_no", possible_exposure_times)
-  hist_profiles_lower <- plyr::ddply(hist_profiles, plyr::.(i, chain_no), function(x) apply(x, 2, function(y) quantile(y, c(0.025))))
-  hist_profiles_lower <- reshape2::melt(hist_profiles_lower, id.vars = c("i", "chain_no"))
-  colnames(hist_profiles_lower) <- c("individual", "chain_no", "variable", "lower")
-  
-  hist_profiles_upper <- plyr::ddply(hist_profiles, plyr::.(i, chain_no), function(x) apply(x, 2, function(y) quantile(y, c(0.975))))
-  hist_profiles_upper <- reshape2::melt(hist_profiles_upper, id.vars = c("i", "chain_no"))
-  colnames(hist_profiles_upper) <- c("individual", "chain_no", "variable", "upper")
-  
-  hist_profiles_median <- plyr::ddply(hist_profiles, plyr::.(i, chain_no), function(x) apply(x, 2, function(y) quantile(y, c(0.5))))
-  hist_profiles_median <- reshape2::melt(hist_profiles_median, id.vars = c("i", "chain_no"))
-  colnames(hist_profiles_median) <- c("individual", "chain_no", "variable", "median")
-  
-  ## Merge these quantiles into a data frame for plotting
-  quant_hist <- merge(hist_profiles_lower, hist_profiles_upper, by = c("individual", "chain_no", "variable"))
-  quant_hist <- merge(quant_hist, hist_profiles_median, by = c("individual", "chain_no", "variable"))
+  hist_profiles <- tmp_inf_chain %>% group_by(i, samp_no,chain_no) %>% mutate(cumu_x=cumsum(x))
+  quant_hist <- hist_profiles %>% group_by(i,j,chain_no) %>% summarize(lower=quantile(cumu_x, 0.025),upper=quantile(cumu_x,0.975),median=quantile(cumu_x,0.5)) %>% ungroup() %>% rename(individual=i,variable=j)
   ## If available, process the real infection history matrix for plotting
   real_hist_profiles <- NULL
   if (!is.null(real_inf_hist)) {

@@ -773,9 +773,12 @@ generate_antigenic_map_flexible <- function(antigenic_distances, buckets = 1, cl
 #'
 #' Given that the MCMC sampler only stores present infections (ie. there are no entries for 0s from the infection history matrix), for some summaries we need to add these 0s back in to avoid bias.
 #' @param inf_chain the data table with infection history samples from \code{\link{serosolver}}
+#' @param pad_by_group if TRUE, accounts for population group when expanding
+#' @param times if not NULL, uses this as a vector of times to replace j when expanding to all combinations
+#' @param indivs if not NULL, uses this as a vector of individuals to replace i when expanding to all combinations
 #' @return the same inf_chain that was passed in, but with 0s for missing i/j/samp_no combinations
 #' @export
-pad_inf_chain <- function(inf_chain, pad_by_group=FALSE) {
+pad_inf_chain <- function(inf_chain, pad_by_group=FALSE, times=NULL,indivs=NULL) {
   if (is.null(inf_chain$chain_no)) {
     inf_chain$chain_no <- 1
   }
@@ -783,8 +786,16 @@ pad_inf_chain <- function(inf_chain, pad_by_group=FALSE) {
     inf_chain$population_group <- 1
   }
   
-  is <- unique(inf_chain$i)
-  js <- unique(inf_chain$j)
+  if(!is.null(indivs)){
+    is <- indivs
+  } else {
+    is <- unique(inf_chain$i)
+  }
+  if(!is.null(times)){
+    js <- times
+  } else {
+    js <- unique(inf_chain$j)
+  }
   
   samp_nos <- unique(inf_chain$samp_no)
   chain_nos <- unique(inf_chain$chain_no)

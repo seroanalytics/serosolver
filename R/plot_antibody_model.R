@@ -178,6 +178,7 @@ plot_model_fits <- function(chain, infection_histories,
     start_levels <- NULL
   }
   ## Generate antibody predictions
+  browser()
   antibody_preds <- get_antibody_level_predictions(
     chain, infection_histories, antibody_data, 
     demographics,
