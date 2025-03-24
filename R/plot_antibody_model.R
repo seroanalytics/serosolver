@@ -178,7 +178,6 @@ plot_model_fits <- function(chain, infection_histories,
     start_levels <- NULL
   }
   ## Generate antibody predictions
-  browser()
   antibody_preds <- get_antibody_level_predictions(
     chain, infection_histories, antibody_data, 
     demographics,
@@ -434,7 +433,7 @@ plot_antibody_predictions <- function(chain, infection_histories,
   x <- get_antibody_level_predictions(
     chain, infection_histories, antibody_data, individuals=unique(antibody_data$individual),
     antigenic_map, possible_exposure_times, 
-    par_tab, nsamp, FALSE, 
+    par_tab, nsamp, TRUE, 
     measurement_bias,
     expand_antibody_data=FALSE,
     expand_to_all_times=FALSE,
@@ -443,7 +442,6 @@ plot_antibody_predictions <- function(chain, infection_histories,
     demographics=demographics,
     for_regression = TRUE
   )
-  
   ## Use these antibody predictions and summary statistics on infection histories
   ## Find proportion of measurements within the 95% prediction intervals
   prop_correct <- x$predicted_observations %>% 
@@ -506,8 +504,23 @@ plot_antibody_predictions <- function(chain, infection_histories,
     ylab("Count") +
     ggtitle("Predicted observations vs. measurements from random posterior draws")
   
+  ## Get all posterior samples for individual antibody predictions and merge with antibody data
+  all_pred_draws <- x$all_predictions
+  colnames(all_pred_draws) <- as.character(1:nsamp)
+  all_pred_draws <- as_tibble(all_pred_draws)
+  all_pred_draws <- bind_cols(antibody_data, all_pred_draws)
+  all_pred_draws <- all_pred_draws %>% pivot_longer(-c(colnames(antibody_data))) %>% rename(posterior_draw=name,prediction=value)
+  
+  ## Get all posterior samples for individual observation predictions and merge with antibody data
+  all_pred_draws_obs <- x$all_predictions_obs
+  colnames(all_pred_draws_obs) <- as.character(1:nsamp)
+  all_pred_draws_obs <- as_tibble(all_pred_draws_obs)
+  all_pred_draws_obs <- bind_cols(antibody_data, all_pred_draws_obs)
+  all_pred_draws_obs <- all_pred_draws_obs %>% pivot_longer(-c(colnames(antibody_data))) %>% rename(posterior_draw=name,prediction=value)
   
   return(list("all_predictions"=x$predicted_observations,
+              "all_predictions_draws" = all_pred_draws,
+              "all_predictions_obs_draws" = all_pred_draws_obs,
               "proportion_correct"=paste0("Proportion of observations within 95% prediction intervals: ", signif(prop_correct,5)),
               "p_hist_median"=p_hist_median,
               "p_hist_draws"=p_hist_draws,
