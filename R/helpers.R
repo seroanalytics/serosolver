@@ -79,8 +79,15 @@ get_n_alive_group <- function(antibody_data, times, demographics=NULL, melt_data
 
     masks <- data.frame(cbind(age_mask, sample_mask))
     DOBs <- cbind(DOBs, masks)
-    n_alive <- plyr::ddply(DOBs, ~population_group, function(y) sapply(times, function(x)
-        nrow(y[y$age_mask <= x & y$sample_mask >= x, ])))
+    
+    n_alive <- DOBs %>% expand_grid(year = times) %>% 
+      mutate(alive = year >= age_mask & year <= sample_mask) %>% 
+      filter(alive==TRUE) %>% 
+      group_by(year, population_group) %>% 
+      tally() %>% 
+      ungroup() %>% 
+      pivot_wider(id_cols=population_group,names_from=year,values_from=n) %>% 
+      as.data.frame()
   }
     n_alive <- as.matrix(n_alive[, 2:ncol(n_alive)])
     colnames(n_alive) <- times
