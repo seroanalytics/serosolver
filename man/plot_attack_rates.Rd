@@ -2,21 +2,29 @@
 % Please edit documentation in R/plot_infection_histories.R
 \name{plot_attack_rates}
 \alias{plot_attack_rates}
-\title{Plot historical attack rates}
+\title{Plot historical attack rates with pointrange plots}
 \usage{
 plot_attack_rates(
   infection_histories,
   antibody_data = NULL,
+  demographics = NULL,
+  par_tab = NULL,
   possible_exposure_times = NULL,
   n_alive = NULL,
-  ymax = 1,
-  resolution = 1,
+  pointsize = 1,
+  fatten = 1,
   pad_chain = TRUE,
+  prior_pars = NULL,
+  plot_den = FALSE,
+  plot_ribbon = FALSE,
   true_ar = NULL,
   by_group = FALSE,
   group_subset = NULL,
-  cumulative = FALSE,
-  add_box = FALSE,
+  plot_residuals = FALSE,
+  colour_by_taken = TRUE,
+  by_val = 5,
+  min_time = min(possible_exposure_times),
+  max_time = max(possible_exposure_times),
   settings = NULL
 )
 }
@@ -29,11 +37,17 @@ plot_attack_rates(
 
 \item{n_alive}{vector with the number of people alive in each year of possible infection Can be left as NULL, and the `birth` variable in `antibody_data` will be used to calculate the number alive}
 
-\item{ymax}{Numeric. the maximum y value to put on the axis. Default = 1.}
+\item{pointsize}{graphics option, numeric - how big should each point be?}
 
-\item{resolution}{Integer. How many buckets of time is each year split into? ie. 12 for monthly data, 4 for quarterly etc. Default = 1 for annual.}
+\item{fatten}{graphics option, numeric - fatten parameter for ggplot pointrange}
 
 \item{pad_chain}{if TRUE, fills the infection history data table with entries for non-infection events (ie. 0s). Can be switched to FALSE for speed to get a rough idea of what the attack rates look like.}
+
+\item{prior_pars}{if not NULL, a list of parameters for the attack rate prior, giving the assumed prior_version along with infection_model_prior_shape1 and infection_model_prior_shape2}
+
+\item{plot_den}{if TRUE, produces a violin plot of attack rates rather than pointrange}
+
+\item{plot_ribbon}{if TRUE, plots a ribbon over time for the attack rate estimates, otherwise plots a pointrange plot}
 
 \item{true_ar}{data frame of true attack rates, with first column `time` matching `possible_exposure_times`, and second column `AR` giving the attack rate. Column names: population_group, time, AR}
 
@@ -41,13 +55,19 @@ plot_attack_rates(
 
 \item{group_subset}{if not NULL, plots only this subset of groups eg. 1:5}
 
-\item{cumulative}{if TRUE, plots the cumulative attack rate}
+\item{plot_residuals}{if TRUE, plots the residuals between inferred and true attack rate}
+
+\item{colour_by_taken}{if TRUE, then colours the attack rates by whether or not titres against the circulating antigen at that time were measured}
+
+\item{by_val}{frequency of x-axis labels}
 
 \item{settings}{if not NULL, list of serosolver settings as returned from the main serosolver function}
+
+\item{resolution}{divides `possible_exposure_times` by this number for x axis labels}
 }
 \value{
 a ggplot2 object with the inferred attack rates for each potential epoch of circulation
 }
 \description{
-Plots inferred historical attack rates from the MCMC output on infection histories.
+Plots inferred historical attack rates from the MCMC output on infection histories, with pointrange plots for per-time incidence estimates
 }

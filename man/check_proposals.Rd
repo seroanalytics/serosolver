@@ -21,6 +21,7 @@ Checks if the multivariate proposal is being used with the FOI proposal
 Other check_inputs: 
 \code{\link{check_attack_rates}()},
 \code{\link{check_data}()},
+\code{\link{check_demographics}()},
 \code{\link{check_inf_hist}()},
 \code{\link{check_par_tab}()}
 }

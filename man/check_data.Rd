@@ -24,6 +24,7 @@ check_data(example_antibody_data)
 \seealso{
 Other check_inputs: 
 \code{\link{check_attack_rates}()},
+\code{\link{check_demographics}()},
 \code{\link{check_inf_hist}()},
 \code{\link{check_par_tab}()},
 \code{\link{check_proposals}()}
