@@ -282,7 +282,6 @@ generate_quantiles <- function(x, sig_f = 3, qs = c(0.025, 0.5, 0.975), as_text 
   return(res)
 }
 
-
 #' Generate antibody level credible intervals
 #'
 #' Generates credible intervals on antibody levels and infection histories from an MCMC chain output.
@@ -586,13 +585,15 @@ calculate_infection_history_statistics <- function(inf_chain, burnin = 0, possib
   n_inf_chain[, cumu_infs := cumsum(total_infs), by = key(n_inf_chain)]
 
   if(length(unique(n_inf_chain$chain_no)) > 1){
-    gelman_res_j <- plyr::ddply(n_inf_chain, plyr::.(population_group,j), function(tmp_chain){
-      tmp_chain_mcmc <- split(as.data.table(tmp_chain), by=c("chain_no"))
-      tmp_chain_mcmc <- lapply(tmp_chain_mcmc, function(x) as.mcmc(x[,c("total_infs")]))
-      tmp_chain_mcmc <- as.mcmc.list(tmp_chain_mcmc)
-      gelman.diag(tmp_chain_mcmc)[[1]][1,]
-    })
-    colnames(gelman_res_j) <- c("population_group","j","gelman_point","gelman_upper")
+    gelman_res_j <- n_inf_chain %>% 
+      select(population_group,j,chain_no,total_infs) %>%
+      group_by(population_group,j,chain_no) %>%
+      summarize(x = list(as.mcmc(total_infs))) %>%
+      group_by(population_group,j) %>%
+      summarize(gelman_point = unlist(gelman.diag(as.mcmc.list(x))[[1]][1,1]),
+                gelman_upper=unlist(gelman.diag(as.mcmc.list(x))[[1]][1,2])) %>%
+      ungroup()
+      
   } else {
     gelman_res_j <- NULL
   }
