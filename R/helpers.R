@@ -452,16 +452,17 @@ setup_antibody_data_for_posterior_func <- function(
   ## each sampling time, for each observation type, for each repeat
   ## ie. each row of this is a unique blood sample and observation type taken
   sample_data <- unique(antibody_data[, c("individual", "sample_time", "biomarker_group")])
-  sample_data_start <- cumsum(c(0,plyr::ddply(sample_data, plyr::.(individual, biomarker_group), nrow)$V1))
+  sample_data_start <- c(0,sample_data %>% group_by(individual,biomarker_group) %>% tally() %>% pull(n) %>% cumsum())
   sample_times <- sample_data$sample_time ## What were the times that these samples were taken?
   # Change
   type_data <- unique(antibody_data[,c("individual","biomarker_group")])
-  type_data_start <- cumsum(c(0, plyr::ddply(type_data, plyr::.(individual), nrow)$V1))
+  type_data_start <- c(0,type_data %>% group_by(individual) %>% tally() %>% pull(n) %>% cumsum())
   biomarker_groups <- type_data$biomarker_group
   
   ## How many rows in the antibody data correspond to each unique individual, sample, observation type?
   ## ie. each element of this vector corresponds to one set of antibodies that need to be predicted
-  nrows_per_sample <- plyr::ddply(antibody_data, plyr::.(individual,biomarker_group, sample_time), nrow)$V1
+  nrows_per_sample <- c(0,antibody_data %>% group_by(individual,biomarker_group, sample_time) %>% 
+                          tally() %>% pull(n) %>% cumsum())
   antibody_data_start <- cumsum(c(0,nrows_per_sample))
   tmp <- add_stratifying_variables(antibody_data, timevarying_demographics, par_tab, use_demographic_groups)
   timevarying_demographics <- tmp$timevarying_demographics
