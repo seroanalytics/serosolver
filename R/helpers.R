@@ -749,10 +749,9 @@ generate_antigenic_map_flexible <- function(antigenic_distances, buckets = 1, cl
 
     ## Enumerate out such that each row has a unique time
     clusters$year <- seq(year_min * buckets, length.out = nrow(clusters))
-
     ## Which time point does each cluster start?
-    cluster_starts <- plyr::ddply(clusters, ~cluster_used, function(x) x$year[1])
-    colnames(cluster_starts)[2] <- "first_cluster_year"
+    cluster_starts <- clusters %>% group_by(cluster_used) %>% filter(year == min(year)) 
+    cluster_starts <- cluster_starts %>% rename(first_cluster_year=year)
     clusters1 <- merge(clusters, cluster_starts, by = c("cluster_used"))
     clusters1 <- clusters1[, c("cluster_used", "first_cluster_year", "year")]
     colnames(fit_data)[3] <- "first_cluster_year"
