@@ -154,7 +154,7 @@ plot_attack_rates <- function(infection_histories, antibody_data=NULL, possible_
     data.table::setkey(tmp, "samp_no", "population_group", "chain_no")
     tmp[, V1 := cumsum(V1), by = key(tmp)]
   }
-  quantiles <- ddply(tmp, plyr::.(time, population_group), function(x) quantile(x$V1, c(0.025,0.25, 0.5,0.75, 0.975)))
+  quantiles <- plyr::ddply(tmp, plyr::.(time, population_group), function(x) quantile(x$V1, c(0.025,0.25, 0.5,0.75, 0.975)))
   colnames(quantiles) <- c("time", "population_group", "lower","lower2", "median", "upper2","upper")
   
   
@@ -342,7 +342,7 @@ plot_attack_rates_pointrange <- function(infection_histories,
   }
   
   if (!plot_den) {
-    quantiles <- ddply(tmp, plyr::.(j, population_group), function(x) quantile(x$V1, c(0.025, 0.5, 0.975)))
+    quantiles <- plyr::ddply(tmp, plyr::.(j, population_group), function(x) quantile(x$V1, c(0.025, 0.5, 0.975)))
     colnames(quantiles) <- c("j", "population_group", "lower", "median", "upper")
     # quantiles[c("lower", "median", "upper")] <- quantiles[c("lower", "median", "upper")]# / n_alive1[quantiles$j]
     #quantiles$j <- years[quantiles$j]
@@ -711,7 +711,7 @@ plot_cumulative_infection_histories <- function(inf_chain, burnin = 0, indivs, r
   ## Generate lower, upper and median cumulative infection histories from the
   ## MCMC chain
   tmp_inf_chain <- inf_chain[inf_chain$i %in% indivs, ]
-  hist_profiles <- ddply(tmp_inf_chain, plyr::.(i, samp_no, chain_no), function(x) {
+  hist_profiles <- plyr::ddply(tmp_inf_chain, plyr::.(i, samp_no, chain_no), function(x) {
     empty <- numeric(length(possible_exposure_times))
     empty[x[x$x == 1, "j"]] <- 1
     cumsum(empty)
@@ -720,15 +720,15 @@ plot_cumulative_infection_histories <- function(inf_chain, burnin = 0, indivs, r
   hist_profiles <- hist_profiles[, colnames(hist_profiles) != "samp_no"]
   
   colnames(hist_profiles) <- c("i", "chain_no", possible_exposure_times)
-  hist_profiles_lower <- ddply(hist_profiles, plyr::.(i, chain_no), function(x) apply(x, 2, function(y) quantile(y, c(0.025))))
+  hist_profiles_lower <- plyr::ddply(hist_profiles, plyr::.(i, chain_no), function(x) apply(x, 2, function(y) quantile(y, c(0.025))))
   hist_profiles_lower <- reshape2::melt(hist_profiles_lower, id.vars = c("i", "chain_no"))
   colnames(hist_profiles_lower) <- c("individual", "chain_no", "variable", "lower")
   
-  hist_profiles_upper <- ddply(hist_profiles, plyr::.(i, chain_no), function(x) apply(x, 2, function(y) quantile(y, c(0.975))))
+  hist_profiles_upper <- plyr::ddply(hist_profiles, plyr::.(i, chain_no), function(x) apply(x, 2, function(y) quantile(y, c(0.975))))
   hist_profiles_upper <- reshape2::melt(hist_profiles_upper, id.vars = c("i", "chain_no"))
   colnames(hist_profiles_upper) <- c("individual", "chain_no", "variable", "upper")
   
-  hist_profiles_median <- ddply(hist_profiles, plyr::.(i, chain_no), function(x) apply(x, 2, function(y) quantile(y, c(0.5))))
+  hist_profiles_median <- plyr::ddply(hist_profiles, plyr::.(i, chain_no), function(x) apply(x, 2, function(y) quantile(y, c(0.5))))
   hist_profiles_median <- reshape2::melt(hist_profiles_median, id.vars = c("i", "chain_no"))
   colnames(hist_profiles_median) <- c("individual", "chain_no", "variable", "median")
   

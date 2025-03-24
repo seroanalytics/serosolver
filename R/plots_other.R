@@ -132,7 +132,7 @@ plot_2d_density <- function(chain, par1, par2) {
 #' @export
 plot_samples_distances <- function(antibody_data) {
     sample_times <- unique(antibody_data[, c("individual", "sample_time")])
-    distances <- ddply(sample_times, ~individual, function(x) {
+    distances <- plyr::ddply(sample_times, ~individual, function(x) {
         if (nrow(x) < 2) {
             y <- 0
         } else {
