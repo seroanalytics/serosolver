@@ -106,6 +106,112 @@ void antibody_data_model_individual_timevarying(NumericVector &predicted_antibod
   }
 }
 
+void antibody_data_model_individual_timevarying_variant_specific(NumericVector &predicted_antibody_levels,
+                                                const NumericVector &start_antibody_levels,
+                                                const NumericVector &births,
+                                                const NumericMatrix &boost_long,
+                                                const NumericMatrix &boost_short,
+                                                const NumericMatrix &boost_delay,
+                                                const NumericMatrix &wane_short,
+                                                const NumericMatrix &wane_long,
+                                                const NumericMatrix &antigenic_seniority,
+                                                const NumericVector &infection_times,
+                                                const IntegerVector &groups,
+                                                const int &birth_group,
+                                                const IntegerVector &exposure_indices,
+                                                const IntegerVector &exposure_group,
+                                                const IntegerVector &biomarker_id_indices,
+                                                const IntegerVector &start_level_indices,
+                                                const NumericVector &sample_times,
+                                                const int &index_in_samples,
+                                                const int &end_index_in_samples,
+                                                const int &start_index_in_data1,
+                                                const IntegerVector &nrows_per_blood_sample,
+                                                const int &number_possible_exposures,
+                                                const arma::cube &antigenic_map_short,
+                                                const arma::cube &antigenic_map_long,
+                                                const NumericMatrix &min_level,
+                                                bool boost_before_infection = false
+){
+  
+  double sampling_time;
+  double time;
+  double n_inf;
+  double wane_short_amount;
+  double wane_long_amount;
+  double seniority;
+  int n_measurements;
+  int max_infections = infection_times.size();
+  int end_index_in_data;
+  int tmp_measurement_index;
+  int start_index_in_data = start_index_in_data1;
+  int inf_map_index;
+  int index;
+  // For each sample this individual has
+  for(int j = index_in_samples; j <= end_index_in_samples; ++j){
+    sampling_time = sample_times[j];
+    n_inf = 1.0;
+    // Find number of measurements in the predicted_antibody_levels vector that correspond to this sample
+    n_measurements = nrows_per_blood_sample[j];
+    // Only iterate through indices for this sample
+    end_index_in_data = start_index_in_data + n_measurements;
+    tmp_measurement_index = start_index_in_data;
+    
+    // Include starting titre contributions
+    // Time elapsed since first sample time
+    // Assume that first entry for birth does not change
+    
+    time = sampling_time - births[start_index_in_data];
+    wane_long_amount= wane_long(birth_group,0)*boost_long(birth_group,0)*time;//MAX(0, 1.0 - (wane_long*time)); 
+    wane_long_amount = MAX(0, wane_long_amount);
+    //Rcpp::Rcout << "wane_long_amount: " << wane_long_amount << std::endl;
+    // For each measured marker, find the biomarker id index which will match an entry in start_antibody_levels
+    // Add this to the predicted antibody level, with waning
+
+    
+    for(int k = 0; k < n_measurements; ++k){
+      index = start_level_indices[tmp_measurement_index + k];
+      predicted_antibody_levels[tmp_measurement_index + k] += min_level(birth_group,0);
+      predicted_antibody_levels[tmp_measurement_index + k] += MAX(0, start_antibody_levels[index] - wane_long_amount);
+    }
+    
+    // Rcpp::Rcout << "Here" << std::endl;
+    // Sum all infections that would contribute towards observed antibody levels at this time
+    for(int x = 0; x < max_infections; ++x){
+      /*Rcpp::Rcout << "Infection time[x]: " << infection_times[x] << std::endl;
+      Rcpp::Rcout << "Boost: " << boost_short(groups[x],exposure_group[exposure_indices[x]]) << std::endl;
+      Rcpp::Rcout << "x: " << x << std::endl;
+      Rcpp::Rcout << "groups[x]: " << groups[x] << std::endl;
+      Rcpp::Rcout << "groups: " << groups << std::endl;
+      Rcpp::Rcout << "exposure_group[exposure_indices[x]]: " << exposure_group[exposure_indices[x]] << std::endl;
+      Rcpp::Rcout << "exposure_group: " << exposure_group << std::endl;
+      */
+      // Only go further if this sample happened after the infection
+      if((boost_before_infection && sampling_time > (infection_times[x] + boost_delay(groups[x],exposure_group[exposure_indices[x]]))) ||
+         (!boost_before_infection && sampling_time >= (infection_times[x] + boost_delay(groups[x],exposure_group[exposure_indices[x]])))){
+        time = sampling_time - (infection_times[x] + boost_delay(groups[x],exposure_group[exposure_indices[x]])); // Time between sample and infection + boost
+        wane_short_amount= MAX(0, 1.0 - (wane_short(groups[x],exposure_group[exposure_indices[x]])*time)); // Waning of the short-term response
+        wane_long_amount= MAX(0, 1.0 - (wane_long(groups[x],exposure_group[exposure_indices[x]])*time)); // Waning of the long-term response
+        
+        seniority = MAX(0, 1.0 - antigenic_seniority(groups[x],exposure_group[exposure_indices[x]])*(n_inf - 1.0)); // Antigenic seniority
+        inf_map_index = exposure_indices[x]; // Index of this infecting antigen in antigenic map
+        
+        // Find contribution to each measured antibody level from this infection
+        for(int k = 0; k < n_measurements; ++k){
+          index = biomarker_id_indices[tmp_measurement_index + k]*number_possible_exposures + inf_map_index;
+          predicted_antibody_levels[tmp_measurement_index + k] += seniority*
+            ((boost_long(groups[x],exposure_group[exposure_indices[x]])*antigenic_map_long.slice(groups[x]).colptr(exposure_group[exposure_indices[x]])[index])*wane_long_amount + 
+            (boost_short(groups[x],exposure_group[exposure_indices[x]])*antigenic_map_short.slice(groups[x]).colptr(exposure_group[exposure_indices[x]])[index])*wane_short_amount);
+        }
+        
+        ++n_inf;
+      }
+    }
+    start_index_in_data = end_index_in_data;
+  }
+}
+
+
 
 
 void antibody_data_model_individual_new(NumericVector &predicted_antibody_levels,

@@ -59,7 +59,6 @@ create_posterior_func <- function(par_tab,
                                   fixed_inf_hists=NULL,
                                   verbose=FALSE,
                                   ...) {
-
     check_par_tab(par_tab, TRUE, prior_version,verbose)
     antibody_data <- as.data.frame(antibody_data)
     ## Add a dummy observation type variable if not provided
@@ -142,6 +141,23 @@ create_posterior_func <- function(par_tab,
     use_demographic_groups <- tmp$use_demographic_groups
     use_timevarying_demographics <- tmp$timevarying_demographics
 
+    if("exposure_group" %in% colnames(antigenic_map)){
+       use_variant_specific_pars <- TRUE
+       exposure_groups <- antigenic_map %>% filter(biomarker_group == min(biomarker_group)) %>% pull(exposure_group)
+       exposure_groups <- exposure_groups - 1
+       unique_exposure_groups <- unique(exposure_groups)
+       antigenic_map_col_indices <- unique_exposure_groups + 1
+       n_antigenic_map_groups <- length(antigenic_map_col_indices)
+       
+    } else {
+      use_variant_specific_pars <- FALSE
+      exposure_groups <- NULL
+      unique_exposure_groups <- NULL
+      antigenic_map_col_indices <- unique_biomarker_groups
+      n_antigenic_map_groups <- n_biomarker_groups
+    }
+    
+    
     setup_dat <- setup_antibody_data_for_posterior_func(
       par_tab,
         antibody_data_unique, antigenic_map, 
@@ -371,7 +387,6 @@ create_posterior_func <- function(par_tab,
     if (function_type == 1) {
       if(verbose) message(cat("Creating posterior solving function...\n"))
         f <- function(pars, infection_history_mat) {
-  
           ## Transmission prob is the part of the likelihood function corresponding to each individual
           transmission_prob <- rep(0, n_indiv)
           if (explicit_phi) {
@@ -380,17 +395,19 @@ create_posterior_func <- function(par_tab,
               phis, infection_history_mat,
               age_mask, sample_mask)
           }
+          
           if (solve_likelihood) {
             names(pars) <- par_names
             theta <- transform_parameters_cpp(pars, scale_table, c(theta_indices,measurement_indices_par_tab)-1, scale_par_indices-1,as.matrix(demographic_groups), transforms)
             colnames(theta) <- names(pars[c(theta_indices, measurement_indices_par_tab)])
-            antigenic_map_long <- array(dim=c(length(possible_biomarker_ids)^2,n_biomarker_groups,n_demographic_groups))
-            antigenic_map_short <- array(dim=c(length(possible_biomarker_ids)^2,n_biomarker_groups,n_demographic_groups))
-            
+            antigenic_map_long <- array(dim=c(length(possible_biomarker_ids)^2,n_antigenic_map_groups,n_demographic_groups))
+            antigenic_map_short <- array(dim=c(length(possible_biomarker_ids)^2,n_antigenic_map_groups,n_demographic_groups))
+
             cr_longs <- matrix(theta[,which(par_names_theta_all=="cr_long")],nrow=length(unique_groups))
             cr_shorts <- matrix(theta[,which(par_names_theta_all=="cr_short")],nrow=length(unique_groups))
+            
             for(group in unique_groups){
-              for(biomarker_group in unique_biomarker_groups){
+              for(biomarker_group in antigenic_map_col_indices){
                 antigenic_map_long[,biomarker_group,group] <- create_cross_reactivity_vector(antigenic_map_melted[[biomarker_group]], cr_longs[group,biomarker_group])
                 antigenic_map_short[,biomarker_group,group] <- create_cross_reactivity_vector(antigenic_map_melted[[biomarker_group]], cr_shorts[group,biomarker_group])
               }
@@ -404,6 +421,8 @@ create_posterior_func <- function(par_tab,
               indiv_group_indices,
               possible_exposure_times, 
               exposure_id_indices,
+              exposure_groups,
+              unique_exposure_groups,
               sample_times, 
               type_data_start,
               biomarker_groups,
@@ -420,6 +439,7 @@ create_posterior_func <- function(par_tab,
               antigenic_map_short,
               antigenic_distances,
               use_timevarying_demographics,
+              use_variant_specific_pars,
               antibody_level_before_infection
             )
             if (use_measurement_bias) {
@@ -524,6 +544,7 @@ create_posterior_func <- function(par_tab,
                       proposal_ratios,
                       temp=1,
                       propose_from_prior=TRUE) {
+          
           names(pars) <- par_names
           theta <- transform_parameters_cpp(pars, scale_table, c(theta_indices,measurement_indices_par_tab)-1, scale_par_indices-1,as.matrix(demographic_groups), transforms)
           colnames(theta) <- names(pars[c(theta_indices, measurement_indices_par_tab)])
@@ -531,14 +552,13 @@ create_posterior_func <- function(par_tab,
               measurement_bias_indices <- matrix(theta[,rho_indices_unique])
               antibody_level_shifts <- measurement_bias_indices[cbind(antibody_data_demo_index, expected_indices)]
             }
-          antigenic_map_long <- array(dim=c(length(possible_biomarker_ids)^2,n_biomarker_groups,n_demographic_groups))
-          antigenic_map_short <- array(dim=c(length(possible_biomarker_ids)^2,n_biomarker_groups,n_demographic_groups))
+          antigenic_map_long <- array(dim=c(length(possible_biomarker_ids)^2,n_antigenic_map_groups,n_demographic_groups))
+          antigenic_map_short <- array(dim=c(length(possible_biomarker_ids)^2,n_antigenic_map_groups,n_demographic_groups))
           
           cr_longs <- matrix(theta[,which(par_names_theta_all=="cr_long")],nrow=length(unique_groups))
           cr_shorts <- matrix(theta[,which(par_names_theta_all=="cr_short")],nrow=length(unique_groups))
-          
           for(group in unique_groups){
-            for(biomarker_group in unique_biomarker_groups){
+            for(biomarker_group in antigenic_map_col_indices){
               antigenic_map_long[,biomarker_group,group] <- create_cross_reactivity_vector(antigenic_map_melted[[biomarker_group]], cr_longs[group,biomarker_group])
               antigenic_map_short[,biomarker_group,group] <- create_cross_reactivity_vector(antigenic_map_melted[[biomarker_group]], cr_shorts[group,biomarker_group])
             }
@@ -569,6 +589,9 @@ create_posterior_func <- function(par_tab,
                 infection_model_prior_shape2,
                 possible_exposure_times,
                 exposure_id_indices,
+                exposure_groups,
+                unique_exposure_groups,
+                
                 sample_times,
                 
                 type_data_start,
@@ -614,6 +637,7 @@ create_posterior_func <- function(par_tab,
                 indiv_poss_exp_times_start,
                 indiv_poss_exp_times_end,
                 use_timevarying_demographics,
+                use_variant_specific_pars,
                 temp,
                 solve_likelihood
             )
@@ -627,13 +651,13 @@ create_posterior_func <- function(par_tab,
           names(pars) <- par_names
           theta <- transform_parameters_cpp(pars, scale_table, c(theta_indices,measurement_indices_par_tab)-1, scale_par_indices-1,as.matrix(demographic_groups), transforms)
           colnames(theta) <- names(pars[c(theta_indices, measurement_indices_par_tab)])
-            antigenic_map_long <- array(dim=c(length(possible_biomarker_ids)^2,n_biomarker_groups,n_demographic_groups))
-            antigenic_map_short <- array(dim=c(length(possible_biomarker_ids)^2,n_biomarker_groups,n_demographic_groups))
+            antigenic_map_long <- array(dim=c(length(possible_biomarker_ids)^2,n_antigenic_map_groups,n_demographic_groups))
+            antigenic_map_short <- array(dim=c(length(possible_biomarker_ids)^2,n_antigenic_map_groups,n_demographic_groups))
             
             cr_longs <- matrix(theta[,which(par_names_theta_all=="cr_long")],nrow=length(unique_groups))
             cr_shorts <- matrix(theta[,which(par_names_theta_all=="cr_short")],nrow=length(unique_groups))
             for(group in unique_groups){
-              for(biomarker_group in unique_biomarker_groups){
+              for(biomarker_group in antigenic_map_col_indices){
                   antigenic_map_long[,biomarker_group,group] <- create_cross_reactivity_vector(antigenic_map_melted[[biomarker_group]], cr_longs[group,biomarker_group])
                   antigenic_map_short[,biomarker_group,group] <- create_cross_reactivity_vector(antigenic_map_melted[[biomarker_group]], cr_shorts[group,biomarker_group])
               }
@@ -646,6 +670,9 @@ create_posterior_func <- function(par_tab,
                 
                 possible_exposure_times, 
                 exposure_id_indices,
+                exposure_groups,
+                unique_exposure_groups,
+                
                 sample_times, 
                 type_data_start,
                 biomarker_groups,
@@ -662,6 +689,8 @@ create_posterior_func <- function(par_tab,
                 antigenic_map_short,
                 antigenic_distances,
                 use_timevarying_demographics,
+                use_variant_specific_pars,
+                
                 antibody_level_before_infection
             )
 

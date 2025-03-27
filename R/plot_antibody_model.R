@@ -623,12 +623,16 @@ plot_estimated_antibody_model <- function(chain,
   
   tmp_samp <- sample(samps, nsamp)
   ## See the function in posteriors.R
-  model_func <- create_posterior_func(par_tab, full_antibody_data, antigenic_map, possible_exposure_times,
+
+  model_func <- create_posterior_func(par_tab, full_antibody_data, 
+                                      antigenic_map, 
+                                      possible_exposure_times,
                                       prior_version=2,
                                       measurement_bias = measurement_bias, function_type = 4,
                                       antibody_level_before_infection=FALSE,
                                       data_type=data_type,start_level="none",
-                                      demographics=full_demographics,demographic_groups=demographic_groups
+                                      demographics=NULL,#full_demographics,
+                                      demographic_groups=demographic_groups
   )
   
   predicted_titres <- observed_predicted_titres <- matrix(nrow = nrow(full_antibody_data), ncol = nsamp)

@@ -431,8 +431,19 @@ setup_antibody_data_for_posterior_func <- function(
   unique_biomarker_groups <- unique(antibody_data$biomarker_group)
   n_biomarker_groups <- length(unique_biomarker_groups)
   
+  ## Check if stratifying by exposure group in antigenic_map, if so, we use this as the "biomarker_group"
+  if("exposure_group" %in% colnames(antigenic_map)){
+    n_exposure_groups <- length(unique(par_tab$biomarker_group))
+    unique_groups_map <- unique(par_tab$biomarker_group)
+    n_groups_map <- n_exposure_groups
+  } else {
+    n_exposure_groups <- NULL
+    n_groups_map <- n_biomarker_groups
+    unique_groups_map <- unique_biomarker_groups
+  }
  
-  antigenic_map_tmp <- setup_antigenic_map(antigenic_map, possible_exposure_times, n_biomarker_groups,unique_biomarker_groups,verbose)
+  antigenic_map_tmp <- setup_antigenic_map(antigenic_map, possible_exposure_times, 
+                                           n_groups_map,unique_groups_map,verbose)
   antigenic_map <- antigenic_map_tmp$antigenic_map
   possible_exposure_times <- antigenic_map_tmp$possible_exposure_times
   infection_history_mat_indices <- antigenic_map_tmp$infection_history_mat_indices
@@ -440,7 +451,7 @@ setup_antibody_data_for_posterior_func <- function(
   possible_biomarker_ids <- unique(antigenic_map$inf_times)
   
   ## Create a melted antigenic map for each observation type
-  antigenic_maps_melted <- lapply(unique_biomarker_groups, function(b){
+  antigenic_maps_melted <- lapply(unique_groups_map, function(b){
       tmp <- antigenic_map[antigenic_map$biomarker_group == b,]
       c(melt_antigenic_coords(tmp[,c("x_coord","y_coord")]))
     })
