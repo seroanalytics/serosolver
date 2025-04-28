@@ -63,7 +63,7 @@ NumericMatrix transform_parameters_cpp(NumericVector pars, List scale_table,
         
         //Rcpp::Rcout << "Scale table: " << tmp_scale_table << std::endl;
         
-        par_index = tmp_scale_table(tmp_strat, i)-1;
+        par_index = tmp_scale_table(tmp_strat, i);
         //Rcpp::Rcout << "Par index: " << par_index << std::endl;
         //Rcpp::Rcout << "Scale par: " << scale_pars[par_index] << std::endl;
         

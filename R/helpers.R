@@ -960,7 +960,7 @@ create_demographic_table <- function(antibody_data, par_tab){
   stratifications <- stratifications[!is.na(stratifications)]
   
   if(length(stratifications) == 0){
-    demographics <- data.frame(all=1)
+    demographics <- data.frame(all=0)
   } else {
     demographics <- antibody_data %>% select(all_of(stratifications)) %>% distinct()
     if(any(apply(demographics, 2, function(x) length(unique(x))) < 2)){
@@ -996,12 +996,12 @@ setup_stratification_table <- function(par_tab, demographics){
   
   ## If no stratifications, create dummy table
   if(nrow(demographics) == 1){
-    scale_table[[1]] <- matrix(1, nrow=1,ncol=n_pars)
+    scale_table[[1]] <- matrix(0, nrow=1,ncol=n_pars)
     scale_pars <- NULL
   } else {
     for(i in seq_along(stratifications)){
       stratification <- stratifications[i]
-      scale_table[[i]] <- matrix(1, nrow=length(unique(demographics[,stratification])),ncol=n_pars)
+      scale_table[[i]] <- matrix(0, nrow=length(unique(demographics[,stratification])),ncol=n_pars)
     }
     names(scale_table) <- stratifications
     
@@ -1022,7 +1022,7 @@ setup_stratification_table <- function(par_tab, demographics){
           unique_demo_strats_names <- unique_demo_strats[!is.na(unique_demo_strats)]
           n_groups <- length(unique_demo_strats_names)
           for(x in 2:n_groups){
-            scale_table[[strat]][x,j] <- index
+            scale_table[[strat]][x,j] <- index-1
             strat_par_names[[index]] <- paste0(use_par_tab$names[j],"_biomarker_",use_par_tab$biomarker_group[j],"_coef_",strat,"_",unique_demo_strats_names[x])
             index <- index + 1
           }
