@@ -662,6 +662,7 @@ create_posterior_func <- function(par_tab,
                   antigenic_map_short[,biomarker_group,group] <- create_cross_reactivity_vector(antigenic_map_melted[[biomarker_group]], cr_shorts[group,biomarker_group])
               }
             }
+
             y_new <- antibody_model(
                 theta, theta_indices_unique, unique_biomarker_groups,
                 infection_history_mat, 

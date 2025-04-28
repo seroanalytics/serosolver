@@ -640,6 +640,7 @@ plot_estimated_antibody_model <- function(chain,
   inf_hist_test <- matrix(0, nrow=n_indiv, ncol = length(possible_exposure_times))
   inf_hist_test[,1] <- 1
   ## For each sample, take values for theta and infection histories and simulate titres
+
   for (i in 1:nsamp) {
     index <- tmp_samp[i]
     pars <- get_index_pars(chain, samp_no=index,chain_no=1)
