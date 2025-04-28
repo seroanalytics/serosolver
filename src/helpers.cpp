@@ -58,10 +58,10 @@ NumericMatrix transform_parameters_cpp(NumericVector pars, List scale_table,
       scales = 0;
       for (int x = 0; x < n_strats; ++x) {
         tmp_strat = demographics(j, x);
-        // Rcpp::Rcout << "Stratification: " << tmp_strat << std::endl;
+        //Rcpp::Rcout << "Stratification: " << tmp_strat << std::endl;
         
         IntegerMatrix tmp_scale_table = scale_table[x];
-        par_index = tmp_scale_table(tmp_strat, i)-1;
+        par_index = tmp_scale_table(tmp_strat, i);
         scales += scale_pars[par_index];
 
       }
