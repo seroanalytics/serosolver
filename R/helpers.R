@@ -949,7 +949,7 @@ create_demographic_table <- function(antibody_data, par_tab){
   stratifications <- stratifications[!is.na(stratifications)]
   
   if(length(stratifications) == 0){
-    demographics <- data.frame(all=1)
+    demographics <- data.frame(all=0)
   } else {
     demographics <- antibody_data %>% select(all_of(stratifications)) %>% distinct()
     if(any(apply(demographics, 2, function(x) length(unique(x))) < 2)){
@@ -985,12 +985,12 @@ setup_stratification_table <- function(par_tab, demographics){
   
   ## If no stratifications, create dummy table
   if(nrow(demographics) == 1){
-    scale_table[[1]] <- matrix(1, nrow=1,ncol=n_pars)
+    scale_table[[1]] <- matrix(0, nrow=1,ncol=n_pars)
     scale_pars <- NULL
   } else {
     for(i in seq_along(stratifications)){
       stratification <- stratifications[i]
-      scale_table[[i]] <- matrix(1, nrow=length(unique(demographics[,stratification])),ncol=n_pars)
+      scale_table[[i]] <- matrix(0, nrow=length(unique(demographics[,stratification])),ncol=n_pars)
     }
     names(scale_table) <- stratifications
     

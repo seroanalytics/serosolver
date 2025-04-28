@@ -40,40 +40,37 @@ NumericMatrix transform_parameters_cpp(NumericVector pars, List scale_table,
   int n_theta_pars = theta_indices.size();
   
   NumericMatrix theta(n_demographic_groups, n_theta_pars);
+  //Rcpp::Rcout << "Theta pars length: " << theta_pars.size() << std::endl;
+  //Rcpp::Rcout << "n_theta_pars: " << n_theta_pars << std::endl;
+  //Rcpp::Rcout << "n_strats: " << n_strats << std::endl;
   //return theta;
   scale_pars(0) = 0; // First element is always 0
   for (int i = 0; i < scale_par_indices.size(); ++i) {
     scale_pars[i + 1] = pars[scale_par_indices[i]];
   }
-  //Rcpp::Rcout << "Scale parameters: " << scale_pars << std::endl;
+  // Rcpp::Rcout << "Scale parameters: " << scale_pars << std::endl;
   double scales;
   int tmp_strat;
   int par_index;
   for (int i = 0; i < n_theta_pars; ++i) {
-    //Rcpp::Rcout << "Theta par: " << i << std::endl;
-    
     for (int j = 0; j < n_demographic_groups; ++j) {
-      //Rcpp::Rcout << "Group: " << j << std::endl;
+      // Rcpp::Rcout << "Group: " << j << std::endl;
       scales = 0;
       for (int x = 0; x < n_strats; ++x) {
         tmp_strat = demographics(j, x);
-//Rcpp::Rcout << "Stratification: " << tmp_strat << std::endl;
+        // Rcpp::Rcout << "Stratification: " << tmp_strat << std::endl;
         
         IntegerMatrix tmp_scale_table = scale_table[x];
-        
-        //Rcpp::Rcout << "Scale table: " << tmp_scale_table << std::endl;
-        
         par_index = tmp_scale_table(tmp_strat, i)-1;
-        //Rcpp::Rcout << "Par index: " << par_index << std::endl;
-        //Rcpp::Rcout << "Scale par: " << scale_pars[par_index] << std::endl;
-        
-        
         scales += scale_pars[par_index];
+
       }
       
       //Rcpp::Rcout << "Scale: " << scales << std::endl;
       //Rcpp::Rcout << "Pre transform par: " << theta_pars[i] << std::endl;
-      
+      //Rcpp::Rcout << "Transforms size: " << transforms.size() << std::endl;
+      //Rcpp::Rcout << "Theta ncol: " << theta.ncol() << std::endl;
+      //Rcpp::Rcout << "Theta pars vector: " << theta_pars.size() << std::endl;
       if(transforms[i] == 0){ 
         theta(j, i) = exp(log(theta_pars[i]) + scales);
       } else if(transforms[i] == 1){
@@ -81,8 +78,8 @@ NumericMatrix transform_parameters_cpp(NumericVector pars, List scale_table,
       } else {
         theta(j, i) = theta_pars[i] + scales;
       }
-      
-     // Rcpp::Rcout << "Post transform par: " << theta(j, i) << std::endl << std::endl;      
+    
+     //Rcpp::Rcout << "Post transform par: " << theta(j, i) << std::endl << std::endl;      
     }
     
   }
