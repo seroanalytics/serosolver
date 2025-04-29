@@ -386,8 +386,8 @@ serosolver <- function(par_tab,
 
   save(serosolver_settings,file=paste0(filename,"_serosolver_settings.RData"))
   
-  #result <- foreach(chain = 1:n_chains, .packages =c("serosolver","data.table","dplyr","tidyr")) %execute% {
-  for(chain in 1:n_chains){
+  result <- foreach(chain = 1:n_chains, .packages =c("serosolver","data.table","dplyr","tidyr")) %execute% {
+  #for(chain in 1:n_chains){
     if(parallel){
       sink(log_file,append=TRUE)                    
     }
