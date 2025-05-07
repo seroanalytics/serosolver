@@ -429,6 +429,12 @@ plot_antibody_predictions <- function(chain, infection_histories,
   } else {
     start_levels <- NULL
   }
+  ## Make sure that we're not trying to use more samples than there are in the MCMC chain
+  if(nsamp > length(unique(chain$samp_no))){ 
+    message("Number of samples requested is greater than the number of samples in the MCMC chain. Using maximum number of samples available.")
+  }
+  nsamp <- min(nsamp, length(unique(chain$samp_no)))
+  
   ## Generate antibody predictions
   x <- get_antibody_level_predictions(
     chain, infection_histories, antibody_data, individuals=unique(antibody_data$individual),
