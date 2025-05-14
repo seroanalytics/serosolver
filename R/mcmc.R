@@ -476,6 +476,7 @@ run_MCMC <- function(par_tab,
             }
             ## Gibbs sampler version, integrate out phi
         } else if (hist_proposal == 2) {
+          
             ## Swap entire contents or propose new
             if (inf_swap_prob > hist_switch_prob) {
                 #print(paste0("Sum infection histories before: ", sum(infection_histories)))

@@ -414,12 +414,20 @@ simulate_individual <- function(theta,
 #' y <- runif(100)
 #' noisy_y <- add_noise(y, pars)
 #' }
-add_noise <- function(y, theta, measurement_bias = NULL, indices = NULL) {
+add_noise <- function(y, theta, measurement_bias = NULL, indices = NULL, data_type=1) {
   ## Draw from normal
+  if(data_type == 1){
   if (!is.null(measurement_bias)) {
     noise_y <- floor(rnorm(length(y), mean = y + measurement_bias[indices], sd = theta["error"]))
   } else {
     noise_y <- floor(rnorm(length(y), mean = y, sd = theta["error"]))
+  }
+  } else {
+    if (!is.null(measurement_bias)) {
+      noise_y <- (rnorm(length(y), mean = y + measurement_bias[indices], sd = theta["error"]))
+    } else {
+      noise_y <- (rnorm(length(y), mean = y, sd = theta["error"]))
+    }
   }
 
   ## If outside of bounds, truncate

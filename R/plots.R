@@ -58,7 +58,7 @@ get_titre_predictions <- function(chain, infection_histories, titre_dat,
                                   mu_indices = NULL,
                                   measurement_indices_by_time = NULL,
                                   for_res_plot = FALSE, expand_titredat = FALSE,
-                                  titre_before_infection=FALSE, titres_for_regression=FALSE){
+                                  titre_before_infection=FALSE, titres_for_regression=FALSE,data_type=1){
     ## Need to align the iterations of the two MCMC chains
     ## and choose some random samples
     samps <- intersect(unique(infection_histories$sampno), unique(chain$sampno))
@@ -124,7 +124,7 @@ get_titre_predictions <- function(chain, infection_histories, titre_dat,
         tmp_inf_hist <- infection_histories[infection_histories$sampno == index, ]
         tmp_inf_hist <- as.matrix(Matrix::sparseMatrix(i = tmp_inf_hist$i, j = tmp_inf_hist$j, x = tmp_inf_hist$x, dims = c(n_indiv, nstrain)))
         predicted_titres[, i] <- model_func(pars, tmp_inf_hist)
-        observed_predicted_titres[,i] <- add_noise(predicted_titres[,i], pars, NULL, NULL)
+        observed_predicted_titres[,i] <- add_noise(predicted_titres[,i], pars, NULL, NULL,data_type)
         inf_hist_all[[i]] <- tmp_inf_hist
         ## Get residuals between observations and predictions
         residuals[, i] <- titre_dat1$titre - floor(predicted_titres[, i])
@@ -227,7 +227,8 @@ plot_infection_histories_long <- function(chain, infection_histories, titre_dat,
                                      strain_isolation_times=NULL, par_tab,
                                      nsamp = 100,
                                      mu_indices = NULL,
-                                     measurement_indices_by_time = NULL) {
+                                     measurement_indices_by_time = NULL,
+                                     data_type=1) {
     individuals <- individuals[order(individuals)]
     ## Generate titre predictions
     titre_preds <- get_titre_predictions(
@@ -235,7 +236,7 @@ plot_infection_histories_long <- function(chain, infection_histories, titre_dat,
         antigenic_map, strain_isolation_times, 
         par_tab, nsamp, FALSE, mu_indices,
         measurement_indices_by_time,
-        expand_titredat=TRUE
+        expand_titredat=TRUE,data_type=data_type
     )
     
     ## Use these titre predictions and summary statistics on infection histories
@@ -307,7 +308,8 @@ plot_infection_histories <- function(chain, infection_histories, titre_dat,
                                      nsamp = 100,
                                      mu_indices = NULL,
                                      measurement_indices_by_time = NULL,
-                                     p_ncol=length(individuals)/2) {
+                                     p_ncol=length(individuals)/2,
+                                     data_type=1) {
     individuals <- individuals[order(individuals)]
     ## Generate titre predictions
     titre_preds <- get_titre_predictions(
@@ -315,9 +317,9 @@ plot_infection_histories <- function(chain, infection_histories, titre_dat,
         antigenic_map, strain_isolation_times, 
         par_tab, nsamp, FALSE, mu_indices,
         measurement_indices_by_time,
-        expand_titredat=TRUE
+        expand_titredat=TRUE,data_type=data_type
     )
-
+    
     ## Use these titre predictions and summary statistics on infection histories
     to_use <- titre_preds$predicted_observations
     model_preds <- titre_preds$predictions
@@ -332,7 +334,6 @@ plot_infection_histories <- function(chain, infection_histories, titre_dat,
     
     max_x <- max(inf_hist_densities$variable) + 5
     time_range <- range(inf_hist_densities$variable)
-    
     titre_pred_p <- ggplot(to_use) +
         geom_rect(data=inf_hist_densities,
                   aes(xmin=xmin,xmax=xmax,fill=value),ymin=min_titre-1,ymax=max_titre+2)+
