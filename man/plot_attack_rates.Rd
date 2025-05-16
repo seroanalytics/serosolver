@@ -13,7 +13,7 @@ plot_attack_rates(
   n_alive = NULL,
   pointsize = 1,
   fatten = 1,
-  pad_chain = TRUE,
+  pad_chain = FALSE,
   prior_pars = NULL,
   plot_den = FALSE,
   plot_ribbon = FALSE,

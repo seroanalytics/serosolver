@@ -4,10 +4,16 @@
 \alias{pad_inf_chain}
 \title{Pad infection history chain}
 \usage{
-pad_inf_chain(inf_chain, pad_by_group = FALSE)
+pad_inf_chain(inf_chain, pad_by_group = FALSE, times = NULL, indivs = NULL)
 }
 \arguments{
 \item{inf_chain}{the data table with infection history samples from \code{\link{serosolver}}}
+
+\item{pad_by_group}{if TRUE, accounts for population group when expanding}
+
+\item{times}{if not NULL, uses this as a vector of times to replace j when expanding to all combinations}
+
+\item{indivs}{if not NULL, uses this as a vector of individuals to replace i when expanding to all combinations}
 }
 \value{
 the same inf_chain that was passed in, but with 0s for missing i/j/samp_no combinations

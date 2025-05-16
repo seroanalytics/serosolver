@@ -359,6 +359,7 @@ List inf_hist_prop_prior_v2_and_v4(
   NumericMatrix boost_delay_parameters(n_groups,n_types);
   NumericMatrix wane_short_parameters(n_groups,n_types);
   NumericMatrix wane_long_parameters(n_groups,n_types);
+  NumericMatrix wane_maternal_parameters(n_groups,n_types);
   NumericMatrix antigenic_seniority_parameters(n_groups,n_types);
   
   NumericMatrix max_measurements(n_groups,n_types);
@@ -369,6 +370,7 @@ List inf_hist_prop_prior_v2_and_v4(
   int boost_delay_index = unique_theta_indices("boost_delay");
   int wane_short_index = unique_theta_indices("wane_short");
   int wane_long_index = unique_theta_indices("wane_long");
+  int wane_maternal_index = unique_theta_indices("wane_maternal");
   int antigenic_seniority_index = unique_theta_indices("antigenic_seniority");
   int error_index = unique_theta_indices("obs_sd");
   int fp_rate_index = unique_theta_indices("fp_rate");
@@ -405,6 +407,7 @@ List inf_hist_prop_prior_v2_and_v4(
         boost_delay_parameters(g,x) = theta(g,boost_delay_index + x*n_theta);
         wane_short_parameters(g,x) = theta(g,wane_short_index + x*n_theta);
         wane_long_parameters(g,x) = theta(g,wane_long_index + x*n_theta);
+        wane_maternal_parameters(g,x) = theta(g,wane_maternal_index + x*n_theta);
         antigenic_seniority_parameters(g,x) = theta(g,antigenic_seniority_index + x*n_theta);
        
           // Titre dependent boosting
@@ -723,6 +726,7 @@ List inf_hist_prop_prior_v2_and_v4(
         	    boost_delay_parameters,
         	    wane_short_parameters, 
         	    wane_long_parameters, 
+        	    wane_maternal_parameters,
         	    antigenic_seniority_parameters,
         	    infection_times,
         	    groups_subset,
@@ -751,7 +755,9 @@ List inf_hist_prop_prior_v2_and_v4(
         	    boost_delay_parameters(group,biomarker_group),
         	    wane_short_parameters(group,biomarker_group), 
         	    wane_long_parameters(group,biomarker_group), 
-        	    antigenic_seniority_parameters(group,biomarker_group),
+        	    wane_maternal_parameters(group,biomarker_group), 
+        	    wane_maternal_parameters(group,biomarker_group), 
+        	    //antigenic_seniority_parameters(group,biomarker_group),
         	    infection_times,
         	    infection_times_indices_tmp,
         	    biomarker_id_indices,

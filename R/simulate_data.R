@@ -55,7 +55,8 @@ simulate_data <- function(par_tab,
                           measurement_bias = NULL,
                           data_type = NULL,
                           demographics=NULL,
-                          verbose=FALSE) {
+                          verbose=FALSE,
+                          starting_levels=NULL) {
     #########################################################
     ## CHECK FOR BIOMARKER GROUPS
     #########################################################
@@ -191,12 +192,21 @@ simulate_data <- function(par_tab,
     ## Correct arrangement
     antibody_data <- antibody_data %>% 
       arrange(individual, biomarker_group, sample_time, biomarker_id, repeat_number)
+    
+    ## Simulate starting antibody levels if requests
+    if(!is.null(starting_levels)){
+      ## Simulate a random starting level from the provided distribution for each individual, each biomarker group and each biomarker ID
+      start_levels <- starting_levels(antibody_data)
+    } else {
+      start_levels <- "none"
+    }
+    
     ## Simulate data!
     f <- create_posterior_func(par_tab,antibody_data,antigenic_map,function_type=3,
                                possible_exposure_times = possible_exposure_times,
                                demographics=timevarying_demographics,
                                measurement_bias=measurement_bias,
-                               start_level="none")
+                               start_level=start_levels)
     antibody_data$measurement <- f(par_tab$values, infection_history)
     ## Add noise, but need to be specific to the data type
     for(i in seq_along(unique_biomarker_groups)){
@@ -216,7 +226,8 @@ simulate_data <- function(par_tab,
         antibody_data = antibody_data, infection_histories = infection_history,
         attack_rates = ARs, phis = attack_rates,par_tab=par_tab,
         population_groups=population_groups,
-        demographic_groups=demographic_groups
+        demographic_groups=demographic_groups,
+        start_levels=start_levels
     ))
 }
 
@@ -432,7 +443,9 @@ simulate_antibody_model <- function(pars,
   start_levels <- rep(0,length(biomarker_ids))
   
   y <- antibody_model_individual_wrapper(pars["boost_long"],pars["boost_short"],pars["boost_delay"],
-                                         pars["wane_short"],pars["wane_long"],pars["antigenic_seniority"],
+                                         pars["wane_short"],pars["wane_long"],
+                                         pars["wane_maternal"],
+                                         pars["antigenic_seniority"],
                                          0,
                                          start_levels,
                                          length(times),

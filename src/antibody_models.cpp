@@ -100,6 +100,7 @@ NumericVector antibody_model(const NumericMatrix theta,
   NumericMatrix boost_delay_parameters(n_groups, n_types);
   NumericMatrix wane_short_parameters(n_groups, n_types);
   NumericMatrix wane_long_parameters(n_groups, n_types);
+  NumericMatrix wane_maternal_parameters(n_groups, n_types);
   NumericMatrix obs_sd_parameters(n_groups, n_types);
   NumericMatrix antigenic_seniority_parameters(n_groups, n_types);
   NumericMatrix min_measurements(n_groups, n_types);
@@ -109,6 +110,7 @@ NumericVector antibody_model(const NumericMatrix theta,
   int boost_delay_index = unique_theta_indices("boost_delay");
   int wane_short_index = unique_theta_indices("wane_short");
   int wane_long_index = unique_theta_indices("wane_long");
+  int wane_maternal_index = unique_theta_indices("wane_maternal");
   int antigenic_seniority_index = unique_theta_indices("antigenic_seniority");
   int error_index = unique_theta_indices("obs_sd");
   int min_index = unique_theta_indices("min_measurement");
@@ -133,6 +135,7 @@ NumericVector antibody_model(const NumericMatrix theta,
         boost_delay_parameters(g,x) = theta(g,boost_delay_index + x*n_theta);
         wane_short_parameters(g,x) = theta(g,wane_short_index + x*n_theta);
         wane_long_parameters(g,x) = theta(g,wane_long_index + x*n_theta);
+        wane_maternal_parameters(g,x) = theta(g,wane_maternal_index + x*n_theta);  // Maternal antibody waning
         antigenic_seniority_parameters(g,x) = theta(g,antigenic_seniority_index + x*n_theta);
         obs_sd_parameters(g,x) = theta(g,error_index + x*n_theta);
         
@@ -140,6 +143,7 @@ NumericVector antibody_model(const NumericMatrix theta,
         
         // Titre dependent boosting
         antibody_dependent_boosting(g,x) = theta(g,antibody_dependent_boosting_index+ x*n_theta);
+        
         
         if(antibody_dependent_boosting(g,x) == 1) {
             gradient_index = unique_theta_indices("gradient");
@@ -229,6 +233,7 @@ NumericVector antibody_model(const NumericMatrix theta,
                 boost_delay_parameters,
                 wane_short_parameters, 
                 wane_long_parameters, 
+                wane_maternal_parameters,
                 antigenic_seniority_parameters,
                 infection_times,
                 groups,
@@ -258,7 +263,8 @@ NumericVector antibody_model(const NumericMatrix theta,
                       boost_delay_parameters(group,biomarker_group),
             					wane_short_parameters(group,biomarker_group), 
             					wane_long_parameters(group,biomarker_group), 
-            					antigenic_seniority_parameters(group,biomarker_group),
+            					wane_maternal_parameters(group,biomarker_group), 
+                      antigenic_seniority_parameters(group,biomarker_group),
             					infection_times,
             					infection_times_indices_tmp,
             					biomarker_id_indices,

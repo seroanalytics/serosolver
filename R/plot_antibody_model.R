@@ -194,7 +194,11 @@ plot_model_fits <- function(chain, infection_histories,
   to_use <- antibody_preds$predicted_observations
   model_preds <- antibody_preds$predictions
   to_use$individual <- individuals[to_use$individual]
-
+  
+  ## Filter to only predictions while alive
+  to_use <- to_use %>% filter(sample_time >= birth)
+  model_preds <- model_preds %>% filter(sample_time >= birth)
+  
   inf_hist_densities <- antibody_preds$histories
   inf_hist_densities$xmin <- inf_hist_densities$variable-0.5
   inf_hist_densities$xmax <- inf_hist_densities$variable+0.5
@@ -308,7 +312,11 @@ plot_model_fits <- function(chain, infection_histories,
       min_measurement <- measurement_ranges %>% dplyr::filter(biomarker_group == biomarker_group_use) %>% dplyr::pull(min_measurement)
       max_measurement <- measurement_ranges %>% dplyr::filter(biomarker_group == biomarker_group_use) %>% dplyr::pull(max_measurement)
       breaks <- seq(floor(min_measurement), floor(max_measurement),by=2)
-      
+      ## Add rectangle blocking pre-birth times
+      min_x <- min(possible_exposure_times)
+      p_tmp <- p_tmp + geom_rect(data=model_preds %>% select(individual, birth) %>% distinct(), 
+                                 aes(xmin=min_x,xmax=birth,ymin=min_measurement-1,ymax=max_measurement+1),fill="grey70",alpha=0.5)
+                                 
       p_tmp <- p_tmp +
         scale_x_continuous(expand=c(0.01,0.01)) +
         scale_alpha_continuous(range=c(0,1),name="Posterior probability of infection")+
@@ -611,6 +619,7 @@ plot_estimated_antibody_model <- function(chain,
     ## Create a dummy map with entries for each observation type
     antigenic_map <- data.frame("x_coord"=1,"y_coord"=1,"inf_times"=possible_exposure_times)
   }
+
   ## Create fake antibody data for all individuals and times
   full_antibody_data <- antibody_data %>% 
     select(biomarker_group,biomarker_id) %>% distinct() %>% 

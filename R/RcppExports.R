@@ -26,6 +26,24 @@ antibody_model <- function(theta, unique_theta_indices, unique_biomarker_groups,
     .Call('_serosolver_antibody_model', PACKAGE = 'serosolver', theta, unique_theta_indices, unique_biomarker_groups, infection_history_mat, infection_history_mat_indices, indiv_theta_groups, possible_exposure_times, possible_exposure_times_indices, sample_times, type_data_start, biomarker_groups, sample_data_start, antibody_data_start, nrows_per_sample, biomarker_id_indices, start_level_indices, starting_antibody_levels, births, antigenic_map_long, antigenic_map_short, antigenic_distances, timevarying_groups, boost_before_infection)
 }
 
+#' Antibody model for one individual
+#' 
+#' A fast implementation of the basic boosting function, giving predicted antibody_levels for a number of samples for one individual. Note that this version attempts to minimise memory allocations.
+#' @family antibody_models
+#' @seealso \code{\link{antibody_model}}
+NULL
+
+#' Antibody dependent boosting model, one individual
+#' 
+#' A fast implementation of the antibody dependent boosting function, giving predicted antibody levels for a number of samples for one individual. Note that this version attempts to minimise memory allocations.
+#' @family antibody_models
+#' @seealso \code{\link{antibody_model}}
+NULL
+
+antibody_model_individual_wrapper <- function(boost_long, boost_short, boost_delay, wane_short, wane_long, wane_maternal, antigenic_seniority, birth, start_antibody_levels, number_possible_exposures, possible_exposure_times, exposure_indices, biomarker_id_indices, sample_times, antigenic_map_long, antigenic_map_short) {
+    .Call('_serosolver_antibody_model_individual_wrapper', PACKAGE = 'serosolver', boost_long, boost_short, boost_delay, wane_short, wane_long, wane_maternal, antigenic_seniority, birth, start_antibody_levels, number_possible_exposures, possible_exposure_times, exposure_indices, biomarker_id_indices, sample_times, antigenic_map_long, antigenic_map_short)
+}
+
 #' Takes a subset of a Nullable NumericVector, but only if it isn't NULL
 subset_nullable_vector <- function(x, index1, index2) {
     .Call('_serosolver_subset_nullable_vector', PACKAGE = 'serosolver', x, index1, index2)

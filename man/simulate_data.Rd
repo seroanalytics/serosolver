@@ -22,7 +22,8 @@ simulate_data(
   measurement_bias = NULL,
   data_type = NULL,
   demographics = NULL,
-  verbose = FALSE
+  verbose = FALSE,
+  starting_levels = NULL
 )
 }
 \arguments{

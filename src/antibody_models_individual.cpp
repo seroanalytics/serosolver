@@ -17,6 +17,7 @@ void antibody_data_model_individual_timevarying(NumericVector &predicted_antibod
                                         const NumericMatrix &boost_delay,
                                         const NumericMatrix &wane_short,
                                         const NumericMatrix &wane_long,
+                                        const NumericMatrix &wane_maternal,
                                         const NumericMatrix &antigenic_seniority,
                                         const NumericVector &infection_times,
                                         const IntegerVector &groups,
@@ -42,6 +43,7 @@ void antibody_data_model_individual_timevarying(NumericVector &predicted_antibod
   double n_inf;
   double wane_short_amount;
   double wane_long_amount;
+  double wane_maternal_amount;
   double seniority;
   int n_measurements;
   int max_infections = infection_times.size();
@@ -66,8 +68,9 @@ void antibody_data_model_individual_timevarying(NumericVector &predicted_antibod
     // Assume that first entry for birth does not change
     
     time = sampling_time - births[start_index_in_data];
-    wane_long_amount= wane_long(birth_group,biomarker_group)*boost_long(birth_group,biomarker_group)*time;//MAX(0, 1.0 - (wane_long*time)); 
-    wane_long_amount = MAX(0, wane_long_amount);
+    //wane_long_amount= wane_long(birth_group,biomarker_group)*boost_long(birth_group,biomarker_group)*time;//MAX(0, 1.0 - (wane_long*time));
+    wane_maternal_amount= wane_maternal(birth_group,biomarker_group)*time;
+    wane_maternal_amount = MAX(0, wane_maternal_amount);
     //Rcpp::Rcout << "wane_long_amount: " << wane_long_amount << std::endl;
     // For each measured marker, find the biomarker id index which will match an entry in start_antibody_levels
     // Add this to the predicted antibody level, with waning
@@ -75,7 +78,7 @@ void antibody_data_model_individual_timevarying(NumericVector &predicted_antibod
     for(int k = 0; k < n_measurements; ++k){
       index = start_level_indices[tmp_measurement_index + k];
       predicted_antibody_levels[tmp_measurement_index + k] += min_level(birth_group,biomarker_group);
-      predicted_antibody_levels[tmp_measurement_index + k] += MAX(0, start_antibody_levels[index] - wane_long_amount);
+      predicted_antibody_levels[tmp_measurement_index + k] += MAX(0, start_antibody_levels[index] - wane_maternal_amount);
     }
     
     // Rcpp::Rcout << "Here" << std::endl;
@@ -116,6 +119,7 @@ void antibody_data_model_individual_new(NumericVector &predicted_antibody_levels
                                          const double &boost_delay,
                                          const double &wane_short,
                                          const double &wane_long,
+                                         const double &wane_maternal,
                                          const double &antigenic_seniority,
                                          const NumericVector &infection_times,
                                          const IntegerVector &exposure_indices,
@@ -138,6 +142,9 @@ void antibody_data_model_individual_new(NumericVector &predicted_antibody_levels
    double n_inf;
    double wane_short_amount;
    double wane_long_amount;
+   double wane_maternal_amount;
+   //double antigenic_seniority = 0;
+   //double wane_maternal = 0.1;
    double seniority;
    int n_measurements;
    int max_infections = infection_times.size();
@@ -161,20 +168,18 @@ void antibody_data_model_individual_new(NumericVector &predicted_antibody_levels
      // Time elapsed since first sample time
      // Assume that first entry for birth does not change
      time = sampling_time - births[start_index_in_data];
-     wane_long_amount= wane_long*boost_long*time;//MAX(0, 1.0 - (wane_long*time)); 
-     //Rcpp::Rcout << "Wane long: " << wane_long << std::endl;
-     //Rcpp::Rcout << "Elapsed time: " << time << std::endl;
-     //Rcpp::Rcout << "Wane long amount: " << wane_long_amount << std::endl;
-      
-     wane_long_amount = MAX(0, wane_long_amount);
-     //Rcpp::Rcout << "wane_long_amount: " << wane_long_amount << std::endl;
+     wane_maternal_amount= wane_maternal*time;
+     wane_maternal_amount = MAX(0, wane_maternal_amount);
+     
+     // wane_long_amount= wane_long*boost_long*time;//MAX(0, 1.0 - (wane_long*time)); 
+     
      // For each measured marker, find the biomarker id index which will match an entry in start_antibody_levels
      // Add this to the predicted antibody level, with waning
     
      for(int k = 0; k < n_measurements; ++k){
        index = start_level_indices[tmp_measurement_index + k];
        predicted_antibody_levels[tmp_measurement_index + k] += min_level;
-       predicted_antibody_levels[tmp_measurement_index + k] += MAX(0, start_antibody_levels[index] - wane_long_amount);
+       predicted_antibody_levels[tmp_measurement_index + k] += MAX(0, start_antibody_levels[index] - wane_maternal_amount);
      }
    
      // Sum all infections that would contribute towards observed antibody levels at this time
@@ -202,12 +207,13 @@ void antibody_data_model_individual_new(NumericVector &predicted_antibody_levels
      start_index_in_data = end_index_in_data;
    }
  }
- 
+// [[Rcpp::export(rng = false)]]
 Rcpp::NumericVector antibody_model_individual_wrapper(const double &boost_long,
                                                       const double &boost_short,
                                                       const double &boost_delay,
                                                       const double &wane_short,
                                                       const double &wane_long,
+                                                      const double &wane_maternal,
                                                       const double &antigenic_seniority,
                                                       const int &birth,
                                                       const NumericVector &start_antibody_levels,
@@ -230,7 +236,7 @@ Rcpp::NumericVector antibody_model_individual_wrapper(const double &boost_long,
   IntegerVector biomarker_id_indices_use = rep(biomarker_id_indices, sample_times.size());
   IntegerVector start_level_indices = biomarker_id_indices_use;
     antibody_data_model_individual_new(predicted_antibody_levels, start_antibody_levels,birth,
-                                     boost_long, boost_short, boost_delay, wane_short,wane_long, antigenic_seniority,
+                                     boost_long, boost_short, boost_delay, wane_short,wane_long, wane_maternal,antigenic_seniority,
                                  possible_exposure_times,exposure_indices, biomarker_id_indices_use, start_level_indices,
                                  sample_times,
                                  index_in_samples, end_index_in_samples, start_index_in_data, nrows_per_blood_sample,number_possible_exposures,

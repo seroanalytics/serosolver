@@ -111,7 +111,7 @@ plot_attack_rates <- function(infection_histories,
                                          possible_exposure_times=NULL, 
                               n_alive = NULL,
                               pointsize = 1, fatten = 1,
-                              pad_chain = TRUE, prior_pars = NULL,
+                              pad_chain = FALSE, prior_pars = NULL,
                               plot_den = FALSE,
                               plot_ribbon=FALSE,
                               true_ar = NULL, by_group = FALSE,
@@ -556,13 +556,18 @@ plot_cumulative_infection_histories <- function(inf_chain, burnin = 0, indivs, r
   }
   if (pad_chain) inf_chain <- pad_inf_chain(inf_chain,times=seq_along(possible_exposure_times),indivs=indivs)
   
-  samps <- sample(unique(inf_chain$samp_no), nsamp)
-  inf_chain <- inf_chain[inf_chain$samp_no %in% samps, ]
+  ## Create samp_no/chain_no combo and use for samples
+  samps_all <- inf_chain[,c("samp_no","chain_no")] %>% distinct() %>% mutate(n = 1:n())
+  samps <- sample(unique(samps_all$n),min(nsamp,nrow(samps_all)))
+  inf_chain <- inf_chain %>% left_join(samps_all,by=c("samp_no","chain_no")) %>% filter(n %in% samps) %>% select(-n)
+  #samps <- sample(unique(inf_chain$samp_no), nsamp)
+  #inf_chain <- inf_chain[inf_chain$samp_no %in% samps, ]
   
   ## Get number of probability that infected in a given time point per individual and year
   inf_chain1 <- inf_chain[inf_chain$i %in% indivs, ]
+  inf_chain1$j <- as.numeric(possible_exposure_times[inf_chain1$j])
   if (!is.null(subset_times)) inf_chain1 <- inf_chain1[inf_chain1$j %in% subset_times, ]
-  data.table::setkey(inf_chain1, "i", "j", "chain_no")
+  data.table::setkey(inf_chain1, "i", "j")
   # max_samp_no <- length(unique(inf_chain1$samp_no))
   max_samp_no <- nsamp
   
@@ -570,19 +575,17 @@ plot_cumulative_infection_histories <- function(inf_chain, burnin = 0, indivs, r
   densities <- inf_chain1[, list(V1 = sum(x) / max_samp_no), by = key(inf_chain1)]
   
   ## Convert to real time points
-  densities$j <- as.numeric(possible_exposure_times[densities$j])
   densities$i <- as.numeric(densities$i)
   
   ## If someone wasn't infected in a given year at all, then need a 0
   possible_exposure_times1 <- possible_exposure_times
   if (!is.null(subset_times)) possible_exposure_times1 <- possible_exposure_times[subset_times]
-  all_combos <- data.table(expand.grid(i = indivs, j = possible_exposure_times1, chain_no = unique(inf_chain$chain_no)))
+  all_combos <- data.table(expand.grid(i = indivs, j = possible_exposure_times1))
   all_combos$j <- as.numeric(all_combos$j)
   all_combos$i <- as.numeric(all_combos$i)
-  all_combos <- data.table::fsetdiff(all_combos[, c("i", "j", "chain_no")], densities[, c("i", "j", "chain_no")])
+  all_combos <- data.table::fsetdiff(all_combos[, c("i", "j")], densities[, c("i", "j")])
   all_combos$V1 <- 0
   densities <- rbind(all_combos, densities)
-  
   infection_history1 <- NULL
   if (!is.null(real_inf_hist)) {
     infection_history1 <- as.data.frame(real_inf_hist)
@@ -593,13 +596,15 @@ plot_cumulative_infection_histories <- function(inf_chain, burnin = 0, indivs, r
     infection_history1 <- reshape2::melt(infection_history1, id.vars = "i")
     infection_history1$variable <- as.numeric(as.character(infection_history1$variable))
     infection_history1 <- infection_history1[infection_history1$value == 1, ]
+    if (!is.null(subset_times)) infection_history1 <- infection_history1[infection_history1$variable %in% subset_times,]
+    
   }
   densities$chain_no <- as.factor(densities$chain_no)
   density_plot <- ggplot() +
-    geom_line(data = densities, aes(x = j, y = V1, col = chain_no))
+    geom_ribbon(data = densities, aes(x = j, ymin=0,ymax = V1),fill="orange")
   if (!is.null(real_inf_hist)) {
     density_plot <- density_plot +
-      geom_vline(data = infection_history1, aes(xintercept = variable), col = "red")
+      geom_vline(data = infection_history1, aes(xintercept = variable), col = "black",linetype="dashed",size=0.75)
   }
   density_plot <- density_plot +
     facet_wrap(~i) +
@@ -610,9 +615,11 @@ plot_cumulative_infection_histories <- function(inf_chain, burnin = 0, indivs, r
   
   ## Generate lower, upper and median cumulative infection histories from the
   ## MCMC chain
-  tmp_inf_chain <- inf_chain[inf_chain$i %in% indivs, ]
-  hist_profiles <- tmp_inf_chain %>% group_by(i, samp_no,chain_no) %>% mutate(cumu_x=cumsum(x))
-  quant_hist <- hist_profiles %>% group_by(i,j,chain_no) %>% summarize(lower=quantile(cumu_x, 0.025),upper=quantile(cumu_x,0.975),median=quantile(cumu_x,0.5)) %>% ungroup() %>% rename(individual=i,variable=j)
+  
+  tmp_inf_chain <- inf_chain1[inf_chain1$i %in% indivs, ]
+  hist_profiles <- tmp_inf_chain %>% arrange(i,samp_no,chain_no,j) %>% group_by(i, samp_no,chain_no) %>% mutate(cumu_x=cumsum(x))
+  quant_hist <- hist_profiles %>% group_by(i,j) %>% summarize(lower=quantile(cumu_x, 0.025),upper=quantile(cumu_x,0.975),median=quantile(cumu_x,0.5)) %>% ungroup() %>% rename(individual=i,variable=j)
+  #quant_hist$variable <- possible_exposure_times[quant_hist$variable]
   ## If available, process the real infection history matrix for plotting
   real_hist_profiles <- NULL
   if (!is.null(real_inf_hist)) {
@@ -622,6 +629,8 @@ plot_cumulative_infection_histories <- function(inf_chain, burnin = 0, indivs, r
     real_hist_profiles <- real_hist_profiles[indivs, ]
     real_hist_profiles$individual <- indivs
     real_hist_profiles <- reshape2::melt(real_hist_profiles, id.vars = "individual")
+    if (!is.null(subset_times)) real_hist_profiles <- real_hist_profiles[real_hist_profiles$variable %in% subset_times,]
+    
   }
   
   ## Process starting point from MCMC chain
@@ -632,14 +641,14 @@ plot_cumulative_infection_histories <- function(inf_chain, burnin = 0, indivs, r
     start_hist_profiles$individual <- indivs
     start_hist_profiles <- reshape2::melt(start_hist_profiles, id.vars = "individual")
   }
-  quant_hist$chain_no <- as.factor(quant_hist$chain_no)
+  #quant_hist$chain_no <- as.factor(quant_hist$chain_no)
   p1 <- ggplot(quant_hist[quant_hist$individual %in% indivs, ]) +
-    geom_line(aes(x = as.integer(as.character(variable)), y = median, col = chain_no)) +
-    geom_ribbon(aes(x = as.integer(as.character(variable)), ymin = lower, ymax = upper, fill = chain_no), alpha = 0.2)
+    geom_line(aes(x = as.integer(as.character(variable)), y = median),col="black") +
+    geom_ribbon(aes(x = as.integer(as.character(variable)), ymin = lower, ymax = upper),fill="orange", alpha = 0.5)
   
   if (!is.null(real_inf_hist)) {
     p1 <- p1 +
-      geom_line(data = real_hist_profiles[real_hist_profiles$individual %in% indivs, ], aes(x = as.integer(as.character(variable)), y = value), col = "blue")
+      geom_line(data = real_hist_profiles[real_hist_profiles$individual %in% indivs, ], aes(x = as.integer(as.character(variable)), y = value), col = "black",linetype="dashed",size=0.75)
   }
   if (!is.null(start_inf)) {
     p1 <- p1 +
