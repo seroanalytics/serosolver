@@ -82,7 +82,7 @@ serosolver <- function(par_tab,
                      data_type=1,
                      verbose=TRUE,
                      verbose_dev=FALSE,
-                     inf_hist_mcmc_summaries=TRUE
+                     inf_hist_mcmc_summaries=TRUE,
                      ...) {
   on.exit(serosolver::unregister_dopar)
   ###################################################################
