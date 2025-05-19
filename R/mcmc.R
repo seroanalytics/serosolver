@@ -1021,7 +1021,8 @@ serosolver <- function(par_tab,
     saved_wd <- getwd()
   }
   saved_wd <- normalizePath(saved_wd)
-  all_diagnostics <- suppressMessages(plot_mcmc_diagnostics(saved_wd, par_tab, adaptive_iterations,inf_hist_mcmc_summaries))
+  all_diagnostics <- suppressMessages(plot_mcmc_diagnostics(saved_wd, par_tab, adaptive_iterations,
+                                                            inf_hist_mcmc_summaries=inf_hist_mcmc_summaries))
   par_est_table <- all_diagnostics$theta_estimates
   diagnostic_warnings <- list()
   if("Rhat upper CI" %in% colnames(par_est_table) && any(par_est_table[par_est_table$names != "total_infections","Rhat upper CI"] > 1.1)){
