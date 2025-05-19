@@ -554,13 +554,16 @@ calculate_infection_history_statistics <- function(inf_chain, burnin = 0, possib
                                                    n_alive = NULL, known_ar = NULL,
                                                    group_ids = NULL,
                                                    known_infection_history = NULL,
-                                                   solve_cumulative=FALSE) {
+                                                   solve_cumulative=FALSE,
+                                                   pad_chain=FALSE) {
   inf_chain <- inf_chain[inf_chain$samp_no > burnin, ]
   if (is.null(inf_chain$chain_no)) {
     inf_chain$chain_no <- 1
   }
   ## message("Padding inf chain...\n")
-  inf_chain <- pad_inf_chain(inf_chain)
+  if(pad_chain){
+    inf_chain <- pad_inf_chain(inf_chain)
+  }
   ## message("Done\n")
   
   if (!is.null(group_ids)) {

@@ -43,7 +43,7 @@ plot_posteriors_infhist <- function(inf_chain,
                                     known_infection_history = NULL,
                                     burnin = 0,
                                     samples = 100,
-                                    pad_chain = TRUE) {
+                                    pad_chain = FALSE) {
   ## Discard burn in period if necessary
   inf_chain <- inf_chain[inf_chain$samp_no > burnin, ]
   if (is.null(inf_chain$chain_no)) {
@@ -73,7 +73,8 @@ plot_posteriors_infhist <- function(inf_chain,
   results <- calculate_infection_history_statistics(inf_chain, 0, possible_exposure_times,
                                                     n_alive, 
                                                     known_ar=known_ar,
-                                                    known_infection_history=known_infection_history
+                                                    known_infection_history=known_infection_history,
+                                                    pad_chain=pad_chain
   )
   return(list(
     "by_time_trace" = time_plot, "by_indiv_trace" = indiv_plot,
