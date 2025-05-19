@@ -261,7 +261,7 @@ plot_mcmc_diagnostics <- function(location, par_tab, burnin){
     gelman_res <- "Cannot calculate Rhat with only 1 chain"
   }
   
-  p_inf_hists <- plot_posteriors_infhist(chains$inf_chain,unique(chains$inf_chain$j),n_alive=NULL)
+  p_inf_hists <- plot_posteriors_infhist(chains$inf_chain,unique(chains$inf_chain$j),n_alive=NULL,pad_chain=FALSE)
   p_thetas <- plot_posteriors_theta(chains$theta_chain,par_tab)
   
   list(
