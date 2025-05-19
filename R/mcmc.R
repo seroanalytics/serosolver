@@ -82,6 +82,7 @@ serosolver <- function(par_tab,
                      data_type=1,
                      verbose=TRUE,
                      verbose_dev=FALSE,
+                     inf_hist_mcmc_summaries=TRUE
                      ...) {
   on.exit(serosolver::unregister_dopar)
   ###################################################################
@@ -1020,13 +1021,13 @@ serosolver <- function(par_tab,
     saved_wd <- getwd()
   }
   saved_wd <- normalizePath(saved_wd)
-  all_diagnostics <- suppressMessages(plot_mcmc_diagnostics(saved_wd, par_tab, adaptive_iterations))
+  all_diagnostics <- suppressMessages(plot_mcmc_diagnostics(saved_wd, par_tab, adaptive_iterations,inf_hist_mcmc_summaries))
   par_est_table <- all_diagnostics$theta_estimates
   diagnostic_warnings <- list()
   if("Rhat upper CI" %in% colnames(par_est_table) && any(par_est_table[par_est_table$names != "total_infections","Rhat upper CI"] > 1.1)){
     diagnostic_warnings <- c(diagnostic_warnings, "Warning - some Rhat values >1.1")
   }
-  if(any(par_est_table[par_est_table$names != "total_infections","ess"] < 200)){
+  if(inf_hist_mcmc_summaries & any(par_est_table[par_est_table$names != "total_infections","ess"] < 200)){
     diagnostic_warnings <- c(diagnostic_warnings, "Warning - some effective sample sizes <200\n")
   }  
 

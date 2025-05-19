@@ -233,7 +233,7 @@ plot_posteriors_theta <- function(chain,par_tab){
 }
 
 #' @export
-plot_mcmc_diagnostics <- function(location, par_tab, burnin){
+plot_mcmc_diagnostics <- function(location, par_tab, burnin, inf_hist_mcmc_summaries=TRUE){
   chains <- load_mcmc_chains(location=location,par_tab=par_tab,burnin=burnin,estimated_only=TRUE)
   
   par_medians <- sapply(chains$theta_chain[,!(colnames(chains$theta_chain) %in% c("samp_no","chain_no","posterior_prob","likelihood","prior_prob"))], function(x) median(x))
@@ -261,7 +261,11 @@ plot_mcmc_diagnostics <- function(location, par_tab, burnin){
     gelman_res <- "Cannot calculate Rhat with only 1 chain"
   }
   
-  p_inf_hists <- plot_posteriors_infhist(chains$inf_chain,unique(chains$inf_chain$j),n_alive=NULL,pad_chain=FALSE)
+  if(inf_hist_mcmc_summaries){
+    p_inf_hists <- plot_posteriors_infhist(chains$inf_chain,unique(chains$inf_chain$j),n_alive=NULL,pad_chain=FALSE)
+  } else {
+    p_inf_hists <- NULL
+  }
   p_thetas <- plot_posteriors_theta(chains$theta_chain,par_tab)
   
   list(
