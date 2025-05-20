@@ -196,8 +196,13 @@ plot_model_fits <- function(chain, infection_histories,
   to_use$individual <- individuals[to_use$individual]
   
   ## Filter to only predictions while alive
-  to_use <- to_use %>% filter(sample_time >= birth)
-  model_preds <- model_preds %>% filter(sample_time >= birth)
+  sample_masks <- create_sample_mask(antibody_data %>% filter(individual %in% individuals),possible_exposure_times)
+  to_use <- to_use %>% filter(sample_time >= birth) %>% 
+    left_join(tibble(individual=individuals,sample_mask=sample_masks)) %>% 
+    filter(sample_time <= sample_mask)
+  model_preds <- model_preds %>% filter(sample_time >= birth)%>% 
+    left_join(tibble(individual=individuals,sample_mask=sample_masks)) %>% 
+    filter(sample_time <= sample_mask)
   
   inf_hist_densities <- antibody_preds$histories
   inf_hist_densities$xmin <- inf_hist_densities$variable-0.5
