@@ -32,6 +32,7 @@ serosolver(
   data_type = 1,
   verbose = TRUE,
   verbose_dev = FALSE,
+  inf_hist_mcmc_summaries = TRUE,
   ...
 )
 }

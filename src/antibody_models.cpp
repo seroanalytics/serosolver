@@ -4,7 +4,7 @@
 
 //' Overall model function, fast implementation
 //'
-//' 
+//' Overall model function, fast implementation
 //' @param theta NumericVector, the named vector of model parameters
 //' @param infection_history_mat IntegerMatrix, the matrix of 1s and 0s showing presence/absence of infection for each possible time for each individual. 
 //' @param possible_exposure_times NumericVector, the time periods that the infection history vector corresponds to

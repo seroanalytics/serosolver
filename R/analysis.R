@@ -152,7 +152,13 @@ load_theta_chains <- function(location = getwd(), par_tab = NULL, estimated_only
   ## Get the estimated parameters only
   if (estimated_only & !is.null(par_tab)) {
     fixed <- par_tab$fixed
-    use_colnames <- intersect(c("samp_no", par_tab$names[which(fixed == 0)], "posterior_prob", "likelihood", "prior_prob", "chain_no"), colnames(read_chains[[1]]))
+    fixed_names <- par_tab$names[which(fixed == 0)]
+    ## Go through the vector of strings called fixed_names and append a number to each non-unique name
+    if (length(fixed_names) > 0) {
+      fixed_names <- make.unique(fixed_names)
+    }
+    
+    use_colnames <- intersect(c("samp_no", fixed_names, "posterior_prob", "likelihood", "prior_prob", "chain_no"), colnames(read_chains[[1]]))
     read_chains <- lapply(read_chains, function(x) x[, use_colnames])
   }
 
@@ -591,11 +597,11 @@ calculate_infection_history_statistics <- function(inf_chain, burnin = 0, possib
 
   if(length(unique(n_inf_chain$chain_no)) > 1){
     gelman_res_j <- n_inf_chain %>% 
-      select(population_group,j,chain_no,total_infs) %>%
-      group_by(population_group,j,chain_no) %>%
-      summarize(x = list(as.mcmc(total_infs))) %>%
-      group_by(population_group,j) %>%
-      summarize(gelman_point = unlist(gelman.diag(as.mcmc.list(x))[[1]][1,1]),
+      dplyr::select(population_group,j,chain_no,total_infs) %>%
+      dplyr::group_by(population_group,j,chain_no) %>%
+      dplyr::summarize(x = list(as.mcmc(total_infs))) %>%
+      dplyr::group_by(population_group,j) %>%
+      dplyr::summarize(gelman_point = unlist(gelman.diag(as.mcmc.list(x))[[1]][1,1]),
                 gelman_upper=unlist(gelman.diag(as.mcmc.list(x))[[1]][1,2])) %>%
       ungroup()
       

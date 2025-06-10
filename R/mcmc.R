@@ -325,7 +325,7 @@ serosolver <- function(par_tab,
                                              start_level=start_level,
                      demographics=demographics,
                      fixed_inf_hists=fixed_inf_hists,
-                                             verbose=verbose,
+                                             verbose=FALSE,
                                              ...
    #)
  )

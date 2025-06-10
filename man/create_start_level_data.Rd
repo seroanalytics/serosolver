@@ -39,8 +39,3 @@ create_start_level_data(example_antibody_data,"full_random",FALSE)
 create_start_level_data(example_antibody_data,"full_random",TRUE)
 }
 }
-\seealso{
-Other antigenic_maps: 
-\code{\link{generate_antigenic_map_flexible}()}
-}
-\concept{antigenic_maps}

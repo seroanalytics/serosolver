@@ -12,7 +12,7 @@ plot_posteriors_infhist(
   known_infection_history = NULL,
   burnin = 0,
   samples = 100,
-  pad_chain = TRUE
+  pad_chain = FALSE
 )
 }
 \arguments{

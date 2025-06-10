@@ -198,10 +198,10 @@ plot_model_fits <- function(chain, infection_histories,
   ## Filter to only predictions while alive
   sample_masks <- create_sample_mask(antibody_data %>% filter(individual %in% individuals),possible_exposure_times)
   to_use <- to_use %>% filter(sample_time >= birth) %>% 
-    left_join(tibble(individual=individuals,sample_mask=sample_masks)) %>% 
+    left_join(tibble(individual=individuals,sample_mask=possible_exposure_times[sample_masks]),by="individual") %>% 
     filter(sample_time <= sample_mask)
   model_preds <- model_preds %>% filter(sample_time >= birth)%>% 
-    left_join(tibble(individual=individuals,sample_mask=sample_masks)) %>% 
+    left_join(tibble(individual=individuals,sample_mask=possible_exposure_times[sample_masks]),by="individual") %>% 
     filter(sample_time <= sample_mask)
   
   inf_hist_densities <- antibody_preds$histories
@@ -478,7 +478,9 @@ plot_antibody_predictions <- function(chain, infection_histories,
   
   
   ## Plot data against 95% prediction intervals and posterior medians
-  p_compare_pointrange <- x$predicted_observations %>% arrange(measurement) %>%mutate(i=1:n()) %>% ggplot() + 
+  p_compare_pointrange <- x$predicted_observations %>% 
+    dplyr::arrange(measurement) %>%
+    dplyr::mutate(i=1:n()) %>% ggplot() + 
     geom_pointrange(aes(x=i,y=median,ymin=lower,ymax=upper,col="Predicted observation"),linewidth=0.25,size=0.25,alpha=0.5) + 
     geom_point(aes(x=i,y=measurement,col="Observation"),size=0.25) + 
     theme_minimal() + 
@@ -490,9 +492,10 @@ plot_antibody_predictions <- function(chain, infection_histories,
   
   ## Histograms of observations against predictions
   ## Posterior median
-  p_hist_median <- ggplot(x$predicted_observations %>% mutate(i=1:n()) %>%
+  p_hist_median <- ggplot(x$predicted_observations %>% 
+                            dplyr::mutate(i=1:n()) %>%
                             dplyr::select(i,measurement,median) %>%
-                            rename(`Posterior median`=median,`Observation`=measurement) %>%
+                            dplyr::rename(`Posterior median`=median,`Observation`=measurement) %>%
                             pivot_longer(-i)) +
     geom_histogram(aes(x=value,fill=name),position="dodge")+
     theme_minimal() + 
@@ -506,10 +509,10 @@ plot_antibody_predictions <- function(chain, infection_histories,
   rand_draws <- sample(1:ncol(x$all_predictions_obs),min(9, ncol(x$all_predictions_obs)))
   tmp_pred_obs <- x$all_predictions_obs[,rand_draws]
   colnames(tmp_pred_obs) <- rand_draws
-  p_hist_draws <- x$predicted_observations %>% select(measurement) %>% bind_cols(tmp_pred_obs) %>%
-    mutate(i=1:n()) %>%
+  p_hist_draws <- x$predicted_observations %>% dplyr::select(measurement) %>% bind_cols(tmp_pred_obs) %>%
+    dplyr::mutate(i=1:n()) %>%
     pivot_longer(-c(i,measurement)) %>%
-    mutate(name=paste0("Posterior draw: ", name)) %>%
+    dplyr::mutate(name=paste0("Posterior draw: ", name)) %>%
     ggplot() + 
     geom_histogram(aes(x=measurement,fill="Observation"),alpha=0.5,col="grey10",
                    linewidth=0.1) + 
@@ -528,14 +531,14 @@ plot_antibody_predictions <- function(chain, infection_histories,
   colnames(all_pred_draws) <- as.character(1:nsamp)
   all_pred_draws <- as_tibble(all_pred_draws)
   all_pred_draws <- bind_cols(antibody_data, all_pred_draws)
-  all_pred_draws <- all_pred_draws %>% pivot_longer(-c(colnames(antibody_data))) %>% rename(posterior_draw=name,prediction=value)
+  all_pred_draws <- all_pred_draws %>% pivot_longer(-c(colnames(antibody_data))) %>% dplyr::rename(posterior_draw=name,prediction=value)
   
   ## Get all posterior samples for individual observation predictions and merge with antibody data
   all_pred_draws_obs <- x$all_predictions_obs
   colnames(all_pred_draws_obs) <- as.character(1:nsamp)
   all_pred_draws_obs <- as_tibble(all_pred_draws_obs)
   all_pred_draws_obs <- bind_cols(antibody_data, all_pred_draws_obs)
-  all_pred_draws_obs <- all_pred_draws_obs %>% pivot_longer(-c(colnames(antibody_data))) %>% rename(posterior_draw=name,prediction=value)
+  all_pred_draws_obs <- all_pred_draws_obs %>% pivot_longer(-c(colnames(antibody_data))) %>% dplyr::rename(posterior_draw=name,prediction=value)
   
   return(list("all_predictions"=x$predicted_observations,
               "all_predictions_draws" = all_pred_draws,

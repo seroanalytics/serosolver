@@ -63,7 +63,7 @@ check_par_tab <- function(par_tab, mcmc = FALSE, version = NULL,possible_exposur
         message(paste(c("Some column names missing from par_tab: ", setdiff(essential_names,colnames(par_tab)),"\n"),collapse=" "))
      
         if(!("type" %in% colnames(par_tab))){
-          if(verbose) message("Adding \"par_type\" to par_tab variables.\n")
+          if(verbose) message(cat("Adding \"par_type\" to par_tab variables.\n"))
           par_tab$par_type <- 1
         }
     }
@@ -76,7 +76,7 @@ check_par_tab <- function(par_tab, mcmc = FALSE, version = NULL,possible_exposur
     if (mcmc == TRUE) {
       
       if(!("steps" %in% colnames(par_tab))){
-        if(verbose) message("Adding \"steps\" to par_tab variables.\n")
+        if(verbose) message(cat("Adding \"steps\" to par_tab variables.\n"))
         par_tab$steps <- 0.1
       }
       

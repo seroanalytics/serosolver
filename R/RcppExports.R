@@ -3,7 +3,7 @@
 
 #' Overall model function, fast implementation
 #'
-#' 
+#' Overall model function, fast implementation
 #' @param theta NumericVector, the named vector of model parameters
 #' @param infection_history_mat IntegerMatrix, the matrix of 1s and 0s showing presence/absence of infection for each possible time for each individual. 
 #' @param possible_exposure_times NumericVector, the time periods that the infection history vector corresponds to
@@ -25,20 +25,6 @@
 antibody_model <- function(theta, unique_theta_indices, unique_biomarker_groups, infection_history_mat, infection_history_mat_indices, indiv_theta_groups, possible_exposure_times, possible_exposure_times_indices, sample_times, type_data_start, biomarker_groups, sample_data_start, antibody_data_start, nrows_per_sample, biomarker_id_indices, start_level_indices, starting_antibody_levels, births, antigenic_map_long, antigenic_map_short, antigenic_distances, timevarying_groups = FALSE, boost_before_infection = FALSE) {
     .Call('_serosolver_antibody_model', PACKAGE = 'serosolver', theta, unique_theta_indices, unique_biomarker_groups, infection_history_mat, infection_history_mat_indices, indiv_theta_groups, possible_exposure_times, possible_exposure_times_indices, sample_times, type_data_start, biomarker_groups, sample_data_start, antibody_data_start, nrows_per_sample, biomarker_id_indices, start_level_indices, starting_antibody_levels, births, antigenic_map_long, antigenic_map_short, antigenic_distances, timevarying_groups, boost_before_infection)
 }
-
-#' Antibody model for one individual
-#' 
-#' A fast implementation of the basic boosting function, giving predicted antibody_levels for a number of samples for one individual. Note that this version attempts to minimise memory allocations.
-#' @family antibody_models
-#' @seealso \code{\link{antibody_model}}
-NULL
-
-#' Antibody dependent boosting model, one individual
-#' 
-#' A fast implementation of the antibody dependent boosting function, giving predicted antibody levels for a number of samples for one individual. Note that this version attempts to minimise memory allocations.
-#' @family antibody_models
-#' @seealso \code{\link{antibody_model}}
-NULL
 
 antibody_model_individual_wrapper <- function(boost_long, boost_short, boost_delay, wane_short, wane_long, wane_maternal, antigenic_seniority, birth, start_antibody_levels, number_possible_exposures, possible_exposure_times, exposure_indices, biomarker_id_indices, sample_times, antigenic_map_long, antigenic_map_short) {
     .Call('_serosolver_antibody_model_individual_wrapper', PACKAGE = 'serosolver', boost_long, boost_short, boost_delay, wane_short, wane_long, wane_maternal, antigenic_seniority, birth, start_antibody_levels, number_possible_exposures, possible_exposure_times, exposure_indices, biomarker_id_indices, sample_times, antigenic_map_long, antigenic_map_short)
@@ -117,9 +103,6 @@ sum_infections_by_group <- function(inf_hist, group_ids_vec, n_groups, timevaryi
 add_measurement_shifts <- function(predicted_antibody_levels, to_add, start_index_in_data, end_index_in_data) {
     invisible(.Call('_serosolver_add_measurement_shifts', PACKAGE = 'serosolver', predicted_antibody_levels, to_add, start_index_in_data, end_index_in_data))
 }
-
-#' Fast observation error function continuous with false positives
-NULL
 
 #' Marginal prior probability (p(Z)) of a particular infection history matrix single prior
 #'  Prior is independent contribution from each year
@@ -213,6 +196,17 @@ likelihood_func_fast_continuous <- function(theta, obs, predicted_antibody_level
     .Call('_serosolver_likelihood_func_fast_continuous', PACKAGE = 'serosolver', theta, obs, predicted_antibody_levels)
 }
 
+#' Fast observation error function continuous with false positives
+#'  Calculate the probability of a set of observed antibody levels given a corresponding set of predicted antibody levels assuming continuous, bounded observations. For true negatives (i.e., model predicts no infections), then the majority of the PDF is at min_measurement. There is a probability, fp_rate, of observing a value within the detectable range.
+#' @name Fast observation error function continuous
+#' @param theta NumericVector, a named parameter vector giving the normal distribution standard deviation and the max observable antibody level. 
+#' Also a parameter fp_rate, giving the probability of a (uniformly distributed) false positive given true negative.
+#' @param obs NumericVector, the vector of observed log antibody levels
+#' @param predicted_antibody_levels NumericVector, the vector of predicted log antibody levels
+#' @param a vector of same length as the input data giving the probability of observing each observation given the predictions
+#' @return a likelihood for each observed antibody level
+#' @export
+#' @family likelihood_functions
 likelihood_func_fast_continuous_fp <- function(theta, obs, predicted_antibody_levels) {
     .Call('_serosolver_likelihood_func_fast_continuous_fp', PACKAGE = 'serosolver', theta, obs, predicted_antibody_levels)
 }

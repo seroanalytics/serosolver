@@ -247,11 +247,9 @@ Rcpp::NumericVector antibody_model_individual_wrapper(const double &boost_long,
 }
 
 
-//' Antibody model for one individual
-//' 
-//' A fast implementation of the basic boosting function, giving predicted antibody_levels for a number of samples for one individual. Note that this version attempts to minimise memory allocations.
-//' @family antibody_models
-//' @seealso \code{\link{antibody_model}}
+// Antibody model for one individual
+// 
+// A fast implementation of the basic boosting function, giving predicted antibody_levels for a number of samples for one individual. Note that this version attempts to minimise memory allocations.
 void antibody_data_model_individual(
     NumericVector &predicted_antibody_levels,
 				     const double &boost_long,
@@ -322,11 +320,9 @@ for(int k = 0; k < n_measurements; ++k){
   }
 }
 
-//' Antibody dependent boosting model, one individual
-//' 
-//' A fast implementation of the antibody dependent boosting function, giving predicted antibody levels for a number of samples for one individual. Note that this version attempts to minimise memory allocations.
-//' @family antibody_models
-//' @seealso \code{\link{antibody_model}}
+// Antibody dependent boosting model, one individual
+//
+// A fast implementation of the antibody dependent boosting function, giving predicted antibody levels for a number of samples for one individual. Note that this version attempts to minimise memory allocations.
 void antibody_dependent_boosting_model_individual(NumericVector &predicted_antibody_levels,
 					 const double &boost_long,
 					 const double &boost_short,

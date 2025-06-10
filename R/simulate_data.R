@@ -64,7 +64,7 @@ simulate_data <- function(par_tab,
         if(verbose) message(cat("Note: no biomarker_group detection in par_tab Assuming all biomarker_group as 1. If this was deliberate, you can ignore this message.\n"))
         par_tab$biomarker_group <- 1
     }
-
+  
     ## Get unique observation types
     unique_biomarker_groups <- unique(par_tab$biomarker_group)
     n_biomarker_groups <- length(unique_biomarker_groups)
@@ -93,10 +93,17 @@ simulate_data <- function(par_tab,
                             birth=max(sampling_times) - floor(runif(n_indiv, age_min,age_max + 1)))
     } 
     
+    ## If demographics provided but no births, simulate births
+    if(!is.null(demographics) & !("birth" %in% colnames(demographics))){
+      demographics <- demographics %>% group_by(individual) %>% dplyr::mutate(birth = max(sampling_times) - floor(runif(n(), age_min,age_max + 1)))
+    } 
     ## If we've specified age_group_bounds, then we want to have timevarying age groups
     if("time" %in% colnames(demographics)){
+      ## If time is in demographics, then we assume that the demographics are timevarying
       timevarying_demographics <- demographics
     } else {
+      ## Otherwise, we assume that the demographics are fixed, unless there are age group bounds provided. Then we bucket into age groups
+      ## and numerate over time
       if(!is.null(age_group_bounds) ){
         timevarying_demographics <- demographics %>% expand_grid(time=possible_exposure_times)
         timevarying_demographics$age <- timevarying_demographics$time - timevarying_demographics$birth
@@ -122,38 +129,65 @@ simulate_data <- function(par_tab,
       filter(sample_time == max(sample_time)) %>% 
       select(individual,sample_time) %>% 
       distinct() %>% 
-      rename(last_sample = sample_time)
-    
+      dplyr::rename(last_sample = sample_time)
+
     ## Expand out with measured biomarkers and repeats
     antibody_data <- expand_grid(sampling_times_data,repeat_number=1:repeats,
                                  biomarker_id = measured_biomarker_ids,
                                  biomarker_group=unique_biomarker_groups,
                                  measurement=0)
+
+    ## If we don't have timevarying demographics, merge in demographic information into antibody data
+    if(is.null(timevarying_demographics)){
+      antibody_data <- align_antibody_demographic_dat(antibody_data,demographics)
+    }
+    ## Merge in demographics table to antibody data
     antibody_data <- as.data.frame(antibody_data)
+    
+    #########################################################
     ## PARAMETER TABLE CHECKS
     #########################################################
+    ## If we don't have scale parameters, but we've requested parameter stratification, then add scale parameters
     if(!(4 %in% unique(par_tab$par_type))){
       par_tab <- add_scale_pars(par_tab,antibody_data, timevarying_demographics)
     }
     par_tab <- check_par_tab(par_tab)
     
+    #########################################################
+    ## ALIGN DEMOGRAPHICS AND POPULATION GROUPS
+    #########################################################
+    tmp1 <- get_demographic_groups(par_tab,antibody_data,timevarying_demographics,NULL) ## Should match unique_demographics
+    
     ## Find unique demographic and population groups
-    tmp <- add_stratifying_variables(antibody_data, timevarying_demographics, par_tab)
+    tmp <- add_stratifying_variables(antibody_data, timevarying_demographics, par_tab,tmp1$use_demographic_groups)
     ## Unique population groups key
     population_groups <- tmp$population_groups
-    
     ## Unique demographics group key
     demographic_groups <- get_demographic_groups(par_tab, antibody_data, timevarying_demographics)$demographic_groups %>% 
-      mutate(demographic_group = 1:n())
-    
+      dplyr::mutate(demographic_group = 1:n())
+
     #########################################################
     ## SIMULATE DATA
     #########################################################
-    message("Simulating data\n")    
-
-    if (!is.null(measurement_bias)) {
-        message(cat("Measurement bias\n"))
+    if(verbose) {
+      message(cat("Simulating data")) 
+      if(!is.null(tmp1$use_demographic_groups)){
+        message(cat("stratifying model parameters by groups: ", tmp1$use_demographic_groups))
+        if(!is.null(tmp$timevarying_demographics)) {
+            message(cat("with timevarying groups"))
+        } else if(!is.null(tmp$demographics)){
+            message(cat("with fixed groups"))
+        } 
+      } else {
+          message(cat("with no parameter stratification"))
+      }
+      
+      if (!is.null(measurement_bias)) {
+          message(cat("with measurement bias parameters"))
+      }
+  
     }
+    
     ## Simulate infection histories
     ## If timevarying demographics, then use this. Otherwise, use the fixed demographics
     if(!is.null(timevarying_demographics)){
@@ -185,7 +219,7 @@ simulate_data <- function(par_tab,
       if(age_mask[i] > 1 & any(tmp_inf_hist[1:(age_mask[i]-1)]) >0) print("Error - infection before birth")
       if(sample_mask[i] < ncol(infection_history) & any(tmp_inf_hist[(sample_mask[i]+1):ncol(infection_history)]) >0) print("Error - infection after last sample")
     }
-    
+
     ## Create model solving function
     ## Check that antibody data is formatted correctly
     check_data(antibody_data,verbose)
@@ -220,7 +254,7 @@ simulate_data <- function(par_tab,
       antibody_data$measurement[tmp_indices] <- add_noise(antibody_data$measurement[tmp_indices],tmp_pars,NULL,NULL,data_type=data_type[i])
      }
     ## Randomly censor titre values
-    antibody_data <- antibody_data %>% mutate(measurement=if_else(runif(n())<missing_data,NA,measurement))
+    antibody_data <- antibody_data %>% dplyr::mutate(measurement=if_else(runif(n())<missing_data,NA,measurement))
 
     return(list(
         antibody_data = antibody_data, infection_histories = infection_history,
@@ -311,7 +345,6 @@ add_noise <- function(y, theta, measurement_bias = NULL, indices = NULL,data_typ
 simulate_attack_rates <- function(infection_years, mean_par = 0.15, sd_par = 0.5,
                                   large_first_year = FALSE, big_year_mean = 0.5,n_groups=1) {
   ars <- matrix(0, nrow=n_groups,ncol=length(infection_years))
-  
   if(length(mean_par) != n_groups){
     mean_par <- rep(mean_par[1], n_groups)
   }
@@ -331,7 +364,7 @@ simulate_attack_rates <- function(infection_years, mean_par = 0.15, sd_par = 0.5
   }
   ars <- as.data.frame(ars)
   ars$population_group <- 1:n_groups
-  ars <- ars %>% pivot_longer(-population_group) %>% rename(time=name, prob_infection=value)
+  ars <- ars %>% pivot_longer(-population_group) %>% dplyr::rename(time=name, prob_infection=value)
   ars$time <- as.numeric(as.factor(ars$time))
   ars$time <- infection_years[ars$time]
   return(ars)
@@ -373,9 +406,9 @@ simulate_infection_histories <- function(p_inf, possible_exposure_times=1:ncol(p
     p_inf <- expand_grid(p_inf, population_group = unique(demographics$population_group))
   }
   
-  demographics <- demographics %>% mutate(alive = time >= birth & time <= last_sample)
-  demographics <- demographics %>% left_join(p_inf,by=c("population_group","time"))
-  demographics <- demographics %>% mutate(infected = rbinom(n(), 1, prob_infection*as.numeric(alive)))
+  demographics <- demographics %>% dplyr::mutate(alive = time >= birth & time <= last_sample)
+  demographics <- demographics %>% dplyr::left_join(p_inf,by=c("population_group","time"))
+  demographics <- demographics %>% dplyr::mutate(infected = rbinom(n(), 1, prob_infection*as.numeric(alive)))
   
   ## Get infection history matrix
   infection_history <- demographics %>% 

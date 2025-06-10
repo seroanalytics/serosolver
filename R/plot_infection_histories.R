@@ -138,7 +138,6 @@ plot_attack_rates <- function(infection_histories,
     if(is.null(par_tab)) par_tab <- settings$par_tab
     if(is.null(demographics)) demographics <- settings$demographics
   }
-  
   ## Add stratifying variables to antibody_data and demographics
   ## Setup data vectors and extract
   tmp <- get_demographic_groups(par_tab,antibody_data,demographics, NULL)
@@ -156,10 +155,11 @@ plot_attack_rates <- function(infection_histories,
   if (is.null(group_subset)) {
     group_subset <- unique(antibody_data$population_group)
   }
+
   if (!by_group) {
     antibody_data$population_group <- 1
     infection_histories$population_group <- 1
-    demographics$population_group <- 1
+    if(!is.null(demographics)) demographics$population_group <- 1
     if(!is.null(true_ar)) true_ar$population_group <- 1
   }
   
@@ -310,7 +310,9 @@ plot_attack_rates <- function(infection_histories,
                   alpha=0.25,
                   draw_quantiles = c(0.025,0.5,0.975), scale = "width",
                   adjust=2
-      )
+      )+
+      scale_fill_manual(name="Samples taken",values=c("No"="darkorange","Yes"="blue","Prior"="grey40"))+
+      scale_color_manual(name="Samples taken",values=c("No"="darkorange","Yes"="blue","Prior"="grey40"))
   }
   if (!is.null(true_ar) & !plot_residuals) {
     p <- p +
@@ -333,7 +335,7 @@ plot_attack_rates <- function(infection_histories,
   }
   
   p <- p +
-    scale_x_continuous(breaks = year_breaks, labels = year_labels,limits=c(min_time-0.5,max_time)) +
+    scale_x_continuous(breaks = year_breaks, labels = year_labels,limits=c(min_time-0.5,max_time+0.5)) +
     theme_classic() +
     theme(legend.position = "bottom") +
     ylab("Estimated attack rate") +
@@ -502,7 +504,8 @@ plot_individual_number_infections <- function(inf_chain, pad_chain = TRUE) {
   n_inf_chain <- inf_chain[, list(V1 = sum(x)), by = key(inf_chain)]
   
   ## Get quantiles on total number of infections per indiv across all samples
-  indiv_hist <- n_inf_chain %>% group_by(i) %>% summarize(lower=quantile(V1,0.025),median=quantile(V1,0.5),upper=quantile(V1,0.975)) %>% ungroup() %>% rename(individual=i)
+  indiv_hist <- n_inf_chain %>% group_by(i) %>% 
+    dplyr::summarize(lower=quantile(V1,0.025),median=quantile(V1,0.5),upper=quantile(V1,0.975)) %>% ungroup() %>% dplyr::rename(individual=i)
   indiv_hist <- indiv_hist[order(indiv_hist$median), ]
   indiv_hist$individual <- 1:nrow(indiv_hist)
   p <- ggplot(indiv_hist) +

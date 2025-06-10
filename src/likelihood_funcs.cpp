@@ -198,20 +198,18 @@ NumericVector likelihood_func_fast_continuous(const NumericVector &theta, const 
 
 
 //' Fast observation error function continuous with false positives
- //'  Calculate the probability of a set of observed antibody levels given a corresponding set of predicted antibody levels assuming continuous, bounded observations. 
- //'  For true negatives (i.e., model predicts no infections), then the majority of the PDF is at min_measurement. 
- //'  There is a probability, fp_rate, of observing a value within the detectable range.
- //' @name Fast observation error function continuous
- //' @param theta NumericVector, a named parameter vector giving the normal distribution standard deviation and the max observable antibody level. 
- //' Also a parameter fp_rate, giving the probability of a (uniformly distributed) false positive given true negative.
- //' @param obs NumericVector, the vector of observed log antibody levels
- //' @param predicted_antibody_levels NumericVector, the vector of predicted log antibody levels
- //' @param a vector of same length as the input data giving the probability of observing each observation given the predictions
- //' @return a likelihood for each observed antibody level
- //' @export
- //' @family likelihood_functions
- // [[Rcpp::export(rng = false)]]
- NumericVector likelihood_func_fast_continuous_fp(const NumericVector &theta, const NumericVector &obs, const NumericVector &predicted_antibody_levels){
+//'  Calculate the probability of a set of observed antibody levels given a corresponding set of predicted antibody levels assuming continuous, bounded observations. For true negatives (i.e., model predicts no infections), then the majority of the PDF is at min_measurement. There is a probability, fp_rate, of observing a value within the detectable range.
+//' @name Fast observation error function continuous
+//' @param theta NumericVector, a named parameter vector giving the normal distribution standard deviation and the max observable antibody level. 
+//' Also a parameter fp_rate, giving the probability of a (uniformly distributed) false positive given true negative.
+//' @param obs NumericVector, the vector of observed log antibody levels
+//' @param predicted_antibody_levels NumericVector, the vector of predicted log antibody levels
+//' @param a vector of same length as the input data giving the probability of observing each observation given the predictions
+//' @return a likelihood for each observed antibody level
+//' @export
+//' @family likelihood_functions
+// [[Rcpp::export(rng = false)]]
+NumericVector likelihood_func_fast_continuous_fp(const NumericVector &theta, const NumericVector &obs, const NumericVector &predicted_antibody_levels){
    int total_measurements = predicted_antibody_levels.size();
    NumericVector ret(total_measurements);
    

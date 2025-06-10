@@ -12,7 +12,8 @@ calculate_infection_history_statistics(
   known_ar = NULL,
   group_ids = NULL,
   known_infection_history = NULL,
-  solve_cumulative = FALSE
+  solve_cumulative = FALSE,
+  pad_chain = FALSE
 )
 }
 \arguments{
@@ -27,6 +28,8 @@ calculate_infection_history_statistics(
 \item{known_infection_history}{data frame of known infection histories.}
 
 \item{solve_cumulative}{if TRUE, finds the cumulative infection histories for each individual. This takes a while, so is left FALSE by default.}
+
+\item{pad_chain}{if TRUE, pads the infection history MCMC chain with non-infection events}
 }
 \value{
 a list of data frames with summary statistics
