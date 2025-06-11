@@ -20,7 +20,16 @@ extend_input_types <- function(par_tab, antigenic_map, n_obs_types){
   return(list(par_tab=par_tab_all,antigenic_map=antigenic_map_all))
 }
 
-devtools::document("~/Documents/GitHub/serosolver")
+library(ggplot2)
+library(plyr)
+library(dplyr)
+library(tidyr)
+library(data.table)
+library(doParallel)
+library(coda)
+library(tidyverse)
+
+devtools::load_all("~/Documents/GitHub/serosolver")
 stratification_types <- c("none","single","multiple")
 demographic_types <- c("none","fixed","timevarying")
 measurement_offsets <- c("none","present","demographics")
@@ -95,18 +104,18 @@ res <- serosolver(example_par_tab,
                   filename="tmp",
                   n_chains=3, ## Run 3 chains
                   parallel=TRUE, ## Run in parallel
-                  mcmc_pars=c(adaptive_iterations=10000, iterations=10000,proposal_ratio=1,thin_inf_hist=10), 
+                  mcmc_pars=c(adaptive_iterations=100000, iterations=100000,proposal_ratio=1,thin_inf_hist=10), 
                   verbose=TRUE,
                   data_type=c(1,2),
                   measurement_bias= NULL) 
 res$all_diagnostics$p_thetas[[1]]
-chains <- load_mcmc_chains(getwd(),par_tab,burnin=10000,estimated_only = FALSE)
+chains <- load_mcmc_chains(getwd(),example_par_tab,burnin=100000,estimated_only = TRUE)
 ggplot(chains$theta_chain %>% pivot_longer(-c(samp_no,chain_no))) + geom_line(aes(x=samp_no,y=value,col=as.factor(chain_no))) +
   facet_wrap(~name,scales="free")
 ggplot(chains$theta_chain %>% pivot_longer(-c(samp_no,chain_no))) + geom_density(aes(x=value)) +
   facet_wrap(~name,scales="free")
 ############################################################
-
+break
 
 ############################################################
 ## 2. Fixed stratification using demographics
