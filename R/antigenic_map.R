@@ -7,6 +7,7 @@
 #' @param unique_biomarker_groups a vector of unique biomarker groups in the antigenic map
 #' @param verbose if TRUE, prints messages about the process
 #' @return list with three entries: 1) the updated antigenic map, 2) the updated possible_exposure_times vector, 3) a set of indices matching possible_exposure_times to entries in the antigenic map
+#' @export
 #' @family antigenic_maps
 setup_antigenic_map <- function(antigenic_map=NULL, possible_exposure_times=NULL, n_biomarker_groups=1,unique_biomarker_groups=c(1), verbose=TRUE){
   ## Check if an antigenic map is provided. If not, then create a dummy map where all pathogens have the same position on the map
