@@ -1,0 +1,18 @@
+---
+title: "Guide to _serosolver_ terminology"
+author: "James Hay"
+date: "2025-06-12"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Updates to the _serosolver_ naming convention compared to the published version
+In an attempt to standardise terminology used across serodynamics software packages, I have overhauled the naming convention of data objects and variables in serosolver. The intention is to align with the general framework and terminology used in the [_serosim_](https://seroanalytics.org/serosim/) R package and accompanying [paper](https://doi.org/10.1371/journal.pcbi.1011384).
+
+# Serological data object: _antibody_data_
+```{r echo=FALSE, results="antibody_data"}
+
+```
