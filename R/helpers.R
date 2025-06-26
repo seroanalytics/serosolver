@@ -661,8 +661,8 @@ create_start_level_data <- function(antibody_data, start_level_summary = "min", 
 #' @export
 add_rhos_par_tab <- function(par_tab, sampled_viruses,n_obs_types=1){
   par_tab_rhos <- as.data.frame(expand_grid(names="rho",values=rep(0,length(sampled_viruses)),fixed=0,
-                                            lower_bound=-3,upper_bound=3,lower_start=-1,
-                                            upper_start=1,par_type=3,biomarker_group=1:n_obs_types))
+                                            lower_bound=-10,upper_bound=10,lower_start=-1,
+                                            upper_start=1,par_type=3,biomarker_group=1:n_obs_types)) %>% arrange(biomarker_group)
   
   par_tab_rhos$values <- rnorm(length(sampled_viruses), 1)
   measurement_indices <- seq_along(sampled_viruses)

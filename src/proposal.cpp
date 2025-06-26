@@ -296,7 +296,6 @@ List inf_hist_prop_prior_v2_and_v4(
   IntegerVector samps; // Variable vector to sample from
   IntegerVector samps_shifted;
   IntegerVector samp_indices;
-  IntegerVector jh_new_samps_shifted;
   IntegerVector locs; // Vector of locations that were sampled
   // As each individual has a different number of years to sample from,
   // need to extract relative proportions and re-weight
@@ -756,8 +755,8 @@ List inf_hist_prop_prior_v2_and_v4(
         	    wane_short_parameters(group,biomarker_group), 
         	    wane_long_parameters(group,biomarker_group), 
         	    wane_maternal_parameters(group,biomarker_group), 
-        	    wane_maternal_parameters(group,biomarker_group), 
-        	    //antigenic_seniority_parameters(group,biomarker_group),
+        	    //wane_maternal_parameters(group,biomarker_group), 
+        	    antigenic_seniority_parameters(group,biomarker_group),
         	    infection_times,
         	    infection_times_indices_tmp,
         	    biomarker_id_indices,

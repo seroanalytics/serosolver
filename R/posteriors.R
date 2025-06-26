@@ -374,7 +374,6 @@ create_posterior_func <- function(par_tab,
     if (function_type == 1) {
       if(verbose) message(cat("Creating posterior solving function...\n"))
         f <- function(pars, infection_history_mat) {
-  
           ## Transmission prob is the part of the likelihood function corresponding to each individual
           transmission_prob <- rep(0, n_indiv)
           if (explicit_phi) {
@@ -391,7 +390,9 @@ create_posterior_func <- function(par_tab,
             antigenic_map_short <- array(dim=c(length(possible_biomarker_ids)^2,n_biomarker_groups,n_demographic_groups))
             cr_longs <- matrix(theta[,colnames(theta)=="cr_long"],nrow=length(unique_groups))
             cr_shorts <- matrix(theta[,colnames(theta)=="cr_short"],nrow=length(unique_groups))
+            #cr_shorts <- cr_shorts*cr_longs
             
+
             for(group in unique_groups){
               for(biomarker_group in unique_biomarker_groups){
                 antigenic_map_long[,biomarker_group,group] <- create_cross_reactivity_vector(antigenic_map_melted[[biomarker_group]], cr_longs[group,biomarker_group])
@@ -528,6 +529,7 @@ create_posterior_func <- function(par_tab,
                       proposal_ratios,
                       temp=1,
                       propose_from_prior=TRUE) {
+
           names(pars) <- par_names
           theta <- transform_parameters_cpp(pars, scale_table, theta_meas_comb_indices-1, scale_par_indices-1,as.matrix(demographic_groups), transforms)
           colnames(theta) <- names(pars[theta_meas_comb_indices])
@@ -541,6 +543,7 @@ create_posterior_func <- function(par_tab,
           
           cr_longs <- matrix(theta[,colnames(theta)=="cr_long"],nrow=length(unique_groups))
           cr_shorts <- matrix(theta[,colnames(theta)=="cr_short"],nrow=length(unique_groups))
+          #cr_shorts <- cr_shorts*cr_longs
           
           for(group in unique_groups){
             for(biomarker_group in unique_biomarker_groups){
@@ -550,7 +553,9 @@ create_posterior_func <- function(par_tab,
           }
             n_infections <- sum_infections_by_group(infection_history_mat, indiv_pop_group_indices, n_groups,use_timevarying_demographics)
             n_infected_group <- rowSums(n_infections)
-
+            #print("=========================================")
+            #print("Theta: ")
+            #print(theta)
             ## Now pass to the C++ function
             res <- inf_hist_prop_prior_v2_and_v4(
                 theta,
@@ -638,6 +643,7 @@ create_posterior_func <- function(par_tab,
           
           cr_longs <- matrix(theta[,colnames(theta)=="cr_long"],nrow=length(unique_groups))
           cr_shorts <- matrix(theta[,colnames(theta)=="cr_short"],nrow=length(unique_groups))
+          #cr_shorts <- cr_shorts*cr_longs
           for(group in unique_groups){
             for(biomarker_group in unique_biomarker_groups){
                 antigenic_map_long[,biomarker_group,group] <- create_cross_reactivity_vector(antigenic_map_melted[[biomarker_group]], cr_longs[group,biomarker_group])

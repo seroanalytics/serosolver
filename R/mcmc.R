@@ -93,17 +93,20 @@ serosolver <- function(par_tab,
       library(doRNG)
       library(foreach)
       library(parallel)
+      #library(doFuture)
+      #registerDoFuture()
       `%execute%` <- `%dorng%`
+      #`%execute%` <- `%dofuture%`
       if(verbose) {
         message(cat("Requested", n_chains, "MCMC chains in parallel, setting up parallel session using doParallel package\n",sep=" "))
         message(cat("Progress messages will be piped to ", filename, "_log.txt when `parallel` is set to true\n",sep=""))
       } else {
         message(cat("\n",sep=" "))
       }
-      #future::plan(future::multisession)
       cl <- makeCluster(min(n_chains,detectCores()))
       registerDoParallel(cl)
       on.exit(stopCluster(cl))
+      #future::plan(multisession,workers=detectCores())
       
     } else {
       `%execute%` <- `%do%`
@@ -386,8 +389,10 @@ serosolver <- function(par_tab,
                               data_type=data_type)
 
   save(serosolver_settings,file=paste0(filename,"_serosolver_settings.RData"))
-  
-  result <- foreach(chain = 1:n_chains, .packages =c("serosolver","data.table","dplyr","tidyr")) %execute% {
+  result <- foreach(chain = 1:n_chains, 
+                    .packages =c("serosolver","data.table","dplyr","tidyr")
+                    #.options.future =list(globals=structure(TRUE),seed = TRUE,packages = c("serosolver","data.table","dplyr","tidyr"))
+                    ) %execute% {
   #for(chain in 1:n_chains){
     if(parallel){
       sink(log_file,append=TRUE)                    
