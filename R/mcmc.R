@@ -84,6 +84,7 @@ serosolver <- function(par_tab,
                      verbose_dev=FALSE,
                      inf_hist_mcmc_summaries=TRUE,
                      ...) {
+  print("Hello I've been updated!")
   on.exit(serosolver::unregister_dopar)
   ###################################################################
   ## Sort out MCMC parameters --------------------------------------
