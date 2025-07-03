@@ -394,10 +394,12 @@ serosolver <- function(par_tab,
                     .packages =c("serosolver","data.table","dplyr","tidyr")
                     #.options.future =list(globals=structure(TRUE),seed = TRUE,packages = c("serosolver","data.table","dplyr","tidyr"))
                     ) %execute% {
+                      
   #for(chain in 1:n_chains){
     if(parallel){
       sink(log_file,append=TRUE)                    
     }
+                      print("Definitely updated")
     ## Setup MCMC chain file with correct column names
     mcmc_chain_file <- paste0(filename, "_",chain,"_chain.csv")
     infection_history_file <- paste0(filename, "_",chain,"_infection_histories.csv")
