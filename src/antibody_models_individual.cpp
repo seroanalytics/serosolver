@@ -190,7 +190,9 @@ void antibody_data_model_individual_timevarying_variant_specific(NumericVector &
       if((boost_before_infection && sampling_time > (infection_times[x] + boost_delay(groups[x],exposure_group[exposure_indices[x]]))) ||
          (!boost_before_infection && sampling_time >= (infection_times[x] + boost_delay(groups[x],exposure_group[exposure_indices[x]])))){
         time = sampling_time - (infection_times[x] + boost_delay(groups[x],exposure_group[exposure_indices[x]])); // Time between sample and infection + boost
-        wane_short_amount= MAX(0, 1.0 - (wane_short(groups[x],exposure_group[exposure_indices[x]])*time)); // Waning of the short-term response
+        //wane_short_amount= MAX(0, 1.0 - (wane_short(groups[x],exposure_group[exposure_indices[x]])*time)); // Waning of the short-term response
+        wane_short_amount= exp(- (wane_short(groups[x],exposure_group[exposure_indices[x]])*time)); // Waning of the short-term response
+        
         wane_long_amount= MAX(0, 1.0 - (wane_long(groups[x],exposure_group[exposure_indices[x]])*time)); // Waning of the long-term response
         
         seniority = MAX(0, 1.0 - antigenic_seniority(groups[x],exposure_group[exposure_indices[x]])*(n_inf - 1.0)); // Antigenic seniority
