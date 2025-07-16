@@ -136,7 +136,8 @@ double inf_mat_prior_total_group_cpp(const IntegerVector& n_infections_group, co
 //' @export
 //' @family likelihood_functions
 // [[Rcpp::export(rng = false)]]
-NumericVector likelihood_func_fast(const NumericVector &theta, const NumericVector &obs, const NumericVector &predicted_antibody_levels){
+NumericVector likelihood_func_fast(const NumericVector &theta, const NumericVector &obs, const NumericVector &predicted_antibody_levels,
+                                   const IntegerVector &prev_infected_flags){
   int total_measurements = predicted_antibody_levels.size();
   NumericVector ret(total_measurements);
   const double sd = theta["obs_sd"];
@@ -172,7 +173,8 @@ NumericVector likelihood_func_fast(const NumericVector &theta, const NumericVect
 //' @export
 //' @family likelihood_functions
 // [[Rcpp::export(rng = false)]]
-NumericVector likelihood_func_fast_continuous(const NumericVector &theta, const NumericVector &obs, const NumericVector &predicted_antibody_levels){
+NumericVector likelihood_func_fast_continuous(const NumericVector &theta, const NumericVector &obs, const NumericVector &predicted_antibody_levels,
+                                              const IntegerVector &prev_infected_flags){
  int total_measurements = predicted_antibody_levels.size();
  NumericVector ret(total_measurements);
  const double sd = theta["obs_sd"];
@@ -211,7 +213,8 @@ NumericVector likelihood_func_fast_continuous(const NumericVector &theta, const 
  //' @export
  //' @family likelihood_functions
  // [[Rcpp::export(rng = false)]]
- NumericVector likelihood_func_fast_continuous_fp(const NumericVector &theta, const NumericVector &obs, const NumericVector &predicted_antibody_levels){
+ NumericVector likelihood_func_fast_continuous_fp(const NumericVector &theta, const NumericVector &obs, const NumericVector &predicted_antibody_levels,
+                                                  const IntegerVector &prev_infected_flags){
    int total_measurements = predicted_antibody_levels.size();
    NumericVector ret(total_measurements);
    
@@ -227,7 +230,9 @@ NumericVector likelihood_func_fast_continuous(const NumericVector &theta, const 
    const double unif_pdf = log(1.0/(max_measurement-min_measurement));
    for(int i = 0; i < total_measurements; ++i){
      // Most antibody levels are between min_measurement and max_measurement, this is the difference in normal cdfs
-     if(predicted_antibody_levels[i] > min_measurement){
+     if(prev_infected_flags[i] == 1){
+
+     // if(predicted_antibody_levels[i] > min_measurement){
        if(obs[i] < max_measurement && obs[i] > min_measurement){
          ret[i] = -0.5*(pow((obs[i]-predicted_antibody_levels[i])/sd, 2)) - den2;
          // For antibody levels above the maximum, 
@@ -237,6 +242,7 @@ NumericVector likelihood_func_fast_continuous(const NumericVector &theta, const 
          ret[i] = log_const + log(1.0 + erf((min_measurement - predicted_antibody_levels[i])/den));
        }
      } else {
+
        if(obs[i] <= min_measurement){
          ret[i] = true_neg_prob;
        } else {
@@ -357,6 +363,7 @@ void proposal_likelihood_func_continuous(double &new_prob,
 void proposal_likelihood_func_continuous_fp(double &new_prob,
                                          NumericVector &predicted_antibody_levels,
                                          const int &indiv,
+                                         const int &prev_infected_flag,
                                          const NumericVector &data,
                                          const NumericVector &repeat_data,
                                          const IntegerVector &repeat_indices,
@@ -374,7 +381,8 @@ void proposal_likelihood_func_continuous_fp(double &new_prob,
                                          const bool &repeat_data_exist,
                                          const double &obs_weight = 1.0){
   for(int x = cum_nrows_per_individual_in_data[indiv]; x < cum_nrows_per_individual_in_data[indiv+1]; ++x){
-    if(predicted_antibody_levels[x] > min_measurement){
+    // if(predicted_antibody_levels[x] > min_measurement){
+    if(prev_infected_flag == 1){
       if(data[x] < max_measurement && data[x] > min_measurement){
         new_prob += -0.5*(pow((data[x]-predicted_antibody_levels[x])/sd, 2)) - den2;
       } else if(data[x] >= max_measurement) {
@@ -395,7 +403,8 @@ void proposal_likelihood_func_continuous_fp(double &new_prob,
   // Do something for repeat data here
   if(repeat_data_exist){
     for(int x = cum_nrows_per_individual_in_repeat_data[indiv]; x < cum_nrows_per_individual_in_repeat_data[indiv+1]; ++x){
-      if(predicted_antibody_levels[repeat_indices[x]] > min_measurement){
+      if(prev_infected_flag == 1){
+      //if(predicted_antibody_levels[repeat_indices[x]] > min_measurement){
         if(repeat_data[x] < max_measurement && repeat_data[x] > min_measurement){
           new_prob += -0.5*(pow((repeat_data[x]-predicted_antibody_levels[repeat_indices[x]])/sd, 2)) - den2;
         } else if(repeat_data[x] >= max_measurement) {

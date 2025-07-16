@@ -392,6 +392,8 @@ List inf_hist_prop_prior_v2_and_v4(
   int gradient_index = -1;
   int boost_limit_index = -1;
   
+  int any_infections;
+  
   // Create vectors of model parameters for each of the observation types
     for(int g = 0; g < n_groups; ++g){
       for(int x = 0; x < n_types; ++x){
@@ -671,6 +673,7 @@ List inf_hist_prop_prior_v2_and_v4(
       	indices = new_infection_history > 0;
         use_indices =infection_history_mat_indices[indices];
       	infection_times = possible_exposure_times[use_indices];
+      	any_infections = sum(new_infection_history) > 0;
       	infection_times_indices_tmp = possible_exposure_times_indices[use_indices];	  
       	
       	// Subset group indices to those times with infections
@@ -834,6 +837,7 @@ List inf_hist_prop_prior_v2_and_v4(
               } else if(data_type==3){
                 proposal_likelihood_func_continuous_fp(new_prob, predicted_antibody_levels, 
                                                     index, 
+                                                    any_infections,
                                                     antibody_data, 
                                                     antibody_data_repeats, 
                                                     repeat_indices,

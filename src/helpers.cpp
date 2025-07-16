@@ -131,8 +131,8 @@ NumericVector sum_likelihoods(NumericVector liks, IntegerVector indices, int n_i
 NumericVector create_cross_reactivity_vector(NumericVector x, double cr_gradient) {
   NumericVector x2(x.size());
   for(int i = 0; i < x2.size(); ++i){
-    //x2[i] = MAX(1 - x[i]*cr_gradient,0);
-    x2[i] = exp(- x[i] * cr_gradient);
+    x2[i] = MAX(1 - x[i]*cr_gradient,0);
+    //x2[i] = exp(- x[i] * cr_gradient);
   }
   return(x2);
 }

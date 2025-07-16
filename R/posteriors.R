@@ -443,6 +443,8 @@ create_posterior_func <- function(par_tab,
               use_variant_specific_pars,
               antibody_level_before_infection
             )
+            
+
             if (use_measurement_bias) {
               measurement_bias_indices <- matrix(theta[,rho_indices_unique])
               antibody_level_shifts <- measurement_bias_indices[cbind(antibody_data_demo_index, expected_indices)]
@@ -453,20 +455,24 @@ create_posterior_func <- function(par_tab,
                 liks <- numeric(n_indivs)
                 for(biomarker_group in unique_biomarker_groups){
                     ## Need theta for each observation type
+                    ever_infected <- rep(rowSums(infection_history_mat) > 0, nrows_per_individual_in_data[,biomarker_group])
                     liks_tmp <- likelihood_func_use[[biomarker_group]](
                                                     pars[(theta_indices_unique+1) + n_pars*(biomarker_group-1)], 
                                                     antibody_levels_unique[biomarker_group_indices[[biomarker_group]]], 
-                                                    y_new[biomarker_group_indices[[biomarker_group]]])
+                                                    y_new[biomarker_group_indices[[biomarker_group]]],
+                                                    ever_infected)
                     
                     liks <- liks + biomarker_groups_weights[biomarker_group]*sum_buckets(liks_tmp, nrows_per_individual_in_data[,biomarker_group])
               
                     if (repeat_data_exist) {
                         ## Need theta for each observation type
-                        
+                      ever_infected <- rep(rowSums(infection_history_mat) > 0, nrows_per_individual_in_data_repeats[,biomarker_group])
+                      
                         liks_repeats <- likelihood_func_use[[biomarker_group]](
                             pars[theta_indices][(theta_indices_unique+1) + n_pars*(biomarker_group-1)], 
                             antibody_levels_repeats[biomarker_group_indices_repeats[[biomarker_group]]], 
-                            y_new[repeat_indices][biomarker_group_indices_repeats[[biomarker_group]]])
+                            y_new[repeat_indices][biomarker_group_indices_repeats[[biomarker_group]]],
+                            ever_infected)
                         
                         liks[indiv_repeat_indices] <- liks[indiv_repeat_indices] + biomarker_groups_weights[biomarker_group]*sum_buckets(liks_repeats, nrows_per_individual_in_data_repeats[,biomarker_group])
                     }

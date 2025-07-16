@@ -177,8 +177,8 @@ inf_mat_prior_total_group_cpp <- function(n_infections_group, n_alive_group, sha
 #' @return a likelihood for each observed antibody level
 #' @export
 #' @family likelihood_functions
-likelihood_func_fast <- function(theta, obs, predicted_antibody_levels) {
-    .Call('_serosolver_likelihood_func_fast', PACKAGE = 'serosolver', theta, obs, predicted_antibody_levels)
+likelihood_func_fast <- function(theta, obs, predicted_antibody_levels, prev_infected_flags) {
+    .Call('_serosolver_likelihood_func_fast', PACKAGE = 'serosolver', theta, obs, predicted_antibody_levels, prev_infected_flags)
 }
 
 #' Fast observation error function continuous
@@ -191,12 +191,12 @@ likelihood_func_fast <- function(theta, obs, predicted_antibody_levels) {
 #' @return a likelihood for each observed antibody level
 #' @export
 #' @family likelihood_functions
-likelihood_func_fast_continuous <- function(theta, obs, predicted_antibody_levels) {
-    .Call('_serosolver_likelihood_func_fast_continuous', PACKAGE = 'serosolver', theta, obs, predicted_antibody_levels)
+likelihood_func_fast_continuous <- function(theta, obs, predicted_antibody_levels, prev_infected_flags) {
+    .Call('_serosolver_likelihood_func_fast_continuous', PACKAGE = 'serosolver', theta, obs, predicted_antibody_levels, prev_infected_flags)
 }
 
-likelihood_func_fast_continuous_fp <- function(theta, obs, predicted_antibody_levels) {
-    .Call('_serosolver_likelihood_func_fast_continuous_fp', PACKAGE = 'serosolver', theta, obs, predicted_antibody_levels)
+likelihood_func_fast_continuous_fp <- function(theta, obs, predicted_antibody_levels, prev_infected_flags) {
+    .Call('_serosolver_likelihood_func_fast_continuous_fp', PACKAGE = 'serosolver', theta, obs, predicted_antibody_levels, prev_infected_flags)
 }
 
 #' Infection history proposal function

@@ -245,38 +245,41 @@ BEGIN_RCPP
 END_RCPP
 }
 // likelihood_func_fast
-NumericVector likelihood_func_fast(const NumericVector& theta, const NumericVector& obs, const NumericVector& predicted_antibody_levels);
-RcppExport SEXP _serosolver_likelihood_func_fast(SEXP thetaSEXP, SEXP obsSEXP, SEXP predicted_antibody_levelsSEXP) {
+NumericVector likelihood_func_fast(const NumericVector& theta, const NumericVector& obs, const NumericVector& predicted_antibody_levels, const IntegerVector& prev_infected_flags);
+RcppExport SEXP _serosolver_likelihood_func_fast(SEXP thetaSEXP, SEXP obsSEXP, SEXP predicted_antibody_levelsSEXP, SEXP prev_infected_flagsSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::traits::input_parameter< const NumericVector& >::type theta(thetaSEXP);
     Rcpp::traits::input_parameter< const NumericVector& >::type obs(obsSEXP);
     Rcpp::traits::input_parameter< const NumericVector& >::type predicted_antibody_levels(predicted_antibody_levelsSEXP);
-    rcpp_result_gen = Rcpp::wrap(likelihood_func_fast(theta, obs, predicted_antibody_levels));
+    Rcpp::traits::input_parameter< const IntegerVector& >::type prev_infected_flags(prev_infected_flagsSEXP);
+    rcpp_result_gen = Rcpp::wrap(likelihood_func_fast(theta, obs, predicted_antibody_levels, prev_infected_flags));
     return rcpp_result_gen;
 END_RCPP
 }
 // likelihood_func_fast_continuous
-NumericVector likelihood_func_fast_continuous(const NumericVector& theta, const NumericVector& obs, const NumericVector& predicted_antibody_levels);
-RcppExport SEXP _serosolver_likelihood_func_fast_continuous(SEXP thetaSEXP, SEXP obsSEXP, SEXP predicted_antibody_levelsSEXP) {
+NumericVector likelihood_func_fast_continuous(const NumericVector& theta, const NumericVector& obs, const NumericVector& predicted_antibody_levels, const IntegerVector& prev_infected_flags);
+RcppExport SEXP _serosolver_likelihood_func_fast_continuous(SEXP thetaSEXP, SEXP obsSEXP, SEXP predicted_antibody_levelsSEXP, SEXP prev_infected_flagsSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::traits::input_parameter< const NumericVector& >::type theta(thetaSEXP);
     Rcpp::traits::input_parameter< const NumericVector& >::type obs(obsSEXP);
     Rcpp::traits::input_parameter< const NumericVector& >::type predicted_antibody_levels(predicted_antibody_levelsSEXP);
-    rcpp_result_gen = Rcpp::wrap(likelihood_func_fast_continuous(theta, obs, predicted_antibody_levels));
+    Rcpp::traits::input_parameter< const IntegerVector& >::type prev_infected_flags(prev_infected_flagsSEXP);
+    rcpp_result_gen = Rcpp::wrap(likelihood_func_fast_continuous(theta, obs, predicted_antibody_levels, prev_infected_flags));
     return rcpp_result_gen;
 END_RCPP
 }
 // likelihood_func_fast_continuous_fp
-NumericVector likelihood_func_fast_continuous_fp(const NumericVector& theta, const NumericVector& obs, const NumericVector& predicted_antibody_levels);
-RcppExport SEXP _serosolver_likelihood_func_fast_continuous_fp(SEXP thetaSEXP, SEXP obsSEXP, SEXP predicted_antibody_levelsSEXP) {
+NumericVector likelihood_func_fast_continuous_fp(const NumericVector& theta, const NumericVector& obs, const NumericVector& predicted_antibody_levels, const IntegerVector& prev_infected_flags);
+RcppExport SEXP _serosolver_likelihood_func_fast_continuous_fp(SEXP thetaSEXP, SEXP obsSEXP, SEXP predicted_antibody_levelsSEXP, SEXP prev_infected_flagsSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::traits::input_parameter< const NumericVector& >::type theta(thetaSEXP);
     Rcpp::traits::input_parameter< const NumericVector& >::type obs(obsSEXP);
     Rcpp::traits::input_parameter< const NumericVector& >::type predicted_antibody_levels(predicted_antibody_levelsSEXP);
-    rcpp_result_gen = Rcpp::wrap(likelihood_func_fast_continuous_fp(theta, obs, predicted_antibody_levels));
+    Rcpp::traits::input_parameter< const IntegerVector& >::type prev_infected_flags(prev_infected_flagsSEXP);
+    rcpp_result_gen = Rcpp::wrap(likelihood_func_fast_continuous_fp(theta, obs, predicted_antibody_levels, prev_infected_flags));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -391,9 +394,9 @@ static const R_CallMethodDef CallEntries[] = {
     {"_serosolver_inf_mat_prior_group_cpp", (DL_FUNC) &_serosolver_inf_mat_prior_group_cpp, 4},
     {"_serosolver_inf_mat_prior_group_cpp_vector", (DL_FUNC) &_serosolver_inf_mat_prior_group_cpp_vector, 4},
     {"_serosolver_inf_mat_prior_total_group_cpp", (DL_FUNC) &_serosolver_inf_mat_prior_total_group_cpp, 4},
-    {"_serosolver_likelihood_func_fast", (DL_FUNC) &_serosolver_likelihood_func_fast, 3},
-    {"_serosolver_likelihood_func_fast_continuous", (DL_FUNC) &_serosolver_likelihood_func_fast_continuous, 3},
-    {"_serosolver_likelihood_func_fast_continuous_fp", (DL_FUNC) &_serosolver_likelihood_func_fast_continuous_fp, 3},
+    {"_serosolver_likelihood_func_fast", (DL_FUNC) &_serosolver_likelihood_func_fast, 4},
+    {"_serosolver_likelihood_func_fast_continuous", (DL_FUNC) &_serosolver_likelihood_func_fast_continuous, 4},
+    {"_serosolver_likelihood_func_fast_continuous_fp", (DL_FUNC) &_serosolver_likelihood_func_fast_continuous_fp, 4},
     {"_serosolver_inf_hist_prop_prior_v3", (DL_FUNC) &_serosolver_inf_hist_prop_prior_v3, 10},
     {"_serosolver_inf_hist_prop_prior_v2_and_v4", (DL_FUNC) &_serosolver_inf_hist_prop_prior_v2_and_v4, 63},
     {NULL, NULL, 0}

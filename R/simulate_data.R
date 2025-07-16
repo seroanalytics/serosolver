@@ -207,7 +207,8 @@ simulate_data <- function(par_tab,
       tmp_pars <- tmp_par_tab$values
       names(tmp_pars) <- tmp_par_tab$names
       ## Add noise, specific to the biomarker group's data type
-      antibody_data$measurement[tmp_indices] <- add_noise(antibody_data$measurement[tmp_indices],tmp_pars,NULL,NULL,data_type=data_type[i])
+      any_infections <- data.frame(individual=1:nrow(infection_history), any_infection=rowSums(infection_history) > 0) %>% left_join(antibody_data,by="individual") %>% pull(any_infection)
+      antibody_data$measurement[tmp_indices] <- add_noise(antibody_data$measurement[tmp_indices],tmp_pars,NULL,NULL,data_type=data_type[i], any_infections)
      }
     ## Randomly censor titre values
     antibody_data <- antibody_data %>% mutate(measurement=if_else(runif(n())<missing_data,NA,measurement))
@@ -235,7 +236,7 @@ simulate_data <- function(par_tab,
 #' y <- runif(100)
 #' noisy_y <- add_noise(y, pars)
 #' }
-add_noise <- function(y, theta, measurement_bias = NULL, indices = NULL,data_type=1) {
+add_noise <- function(y, theta, measurement_bias = NULL, indices = NULL,data_type=1, any_infection=NULL) {
   if(data_type ==2){
     if (!is.null(measurement_bias)) {
       noise_y <- rnorm(length(y), mean = y + measurement_bias[indices], sd = theta["obs_sd"])
@@ -249,8 +250,8 @@ add_noise <- function(y, theta, measurement_bias = NULL, indices = NULL,data_typ
     
   } else if(data_type == 3){
     ## If true 0, then exponentially distributed
-    negative_predictions <- which(y == 0)
-    positive_predictions <- which(y > 0)
+    negative_predictions <- which(any_infection == 0)
+    positive_predictions <- which(any_infection > 0)
     noise_y <- y
     
     if (!is.null(measurement_bias)) {
