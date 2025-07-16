@@ -252,6 +252,8 @@ add_noise <- function(y, theta, measurement_bias = NULL, indices = NULL,data_typ
     ## If true 0, then exponentially distributed
     negative_predictions <- which(any_infection == 0)
     positive_predictions <- which(any_infection > 0)
+    ##negative_predictions <- which(y <= theta["min_measurement"])
+    ##positive_predictions <- which(y > theta["min_measurement"])
     noise_y <- y
     
     if (!is.null(measurement_bias)) {
