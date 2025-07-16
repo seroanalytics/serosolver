@@ -387,6 +387,7 @@ create_posterior_func <- function(par_tab,
     if (function_type == 1) {
       if(verbose) message(cat("Creating posterior solving function...\n"))
         f <- function(pars, infection_history_mat) {
+
           ## Transmission prob is the part of the likelihood function corresponding to each individual
           transmission_prob <- rep(0, n_indiv)
           if (explicit_phi) {
@@ -463,7 +464,7 @@ create_posterior_func <- function(par_tab,
                         ## Need theta for each observation type
                         
                         liks_repeats <- likelihood_func_use[[biomarker_group]](
-                            pars[(theta_indices_unique+1) + n_pars*(biomarker_group-1)], 
+                            pars[theta_indices][(theta_indices_unique+1) + n_pars*(biomarker_group-1)], 
                             antibody_levels_repeats[biomarker_group_indices_repeats[[biomarker_group]]], 
                             y_new[repeat_indices][biomarker_group_indices_repeats[[biomarker_group]]])
                         
