@@ -98,7 +98,7 @@ plot_antibody_data(example_antibody_data,example_antigenic_map$inf_times,n_indiv
 ```{r example_mcmc, message=FALSE,warning=FALSE}
 ## Run the MCMC
 # This example uses prior version 2 (i.e. beta prior on phi with parameters shape1 and shape2)
-output <- serosolver::serosolver(example_par_tab, example_antibody_data, example_antigenic_map,
+output <- serosolver::serosolver(example_par_tab, example_antibody_data, antigenic_map=example_antigenic_map,
                 filename="readme", n_chains=3,parallel=TRUE,
                 mcmc_pars=c(adaptive_iterations=10000, iterations=50000),verbose=TRUE)
 ```

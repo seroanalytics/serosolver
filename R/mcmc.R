@@ -84,7 +84,6 @@ serosolver <- function(par_tab,
                      verbose_dev=FALSE,
                      inf_hist_mcmc_summaries=TRUE,
                      ...) {
-  print("Hello I've been updated!")
   on.exit(serosolver::unregister_dopar)
   ###################################################################
   ## Sort out MCMC parameters --------------------------------------
@@ -399,7 +398,6 @@ serosolver <- function(par_tab,
     if(parallel){
       sink(log_file,append=TRUE)                    
     }
-                      print("Definitely updated")
     ## Setup MCMC chain file with correct column names
     mcmc_chain_file <- paste0(filename, "_",chain,"_chain.csv")
     infection_history_file <- paste0(filename, "_",chain,"_infection_histories.csv")
