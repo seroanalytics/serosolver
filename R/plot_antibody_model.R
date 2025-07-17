@@ -656,8 +656,10 @@ plot_estimated_antibody_model <- function(chain,
     names(pars) <- par_tab$names
     
     predicted_titres[, i] <- model_func(pars, inf_hist_test)
+    ever_infected <- data.frame(individual=1:nrow(inf_hist_test), ever_infected=rowSums(inf_hist_test) > 0) %>% left_join(full_antibody_data,by="individual")
+    
     for(biomarker_group in unique_biomarker_groups){
-      observed_predicted_titres[which(full_antibody_data$biomarker_group == biomarker_group),i] <- add_noise(predicted_titres[which(full_antibody_data$biomarker_group == biomarker_group),i], pars, NULL, NULL,data_type=data_type[biomarker_group])
+      observed_predicted_titres[which(full_antibody_data$biomarker_group == biomarker_group),i] <- add_noise(predicted_titres[which(full_antibody_data$biomarker_group == biomarker_group),i], pars, NULL, NULL,data_type=data_type[biomarker_group],ever_infected %>% filter(biomarker_group == biomarker_group) %>% pull(ever_infected))
     }
     samp_record[i] <- index
   }

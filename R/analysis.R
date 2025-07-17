@@ -434,8 +434,9 @@ get_antibody_level_predictions <- function(chain, infection_histories, antibody_
     tmp_inf_hist <- infection_histories[infection_histories$samp_no == index, ]
     tmp_inf_hist <- as.matrix(Matrix::sparseMatrix(i = tmp_inf_hist$i, j = tmp_inf_hist$j, x = tmp_inf_hist$x, dims = c(n_indiv, nstrain)))
     predicted_titres[, i] <- model_func(pars, tmp_inf_hist)
+    ever_infected <- data.frame(individual=1:nrow(tmp_inf_hist), ever_infected=rowSums(tmp_inf_hist) > 0) %>% left_join(antibody_data1,by="individual")
     for(biomarker_group in unique_biomarker_groups){
-      observed_predicted_titres[which(antibody_data1$biomarker_group == biomarker_group),i] <- add_noise(predicted_titres[which(antibody_data1$biomarker_group == biomarker_group),i], pars, NULL, NULL,data_type=data_type[biomarker_group])
+      observed_predicted_titres[which(antibody_data1$biomarker_group == biomarker_group),i] <- add_noise(predicted_titres[which(antibody_data1$biomarker_group == biomarker_group),i], pars, NULL, NULL,data_type=data_type[biomarker_group], ever_infected %>% filter(biomarker_group == biomarker_group) %>% pull(ever_infected))
     }
     inf_hist_all[[i]] <- tmp_inf_hist
     ## Get residuals between observations and predictions
