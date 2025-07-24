@@ -34,7 +34,30 @@ scaletuning <- function(step, target_acceptance_rate_theta, pcur) {
     if (pcur == 0) pcur <- 0.01
     step <- (step * qnorm(target_acceptance_rate_theta / 2)) / qnorm(pcur / 2)
     if (step > 1) step <- 1
-    step <- max(0.00001, step)
+    step <- max(1e-4, step)
+  }
+  return(step)
+}
+
+#' Scale step sizes
+#'
+#' Scales the given step size (between 0 and 1) based on the current acceptance rate to get closed to the desired acceptance rate
+#' @param step the current step size
+#' @param target_acceptance_rate_theta the desired acceptance rate
+#' @param pcur the current acceptance rate
+#' @return the scaled step size
+#' @export
+#' @family mcmc
+#' @useDynLib serosolver
+scaletuning_alt <- function(step, target_acceptance_rate_theta, pcur) {
+  if(is.finite(pcur)){
+    if (pcur == 1) pcur <- 0.99
+    if (pcur == 0) pcur <- 0.01
+    
+    step <- step * exp(0.01*(pcur-target_acceptance_rate_theta))
+    #step <- (step * qnorm(target_acceptance_rate_theta / 2)) / qnorm(pcur / 2)
+    if (step > 10) step <- 10
+    step <- max(1e-4, step)
   }
   return(step)
 }
@@ -71,7 +94,6 @@ rm_scale <- function(step_scale, mc, target_acceptance_rate_theta, log_prob, N_a
 #' data(example_antigenic_map)
 #' times <- example_antigenic_map$inf_times
 #' setup_infection_histories_prior(example_antibody_data, times, 1, 1)
-#' @export
 setup_infection_histories_prior <- function(antibody_data, possible_exposure_times, infection_model_prior_shape1=1,infection_model_prior_shape2=1){
   DOBs <- unique(antibody_data[, c("individual", "birth")])[, 2]
   n_indiv <- length(unique(antibody_data$individual))
@@ -109,7 +131,6 @@ setup_infection_histories_prior <- function(antibody_data, possible_exposure_tim
 #' data(example_antibody_data)
 #' data(example_antigenic_map)
 #' start_inf <- setup_infection_histories_antibody_level(example_antibody_data, example_antigenic_map$inf_times)
-#' @export
 setup_infection_histories_antibody_level <- function(antibody_data, possible_exposure_times, space = 5, antibody_cutoff = 2, sample_prob = 0.9) {
   start_inf <- NULL
   individuals <- unique(antibody_data$individual)
@@ -178,7 +199,6 @@ setup_infection_histories_antibody_level <- function(antibody_data, possible_exp
 #' data(example_antibody_data)
 #' data(example_antigenic_map)
 #' start_inf <- setup_infection_histories(example_antibody_data, example_antigenic_map$inf_times)
-#' @export
 setup_infection_histories <- function(antibody_data, possible_exposure_times, space = 5, antibody_cutoff = 2, sample_prob = 0.9) {
   start_inf <- NULL
   individuals <- unique(antibody_data$individual)
@@ -244,7 +264,6 @@ setup_infection_histories <- function(antibody_data, possible_exposure_times, sp
 #' @param col_names if TRUE, saves column names first (only set to true if append = FALSE)
 #' @return nothing
 #' @family mcmc
-#' @export
 save_infection_history_to_disk <- function(infection_history, file, samp_no, append = TRUE, col_names = FALSE) {
   save_inf_hist <- Matrix::Matrix(infection_history, sparse = TRUE)
   save_inf_hist <- as.data.frame(Matrix::summary(save_inf_hist))

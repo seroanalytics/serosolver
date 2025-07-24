@@ -191,12 +191,12 @@ get_demographic_groups <- function(par_tab, antibody_data, timevarying_demograph
 }
 
 #' Internal function -- merges antibody_data and demographics such that antibody_data has correct variables
-align_antibody_demographic_dat <- function(antibody_data, demographics=NULL){
+align_antibody_demographic_dat <- function(antibody_data, demographics=NULL,verbose=FALSE){
   if(!is.null(demographics)){
     overlapping_colnames <- intersect(colnames(antibody_data),colnames(demographics))
     overlapping_colnames <- overlapping_colnames[!(overlapping_colnames %in% c("individual","birth"))]
     if(length(overlapping_colnames) > 0){
-      message(paste0("Warning: antibody_data and demographics have overlapping column names: ", paste(overlapping_colnames, collapse=", "), ". Using the values given in demographics."))
+      if(verbose) message(paste0("Warning: antibody_data and demographics have overlapping column names: ", paste(overlapping_colnames, collapse=", "), ". Using the values given in demographics."))
     }
     if("time" %in% colnames(demographics)){
       antibody_data <- suppressMessages(antibody_data %>% select(-overlapping_colnames) %>% left_join(demographics %>% dplyr::rename(sample_time = time)))

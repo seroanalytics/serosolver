@@ -32,8 +32,8 @@ Other infection_history_plots:
 \code{\link{plot_estimated_antibody_model}()},
 \code{\link{plot_infection_history_chains_indiv}()},
 \code{\link{plot_infection_history_chains_time}()},
+\code{\link{plot_infection_history_posteriors}()},
 \code{\link{plot_model_fits}()},
-\code{\link{plot_posteriors_infhist}()},
 \code{\link{plot_total_number_infections}()}
 }
 \concept{infection_history_plots}

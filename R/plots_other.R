@@ -262,7 +262,7 @@ plot_mcmc_diagnostics <- function(location, par_tab, burnin, inf_hist_mcmc_summa
   }
   
   if(inf_hist_mcmc_summaries){
-    p_inf_hists <- plot_posteriors_infhist(chains$inf_chain,unique(chains$inf_chain$j),n_alive=NULL,pad_chain=TRUE)
+    p_inf_hists <- plot_infection_history_posteriors(chains$inf_chain,unique(chains$inf_chain$j),n_alive=NULL,pad_chain=TRUE)
   } else {
     p_inf_hists <- NULL
   }

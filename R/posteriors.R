@@ -76,7 +76,7 @@ create_posterior_func <- function(par_tab,
       measurement_bias$biomarker_group <- 1
     }
     if(verbose & any(class(start_level) == "character")){
-      message(cat("Setting starting antibody levels based on data using command:", start_level, "; and randomizing starting antibody levels set to:", start_level_randomize, "\n"))
+      message(cat("Setting starting antibody levels based on data using command ", start_level, " and randomizing starting antibody levels set to ", start_level_randomize, "\n"))
     }
   
     if(verbose & !is.null(demographics)) message("Using time-varying demographic groupings for parameter stratification\n")
@@ -372,7 +372,7 @@ create_posterior_func <- function(par_tab,
     }
     
     if (function_type == 1) {
-      if(verbose) message(cat("Creating posterior solving function...\n"))
+      if(verbose) message(cat("Creating posterior solving function\n"))
         f <- function(pars, infection_history_mat) {
           ## Transmission prob is the part of the likelihood function corresponding to each individual
           transmission_prob <- rep(0, n_indiv)
@@ -631,7 +631,7 @@ create_posterior_func <- function(par_tab,
             return(res)
         }
     } else {
-      if(verbose) message(cat("Creating model solving function...\n"))
+      if(verbose) message(cat("Creating model solving function\n"))
         ## Final version is just the model solving function
         f <- function(pars, infection_history_mat) {
           ## Need to create demographic-specific parameter transformations here
@@ -651,7 +651,9 @@ create_posterior_func <- function(par_tab,
             }
           }
           y_new <- antibody_model(
-              theta, theta_indices_unique, unique_biomarker_groups,
+              theta, 
+              theta_indices_unique, 
+              unique_biomarker_groups,
               infection_history_mat, 
               infection_history_mat_indices,
               indiv_group_indices,
