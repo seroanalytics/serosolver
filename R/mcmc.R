@@ -403,11 +403,13 @@ serosolver <- function(par_tab,
     infection_history_file <- paste0(filename, "_",chain,"_infection_histories.csv")
     index <- 1
     total_posterior <- -Inf
+    if(verbose) message(cat("Chain ", chain, " generating starting parameter values", "\n", sep = ""))
     while(!is.finite(total_posterior) & index <= 100){
       ## Setup initial conditions
       infection_histories <- start_inf_hist
       if (is.null(start_inf_hist)) {
-        infection_histories <- setup_infection_histories_antibody_level(antibody_data, possible_exposure_times, space = 5, antibody_cutoff = 3,sample_prob=0.1)
+        #infection_histories <- setup_infection_histories_antibody_level(antibody_data, possible_exposure_times, space = 5, antibody_cutoff = 3,sample_prob=0.1)
+        infection_histories <- setup_infection_histories_prior(antibody_data, possible_exposure_times, 1,10)
       }
       
       ## Fix infection states if specified
@@ -440,8 +442,13 @@ serosolver <- function(par_tab,
       total_posterior <- total_likelihood + total_prior_prob
       index <- index + 1
     }
-    if(!is.finite(total_prior_prob)) stop(paste("Error: starting prior probability of chain",chain,"is not finite."))
-    if(!is.finite(total_likelihood)) stop(paste("Error: starting likelihood of chain",chain,"is not finite."))
+    if(!is.finite(total_prior_prob)){
+      stop(paste("Error: starting prior probability of chain",chain,"is not finite. This could be because the custom prior function is not compatible with the settings in par_tab, or there is an error in the antibody data birth or sample_time variables."))
+      
+    }
+    if(!is.finite(total_likelihood)){
+      stop(paste("Error: starting likelihood of chain",chain,"is not finite. This could be due to a mistake in antibody_data."))
+    }
     if(!is.finite(total_posterior)) stop(paste("Error: starting posterior probability of chain", chain, "is not finite."))
     
     if(verbose) message(cat("Chain ", chain, " starting posterior probability: ", total_posterior, "\n", sep = ""))

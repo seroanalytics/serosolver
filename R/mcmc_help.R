@@ -114,7 +114,6 @@ setup_infection_histories_antibody_level <- function(antibody_data, possible_exp
   start_inf <- NULL
   individuals <- unique(antibody_data$individual)
   ages <- unique(antibody_data[, c("individual", "birth")])
-  
   ## For each individual
   for (individual in individuals) {
     ## Isolate that individual's data and date of birth
@@ -125,7 +124,6 @@ setup_infection_histories_antibody_level <- function(antibody_data, possible_exp
 
     ## What was the most recent strain that the individual could get
     sample_mask <- create_sample_mask(dat, possible_exposure_times)
-    
     ## Only look at biomarker IDs that circulated when an individual was alive and for samples not in the future
     times <- times[times >= dob & times <= possible_exposure_times[sample_mask]]
     
@@ -157,6 +155,8 @@ setup_infection_histories_antibody_level <- function(antibody_data, possible_exp
         dist <- 0
       }
     }
+    ## Make sure that infections are all in allowable times
+    inf_times <- inf_times[inf_times %in% times]
     infections <- rep(0, length(possible_exposure_times))
     infections[match(inf_times, possible_exposure_times)] <- 1
     start_inf <- rbind(start_inf, infections)
