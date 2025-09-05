@@ -191,7 +191,7 @@ plot_model_fits <- function(chain, infection_histories,
     antigenic_map, possible_exposure_times, 
     par_tab, nsamp, FALSE, 
     measurement_bias,
-    expand_antibody_data=TRUE,
+    expand_antibody_data=FALSE,
     expand_to_all_times=expand_to_all_times,
     data_type=data_type,
     start_level=start_levels,
@@ -243,7 +243,7 @@ plot_model_fits <- function(chain, infection_histories,
   }
   
   if(is.null(subset_biomarker_groups)){
-    subset_biomarker_groups_use <- 1
+    subset_biomarker_groups_use <- unique(par_tab$biomarker_group)
   } else {
     subset_biomarker_groups_use <- subset_biomarker_groups
   }
@@ -261,8 +261,8 @@ plot_model_fits <- function(chain, infection_histories,
         geom_ribbon(data=model_preds[model_preds$individual %in% individuals,]%>% dplyr::filter(biomarker_group == biomarker_group_use), 
                     aes(x=biomarker_id,ymin=lower,ymax=upper),alpha=0.7,fill="#009E73",linewidth=0.2) + 
         geom_line(data=model_preds%>% dplyr::filter(biomarker_group == biomarker_group_use), aes(x=biomarker_id, y=median),linewidth=0.75,color="#009E73")+
-        geom_rect(data=measurement_ranges,aes(ymin=max_measurement,ymax=max_measurement+1),xmin=0,xmax=max_x,fill="grey70")+
-        geom_rect(data=measurement_ranges, aes(ymin=min_measurement-1,ymax=min_measurement),xmin=0,xmax=max_x,fill="grey70")
+        geom_rect(data=measurement_ranges[measurement_ranges$biomarker_group == biomarker_group_use,],aes(ymin=max_measurement,ymax=max_measurement+1),xmin=0,xmax=max_x,fill="grey70")+
+        geom_rect(data=measurement_ranges[measurement_ranges$biomarker_group == biomarker_group_use,], aes(ymin=min_measurement-1,ymax=min_measurement),xmin=0,xmax=max_x,fill="grey70")
       
       
       if(!is.null(known_infection_history)){
@@ -354,10 +354,7 @@ plot_model_fits <- function(chain, infection_histories,
     }
     titre_pred_p[[biomarker_group_use]] <- p_tmp
   }
-  if(is.null(subset_biomarker_groups)){
-    titre_pred_p <- titre_pred_p[[1]]
-  }
-  titre_pred_p
+  return(titre_pred_p)
 }
 
 ## From ggpubr
@@ -563,6 +560,7 @@ plot_antibody_predictions <- function(chain, infection_histories,
 #'
 #' @inheritParams plot_model_fits
 #' @param solve_times vector of times to solve model over
+#' @param set_infections numeric vector giving the corresponding times in possible_exposure_histories to simulate infections
 #' @return a ggplot2 object giving model-predicted antibody level and predicted observations over time since infection
 #' @family infection_history_plots
 #' @export
@@ -579,8 +577,9 @@ plot_estimated_antibody_model <- function(chain,
                                           settings=NULL,
                                           by_group=TRUE,
                                           add_prediction_intervals=FALSE,
-                                          exponential_waning=NULL){
-  ## If the list of serosolver settings was included, use these rather than passing each one by one
+                                          exponential_waning=NULL,
+                                          set_infections=NULL){
+    ## If the list of serosolver settings was included, use these rather than passing each one by one
   if(!is.null(settings)){
     message("Using provided serosolver settings list")
     if(is.null(antigenic_map)) antigenic_map <- settings$antigenic_map
@@ -658,6 +657,7 @@ plot_estimated_antibody_model <- function(chain,
   
   tmp_samp <- sample(samps, nsamp)
   ## See the function in posteriors.R
+
   model_func <- create_posterior_func(par_tab, full_antibody_data, antigenic_map, possible_exposure_times,
                                       prior_version=2,
                                       measurement_bias = measurement_bias, function_type = 4,
@@ -666,11 +666,14 @@ plot_estimated_antibody_model <- function(chain,
                                       demographics=full_demographics,demographic_groups=demographic_groups,
                                       exponential_waning=exponential_waning
   )
-  
   predicted_titres <- observed_predicted_titres <- matrix(nrow = nrow(full_antibody_data), ncol = nsamp)
   samp_record <- numeric(nsamp)
   inf_hist_test <- matrix(0, nrow=n_indiv, ncol = length(possible_exposure_times))
-  inf_hist_test[,1] <- 1
+  if(is.null(set_infections)){
+    inf_hist_test[,1] <- 1
+  } else {
+    inf_hist_test[,match(set_infections,possible_exposure_times)] <- 1
+  }
   ## For each sample, take values for theta and infection histories and simulate titres
   for (i in 1:nsamp) {
     index <- tmp_samp[i]
