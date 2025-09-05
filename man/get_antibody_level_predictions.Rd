@@ -22,7 +22,8 @@ get_antibody_level_predictions(
   antibody_level_before_infection = FALSE,
   for_regression = FALSE,
   data_type = 1,
-  start_level = "none"
+  start_level = "none",
+  exponential_waning = FALSE
 )
 }
 \arguments{
@@ -57,6 +58,10 @@ get_antibody_level_predictions(
 \item{for_regression}{if TRUE, returns posterior draws rather than posterior summaries}
 
 \item{data_type}{integer, currently accepting 1 or 2. Set to 1 for discretized, bounded data, or 2 for continuous, bounded data.}
+
+\item{start_level}{"none"}
+
+\item{exponential}{waning if TRUE, assumes exponential rather than linear waning}
 }
 \value{
 a list with the antibody level predictions (95% credible intervals, median and multivariate posterior mode) and the probabilities of infection for each individual in each epoch

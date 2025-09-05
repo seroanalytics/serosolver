@@ -23,6 +23,7 @@
 #' @param OPT_TUNING Constant describing the amount of leeway when adapting the proposals steps to reach a desired acceptance rate (ie. does not change step size if within OPT_TUNING of the specified acceptance rate)
 #' @param verbose if TRUE, prints progress updates during the run
 #' @param verbose_dev if TRUE, prints additional messages regarding step sizes, acceptance rates etc
+#' @param exponential_waning if TRUE, assumes exponential waning of antibody titres rather than linear waning
 #' @param ... Other arguments to pass to posterior_func
 #' @return A list with: 1) relative file path at which the MCMC chain is saved as a .csv file; 2) relative file path at which the infection history chain is saved as a .csv file; 3) the last used covariance matrix if mvr_pars != NULL; 4) the last used scale/step size (if multivariate proposals) or vector of step sizes (if univariate proposals)
 #' @details
@@ -83,6 +84,7 @@ serosolver <- function(par_tab,
                      verbose=TRUE,
                      verbose_dev=FALSE,
                      inf_hist_mcmc_summaries=TRUE,
+                     exponential_waning=FALSE,
                      ...) {
   on.exit(serosolver::unregister_dopar)
   ###################################################################
@@ -303,6 +305,7 @@ serosolver <- function(par_tab,
                                           demographics=demographics,
                    fixed_inf_hists=fixed_inf_hists,
                                            verbose=verbose,
+                   exponential_waning=exponential_waning,
                                            ...
 #)
 )
@@ -329,6 +332,7 @@ serosolver <- function(par_tab,
                      demographics=demographics,
                      fixed_inf_hists=fixed_inf_hists,
                                              verbose=FALSE,
+                     exponential_waning=exponential_waning,
                                              ...
    #)
  )
@@ -386,7 +390,9 @@ serosolver <- function(par_tab,
                               antigenic_map=antigenic_map,
                               start_levels=start_level,
                               measurement_bias=measurement_bias,
-                              data_type=data_type)
+                              data_type=data_type,
+                              exponential_waning=exponential_waning
+                              )
 
   save(serosolver_settings,file=paste0(filename,"_serosolver_settings.RData"))
   result <- foreach(chain = 1:n_chains, 

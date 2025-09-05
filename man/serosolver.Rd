@@ -33,6 +33,7 @@ serosolver(
   verbose = TRUE,
   verbose_dev = FALSE,
   inf_hist_mcmc_summaries = TRUE,
+  exponential_waning = FALSE,
   ...
 )
 }
@@ -79,6 +80,8 @@ serosolver(
 \item{verbose}{if TRUE, prints progress updates during the run}
 
 \item{verbose_dev}{if TRUE, prints additional messages regarding step sizes, acceptance rates etc}
+
+\item{exponential_waning}{if TRUE, assumes exponential waning of antibody titres rather than linear waning}
 
 \item{...}{Other arguments to pass to posterior_func}
 }

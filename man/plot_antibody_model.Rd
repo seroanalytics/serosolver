@@ -9,7 +9,8 @@ plot_antibody_model(
   times = NULL,
   infection_history = NULL,
   antigenic_map = NULL,
-  label_parameters = FALSE
+  label_parameters = FALSE,
+  exponential_waning = FALSE
 )
 }
 \arguments{
@@ -22,6 +23,8 @@ plot_antibody_model(
 \item{antigenic_map}{the antigenic map to solve the model with. Can be left to NULL to ssume all biomarker IDs have the same antigenic coordinates.}
 
 \item{label_parameters}{if TRUE, labels the model parameters on the plot}
+
+\item{exponential_waning}{if TRUE, then waning is exponential rather than linear}
 }
 \value{
 a list with two ggplot objects, one showing the simulated antibody kinetics over time, stratified by biomarker ID, the other showing simulated antibody kinetics for each biomarker ID, stratified by sample time

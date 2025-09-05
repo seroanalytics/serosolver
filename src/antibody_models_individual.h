@@ -50,6 +50,7 @@ void antibody_data_model_individual_new(NumericVector &predicted_antibody_levels
                                         const int &number_possible_exposures,
                                         const double *antigenic_map_short,
                                         const double *antigenic_map_long,
+                                        bool exponential_waning,
                                         bool boost_before_infection,
                                         const double min_level
 );
@@ -83,6 +84,7 @@ void antibody_data_model_individual_timevarying(NumericVector &predicted_antibod
                                                 const arma::cube &antigenic_map_long,
                                                 const int &biomarker_group,
                                                 const NumericMatrix &min_level,
+                                                bool exponential_waning,
                                                 bool boost_before_infection
 );
 #endif
@@ -107,6 +109,7 @@ void antibody_data_model_individual(NumericVector &predicted_antibody_levels,
                                     const int &number_possible_exposures,
                                     const double *antigenic_map_short,
                                     const double *antigenic_map_long,
+                                    bool exponential_waning,
                                     bool boost_before_infection
 );
 #endif

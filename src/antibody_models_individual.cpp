@@ -35,6 +35,7 @@ void antibody_data_model_individual_timevarying(NumericVector &predicted_antibod
                                         const arma::cube &antigenic_map_long,
                                         const int &biomarker_group,
                                         const NumericMatrix &min_level,
+                                        bool exponential_waning = false,
                                         bool boost_before_infection = false
 ){
   
@@ -88,15 +89,23 @@ void antibody_data_model_individual_timevarying(NumericVector &predicted_antibod
       if((boost_before_infection && sampling_time > (infection_times[x] + boost_delay(groups[x],biomarker_group))) ||
          (!boost_before_infection && sampling_time >= (infection_times[x] + boost_delay(groups[x],biomarker_group)))){
         time = sampling_time - (infection_times[x] + boost_delay(groups[x],biomarker_group)); // Time between sample and infection + boost
-        wane_short_amount= MAX(0, 1.0 - (wane_short(groups[x],biomarker_group)*time)); // Waning of the short-term response
-        wane_long_amount= MAX(0, 1.0 - (wane_long(groups[x],biomarker_group)*time)); // Waning of the long-term response
+        if(exponential_waning){
+          wane_short_amount= exp(- (wane_short(groups[x],biomarker_group)*time)); // Waning of the short-term response
+          wane_long_amount= exp(- (wane_long(groups[x],biomarker_group)*time)); // Waning of the long-term response
+          
+        } else {
+          wane_short_amount= MAX(0, 1.0 - (wane_short(groups[x],biomarker_group)*time)); // Waning of the short-term response
+          wane_long_amount= MAX(0, 1.0 - (wane_long(groups[x],biomarker_group)*time)); // Waning of the long-term response
+        }
+        
         
         seniority = MAX(0, 1.0 - antigenic_seniority(groups[x],biomarker_group)*(n_inf - 1.0)); // Antigenic seniority
         inf_map_index = exposure_indices[x]; // Index of this infecting antigen in antigenic map
-        
+       
         // Find contribution to each measured antibody level from this infection
         for(int k = 0; k < n_measurements; ++k){
           index = biomarker_id_indices[tmp_measurement_index + k]*number_possible_exposures + inf_map_index;
+          
           predicted_antibody_levels[tmp_measurement_index + k] += seniority*
             ((boost_long(groups[x],biomarker_group)*antigenic_map_long.slice(groups[x]).colptr(biomarker_group)[index])*wane_long_amount + 
             (boost_short(groups[x],biomarker_group)*antigenic_map_short.slice(groups[x]).colptr(biomarker_group)[index])*wane_short_amount);
@@ -133,6 +142,7 @@ void antibody_data_model_individual_new(NumericVector &predicted_antibody_levels
                                          const int &number_possible_exposures,
                                          const double *antigenic_map_short,
                                          const double *antigenic_map_long,
+                                         bool exponential_waning = false,
                                          bool boost_before_infection = false,
                                          const double min_level = 0
  ){
@@ -188,8 +198,14 @@ void antibody_data_model_individual_new(NumericVector &predicted_antibody_levels
        if((boost_before_infection && sampling_time > (infection_times[x] + boost_delay)) ||
           (!boost_before_infection && sampling_time >= (infection_times[x] + boost_delay))){
          time = sampling_time - (infection_times[x] + boost_delay); // Time between sample and infection + boost
-         wane_short_amount= MAX(0, 1.0 - (wane_short*time)); // Waning of the short-term response
-         wane_long_amount= MAX(0, 1.0 - (wane_long*time)); // Waning of the long-term response
+         if(exponential_waning){
+           wane_short_amount= exp(- (wane_short*time));
+           wane_long_amount= exp(- (wane_long*time));
+           
+         } else {
+            wane_short_amount= MAX(0, 1.0 - (wane_short*time)); // Waning of the short-term response
+            wane_long_amount= MAX(0, 1.0 - (wane_long*time)); // Waning of the long-term response
+         }
          
          seniority = MAX(0, 1.0 - antigenic_seniority*(n_inf - 1.0)); // Antigenic seniority
          inf_map_index = exposure_indices[x]; // Index of this infecting antigen in antigenic map
@@ -223,7 +239,8 @@ Rcpp::NumericVector antibody_model_individual_wrapper(const double &boost_long,
                                                       const IntegerVector &biomarker_id_indices,
                                                       const NumericVector &sample_times,
                                                       const arma::mat &antigenic_map_long,
-                                                      const arma::mat &antigenic_map_short){
+                                                      const arma::mat &antigenic_map_short,
+                                                      const bool exponential_waning = false){
   
   Rcpp::NumericVector predicted_antibody_levels(biomarker_id_indices.size()*sample_times.size());
   int index_in_samples = 0;
@@ -241,6 +258,7 @@ Rcpp::NumericVector antibody_model_individual_wrapper(const double &boost_long,
                                  sample_times,
                                  index_in_samples, end_index_in_samples, start_index_in_data, nrows_per_blood_sample,number_possible_exposures,
                                  antigenic_map_short.colptr(0), antigenic_map_long.colptr(0),
+                                 exponential_waning,
                                  false);
   
   return(predicted_antibody_levels);
@@ -269,6 +287,7 @@ void antibody_data_model_individual(
 				     const int &number_possible_exposures,
 				     const double *antigenic_map_short,
 				     const double *antigenic_map_long,
+				     bool exponential_waning = false,
 				     bool boost_before_infection = false
 				     ){
   double sampling_time;
@@ -300,8 +319,13 @@ void antibody_data_model_individual(
       if((boost_before_infection && sampling_time > (possible_exposure_times[x] + boost_delay)) ||
 	 (!boost_before_infection && sampling_time >= (possible_exposure_times[x] + boost_delay))){
 	time = sampling_time - (possible_exposure_times[x] + boost_delay); // Time between sample and infection + boost
-	wane_short_amount= MAX(0, 1.0 - (wane_short*time)); // Waning of the short-term response
-	wane_long_amount= MAX(0, 1.0 - (wane_long*time)); // Waning of the long-term response
+        if(exponential_waning){
+          wane_short_amount= exp(- (wane_short*time)); // Waning of the short-term response
+          wane_long_amount= exp(- (wane_long*time)); // Waning of the long-term response
+        } else {
+        	wane_short_amount= MAX(0, 1.0 - (wane_short*time)); // Waning of the short-term response
+        	wane_long_amount= MAX(0, 1.0 - (wane_long*time)); // Waning of the long-term response
+        }
 	
 	seniority = MAX(0, 1.0 - antigenic_seniority*(n_inf - 1.0)); // Antigenic seniority
 	inf_map_index = exposure_indices[x]; // Index of this infecting antigen in antigenic map

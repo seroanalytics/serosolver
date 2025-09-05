@@ -4,12 +4,14 @@
 \alias{create_cross_reactivity_vector}
 \title{Convert melted antigenic map to cross reactivity}
 \usage{
-create_cross_reactivity_vector(x, cr_gradient)
+create_cross_reactivity_vector(x, cr_gradient, exponential_waning = FALSE)
 }
 \arguments{
 \item{x}{the melted antigenic map}
 
 \item{cr_gradient}{the cross reactivity waning parameter}
+
+\item{exponential_waning}{if TRUE, uses exponential waning rather than linear}
 }
 \value{
 a vector of cross reactivity

@@ -23,7 +23,8 @@ simulate_data(
   data_type = NULL,
   demographics = NULL,
   verbose = FALSE,
-  starting_levels = NULL
+  starting_levels = NULL,
+  exponential_waning = FALSE
 )
 }
 \arguments{
@@ -58,6 +59,8 @@ simulate_data(
 \item{demographics}{if not NULL, then a tibble for each individual (1:n_indiv) giving demographic variable entries. Most importantly must include "birth" as the birth time. This is used if, for example, you have a stratification grouping in `par_tab`}
 
 \item{verbose}{if TRUE, prints additional messages}
+
+\item{exponential_waning}{if TRUE, uses exponential waning function rather than linear waning}
 
 \item{measurement_indices}{default NULL, optional vector giving the index of `measurement_bias` that each antigen/biomarker ID uses the measurement shift from from. eg. if there's 6 circulation years and 3 strain clusters, then this might be c(1,1,2,2,3,3)}
 }

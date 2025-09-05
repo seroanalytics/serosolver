@@ -8,7 +8,8 @@ simulate_antibody_model(
   pars,
   times = NULL,
   infection_history = NULL,
-  antigenic_map = NULL
+  antigenic_map = NULL,
+  exponential_waning = FALSE
 )
 }
 \arguments{
@@ -19,6 +20,8 @@ simulate_antibody_model(
 \item{infection_history}{the vector of times matching entries in `times` to simulate infections in.}
 
 \item{antigenic_map}{the antigenic map to solve the model with. Can be left to NULL to ssume all biomarker IDs have the same antigenic coordinates.}
+
+\item{exponential_waning}{if TRUE, then waning is exponential rather than linear}
 }
 \value{
 a data frame with variables `sample_times`, `biomarker_id` and `antibody_level`

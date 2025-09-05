@@ -27,6 +27,7 @@ antibody_model(
   antigenic_map_short,
   antigenic_distances,
   timevarying_groups = FALSE,
+  exponential_waning = FALSE,
   boost_before_infection = FALSE
 )
 }

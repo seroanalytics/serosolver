@@ -307,6 +307,8 @@ generate_quantiles <- function(x, sig_f = 3, qs = c(0.025, 0.5, 0.975), as_text 
 #' @param antibody_level_before_infection TRUE/FALSE value. If TRUE, solves antibody level predictions, but gives the predicted antibody level at a given time point BEFORE any infection during that time occurs.
 #' @param for_regression if TRUE, returns posterior draws rather than posterior summaries
 #' @param data_type integer, currently accepting 1 or 2. Set to 1 for discretized, bounded data, or 2 for continuous, bounded data. 
+#' @param start_level "none"
+#' @param exponential waning if TRUE, assumes exponential rather than linear waning
 #' @return a list with the antibody level predictions (95% credible intervals, median and multivariate posterior mode) and the probabilities of infection for each individual in each epoch
 #' @examples
 #' \dontrun{
@@ -330,9 +332,9 @@ get_antibody_level_predictions <- function(chain, infection_histories, antibody_
                                            for_res_plot = FALSE, expand_antibody_data = FALSE,
                                            expand_to_all_times=FALSE,
                                            antibody_level_before_infection=FALSE, for_regression=FALSE,
-                                           data_type=1,start_level="none"){
+                                           data_type=1,start_level="none",
+                                           exponential_waning=FALSE){
   par_tab <- add_scale_pars(par_tab,antibody_data,demographics)
-  
   ## Get unique demographic groups from full data set, not just the subset
   if(!is.null(demographics)){
     demographic_groups <- create_demographic_table(demographics,par_tab)
@@ -417,12 +419,15 @@ get_antibody_level_predictions <- function(chain, infection_histories, antibody_
     antibody_data1 <- merge(antibody_data1, antibody_data2)
     antibody_data1 <- antibody_data1 %>% arrange(individual, biomarker_group, sample_time, biomarker_id, repeat_number)
   }
+  ## Arrange to be same order as in create_posterior_func
+  antibody_data1 <- antibody_data1 %>% arrange(individual, biomarker_group, sample_time, biomarker_id, repeat_number)
   model_func <- create_posterior_func(par_tab, antibody_data1, antigenic_map, possible_exposure_times,
                                      prior_version=2,
                                      measurement_bias = measurement_bias, function_type = 4,
                                       antibody_level_before_infection=antibody_level_before_infection,
                                       data_type=data_type,start_level=start_level,
-                                     demographics=demographics,demographic_groups=demographic_groups
+                                     demographics=demographics,demographic_groups=demographic_groups,
+                                     exponential_waning=exponential_waning
   )
   
   predicted_titres <- residuals <- residuals_floor <- 

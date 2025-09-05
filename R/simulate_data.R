@@ -18,6 +18,8 @@
 #' @param data_type if not NULL, then a vector of data types to use for each biomarker_group
 #' @param demographics if not NULL, then a tibble for each individual (1:n_indiv) giving demographic variable entries. Most importantly must include "birth" as the birth time. This is used if, for example, you have a stratification grouping in `par_tab`
 #' @param verbose if TRUE, prints additional messages
+#' @param starting_levels
+#' @param exponential_waning if TRUE, uses exponential waning function rather than linear waning
 #' @return a list with: 1) the data frame of antibody data as returned by \code{\link{simulate_group}}; 2) a matrix of infection histories as returned by \code{\link{simulate_infection_histories}}; 3) a vector of ages
 #' @family simulation_functions
 #' @examples
@@ -56,7 +58,8 @@ simulate_data <- function(par_tab,
                           data_type = NULL,
                           demographics=NULL,
                           verbose=FALSE,
-                          starting_levels=NULL) {
+                          starting_levels=NULL,
+                          exponential_waning=FALSE) {
     #########################################################
     ## CHECK FOR BIOMARKER GROUPS
     #########################################################
@@ -240,7 +243,8 @@ simulate_data <- function(par_tab,
                                possible_exposure_times = possible_exposure_times,
                                demographics=timevarying_demographics,
                                measurement_bias=measurement_bias,
-                               start_level=start_levels)
+                               start_level=start_levels,
+                               exponential_waning=exponential_waning)
     antibody_data$measurement <- f(par_tab$values, infection_history)
     ## Add noise, but need to be specific to the data type
     for(i in seq_along(unique_biomarker_groups)){
@@ -294,8 +298,8 @@ add_noise <- function(y, theta, measurement_bias = NULL, indices = NULL,data_typ
     
   } else if(data_type == 3){
     ## If true 0, then exponentially distributed
-    negative_predictions <- which(y == 0)
-    positive_predictions <- which(y > 0)
+    negative_predictions <- which(y == theta["min_measurement"])
+    positive_predictions <- which(y > theta["min_measurement"])
     noise_y <- y
     
     if (!is.null(measurement_bias)) {
@@ -433,6 +437,7 @@ simulate_infection_histories <- function(p_inf, possible_exposure_times=1:ncol(p
 #' @param times the vector of times to solve the model over. A continuous vector of discrete timepoints. Can be left to NULL if this information is included in the `antigenic_map` argument.
 #' @param infection_history the vector of times matching entries in `times` to simulate infections in.
 #' @param antigenic_map the antigenic map to solve the model with. Can be left to NULL to ssume all biomarker IDs have the same antigenic coordinates.
+#' @param exponential_waning if TRUE, then waning is exponential rather than linear
 #' @return a data frame with variables `sample_times`, `biomarker_id` and `antibody_level`
 #' @examples
 #' simulate_antibody_model(c("boost_long"=2,"boost_short"=3,"boost_delay"=1,"wane_short"=0.2,"wane_long"=0.01, "antigenic_seniority"=0,"cr_long"=0.1,"cr_short"=0.03), times=seq(1,25,by=1),infection_history=NULL,antigenic_map=example_antigenic_map)
@@ -441,7 +446,8 @@ simulate_infection_histories <- function(p_inf, possible_exposure_times=1:ncol(p
 simulate_antibody_model <- function(pars, 
                                 times=NULL, 
                                 infection_history=NULL, 
-                                antigenic_map=NULL){
+                                antigenic_map=NULL,
+                                exponential_waning=FALSE){
   if(is.null(times) & is.null(antigenic_map)){
     stop("Must provide one of times or antigenic_map to give the possible infection times and biomarker IDs over which to solve the model.")
   }
@@ -461,8 +467,8 @@ simulate_antibody_model <- function(pars,
   
   ## Setup antigenic map
   use_antigenic_map <- melt_antigenic_coords(antigenic_map[seq_along(times),c("x_coord","y_coord")])
-  antigenic_map_long <- matrix(create_cross_reactivity_vector(use_antigenic_map, pars["cr_long"]),ncol=1)
-  antigenic_map_short <- matrix(create_cross_reactivity_vector(use_antigenic_map, pars["cr_short"]),ncol=1)
+  antigenic_map_long <- matrix(create_cross_reactivity_vector(use_antigenic_map, pars["cr_long"],exponential_waning),ncol=1)
+  antigenic_map_short <- matrix(create_cross_reactivity_vector(use_antigenic_map, pars["cr_short"],exponential_waning),ncol=1)
   
   ## If no infection history was provided, setup a dummy infection history vector with only the first entry as an infection
   if(is.null(infection_history)){
@@ -487,6 +493,7 @@ simulate_antibody_model <- function(pars,
                                          biomarker_ids,
                                          sample_times,
                                          antigenic_map_long,
-                                         antigenic_map_short)
+                                         antigenic_map_short,
+                                         exponential_waning)
   data.frame(sample_times = rep(sample_times,each=length(biomarker_ids)),biomarker_ids = rep(biomarker_ids,length(sample_times)),antibody_level=y)
 }

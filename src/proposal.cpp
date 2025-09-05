@@ -237,6 +237,7 @@ List inf_hist_prop_prior_v2_and_v4(
 				   const IntegerVector &indiv_poss_exp_times_start,
 				   const IntegerVector &indiv_poss_exp_times_end,
 				   
+				   const bool exponential_waning = false,
 				   const bool timevarying_groups = false,
 				   const double temp=1,
 				   bool solve_likelihood=true){
@@ -743,6 +744,7 @@ List inf_hist_prop_prior_v2_and_v4(
         	    antigenic_map_long,
         	    biomarker_group,
         	    min_measurements,
+        	    exponential_waning,
         	    false);
         	} else {
         	  antibody_data_model_individual_new(
@@ -769,6 +771,7 @@ List inf_hist_prop_prior_v2_and_v4(
         	    number_possible_exposures,
         	    antigenic_map_short.slice(group).colptr(biomarker_group),
         	    antigenic_map_long.slice(group).colptr(biomarker_group),
+        	    exponential_waning,
         	    false,
         	    min_measurements(group,biomarker_group));
         

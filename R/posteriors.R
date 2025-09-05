@@ -58,6 +58,7 @@ create_posterior_func <- function(par_tab,
                                   demographic_groups=NULL,
                                   fixed_inf_hists=NULL,
                                   verbose=FALSE,
+                                  exponential_waning=FALSE,
                                   ...) {
     check_par_tab(par_tab, TRUE, prior_version,verbose)
     antibody_data <- as.data.frame(antibody_data)
@@ -350,7 +351,7 @@ create_posterior_func <- function(par_tab,
     ## Find which options are being used in advance for speed
     explicit_phi <- "phi" %in% par_tab$names ## Explicit prob of infection term
     # spline_phi <- (length(knot_indices) > 0)
-    
+
     ## Allow different likelihood function for each observation type
     ## Set data type for likelihood function
     ## Potentially different likelihood for each observation type
@@ -395,8 +396,8 @@ create_posterior_func <- function(par_tab,
 
             for(group in unique_groups){
               for(biomarker_group in unique_biomarker_groups){
-                antigenic_map_long[,biomarker_group,group] <- create_cross_reactivity_vector(antigenic_map_melted[[biomarker_group]], cr_longs[group,biomarker_group])
-                antigenic_map_short[,biomarker_group,group] <- create_cross_reactivity_vector(antigenic_map_melted[[biomarker_group]], cr_shorts[group,biomarker_group])
+                antigenic_map_long[,biomarker_group,group] <- create_cross_reactivity_vector(antigenic_map_melted[[biomarker_group]], cr_longs[group,biomarker_group],exponential_waning)
+                antigenic_map_short[,biomarker_group,group] <- create_cross_reactivity_vector(antigenic_map_melted[[biomarker_group]], cr_shorts[group,biomarker_group],exponential_waning)
               }
             }
             y_new <- antibody_model(
@@ -424,6 +425,7 @@ create_posterior_func <- function(par_tab,
               antigenic_map_short,
               antigenic_distances,
               use_timevarying_demographics,
+              exponential_waning,
               antibody_level_before_infection
             )
             if (use_measurement_bias) {
@@ -547,8 +549,8 @@ create_posterior_func <- function(par_tab,
           
           for(group in unique_groups){
             for(biomarker_group in unique_biomarker_groups){
-              antigenic_map_long[,biomarker_group,group] <- create_cross_reactivity_vector(antigenic_map_melted[[biomarker_group]], cr_longs[group,biomarker_group])
-              antigenic_map_short[,biomarker_group,group] <- create_cross_reactivity_vector(antigenic_map_melted[[biomarker_group]], cr_shorts[group,biomarker_group])
+              antigenic_map_long[,biomarker_group,group] <- create_cross_reactivity_vector(antigenic_map_melted[[biomarker_group]], cr_longs[group,biomarker_group],exponential_waning)
+              antigenic_map_short[,biomarker_group,group] <- create_cross_reactivity_vector(antigenic_map_melted[[biomarker_group]], cr_shorts[group,biomarker_group],exponential_waning)
             }
           }
             n_infections <- sum_infections_by_group(infection_history_mat, indiv_pop_group_indices, n_groups,use_timevarying_demographics)
@@ -624,6 +626,7 @@ create_posterior_func <- function(par_tab,
                 indiv_possible_exposure_times_indices,
                 indiv_poss_exp_times_start,
                 indiv_poss_exp_times_end,
+                exponential_waning,
                 use_timevarying_demographics,
                 temp,
                 solve_likelihood
@@ -646,8 +649,8 @@ create_posterior_func <- function(par_tab,
           #cr_shorts <- cr_shorts*cr_longs
           for(group in unique_groups){
             for(biomarker_group in unique_biomarker_groups){
-                antigenic_map_long[,biomarker_group,group] <- create_cross_reactivity_vector(antigenic_map_melted[[biomarker_group]], cr_longs[group,biomarker_group])
-                antigenic_map_short[,biomarker_group,group] <- create_cross_reactivity_vector(antigenic_map_melted[[biomarker_group]], cr_shorts[group,biomarker_group])
+                antigenic_map_long[,biomarker_group,group] <- create_cross_reactivity_vector(antigenic_map_melted[[biomarker_group]], cr_longs[group,biomarker_group],exponential_waning)
+                antigenic_map_short[,biomarker_group,group] <- create_cross_reactivity_vector(antigenic_map_melted[[biomarker_group]], cr_shorts[group,biomarker_group],exponential_waning)
             }
           }
           y_new <- antibody_model(
@@ -674,6 +677,7 @@ create_posterior_func <- function(par_tab,
               antigenic_map_short,
               antigenic_distances,
               use_timevarying_demographics,
+              exponential_waning,
               antibody_level_before_infection
           )
 

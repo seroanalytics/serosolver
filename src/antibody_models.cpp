@@ -52,6 +52,7 @@ NumericVector antibody_model(const NumericMatrix theta,
 			      const arma::cube &antigenic_map_short,
 			      const NumericVector &antigenic_distances,	// Currently not doing anything, but has uses for model extensions
 			      const bool timevarying_groups = false,
+			      bool exponential_waning = false,
 			      bool boost_before_infection = false
 			      ){
   // Dimensions of structures
@@ -251,6 +252,7 @@ NumericVector antibody_model(const NumericMatrix theta,
                 antigenic_map_long,
                 biomarker_group,
                 min_measurements,
+                exponential_waning,
                 boost_before_infection);
               
             } else {
@@ -277,6 +279,7 @@ NumericVector antibody_model(const NumericMatrix theta,
             					number_possible_exposures,
             					antigenic_map_short.slice(group).colptr(biomarker_group),
             					antigenic_map_long.slice(group).colptr(biomarker_group),
+            					exponential_waning,
             					boost_before_infection,
             					min_measurements(group,biomarker_group));
               }

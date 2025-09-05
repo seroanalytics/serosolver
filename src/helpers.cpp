@@ -123,12 +123,17 @@ NumericVector sum_likelihoods(NumericVector liks, IntegerVector indices, int n_i
 //' Multiplies all elements of the provided vector, x such that y = 1 - cr_gradient*x. Also makes sure that no calculated value is less than 0
 //' @param x the melted antigenic map
 //' @param cr_gradient the cross reactivity waning parameter
+//' @param exponential_waning if TRUE, uses exponential waning rather than linear
 //' @return a vector of cross reactivity
 // [[Rcpp::export]]
-NumericVector create_cross_reactivity_vector(NumericVector x, double cr_gradient) {
+NumericVector create_cross_reactivity_vector(NumericVector x, double cr_gradient, bool exponential_waning = false)  {
   NumericVector x2(x.size());
   for(int i = 0; i < x2.size(); ++i){
-    x2[i] = MAX(1 - x[i]*cr_gradient,0);
+    if(exponential_waning){
+      x2[i] = exp(- x[i] * cr_gradient);
+    } else {
+      x2[i] = MAX(1 - x[i]*cr_gradient,0);
+    }
   }
   return(x2);
 }

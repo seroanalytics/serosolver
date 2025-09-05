@@ -24,6 +24,7 @@ create_posterior_func(
   demographic_groups = NULL,
   fixed_inf_hists = NULL,
   verbose = FALSE,
+  exponential_waning = FALSE,
   ...
 )
 }

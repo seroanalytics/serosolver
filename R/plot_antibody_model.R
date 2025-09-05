@@ -40,8 +40,9 @@ plot_antibody_model <- function(pars,
                                 times=NULL, 
                                 infection_history=NULL, 
                                 antigenic_map=NULL,
-                                label_parameters=FALSE){
-  y <- simulate_antibody_model(pars,times, infection_history,antigenic_map)
+                                label_parameters=FALSE,
+                                exponential_waning=FALSE){
+  y <- simulate_antibody_model(pars,times, infection_history,antigenic_map, exponential_waning)
   y$biomarker_id_label <- paste0("Biomarker ID: ", y$biomarker_ids)
   y$sample_label <- paste0("Sample time: ", y$sample_times)
   
@@ -113,6 +114,7 @@ plot_antibody_model <- function(pars,
 #' @param orientation either "cross-sectional" or "longitudinal"
 #' @param subset_biomarker_ids if not NULL, then a vector giving the entries of biomarker_id to include in the longitudinal plot
 #' @param settings if not NULL, list of serosolver settings as returned from the main serosolver function
+#' @param exponential_waning if TRUE, assumes exponential rather than linear waning
 #' @return a ggplot2 object
 #' @family infection_history_plots
 #' @examples
@@ -144,7 +146,8 @@ plot_model_fits <- function(chain, infection_histories,
                             subset_biomarker_ids=NULL,
                             subset_biomarker_groups = NULL,
                             start_level="none",
-                            settings=NULL
+                            settings=NULL,
+                            exponential_waning=NULL
 ) {
   ## If the list of serosolver settings was included, use these rather than passing each one by one
   if(!is.null(settings)){
@@ -156,8 +159,11 @@ plot_model_fits <- function(chain, infection_histories,
     if(is.null(demographics)) demographics <- settings$demographics
     if(is.null(par_tab)) par_tab <- settings$par_tab
     if(is.null(start_level) | start_level == "none") start_level <- settings$start_levels
+    if(is.null(exponential_waning)) exponential_waning <- settings$exponential_waning
     if(missing(data_type)) data_type <- settings$data_type
   }
+  if(is.null(settings) & is.null(exponential_waning)) exponential_waning <- FALSE
+  
   individuals <- individuals[order(individuals)]
   
   ## Setup antigenic map and exposure times
@@ -188,7 +194,8 @@ plot_model_fits <- function(chain, infection_histories,
     expand_antibody_data=TRUE,
     expand_to_all_times=expand_to_all_times,
     data_type=data_type,
-    start_level=start_levels
+    start_level=start_levels,
+    exponential_waning=exponential_waning
   )
   ## Use these antibody predictions and summary statistics on infection histories
   to_use <- antibody_preds$predicted_observations
@@ -413,7 +420,8 @@ plot_antibody_predictions <- function(chain, infection_histories,
                                       measurement_bias = NULL,
                                       data_type=1,
                                       start_level="none",
-                                      settings=NULL){
+                                      settings=NULL,
+                                      exponential_waning=NULL){
   ## If the list of serosolver settings was included, use these rather than passing each one by one
   if(!is.null(settings)){
     message("Using provided serosolver settings list")
@@ -423,8 +431,10 @@ plot_antibody_predictions <- function(chain, infection_histories,
     if(is.null(demographics)) demographics <- settings$demographics
     if(is.null(par_tab)) par_tab <- settings$par_tab
     if(is.null(start_level) | start_level == "none") start_level <- settings$start_levels
+    if(is.null(exponential_waning)) exponential_waning <- settings$exponential_waning
     if(missing(data_type)) data_type <- settings$data_type
   }
+  if(is.null(settings) & is.null(exponential_waning)) exponential_waning <- FALSE
   
   ## Setup antigenic map and exposure times
   ## Check if an antigenic map is provided. If not, then create a dummy map where all pathogens have the same position on the map
@@ -459,7 +469,8 @@ plot_antibody_predictions <- function(chain, infection_histories,
     data_type=data_type,
     start_level=start_levels,
     demographics=demographics,
-    for_regression = TRUE
+    for_regression = TRUE,
+    exponential_waning=exponential_waning
   )
   ## Use these antibody predictions and summary statistics on infection histories
   ## Find proportion of measurements within the 95% prediction intervals
@@ -475,7 +486,6 @@ plot_antibody_predictions <- function(chain, infection_histories,
   prop_correct <- prop_correct %>%
     mutate(prop_correct1 = `TRUE`/(`FALSE` + `TRUE`)) %>% 
     pull(prop_correct1)
-  
   
   ## Plot data against 95% prediction intervals and posterior medians
   p_compare_pointrange <- x$predicted_observations %>% 
@@ -504,14 +514,13 @@ plot_antibody_predictions <- function(chain, infection_histories,
     xlab("Antibody level") +
     ylab("Count") +
     ggtitle("Distribution of measurements vs. posterior median predictions")
-  
   ## Some random draws
   rand_draws <- sample(1:ncol(x$all_predictions_obs),min(9, ncol(x$all_predictions_obs)))
   tmp_pred_obs <- x$all_predictions_obs[,rand_draws]
   colnames(tmp_pred_obs) <- rand_draws
-  p_hist_draws <- x$predicted_observations %>% dplyr::select(measurement) %>% bind_cols(tmp_pred_obs) %>%
+  p_hist_draws <- x$predicted_observations %>% dplyr::select(measurement,biomarker_group) %>% bind_cols(tmp_pred_obs) %>%
     dplyr::mutate(i=1:n()) %>%
-    pivot_longer(-c(i,measurement)) %>%
+    pivot_longer(-c(i,measurement,biomarker_group)) %>%
     dplyr::mutate(name=paste0("Posterior draw: ", name)) %>%
     ggplot() + 
     geom_histogram(aes(x=measurement,fill="Observation"),alpha=0.5,col="grey10",
@@ -569,7 +578,8 @@ plot_estimated_antibody_model <- function(chain,
                                           data_type=1,
                                           settings=NULL,
                                           by_group=TRUE,
-                                          add_prediction_intervals=FALSE){
+                                          add_prediction_intervals=FALSE,
+                                          exponential_waning=NULL){
   ## If the list of serosolver settings was included, use these rather than passing each one by one
   if(!is.null(settings)){
     message("Using provided serosolver settings list")
@@ -580,7 +590,9 @@ plot_estimated_antibody_model <- function(chain,
     if(is.null(demographics)) demographics <- settings$demographics
     if(is.null(par_tab)) par_tab <- settings$par_tab
     if(missing(data_type)) data_type <- settings$data_type
+    if(is.null(exponential_waning)) exponential_waning <- settings$exponential_waning
   }
+  if(is.null(settings) & is.null(exponential_waning)) exponential_waning <- FALSE
   
   par_tab <- add_scale_pars(par_tab,antibody_data,demographics)
   
@@ -651,7 +663,8 @@ plot_estimated_antibody_model <- function(chain,
                                       measurement_bias = measurement_bias, function_type = 4,
                                       antibody_level_before_infection=FALSE,
                                       data_type=data_type,start_level="none",
-                                      demographics=full_demographics,demographic_groups=demographic_groups
+                                      demographics=full_demographics,demographic_groups=demographic_groups,
+                                      exponential_waning=exponential_waning
   )
   
   predicted_titres <- observed_predicted_titres <- matrix(nrow = nrow(full_antibody_data), ncol = nsamp)
