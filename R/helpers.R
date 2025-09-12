@@ -68,6 +68,8 @@ get_n_alive_group <- function(antibody_data, times, demographics=NULL, melt_data
       dplyr::filter(time >= age_mask & time <= sample_mask) %>% 
       group_by(population_group,time) %>% 
       tally() %>% 
+      ungroup() %>%
+      complete(population_group,time=times,fill=list(n=0)) %>%
       pivot_wider(id_cols=population_group,names_from=time,values_from=n,values_fill=0) %>% 
       as.data.frame()
   } else {

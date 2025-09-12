@@ -173,8 +173,7 @@ serosolver <- function(par_tab,
   proposal_inf_hist_group_swap_prop <- mcmc_pars_used["proposal_inf_hist_group_swap_prop"] # If gibbs and swapping contents, what proportion of these time periods should be swapped?
   propose_from_prior <- mcmc_pars_used["propose_from_prior"]
   ###################################################################
-  
-  ## Error checks --------------------------------------
+    ## Error checks --------------------------------------
   if (!is.null(antigenic_map) & is.null(possible_exposure_times)) {
     possible_exposure_times <- unique(antigenic_map$inf_times) # How many strains are we testing against and what time did they circulate
   } else if(is.null(antigenic_map)) {
@@ -279,7 +278,6 @@ serosolver <- function(par_tab,
   demographics_updated <- tmp$timevarying_demographics
   demographic_groups <- tmp$demographics
   population_groups <- tmp$population_groups
-  
   if (is.null(n_alive)) {
     n_alive <- get_n_alive_group(antibody_data_updated, possible_exposure_times, demographics_updated)
   }

@@ -262,11 +262,11 @@ save_infection_history_to_disk <- function(infection_history, file, samp_no, app
 #' @export
 expand_summary_inf_chain <- function(inf_chain, j_vec = NULL) {
   if (is.null(j_vec)) j_vec <- 1:max(inf_chain$j)
-  full_inf_chain <- data.table::CJ(i = min(inf_chain$i):max(inf_chain$i), j = j_vec, samp_no = sort(unique(inf_chain$samp_no)))
+  full_inf_chain <- data.table::CJ(i = min(inf_chain$i):max(inf_chain$i), j = j_vec, samp_no = sort(unique(inf_chain$samp_no)),chain_no=sort(unique(inf_chain$chain_no)))
   inf_chain <- data.table::data.table(apply(inf_chain, 2, as.numeric))
-  summary_with_non_infections <- merge(inf_chain, full_inf_chain, by = c("samp_no", "j", "i"), all = TRUE)
+  summary_with_non_infections <- merge(inf_chain, full_inf_chain, by = c("chain_no","samp_no", "j", "i"), all = TRUE)
   summary_with_non_infections[is.na(summary_with_non_infections$x), "x"] <- 0
-  colnames(summary_with_non_infections) <- c("samp_no", "j", "individual", "x")
-  expanded_chain <- data.table::dcast(summary_with_non_infections, samp_no + individual ~ j, value.var = "x")
+  colnames(summary_with_non_infections) <- c("chain_no","samp_no", "j", "individual", "x")
+  expanded_chain <- data.table::dcast(summary_with_non_infections, chain_no + samp_no + individual ~ j, value.var = "x")
   return(expanded_chain)
 }

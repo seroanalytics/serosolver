@@ -152,10 +152,11 @@ plot_attack_rates <- function(infection_histories,
   population_groups <- tmp$population_groups
   if (pad_chain) infection_histories <- pad_inf_chain(infection_histories)
   ## Subset of groups to plot
-  if (is.null(group_subset)) {
+  if (is.null(group_subset) & by_group == TRUE) {
     group_subset <- unique(antibody_data$population_group)
+  } else {
+    group_subset <- 1
   }
-
   if (!by_group) {
     antibody_data$population_group <- 1
     infection_histories$population_group <- 1
