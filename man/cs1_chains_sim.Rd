@@ -15,10 +15,10 @@ MCMC outputs from case study 1 analysis on simulated data. This example data obj
 }
 \seealso{
 Other case_study_data: 
-\code{\link{cs1_chains_real_b}},
 \code{\link{cs1_chains_real}},
-\code{\link{cs2_chains_real_b}},
+\code{\link{cs1_chains_real_b}},
 \code{\link{cs2_chains_real}},
+\code{\link{cs2_chains_real_b}},
 \code{\link{cs2_chains_sim}}
 }
 \concept{case_study_data}

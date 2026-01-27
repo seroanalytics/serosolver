@@ -24,7 +24,8 @@ plot_model_fits(
   subset_biomarker_groups = NULL,
   start_level = "none",
   settings = NULL,
-  exponential_waning = NULL
+  exponential_waning = NULL,
+  verbose = FALSE
 )
 }
 \arguments{
@@ -58,8 +59,6 @@ plot_model_fits(
 
 \item{subset_biomarker_ids}{if not NULL, then a vector giving the entries of biomarker_id to include in the longitudinal plot}
 
-\item{start_level}{"none"}
-
 \item{settings}{if not NULL, list of serosolver settings as returned from the main serosolver function}
 
 \item{exponential_waning}{if TRUE, assumes exponential rather than linear waning}
@@ -92,7 +91,7 @@ Other infection_history_plots:
 \code{\link{plot_individual_number_infections}()},
 \code{\link{plot_infection_history_chains_indiv}()},
 \code{\link{plot_infection_history_chains_time}()},
-\code{\link{plot_posteriors_infhist}()},
+\code{\link{plot_infection_history_posteriors}()},
 \code{\link{plot_total_number_infections}()}
 }
 \concept{infection_history_plots}

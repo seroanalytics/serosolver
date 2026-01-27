@@ -21,7 +21,7 @@ get_DOBs(antibody_data)
 }
 \seealso{
 Other get_summary: 
-\code{\link{get_n_alive_group}()},
-\code{\link{get_n_alive}()}
+\code{\link{get_n_alive}()},
+\code{\link{get_n_alive_group}()}
 }
 \concept{get_summary}

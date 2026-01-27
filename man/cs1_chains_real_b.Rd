@@ -17,8 +17,8 @@ MCMC outputs from case study 1 analysis on real data, for the second call of loa
 Other case_study_data: 
 \code{\link{cs1_chains_real}},
 \code{\link{cs1_chains_sim}},
-\code{\link{cs2_chains_real_b}},
 \code{\link{cs2_chains_real}},
+\code{\link{cs2_chains_real_b}},
 \code{\link{cs2_chains_sim}}
 }
 \concept{case_study_data}

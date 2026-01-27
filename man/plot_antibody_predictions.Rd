@@ -17,7 +17,8 @@ plot_antibody_predictions(
   data_type = 1,
   start_level = "none",
   settings = NULL,
-  exponential_waning = NULL
+  exponential_waning = NULL,
+  verbose = FALSE
 )
 }
 \arguments{
@@ -38,8 +39,6 @@ plot_antibody_predictions(
 \item{measurement_bias}{default NULL, optional data frame giving the index of `rho` that each biomarker_id and biomarker_group which uses the measurement shift from from. eg. if there's 6 circulation years and 3 strain clusters}
 
 \item{data_type}{integer, currently accepting 1 or 2. Set to 1 for discretized, bounded data, or 2 for continuous, bounded data.}
-
-\item{start_level}{"none"}
 
 \item{settings}{if not NULL, list of serosolver settings as returned from the main serosolver function}
 
@@ -67,8 +66,8 @@ Other infection_history_plots:
 \code{\link{plot_individual_number_infections}()},
 \code{\link{plot_infection_history_chains_indiv}()},
 \code{\link{plot_infection_history_chains_time}()},
+\code{\link{plot_infection_history_posteriors}()},
 \code{\link{plot_model_fits}()},
-\code{\link{plot_posteriors_infhist}()},
 \code{\link{plot_total_number_infections}()}
 }
 \concept{infection_history_plots}

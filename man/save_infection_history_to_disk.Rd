@@ -33,8 +33,8 @@ Write given infection history to disk
 Other mcmc: 
 \code{\link{generate_start_tab}()},
 \code{\link{rm_scale}()},
-\code{\link{scaletuning_alt}()},
 \code{\link{scaletuning}()},
+\code{\link{scaletuning_alt}()},
 \code{\link{serosolver}()}
 }
 \concept{mcmc}

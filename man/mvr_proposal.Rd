@@ -35,8 +35,8 @@ Given the current parameters and a covariance matrix, returns a vector for a pro
 }
 \seealso{
 Other proposals: 
-\code{\link{inf_hist_swap_phi}()},
 \code{\link{inf_hist_swap}()},
+\code{\link{inf_hist_swap_phi}()},
 \code{\link{infection_history_symmetric}()},
 \code{\link{univ_proposal}()}
 }

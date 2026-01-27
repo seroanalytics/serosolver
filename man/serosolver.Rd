@@ -2,7 +2,7 @@
 % Please edit documentation in R/mcmc.R
 \name{serosolver}
 \alias{serosolver}
-\title{Adaptive Metropolis-within-Gibbs/Metropolis Hastings Random Walk Algorithm.}
+\title{Run the serosolver model}
 \usage{
 serosolver(
   par_tab,
@@ -11,22 +11,19 @@ serosolver(
   antigenic_map = NULL,
   possible_exposure_times = NULL,
   mcmc_pars = c(),
-  mvr_pars = NULL,
+  mv_proposals = FALSE,
   n_chains = 1,
   parallel = FALSE,
   start_inf_hist = NULL,
   fixed_inf_hists = NULL,
   filename = "test",
-  posterior_func = create_posterior_func,
   prior_func = NULL,
   prior_version = 2,
   measurement_bias = NULL,
-  measurement_random_effects = FALSE,
   proposal_ratios = NULL,
   temp = 1,
   solve_likelihood = TRUE,
   n_alive = NULL,
-  OPT_TUNING = 0.1,
   random_start_parameters = TRUE,
   start_level = "none",
   data_type = 1,
@@ -34,14 +31,16 @@ serosolver(
   verbose_dev = FALSE,
   inf_hist_mcmc_summaries = TRUE,
   exponential_waning = FALSE,
+  plot_outputs = TRUE,
   ...
 )
 }
 \arguments{
 \item{par_tab}{The parameter table controlling information such as bounds, initial values etc. See \code{\link{example_par_tab}}}
 
-\item{antibody_data}{The data frame of titre data to be fitted. Must have columns: group (index of group); individual (integer ID of individual); samples (numeric time of sample taken); virus (numeric time of when the virus was circulating); titre (integer of titre value against the given virus at that sampling time); run (integer giving the repeated number of this titre); DOB (integer giving date of birth matching time units used in model). See \code{\link{example_antibody_data}}
-#' @param demographics if not NULL, then a tibble for each individual (1:n_indiv) giving demographic variable entries. Most importantly must include "birth" as the birth time. This is used if, for example, you have a stratification grouping in \code{par_tab}}
+\item{antibody_data}{The data frame of titre data to be fitted. Must have columns: group (index of group); individual (integer ID of individual); samples (numeric time of sample taken); virus (numeric time of when the virus was circulating); titre (integer of titre value against the given virus at that sampling time); run (integer giving the repeated number of this titre); DOB (integer giving date of birth matching time units used in model). See \code{\link{example_antibody_data}}}
+
+\item{demographics}{if not NULL, then a tibble for each individual (1:n_indiv) giving demographic variable entries. Most importantly must include "birth" as the birth time. This is used if, for example, you have a stratification grouping in \code{par_tab}}
 
 \item{antigenic_map}{(optional) A data frame of antigenic x and y coordinates. Must have column names: x_coord; y_coord; inf_times. See \code{\link{example_antigenic_map}}}
 
@@ -49,21 +48,19 @@ serosolver(
 
 \item{mcmc_pars}{Named vector named vector with parameters for the MCMC procedure. See details}
 
-\item{mvr_pars}{Leave NULL to use univariate proposals. Otherwise, a list of parameters if using a multivariate proposal. Must contain an initial covariance matrix, weighting for adapting cov matrix, and an initial scaling parameter (0-1)}
+\item{mv_proposals}{If TRUE, uses a multivariate normal distribution for the proposal distribution. FALSE uses univariate proposals. It is advised to leave this as FALSE, multivariate proposals seems to generally be inefficient for serosolver.}
+
+\item{n_chains}{}
 
 \item{start_inf_hist}{Infection history matrix to start MCMC at. Can be left NULL. See \code{\link{example_inf_hist}}}
 
 \item{filename}{The full filepath at which the MCMC chain should be saved. "_chain.csv" will be appended to the end of this, so filename should have no file extensions}
-
-\item{posterior_func}{Pointer to posterior function used to calculate a likelihood. This will probably be \code{\link{create_posterior_func}}}
 
 \item{prior_func}{User function of prior for model parameters. Should take parameter values only}
 
 \item{prior_version}{which infection history assumption prior_version to use? See \code{\link{describe_priors}} for options. Can be 1, 2, 3 or 4}
 
 \item{measurement_bias}{optional NULL. For measurement bias function. Vector of indices of length equal to number of circulation times. For each year, gives the index of parameters named "rho" that correspond to each time period}
-
-\item{measurement_random_effects}{optional FALSE. Boolean indicating if measurement bias is a random effects term. If TRUE adds a component to the posterior calculation that calculates the probability of a set of measurement shifts "rho", given a mean and standard deviation}
 
 \item{proposal_ratios}{optional NULL. Can set the relative sampling weights of the infection state times. Should be an integer vector of length matching nrow(antigenic_map). Otherwise, leave as NULL for uniform sampling.}
 
@@ -73,8 +70,6 @@ serosolver(
 
 \item{n_alive}{if not NULL, uses this as the number alive for the infection history prior, rather than calculating the number alive based on antibody_data}
 
-\item{OPT_TUNING}{Constant describing the amount of leeway when adapting the proposals steps to reach a desired acceptance rate (ie. does not change step size if within OPT_TUNING of the specified acceptance rate)}
-
 \item{random_start_parameters}{if FALSE, uses whatever parameter values were passed in \code{par_tab} as the starting positions for the MCMC chain}
 
 \item{verbose}{if TRUE, prints progress updates during the run}
@@ -83,7 +78,7 @@ serosolver(
 
 \item{exponential_waning}{if TRUE, assumes exponential waning of antibody titres rather than linear waning}
 
-\item{...}{Other arguments to pass to posterior_func}
+\item{...}{Other arguments to pass to create_posterior_func}
 }
 \value{
 A list with: 1) relative file path at which the MCMC chain is saved as a .csv file; 2) relative file path at which the infection history chain is saved as a .csv file; 3) the last used covariance matrix if mvr_pars != NULL; 4) the last used scale/step size (if multivariate proposals) or vector of step sizes (if univariate proposals)
@@ -92,13 +87,17 @@ A list with: 1) relative file path at which the MCMC chain is saved as a .csv fi
 The Adaptive Metropolis-within-Gibbs algorithm. Given a starting point and the necessary MCMC parameters as set out below, performs a random-walk of the posterior space to produce an MCMC chain that can be used to generate MCMC density and iteration plots. The algorithm undergoes an adaptive period, where it changes the step size of the random walk for each parameter to approach the desired acceptance rate, target_acceptance_rate_theta. The algorithm then uses \code{\link{univ_proposal}} or \code{\link{mvr_proposal}} to explore parameter space, recording the value and posterior value at each step. The MCMC chain is saved in blocks as a .csv file at the location given by filename. This version of the algorithm is also designed to explore posterior densities for infection histories. See the package vignettes for examples.
 }
 \details{
-The \code{mcmc_pars} argument has the following options:
+The \code{mcmc_pars} argument is a named vector allowing control over many MCMC options. The key options are:
 \itemize{
 \item iterations (number of post adaptive period iterations to run)
 \item adaptive_iterations (for this many iterations, change proposal step size adaptively every \code{adaptive_frequency} iterations)
 \item adaptive_frequency (adapt proposal step size every adaptive_frequency iterations)
-\item thin (save every n iterations from theta samples)
-\item thin_inf_hist (save every n iterations from infection history samples)
+\item thin (save every n iterations from kinetics parameters samples, advised for long chains, advised to set such that iterations/thin is no more than 1000)
+\item thin_inf_hist (save every n iterations from infection history samples, advised to set such that iterations/thin_inf_hist is no more than 1000)
+}
+
+Additional arguments for more precise control, not relevant for the majority of users:
+\itemize{
 \item proposal_inf_hist_indiv_prop (proportion of individuals resampled at each infection history proposal)
 \item save_block (after this many iterations (post thinning), save to disk)
 \item target_acceptance_rate_theta (desired acceptance rate for theta parameters)
@@ -118,16 +117,15 @@ The \code{mcmc_pars} argument has the following options:
 data(example_antibody_data)
 data(example_par_tab)
 data(example_antigenic_map)
-res <- serosolver(example_par_tab[example_par_tab$names != "phi",], example_antibody_data, example_antigenic_map, prior_version=2)
+res <- serosolver(example_par_tab, example_antibody_data, example_antigenic_map)
 }
 }
 \seealso{
-\url{https://github.com/jameshay218/lazymcmc}
-
 Other mcmc: 
 \code{\link{generate_start_tab}()},
 \code{\link{rm_scale}()},
 \code{\link{save_infection_history_to_disk}()},
-\code{\link{scaletuning}()}
+\code{\link{scaletuning}()},
+\code{\link{scaletuning_alt}()}
 }
 \concept{mcmc}

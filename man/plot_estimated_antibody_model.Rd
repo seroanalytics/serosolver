@@ -18,7 +18,9 @@ plot_estimated_antibody_model(
   settings = NULL,
   by_group = TRUE,
   add_prediction_intervals = FALSE,
-  exponential_waning = NULL
+  exponential_waning = NULL,
+  set_infections = NULL,
+  verbose = FALSE
 )
 }
 \arguments{
@@ -43,6 +45,8 @@ plot_estimated_antibody_model(
 \item{settings}{if not NULL, list of serosolver settings as returned from the main serosolver function}
 
 \item{exponential_waning}{if TRUE, assumes exponential rather than linear waning}
+
+\item{set_infections}{numeric vector giving the corresponding times in possible_exposure_histories to simulate infections}
 }
 \value{
 a ggplot2 object giving model-predicted antibody level and predicted observations over time since infection
@@ -59,8 +63,8 @@ Other infection_history_plots:
 \code{\link{plot_individual_number_infections}()},
 \code{\link{plot_infection_history_chains_indiv}()},
 \code{\link{plot_infection_history_chains_time}()},
+\code{\link{plot_infection_history_posteriors}()},
 \code{\link{plot_model_fits}()},
-\code{\link{plot_posteriors_infhist}()},
 \code{\link{plot_total_number_infections}()}
 }
 \concept{infection_history_plots}

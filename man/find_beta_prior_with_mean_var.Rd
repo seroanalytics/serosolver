@@ -24,9 +24,9 @@ find_beta_prior_with_mean_var(0.15,0.1,FALSE)
 }
 \seealso{
 Other priors: 
+\code{\link{calc_phi_probs}()},
 \code{\link{calc_phi_probs_indiv}()},
 \code{\link{calc_phi_probs_spline}()},
-\code{\link{calc_phi_probs}()},
 \code{\link{create_prob_shifts}()},
 \code{\link{find_beta_prior_mode}()},
 \code{\link{find_beta_prior_with_mean}()},

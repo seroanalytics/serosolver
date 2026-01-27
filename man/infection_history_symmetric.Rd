@@ -65,8 +65,8 @@ new_inf_hist <- infection_history_symmetric(example_inf_hist, indivs,age_mask ,s
 }
 \seealso{
 Other proposals: 
-\code{\link{inf_hist_swap_phi}()},
 \code{\link{inf_hist_swap}()},
+\code{\link{inf_hist_swap_phi}()},
 \code{\link{mvr_proposal}()},
 \code{\link{univ_proposal}()}
 }

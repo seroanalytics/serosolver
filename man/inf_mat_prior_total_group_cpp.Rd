@@ -30,9 +30,9 @@ Marginal prior probability (p(Z)) of a particular infection history matrix total
 }
 \seealso{
 Other inf_mat_prior: 
-\code{\link{inf_mat_prior_cpp_vector}()},
 \code{\link{inf_mat_prior_cpp}()},
-\code{\link{inf_mat_prior_group_cpp_vector}()},
-\code{\link{inf_mat_prior_group_cpp}()}
+\code{\link{inf_mat_prior_cpp_vector}()},
+\code{\link{inf_mat_prior_group_cpp}()},
+\code{\link{inf_mat_prior_group_cpp_vector}()}
 }
 \concept{inf_mat_prior}

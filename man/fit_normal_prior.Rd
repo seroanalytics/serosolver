@@ -39,13 +39,13 @@ results <- fit_normal_prior(chain, par_name="mu",plot_fit=FALSE)
 }
 
 Other priors: 
+\code{\link{calc_phi_probs}()},
 \code{\link{calc_phi_probs_indiv}()},
 \code{\link{calc_phi_probs_spline}()},
-\code{\link{calc_phi_probs}()},
 \code{\link{create_prob_shifts}()},
 \code{\link{find_beta_prior_mode}()},
-\code{\link{find_beta_prior_with_mean_var}()},
 \code{\link{find_beta_prior_with_mean}()},
+\code{\link{find_beta_prior_with_mean_var}()},
 \code{\link{fit_beta_prior}()},
 \code{\link{inf_mat_prior}()},
 \code{\link{infection_history_prior}()},
