@@ -27,6 +27,8 @@ inf_hist_prop_prior_v2_and_v4(
   shape2,
   possible_exposure_times,
   possible_exposure_times_indices,
+  exposure_groups,
+  unique_exposure_groups,
   sample_times,
   type_data_start,
   biomarker_groups,
@@ -64,6 +66,7 @@ inf_hist_prop_prior_v2_and_v4(
   indiv_poss_exp_times_end,
   exponential_waning = FALSE,
   timevarying_groups = FALSE,
+  variant_specific_pars = FALSE,
   temp = 1,
   solve_likelihood = TRUE
 )

@@ -115,3 +115,37 @@ void antibody_data_model_individual(NumericVector &predicted_antibody_levels,
 #endif
 
 
+#ifndef ANTIBODY_DATA_MODEL_INDIVIDUAL_TIMEVARYING_VARIANT_SPECIFIC_H
+#define ANTIBODY_DATA_MODEL_INDIVIDUAL_TIMEVARYING_VARIANT_SPECIFIC_H
+void antibody_data_model_individual_timevarying_variant_specific(NumericVector &predicted_antibody_levels,
+                                                                 const NumericVector &start_antibody_levels,
+                                                                 const NumericVector &births,
+                                                                 const NumericMatrix &boost_long,
+                                                                 const NumericMatrix &boost_short,
+                                                                 const NumericMatrix &boost_delay,
+                                                                 const NumericMatrix &wane_short,
+                                                                 const NumericMatrix &wane_long,
+                                                                 const NumericMatrix &antigenic_seniority,
+                                                                 const NumericVector &infection_times,
+                                                                 const IntegerVector &groups,
+                                                                 const int &birth_group,
+                                                                 const IntegerVector &exposure_indices,
+                                                                 const IntegerVector &exposure_group,
+                                                                 const IntegerVector &biomarker_id_indices,
+                                                                 const IntegerVector &start_level_indices,
+                                                                 const NumericVector &sample_times,
+                                                                 const int &index_in_samples,
+                                                                 const int &end_index_in_samples,
+                                                                 const int &start_index_in_data1,
+                                                                 const IntegerVector &nrows_per_blood_sample,
+                                                                 const int &number_possible_exposures,
+                                                                 const arma::cube &antigenic_map_short,
+                                                                 const arma::cube &antigenic_map_long,
+                                                                 const NumericMatrix &min_level,
+                                                                 bool exponential_waning,
+                                                                 bool boost_before_infection
+);
+
+#endif
+
+

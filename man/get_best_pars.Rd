@@ -23,6 +23,7 @@ best_pars <- get_best_pars(mcmc_chains$chain)
 }
 \seealso{
 Other mcmc_diagnostics: 
+\code{\link{get_best_draw}()},
 \code{\link{get_index_pars}()}
 }
 \concept{mcmc_diagnostics}

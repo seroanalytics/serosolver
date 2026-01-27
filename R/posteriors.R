@@ -142,6 +142,22 @@ create_posterior_func <- function(par_tab,
     use_demographic_groups <- tmp$use_demographic_groups
     use_timevarying_demographics <- tmp$timevarying_demographics
 
+    if("exposure_group" %in% colnames(antigenic_map)){
+      use_variant_specific_pars <- TRUE
+      exposure_groups <- antigenic_map %>% filter(biomarker_group == min(biomarker_group)) %>% pull(exposure_group)
+      exposure_groups <- exposure_groups - 1
+      unique_exposure_groups <- unique(exposure_groups)
+      antigenic_map_col_indices <- unique_exposure_groups + 1
+      n_antigenic_map_groups <- length(antigenic_map_col_indices)
+      
+    } else {
+      use_variant_specific_pars <- FALSE
+      exposure_groups <- NULL
+      unique_exposure_groups <- NULL
+      antigenic_map_col_indices <- unique_biomarker_groups
+      n_antigenic_map_groups <- n_biomarker_groups
+    }
+    
     setup_dat <- setup_antibody_data_for_posterior_func(
       par_tab,
         antibody_data_unique, antigenic_map, 
@@ -387,15 +403,15 @@ create_posterior_func <- function(par_tab,
             names(pars) <- par_names
             theta <- transform_parameters_cpp(pars, scale_table, theta_meas_comb_indices-1, scale_par_indices-1,as.matrix(demographic_groups), transforms)
             colnames(theta) <- names(pars[theta_meas_comb_indices])
-            antigenic_map_long <- array(dim=c(length(possible_biomarker_ids)^2,n_biomarker_groups,n_demographic_groups))
-            antigenic_map_short <- array(dim=c(length(possible_biomarker_ids)^2,n_biomarker_groups,n_demographic_groups))
+            antigenic_map_long <- array(dim=c(length(possible_biomarker_ids)^2,n_antigenic_map_groups,n_demographic_groups))
+            antigenic_map_short <- array(dim=c(length(possible_biomarker_ids)^2,n_antigenic_map_groups,n_demographic_groups))
             cr_longs <- matrix(theta[,colnames(theta)=="cr_long"],nrow=length(unique_groups))
             cr_shorts <- matrix(theta[,colnames(theta)=="cr_short"],nrow=length(unique_groups))
             #cr_shorts <- cr_shorts*cr_longs
             
 
             for(group in unique_groups){
-              for(biomarker_group in unique_biomarker_groups){
+              for(biomarker_group in n_antigenic_map_groups){
                 antigenic_map_long[,biomarker_group,group] <- create_cross_reactivity_vector(antigenic_map_melted[[biomarker_group]], cr_longs[group,biomarker_group],exponential_waning)
                 antigenic_map_short[,biomarker_group,group] <- create_cross_reactivity_vector(antigenic_map_melted[[biomarker_group]], cr_shorts[group,biomarker_group],exponential_waning)
               }
@@ -409,6 +425,8 @@ create_posterior_func <- function(par_tab,
               indiv_group_indices,
               possible_exposure_times, 
               exposure_id_indices,
+              exposure_groups,
+              unique_exposure_groups,
               sample_times, 
               type_data_start,
               biomarker_groups,
@@ -426,6 +444,7 @@ create_posterior_func <- function(par_tab,
               antigenic_distances,
               use_timevarying_demographics,
               exponential_waning,
+              use_variant_specific_pars,
               antibody_level_before_infection
             )
             if (use_measurement_bias) {
@@ -437,7 +456,7 @@ create_posterior_func <- function(par_tab,
                 ## Sum these for each individual
                 liks <- numeric(n_indivs)
 
-                for(biomarker_group in unique_biomarker_groups){
+                for(biomarker_group in antigenic_map_col_indices){
                     ## Need theta for each observation type
                     liks_tmp <- likelihood_func_use[[biomarker_group]](
                       pars[theta_indices][(theta_indices_unique+1) + n_pars*(biomarker_group-1)], 
@@ -540,15 +559,15 @@ create_posterior_func <- function(par_tab,
             antibody_level_shifts <- measurement_bias_indices[cbind(antibody_data_demo_index,expected_indices)]
           }
           
-          antigenic_map_long <- array(dim=c(length(possible_biomarker_ids)^2,n_biomarker_groups,n_demographic_groups))
-          antigenic_map_short <- array(dim=c(length(possible_biomarker_ids)^2,n_biomarker_groups,n_demographic_groups))
+          antigenic_map_long <- array(dim=c(length(possible_biomarker_ids)^2,n_antigenic_map_groups,n_demographic_groups))
+          antigenic_map_short <- array(dim=c(length(possible_biomarker_ids)^2,n_antigenic_map_groups,n_demographic_groups))
           
           cr_longs <- matrix(theta[,colnames(theta)=="cr_long"],nrow=length(unique_groups))
           cr_shorts <- matrix(theta[,colnames(theta)=="cr_short"],nrow=length(unique_groups))
           #cr_shorts <- cr_shorts*cr_longs
           
           for(group in unique_groups){
-            for(biomarker_group in unique_biomarker_groups){
+            for(biomarker_group in antigenic_map_col_indices){
               antigenic_map_long[,biomarker_group,group] <- create_cross_reactivity_vector(antigenic_map_melted[[biomarker_group]], cr_longs[group,biomarker_group],exponential_waning)
               antigenic_map_short[,biomarker_group,group] <- create_cross_reactivity_vector(antigenic_map_melted[[biomarker_group]], cr_shorts[group,biomarker_group],exponential_waning)
             }
@@ -582,6 +601,8 @@ create_posterior_func <- function(par_tab,
                 infection_model_prior_shape2,
                 possible_exposure_times,
                 exposure_id_indices,
+                exposure_groups,
+                unique_exposure_groups,
                 sample_times,
                 
                 type_data_start,
@@ -628,6 +649,7 @@ create_posterior_func <- function(par_tab,
                 indiv_poss_exp_times_end,
                 exponential_waning,
                 use_timevarying_demographics,
+                use_variant_specific_pars,
                 temp,
                 solve_likelihood
             )
@@ -641,14 +663,14 @@ create_posterior_func <- function(par_tab,
           names(pars) <- par_names
           theta <- transform_parameters_cpp(pars, scale_table, theta_meas_comb_indices-1, scale_par_indices-1,as.matrix(demographic_groups), transforms)
           colnames(theta) <- names(pars[theta_meas_comb_indices])
-          antigenic_map_long <- array(dim=c(length(possible_biomarker_ids)^2,n_biomarker_groups,n_demographic_groups))
-          antigenic_map_short <- array(dim=c(length(possible_biomarker_ids)^2,n_biomarker_groups,n_demographic_groups))
+          antigenic_map_long <- array(dim=c(length(possible_biomarker_ids)^2,n_antigenic_map_groups,n_demographic_groups))
+          antigenic_map_short <- array(dim=c(length(possible_biomarker_ids)^2,n_antigenic_map_groups,n_demographic_groups))
           
           cr_longs <- matrix(theta[,colnames(theta)=="cr_long"],nrow=length(unique_groups))
           cr_shorts <- matrix(theta[,colnames(theta)=="cr_short"],nrow=length(unique_groups))
           #cr_shorts <- cr_shorts*cr_longs
           for(group in unique_groups){
-            for(biomarker_group in unique_biomarker_groups){
+            for(biomarker_group in antigenic_map_col_indices){
                 antigenic_map_long[,biomarker_group,group] <- create_cross_reactivity_vector(antigenic_map_melted[[biomarker_group]], cr_longs[group,biomarker_group],exponential_waning)
                 antigenic_map_short[,biomarker_group,group] <- create_cross_reactivity_vector(antigenic_map_melted[[biomarker_group]], cr_shorts[group,biomarker_group],exponential_waning)
             }
@@ -663,6 +685,8 @@ create_posterior_func <- function(par_tab,
               
               possible_exposure_times, 
               exposure_id_indices,
+              exposure_groups,
+              unique_exposure_groups,
               sample_times, 
               type_data_start,
               biomarker_groups,
@@ -680,6 +704,7 @@ create_posterior_func <- function(par_tab,
               antigenic_distances,
               use_timevarying_demographics,
               exponential_waning,
+              use_variant_specific_pars,
               antibody_level_before_infection
           )
 

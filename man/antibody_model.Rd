@@ -13,6 +13,8 @@ antibody_model(
   indiv_theta_groups,
   possible_exposure_times,
   possible_exposure_times_indices,
+  exposure_groups,
+  unique_exposure_groups,
   sample_times,
   type_data_start,
   biomarker_groups,
@@ -28,6 +30,7 @@ antibody_model(
   antigenic_distances,
   timevarying_groups = FALSE,
   exponential_waning = FALSE,
+  variant_specific_pars = FALSE,
   boost_before_infection = FALSE
 )
 }

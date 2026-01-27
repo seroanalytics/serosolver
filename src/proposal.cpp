@@ -188,6 +188,8 @@ List inf_hist_prop_prior_v2_and_v4(
 				   const double &shape2, // shape2 for prior
 				   const NumericVector &possible_exposure_times,
 				   const IntegerVector &possible_exposure_times_indices,
+				   const IntegerVector &exposure_groups,
+				   const IntegerVector &unique_exposure_groups,
 				   const NumericVector &sample_times,
 				   
 				   const IntegerVector &type_data_start, // For each individual, which entry in the unique(antibody _data[,c("individual","biomarker_group)]) data frame is their first?
@@ -239,6 +241,8 @@ List inf_hist_prop_prior_v2_and_v4(
 				   
 				   const bool exponential_waning = false,
 				   const bool timevarying_groups = false,
+				   const bool variant_specific_pars = false,
+				   
 				   const double temp=1,
 				   bool solve_likelihood=true){
   // ########################################################################
@@ -339,6 +343,9 @@ List inf_hist_prop_prior_v2_and_v4(
   // 1. Extract general parameters that apply to all models
   // Pull out model parameters so only need to allocate once
   int n_types = unique_biomarker_groups.size();
+  if(variant_specific_pars){
+    n_types = unique_exposure_groups.size();
+  }
   int n_theta = unique_theta_indices.size();
   int n_groups = theta.nrow();
   
@@ -717,7 +724,7 @@ List inf_hist_prop_prior_v2_and_v4(
         					      antigenic_map_short.slice(group).colptr(biomarker_group),
         					      antigenic_map_long.slice(group).colptr(biomarker_group),
         					      false);	
-        	} else if(timevarying_groups){
+        	} else if(timevarying_groups & !variant_specific_pars){
         	  antibody_data_model_individual_timevarying(
         	    predicted_antibody_levels, 
         	    starting_antibody_levels,
@@ -744,6 +751,35 @@ List inf_hist_prop_prior_v2_and_v4(
         	    antigenic_map_short,
         	    antigenic_map_long,
         	    biomarker_group,
+        	    min_measurements,
+        	    exponential_waning,
+        	    false);
+        	} else if(variant_specific_pars){
+        	  antibody_data_model_individual_timevarying_variant_specific(
+        	    predicted_antibody_levels, 
+        	    starting_antibody_levels,
+        	    births,
+        	    boost_long_parameters, 
+        	    boost_short_parameters,
+        	    boost_delay_parameters,
+        	    wane_short_parameters, 
+        	    wane_long_parameters, 
+        	    antigenic_seniority_parameters,
+        	    infection_times,
+        	    groups_subset,
+        	    birth_group,
+        	    infection_times_indices_tmp,
+        	    exposure_groups,
+        	    biomarker_id_indices,
+        	    start_level_indices,
+        	    sample_times,
+        	    start_index_in_samples,
+        	    end_index_in_samples,
+        	    start_index_in_data,
+        	    nrows_per_sample,
+        	    number_possible_exposures,
+        	    antigenic_map_short,
+        	    antigenic_map_long,
         	    min_measurements,
         	    exponential_waning,
         	    false);

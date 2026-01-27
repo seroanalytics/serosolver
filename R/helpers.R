@@ -232,6 +232,47 @@ get_best_pars <- function(chain) {
   return(best_pars)
 }
 
+#' Best infection history and theta parameters
+#'
+#' Given an MCMC chain of theta parameters and infection histories, returns the MAP infection history
+#' @param chain the MCMC chain for theta parameters
+#' @param inf_chain the MCMC chain for infection histories
+#' @param max_indivs the maximum number of individuals in the infection history matrix (default is max individual in inf_chain)
+#' @param max_times the maximum number of time points in the infection history matrix (default is max time in inf_chain)
+#' @return a list with a vector of the best parameters and a matrix of the best infection history
+#' @family mcmc_diagnostics
+#' @examples
+#' \dontrun{
+#' mcmc_chains <- load_theta_chains()
+#' inf_chains <- load_infection_chains()
+#' best_pars <- get_best_draw(mcmc_chains$chain)
+#' }
+#' @export
+#' @useDynLib serosolver
+get_best_draw <- function(chain, inf_chain, max_indivs=NULL,max_times=NULL) {
+  tmp_names <- colnames(chain)
+  tmp_names <- tmp_names[!(tmp_names) %in% c("samp_no","chain_no","likelihood","posterior_prob","prior_prob")]
+  best_index <- which.max(as.data.frame(chain)[, "posterior_prob"])
+  best_sampno <- as.numeric(as.data.frame(chain)[best_index, "samp_no"])
+  best_chainno <- as.numeric(as.data.frame(chain)[best_index, "chain_no"])
+  best_pars <- as.numeric(as.data.frame(chain)[best_index, tmp_names])
+  
+  best_inf_hist <- inf_chain %>% filter(samp_no == best_sampno & chain_no == best_chainno) %>% select(i, j, x)
+  
+  if(is.null(max_indivs)){
+    max_indivs <- max(best_inf_hist$i)
+  }
+  
+  if(is.null(max_times)){
+    max_times = max(best_inf_hist$j)
+  }
+  out <- matrix(0, nrow = max_indivs, ncol = max_times)
+  out[cbind(best_inf_hist$i, best_inf_hist$j)] <- 1
+  
+  names(best_pars) <- tmp_names
+  return(list(best_pars, out))
+}
+
 #' Index pars
 #'
 #' Given an MCMC chain, returns the parameters at the specified index
@@ -434,7 +475,18 @@ setup_antibody_data_for_posterior_func <- function(
   n_biomarker_groups <- length(unique_biomarker_groups)
   
  
-  antigenic_map_tmp <- setup_antigenic_map(antigenic_map, possible_exposure_times, n_biomarker_groups,unique_biomarker_groups,verbose)
+  ## Check if stratifying by exposure group in antigenic_map, if so, we use this as the "biomarker_group"
+  if("exposure_group" %in% colnames(antigenic_map)){
+    n_exposure_groups <- length(unique(par_tab$biomarker_group))
+    unique_groups_map <- unique(par_tab$biomarker_group)
+    n_groups_map <- n_exposure_groups
+  } else {
+    n_exposure_groups <- NULL
+    n_groups_map <- n_biomarker_groups
+    unique_groups_map <- unique_biomarker_groups
+  }
+  
+  antigenic_map_tmp <- setup_antigenic_map(antigenic_map, possible_exposure_times, n_groups_map,unique_groups_map,verbose)
   antigenic_map <- antigenic_map_tmp$antigenic_map
   possible_exposure_times <- antigenic_map_tmp$possible_exposure_times
   infection_history_mat_indices <- antigenic_map_tmp$infection_history_mat_indices
@@ -442,7 +494,7 @@ setup_antibody_data_for_posterior_func <- function(
   possible_biomarker_ids <- unique(antigenic_map$inf_times)
   
   ## Create a melted antigenic map for each observation type
-  antigenic_maps_melted <- lapply(unique_biomarker_groups, function(b){
+  antigenic_maps_melted <- lapply(unique_groups_map, function(b){
       tmp <- antigenic_map[antigenic_map$biomarker_group == b,]
       c(melt_antigenic_coords(tmp[,c("x_coord","y_coord")]))
     })

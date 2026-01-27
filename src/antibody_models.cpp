@@ -35,6 +35,10 @@ NumericVector antibody_model(const NumericMatrix theta,
 			      
 			      const NumericVector &possible_exposure_times,
 			      const IntegerVector &possible_exposure_times_indices,
+			      
+			      const IntegerVector &exposure_groups,
+			      const IntegerVector &unique_exposure_groups,
+			      
 			      const NumericVector &sample_times,
 			      
 			      const IntegerVector &type_data_start,
@@ -53,6 +57,7 @@ NumericVector antibody_model(const NumericMatrix theta,
 			      const NumericVector &antigenic_distances,	// Currently not doing anything, but has uses for model extensions
 			      const bool timevarying_groups = false,
 			      bool exponential_waning = false,
+			      const bool variant_specific_pars = false,
 			      bool boost_before_infection = false
 			      ){
   // Dimensions of structures
@@ -91,6 +96,11 @@ NumericVector antibody_model(const NumericMatrix theta,
   // 1. Extract general parameters that apply to all models
   // Pull out model parameters so only need to allocate once
   int n_types = unique_biomarker_groups.size();
+  
+  if(variant_specific_pars){
+    n_types = unique_exposure_groups.size();
+  }
+  
   int n_theta = unique_theta_indices.size();
   int n_groups = theta.nrow();
   
@@ -224,7 +234,7 @@ NumericVector antibody_model(const NumericMatrix theta,
   					    antigenic_map_short.slice(group).colptr(biomarker_group),
   					    antigenic_map_long.slice(group).colptr(biomarker_group),
   					    boost_before_infection);
-            } else if(timevarying_groups){
+            } else if(timevarying_groups & !variant_specific_pars){
               antibody_data_model_individual_timevarying(
                 predicted_antibody_levels, 
                 starting_antibody_levels,
@@ -254,7 +264,35 @@ NumericVector antibody_model(const NumericMatrix theta,
                 min_measurements,
                 exponential_waning,
                 boost_before_infection);
-              
+            } else if(variant_specific_pars){
+              antibody_data_model_individual_timevarying_variant_specific(
+                predicted_antibody_levels, 
+                starting_antibody_levels,
+                births,
+                boost_long_parameters, 
+                boost_short_parameters,
+                boost_delay_parameters,
+                wane_short_parameters, 
+                wane_long_parameters, 
+                antigenic_seniority_parameters,
+                infection_times,
+                groups,
+                birth_group,
+                infection_times_indices_tmp,
+                exposure_groups,
+                biomarker_id_indices,
+                start_level_indices,
+                sample_times,
+                start_index_in_samples,
+                end_index_in_samples,
+                start_index_in_data,
+                nrows_per_sample,
+                number_possible_exposures,
+                antigenic_map_short,
+                antigenic_map_long,
+                min_measurements,
+                exponential_waning,
+                boost_before_infection);
             } else {
               antibody_data_model_individual_new(
             	        predicted_antibody_levels, 
