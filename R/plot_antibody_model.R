@@ -711,7 +711,6 @@ plot_estimated_antibody_model <- function(chain,
   ## Get blanks for ranges
   ranges <- par_tab[par_tab$names %in% c("min_measurement","max_measurement"),c("names","values","biomarker_group")] %>% pivot_wider(names_from=names,values_from=values)  
 
-  browser()
   if(by_group){
     dat2$biomarker_id <- as.factor(dat2$biomarker_id)
     obs_dat$biomarker_id <- as.factor(obs_dat$biomarker_id)

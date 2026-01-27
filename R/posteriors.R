@@ -152,8 +152,8 @@ create_posterior_func <- function(par_tab,
       
     } else {
       use_variant_specific_pars <- FALSE
-      exposure_groups <- NULL
-      unique_exposure_groups <- NULL
+      exposure_groups <- 1
+      unique_exposure_groups <- 1
       antigenic_map_col_indices <- unique_biomarker_groups
       n_antigenic_map_groups <- n_biomarker_groups
     }
@@ -411,7 +411,7 @@ create_posterior_func <- function(par_tab,
             
 
             for(group in unique_groups){
-              for(biomarker_group in n_antigenic_map_groups){
+              for(biomarker_group in antigenic_map_col_indices){
                 antigenic_map_long[,biomarker_group,group] <- create_cross_reactivity_vector(antigenic_map_melted[[biomarker_group]], cr_longs[group,biomarker_group],exponential_waning)
                 antigenic_map_short[,biomarker_group,group] <- create_cross_reactivity_vector(antigenic_map_melted[[biomarker_group]], cr_shorts[group,biomarker_group],exponential_waning)
               }

@@ -40,7 +40,8 @@ knitr::include_graphics("figures/guide_fig1.png")
 The following code runs the entire pipeline for a simulation-recovery experiment with `serosolver`. We will step through each of these sections in more detail in this guide.
 
 ```{r entire_simulation,echo=TRUE,eval=FALSE}
-library(serosolver)
+#library(serosolver)
+devtools::load_all("~/Documents/GitHub/serosolver")
 library(tidyverse)
 library(doParallel)
 library(data.table)
@@ -83,7 +84,7 @@ plot_antibody_data(antibody_data,possible_exposure_times,1:4,infection_histories
 ## Run serosolver on the simulated data
 output <- serosolver(example_par_tab, antibody_data, 
                                  antigenic_map=antigenic_map,
-                filename="readme", n_chains=3,parallel=FALSE,
+                filename="readme", n_chains=3,parallel=TRUE,
                 mcmc_pars=c(adaptive_iterations=1000, iterations=5000),verbose=TRUE)
 
 ## Read in the MCMC chains and compare model fits to the data

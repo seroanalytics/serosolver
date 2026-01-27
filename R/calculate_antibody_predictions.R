@@ -17,6 +17,8 @@
 #' @param antibody_level_before_infection TRUE/FALSE value. If TRUE, solves antibody level predictions, but gives the predicted antibody level at a given time point BEFORE any infection during that time occurs.
 #' @param for_regression if TRUE, returns posterior draws rather than posterior summaries
 #' @param data_type integer, currently accepting 1 or 2. Set to 1 for discretized, bounded data, or 2 for continuous, bounded data. 
+#' @param start_level "none"
+#' @param exponential waning if TRUE, assumes exponential rather than linear waning
 #' @return a list with the antibody level predictions (95% credible intervals, median and multivariate posterior mode) and the probabilities of infection for each individual in each epoch
 #' @examples
 #' \dontrun{
@@ -40,9 +42,9 @@ get_antibody_level_predictions <- function(chain, infection_histories, antibody_
                                            for_res_plot = FALSE, expand_antibody_data = FALSE,
                                            expand_to_all_times=FALSE,
                                            antibody_level_before_infection=FALSE, for_regression=FALSE,
-                                           data_type=1,start_level="none"){
+                                           data_type=1,start_level="none",
+                                           exponential_waning=FALSE){
   par_tab <- add_scale_pars(par_tab,antibody_data,demographics)
-
   ## Get unique demographic groups from full data set, not just the subset
   if(!is.null(demographics)){
     demographic_groups <- create_demographic_table(demographics,par_tab)
@@ -77,17 +79,18 @@ get_antibody_level_predictions <- function(chain, infection_histories, antibody_
   infection_histories <- infection_histories[infection_histories$i %in% individuals, ]
   antibody_data$individual <- match(antibody_data$individual, individuals)
   infection_histories$i <- match(infection_histories$i, individuals)
-  if(class(start_level) %in% c("data.frame","tibble")){
-    start_index_tmp <- start_level$start_index
-    start_level <- start_level[start_level$individual %in% individuals,]
-    start_level$individual <- match(start_level$individual, individuals)
-    start_level$start_index <- 1:nrow(start_level)# match(start_level$start_index, start_index_tmp)
-  }
+  
+  #if(class(start_level) %in% c("data.frame","tibble")){
+  #  start_index_tmp <- start_level$start_index
+  #  start_level <- start_level[start_level$individual %in% individuals,]
+  #  start_level$individual <- match(start_level$individual, individuals)
+  #  start_level$start_index <- 1:nrow(start_level)# match(start_level$start_index, start_index_tmp)
+  #}
   ## Format the antigenic map to solve the model 
   ## Check if an antigenic map is provided. If not, then create a dummy map where all pathogens have the same position on the map
   if (!is.null(antigenic_map)) {
     possible_exposure_times_tmp <- unique(antigenic_map$inf_times) 
-     ## If possible exposure times was not specified, use antigenic map times instead
+    ## If possible exposure times was not specified, use antigenic map times instead
     if(is.null(possible_exposure_times)) {
       possible_exposure_times <- possible_exposure_times_tmp
     }
@@ -133,12 +136,12 @@ get_antibody_level_predictions <- function(chain, infection_histories, antibody_
     
   }
   model_func <- create_posterior_func(par_tab, antibody_data1, antigenic_map, possible_exposure_times,
-                                     prior_version=2,
-                                     measurement_bias = measurement_bias, function_type = 4,
+                                      prior_version=2,
+                                      measurement_bias = measurement_bias, function_type = 4,
                                       antibody_level_before_infection=antibody_level_before_infection,
                                       data_type=data_type,start_level=start_level1,
-                                     demographics=demographics,demographic_groups=demographic_groups,
-                                     exponential_waning=exponential_waning
+                                      demographics=demographics,demographic_groups=demographic_groups,
+                                      exponential_waning=exponential_waning
   )
   
   predicted_titres <- residuals <- residuals_floor <- 
@@ -167,7 +170,7 @@ get_antibody_level_predictions <- function(chain, infection_histories, antibody_
     residuals_floor[,i] <- antibody_data1$measurement - observed_predicted_titres[,i]
     samp_record[i] <- index
   }
-
+  
   colnames(predicted_titres) <- tmp_samp
   ## If generating for residual plot, can return now
   if (for_res_plot) {
@@ -226,7 +229,7 @@ get_antibody_level_predictions <- function(chain, infection_histories, antibody_
   infection_history_final$individual <- individuals[infection_history_final$individual]
   if(for_regression){
     return(list("all_predictions"=predicted_titres, "all_predictions_obs"=observed_predicted_titres,
-    "all_inf_hist"=inf_hist_all,
+                "all_inf_hist"=inf_hist_all,
                 "summary_titres"=dat2,"best_inf_hist"=best_inf, "predicted_observations"=obs_dat)) 
   }
   
@@ -240,9 +243,3 @@ get_antibody_level_predictions <- function(chain, infection_histories, antibody_
   }
   return(result)
 }
-
-
-
-
-
-

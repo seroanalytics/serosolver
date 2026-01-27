@@ -136,8 +136,7 @@ NumericVector antibody_model(const NumericMatrix theta,
   int boost_limit_index = -1;
 
   // Create vectors of model parameters for each of the observation types
-  NumericVector predicted_antibody_levels(n_measurements, 0.0);
-
+ NumericVector predicted_antibody_levels(n_measurements, 0.0);
   for(int g = 0; g < n_groups; ++g){
     for(int x = 0; x < n_types; ++x){
   

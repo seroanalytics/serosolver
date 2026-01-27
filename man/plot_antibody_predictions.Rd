@@ -40,6 +40,8 @@ plot_antibody_predictions(
 
 \item{data_type}{integer, currently accepting 1 or 2. Set to 1 for discretized, bounded data, or 2 for continuous, bounded data.}
 
+\item{start_level}{"none"}
+
 \item{settings}{if not NULL, list of serosolver settings as returned from the main serosolver function}
 
 \item{exponential_waning}{if TRUE, assumes exponential rather than linear waning}

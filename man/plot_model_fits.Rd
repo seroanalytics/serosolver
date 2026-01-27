@@ -59,6 +59,8 @@ plot_model_fits(
 
 \item{subset_biomarker_ids}{if not NULL, then a vector giving the entries of biomarker_id to include in the longitudinal plot}
 
+\item{start_level}{"none"}
+
 \item{settings}{if not NULL, list of serosolver settings as returned from the main serosolver function}
 
 \item{exponential_waning}{if TRUE, assumes exponential rather than linear waning}
