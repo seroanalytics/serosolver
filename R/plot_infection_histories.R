@@ -31,12 +31,12 @@
 #' 
 #' n_alive_group <- get_n_alive_group(example_antibody_data, possible_exposure_times,melt_dat = TRUE)
 #' n_alive_group$j <- possible_exposure_times[n_alive_group$j]
-#' all_plots <- plot_posteriors_infhist(example_inf_chain, possible_exposure_times, n_alive_group,
+#' all_plots <- plot_infection_history_posteriors(example_inf_chain, possible_exposure_times, n_alive_group,
 #'                                      known_ar=known_ar,known_infection_history = known_inf_hist,
 #'                                      samples=100)
 #' }
 #' @export
-plot_posteriors_infhist <- function(inf_chain,
+plot_infection_history_posteriors <- function(inf_chain,
                                     possible_exposure_times,
                                     n_alive,
                                     known_ar = NULL,
@@ -82,49 +82,6 @@ plot_posteriors_infhist <- function(inf_chain,
   ))
 }
 
-#' Plot historical attack rates with pointrange plots
-#'
-#' Plots inferred historical attack rates from the MCMC output on infection histories, with pointrange plots for per-time incidence estimates
-#' @param infection_histories the MCMC chain for infection histories
-#' @param antibody_data the data frame of antibody data
-#' @param possible_exposure_times vector of the epochs of potential infection
-#' @param n_alive vector with the number of people alive in each year of possible infection Can be left as NULL, and the `birth` variable in `antibody_data` will be used to calculate the number alive
-#' @param resolution divides `possible_exposure_times` by this number for x axis labels
-#' @param pointsize graphics option, numeric - how big should each point be?
-#' @param fatten graphics option, numeric - fatten parameter for ggplot pointrange
-#' @param pad_chain if TRUE, fills the infection history data table with entries for non-infection events (ie. 0s). Can be switched to FALSE for speed to get a rough idea of what the attack rates look like.
-#' @param prior_pars if not NULL, a list of parameters for the attack rate prior, giving the assumed prior_version along with infection_model_prior_shape1 and infection_model_prior_shape2
-#' @param plot_den if TRUE, produces a violin plot of attack rates rather than pointrange
-#' @param plot_ribbon if TRUE, plots a ribbon over time for the attack rate estimates, otherwise plots a pointrange plot
-#' @param true_ar data frame of true attack rates, with first column `time` matching `possible_exposure_times`, and second column `AR` giving the attack rate. Column names: population_group, time, AR
-#' @param by_group if TRUE, facets the plot by population_group ID
-#' @param group_subset if not NULL, plots only this subset of groups eg. 1:5
-#' @param plot_residuals if TRUE, plots the residuals between inferred and true attack rate
-#' @param colour_by_taken if TRUE, then colours the attack rates by whether or not titres against the circulating antigen at that time were measured
-#' @param by_val frequency of x-axis labels
-#' @param settings if not NULL, list of serosolver settings as returned from the main serosolver function
-#' @return a ggplot2 object with the inferred attack rates for each potential epoch of circulation
-#' @export
-plot_attack_rates <- function(infection_histories, 
-                                         antibody_data=NULL, 
-                                         demographics = NULL,
-                                         par_tab=NULL,
-                                         possible_exposure_times=NULL, 
-                              n_alive = NULL,
-                              pointsize = 1, fatten = 1,
-                              pad_chain = FALSE, prior_pars = NULL,
-                              plot_den = FALSE,
-                              plot_ribbon=FALSE,
-                              true_ar = NULL, by_group = FALSE,
-                              group_subset = NULL, plot_residuals = FALSE,
-                              colour_by_taken = TRUE, by_val = 5,
-                              min_time=min(possible_exposure_times),max_time=max(possible_exposure_times),
-                              settings=NULL) {
-  ## Some year/sample combinations might have no infections there.
-  ## Need to make sure that these get considered
-  if (is.null(infection_histories$chain_no)) {
-    infection_histories$chain_no <- 1
-  }
 
   ## If the list of serosolver settings was included, use these rather than passing each one by one
   if(!is.null(settings)){

@@ -9,7 +9,6 @@
 #' @param gaussian_proposal if TRUE, then samples moves from a Gaussian distribution centered around the current value
 #' @return the parameter vector after step
 #' @family proposals
-#' @export
 #' @useDynLib serosolver
 univ_proposal <- function(values, lower_bounds, upper_bounds, steps, index, gaussian_proposal=TRUE) {
   rtn <- values
@@ -62,7 +61,6 @@ univ_proposal <- function(values, lower_bounds, upper_bounds, steps, index, gaus
 #' @param beta Beta as in Rosenthal and Roberts 2009
 #' @return a parameter vector of a proposed move. Note that these may fall outside the allowable ranges.
 #' @family proposals
-#' @export
 #' @useDynLib serosolver
 mvr_proposal <- function(values, fixed, cov_mat, cov_mat0 = NULL, use_log = FALSE, beta = 0.05) {
   proposed <- values

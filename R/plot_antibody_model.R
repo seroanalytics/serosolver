@@ -147,11 +147,12 @@ plot_model_fits <- function(chain, infection_histories,
                             subset_biomarker_groups = NULL,
                             start_level="none",
                             settings=NULL,
-                            exponential_waning=NULL
+                            exponential_waning=NULL,
+                            verbose=FALSE
 ) {
   ## If the list of serosolver settings was included, use these rather than passing each one by one
   if(!is.null(settings)){
-    message("Using provided serosolver settings list")
+    if(verbose) message("Using provided serosolver settings list")
     if(is.null(antigenic_map)) antigenic_map <- settings$antigenic_map
     if(is.null(possible_exposure_times)) possible_exposure_times <- settings$possible_exposure_times
     if(is.null(measurement_bias)) measurement_bias <- settings$measurement_bias
@@ -177,12 +178,13 @@ plot_model_fits <- function(chain, infection_histories,
   if(class(start_level) == "character"){
   start_levels <- create_start_level_data(antibody_data %>% 
                                             dplyr::filter(individual %in% individuals),start_level,FALSE) %>% 
-                                            dplyr::arrange(individual, biomarker_group, sample_time, biomarker_id, repeat_number)
+                                            dplyr::arrange(individual, biomarker_group, sample_time, biomarker_id, repeat_number) %>% dplyr::filter(repeat_number == 1)
   } else if(class(start_level) %in% c("tibble","data.frame")){
     start_levels <- start_level
   } else {
     start_levels <- NULL
   }
+
   ## Generate antibody predictions
   antibody_preds <- get_antibody_level_predictions(
     chain, infection_histories, antibody_data, 
@@ -418,10 +420,11 @@ plot_antibody_predictions <- function(chain, infection_histories,
                                       data_type=1,
                                       start_level="none",
                                       settings=NULL,
-                                      exponential_waning=NULL){
+                                      exponential_waning=NULL,
+                                      verbose=FALSE){
   ## If the list of serosolver settings was included, use these rather than passing each one by one
   if(!is.null(settings)){
-    message("Using provided serosolver settings list")
+    if(verbose) message("Using provided serosolver settings list")
     if(is.null(antigenic_map)) antigenic_map <- settings$antigenic_map
     if(is.null(measurement_bias)) measurement_bias <- settings$measurement_bias
     if(is.null(antibody_data)) antibody_data <- settings$antibody_data
@@ -451,7 +454,7 @@ plot_antibody_predictions <- function(chain, infection_histories,
   }
   ## Make sure that we're not trying to use more samples than there are in the MCMC chain
   if(nsamp > length(unique(chain$samp_no))){ 
-    message("Number of samples requested is greater than the number of samples in the MCMC chain. Using maximum number of samples available.")
+    if(verbose) message("Number of samples requested is greater than the number of samples in the MCMC chain. Using maximum number of samples available.")
   }
   nsamp <- min(nsamp, length(unique(chain$samp_no)))
   
@@ -578,10 +581,11 @@ plot_estimated_antibody_model <- function(chain,
                                           by_group=TRUE,
                                           add_prediction_intervals=FALSE,
                                           exponential_waning=NULL,
-                                          set_infections=NULL){
-    ## If the list of serosolver settings was included, use these rather than passing each one by one
+                                          set_infections=NULL,
+                                          verbose=FALSE){
+  ## If the list of serosolver settings was included, use these rather than passing each one by one
   if(!is.null(settings)){
-    message("Using provided serosolver settings list")
+    if(verbose) message("Using provided serosolver settings list")
     if(is.null(antigenic_map)) antigenic_map <- settings$antigenic_map
     if(is.null(possible_exposure_times)) possible_exposure_times <- settings$possible_exposure_times
     if(is.null(measurement_bias)) measurement_bias <- settings$measurement_bias
@@ -707,14 +711,15 @@ plot_estimated_antibody_model <- function(chain,
   ## Get blanks for ranges
   ranges <- par_tab[par_tab$names %in% c("min_measurement","max_measurement"),c("names","values","biomarker_group")] %>% pivot_wider(names_from=names,values_from=values)  
 
-  
+  browser()
   if(by_group){
     dat2$biomarker_id <- as.factor(dat2$biomarker_id)
     obs_dat$biomarker_id <- as.factor(obs_dat$biomarker_id)
     
-    p1 <- ggplot(dat2) + 
-      geom_hline(data=ranges, aes(yintercept=min_measurement),linetype="dotted",linewidth=0.25) +
-      geom_hline(data=ranges, aes(yintercept=max_measurement),linetype="dotted",linewidth=0.25)
+    ## Over time
+    p1 <- ggplot(dat2)# + 
+      #geom_hline(data=ranges, aes(yintercept=min_measurement),linetype="dotted",linewidth=0.25) +
+      #geom_hline(data=ranges, aes(yintercept=max_measurement),linetype="dotted",linewidth=0.25)
     if(add_prediction_intervals){
       p1 <- p1 +  geom_ribbon(data=obs_dat, aes(x=sample_time,ymin=lower,ymax=upper,y=mean,fill=biomarker_id,group=biomarker_id),alpha=0.1)
     }
@@ -730,10 +735,12 @@ plot_estimated_antibody_model <- function(chain,
       theme_pubr()+
       theme(legend.position="bottom") +
       facet_wrap(paste0("Biomarker group: ", biomarker_group)~Group)
+     
+     
   } else {
-    p1 <- ggplot(dat2) + 
-      geom_hline(data=ranges, aes(yintercept=min_measurement),linetype="dotted",linewidth=0.25) +
-      geom_hline(data=ranges, aes(yintercept=max_measurement),linetype="dotted",linewidth=0.25)
+    p1 <- ggplot(dat2)# + 
+      #geom_hline(data=ranges, aes(yintercept=min_measurement),linetype="dotted",linewidth=0.25) +
+      #geom_hline(data=ranges, aes(yintercept=max_measurement),linetype="dotted",linewidth=0.25)
     if(add_prediction_intervals){
       p1 <- p1 + geom_ribbon(data=obs_dat, aes(x=sample_time,ymin=lower,ymax=upper,y=mean,fill=Group,group=Group),alpha=0.1)     }
     p1 <- p1 + 

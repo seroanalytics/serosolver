@@ -1,38 +1,46 @@
-#' Adaptive Metropolis-within-Gibbs/Metropolis Hastings Random Walk Algorithm.
+#' Run the serosolver model
 #'
 #' The Adaptive Metropolis-within-Gibbs algorithm. Given a starting point and the necessary MCMC parameters as set out below, performs a random-walk of the posterior space to produce an MCMC chain that can be used to generate MCMC density and iteration plots. The algorithm undergoes an adaptive period, where it changes the step size of the random walk for each parameter to approach the desired acceptance rate, target_acceptance_rate_theta. The algorithm then uses \code{\link{univ_proposal}} or \code{\link{mvr_proposal}} to explore parameter space, recording the value and posterior value at each step. The MCMC chain is saved in blocks as a .csv file at the location given by filename. This version of the algorithm is also designed to explore posterior densities for infection histories. See the package vignettes for examples. 
 #' @param par_tab The parameter table controlling information such as bounds, initial values etc. See \code{\link{example_par_tab}}
 #' @param antibody_data The data frame of titre data to be fitted. Must have columns: group (index of group); individual (integer ID of individual); samples (numeric time of sample taken); virus (numeric time of when the virus was circulating); titre (integer of titre value against the given virus at that sampling time); run (integer giving the repeated number of this titre); DOB (integer giving date of birth matching time units used in model). See \code{\link{example_antibody_data}}
-#' #' @param demographics if not NULL, then a tibble for each individual (1:n_indiv) giving demographic variable entries. Most importantly must include "birth" as the birth time. This is used if, for example, you have a stratification grouping in `par_tab`
+#' @param demographics if not NULL, then a tibble for each individual (1:n_indiv) giving demographic variable entries. Most importantly must include "birth" as the birth time. This is used if, for example, you have a stratification grouping in `par_tab`
 #' @param antigenic_map (optional) A data frame of antigenic x and y coordinates. Must have column names: x_coord; y_coord; inf_times. See \code{\link{example_antigenic_map}}
 #' @param possible_exposure_times (optional) this argument gives the vector of times at which individuals can be infected. Defaults to entries in `antigenic_map`.
 #' @param mcmc_pars Named vector named vector with parameters for the MCMC procedure. See details
-#' @param mvr_pars Leave NULL to use univariate proposals. Otherwise, a list of parameters if using a multivariate proposal. Must contain an initial covariance matrix, weighting for adapting cov matrix, and an initial scaling parameter (0-1)
+#' @param n_chains 
+#' @param parallel
 #' @param start_inf_hist Infection history matrix to start MCMC at. Can be left NULL. See \code{\link{example_inf_hist}}
+#' @param fixed_inf_hist
 #' @param filename The full filepath at which the MCMC chain should be saved. "_chain.csv" will be appended to the end of this, so filename should have no file extensions
-#' @param posterior_func Pointer to posterior function used to calculate a likelihood. This will probably be \code{\link{create_posterior_func}}
 #' @param prior_func User function of prior for model parameters. Should take parameter values only
 #' @param prior_version which infection history assumption prior_version to use? See \code{\link{describe_priors}} for options. Can be 1, 2, 3 or 4
 #' @param measurement_bias optional NULL. For measurement bias function. Vector of indices of length equal to number of circulation times. For each year, gives the index of parameters named "rho" that correspond to each time period
-#' @param measurement_random_effects optional FALSE. Boolean indicating if measurement bias is a random effects term. If TRUE adds a component to the posterior calculation that calculates the probability of a set of measurement shifts "rho", given a mean and standard deviation
 #' @param proposal_ratios optional NULL. Can set the relative sampling weights of the infection state times. Should be an integer vector of length matching nrow(antigenic_map). Otherwise, leave as NULL for uniform sampling.
 #' @param random_start_parameters if FALSE, uses whatever parameter values were passed in `par_tab` as the starting positions for the MCMC chain
 #' @param temp Temperature term for parallel tempering, raises likelihood to this value. Just used for testing at this point
 #' @param solve_likelihood if FALSE, returns only the prior and does not solve the likelihood. Use this if you wish to sample directly from the prior
 #' @param n_alive if not NULL, uses this as the number alive for the infection history prior, rather than calculating the number alive based on antibody_data
-#' @param OPT_TUNING Constant describing the amount of leeway when adapting the proposals steps to reach a desired acceptance rate (ie. does not change step size if within OPT_TUNING of the specified acceptance rate)
+#' @param random_start_parameters
+#' @param start_level
+#' @param data_type
+#' @param mv_proposals If TRUE, uses a multivariate normal distribution for the proposal distribution. FALSE uses univariate proposals. It is advised to leave this as FALSE, multivariate proposals seems to generally be inefficient for serosolver.
 #' @param verbose if TRUE, prints progress updates during the run
 #' @param verbose_dev if TRUE, prints additional messages regarding step sizes, acceptance rates etc
 #' @param exponential_waning if TRUE, assumes exponential waning of antibody titres rather than linear waning
 #' @param ... Other arguments to pass to posterior_func
+#' @param inf_hist_mcmc_summaries
+#' @param plot_outputs
+#' @param ... Other arguments to pass to create_posterior_func
 #' @return A list with: 1) relative file path at which the MCMC chain is saved as a .csv file; 2) relative file path at which the infection history chain is saved as a .csv file; 3) the last used covariance matrix if mvr_pars != NULL; 4) the last used scale/step size (if multivariate proposals) or vector of step sizes (if univariate proposals)
 #' @details
-#' The `mcmc_pars` argument has the following options:
+#' The `mcmc_pars` argument is a named vector allowing control over many MCMC options. The key options are:
 #'  * iterations (number of post adaptive period iterations to run)
 #'  * adaptive_iterations (for this many iterations, change proposal step size adaptively every `adaptive_frequency` iterations)
 #'  * adaptive_frequency (adapt proposal step size every adaptive_frequency iterations)
-#'  * thin (save every n iterations from theta samples)
-#'  * thin_inf_hist (save every n iterations from infection history samples)
+#'  * thin (save every n iterations from kinetics parameters samples, advised for long chains, advised to set such that iterations/thin is no more than 1000)
+#'  * thin_inf_hist (save every n iterations from infection history samples, advised to set such that iterations/thin_inf_hist is no more than 1000)
+#'  
+#'  Additional arguments for more precise control, not relevant for the majority of users:
 #'  * proposal_inf_hist_indiv_prop (proportion of individuals resampled at each infection history proposal)
 #'  * save_block (after this many iterations (post thinning), save to disk)
 #'  * target_acceptance_rate_theta (desired acceptance rate for theta parameters)
@@ -46,14 +54,13 @@
 #'  * proposal_inf_hist_group_swap_prop (when swapping contents of two time points, what proportion of individuals should have their contents swapped, between 0 and 1)
 #'  * propose_from_prior (set to 1 to sample directly from the infection history prior, or 0 for independent proposals. Sometimes one version works better than the other, so try switching if you are getting poor infection history convergence)
 #' @md
-#' @seealso \url{https://github.com/jameshay218/lazymcmc}
 #' @family mcmc
 #' @examples
 #' \dontrun{
 #' data(example_antibody_data)
 #' data(example_par_tab)
 #' data(example_antigenic_map)
-#' res <- serosolver(example_par_tab[example_par_tab$names != "phi",], example_antibody_data, example_antigenic_map, prior_version=2)
+#' res <- serosolver(example_par_tab, example_antibody_data, example_antigenic_map)
 #' }
 #' @export
 serosolver <- function(par_tab,
@@ -62,22 +69,19 @@ serosolver <- function(par_tab,
                      antigenic_map=NULL,
                      possible_exposure_times=NULL,
                      mcmc_pars = c(),
-                     mvr_pars = NULL,
+                     mv_proposals = FALSE,
                      n_chains=1,
                      parallel=FALSE,
                      start_inf_hist = NULL,
                      fixed_inf_hists = NULL,
                      filename = "test",
-                     posterior_func = create_posterior_func,
                      prior_func = NULL,
                      prior_version = 2,
                      measurement_bias = NULL,
-                     measurement_random_effects = FALSE,
                      proposal_ratios = NULL,
                      temp = 1,
                      solve_likelihood = TRUE,
                      n_alive = NULL,
-                     OPT_TUNING = 0.1,
                      random_start_parameters=TRUE,
                      start_level="none",
                      data_type=1,
@@ -85,50 +89,25 @@ serosolver <- function(par_tab,
                      verbose_dev=FALSE,
                      inf_hist_mcmc_summaries=TRUE,
                      exponential_waning=FALSE,
+                     plot_outputs=TRUE,
                      ...) {
-  on.exit(serosolver::unregister_dopar)
+  message(cat("================================ Running serosolver ================================\n"))
+  on.exit(serosolver::unregister_dopar())
   ###################################################################
   ## Sort out MCMC parameters --------------------------------------
-  ## Set up parallel cluster if requests
-  if(n_chains > 1){
-    if(parallel){
-      library(doRNG)
-      library(foreach)
-      library(parallel)
-      #library(doFuture)
-      #registerDoFuture()
-      `%execute%` <- `%dorng%`
-      #`%execute%` <- `%dofuture%`
-      if(verbose) {
-        message(cat("Requested", n_chains, "MCMC chains in parallel, setting up parallel session using doParallel package\n",sep=" "))
-        message(cat("Progress messages will be piped to ", filename, "_log.txt when `parallel` is set to true\n",sep=""))
-      } else {
-        message(cat("\n",sep=" "))
-      }
-      cl <- makeCluster(min(n_chains,detectCores()))
-      registerDoParallel(cl)
-      on.exit(stopCluster(cl))
-      #future::plan(multisession,workers=detectCores())
-      
-    } else {
-      `%execute%` <- `%do%`
-      if(verbose) message(cat("Requested", n_chains, "MCMC chains\n",sep=" "))
-    }
-  } else {
-    `%execute%` <- `%do%`
-  }
+  OPT_TUNING <- 0.1
   
   mcmc_pars_used <- c(
     "iterations" = 50000, 
     "adaptive_iterations" = 10000,
     "adaptive_frequency" = 2000, 
     "save_block" = 100, 
+    "thin" = 1,
+    "thin_inf_hist" = 10, 
+    
     
     "target_acceptance_rate_theta" = 0.44, 
     "target_acceptance_rate_inf_hist" = 0.44, 
-    
-    "thin" = 1,
-    "thin_inf_hist" = 10, 
     
     "proposal_inf_hist_indiv_prop" = 0.5, 
     "proposal_ratio" = 2,
@@ -182,10 +161,10 @@ serosolver <- function(par_tab,
   
   ## Add stratifications to par_tab based on what's available in antibody_data or demographics
   par_tab <- add_scale_pars(par_tab,antibody_data, demographics)
-  par_tab <- check_par_tab(par_tab, TRUE,possible_exposure_times=possible_exposure_times, version=prior_version,verbose)
+  par_tab <- check_par_tab(par_tab, TRUE,possible_exposure_times=possible_exposure_times, version=prior_version,verbose_dev)
     
   if(!is.null(start_inf_hist)){
-    check_inf_hist(antibody_data, possible_exposure_times, start_inf_hist,verbose=verbose)
+    check_inf_hist(antibody_data, possible_exposure_times, start_inf_hist,verbose=verbose_dev)
   }
     
   ## Sort out which prior_version to run --------------------------------------
@@ -208,7 +187,7 @@ serosolver <- function(par_tab,
   } else { ## By default, use phi prior_version
     stop("Invalid version specified - must be 1 (phi), 2 (beta on times), 3 (beta on individual) or 4 (beta on overall).\n")
   }
-  if(verbose) message(cat(prop_print, "\n"))
+  if(verbose_dev) message(cat(prop_print))
 
   ## Extract parameter settings
   par_names <- as.character(par_tab$names) # Parameter names
@@ -220,8 +199,7 @@ serosolver <- function(par_tab,
   ## Parameter constraints
   lower_bounds <- par_tab$lower_bound # Parameters cannot step below this
   upper_bounds <- par_tab$upper_bound # Parameters cannot step above this
-  steps <- par_tab$steps # How far to step on unit scale to begin with? "steps" will be added above by check_par_tab
-
+  steps_global <- par_tab$steps # How far to step on unit scale to begin with? "steps" will be added above by check_par_tab
   ## If using phi terms, pull their indices out of the parameter table
   phi_indices <- NULL
   if ("phi" %in% par_names) {
@@ -288,7 +266,7 @@ serosolver <- function(par_tab,
 
   ## Create posterior calculating function
   posterior_simp <- #protect_posterior(
-    posterior_func(par_tab,
+    create_posterior_func(par_tab,
                                            antibody_data,
                                            antigenic_map,
                                            possible_exposure_times,
@@ -304,6 +282,7 @@ serosolver <- function(par_tab,
                    fixed_inf_hists=fixed_inf_hists,
                                            verbose=verbose,
                    exponential_waning=exponential_waning,
+                                           verbose=verbose_dev,
                                            ...
 #)
 )
@@ -315,7 +294,7 @@ serosolver <- function(par_tab,
   ## If using gibbs proposal on infection_history, create here
   if (hist_proposal == 2) {
     proposal_gibbs <- #protect_posterior(
-      posterior_func(par_tab,
+      create_posterior_func(par_tab,
                                              antibody_data,
                                              antigenic_map,
                                              possible_exposure_times,
@@ -331,14 +310,12 @@ serosolver <- function(par_tab,
                      fixed_inf_hists=fixed_inf_hists,
                                              verbose=FALSE,
                      exponential_waning=exponential_waning,
+                                             verbose=verbose_dev,
                                              ...
-   #)
+
  )
   }
-  
-  if (measurement_random_effects) {
-    prior_shifts <- create_prob_shifts(par_tab)
-  }
+
   ######################
 
   ## Create closure to add extra prior probabilities, to avoid re-typing later
@@ -368,12 +345,11 @@ serosolver <- function(par_tab,
       }
     }
     if (!is.null(prior_func)) prior_probab <- prior_probab + prior_func(prior_pars)
-    if (measurement_random_effects) prior_probab <- prior_probab + prior_shifts(prior_pars)
     prior_probab
   }
 
   log_file <- paste0(filename,"_log.txt")
-  if(parallel){
+  if(parallel & n_chains > 1){
     writeLines(c(""), log_file)
   }
   
@@ -393,14 +369,48 @@ serosolver <- function(par_tab,
                               )
 
   save(serosolver_settings,file=paste0(filename,"_serosolver_settings.RData"))
+  
+  ## Set up parallel cluster if requests
+  if(n_chains > 1){
+    if(parallel){
+      library(doRNG)
+      library(foreach)
+      library(parallel)
+      #library(doFuture)
+      #doFuture::registerDoFuture()
+      `%execute%` <- `%dorng%`
+      #`%execute%` <- `%dofuture%`
+      if(verbose) {
+        message(cat("Requested", n_chains, "chains in parallel, setting up parallel session using the parallel package\n",sep=" "))
+        message(cat("Progress messages will be piped to ", filename, "_log.txt when `parallel` is set to true\n",sep=""))
+      }
+      cl <- makeCluster(min(n_chains,detectCores()))
+      registerDoParallel(cl)
+      on.exit(stopCluster(cl))
+      #future::plan(multisession,workers=min(n_chains,detectCores()))
+      #on.exit(plan(sequential))
+      
+    } else {
+      `%execute%` <- `%do%`
+      if(verbose) message(cat("Requested", n_chains, "MCMC chains\n",sep=" "))
+    }
+  } else {
+    if(verbose) message(cat("Requested", n_chains, "MCMC chains\n",sep=" "))
+    `%execute%` <- `%do%`
+  }
+  par_tab_global <- par_tab
+  if(verbose) message(cat("Model fitting started\n"))
   result <- foreach(chain = 1:n_chains, 
                     .packages =c("serosolver","data.table","dplyr","tidyr")
-                    #.options.future =list(globals=structure(TRUE),seed = TRUE,packages = c("serosolver","data.table","dplyr","tidyr"))
+                    #.options.future =list(seed = TRUE,packages = c("serosolver","data.table","dplyr","tidyr"),globals=structure(TRUE,add="steps_global"))
                     ) %execute% {
-                      
-  #for(chain in 1:n_chains){
-    if(parallel){
-      sink(log_file,append=TRUE)                    
+   steps <- steps_global       
+                     #for(chain in 1:n_chains){       
+    #steps <- par_tab_global$steps
+    ## Assert some global variables
+    if(parallel & n_chains >1){
+      sink(log_file,append=TRUE)        
+      on.exit(sink())
     }
     ## Setup MCMC chain file with correct column names
     mcmc_chain_file <- paste0(filename, "_",chain,"_chain.csv")
@@ -424,8 +434,12 @@ serosolver <- function(par_tab,
       }
       
       if (random_start_parameters){
-        par_tab <- generate_start_tab(par_tab)
+        par_tab <- generate_start_tab(par_tab_global)
+      } else {
+        par_tab <- par_tab_global
       }
+    
+  
       current_pars <- par_tab$values # Starting parameters
       
       ## Initial likelihoods and individual priors
@@ -463,7 +477,8 @@ serosolver <- function(par_tab,
     infection_history_swap_n <- infection_history_swap_accept <- 0
     ## Arrays to store acceptance rates
     ## If univariate proposals, store vector of acceptances
-    if (is.null(mvr_pars)) {
+    #steps <- par_tab$steps
+    if (!mv_proposals) {
       tempaccepted <- tempiter <- integer(param_length)
       reset <- integer(param_length)
       reset[] <- 0
@@ -472,9 +487,10 @@ serosolver <- function(par_tab,
       ## Also extract covariance matrix, scale of proposal steps, and how
       ## much weighting to give to previous covariance matrix upon adaptive update
       tempaccepted <- tempiter <- reset <- 0
-      cov_mat <- mvr_pars[[1]][unfixed_pars, unfixed_pars]
-      steps <- mvr_pars[[2]]
-      w <- mvr_pars[[3]]
+      cov_mat <- diag(unfixed_par_length) # Initial covariance matrix
+      cov_mat0 <- diag(unfixed_par_length)
+      steps1 <- (2.38^2)/unfixed_par_length # Initial step size
+      w <- 0.99
     }
   
     
@@ -493,7 +509,9 @@ serosolver <- function(par_tab,
   
       ## Scaling of infection history time proposal sample probs    
       if(is.null(proposal_ratios)){
-          proposal_ratios <- rep(1, length(possible_exposure_times))
+          proposal_ratios_local <- rep(1, length(possible_exposure_times))
+      } else {
+        proposal_ratios_local <- proposal_ratios
       }
   
       n_infs_vec <- rep(n_infs, n_indiv) # How many infection history moves to make with each proposal
@@ -531,7 +549,6 @@ serosolver <- function(par_tab,
     par_i <- 1
     chain_index <- 1
   
-    cov_mat0 <- diag(unfixed_pars)
     
     
     #####################
@@ -582,7 +599,7 @@ serosolver <- function(par_tab,
             units <- "seconds"
           }
           
-          message(cat("Chain ", chain, ": ", signif(proportion_iterations_done*100, 2), "% done.  Iteration: ", i, ". Estimated time remaining: ", signif(t_remaining,2), " ", units,  "\n", sep = ""))
+          message(cat("Chain ", chain, ": ", signif(proportion_iterations_done*100, 2), "% done.  Iteration: ", i, ". Estimated time remaining: ", signif(t_remaining,2), " ", units, "\n",  sep = ""))
         }
       }
       ######################
@@ -601,7 +618,7 @@ serosolver <- function(par_tab,
           tempiter <- tempiter + 1
         } else { ## Else propose parameters
           ## If using univariate proposals
-          if (is.null(mvr_pars)) {
+          if (!mv_proposals) {
             ## For each parameter (Gibbs)
             j <- unfixed_pars[par_i]
             par_i <- par_i + 1
@@ -611,8 +628,9 @@ serosolver <- function(par_tab,
             ## If using multivariate proposals
           } else {
             proposal <- mvr_proposal(current_pars, unfixed_pars, steps * cov_mat,
-              steps * cov_mat0, FALSE,
-              beta = 0.05
+                                     steps * cov_mat0, 
+              FALSE,
+              beta = 1e-5
             )
             tempiter <- tempiter + 1
           }
@@ -683,7 +701,7 @@ serosolver <- function(par_tab,
                       histaccepted_move,
                       overall_swap_proposals,
                       overall_add_proposals,
-                      proposal_ratios,
+                      proposal_ratios_local,
                       temp,
                       propose_from_prior
                   )
@@ -769,7 +787,7 @@ serosolver <- function(par_tab,
               if (length(unfixed_pars) == 0) {
                 tempaccepted <- tempaccepted + 1
               } else {
-                if (is.null(mvr_pars)) {
+                if (!mv_proposals) {
                   tempaccepted[j] <- tempaccepted[j] + 1
                 } else {
                   tempaccepted <- tempaccepted + 1
@@ -924,19 +942,19 @@ serosolver <- function(par_tab,
         ## If in an adaptive step
         if (chain_index %% adaptive_frequency == 0) {
           ## If using univariate proposals
-          if (is.null(mvr_pars)) {
+          if (!mv_proposals) {
             ## For each non fixed parameter, scale the step size
             for (x in unfixed_pars) steps[x] <- scaletuning(steps[x], target_acceptance_rate_theta, pcur[x])
           } else {
-            if (chain_index > OPT_TUNING * adaptive_iterations & chain_index < adaptive_iterations) {
+            if (chain_index > 0.2 * adaptive_iterations & chain_index < adaptive_iterations) {
               old_cov_mat <- cov_mat
               ## Creates a new covariance matrix, but weights it with the old one
               cov_mat <- cov(opt_chain[1:chain_index, ])
               cov_mat <- w * cov_mat + (1 - w) * old_cov_mat
             }
-            ## Scale tuning for last 80% of the adaptive period
-            if (chain_index > (0.2) * adaptive_iterations) {
-                steps <- scaletuning(steps, target_acceptance_rate_theta, pcur)
+            ## Scale tuning for last 20% of the adaptive period
+            if (chain_index > (0.8) * adaptive_iterations) {
+              steps <- scaletuning(steps, target_acceptance_rate_theta, pcur)
             }
           }
             pcur_hist <- histaccepted / histiter
@@ -1024,13 +1042,16 @@ serosolver <- function(par_tab,
                              )
       }
   
-      if (is.null(mvr_pars)) {
+      if (!mv_proposals) {
           cov_mat <- NULL
       }
     if(parallel) sink()
     final <- c("chain_file" = mcmc_chain_file, "history_file" = infection_history_file)
     final
-  }
+                    }
+  if(verbose){ message(cat("Model fitting done!\n"))}
+  
+  #plan(sequential)
   serosolver::unregister_dopar()
   if(verbose){ message(cat("Generating MCMC diagnostics\n"))}
   saved_wd <- paste(strsplit(filename, "/")[[1]][-length(strsplit(filename, "/")[[1]])],sep="/",collapse="/")
@@ -1053,8 +1074,37 @@ serosolver <- function(par_tab,
   chain_files <- c(sapply(result,function(x) x[1]))
   infection_history_files <- c(sapply(result,function(x) x[2]))
   
-  if(verbose){ message(cat("Done!\n"))}
+  ## Generate output plots
+  if(plot_outputs){
+    if(verbose){ message(cat("Generating output plots\n"))}
+    chains <- load_mcmc_chains(location=saved_wd,par_tab=par_tab_global,burnin = adaptive_iterations,verbose=FALSE)
+    max_samps <- min(iterations/thin, nrow(chains$theta_chain))
+    antibody_predictions <- plot_antibody_predictions(chains$theta_chain,chains$inf_chain,settings=serosolver_settings,nsamp=max_samps)
+
+    plot_longitudinal <- plot_model_fits(chains$theta_chain,chains$inf_chain,individuals = 1:min(n_indiv, 5),
+                              known_infection_history=NULL, ## Set this to NULL for real data
+                              settings=serosolver_settings,orientation="longitudinal",expand_to_all_times = TRUE) + 
+      facet_wrap(~individual,ncol=1)
+    
+    
+    plot_cross_sectional <- plot_model_fits(chains$theta_chain,chains$inf_chain,individuals = 1:min(n_indiv, 5),
+                              known_infection_history=NULL, ## Set this to NULL for real data
+                              settings=serosolver_settings,orientation="cross-sectional",expand_to_all_times = FALSE)
+    
+    p_ar <- plot_attack_rates(chains$inf_chain,settings = serosolver_settings,by_group=TRUE,plot_den = FALSE)
+    p_ab_model <- plot_estimated_antibody_model(chains$theta_chain,settings=output$settings,solve_times = possible_exposure_times)
+  } else {
+    antibody_predictions <- NULL
+    plot_longitudinal <- NULL
+    plot_cross_sectional <- NULL
+    p_ar <- NULL
+  }
+  
+  if(verbose){ message(cat("================================ Finished ================================\n"))}
   
   return(list(chain_files=chain_files, infection_history_files=infection_history_files,all_diagnostics=all_diagnostics,
-              diagnostic_warnings=diagnostic_warnings, settings=serosolver_settings))
+              diagnostic_warnings=diagnostic_warnings, settings=serosolver_settings,
+              antibody_predictions=antibody_predictions, plot_fits_longitudinal=plot_longitudinal,
+              plot_fits_cross_sectional=plot_cross_sectional, plot_attack_rates=p_ar,
+              mcmc_chains=chains))
 }

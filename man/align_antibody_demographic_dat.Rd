@@ -4,7 +4,11 @@
 \alias{align_antibody_demographic_dat}
 \title{Internal function -- merges antibody_data and demographics such that antibody_data has correct variables}
 \usage{
-align_antibody_demographic_dat(antibody_data, demographics = NULL)
+align_antibody_demographic_dat(
+  antibody_data,
+  demographics = NULL,
+  verbose = FALSE
+)
 }
 \description{
 Internal function -- merges antibody_data and demographics such that antibody_data has correct variables

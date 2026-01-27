@@ -23,6 +23,7 @@ start_tab <- generate_start_tab(example_par_tab)
 Other mcmc: 
 \code{\link{rm_scale}()},
 \code{\link{save_infection_history_to_disk}()},
+\code{\link{scaletuning_alt}()},
 \code{\link{scaletuning}()},
 \code{\link{serosolver}()}
 }
