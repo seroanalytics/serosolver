@@ -50,7 +50,9 @@ serosolver(
 
 \item{mv_proposals}{If TRUE, uses a multivariate normal distribution for the proposal distribution. FALSE uses univariate proposals. It is advised to leave this as FALSE, multivariate proposals seems to generally be inefficient for serosolver.}
 
-\item{n_chains}{}
+\item{n_chains}{Number of MCMC chains to run}
+
+\item{parallel}{if TRUE, runs multiple chains in parallel using the \code{doParallel} package}
 
 \item{start_inf_hist}{Infection history matrix to start MCMC at. Can be left NULL. See \code{\link{example_inf_hist}}}
 
@@ -72,19 +74,29 @@ serosolver(
 
 \item{random_start_parameters}{if FALSE, uses whatever parameter values were passed in \code{par_tab} as the starting positions for the MCMC chain}
 
+\item{start_level}{a data frame giving the starting biomarker level for each individual, biomarker_group and biomarker_id combination. If NULL, then starting levels are assumed to be 0.}
+
+\item{data_type}{int, defaults to 1 for discretized, bounded data. Set to 2 for continuous, bounded data}
+
 \item{verbose}{if TRUE, prints progress updates during the run}
 
 \item{verbose_dev}{if TRUE, prints additional messages regarding step sizes, acceptance rates etc}
 
+\item{inf_hist_mcmc_summaries}{if TRUE, calculates MCMC summaries of the infection history posterior draws. Set to FALSE to decrease run time, as this is a slow operation.}
+
 \item{exponential_waning}{if TRUE, assumes exponential waning of antibody titres rather than linear waning}
 
+\item{plot_outputs}{if TRUE, returns MCMC diagnostic plots. Defaults to TRUE.}
+
 \item{...}{Other arguments to pass to create_posterior_func}
+
+\item{fixed_inf_hist}{(optional) Data frame with columns "individual", "time" and "value", giving infection states that should be fixed during the MCMC run}
 }
 \value{
 A list with: 1) relative file path at which the MCMC chain is saved as a .csv file; 2) relative file path at which the infection history chain is saved as a .csv file; 3) the last used covariance matrix if mvr_pars != NULL; 4) the last used scale/step size (if multivariate proposals) or vector of step sizes (if univariate proposals)
 }
 \description{
-The Adaptive Metropolis-within-Gibbs algorithm. Given a starting point and the necessary MCMC parameters as set out below, performs a random-walk of the posterior space to produce an MCMC chain that can be used to generate MCMC density and iteration plots. The algorithm undergoes an adaptive period, where it changes the step size of the random walk for each parameter to approach the desired acceptance rate, target_acceptance_rate_theta. The algorithm then uses \code{\link{univ_proposal}} or \code{\link{mvr_proposal}} to explore parameter space, recording the value and posterior value at each step. The MCMC chain is saved in blocks as a .csv file at the location given by filename. This version of the algorithm is also designed to explore posterior densities for infection histories. See the package vignettes for examples.
+Core serosolver function running the adaptive Metropolis-within-Gibbs algorithm. Given a starting point and the necessary MCMC parameters as set out below, performs a random-walk of the posterior space to produce an MCMC chain that can be used to generate MCMC density and iteration plots. The algorithm undergoes an adaptive period, where it changes the step size of the random walk for each parameter to approach the desired acceptance rate, target_acceptance_rate_theta. The algorithm then uses \code{\link{univ_proposal}} or \code{\link{mvr_proposal}} to explore parameter space, recording the value and posterior value at each step. The MCMC chain is saved in blocks as a .csv file at the location given by filename. This version of the algorithm is also designed to explore posterior densities for infection histories. See the package vignettes for examples.
 }
 \details{
 The \code{mcmc_pars} argument is a named vector allowing control over many MCMC options. The key options are:

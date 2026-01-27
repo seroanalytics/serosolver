@@ -371,12 +371,12 @@ theme_pubr <- function (base_size = 12, base_family = "", border = FALSE, margin
   else xhjust <- NULL
   if (border) {
     panel.border <- element_rect(fill = NA, colour = "black", 
-                                 size = 0.7)
+                                 linewidth = 0.7)
     axis.line <- element_blank()
   }
   else {
     panel.border <- element_blank()
-    axis.line = element_line(colour = "black", size = 0.5)
+    axis.line = element_line(colour = "black", linewidth = 0.5)
   }
   if (margin) 
     plot.margin <- margin(half_line, half_line, half_line, 
@@ -387,7 +387,7 @@ theme_pubr <- function (base_size = 12, base_family = "", border = FALSE, margin
           panel.grid.minor = element_blank(), axis.line = axis.line, 
           axis.text = element_text(color = "black"), legend.key = element_blank(), 
           strip.background = element_rect(fill = "#F2F2F2", 
-                                          colour = "black", size = 0.7), plot.margin = plot.margin, 
+                                          colour = "black", linewidth = 0.7), plot.margin = plot.margin, 
           legend.position = legend, complete = TRUE)
   if (x.text.angle != 0) 
     .theme <- .theme + theme(axis.text.x = element_text(angle = x.text.angle, 

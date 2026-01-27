@@ -137,7 +137,8 @@ get_antibody_level_predictions <- function(chain, infection_histories, antibody_
                                      measurement_bias = measurement_bias, function_type = 4,
                                       antibody_level_before_infection=antibody_level_before_infection,
                                       data_type=data_type,start_level=start_level1,
-                                     demographics=demographics,demographic_groups=demographic_groups
+                                     demographics=demographics,demographic_groups=demographic_groups,
+                                     exponential_waning=exponential_waning
   )
   
   predicted_titres <- residuals <- residuals_floor <- 

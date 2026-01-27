@@ -18,7 +18,7 @@
 #' @param data_type if not NULL, then a vector of data types to use for each biomarker_group
 #' @param demographics if not NULL, then a tibble for each individual (1:n_indiv) giving demographic variable entries. Most importantly must include "birth" as the birth time. This is used if, for example, you have a stratification grouping in `par_tab`
 #' @param verbose if TRUE, prints additional messages
-#' @param starting_levels
+#' @param starting_levels a data frame giving the starting biomarker level for each individual, biomarker_group and biomarker_id combination. If NULL, then starting levels are assumed to be 0.
 #' @param exponential_waning if TRUE, uses exponential waning function rather than linear waning
 #' @return a list with: 1) the data frame of antibody data as returned by \code{\link{simulate_group}}; 2) a matrix of infection histories as returned by \code{\link{simulate_infection_histories}}; 3) a vector of ages
 #' @family simulation_functions

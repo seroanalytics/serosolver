@@ -60,6 +60,8 @@ simulate_data(
 
 \item{verbose}{if TRUE, prints additional messages}
 
+\item{starting_levels}{a data frame giving the starting biomarker level for each individual, biomarker_group and biomarker_id combination. If NULL, then starting levels are assumed to be 0.}
+
 \item{exponential_waning}{if TRUE, uses exponential waning function rather than linear waning}
 
 \item{measurement_indices}{default NULL, optional vector giving the index of `measurement_bias` that each antigen/biomarker ID uses the measurement shift from from. eg. if there's 6 circulation years and 3 strain clusters, then this might be c(1,1,2,2,3,3)}
