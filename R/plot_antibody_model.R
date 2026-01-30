@@ -42,6 +42,10 @@ plot_antibody_model <- function(pars,
                                 antigenic_map=NULL,
                                 label_parameters=FALSE,
                                 exponential_waning=FALSE){
+  if(class(pars) == "data.frame" & "names" in colnames(pars)){
+    pars <- pars$values
+    names(pars) <- pars$names
+  }
   y <- simulate_antibody_model(pars,times, infection_history,antigenic_map, exponential_waning)
   y$biomarker_id_label <- paste0("Biomarker ID: ", y$biomarker_ids)
   y$sample_label <- paste0("Sample time: ", y$sample_times)
@@ -626,7 +630,7 @@ plot_estimated_antibody_model <- function(chain,
     for(j in 1:ncol(demographic_groups)) 
       labels[i] <- paste0(labels[i], paste0(colnames(demographic_groups)[j], ":", demographic_groups[i,j],";"))
   
-  demographic_groups_plot <- demographic_groups %>% mutate(individual = 1:n())
+  demographic_groups_plot <- demographic_groups %>% dplyr::mutate(individual = 1:n())
   demographic_groups_plot$Group <- labels
  
   
@@ -645,19 +649,20 @@ plot_estimated_antibody_model <- function(chain,
 
   ## Create fake antibody data for all individuals and times
   full_antibody_data <- antibody_data %>% 
-    select(biomarker_group,biomarker_id) %>% distinct() %>% 
-    cross_join(demographic_groups_plot) %>% 
-    expand_grid(sample_time=solve_times) %>% 
-    mutate(birth = min(possible_exposure_times), repeat_number=1,measurement=0) %>% 
-    arrange(individual, biomarker_group, sample_time, biomarker_id, repeat_number)
+    dplyr::select(biomarker_group,biomarker_id) %>% 
+    dplyr::distinct() %>% 
+    dplyr::cross_join(demographic_groups_plot) %>% 
+    tidyr::expand_grid(sample_time=solve_times) %>% 
+    dplyr::mutate(birth = min(possible_exposure_times), repeat_number=1,measurement=0) %>% 
+    dplyr::arrange(individual, biomarker_group, sample_time, biomarker_id, repeat_number)
   
   n_indiv <- length(unique(full_antibody_data$individual))
   unique_biomarker_groups <- unique(full_antibody_data$biomarker_group)
   
   ## Create fake demographics data for all individuals and times
   full_demographics <- full_antibody_data[,colnames(full_antibody_data) %in% c("individual","birth",colnames(demographic_groups))] %>%
-    distinct() %>%
-    expand_grid(time=possible_exposure_times) %>% mutate(age=time-birth)
+    dplyr::distinct() %>%
+    tidyr::expand_grid(time=possible_exposure_times) %>% mutate(age=time-birth)
   
   tmp_samp <- sample(samps, nsamp)
   ## See the function in posteriors.R

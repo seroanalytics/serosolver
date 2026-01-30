@@ -104,7 +104,6 @@ get_n_alive_group <- function(antibody_data, times, demographics=NULL, melt_data
   n_alive
 }
 
-#' @export
 create_prior_lookup <- function(antibody_data, possible_exposure_times, infection_model_prior_shape1, beta1, n_alive=NULL){
     if(is.null(n_alive)){
         n_alive <- get_n_alive(antibody_data, possible_exposure_times)
@@ -122,7 +121,6 @@ create_prior_lookup <- function(antibody_data, possible_exposure_times, infectio
     lookup_tab
 }
 
-#' @export
 create_prior_lookup_groups <- function(antibody_data, demographics=NULL, possible_exposure_times, infection_model_prior_shape1, beta1, n_alive=NULL){
     if(is.null(n_alive)){
         n_alive <- get_n_alive_group(antibody_data, demographics, possible_exposure_times)
@@ -157,7 +155,6 @@ create_prior_lookup_groups <- function(antibody_data, demographics=NULL, possibl
 #' times <- example_antigenic_map$inf_times
 #' DOBs <- unique(example_antibody_data[,c("individual","birth")])
 #' age_mask <- create_age_mask(DOBs$birth, times)
-#' @export
 create_age_mask <- function(DOBs, possible_exposure_times) {
   age_mask <- sapply(DOBs, function(x) {
     if (is.na(x)) {
@@ -179,7 +176,6 @@ create_age_mask <- function(DOBs, possible_exposure_times) {
 #' data(example_antigenic_map)
 #' times <- example_antigenic_map$inf_times
 #' sample_mask <- create_sample_mask(example_antibody_data, times)
-#' @export
 create_sample_mask <- function(antibody_data, possible_exposure_times) {
   ids <- unique(antibody_data$individual)
   sample_mask <- sapply(ids, function(x) {
@@ -199,7 +195,6 @@ create_sample_mask <- function(antibody_data, possible_exposure_times) {
 #' period.
 #' @param inf_chain a data table with the MCMC saved infection history chain
 #' @return the MCMC saved infection history expanded with infection times as columns
-#' @export
 expand_summary_inf_chain <- function(inf_chain) {
   full_inf_chain <- data.table::CJ(i = 1:max(inf_chain$i), j = 1:max(inf_chain$j), samp_no = min(inf_chain$samp_no):max(inf_chain$samp_no))
   inf_chain <- data.table::data.table(apply(inf_chain, 2, as.numeric))
@@ -313,7 +308,6 @@ get_index_pars <- function(chain, samp_no=NULL,index=NULL,chain_no=NULL) {
 #' @param expr expression to give plot
 #' @param filename filename to print to
 #' @family safe_plot_saving
-#' @export
 to.pdf <- function(expr, filename, ..., verbose = TRUE) {
   if (verbose) {
     cat(sprintf("Creating %s\n", filename))
@@ -329,7 +323,6 @@ to.pdf <- function(expr, filename, ..., verbose = TRUE) {
 #' @param expr expression to give plot
 #' @param filename filename to print to
 #' @family safe_plot_saving
-#' @export
 to.png <- function(expr, filename, ..., verbose = TRUE) {
   if (verbose) {
     cat(sprintf("Creating %s\n", filename))
@@ -345,7 +338,6 @@ to.png <- function(expr, filename, ..., verbose = TRUE) {
 #' @param expr expression to give plot
 #' @param filename filename to print to
 #' @family safe_plot_saving
-#' @export
 to.svg <- function(expr, filename, ..., verbose = TRUE) {
   if (verbose) {
     cat(sprintf("Creating %s\n", filename))
@@ -361,7 +353,6 @@ to.svg <- function(expr, filename, ..., verbose = TRUE) {
 #' Wrapper function to protect calls to a function. If the function does not compute correctly, returns -100000.
 #' @param f the function to be protected
 #' @return the protected function
-#' @export
 #' @useDynLib serosolver
 protect <- function(f) {
   function(...) {
@@ -377,7 +368,6 @@ protect <- function(f) {
 #' Wrapper function to protect calls to the posterior function. If posterior does not compute correctly, returns -100000.
 #' @param f the function to be protected
 #' @return the protected function
-#' @export
 #' @useDynLib serosolver
 protect_posterior <- function(f) {
   function(...) {
@@ -409,11 +399,9 @@ describe_priors <- function() {
   message("Version 4: Beta prior on probability of any infection. Gibbs sampling of infection histories using total number of infections across all times and all individuals as the prior")
 }
 
-#' @export
 logistic_transform <- function(x, maxX) {
   return(maxX / (1 + exp(-x)))
 }
-#' @export
 logit_transform <- function(p, maxX) {
   return(log(p / (maxX - p)))
 }
@@ -440,7 +428,6 @@ pad_infection_model_prior_parameters <- function(par_tab, n_times) {
 }
 
 ## From prodlim package - finds matching rows between two data frames. "Thus the function returns a vector with the row numbers of (first) matches of its first argument in its second.", https://www.rdocumentation.org/packages/prodlim/versions/2018.04.18/topics/row.match
-#' @export
 row.match <- function(x, table, nomatch = NA) {
   if (class(table) == "matrix") {
     table <- as.data.frame(table)
@@ -463,7 +450,6 @@ row.match <- function(x, table, nomatch = NA) {
 #' @param timevarying_demographics if not NULL, then calculates an individual's demographic group over the entire time period of the simulation rather than assuming fixed demographics
 #' @return a very long list. See source code directly.
 #' @seealso \code{\link{create_posterior_func}}
-#' @export
 setup_antibody_data_for_posterior_func <- function(
     par_tab,antibody_data, antigenic_map=NULL, possible_exposure_times=NULL,
                                               age_mask = NULL, n_alive = NULL,verbose=FALSE,
@@ -640,7 +626,6 @@ pad_inf_chain <- function(inf_chain, pad_by_group=FALSE, times=NULL,indivs=NULL)
 #'
 #' When the serosolver function uses a parallel backend but is not closed correctly, this can confuse `dopar` if the function is called again. This function tidies the parallel backend and corrects the error.
 #' @return NULL
-#' @export
 unregister_dopar <- function() {
   env <- foreach:::.foreachGlobals
   rm(list=ls(name=env), pos=env)

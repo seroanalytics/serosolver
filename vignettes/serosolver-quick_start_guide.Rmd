@@ -42,10 +42,10 @@ The following code runs the entire pipeline for a simulation-recovery experiment
 ```{r entire_simulation,echo=TRUE,eval=FALSE}
 #library(serosolver)
 devtools::load_all("~/Documents/GitHub/serosolver")
-library(tidyverse)
-library(doParallel)
-library(data.table)
-library(coda)
+library(dplyr) ## Used for most data manipulation
+library(doParallel) ## Used to run MCMC chains in parallel
+library(data.table) ## Used to manipulate large MCMC chain objects
+library(coda) ## Used for MCMC diagnostics
 
 ## Define a vector of all possible infection times
 possible_exposure_times <- seq(2000,2024,by=1)
@@ -82,21 +82,12 @@ true_inf_hist <- all_simulated_data$infection_histories
 plot_antibody_data(antibody_data,possible_exposure_times,1:4,infection_histories = true_inf_hist)
 
 ## Run serosolver on the simulated data
-output <- serosolver(example_par_tab, antibody_data, 
-                                 antigenic_map=antigenic_map,
+output <- serosolver(example_par_tab, antibody_data, antigenic_map=antigenic_map,
                 filename="readme", n_chains=3,parallel=TRUE,
-                mcmc_pars=c(adaptive_iterations=1000, iterations=5000),verbose=TRUE)
+                mcmc_pars=c(adaptive_iterations=2000, iterations=5000),verbose=TRUE)
 
-## Read in the MCMC chains and compare model fits to the data
-chains <- load_mcmc_chains(location=getwd(),par_tab=example_par_tab,burnin = 1000)
-plot_model_fits(chain = chains$theta_chain,
-                infection_histories = chains$inf_chain,
-                known_infection_history = true_inf_hist,
-                antibody_data = antibody_data,individuals=1:4,
-                antigenic_map=antigenic_map,
-                par_tab=example_par_tab,
-                orientation="cross-sectional",
-                settings=output$settings)
+## Look at model fits to the data
+output$plot_fits_cross_sectional
 ```
 
 ```         
@@ -164,14 +155,14 @@ Most applications of `serosolver` involve fitting to antibody titre or concentra
 ```{r,eval=FALSE}
 ## Example of two biomarker_groups, one has discrete data one has continuous data
 ## Set bounds of the assay
-par_tab[par_tab$names=="min_measurement" & par_tab$biomarker_group == 1,values] <- lower_bound1
-par_tab[par_tab$names=="max_measurement" & par_tab$biomarker_group == 1,values] <- upper_bound1
+par_tab[par_tab$names=="min_measurement" & par_tab$biomarker_group == 1,values] <- 0
+par_tab[par_tab$names=="max_measurement" & par_tab$biomarker_group == 1,values] <- 10
 
-par_tab[par_tab$names=="min_measurement" & par_tab$biomarker_group == 2,values] <- lower_bound2
-par_tab[par_tab$names=="max_measurement" & par_tab$biomarker_group == 2,values] <- upper_bound2
+par_tab[par_tab$names=="min_measurement" & par_tab$biomarker_group == 2,values] <- 1
+par_tab[par_tab$names=="max_measurement" & par_tab$biomarker_group == 2,values] <- 8
 
-## Set observation type, discrete = 1, continuous = 2
-data_type <- c(1,2) ## used in `serosolver::serosolver`, `serosolver::simulate_data` etc
+## Set observation type, discrete = 1, continuous = 2, continuous with false positives = 3
+data_type <- c(1,2,3) ## used in `serosolver::serosolver`, `serosolver::simulate_data` etc
 ```
 
 ### 1.3 Antigenic map
@@ -191,9 +182,6 @@ data.frame(x_coord=1,y_coord=1,inf_times=1:10)
 ## Antigenic map with clusters
 data.frame(x_coord = rep(seq(1,3,by=1),each=3), y_coord=rep(seq(1,3,by=1),each=3),inf_times=1:9)
 
-## Antigenic map with just one biomarker ID
-data.frame(x_coord=1,y_coord=1,inf_times=1)
-
 ## Antigenic map with two biomarker groups
 data.frame(x_coord=1,y_coord=1,inf_times=rep(1:10,2),biomarker_group=rep(c(1,2),each=10))
 ```
@@ -202,7 +190,7 @@ data.frame(x_coord=1,y_coord=1,inf_times=rep(1:10,2),biomarker_group=rep(c(1,2),
 
 Individuals can't be infected before they're born, and we can't infer infections which occurred after the final sample from each individual. `serosolver` uses the `birth` and `sample_time` variables to constrain which `biomarker_id`s an individual can have been infected by.
 
-The `population_group` variable is used to split individuals into different groups. These might represent different geographic groups, which can be used to estimate separate attack rates, or demographic groups, which can be used to estimate demographic-specific antibody kinetics (or both). For example, we might be interested in comparing attack rates and infection histories between two locations with very different epidemiological dynamics, or estimating different antibody boosting parameters for different age groups. For most simple models, this variable can be ignored or set to 1 for all individuals. \<\<PLACEHOLDER\>\> provides a detailed vignette on how to use covariate data.
+The `population_group` variable is used to split individuals into groups under different infection probabilities. These might represent different geographic groups, which can be used to estimate separate attack rates, or demographic groups, which can be used to estimate demographic-specific attack rates (or both). For example, we might be interested in comparing attack rates and infection histories between two locations with very different epidemiological dynamics. For most simple models, this variable can be ignored or set to 1 for all individuals. \<\<PLACEHOLDER\>\> provides a detailed vignette on how to use covariate data.
 
 ## 2 Model decisions
 
@@ -242,7 +230,7 @@ It is possible to assume different priors for the infection history model, but t
 
 ### 2.2 Antibody kinetics model and priors
 
-Along with a data file, serosolver expects several additional inputs namely, a parameter input file for starting values of antibody kinetics parameters, an antigenic map, an age mask, and starting infection histories. The following section will walk the users through creating each of these inputs.
+Along with a data file, serosolver expects several additional inputs namely, a parameter input file controlling the model parameters, an antigenic map, an age mask, and starting infection histories. The following section will walk the users through creating each of these inputs.
 
 Several input files are stored within the `serosolver` package in the 'inputs' directory, however users can create their own. The default parameter file 'parTab_base.csv' is shown below:
 
@@ -269,9 +257,7 @@ Using the default options, the MCMC can be run using the following.
 
 ```{r, eval=FALSE}
 # run MCMC  
-  res <- serosolver(par_tab = start_tab, titre_dat = titre_dat, antigenic_map = antigenic_map, 
-                  start_inf_hist = start_inf, CREATE_POSTERIOR_FUNC = create_posterior_func,
-                  version = 2)
+  res <- serosolver(par_tab = par_tab, antibody_data = antibody_data, antigenic_map = antigenic_map)
 ```
 
 If you want to change any default options, such as increasing or decreasing the number of iterations and the adaptive period you can pass a vector of function argument values to `serosolver()`.
@@ -313,6 +299,12 @@ Plot inferred attack rates.
 Plot inferred infection histories.
 
 ```{r, eval=FALSE}
+
+```
+
+Assess model fits
+
+```{r,eval=FALSE}
 
 ```
 

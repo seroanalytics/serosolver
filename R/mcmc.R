@@ -1080,16 +1080,16 @@ serosolver <- function(par_tab,
 
     plot_longitudinal <- plot_model_fits(chains$theta_chain,chains$inf_chain,individuals = 1:min(n_indiv, 5),
                               known_infection_history=NULL, ## Set this to NULL for real data
-                              settings=serosolver_settings,orientation="longitudinal",expand_to_all_times = TRUE) + 
-      facet_wrap(~individual,ncol=1)
+                              settings=serosolver_settings,orientation="longitudinal",expand_to_all_times = TRUE)
     
+    plot_longitudinal <- lapply(plot_longitudinal, function(x) x + ggplot2::facet_wrap(~individual))
     
     plot_cross_sectional <- plot_model_fits(chains$theta_chain,chains$inf_chain,individuals = 1:min(n_indiv, 5),
                               known_infection_history=NULL, ## Set this to NULL for real data
                               settings=serosolver_settings,orientation="cross-sectional",expand_to_all_times = FALSE)
     
     p_ar <- plot_attack_rates(chains$inf_chain,settings = serosolver_settings,by_group=TRUE,plot_den = FALSE)
-    p_ab_model <- plot_estimated_antibody_model(chains$theta_chain,settings=output$settings,solve_times = possible_exposure_times)
+    p_ab_model <- plot_estimated_antibody_model(chains$theta_chain,settings=serosolver_settings,solve_times = possible_exposure_times)
   } else {
     antibody_predictions <- NULL
     plot_longitudinal <- NULL
