@@ -13,7 +13,7 @@ simulate_antibody_model(
 )
 }
 \arguments{
-\item{pars}{the vector of named model parameters, including `boost_long`, `boost_short`,`boost_delay`,`wane_long`,`wane_short`,`cr_long`, and `cr_short`.}
+\item{pars}{either the original `par_tab` object (a data frame), or the vector of named model parameters, including `boost_long`, `boost_short`,`boost_delay`,`wane_long`,`wane_short`,`cr_long`, and `cr_short`.}
 
 \item{times}{the vector of times to solve the model over. A continuous vector of discrete timepoints. Can be left to NULL if this information is included in the `antigenic_map` argument.}
 

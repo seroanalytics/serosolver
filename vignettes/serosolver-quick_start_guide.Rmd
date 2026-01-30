@@ -29,7 +29,7 @@ The core of the package is the `serosolver` function, which takes all of the dat
 
 ## Contents
 
-This guide provides an overview of the key components for fitting a `serosolver` model. For more in depth instructions on specific features, see the case study vignettes. We will discuss the following workflow:
+This guide provides an overview of the key components for fitting a `serosolver` model. For more in depth instructions on specific features and detailed methods, see the case study vignettes. We will discuss the following workflow:
 
 ```{r fig1, echo=FALSE, fig.cap="Outline of the serosolver workflow", out.width = '100%'}
 knitr::include_graphics("figures/guide_fig1.png")
@@ -113,19 +113,22 @@ library(tidyr)
 library(data.table)
 library(doParallel)
 library(coda)
-
 ```
 
 ## 1. Input data
 
-### 1.1 Required variables
+Along with a data file, `serosolver` expects several additional inputs namely, a parameter input data frame controlling the model parameters (`par_tab`), an antigenic map or vector of possible exposure times (`antigenic_map` or `possible_exposure_times`), and optionally a data frame of demographic data (`demographics`). This section will walk the users through creating each of these inputs.
 
-`serosolver` expects a data frame in long format (i.e., there is a row for each observation), referred to as `antibody_data` in most function arguments, giving the individual ID, sample time, biomarkers or antigens measured, serological measurement, and demographic information:
+### 1.1 Serological data
+
+`serosolver` expects a data frame of serological data in long format (i.e., there is a row for each observation), referred to as `antibody_data` in most function arguments, giving the individual ID, sample time, biomarkers or antigens measured, serological measurement, and demographic information:
 
 ```{r, eval=TRUE}
 data(example_antibody_data)
 knitr::kable(head(example_antibody_data))
 ```
+
+[**Key point:** all variables in `serosolver` are indexed from 1, matching `R` coding style rather than `C++`.]{.underline}
 
 Description of variables:
 
@@ -140,6 +143,8 @@ Description of variables:
 
 Data can be cross-sectional samples with multiple biomarkers measured per sample (e.g., multiple influenza strains), such that different `biomarker_id`s correspond to different time periods, or longitudinal samples with one or more biomarkers measured per sample (e.g., measuring measles IgG titers over time).
 
+More details on formatting a serological dataset for use in `serosolver` is described in \<\<PLACEHOLDER\>\>.
+
 ```{r, eval=TRUE, fig.width=6,fig.height=4,fig.cap="Cross-sectional serology against multiple antigens from multiple serum samples. Plot columns give time periods of sample times, rows give individuals. X-axis gives the time each biomarker ID was assumed to be circulating."}
 plot_antibody_data(example_antibody_data,example_antigenic_map$inf_times,n_indivs=1:3,study_design = "cross-sectional")
 ```
@@ -148,24 +153,7 @@ plot_antibody_data(example_antibody_data,example_antigenic_map$inf_times,n_indiv
 plot_antibody_data(example_antibody_data %>% filter(biomarker_id %in% c(1968,2002,2012)),2010:2015,n_indivs=1:3,study_design = "longitudinal")
 ```
 
-### 1.2 Serological data
-
-Most applications of `serosolver` involve fitting to antibody titre or concentration data. Make a note of whether your data are continuous or discrete, and the upper and lower bounds of the assay. These will need to be specified in the model later using the `par_tab` object. `serosolver` also supports multiple measurement types per sample, for example, measuring both antibody titre and avidity. These observation types are distinguished by the `biomarker_group` variable --- all observations within a `biomarker_group` are underpinned by their own antibody kinetics model parameters, but arising from the same individual-level infection histories. These will be specified using the `data_type` argument later.
-
-```{r,eval=FALSE}
-## Example of two biomarker_groups, one has discrete data one has continuous data
-## Set bounds of the assay
-par_tab[par_tab$names=="min_measurement" & par_tab$biomarker_group == 1,values] <- 0
-par_tab[par_tab$names=="max_measurement" & par_tab$biomarker_group == 1,values] <- 10
-
-par_tab[par_tab$names=="min_measurement" & par_tab$biomarker_group == 2,values] <- 1
-par_tab[par_tab$names=="max_measurement" & par_tab$biomarker_group == 2,values] <- 8
-
-## Set observation type, discrete = 1, continuous = 2, continuous with false positives = 3
-data_type <- c(1,2,3) ## used in `serosolver::serosolver`, `serosolver::simulate_data` etc
-```
-
-### 1.3 Antigenic map
+### 1.2 Antigenic map
 
 `serosolver` was designed to treat `biomarker_id` as interchangeable with the time variables, such that one antigen ID is assumed to circulate in one time period. For example, `biomarker_id=1968` refers to the antigen assumed to be circulating in 1968. Note that at present, `serosolver` supports only one antigen/biomarker per time period. However, a single `biomarker_id` can be assumed to circulate and dominate for multiple time periods, which can be specified using the `antigenic_map` argument.
 
@@ -186,68 +174,110 @@ data.frame(x_coord = rep(seq(1,3,by=1),each=3), y_coord=rep(seq(1,3,by=1),each=3
 data.frame(x_coord=1,y_coord=1,inf_times=rep(1:10,2),biomarker_group=rep(c(1,2),each=10))
 ```
 
-### 1.4 Covariate data
+### 1.3 Covariate data {#covariates}
 
 Individuals can't be infected before they're born, and we can't infer infections which occurred after the final sample from each individual. `serosolver` uses the `birth` and `sample_time` variables to constrain which `biomarker_id`s an individual can have been infected by.
 
-The `population_group` variable is used to split individuals into groups under different infection probabilities. These might represent different geographic groups, which can be used to estimate separate attack rates, or demographic groups, which can be used to estimate demographic-specific attack rates (or both). For example, we might be interested in comparing attack rates and infection histories between two locations with very different epidemiological dynamics. For most simple models, this variable can be ignored or set to 1 for all individuals. \<\<PLACEHOLDER\>\> provides a detailed vignette on how to use covariate data.
+The `population_group` variable is used to split individuals into groups under different infection rates. These might represent different geographic groups or demographic groups. For example, we might be interested in comparing attack rates and infection histories between two locations with very different epidemiological dynamics. In this case, we shouldn't assume that all individuals are under the same force of infection, and thus we need to tell `serosolver` to account for this difference in two places:
+
+```{r, eval=FALSE}
+## Set individual 1:25 to population_group 1, and individual IDs >25 to population_group 2
+antibody_data <- antibody_data %>% mutate(population_group=if_else(individual <= 25, 1, 2))
+
+par_tab[par_tab$names %in% c("infection_model_prior_shape1","infection_model_prior_shape1"),"stratification"] <- "population_group"
+```
+
+For most simple models, this variable can be ignored or set to 1 for all individuals and `par_tab$stratification` can be left as `NA`.
+
+Similar logic can be applied to stratify the antibody kinetics by one or more covariates. For example, we might want to test if antibody titres wane quicker in certain age groups. The general approach is similar to `population_group`:
+
+```{r, eval=FALSE}
+## Split into two age groups based on whether the individual was born on or before 1990 or after
+antibody_data <- antibody_data %>% mutate(age_group=if_else(birth <= 1990, 1, 2))
+
+## Tell serosolver to stratify the wane_short parameter by age_group
+par_tab[par_tab$names == "wane_short","stratification"] <- "age_group"
+```
+
+There are a few ways the user can implement this depending on their desired model (e.g., should covariates be static over the study period or change with e.g., age?). \<\<PLACEHOLDER\>\> provides a detailed vignette on the model structure and how to implement covariate data in `serosolver`.
 
 ## 2 Model decisions
 
 ### 2.1 Infection history model and priors
 
-One of the most confusing model design decision in `serosolver` is setting the infection history model. First, we need to understand the epidemiological question we seek to address. If our main objective is to estimate attack rates, we need to think about the power/information we have to estimate attack rates and infection histories at a chosen time resolution (e.g., annual attack rates or per month). If instead our main objective is to understand antibody kinetics, we might wish to simplify the infection history model to allow a more complex antibody kinetics model. The rationale is the same as for any statistical model: identifiability is limited by the data, and thus we should choose as simple a model structure as possible to answer our question.
+One of the most confusing model design decision in `serosolver` is setting the infection history model. First, we need to understand the epidemiological question we seek to address. If our main objective is to estimate attack rates, we need to think about the power/information we have to estimate attack rates and infection histories at a chosen time resolution (e.g., annual attack rates or per month). If instead our main objective is to understand antibody kinetics, we might wish to simplify the infection history model to allow a more complex antibody kinetics model. The rationale is the same as any other statistical model: practical parameter identifiability is limited by the data, and thus we should choose as simple a model structure as possible to answer our question.
 
 #### 2.1.1 Model time resolution
 
-All time variables in a `serosolver` model must be at the same time resolution, including `sample_time`, `biomarker_id`, `birth`, and `possible_exposure_times`. This can cause confusion, as these variables must be integers, and thus we have to do some transformation before running `serosolver`:
-
--   For annual samples, the sample time is simply the year each sample was collected in. For example, data collected between 2009 and 2011 would have values of 2009, 2010, or 2011.
-
--   For semi-annual samples, the sample time is the year the sample was collected multiplied by 2 (since there are two semesters in every year). For example, data collected between 2009 and 2011 would have values of $(2009 \times 2) + 1 = 4019$, $(2009.5 \times 2) + 1 = 4020$, $(2010 \times 2) + 1 = 4021$, $(2010.5 \times 2) + 1 = 4022$, $(2011 \times 2) + 1 = 4023$, $(2011.5 \times 2) + 1 = 4024$.
-
--   Similarly, for quarterly or monthly samples, the sample time follows the same pattern. For example for a sample collected in July of 2009, the quarterly sample time would be $(2009.75 \times 4) + 1 = 8040$ (because July is in the third quarter of the year) and the monthly sample time would be $(2009.5833 \times 12) + 1 = 24116$ (because July is the seventh month and $7/12=0.5833$).
-
-A useful feature of `serosolver` is to use *mixed* time resolutions. For example, we might estimate infection histories at an annual resolution up to 2009, and then at a per-quarter resolution thereafter. Another example might be to estimate per-cluster infections for historic periods of time to establish long-term infection histories, and then per-quarter or per-year infection histories during the study period to model shorter-term dynamics. This can be useful for reducing parameter space when we have limited information to draw inferences about particular time periods, but rich information for others. See the \<\<PLACEHOLDER\>\> vignette for more details on this feature.
-
-#### 2.1.2 Model time period
-
 It is possible to estimate infection states just for the duration of the serostudy, or to estimate infection histories for an arbitrary number of time periods prior to the study. For example, we might use serosolver to estimate infections that occurred between two serum sample collection times in the same way we would measure seroconversion rates. Alternatively, we might only have serum samples for recent time periods, but aim to estimate infection histories all the way back to the time of birth.
 
-`serosolver` estimates an infection state for each element of the vector `possible_exposure_times`, which is either passed directly or extract automatically from `antigenic_map$inf_times`. The range and entries of these vectors therefore determines the model time period and resolution of the infection history model.
+All time variables in a `serosolver` model must be at the same time resolution, including `sample_time`, `biomarker_id`, `birth`, and `possible_exposure_times`. This can cause confusion, as these variables must be integers, and thus we have to do some transformation before running `serosolver`:
 
-#### 2.2.3 Infection history priors
+-   For annual samples, the sample time is simply the year each sample was collected in. For example, data collected between 2009 and 2011 would simply have values of 2009, 2010, or 2011.
 
-A very important consideration, but one which is highly technical and unimportant for most users, is the structure of the prior to place on the individual infection histories.
+-   For semi-annual samples, the sample time is the year the sample was collected multiplied by 2 (since there are two time periods in each year). For example, data collected between 2009 and 2011 would have values of $(2009 \times 2) + 1 = 4019$, $(2009.5 \times 2) + 1 = 4020$, $(2010 \times 2) + 1 = 4021$, $(2010.5 \times 2) + 1 = 4022$, $(2011 \times 2) + 1 = 4023$, $(2011.5 \times 2) + 1 = 4024$.
+
+-   Similarly, for quarterly or monthly samples, the sample time follows the same pattern. For example for a sample collected in July of 2009, the quarterly sample time would be $(2009 + \frac{3}{4})\times 4 + 1 = 8040$ (because July is in the third quarter of the year) and the monthly sample time would be $(2009 + \frac{7}{12})\times12 + 1 = 24116$ (because July is the seventh month).
+
+`serosolver` estimates an infection state for each element of the vector `possible_exposure_times`, which is either passed directly or extract automatically from `antigenic_map$inf_times`. The range and entries of these vectors therefore determines the model time period and resolution of the infection history model. If `antigenic_map` is specified, then you can typically leave `possible_exposure_times` as `NULL`. If you aren't using an antigenic map, then you must specify `possible_exposure_times`.
+
+```{r,eval=FALSE}
+## possible_exposure_times is used in multiple places to tell serosolver the vector of times at which individuals might be infected
+possible_exposure_times <- seq(2000,2025,by=1) ## Annual infection states
+possible_exposure_times <- seq(2000*4, 2025*4,by=1) ## Quarterly infection states
+
+## antigenic_map contains the same information as possible_exposure_times in its inf_times variable
+possible_exposure_times <- antigenic_map$inf_times
+```
+
+A useful feature of `serosolver` is to use *mixed* time resolutions. For example, we might estimate infection histories at an annual resolution up to 2009, and then at a per-quarter resolution thereafter. Another example might be to estimate per-cluster infections for historic periods of time to establish long-term infection histories, and then per-quarter or per-year infection histories during the study period to model shorter-term dynamics. This can be useful for reducing parameter space when we have limited information to draw inferences about particular time periods, but rich information for others:
+
+```{r,eval=FALSE}
+## Infection states every 4 years up to 2020, then yearly
+possible_exposure_times <- c(seq(1990, 2019,by=4), seq(2020,2025,by=1))
+```
+
+#### 2.1.2 Infection history priors
+
+A very important consideration, but one which is highly technical and unimportant for most users, is the structure of the prior to place on the individual infection histories. Most of the supplementary material of the main [publication](https://pubmed.ncbi.nlm.nih.gov/32365062/) is about this decision.
 
 For most users, the only thing you need to consider is the prior you wish to place on the per-time probability of infection. As individual infection states are modeled as Bernoulli variables (i.e., they can be 0 or 1), an appropriate prior for the per-time probability of infection is a Beta distribution. Thus, by changing the shape and scale parameters of this Beta distribution, we can change the prior on the infection states. For example, we might want to use uninformative priors by setting the shape and scale parameters both to 1. Alternatively, we might have some prior understanding of the probability of infection in each time period — if we think the annual attack rate is around 5%, we might set the Beta distribution shape and scale to 0.5 and 10 (which would give a mean prior attack rate of 5%, try `hist(rbeta(1000, 0.5, 10))`.
 
-Note that `serosolver` assumes the same Beta prior applies to all individuals and all time periods, so choose your Beta parameters carefully.
-
-It is possible to use a separate Beta prior for different population groups, for example, if you want to model the fact that individuals in different locations are under independent forces of infection. This is described in detail in the \<\<PLACEHOLDER\>\> vignette.
+Note that `serosolver` assumes the same Beta prior applies to all individuals and all time periods by default, so choose your Beta parameters carefully. However, it is possible to use a separate Beta prior for different population groups, for example, if you want to model the fact that individuals in different locations are under independent forces of infection. This is referenced in [1.3 Covariate data](#covariates) and described in detail in the \<\<PLACEHOLDER\>\> vignette.
 
 It is possible to assume different priors for the infection history model, but this is complex and not necessary for most use cases. You can read more about the different priors in the main [publication](https://pubmed.ncbi.nlm.nih.gov/32365062/), and if you really know what you're doing you can change the prior model with the `prior_version` argument of the main `serosolver` function.
 
 ### 2.2 Antibody kinetics model and priors
 
-Along with a data file, serosolver expects several additional inputs namely, a parameter input file controlling the model parameters, an antigenic map, an age mask, and starting infection histories. The following section will walk the users through creating each of these inputs.
-
-Several input files are stored within the `serosolver` package in the 'inputs' directory, however users can create their own. The default parameter file 'parTab_base.csv' is shown below:
-
 ```{r,echo=FALSE,results='asis'}
-  options(scipen=999)
-  par_tab_path <- system.file("extdata", "par_tab_base.csv", package = "serosolver")
-  par_tab <- read.csv(par_tab_path, stringsAsFactors=FALSE)
-  par_tab[par_tab$names %in% c("alpha","beta"),"values"] <- c(1,1)
-  
-  ## Remove phi term for infection history prior version 2
-  par_tab <- par_tab[par_tab$type != 2,]
+  attach(example_par_tab)
   knitr::kable(par_tab)
 ```
 
 In the parameter file, the column 'fixed' indicates if each parameter value is fixed or should be estimated. For values that are not fixed, starting values need to be generated. The below code generates a random starting value for unfixed parameter values.
 
+```{r,echo=FALSE}
+plot_antibody_model(pars=example_par_tab,antigenic_map=example_antigenic_map,times=1:25)
+```
+
 ### 2.3 Observation model
+
+Most applications of `serosolver` involve fitting to antibody titre or concentration data. Make a note of whether your data are continuous or discrete, and the upper and lower bounds of the assay. These will need to be specified in the model later using the `par_tab` object. `serosolver` also supports multiple measurement types per sample, for example, measuring both antibody titre and avidity. These observation types are distinguished by the `biomarker_group` variable --- all observations within a `biomarker_group` are underpinned by their own antibody kinetics model parameters, but arising from the same individual-level infection histories. These will be specified using the `data_type` argument later.
+
+```{r,eval=FALSE}
+## Example of two biomarker_groups, one has discrete data one has continuous data
+## Set bounds of the assay
+par_tab[par_tab$names=="min_measurement" & par_tab$biomarker_group == 1,values] <- 0
+par_tab[par_tab$names=="max_measurement" & par_tab$biomarker_group == 1,values] <- 10
+
+par_tab[par_tab$names=="min_measurement" & par_tab$biomarker_group == 2,values] <- 1
+par_tab[par_tab$names=="max_measurement" & par_tab$biomarker_group == 2,values] <- 8
+
+## Set observation type, discrete = 1, continuous = 2, continuous with false positives = 3
+data_type <- c(1,2,3) ## used in `serosolver::serosolver`, `serosolver::simulate_data` etc
+```
+
+### 2.4 Setting priors
 
 ## 3. Running *serosolver*
 

@@ -433,7 +433,7 @@ simulate_infection_histories <- function(p_inf, possible_exposure_times=1:ncol(p
 #' Simulate the antibody model
 #' 
 #' Simulates the trajectory of the serosolver antibody model using specified parameters and optionally a specified antigenic map and infection history.
-#' @param pars the vector of named model parameters, including `boost_long`, `boost_short`,`boost_delay`,`wane_long`,`wane_short`,`cr_long`, and `cr_short`.
+#' @param pars either the original `par_tab` object (a data frame), or the vector of named model parameters, including `boost_long`, `boost_short`,`boost_delay`,`wane_long`,`wane_short`,`cr_long`, and `cr_short`.
 #' @param times the vector of times to solve the model over. A continuous vector of discrete timepoints. Can be left to NULL if this information is included in the `antigenic_map` argument.
 #' @param infection_history the vector of times matching entries in `times` to simulate infections in.
 #' @param antigenic_map the antigenic map to solve the model with. Can be left to NULL to ssume all biomarker IDs have the same antigenic coordinates.
@@ -452,6 +452,13 @@ simulate_antibody_model <- function(pars,
     stop("Must provide one of times or antigenic_map to give the possible infection times and biomarker IDs over which to solve the model.")
   }
   
+  ## Check if passed parameters as vector or just using par_tab
+  if(class(pars) == "data.frame" & "names" %in% colnames(pars)){
+    pars_use <- pars$values
+    names(pars_use) <- pars$names
+    pars <- pars_use
+  }
+  
   ## If no vector of times provided, take from the antigenic map
   if(is.null(times) & !is.null(antigenic_map)){
     times <- antigenic_map$inf_times
@@ -461,8 +468,10 @@ simulate_antibody_model <- function(pars,
   if(is.null(antigenic_map)){
     antigenic_map <- data.frame(x_coord=1,y_coord=1,inf_times=times)
     biomarker_ids <- 0
+    biomarker_id_labels <- times
   } else {
     biomarker_ids <- match(antigenic_map$inf_times[seq_along(times)], antigenic_map$inf_times[seq_along(times)]) -1
+    biomarker_id_labels <- antigenic_map$inf_times[seq_along(times)]
   }
   
   ## Setup antigenic map
@@ -472,15 +481,14 @@ simulate_antibody_model <- function(pars,
   
   ## If no infection history was provided, setup a dummy infection history vector with only the first entry as an infection
   if(is.null(infection_history)){
-    infection_history <- 1
+    infection_history <- times[1]
   }
-  
-  infection_indices <- infection_history-1
-  sample_times <- seq(1, max(times),by=1)
+  infection_indices <- match(infection_history, times)-1
+  sample_times <- seq(min(times), max(times),by=1)
   
 
   start_levels <- rep(0,length(biomarker_ids))
-  
+
   y <- antibody_model_individual_wrapper(pars["boost_long"],pars["boost_short"],pars["boost_delay"],
                                          pars["wane_short"],pars["wane_long"],
                                          pars["wane_maternal"],
@@ -495,5 +503,5 @@ simulate_antibody_model <- function(pars,
                                          antigenic_map_long,
                                          antigenic_map_short,
                                          exponential_waning)
-  data.frame(sample_times = rep(sample_times,each=length(biomarker_ids)),biomarker_ids = rep(biomarker_ids,length(sample_times)),antibody_level=y)
+  data.frame(sample_times = rep(sample_times,each=length(biomarker_ids)),biomarker_ids = rep(biomarker_id_labels,length(sample_times)),antibody_level=y)
 }
