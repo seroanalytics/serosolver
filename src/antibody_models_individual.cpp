@@ -163,7 +163,6 @@ void antibody_data_model_individual_new(NumericVector &predicted_antibody_levels
    int start_index_in_data = start_index_in_data1;
    int inf_map_index;
    int index;
-
    // For each sample this individual has
    for(int j = index_in_samples; j <= end_index_in_samples; ++j){
      sampling_time = sample_times[j];
@@ -252,7 +251,10 @@ Rcpp::NumericVector antibody_model_individual_wrapper(const double &boost_long,
   }
   IntegerVector biomarker_id_indices_use = rep(biomarker_id_indices, sample_times.size());
   IntegerVector start_level_indices = biomarker_id_indices_use;
-    antibody_data_model_individual_new(predicted_antibody_levels, start_antibody_levels,birth,
+  double birth_d = static_cast<double>(birth);
+  NumericVector births = rep(birth_d, biomarker_id_indices_use.size());
+  
+  antibody_data_model_individual_new(predicted_antibody_levels, start_antibody_levels,births,
                                      boost_long, boost_short, boost_delay, wane_short,wane_long, wane_maternal,antigenic_seniority,
                                  possible_exposure_times,exposure_indices, biomarker_id_indices_use, start_level_indices,
                                  sample_times,

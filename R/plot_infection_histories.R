@@ -333,7 +333,7 @@ plot_cumulative_infection_histories <- function(inf_chain, burnin = 0, indivs, r
     geom_ribbon(data = densities, aes(x = j, ymin=0,ymax = V1),fill="orange")
   if (!is.null(real_inf_hist)) {
     density_plot <- density_plot +
-      geom_vline(data = infection_history1, aes(xintercept = variable), col = "black",linetype="dashed",size=0.75)
+      geom_vline(data = infection_history1, aes(xintercept = variable), col = "black",linetype="dashed",linewidth=0.75)
   }
   density_plot <- density_plot +
     facet_wrap(~i) +
@@ -377,7 +377,7 @@ plot_cumulative_infection_histories <- function(inf_chain, burnin = 0, indivs, r
   
   if (!is.null(real_inf_hist)) {
     p1 <- p1 +
-      geom_line(data = real_hist_profiles[real_hist_profiles$individual %in% indivs, ], aes(x = as.integer(as.character(variable)), y = value), col = "black",linetype="dashed",size=0.75)
+      geom_line(data = real_hist_profiles[real_hist_profiles$individual %in% indivs, ], aes(x = as.integer(as.character(variable)), y = value), col = "black",linetype="dashed",linewidth=0.75)
   }
   if (!is.null(start_inf)) {
     p1 <- p1 +

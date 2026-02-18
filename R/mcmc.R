@@ -91,7 +91,7 @@ serosolver <- function(par_tab,
                      plot_outputs=TRUE,
                      ...) {
   message(cat("================================ Running serosolver ================================\n"))
-  on.exit(serosolver::unregister_dopar())
+  on.exit(unregister_dopar())
   ###################################################################
   ## Sort out MCMC parameters --------------------------------------
   OPT_TUNING <- 0.1
@@ -1049,7 +1049,7 @@ serosolver <- function(par_tab,
   if(verbose){ message(cat("Model fitting done!\n"))}
   
   #plan(sequential)
-  serosolver::unregister_dopar()
+  unregister_dopar()
   if(verbose){ message(cat("Generating MCMC diagnostics\n"))}
   saved_wd <- paste(strsplit(filename, "/")[[1]][-length(strsplit(filename, "/")[[1]])],sep="/",collapse="/")
   if(saved_wd == ""){
@@ -1103,5 +1103,6 @@ serosolver <- function(par_tab,
               diagnostic_warnings=diagnostic_warnings, settings=serosolver_settings,
               antibody_predictions=antibody_predictions, plot_fits_longitudinal=plot_longitudinal,
               plot_fits_cross_sectional=plot_cross_sectional, plot_attack_rates=p_ar,
+              plot_antibody_model=p_ab_model,
               mcmc_chains=chains))
 }

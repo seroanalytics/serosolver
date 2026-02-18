@@ -468,7 +468,7 @@ simulate_antibody_model <- function(pars,
   if(is.null(antigenic_map)){
     antigenic_map <- data.frame(x_coord=1,y_coord=1,inf_times=times)
     biomarker_ids <- 0
-    biomarker_id_labels <- times
+    biomarker_id_labels <- 0
   } else {
     biomarker_ids <- match(antigenic_map$inf_times[seq_along(times)], antigenic_map$inf_times[seq_along(times)]) -1
     biomarker_id_labels <- antigenic_map$inf_times[seq_along(times)]
@@ -483,12 +483,11 @@ simulate_antibody_model <- function(pars,
   if(is.null(infection_history)){
     infection_history <- times[1]
   }
-  infection_indices <- match(infection_history, times)-1
+  infection_indices <- infection_history-1# match(infection_history, times)-1
   sample_times <- seq(min(times), max(times),by=1)
   
 
   start_levels <- rep(0,length(biomarker_ids))
-
   y <- antibody_model_individual_wrapper(pars["boost_long"],pars["boost_short"],pars["boost_delay"],
                                          pars["wane_short"],pars["wane_long"],
                                          pars["wane_maternal"],

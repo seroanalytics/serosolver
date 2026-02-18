@@ -650,6 +650,11 @@ plot_estimated_antibody_model <- function(chain,
   
   tmp_samp <- sample(samps, nsamp)
   ## See the function in posteriors.R
+
+  ## Do not include infection history model stratification
+  skip_pars <- c("infection_model_prior_shape1","infection_model_prior_shape2","phi")
+  par_tab[par_tab$names %in% skip_pars,"stratification"] <- NA
+  
   model_func <- create_posterior_func(par_tab, full_antibody_data, antigenic_map, possible_exposure_times,
                                       prior_version=2,
                                       measurement_bias = measurement_bias, function_type = 4,
