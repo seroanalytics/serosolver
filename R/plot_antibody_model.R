@@ -56,7 +56,15 @@ plot_antibody_model <- function(pars,
       infection_history_intercept <- min(antigenic_map$inf_times)
     }
   } else {
-    infection_history_intercept <- infection_history
+    if(!is.null(times)){
+      infection_history_intercept <- infection_history
+      infection_history <- match(infection_history,times)
+    } else if(!is.null(antigenic_map)){
+      infection_history_intercept <- infection_history
+      infection_history <- match(infection_history,antigenic_map$inf_times)
+    } else {
+      infection_history_intercept <- infection_history
+    }
   }
   y <- simulate_antibody_model(pars,times, infection_history,antigenic_map, exponential_waning)
   y$biomarker_id_label <- paste0("Biomarker ID: ", y$biomarker_ids)
