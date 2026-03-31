@@ -483,7 +483,8 @@ simulate_antibody_model <- function(pars,
   if(is.null(infection_history)){
     infection_history <- times[1]
   }
-  infection_indices <- infection_history-1# match(infection_history, times)-1
+  infection_indices <- match(infection_history, times)-1 # infection_history-1
+  
   sample_times <- seq(min(times), max(times),by=1)
   
 

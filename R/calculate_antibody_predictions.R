@@ -135,6 +135,8 @@ get_antibody_level_predictions <- function(chain, infection_histories, antibody_
                                                  by=c("individual","biomarker_group","biomarker_id"))
     
   }
+  antibody_data1 <- antibody_data1 %>% arrange(individual, biomarker_group, sample_time, biomarker_id, repeat_number)
+  
   model_func <- create_posterior_func(par_tab, antibody_data1, antigenic_map, possible_exposure_times,
                                       prior_version=2,
                                       measurement_bias = measurement_bias, function_type = 4,

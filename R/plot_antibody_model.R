@@ -56,15 +56,7 @@ plot_antibody_model <- function(pars,
       infection_history_intercept <- min(antigenic_map$inf_times)
     }
   } else {
-    if(!is.null(times)){
       infection_history_intercept <- infection_history
-      infection_history <- match(infection_history,times)
-    } else if(!is.null(antigenic_map)){
-      infection_history_intercept <- infection_history
-      infection_history <- match(infection_history,antigenic_map$inf_times)
-    } else {
-      infection_history_intercept <- infection_history
-    }
   }
   y <- simulate_antibody_model(pars,times, infection_history,antigenic_map, exponential_waning)
   y$biomarker_id_label <- paste0("Biomarker ID: ", y$biomarker_ids)
@@ -160,7 +152,6 @@ plot_model_fits <- function(chain, infection_histories,
     if(missing(data_type)) data_type <- settings$data_type
   }
   if(is.null(settings) & is.null(exponential_waning)) exponential_waning <- FALSE
-  
   individuals <- individuals[order(individuals)]
   
   ## Setup antigenic map and exposure times
@@ -180,7 +171,8 @@ plot_model_fits <- function(chain, infection_histories,
   } else {
     start_levels <- NULL
   }
-
+  antibody_data <- antibody_data %>% arrange(individual, biomarker_group, sample_time, biomarker_id, repeat_number)
+  
   ## Generate antibody predictions
   antibody_preds <- get_antibody_level_predictions(
     chain, infection_histories, antibody_data, 

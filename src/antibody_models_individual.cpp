@@ -212,6 +212,7 @@ void antibody_data_model_individual_new(NumericVector &predicted_antibody_levels
          // Find contribution to each measured antibody level from this infection
          for(int k = 0; k < n_measurements; ++k){
            index = biomarker_id_indices[tmp_measurement_index + k]*number_possible_exposures + inf_map_index;
+           //Rcpp::Rcout << "Measurement index: " << index << std::endl;
            predicted_antibody_levels[tmp_measurement_index + k] += seniority *
              ((boost_long*antigenic_map_long[index])*wane_long_amount + (boost_short*antigenic_map_short[index])*wane_short_amount);
          }
