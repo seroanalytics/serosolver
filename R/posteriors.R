@@ -456,7 +456,7 @@ create_posterior_func <- function(par_tab,
                 ## Sum these for each individual
                 liks <- numeric(n_indivs)
 
-                for(biomarker_group in antigenic_map_col_indices){
+                for(biomarker_group in unique_biomarker_groups){
                     ## Need theta for each observation type
                     liks_tmp <- likelihood_func_use[[biomarker_group]](
                       pars[theta_indices][(theta_indices_unique+1) + n_pars*(biomarker_group-1)], 
