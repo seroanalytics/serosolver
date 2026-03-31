@@ -79,7 +79,9 @@ get_antibody_level_predictions <- function(chain, infection_histories, antibody_
   infection_histories <- infection_histories[infection_histories$i %in% individuals, ]
   antibody_data$individual <- match(antibody_data$individual, individuals)
   infection_histories$i <- match(infection_histories$i, individuals)
-  
+  if(class(start_level) %in% c("data.frame","tibble")){
+    start_level$individual <- match(start_level$individual, individuals)
+  }
   #if(class(start_level) %in% c("data.frame","tibble")){
   #  start_index_tmp <- start_level$start_index
   #  start_level <- start_level[start_level$individual %in% individuals,]
