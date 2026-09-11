@@ -89,16 +89,91 @@ antibody_data <- all_simulated_data$antibody_data
 true_inf_hist <- all_simulated_data$infection_histories
 plot_antibody_data(antibody_data,possible_exposure_times,1:4,infection_histories = true_inf_hist)
 
-## Run serosolver on the simulated data
+## MCMC settings used by the executable example
 mcmc_pars <- c(adaptive_iterations=500, iterations=1000,
                thin=1, thin_inf_hist=1, save_block=100)
-res <- serosolver(example_par_tab, antibody_data, antigenic_map=antigenic_map,
-                filename=mcmc_file, n_chains=2,parallel=FALSE,
-                mcmc_pars=mcmc_pars,
-                verbose=FALSE)
+```
 
-## Look at model fits to the data
-res$plot_fits_cross_sectional
+The complete pipeline can be run with the following call. It is shown here for reference; the vignette runs the call in a hidden chunk below only when the required chain files do not already exist.
+
+```{r fit_model_call, eval=FALSE}
+res <- serosolver(
+  example_par_tab,
+  antibody_data,
+  antigenic_map = antigenic_map,
+  filename = mcmc_file,
+  n_chains = 2,
+  parallel = FALSE,
+  mcmc_pars = mcmc_pars,
+  verbose = FALSE
+)
+```
+
+```{r fit_model, echo=FALSE, results='hide', message=FALSE, warning=FALSE}
+settings_file <- paste0(mcmc_file, "_serosolver_settings.RData")
+chain_files <- list.files(
+  mcmc_dir,
+  pattern = paste0("^", basename(mcmc_file), "_[0-9]+_chain\\.csv$"),
+  full.names = TRUE
+)
+infection_history_files <- sub(
+  "_chain\\.csv$", "_infection_histories.csv", chain_files
+)
+chains_available <- length(chain_files) > 0L &&
+  file.exists(settings_file) &&
+  all(file.exists(infection_history_files))
+
+if (!chains_available) {
+  res <- serosolver(
+    example_par_tab,
+    antibody_data,
+    antigenic_map = antigenic_map,
+    filename = mcmc_file,
+    n_chains = 2,
+    parallel = FALSE,
+    mcmc_pars = mcmc_pars,
+    verbose = FALSE
+  )
+} else {
+  load(settings_file)
+  chains <- load_mcmc_chains(
+    location = mcmc_dir,
+    par_tab = example_par_tab,
+    burnin = mcmc_pars[["adaptive_iterations"]],
+    thin = mcmc_pars[["thin"]],
+    convert_mcmc = FALSE,
+    verbose = FALSE
+  )
+  all_diagnostics <- plot_mcmc_diagnostics(
+    location = mcmc_dir,
+    par_tab = example_par_tab,
+    burnin = mcmc_pars[["adaptive_iterations"]]
+  )
+  res <- list(
+    all_diagnostics = all_diagnostics,
+    settings = serosolver_settings,
+    plot_fits_cross_sectional = plot_model_fits(
+      chains$theta_chain,
+      chains$inf_chain,
+      individuals = 1:5,
+      settings = serosolver_settings,
+      orientation = "cross-sectional",
+      expand_to_all_times = FALSE
+    ),
+    plot_attack_rates = plot_attack_rates(
+      chains$inf_chain,
+      settings = serosolver_settings,
+      by_group = TRUE,
+      plot_den = FALSE
+    ),
+    plot_antibody_model = plot_estimated_antibody_model(
+      chains$theta_chain,
+      settings = serosolver_settings,
+      solve_times = serosolver_settings$possible_exposure_times
+    ),
+    mcmc_chains = chains
+  )
+}
 ```
 
 ## Installation and dependencies
