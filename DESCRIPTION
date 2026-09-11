@@ -36,24 +36,28 @@ Imports:
     ggplot2,
     dplyr,
     tidyr,
-    Rcpp
-Suggests:
+    Rcpp,
     coda,
     foreach,
-    knitr,
     Matrix,
+    MASS,
+    reshape2
+Suggests:
+    devtools,
+    pak,
+    knitr,
     rmarkdown,
     testthat,
     GGally,
-    MASS,
     bayesplot,
     deSolve,
-    reshape2,
     ggpubr,
-    viridis,
-    foreach,
     doParallel,
-    doRNG
+    doRNG,
+    doMC,
+    plyr,
+    tidyverse,
+    viridis
 LinkingTo: 
     Rcpp,
     RcppArmadillo,

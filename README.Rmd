@@ -2,6 +2,8 @@
 output: github_document
 ---
 
+<!-- Modified by an AI assistant on 2026-09-11 using GPT-5. Changes in this pass are limited to README wording/code tidying, package requirements, and links to existing documentation. -->
+
 <!-- README.md is generated from README.Rmd. Please edit that file -->
 
 ```{r, include = FALSE}
@@ -12,49 +14,62 @@ knitr::opts_chunk$set(
   out.width = "100%",
   eval=TRUE
 )
+library(tidyverse)
 ```
-# Update 16/01/2024
-`serosolver` is in the midst of an overhaul. Please use the `published` branch to ensure continued compatibility with existing projects.
-
-```{r, eval=FALSE}
-devtools::install_github("seroanalytics/serosolver",ref="published")
-```
-
 # serosolver
 
 [![Project Status: Active – The project has reached a stable, usable state and is being actively developed.](https://www.repostatus.org/badges/latest/active.svg)](https://www.repostatus.org/#active)
 
 `serosolver` uses a hierarchical model with a custom Markov chain Monte Carlo sampler to simultaneously infer antibody kinetics and infection histories from cross-sectional or longitudinal serological data. `serosolver` is a [time-since-infection serodynamics model](https://osf.io/preprints/osf/kqdsn), meaning that infection times are back-calculated from one or more antibody measurements through an antibody kinetics model. `serosolver` can be used to infer infection timings during a study period using longitudinal measurements against a single antigen, or lifetime infection histories using multi-antigen serology panels. The package and model are described by Hay _et al._ [here](https://doi.org/10.1371/journal.pcbi.1007840).
 
-## Recent changes
-`serosolver` is back in active development to fix bugs, standardize variable names and add new features.
+## New features
+`serosolver` is in active development with new features and ongoing improvements.
 <details>
-  <summary>List of recent changes:</summary>
+  <summary>List of new features:</summary>
   
-* Overhaul of variable names (e.g., _titre_ -> _measurement_, _strain_ -> _biomarker_id_)
-* Consolidation of plotting functions
-* Moving more options and inputs behind the scenes to streamline the user interface
-* Generalization to consider multiple biomarker types per sample (e.g., antibody titre and avidity)
-* Support for continuous as well as discrete observations (e.g., can now fit to ELISA data as well as HAI titres)
-* Model infection histories and antibody kinetics as a function of demographic variables
-* Allow some infection states to be fixed during fitting
-* Ways to fix or estimate starting/baseline titres
-* _IN PROGRESS_ Some small improvements to the MCMC sampler and parameter transformations
-* _IN PROGRESS_ Improved guidance and support for using priors
-* _IN PROGRESS_ Inclusion of explicit immunity model
-* _IN PROGRESS_ Added tests
+* Generalisation to multiple biomarker types per sample (e.g., antibody titre and avidity)
+* Support for continuous and discrete observations (e.g., ELISA data and HAI titres)
+* Stratification by demographic variables
+* Fixing infection states during fitting
+* Fixing or estimating starting titres
+* Improved user interface
 </details>
 
 ## Installation
-1. Install [R][r-project]
 
-2. Install the development version of serosolver from [GitHub](https://github.com/seroanalytics/serosolver):
+`serosolver` is in the midst of an overhaul. Please use the `published` branch to ensure continued compatibility with existing projects.
+
+```{r, eval=FALSE}
+pak::pak("github::seroanalytics/serosolver@published")
+```
+
+Install the development version of serosolver from [GitHub](https://github.com/seroanalytics/serosolver):
 
 ```{r installation,eval=FALSE}
-devtools::install_github("seroanalytics/serosolver")
+pak::pak("seroanalytics/serosolver")
 library(serosolver)
 ```
-## Guide and vignettes
+
+## Dependencies
+
+A working C++14 compiler is needed. The package uses `Rcpp`, `RcppArmadillo`, and `RcppParallel`.
+
+```{r package_installation, eval=FALSE}
+required_packages <- c(
+  "data.table", "ggplot2", "dplyr", "tidyr", "Rcpp", "coda",
+  "foreach", "Matrix", "MASS", "reshape2", "RcppArmadillo",
+  "RcppParallel"
+)
+
+additional_packages <- c(
+  "pak", "doParallel", "doRNG", "devtools", "plyr", "bayesplot",
+  "viridis", "ggpubr"
+)
+
+install.packages(c(required_packages, additional_packages))
+```
+
+## Resources
 
 Read the [guide][vignette-doc] to set up and run a simple implementation with a simulation model.
 
@@ -62,14 +77,16 @@ Additional vignettes:
 
 * [Longitudinal data][c1-vignette-doc]: estimating infection timings using longitudinal data, example of influenza A/H1N1p in Hong Kong
 * [Cross-sectional data][c2-vignette-doc]: estimating life-course infection histories from multi-strain serology, example of influenza A/H3N2 from the [Fluscape cohort](https://pubmed.ncbi.nlm.nih.gov/26875566/)
-* TBC Overview of optional features: walkthrough of additional `serosolver` features and use cases, such as inclusion of biomarker-specific measurement offsets
-* TBC Multiple measurements: fitting `serosolver` to multiple biomarker types, example of binding avidity and ELISA measurements per sample
-* TBC Group-level differences: estimating demographic differences in antibody kinetics and attack rates
+* [Optional features][vignette-doc]: walkthrough of additional `serosolver` features and use cases, such as inclusion of biomarker-specific measurement offsets
+* [Multiple measurements][vignette-doc]: fitting `serosolver` to multiple biomarker types, example of binding avidity and ELISA measurements per sample
+* [Group-level differences][vignette-doc]: estimating demographic differences in antibody kinetics and attack rates
+* [Naming conventions][naming-vignette-doc]: the current names for datasets, variables, and model inputs
 
 [r-project]: http://cran.r-project.org
 [vignette-doc]: https://seroanalytics.github.io/serosolver/articles/serosolver-quick_start_guide.html
 [c1-vignette-doc]: https://seroanalytics.github.io/serosolver/articles/cs1_vignette.html
 [c2-vignette-doc]: https://seroanalytics.github.io/serosolver/articles/cs2_vignette.html
+[naming-vignette-doc]: https://seroanalytics.github.io/serosolver/articles/naming_convention.html
 
 ## Example
 
@@ -90,28 +107,21 @@ data(example_par_tab)
 data(example_antigenic_map)
 data(example_antibody_data)
 data(example_inf_hist)
+
+## Check the dataset and model control table
+example_antibody_data <- check_data(example_antibody_data)
+example_par_tab <- check_par_tab(example_par_tab)
 ```
 ```{r example_plot, message=FALSE,warning=FALSE, fig.width=6,fig.height=5}
-plot_antibody_data(example_antibody_data,example_antigenic_map$inf_times,n_indivs=1:4,example_inf_hist)
+plot_antibody_data(example_antibody_data,example_antigenic_map$inf_times,n_indivs=1:5,infection_histories=example_inf_hist)
 ```
 
-```{r example_mcmc, message=FALSE,warning=FALSE}
+```{r example_mcmc, message=FALSE,warning=FALSE,eval=TRUE}
 ## Run the MCMC
-# This example uses prior version 2 (i.e. beta prior on phi with parameters shape1 and shape2)
 output <- serosolver::serosolver(example_par_tab, example_antibody_data, antigenic_map=example_antigenic_map,
                 filename="readme", n_chains=3,parallel=TRUE,
                 mcmc_pars=c(adaptive_iterations=10000, iterations=50000),verbose=TRUE)
 ```
-```{r example_model_fits, message=FALSE,warning=FALSE, fig.width=6,fig.height=5}
-# Plot model predicted titres for a subset of individuals
-chains <- load_mcmc_chains(location=getwd(),par_tab=example_par_tab,burnin = 10000)
-plot_model_fits(chain = chains$theta_chain,
-                infection_histories = chains$inf_chain,
-                known_infection_history = example_inf_hist,
-                individuals=1:4,
-                orientation="cross-sectional",
-                settings=output$settings)
-
+```{r example_model_fits, message=FALSE,warning=FALSE,eval=TRUE}
+output$plot_fits_cross_sectional
 ```
-
-

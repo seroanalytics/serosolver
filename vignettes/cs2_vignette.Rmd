@@ -12,6 +12,8 @@ vignette: |
   %\VignetteEngine{knitr::rmarkdown} 
 ---
 
+<!-- Modified by an AI assistant on 2026-09-11 using GPT-5. Updated installation instructions from devtools::install_github() to pak::pak(). -->
+
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(
   collapse = TRUE,
@@ -28,10 +30,10 @@ This vignette demonstrates only how to reproduce the MCMC chains, simulate data,
 # Setup
 
 ## Installation and requirements
-`serosolver` may be installed from github using the `devtools` package. There are a number of additional packages that we need for this analysis.
+`serosolver` may be installed from github using the `pak` package. There are a number of additional packages that we need for this analysis.
 ```{r message=FALSE, warning=FALSE, r,eval=TRUE}
 # Required to run serosolver
-devtools::install_github("seroanalytics/serosolver")
+pak::pak("seroanalytics/serosolver")
 library(serosolver)
 library(plyr)
 library(data.table)
