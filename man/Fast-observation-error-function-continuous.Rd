@@ -34,10 +34,7 @@ Fast observation error function continuous with false positives
  Calculate the probability of a set of observed antibody levels given a corresponding set of predicted antibody levels assuming continuous, bounded observations. For true negatives (i.e., model predicts no infections), then the majority of the PDF is at min_measurement. There is a probability, fp_rate, of observing a value within the detectable range.
 }
 \seealso{
-Other likelihood_functions: 
-\code{\link{likelihood_func_fast}()}
-
-Other likelihood_functions: 
-\code{\link{likelihood_func_fast}()}
+Other likelihood_functions:
+\code{\link[=likelihood_func_fast]{likelihood_func_fast()}}
 }
 \concept{likelihood_functions}

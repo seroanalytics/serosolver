@@ -20,11 +20,11 @@ the scaled step size
 Scales the given step size (between 0 and 1) based on the current acceptance rate to get closed to the desired acceptance rate
 }
 \seealso{
-Other mcmc: 
-\code{\link{generate_start_tab}()},
-\code{\link{rm_scale}()},
-\code{\link{save_infection_history_to_disk}()},
-\code{\link{scaletuning_alt}()},
-\code{\link{serosolver}()}
+Other mcmc:
+\code{\link[=generate_start_tab]{generate_start_tab()}},
+\code{\link[=rm_scale]{rm_scale()}},
+\code{\link[=save_infection_history_to_disk]{save_infection_history_to_disk()}},
+\code{\link[=scaletuning_alt]{scaletuning_alt()}},
+\code{\link[=serosolver]{serosolver()}}
 }
 \concept{mcmc}

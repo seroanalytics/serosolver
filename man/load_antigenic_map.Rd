@@ -24,11 +24,11 @@ Reads in an antigenic map from the first CSV file found matching the pattern `*_
 \seealso{
 [load_antibody_data()], [load_start_tab()]
 
-Other load_data_functions: 
-\code{\link{load_antibody_data}()},
-\code{\link{load_infection_chains}()},
-\code{\link{load_mcmc_chains}()},
-\code{\link{load_start_tab}()},
-\code{\link{load_theta_chains}()}
+Other load_data_functions:
+\code{\link[=load_antibody_data]{load_antibody_data()}},
+\code{\link[=load_infection_chains]{load_infection_chains()}},
+\code{\link[=load_mcmc_chains]{load_mcmc_chains()}},
+\code{\link[=load_start_tab]{load_start_tab()}},
+\code{\link[=load_theta_chains]{load_theta_chains()}}
 }
 \concept{load_data_functions}

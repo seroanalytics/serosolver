@@ -39,11 +39,11 @@ Reads in all MCMC chains for theta and infection histories from the specified di
 \dontrun{load_mcmc_chains(par_tab=par_tab, estimated_only=TRUE,thin=10,burnin=5000,convert_mcmc=TRUE)}
 }
 \seealso{
-Other load_data_functions: 
-\code{\link{load_antibody_data}()},
-\code{\link{load_antigenic_map}()},
-\code{\link{load_infection_chains}()},
-\code{\link{load_start_tab}()},
-\code{\link{load_theta_chains}()}
+Other load_data_functions:
+\code{\link[=load_antibody_data]{load_antibody_data()}},
+\code{\link[=load_antigenic_map]{load_antigenic_map()}},
+\code{\link[=load_infection_chains]{load_infection_chains()}},
+\code{\link[=load_start_tab]{load_start_tab()}},
+\code{\link[=load_theta_chains]{load_theta_chains()}}
 }
 \concept{load_data_functions}

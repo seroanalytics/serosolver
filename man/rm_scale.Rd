@@ -10,11 +10,11 @@ rm_scale(step_scale, mc, target_acceptance_rate_theta, log_prob, N_adapt)
 Robins and Monro scaler, thanks to Michael White
 }
 \seealso{
-Other mcmc: 
-\code{\link{generate_start_tab}()},
-\code{\link{save_infection_history_to_disk}()},
-\code{\link{scaletuning}()},
-\code{\link{scaletuning_alt}()},
-\code{\link{serosolver}()}
+Other mcmc:
+\code{\link[=generate_start_tab]{generate_start_tab()}},
+\code{\link[=save_infection_history_to_disk]{save_infection_history_to_disk()}},
+\code{\link[=scaletuning]{scaletuning()}},
+\code{\link[=scaletuning_alt]{scaletuning_alt()}},
+\code{\link[=serosolver]{serosolver()}}
 }
 \concept{mcmc}

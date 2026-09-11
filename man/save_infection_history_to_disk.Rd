@@ -30,11 +30,11 @@ nothing
 Write given infection history to disk
 }
 \seealso{
-Other mcmc: 
-\code{\link{generate_start_tab}()},
-\code{\link{rm_scale}()},
-\code{\link{scaletuning}()},
-\code{\link{scaletuning_alt}()},
-\code{\link{serosolver}()}
+Other mcmc:
+\code{\link[=generate_start_tab]{generate_start_tab()}},
+\code{\link[=rm_scale]{rm_scale()}},
+\code{\link[=scaletuning]{scaletuning()}},
+\code{\link[=scaletuning_alt]{scaletuning_alt()}},
+\code{\link[=serosolver]{serosolver()}}
 }
 \concept{mcmc}

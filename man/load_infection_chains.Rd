@@ -35,11 +35,11 @@ Searches the given working directory for MCMC outputs from \code{\link{serosolve
 \seealso{
 [load_mcmc_chains()], [load_start_tab()], [plot_infection_histories()]
 
-Other load_data_functions: 
-\code{\link{load_antibody_data}()},
-\code{\link{load_antigenic_map}()},
-\code{\link{load_mcmc_chains}()},
-\code{\link{load_start_tab}()},
-\code{\link{load_theta_chains}()}
+Other load_data_functions:
+\code{\link[=load_antibody_data]{load_antibody_data()}},
+\code{\link[=load_antigenic_map]{load_antigenic_map()}},
+\code{\link[=load_mcmc_chains]{load_mcmc_chains()}},
+\code{\link[=load_start_tab]{load_start_tab()}},
+\code{\link[=load_theta_chains]{load_theta_chains()}}
 }
 \concept{load_data_functions}

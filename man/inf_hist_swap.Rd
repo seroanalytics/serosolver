@@ -40,10 +40,10 @@ sample_mask <- create_sample_mask(example_antibody_data, times)
 new_inf_hist <- inf_hist_swap(example_inf_hist, age_mask,sample_mask, 1,3)[[1]]
 }
 \seealso{
-Other proposals: 
-\code{\link{inf_hist_swap_phi}()},
-\code{\link{infection_history_symmetric}()},
-\code{\link{mvr_proposal}()},
-\code{\link{univ_proposal}()}
+Other proposals:
+\code{\link[=inf_hist_swap_phi]{inf_hist_swap_phi()}},
+\code{\link[=infection_history_symmetric]{infection_history_symmetric()}},
+\code{\link[=mvr_proposal]{mvr_proposal()}},
+\code{\link[=univ_proposal]{univ_proposal()}}
 }
 \concept{proposals}

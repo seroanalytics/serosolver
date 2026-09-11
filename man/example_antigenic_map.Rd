@@ -19,7 +19,7 @@ data(example_antigenic_map)
 Example of the 2-dimensional antigenic map used through \code{serosolver}. This data frame specifies the antigenic coordinates for each pathogen/variant, with the assumption that only one representative variant circulates in each time period
 }
 \seealso{
-Other example_data: 
+Other example_data:
 \code{\link{example_antibody_data}},
 \code{\link{example_inf_chain}},
 \code{\link{example_inf_hist}},

@@ -63,6 +63,6 @@ LinkingTo:
     RcppArmadillo,
     RcppParallel
 SystemRequirements: C++14
-RoxygenNote: 7.3.1
 VignetteBuilder: knitr
 Encoding: UTF-8
+Config/roxygen2/version: 8.1.0

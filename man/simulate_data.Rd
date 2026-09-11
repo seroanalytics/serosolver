@@ -92,8 +92,8 @@ antibody_data <- all_simulated_data$data
 antibody_data <- merge(antibody_data, all_simulated_data$ages)
 }
 \seealso{
-Other simulation_functions: 
-\code{\link{simulate_attack_rates}()},
-\code{\link{simulate_infection_histories}()}
+Other simulation_functions:
+\code{\link[=simulate_attack_rates]{simulate_attack_rates()}},
+\code{\link[=simulate_infection_histories]{simulate_infection_histories()}}
 }
 \concept{simulation_functions}

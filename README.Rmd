@@ -94,13 +94,6 @@ This is a basic example of simulating some serological data and fitting the mode
 
 ```{r example_setup, message=FALSE,warning=FALSE}
 library(serosolver)
-library(ggplot2)
-library(plyr)
-library(dplyr)
-library(tidyr)
-library(data.table)
-library(doParallel)
-library(coda)
 
 ## Load in example parameter values and antigenic map
 data(example_par_tab)
@@ -108,7 +101,7 @@ data(example_antigenic_map)
 data(example_antibody_data)
 data(example_inf_hist)
 
-## Check the dataset and model control table
+## Check the dataset and model control table for errors
 example_antibody_data <- check_data(example_antibody_data)
 example_par_tab <- check_par_tab(example_par_tab)
 ```
@@ -117,7 +110,7 @@ plot_antibody_data(example_antibody_data,example_antigenic_map$inf_times,n_indiv
 ```
 
 ```{r example_mcmc, message=FALSE,warning=FALSE,eval=TRUE}
-## Run the MCMC
+## Run serosolver
 output <- serosolver::serosolver(example_par_tab, example_antibody_data, antigenic_map=example_antigenic_map,
                 filename="readme", n_chains=3,parallel=TRUE,
                 mcmc_pars=c(adaptive_iterations=10000, iterations=50000),verbose=TRUE)

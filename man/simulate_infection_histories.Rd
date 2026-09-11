@@ -31,8 +31,8 @@ demographics <- data.frame(individual = 1:n_indiv,birth=sample(1:5,n_indiv,repla
 inf_hist <- simulate_infection_histories(p_inf, possible_exposure_times, demographics)
 }
 \seealso{
-Other simulation_functions: 
-\code{\link{simulate_attack_rates}()},
-\code{\link{simulate_data}()}
+Other simulation_functions:
+\code{\link[=simulate_attack_rates]{simulate_attack_rates()}},
+\code{\link[=simulate_data]{simulate_data()}}
 }
 \concept{simulation_functions}

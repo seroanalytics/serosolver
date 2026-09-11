@@ -64,10 +64,10 @@ rand_ns <- runif(n_indiv)
 new_inf_hist <- infection_history_symmetric(example_inf_hist, indivs,age_mask ,sample_mask, proposal_inf_hist_distances, n_infs, rand_ns, 0.5)
 }
 \seealso{
-Other proposals: 
-\code{\link{inf_hist_swap}()},
-\code{\link{inf_hist_swap_phi}()},
-\code{\link{mvr_proposal}()},
-\code{\link{univ_proposal}()}
+Other proposals:
+\code{\link[=inf_hist_swap]{inf_hist_swap()}},
+\code{\link[=inf_hist_swap_phi]{inf_hist_swap_phi()}},
+\code{\link[=mvr_proposal]{mvr_proposal()}},
+\code{\link[=univ_proposal]{univ_proposal()}}
 }
 \concept{proposals}

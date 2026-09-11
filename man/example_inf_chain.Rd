@@ -14,7 +14,7 @@ data(example_inf_chain)
 Outputs of a quick MCMC run corresponding to the example data. See \code{\link{example_theta_chain}} for corresponding theta chain output. Note that this was run with prior version 2
 }
 \seealso{
-Other example_data: 
+Other example_data:
 \code{\link{example_antibody_data}},
 \code{\link{example_antigenic_map}},
 \code{\link{example_inf_hist}},

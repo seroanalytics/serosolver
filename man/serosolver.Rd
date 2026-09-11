@@ -133,11 +133,11 @@ res <- serosolver(example_par_tab, example_antibody_data, example_antigenic_map)
 }
 }
 \seealso{
-Other mcmc: 
-\code{\link{generate_start_tab}()},
-\code{\link{rm_scale}()},
-\code{\link{save_infection_history_to_disk}()},
-\code{\link{scaletuning}()},
-\code{\link{scaletuning_alt}()}
+Other mcmc:
+\code{\link[=generate_start_tab]{generate_start_tab()}},
+\code{\link[=rm_scale]{rm_scale()}},
+\code{\link[=save_infection_history_to_disk]{save_infection_history_to_disk()}},
+\code{\link[=scaletuning]{scaletuning()}},
+\code{\link[=scaletuning_alt]{scaletuning_alt()}}
 }
 \concept{mcmc}

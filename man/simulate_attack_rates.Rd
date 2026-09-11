@@ -33,8 +33,8 @@ a matrix of attack rates for each group
 Given a number of possible infection years, simulates attack rates from a log normal distribution with specified mean and standard deviation.
 }
 \seealso{
-Other simulation_functions: 
-\code{\link{simulate_data}()},
-\code{\link{simulate_infection_histories}()}
+Other simulation_functions:
+\code{\link[=simulate_data]{simulate_data()}},
+\code{\link[=simulate_infection_histories]{simulate_infection_histories()}}
 }
 \concept{simulation_functions}

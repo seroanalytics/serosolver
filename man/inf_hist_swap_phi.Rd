@@ -46,10 +46,10 @@ new_inf_hist <- inf_hist_swap_phi(example_inf_hist, phis, age_mask,sample_mask, 
 \seealso{
 \code{\link{inf_hist_swap}}
 
-Other proposals: 
-\code{\link{inf_hist_swap}()},
-\code{\link{infection_history_symmetric}()},
-\code{\link{mvr_proposal}()},
-\code{\link{univ_proposal}()}
+Other proposals:
+\code{\link[=inf_hist_swap]{inf_hist_swap()}},
+\code{\link[=infection_history_symmetric]{infection_history_symmetric()}},
+\code{\link[=mvr_proposal]{mvr_proposal()}},
+\code{\link[=univ_proposal]{univ_proposal()}}
 }
 \concept{proposals}

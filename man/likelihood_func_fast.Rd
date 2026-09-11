@@ -24,7 +24,7 @@ Fast observation error function
  Calculate the probability of a set of observed antibody levels given a corresponding set of predicted antibody levels.
 }
 \seealso{
-Other likelihood_functions: 
+Other likelihood_functions:
 \code{\link{Fast observation error function continuous}}
 }
 \concept{likelihood_functions}

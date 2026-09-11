@@ -24,8 +24,8 @@ times <- unique(example_antigenic_map$inf_times)
 get_n_alive(example_antibody_data, times)
 }
 \seealso{
-Other get_summary: 
-\code{\link{get_DOBs}()},
-\code{\link{get_n_alive_group}()}
+Other get_summary:
+\code{\link[=get_DOBs]{get_DOBs()}},
+\code{\link[=get_n_alive_group]{get_n_alive_group()}}
 }
 \concept{get_summary}

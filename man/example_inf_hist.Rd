@@ -14,7 +14,7 @@ data(example_inf_hist)
 Example of the infection history matrix for a cohort of 50 individuals, matching \code{\link{example_antibody_data}} and \code{\link{example_antigenic_map}}
 }
 \seealso{
-Other example_data: 
+Other example_data:
 \code{\link{example_antibody_data}},
 \code{\link{example_antigenic_map}},
 \code{\link{example_inf_chain}},

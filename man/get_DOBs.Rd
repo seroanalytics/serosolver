@@ -20,8 +20,8 @@ data(example_antibody_data)
 get_DOBs(antibody_data)
 }
 \seealso{
-Other get_summary: 
-\code{\link{get_n_alive}()},
-\code{\link{get_n_alive_group}()}
+Other get_summary:
+\code{\link[=get_n_alive]{get_n_alive()}},
+\code{\link[=get_n_alive_group]{get_n_alive_group()}}
 }
 \concept{get_summary}

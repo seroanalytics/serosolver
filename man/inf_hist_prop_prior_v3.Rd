@@ -43,7 +43,7 @@ a matrix of 1s and 0s corresponding to the infection histories for all individua
 Proposes a new matrix of infection histories using a beta binomial proposal distribution. This particular implementation allows for n_infs epoch times to be changed with each function call. Furthermore, the size of the swap step is specified for each individual by proposal_inf_hist_distances.
 }
 \seealso{
-Other infection_history_proposal: 
-\code{\link{inf_hist_prop_prior_v2_and_v4}()}
+Other infection_history_proposal:
+\code{\link[=inf_hist_prop_prior_v2_and_v4]{inf_hist_prop_prior_v2_and_v4()}}
 }
 \concept{infection_history_proposal}

@@ -30,7 +30,7 @@ list with three entries: 1) the updated antigenic map, 2) the updated possible_e
 Cleans up an antigenic_map data frame based on provided inputs. Two checks are carried out. First, it will check if an antigenic map is provided, and if so, it will align its entries with possible_exposure_times. If no antigenic map is provided, it will create a dummy map where all pathogens have the same position on the map. Second, it will enumerate the antigenic map for each unique biomarker group, unless the antigenic map has already been enumerated.
 }
 \seealso{
-Other antigenic_maps: 
-\code{\link{generate_antigenic_map_flexible}()}
+Other antigenic_maps:
+\code{\link[=generate_antigenic_map_flexible]{generate_antigenic_map_flexible()}}
 }
 \concept{antigenic_maps}

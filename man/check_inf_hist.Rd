@@ -36,12 +36,12 @@ nothing, prints a warning
 Checks that the infection history matrix is allowable given the birth dates and sampling times of the data
 }
 \seealso{
-Other check_inputs: 
-\code{\link{check_attack_rates}()},
-\code{\link{check_data}()},
-\code{\link{check_demographics}()},
-\code{\link{check_par_tab}()},
-\code{\link{check_proposals}()}
+Other check_inputs:
+\code{\link[=check_attack_rates]{check_attack_rates()}},
+\code{\link[=check_data]{check_data()}},
+\code{\link[=check_demographics]{check_demographics()}},
+\code{\link[=check_par_tab]{check_par_tab()}},
+\code{\link[=check_proposals]{check_proposals()}}
 }
 \concept{check_inputs}
 \concept{check_inputs

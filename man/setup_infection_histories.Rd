@@ -36,7 +36,7 @@ data(example_antigenic_map)
 start_inf <- setup_infection_histories(example_antibody_data, example_antigenic_map$inf_times)
 }
 \seealso{
-Other setup_infection_histories: 
-\code{\link{setup_infection_histories_antibody_level}()}
+Other setup_infection_histories:
+\code{\link[=setup_infection_histories_antibody_level]{setup_infection_histories_antibody_level()}}
 }
 \concept{setup_infection_histories}

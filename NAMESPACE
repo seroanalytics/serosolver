@@ -102,4 +102,56 @@ export(sum_likelihoods)
 export(summarize_run_lengths)
 export(unregister_dopar)
 importFrom(Rcpp,evalCpp)
+importFrom(coda,
+  as.mcmc,
+  as.mcmc.list,
+  effectiveSize,
+  gelman.diag
+)
+importFrom(data.table,
+  `%like%`,
+  data.table,
+  fsetdiff,
+  key
+)
+importFrom(dplyr,
+  `%>%`,
+  across,
+  all_of,
+  arrange,
+  bind_cols,
+  bind_rows,
+  case_when,
+  cur_group_id,
+  distinct,
+  everything,
+  filter,
+  group_by,
+  if_else,
+  left_join,
+  mutate,
+  n,
+  pull,
+  rename,
+  row_number,
+  sample_n,
+  select,
+  summarise,
+  summarize,
+  tally,
+  tibble,
+  ungroup
+)
+importFrom(foreach,
+  `%do%`,
+  foreach
+)
+importFrom(tidyr,
+  complete,
+  drop_na,
+  expand_grid,
+  pivot_longer,
+  pivot_wider,
+  unnest
+)
 useDynLib(serosolver)

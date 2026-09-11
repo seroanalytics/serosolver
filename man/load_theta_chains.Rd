@@ -39,11 +39,11 @@ Searches the given working directory for MCMC outputs from \code{\link{serosolve
 \dontrun{load_theta_chains(location="mcmc_chains", par_tab=par_tab, estimated_only=TRUE,thin=10,burnin=5000,convert_mcmc=TRUE)}
 }
 \seealso{
-Other load_data_functions: 
-\code{\link{load_antibody_data}()},
-\code{\link{load_antigenic_map}()},
-\code{\link{load_infection_chains}()},
-\code{\link{load_mcmc_chains}()},
-\code{\link{load_start_tab}()}
+Other load_data_functions:
+\code{\link[=load_antibody_data]{load_antibody_data()}},
+\code{\link[=load_antigenic_map]{load_antigenic_map()}},
+\code{\link[=load_infection_chains]{load_infection_chains()}},
+\code{\link[=load_mcmc_chains]{load_mcmc_chains()}},
+\code{\link[=load_start_tab]{load_start_tab()}}
 }
 \concept{load_data_functions}

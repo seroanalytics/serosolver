@@ -157,7 +157,7 @@ an R list with 6 entries: 1) the vector replacing likelihoods_pre_proposal, corr
 Generates a new infection history matrix and corresponding individual likelihoods, using a gibbs sampler from the infection history prior. See \code{\link{inf_hist_prop_prior_v3}}, as inputs are very similar.
 }
 \seealso{
-Other infection_history_proposal: 
-\code{\link{inf_hist_prop_prior_v3}()}
+Other infection_history_proposal:
+\code{\link[=inf_hist_prop_prior_v3]{inf_hist_prop_prior_v3()}}
 }
 \concept{infection_history_proposal}

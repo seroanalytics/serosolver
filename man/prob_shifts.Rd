@@ -18,17 +18,17 @@ a single prior probability
 Assumes measurement shifts are drawn from a normal distribution (random effects) with given standard deviation and mean. Code is commented out to assume log normally distributied
 }
 \seealso{
-Other priors: 
-\code{\link{calc_phi_probs}()},
-\code{\link{calc_phi_probs_indiv}()},
-\code{\link{calc_phi_probs_spline}()},
-\code{\link{create_prob_shifts}()},
-\code{\link{find_beta_prior_mode}()},
-\code{\link{find_beta_prior_with_mean}()},
-\code{\link{find_beta_prior_with_mean_var}()},
-\code{\link{fit_beta_prior}()},
-\code{\link{fit_normal_prior}()},
-\code{\link{inf_mat_prior}()},
-\code{\link{infection_history_prior}()}
+Other priors:
+\code{\link[=calc_phi_probs]{calc_phi_probs()}},
+\code{\link[=calc_phi_probs_indiv]{calc_phi_probs_indiv()}},
+\code{\link[=calc_phi_probs_spline]{calc_phi_probs_spline()}},
+\code{\link[=create_prob_shifts]{create_prob_shifts()}},
+\code{\link[=find_beta_prior_mode]{find_beta_prior_mode()}},
+\code{\link[=find_beta_prior_with_mean]{find_beta_prior_with_mean()}},
+\code{\link[=find_beta_prior_with_mean_var]{find_beta_prior_with_mean_var()}},
+\code{\link[=fit_beta_prior]{fit_beta_prior()}},
+\code{\link[=fit_normal_prior]{fit_normal_prior()}},
+\code{\link[=inf_mat_prior]{inf_mat_prior()}},
+\code{\link[=infection_history_prior]{infection_history_prior()}}
 }
 \concept{priors}

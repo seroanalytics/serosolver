@@ -14,7 +14,7 @@ data(cs1_chains_real_b)
 MCMC outputs from case study 1 analysis on real data, for the second call of load_mcmc_chains. This example data object contains 3 MCMC chains thinned down to 100 samples from the posterior for each chain. The structure of the data is as returned from \code{\link{load_mcmc_chains}}.
 }
 \seealso{
-Other case_study_data: 
+Other case_study_data:
 \code{\link{cs1_chains_real}},
 \code{\link{cs1_chains_sim}},
 \code{\link{cs2_chains_real}},

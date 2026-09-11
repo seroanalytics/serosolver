@@ -42,16 +42,16 @@ plot_antibody_data(example_antibody_data, possible_exposure_times, 5, example_in
 }
 }
 \seealso{
-Other infection_history_plots: 
-\code{\link{calculate_infection_history_statistics}()},
-\code{\link{plot_antibody_predictions}()},
-\code{\link{plot_cumulative_infection_histories}()},
-\code{\link{plot_estimated_antibody_model}()},
-\code{\link{plot_individual_number_infections}()},
-\code{\link{plot_infection_history_chains_indiv}()},
-\code{\link{plot_infection_history_chains_time}()},
-\code{\link{plot_infection_history_posteriors}()},
-\code{\link{plot_model_fits}()},
-\code{\link{plot_total_number_infections}()}
+Other infection_history_plots:
+\code{\link[=calculate_infection_history_statistics]{calculate_infection_history_statistics()}},
+\code{\link[=plot_antibody_predictions]{plot_antibody_predictions()}},
+\code{\link[=plot_cumulative_infection_histories]{plot_cumulative_infection_histories()}},
+\code{\link[=plot_estimated_antibody_model]{plot_estimated_antibody_model()}},
+\code{\link[=plot_individual_number_infections]{plot_individual_number_infections()}},
+\code{\link[=plot_infection_history_chains_indiv]{plot_infection_history_chains_indiv()}},
+\code{\link[=plot_infection_history_chains_time]{plot_infection_history_chains_time()}},
+\code{\link[=plot_infection_history_posteriors]{plot_infection_history_posteriors()}},
+\code{\link[=plot_model_fits]{plot_model_fits()}},
+\code{\link[=plot_total_number_infections]{plot_total_number_infections()}}
 }
 \concept{infection_history_plots}
