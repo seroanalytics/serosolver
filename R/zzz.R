@@ -14,4 +14,13 @@
 #' @importFrom coda as.mcmc as.mcmc.list effectiveSize gelman.diag
 #' @importFrom foreach foreach `%do%`
 #' @importFrom doParallel registerDoParallel
+#' @importFrom ggplot2 `%+replace%` aes coord_cartesian element_blank element_line element_rect
+#'   element_text facet_grid facet_wrap geom_density geom_histogram geom_hline
+#'   geom_line geom_point geom_pointrange geom_rect geom_ribbon geom_violin
+#'   geom_vline ggplot guide_colourbar guides scale_alpha_continuous
+#'   scale_color_manual scale_color_viridis_d scale_fill_gradient scale_fill_manual
+#'   scale_fill_viridis_d scale_linetype_manual scale_shape_manual
+#'   scale_x_continuous scale_y_continuous stat_density_2d theme_bw theme_classic
+#'   theme_minimal theme xlab xlim ylab ylim margin
+#' @importFrom grid unit
 NULL
