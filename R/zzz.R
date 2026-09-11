@@ -13,4 +13,5 @@
 #'   unnest
 #' @importFrom coda as.mcmc as.mcmc.list effectiveSize gelman.diag
 #' @importFrom foreach foreach `%do%`
+#' @importFrom doParallel registerDoParallel
 NULL

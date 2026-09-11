@@ -114,6 +114,7 @@ importFrom(data.table,
   fsetdiff,
   key
 )
+importFrom(doParallel,registerDoParallel)
 importFrom(dplyr,
   `%>%`,
   across,

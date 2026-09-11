@@ -12,7 +12,7 @@ vignette: |
   %\VignetteEncoding{UTF-8}
 ---
 
-<!-- Modified by an AI assistant on 2026-09-11 using GPT-5. Updated installation instructions from devtools::install_github() to pak::pak(). -->
+<!-- Modified by an AI assistant on 2026-09-11 using GPT-5. Updated installation instructions to remotes::install_github(). -->
 
 ```{r setup, include = FALSE}
 knitr::opts_chunk$set(
@@ -97,10 +97,10 @@ output$plot_fits_cross_sectional
 
 ## Installation and dependencies
 
-Install `serosolver` using the `pak` package:
+Install `serosolver` using the `remotes` package:
 
 ```{r,eval=FALSE}
-pak::pak("seroanalytics/serosolver")
+remotes::install_github("seroanalytics/serosolver")
 ```
 
 Note, that `serosolver` uses `Rcpp` code, including `RcppArmadillo`. You will therefore need a working C++ compiler such as `clang` or `gcc`. The easiest way to set this up is up for Windows users is the [`Rtools`](https://cran.r-project.org/bin/windows/Rtools/rtools43/rtools.html) package. For Mac users, you will need to install a compiler such as [`Xcode`](https://mac.r-project.org/tools/) or [`clang`](https://cran.r-project.org/bin/macosx/tools/).

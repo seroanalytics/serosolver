@@ -49,14 +49,14 @@ List of new features:
 branch to ensure continued compatibility with existing projects.
 
 ``` r
-pak::pak("github::seroanalytics/serosolver@published")
+remotes::install_github("seroanalytics/serosolver", ref = "published")
 ```
 
 Install the development version of serosolver from
 [GitHub](https://github.com/seroanalytics/serosolver):
 
 ``` r
-pak::pak("seroanalytics/serosolver")
+remotes::install_github("seroanalytics/serosolver")
 library(serosolver)
 ```
 
@@ -73,7 +73,7 @@ required_packages <- c(
 )
 
 additional_packages <- c(
-  "pak", "doParallel", "doRNG", "devtools", "plyr", "bayesplot",
+  "remotes", "doParallel", "doRNG", "devtools", "plyr", "bayesplot",
   "viridis", "ggpubr"
 )
 

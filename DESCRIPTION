@@ -44,7 +44,7 @@ Imports:
     reshape2
 Suggests:
     devtools,
-    pak,
+    remotes,
     knitr,
     rmarkdown,
     testthat,
