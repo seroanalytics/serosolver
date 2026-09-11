@@ -168,6 +168,7 @@ importFrom(ggplot2,
   geom_violin,
   geom_vline,
   ggplot,
+  ggtitle,
   guide_colourbar,
   guides,
   margin,
@@ -192,6 +193,7 @@ importFrom(ggplot2,
   ylim
 )
 importFrom(grid,unit)
+importFrom(tibble,as_tibble)
 importFrom(tidyr,
   complete,
   drop_na,

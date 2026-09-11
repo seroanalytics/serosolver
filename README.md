@@ -120,13 +120,6 @@ the model using the MCMC framework.
 
 ``` r
 library(serosolver)
-library(ggplot2)
-library(plyr)
-library(dplyr)
-library(tidyr)
-library(data.table)
-library(doParallel)
-library(coda)
 
 ## Load in example parameter values and antigenic map
 data(example_par_tab)
@@ -134,7 +127,7 @@ data(example_antigenic_map)
 data(example_antibody_data)
 data(example_inf_hist)
 
-## Check the dataset and model control table
+## Check the dataset and model control table for errors
 example_antibody_data <- check_data(example_antibody_data)
 example_par_tab <- check_par_tab(example_par_tab)
 ```
@@ -146,8 +139,7 @@ plot_antibody_data(example_antibody_data,example_antigenic_map$inf_times,n_indiv
 <img src="man/figures/README-example_plot-1.png" alt="" width="100%" />
 
 ``` r
-## Run the MCMC
-# This example uses prior version 2 (i.e. beta prior on phi with parameters shape1 and shape2)
+## Run serosolver
 output <- serosolver::serosolver(example_par_tab, example_antibody_data, antigenic_map=example_antigenic_map,
                 filename="readme", n_chains=3,parallel=TRUE,
                 mcmc_pars=c(adaptive_iterations=10000, iterations=50000),verbose=TRUE)
