@@ -395,7 +395,7 @@ It is possible to assume different priors for the infection history model, but t
 In the parameter file, the column 'fixed' indicates if each parameter value is fixed or should be estimated. For values that are not fixed, starting values need to be generated. The below code generates a random starting value for unfixed parameter values.
 
 ```{r,echo=FALSE}
-plot_antibody_model(pars=example_par_tab,antigenic_map=example_antigenic_map,times=1:25)
+plot_antibody_model(pars=example_par_tab,antigenic_map=example_antigenic_map,times=example_antigenic_map$inf_times[1:25])
 ```
 
 ### 2.3 Observation model
@@ -433,7 +433,7 @@ The same idea can be used to plot prior attack rates for each population group a
 plot_antibody_model(
   pars = example_par_tab,
   antigenic_map = example_antigenic_map,
-  times = 1:25
+  times = example_antigenic_map$inf_times[1:25]
 )
 ```
 

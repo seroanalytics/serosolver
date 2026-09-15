@@ -1,4 +1,7 @@
 
+# Modified by an AI assistant on 2026-09-15 using GPT-5. Fixed the default
+# infection history in `plot_antibody_model()` to use the first supplied time.
+#'
 #' Antibody dependent boosting relationship
 #'
 #' Calculates the inferred antibody dependent boosting relationship from the MCMC chain
@@ -48,13 +51,8 @@ plot_antibody_model <- function(pars,
     pars <- pars_use
   }
   if(is.null(infection_history)){
-    infection_history <- 1
-    infection_history_intercept <- 1
-    if(!is.null(times)){
-      infection_history_intercept <- times[1]
-    } else if(!is.null(antigenic_map)){
-      infection_history_intercept <- min(antigenic_map$inf_times)
-    }
+    infection_history <- if(!is.null(times)) times[1] else antigenic_map$inf_times[1]
+    infection_history_intercept <- infection_history
   } else {
       infection_history_intercept <- infection_history
   }
@@ -753,4 +751,3 @@ plot_estimated_antibody_model <- function(chain,
   
   return(p1)
 }
-

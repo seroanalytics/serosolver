@@ -471,25 +471,34 @@ simulate_antibody_model <- function(pars,
   if(!is.null(antigenic_map) && length(times) > nrow(antigenic_map)){
     stop("length(times) cannot exceed the number of rows in antigenic_map.")
   }
+  if(!is.null(antigenic_map) && anyNA(match(times, antigenic_map$inf_times))){
+    stop("Every value in times must be present in antigenic_map$inf_times.")
+  }
   
   ## If no antigenic map is provided, create a dummy antigenic map where each element has the same antigenic coordinate
   if(is.null(antigenic_map)){
     antigenic_map <- data.frame(x_coord=1,y_coord=1,inf_times=times)
+    map_indices <- seq_along(times)
     biomarker_ids <- 0
     biomarker_id_labels <- 0
   } else {
-    biomarker_ids <- match(antigenic_map$inf_times[seq_along(times)], antigenic_map$inf_times[seq_along(times)]) -1
-    biomarker_id_labels <- antigenic_map$inf_times[seq_along(times)]
+    map_indices <- match(times, antigenic_map$inf_times)
+    biomarker_ids <- seq_along(times) - 1
+    biomarker_id_labels <- times
   }
   
   ## Setup antigenic map
-  use_antigenic_map <- melt_antigenic_coords(antigenic_map[seq_along(times),c("x_coord","y_coord")])
+  antigenic_map_for_times <- antigenic_map[map_indices, c("x_coord", "y_coord")]
+  use_antigenic_map <- melt_antigenic_coords(antigenic_map_for_times)
   antigenic_map_long <- matrix(create_cross_reactivity_vector(use_antigenic_map, pars["cr_long"],exponential_waning),ncol=1)
   antigenic_map_short <- matrix(create_cross_reactivity_vector(use_antigenic_map, pars["cr_short"],exponential_waning),ncol=1)
   
   ## If no infection history was provided, setup a dummy infection history vector with only the first entry as an infection
   if(is.null(infection_history)){
     infection_history <- times[1]
+  }
+  if(anyNA(match(infection_history, times))){
+    stop("All infection_history values must be present in times.")
   }
   infection_indices <- match(infection_history, times)-1 # infection_history-1
   
