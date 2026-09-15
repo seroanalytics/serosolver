@@ -20,7 +20,7 @@ knitr::opts_chunk$set(
   comment = "#>",
   fig.width = 8,
   fig.height = 6,
-  fig.path = file.path(tempdir(), "serosolver_quick_start_figures/")
+  fig.path = file.path(tempdir(), "serosolver_guide_figures/")
 )
 
 
@@ -30,16 +30,16 @@ data(example_par_tab)
 data(example_antigenic_map)
 par_tab <- example_par_tab
 cache_candidates <- c(
-  file.path("..", "inst", "extdata", "quick_start"),
-  file.path("inst", "extdata", "quick_start"),
-  system.file("extdata", "quick_start", package = "serosolver")
+  file.path("..", "inst", "extdata", "guide"),
+  file.path("inst", "extdata", "guide"),
+  system.file("extdata", "guide", package = "serosolver")
 )
 cache_candidates <- cache_candidates[dir.exists(cache_candidates)]
 if (!length(cache_candidates)) {
-  stop("The pre-cached quick-start MCMC chains could not be found.")
+  stop("The pre-cached guide MCMC chains could not be found.")
 }
 mcmc_dir <- cache_candidates[[1]]
-mcmc_file <- file.path(mcmc_dir, "quick_start")
+mcmc_file <- file.path(mcmc_dir, "guide")
 ```
 
 ## Overview
@@ -392,15 +392,90 @@ It is possible to assume different priors for the infection history model, but t
 
 ### 2.2 Antibody kinetics model and priors
 
-In the parameter file, the column 'fixed' indicates if each parameter value is fixed or should be estimated. For values that are not fixed, starting values need to be generated. The below code generates a random starting value for unfixed parameter values.
+`serosolver` models antibody measurements as arising from antibody responses following one or more infections. Users can specify the size and timing of short- and long-term boosts, antibody waning, antigenic seniority, and cross-reactivity between biomarkers using an antigenic map. The model is described fully in the main [publication](https://pubmed.ncbi.nlm.nih.gov/32365062/). In the parameter file, the column 'fixed' indicates if each parameter value is fixed or should be estimated. A brief summary of each model level is described here.
+
+You can inspect the shape of the assumed antibody kinetics model using the `plot_antibody_model` function along with `par_tab`, the antigenic map, and a chosen infection history. For example, the current assumed antibody kinetics model using the example antigenic map and assuming a single infection in 1975 produces longitudinal antibody kinetics and antibody landscapes which look like this:
 
 ```{r,echo=FALSE}
-plot_antibody_model(pars=example_par_tab,antigenic_map=example_antigenic_map,times=example_antigenic_map$inf_times[1:25])
+plot_antibody_model(
+  pars = example_par_tab,
+  infection_history = 1975,
+  antigenic_map = example_antigenic_map,
+  times = example_antigenic_map$inf_times[1:25]
+)
 ```
+
+The first plot shows the modelled antibody level over time (on the x-axis) stratified by each biomarker ID in the antigenic map. The second plot shows the antibody landscape at each sample time (as facets) with biomarker ID on the x-axis.
+
+#### 2.2.1 Boosting
+
+Following infection, `serosolver` assumes that an individual's antibody level against the infecting strain/variant increases by $\mu_{long} + \mu_{short}$, coded as `boost_short + boost_long` units over `boost_delay` time units. Note that `boost_delay` should be in integer units matching the timescale of the model. Estimating `boost_short` and `boost_long` jointly may be challenging without sufficient data, particularly longitudinal data to distinguish a short-term, transient response from the long-term, persistent response. Users may therefore wish to fix one of these parameters either at a known value or at 0.
+
+```{r, echo=FALSE,eval=FALSE}
+## Fix boost_short at 0 and only estimate long-term boosting
+par_tab[par_tab$names == "boost_short","fixed"] <- 1
+par_tab[par_tab$names == "boost_short","values"] <- 0
+```
+
+#### 2.2.2 Waning
+
+Both the short- and long-term boosts can be set to wane over time. These rates are set by $\omega_{short}$ and $\omega_{long}$, coded as `wane_short` and `wane_long` respectively. In practice, we have found it difficult to identify both waning rates, and usually fix `wane_long` at 0. Note that this parameter is not an exponential (on the natural scale) waning rate parameter by default: it describes the proportion of the boost lost per time unit since infection, $t$:
+
+$$
+W(t)=\max\{0,1-\omega t\}
+$$
+
+Alternatively, users can model waning as exponential decay *on the log scale* (so exponential-on-exponential on the natural scale) by setting `exponential_waning=TRUE` in the `serosolver` call:
+
+$$
+W(t) = e^{-\omega t}
+$$
+
+Note that this setting also changes the cross-reactivity model below. The rationale behind these waning models is described in this [publication](https://doi.org/10.64898/2026.04.16.26351029).
+
+```{r}
+plot_antibody_model(
+  pars = example_par_tab,
+  infection_history = 1975,
+  antigenic_map = example_antigenic_map,
+  times = example_antigenic_map$inf_times[1:25],
+  exponential_waning=TRUE
+)[[1]]
+```
+
+If the default `exponential_waning=FALSE` is assumed, then the range of the waning parameters (lower and upper bounds) should be 0-1. Otherwise, if `exponential_waning=TRUE`, then the parameters should be assumed to be positively bounded.
+
+#### 2.2.3 Cross-reactivity
+
+Cross-reactivity between biomarker IDs is modelled using the antigenic map input. Separate cross-reactivity parameters are used for the short- and long-term boosts, usually because short-term boosting is antigenically broader than the long-term boost. Cross-reactivity is modelled as a declining boost with increasing antigenic distance from the infecting strain: the degree of boosting to the infecting strain, $x$, is just `boost_long+boost_short`, but for heterologous strains, $y$, this declines as a linear function of antigenic distance such that the degree of boosting of antibody levels to strain $y$ given infection with strain $x$ is:
+
+$$
+B_{x,y}=\mu_{long} \text{max}\{0,1-\sigma_{long} \delta_{x,y}\} + \mu_{short} \text{max}\{0,1-\sigma_{short}\delta_{x,y}\} $$ where $\sigma_{long}$ and $\sigma_{short}$ correspond to `cr_long` and `cr_short` in `par_tab` respectively, and $\delta_{x,y}$ is the euclidean distance between strain $x$ and strain $y$ calculated from the antigenic map directly.
+
+As with the waning model, cross-reactivity can instead be assumed to decline exponentially rather than linearly with antigenic distance as:
+
+$$
+B_{x,y}=\mu_{long}e^{-\sigma_{long} \delta_{x,y}} + \mu_{short}e^{-\sigma_{short} \delta_{x,y}} $$
+
+If the default `exponential_waning=FALSE` is assumed, then the range of the cross-reactivity parameters (lower and upper bounds) should be 0-1. Otherwise, if `exponential_waning=TRUE`, then the parameters should be assumed to be positively bounded.
+
+If fixing either the long-term or short-term boosting arms to 0, then it is recommended to also fix the corresponding cross-reactivity parameters at 0.
+
+#### 2.2.4 Antigenic seniority
+
+`serosolver` can model the overall level of antibody boosting to decline with each successive infection using the antigenic seniority parameter, $\tau$, or `antigenic_seniority`. Antigenic seniority is modelled here as a simple phenomenological effect and thus we caution against overinterpretation. It simply suppresses each successive boost as a function of the number of prior infections as:
+
+$$
+S(k) = \text{max}\{0, 1-\tau(k-1)\}
+$$
+
+where $k-1$ gives the number of infections prior to the current one. Thus, the first infection has $S_{1}=1$, the second has $S(2)=\text{max}\{0, 1-\tau\}$, and the third has $S(3)=\text{max}\{0, 1-2\tau\}$, etc. Setting $\tau=0$ means that there is no reduction. This model stems from the paper by [Kucharski et al](https://doi.org/10.1371/journal.pbio.1002082) and should not be over-interpreted as mechanistically representing antigenic seniority, back-boosting, or antibody ceiling effects.
 
 ### 2.3 Observation model
 
-Most applications of `serosolver` involve fitting to antibody titre or concentration data. Make a note of whether your data are continuous or discrete, and the upper and lower limits of detection of the assay. Continuous data can take values across a range, whereas discrete data take separate values such as integer titre categories. These limits and the measurement type will need to be specified in the model later using the `par_tab` object. `serosolver` also supports multiple measurement types per sample, for example, measuring both antibody titre and avidity. These observation types are distinguished by the `biomarker_group` variable --- all observations within a `biomarker_group` are underpinned by their own antibody kinetics model parameters, but arising from the same individual-level infection histories. These will be specified using the `data_type` argument later.
+Most applications of `serosolver` involve fitting to antibody titre or concentration data. Make a note of whether your data are continuous or discrete, and the upper and lower limits of detection of the assay. Continuous data can take values across a range, whereas discrete data take separate values such as integer titre categories. These limits and the measurement type will need to be specified in the model using the `par_tab` object. `serosolver` also supports multiple measurement types per sample, for example, measuring both antibody titre and avidity. These observation types are distinguished by the `biomarker_group` variable -- all observations within a `biomarker_group` are underpinned by their own antibody kinetics model parameters, but arising from the same individual-level infection histories.
+
+The following inputs should be updated depending on the limits of detection of the assay used and whether the data are continuous or discrete:
 
 ```{r,eval=FALSE}
 ## Example of two biomarker_groups, one has discrete data one has continuous data
@@ -430,10 +505,15 @@ hist(prior_attack_rate, breaks = 50,
 The same idea can be used to plot prior attack rates for each population group after setting the relevant `par_tab$stratification` values. The implied antibody kinetics from the starting parameter values can be plotted with:
 
 ```{r, eval=TRUE}
-plot_antibody_model(
-  pars = example_par_tab,
-  antigenic_map = example_antigenic_map,
-  times = example_antigenic_map$inf_times[1:25]
+lapply(
+  plot_antibody_model(
+    pars = example_par_tab,
+    antigenic_map = example_antigenic_map,
+    times = example_antigenic_map$inf_times[1:25]
+  ),
+  function(p) p + ggplot2::theme(
+    axis.text.x = ggplot2::element_text(angle = 45, hjust = 1, size = 6)
+  )
 )
 ```
 
@@ -443,9 +523,9 @@ More complete checks of prior attack-rate distributions, demographic-group prior
 
 ### 2.5 Advanced features
 
-`serosolver` can be used to fix selected infection states, provide starting antibody levels, include measurement offsets, use exponential rather than linear antibody waning, and fit multiple biomarker groups such as antibody titre and avidity together.
+`serosolver` has a number of advanced features for greater control over the model assumptions and inputs. Users can fix selected infection states, provide starting antibody levels, include measurement offsets (for systematic measurement biases), use exponential rather than linear antibody waning, and fit multiple biomarker groups such as antibody titre and avidity together.
 
-These features require additional data preparation and model decisions. They are not explained in detail in this quick-start guide yet and will be described, tested, and illustrated in the [advanced features vignette](ADVANCED_FEATURES_VIGNETTE_LINK) and the relevant case-study material.
+These features require additional data preparation and model decisions. They are explained in detail in the [advanced features vignette](ADVANCED_FEATURES_VIGNETTE_LINK) and the relevant case-study material.
 
 <!-- TODO: replace ADVANCED_FEATURES_VIGNETTE_LINK with the final vignette link. -->
 
@@ -487,7 +567,7 @@ chains <- load_mcmc_chains(
   thin = 1,
   convert_mcmc = TRUE
 )
-load(file.path(mcmc_dir, "quick_start_serosolver_settings.RData"))
+load(file.path(mcmc_dir, "guide_serosolver_settings.RData"))
 ```
 
 ## 4. Output posteriors {#output-posteriors}
