@@ -33,7 +33,7 @@ plot_antibody_dependent_boosting <- function(chain, n, titres = seq(0, 8, by = 0
 #' @inheritParams simulate_antibody_model
 #' @return a list with two ggplot objects, one showing the simulated antibody kinetics over time, stratified by biomarker ID, the other showing simulated antibody kinetics for each biomarker ID, stratified by sample time
 #' @examples
-#' plot_antibody_model(c("boost_long"=2,"boost_short"=3,"boost_delay"=1,"wane_short"=0.2,"wane_long"=0.01, "antigenic_seniority"=0,"cr_long"=0.1,"cr_short"=0.03), times=seq(2010:2020,by=1),infection_history=NULL,antigenic_map=example_antigenic_map)
+#' plot_antibody_model(c("boost_long"=2,"boost_short"=3,"boost_delay"=1,"wane_short"=0.2,"wane_long"=0.01, "antigenic_seniority"=0,"cr_long"=0.1,"cr_short"=0.03), times=seq(2000,2015,by=1),infection_history=NULL,antigenic_map=example_antigenic_map)
 #' @export
 plot_antibody_model <- function(pars, 
                                 times=NULL, 

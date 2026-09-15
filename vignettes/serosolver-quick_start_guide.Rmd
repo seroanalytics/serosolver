@@ -18,15 +18,27 @@ vignette: |
 knitr::opts_chunk$set(
   collapse = TRUE,
   comment = "#>",
+  fig.width = 8,
+  fig.height = 6,
   fig.path = file.path(tempdir(), "serosolver_quick_start_figures/")
 )
+
+
 library(serosolver)
 data(example_antibody_data)
 data(example_par_tab)
 data(example_antigenic_map)
 par_tab <- example_par_tab
-mcmc_dir <- file.path(tempdir(), "serosolver_quick_start")
-dir.create(mcmc_dir, showWarnings = FALSE, recursive = TRUE)
+cache_candidates <- c(
+  file.path("..", "inst", "extdata", "quick_start"),
+  file.path("inst", "extdata", "quick_start"),
+  system.file("extdata", "quick_start", package = "serosolver")
+)
+cache_candidates <- cache_candidates[dir.exists(cache_candidates)]
+if (!length(cache_candidates)) {
+  stop("The pre-cached quick-start MCMC chains could not be found.")
+}
+mcmc_dir <- cache_candidates[[1]]
 mcmc_file <- file.path(mcmc_dir, "quick_start")
 ```
 
@@ -50,7 +62,7 @@ knitr::include_graphics("figures/guide_fig1.png")
 
 The following code runs the entire pipeline for a simulation-recovery experiment with `serosolver`. We will step through each of these sections in more detail in this guide.
 
-```{r entire_simulation,echo=TRUE,eval=TRUE,results='hide',message=FALSE,warning=FALSE}
+```{r entire_simulation,echo=TRUE,eval=TRUE,results='hide',message=FALSE,warning=FALSE,fig.width=8,fig.height=6}
 library(serosolver)
 data(example_par_tab)
 data(example_antigenic_map)
@@ -90,8 +102,8 @@ true_inf_hist <- all_simulated_data$infection_histories
 plot_antibody_data(antibody_data,possible_exposure_times,1:4,infection_histories = true_inf_hist)
 
 ## MCMC settings used by the executable example
-mcmc_pars <- c(adaptive_iterations=500, iterations=1000,
-               thin=1, thin_inf_hist=1, save_block=100)
+mcmc_pars <- c(adaptive_iterations=2000, iterations=5000,
+               thin=5, thin_inf_hist=5, save_block=1000)
 ```
 
 The complete pipeline can be run with the following call. It is shown here for reference; the vignette runs the call in a hidden chunk below only when the required chain files do not already exist.
@@ -102,10 +114,9 @@ res <- serosolver(
   antibody_data,
   antigenic_map = antigenic_map,
   filename = mcmc_file,
-  n_chains = 2,
-  parallel = FALSE,
-  mcmc_pars = mcmc_pars,
-  verbose = FALSE
+  n_chains = 3,
+  parallel = TRUE,
+  mcmc_pars = mcmc_pars
 )
 ```
 
@@ -129,8 +140,8 @@ if (!chains_available) {
     antibody_data,
     antigenic_map = antigenic_map,
     filename = mcmc_file,
-    n_chains = 2,
-    parallel = FALSE,
+    n_chains = 3,
+    parallel = TRUE,
     mcmc_pars = mcmc_pars,
     verbose = FALSE
   )
@@ -380,10 +391,6 @@ Note that `serosolver` assumes the same Beta prior applies to all individuals an
 It is possible to assume different priors for the infection history model, but this is complex and not necessary for most use cases. You can read more about the different priors in the main [publication](https://pubmed.ncbi.nlm.nih.gov/32365062/), and if you really know what you're doing you can change the prior model with the `prior_version` argument of the main `serosolver` function.
 
 ### 2.2 Antibody kinetics model and priors
-
-```{r,echo=FALSE,results='asis'}
-  knitr::kable(example_par_tab)
-```
 
 In the parameter file, the column 'fixed' indicates if each parameter value is fixed or should be estimated. For values that are not fixed, starting values need to be generated. The below code generates a random starting value for unfixed parameter values.
 

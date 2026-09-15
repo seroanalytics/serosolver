@@ -1,3 +1,7 @@
+# Modified by an AI assistant on 2026-09-15 using GPT-5. Added a check to stop
+# `simulate_antibody_model()` before an overlong `times` vector can index past
+# the supplied antigenic map.
+#'
 #' Simulate full data set
 #'
 #' Simulates a full data set for a given set of parameters etc.
@@ -462,6 +466,10 @@ simulate_antibody_model <- function(pars,
   ## If no vector of times provided, take from the antigenic map
   if(is.null(times) & !is.null(antigenic_map)){
     times <- antigenic_map$inf_times
+  }
+
+  if(!is.null(antigenic_map) && length(times) > nrow(antigenic_map)){
+    stop("length(times) cannot exceed the number of rows in antigenic_map.")
   }
   
   ## If no antigenic map is provided, create a dummy antigenic map where each element has the same antigenic coordinate

@@ -1,3 +1,6 @@
+# Modified by an AI assistant on 2026-09-15 using GPT-5. Added a message when
+# R-hat is skipped because only one MCMC chain is available.
+#'
 #' Plot raw data
 #'
 #' Plots measured antibody measurements and known infection histories for all individuals, faceted by sample time (multi-antigen panel) or biomarker_id variable (longitudinal single antigen)
@@ -253,11 +256,13 @@ plot_mcmc_diagnostics <- function(location, par_tab, burnin, inf_hist_mcmc_summa
                               mean=par_means,lower95_CrI=par_lower95,upper95_CrI=par_upper95,
                               ess=ess)
   
-  if(length(chains$theta_list_chains) > 1){
+  n_chains <- length(chains$theta_list_chains)
+  if(n_chains > 1){
     gelman_res <- gelman.diag(chains1)
     par_estimates <- cbind(par_estimates, gelman_res$psrf)
     colnames(par_estimates)[7:8] <- c("Rhat point estimate","Rhat upper CI")
   } else {
+    message("R-hat not calculated: only one MCMC chain is available.")
     gelman_res <- "Cannot calculate Rhat with only 1 chain"
   }
   
