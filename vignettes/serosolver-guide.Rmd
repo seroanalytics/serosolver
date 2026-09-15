@@ -12,7 +12,7 @@ vignette: |
   %\VignetteEncoding{UTF-8}
 ---
 
-<!-- Modified by an AI assistant on 2026-09-15 using GPT-5. Updated the guide's MCMC cache handling so missing cached chains trigger the hidden fitting workflow; no functional package code was changed. -->
+<!-- Modified by an AI assistant on 2026-09-15 using GPT-5. Updated the guide's MCMC cache handling so missing cached chains trigger the hidden fitting workflow, with the cache stored in the package's inst/extdata directory. -->
 
 ```{r setup, include = FALSE}
 knitr::opts_chunk$set(
@@ -29,8 +29,12 @@ data(example_antibody_data)
 data(example_par_tab)
 data(example_antigenic_map)
 par_tab <- example_par_tab
-mcmc_dir <- file.path("inst", "extdata", "guide")
-dir.create(mcmc_dir, recursive = TRUE, showWarnings = FALSE)
+source_mcmc_dir <- file.path("..", "inst", "extdata", "guide")
+if (dir.exists(source_mcmc_dir)) {
+  mcmc_dir <- source_mcmc_dir
+} else {
+  mcmc_dir <- system.file("extdata", "guide", package = "serosolver")
+}
 mcmc_file <- file.path(mcmc_dir, "guide")
 ```
 
