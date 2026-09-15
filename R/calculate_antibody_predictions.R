@@ -1,3 +1,7 @@
+# Modified by an AI assistant on 2026-09-15 using GPT-5. Added an option to
+# solve predictions for all biomarker IDs in the antigenic map at observed sample times,
+# with a warning when missing starting levels are filled with zero.
+#'
 #' Generate antibody level credible intervals
 #'
 #' Generates credible intervals on antibody levels and infection histories from an MCMC chain output.
@@ -14,6 +18,7 @@
 #' @param for_res_plot TRUE/FALSE value. If using the output of this for plotting of residuals, returns the actual data points rather than summary statistics
 #' @param expand_antibody_data TRUE/FALSE value. If TRUE, solves antibody level predictions for the entire study period (i.e., between the range of antibody_data$sample_time). If left FALSE, then only solves for the infections times at which a antibody level against the circulating biomarker_id was measured in antibody_data.
 #' @param expand_to_all_times TRUE/FALSE value. If TRUE, solves antibody level predictions for all possible infection times (i.e., for the range in possible_exposure_times). If left FALSE, then only solves for the infections times at which a antibody level against the circulating biomarker_id was measured in antibody_data.
+#' @param expand_to_all_biomarker_ids TRUE/FALSE value. If TRUE, solves antibody level predictions for all biomarker IDs in the antigenic map while retaining the sample times in antibody_data.
 #' @param antibody_level_before_infection TRUE/FALSE value. If TRUE, solves antibody level predictions, but gives the predicted antibody level at a given time point BEFORE any infection during that time occurs.
 #' @param for_regression if TRUE, returns posterior draws rather than posterior summaries
 #' @param data_type integer, currently accepting 1 or 2. Set to 1 for discretized, bounded data, or 2 for continuous, bounded data. 
@@ -41,6 +46,7 @@ get_antibody_level_predictions <- function(chain, infection_histories, antibody_
                                            measurement_bias = NULL,
                                            for_res_plot = FALSE, expand_antibody_data = FALSE,
                                            expand_to_all_times=FALSE,
+                                           expand_to_all_biomarker_ids=FALSE,
                                            antibody_level_before_infection=FALSE, for_regression=FALSE,
                                            data_type=1,start_level="none",
                                            exponential_waning=FALSE){
@@ -116,25 +122,84 @@ get_antibody_level_predictions <- function(chain, infection_histories, antibody_
   ## See the function in posteriors.R
   antibody_data1 <- antibody_data
   start_level1 <- start_level
-  if (expand_antibody_data) {
+  if (expand_antibody_data | expand_to_all_biomarker_ids) {
     if(expand_to_all_times){
       expand_times <- possible_exposure_times
     } else {
       expand_times <- unique(antibody_data$sample_time)
     }
-    antibody_data1 <- expand.grid(
-      individual = unique(antibody_data$individual),
-      sample_time = expand_times,
-      biomarker_group=unique(antibody_data$biomarker_group),
-      measurement = 0, repeat_number = 1
-    )
-    antibody_data2 <- antibody_data %>% dplyr::select(-c(sample_time,measurement,repeat_number)) %>% distinct()
-    antibody_data1 <- merge(antibody_data1, antibody_data2)
+    if(expand_to_all_biomarker_ids){
+      if("biomarker_group" %in% colnames(antigenic_map)){
+        biomarker_data <- antigenic_map %>%
+          dplyr::transmute(biomarker_group, biomarker_id = inf_times) %>%
+          dplyr::distinct()
+      } else {
+        biomarker_data <- tidyr::expand_grid(
+          biomarker_group = unique(antibody_data$biomarker_group),
+          biomarker_id = unique(antigenic_map$inf_times)
+        )
+      }
+      antibody_data1 <- expand.grid(
+        individual = unique(antibody_data$individual),
+        sample_time = expand_times,
+        biomarker_group=unique(antibody_data$biomarker_group),
+        measurement = 0, repeat_number = 1
+      ) %>%
+        dplyr::left_join(biomarker_data, by="biomarker_group") %>%
+        dplyr::left_join(
+          antibody_data %>%
+            dplyr::select(-c(measurement,repeat_number,biomarker_id,biomarker_group)) %>%
+            dplyr::distinct(),
+          by=c("individual","sample_time")
+        )
+    } else {
+      antibody_data1 <- expand.grid(
+        individual = unique(antibody_data$individual),
+        sample_time = expand_times,
+        biomarker_group=unique(antibody_data$biomarker_group),
+        measurement = 0, repeat_number = 1
+      )
+      antibody_data2 <- antibody_data %>% dplyr::select(-c(sample_time,measurement,repeat_number)) %>% distinct()
+      antibody_data1 <- merge(antibody_data1, antibody_data2)
+    }
     antibody_data1 <- antibody_data1 %>% arrange(individual, biomarker_group, sample_time, biomarker_id, repeat_number)
     
     ## Create full start level data
-    start_level1 <- antibody_data1 %>% left_join(start_level %>% select(individual,biomarker_id,biomarker_group,starting_level, start_index) %>% distinct(),
-                                                 by=c("individual","biomarker_group","biomarker_id"))
+    if(expand_to_all_biomarker_ids){
+      if(class(start_level) %in% c("data.frame","tibble")){
+        start_level_complete <- start_level %>%
+          dplyr::select(individual, biomarker_id, biomarker_group, starting_level, start_index) %>%
+          dplyr::distinct()
+      } else {
+        start_level_summary <- if(is.character(start_level)) start_level else "none"
+        start_level_complete <- create_start_level_data(antibody_data, start_level_summary, FALSE) %>%
+          dplyr::select(individual, biomarker_id, biomarker_group, starting_level, start_index) %>%
+          dplyr::distinct()
+      }
+      missing_start_levels <- antibody_data1 %>%
+        dplyr::select(individual, biomarker_id, biomarker_group) %>%
+        dplyr::distinct() %>%
+        dplyr::anti_join(start_level_complete,
+                         by=c("individual","biomarker_id","biomarker_group"))
+      if(nrow(missing_start_levels) > 0){
+        warning(paste0(
+          "No starting levels were supplied for ", nrow(missing_start_levels),
+          " individual-biomarker combinations created by expanding to all biomarker IDs. ",
+          "These starting levels have been set to zero. This may give unexpected predictions,",
+          " particularly when an unobserved biomarker ID lies between observed IDs with non-zero starting levels."
+        ), call.=FALSE)
+        missing_start_levels <- missing_start_levels %>%
+          dplyr::mutate(starting_level=0,
+                        start_index=max(start_level_complete$start_index) + dplyr::row_number())
+        start_level_complete <- dplyr::bind_rows(start_level_complete, missing_start_levels)
+      }
+      start_level1 <- antibody_data1 %>%
+        dplyr::left_join(start_level_complete,
+                         by=c("individual","biomarker_id","biomarker_group"))
+    } else {
+      start_level1 <- antibody_data1 %>% left_join(start_level %>% select(individual,biomarker_id,biomarker_group,starting_level, start_index) %>% distinct(),
+                                                   by=c("individual","biomarker_group","biomarker_id"))
+    }
     
   }
   antibody_data1 <- antibody_data1 %>% arrange(individual, biomarker_group, sample_time, biomarker_id, repeat_number)

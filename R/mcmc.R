@@ -1,3 +1,6 @@
+# Modified by an AI assistant on 2026-09-15 using GPT-5. Enabled expansion to all
+# antigenic-map biomarker IDs for the cross-sectional output plot.
+#'
 #' Run the serosolver model
 #'
 #' Core serosolver function running the adaptive Metropolis-within-Gibbs algorithm. Given a starting point and the necessary MCMC parameters as set out below, performs a random-walk of the posterior space to produce an MCMC chain that can be used to generate MCMC density and iteration plots. The algorithm undergoes an adaptive period, where it changes the step size of the random walk for each parameter to approach the desired acceptance rate, target_acceptance_rate_theta. The algorithm then uses \code{\link{univ_proposal}} or \code{\link{mvr_proposal}} to explore parameter space, recording the value and posterior value at each step. The MCMC chain is saved in blocks as a .csv file at the location given by filename. This version of the algorithm is also designed to explore posterior densities for infection histories. See the package vignettes for examples. 
@@ -1086,7 +1089,8 @@ serosolver <- function(par_tab,
     
     plot_cross_sectional <- plot_model_fits(chains$theta_chain,chains$inf_chain,individuals = 1:min(n_indiv, 5),
                               known_infection_history=NULL, ## Set this to NULL for real data
-                              settings=serosolver_settings,orientation="cross-sectional",expand_to_all_times = FALSE)
+                              settings=serosolver_settings,orientation="cross-sectional",expand_to_all_times = FALSE,
+                              expand_to_all_biomarker_ids = TRUE)
     
     p_ar <- plot_attack_rates(chains$inf_chain,settings = serosolver_settings,by_group=TRUE,plot_den = FALSE)
     p_ab_model <- plot_estimated_antibody_model(chains$theta_chain,settings=serosolver_settings,solve_times = possible_exposure_times)

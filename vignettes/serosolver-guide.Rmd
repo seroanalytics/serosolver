@@ -55,6 +55,8 @@ knitr::include_graphics("figures/guide_fig1.png")
 The following code runs the entire pipeline for a simulation-recovery experiment with `serosolver`. We will step through each of these sections in more detail in this guide.
 
 ```{r entire_simulation,echo=TRUE,eval=TRUE,results='hide',message=FALSE,warning=FALSE,fig.width=8,fig.height=6}
+set.seed(123)
+
 library(serosolver)
 data(example_par_tab)
 data(example_antigenic_map)
@@ -79,14 +81,14 @@ antigenic_map <- example_antigenic_map[1:25,]
 antigenic_map$inf_times <- possible_exposure_times
 
 ## Simulate a full serosurvey with these parameters
-all_simulated_data <- simulate_data(par_tab=example_par_tab, group=1, n_indiv=50,
+all_simulated_data <- simulate_data(par_tab=example_par_tab, group=1, n_indiv=100,
                                     possible_exposure_times=possible_exposure_times,
                                     measured_biomarker_ids = sampled_antigens,
                                     sampling_times=sampling_times, nsamps=n_samps,
                                     antigenic_map=antigenic_map,
                                     age_min=10,age_max=75,
-                                    attack_rates=attack_rates, repeats=2,
-                                    data_type=c(1))
+                                    attack_rates=attack_rates, repeats=1,
+                                    data_type=2)
 
 ## Pull out the simulated titre data and infection histories
 antibody_data <- all_simulated_data$antibody_data
@@ -94,7 +96,7 @@ true_inf_hist <- all_simulated_data$infection_histories
 plot_antibody_data(antibody_data,possible_exposure_times,1:4,infection_histories = true_inf_hist)
 
 ## MCMC settings used by the executable example
-mcmc_pars <- c(adaptive_iterations=100000, iterations=50000,
+mcmc_pars <- c(adaptive_iterations=200000, iterations=100000,
                thin=10, thin_inf_hist=1000, save_block=1000)
 ```
 
@@ -106,7 +108,8 @@ res <- serosolver(
   filename = mcmc_file,
   n_chains = 3,
   parallel = TRUE,
-  mcmc_pars = mcmc_pars
+  mcmc_pars = mcmc_pars,
+  data_type=2
 )
 ```
 
@@ -133,7 +136,8 @@ if (!chains_available) {
     n_chains = 3,
     parallel = TRUE,
     mcmc_pars = mcmc_pars,
-    verbose = FALSE
+    verbose = FALSE,
+    data_type=2
   )
 } else {
   load(settings_file)
@@ -159,7 +163,9 @@ if (!chains_available) {
       individuals = 1:5,
       settings = serosolver_settings,
       orientation = "cross-sectional",
-      expand_to_all_times = FALSE
+      expand_to_all_times = FALSE,
+      expand_to_all_biomarker_ids = TRUE,
+      data_type=2
     ),
     plot_attack_rates = plot_attack_rates(
       chains$inf_chain,
@@ -175,6 +181,9 @@ if (!chains_available) {
     mcmc_chains = chains
   )
 }
+
+serosolver_settings <- res$settings
+chains <- res$mcmc_chains
 ```
 
 ## Installation and dependencies
@@ -525,7 +534,7 @@ mcmc_pars <- c("iterations"=50000,"target_acceptance_rate_theta"=0.44,"target_ac
               "proposal_inf_hist_indiv_swap_ratio"=0.5,"proposal_inf_hist_group_swap_ratio"=0.5,
               "proposal_inf_hist_group_swap_prop"=0.5)
 res <- serosolver(par_tab = start_tab, titre_dat = titre_dat, antigenic_map = antigenic_map,
-              mcmc_pars = mcmc_pars)
+              mcmc_pars = mcmc_pars,data_type=2)
 ```
 
 MCMC output is written to files automatically. The `filename` argument provides the prefix of the file names; `_chain.csv` and `_infection_histories.csv` are appended for the parameter and infection-history chain files. When multiple chains are run in parallel, progress messages are written to a matching `_log.txt` file in the same directory. A settings file is also saved alongside the chains to easily read back in all of the model inputs and settings.

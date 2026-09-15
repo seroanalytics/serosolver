@@ -19,6 +19,7 @@ plot_model_fits(
   p_ncol = max(1, floor(length(individuals)/2)),
   data_type = 1,
   expand_to_all_times = FALSE,
+  expand_to_all_biomarker_ids = FALSE,
   orientation = "cross-sectional",
   subset_biomarker_ids = NULL,
   subset_biomarker_groups = NULL,
@@ -54,6 +55,8 @@ plot_model_fits(
 \item{data_type}{integer, currently accepting 1 or 2. Set to 1 for discretized, bounded data, or 2 for continuous, bounded data.}
 
 \item{expand_to_all_times}{TRUE/FALSE value. If TRUE, solves antibody level predictions for all possible infection times (i.e., for the range in possible_exposure_times). If left FALSE, then only solves for the infections times at which a antibody level against the circulating biomarker_id was measured in antibody_data.}
+
+\item{expand_to_all_biomarker_ids}{if TRUE, solves predictions for all biomarker IDs in the antigenic map while retaining the sample times in antibody_data}
 
 \item{orientation}{either "cross-sectional" or "longitudinal"}
 

@@ -19,6 +19,7 @@ get_antibody_level_predictions(
   for_res_plot = FALSE,
   expand_antibody_data = FALSE,
   expand_to_all_times = FALSE,
+  expand_to_all_biomarker_ids = FALSE,
   antibody_level_before_infection = FALSE,
   for_regression = FALSE,
   data_type = 1,
@@ -52,6 +53,8 @@ get_antibody_level_predictions(
 \item{expand_antibody_data}{TRUE/FALSE value. If TRUE, solves antibody level predictions for the entire study period (i.e., between the range of antibody_data$sample_time). If left FALSE, then only solves for the infections times at which a antibody level against the circulating biomarker_id was measured in antibody_data.}
 
 \item{expand_to_all_times}{TRUE/FALSE value. If TRUE, solves antibody level predictions for all possible infection times (i.e., for the range in possible_exposure_times). If left FALSE, then only solves for the infections times at which a antibody level against the circulating biomarker_id was measured in antibody_data.}
+
+\item{expand_to_all_biomarker_ids}{TRUE/FALSE value. If TRUE, solves antibody level predictions for all biomarker IDs in the antigenic map while retaining the sample times in antibody_data.}
 
 \item{antibody_level_before_infection}{TRUE/FALSE value. If TRUE, solves antibody level predictions, but gives the predicted antibody level at a given time point BEFORE any infection during that time occurs.}
 

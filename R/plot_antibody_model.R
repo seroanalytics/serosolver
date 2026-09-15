@@ -108,6 +108,7 @@ plot_antibody_model <- function(pars,
 #' @param orientation either "cross-sectional" or "longitudinal"
 #' @param subset_biomarker_ids if not NULL, then a vector giving the entries of biomarker_id to include in the longitudinal plot
 #' @param settings if not NULL, list of serosolver settings as returned from the main serosolver function
+#' @param expand_to_all_biomarker_ids if TRUE, solves predictions for all biomarker IDs in the antigenic map while retaining the sample times in antibody_data
 #' @param exponential_waning if TRUE, assumes exponential rather than linear waning
 #' @return a ggplot2 object
 #' @family infection_history_plots
@@ -136,6 +137,7 @@ plot_model_fits <- function(chain, infection_histories,
                             p_ncol=max(1,floor(length(individuals)/2)),
                             data_type=1,
                             expand_to_all_times=FALSE,
+                            expand_to_all_biomarker_ids=FALSE,
                             orientation="cross-sectional",
                             subset_biomarker_ids=NULL,
                             subset_biomarker_groups = NULL,
@@ -189,6 +191,7 @@ plot_model_fits <- function(chain, infection_histories,
     measurement_bias,
     expand_antibody_data=FALSE,
     expand_to_all_times=expand_to_all_times,
+    expand_to_all_biomarker_ids=expand_to_all_biomarker_ids,
     data_type=data_type,
     start_level=start_levels,
     exponential_waning=exponential_waning
