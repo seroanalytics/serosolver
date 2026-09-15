@@ -75,7 +75,10 @@ plot_antibody_model <- function(pars,
     ylab("Antibody level") +
     theme_pubr()+
     theme(legend.position="bottom",
-          axis.text.x = ggplot2::element_text(angle = 45, hjust = 1, size = 6))
+          axis.title=ggplot2::element_text(size = 8),
+          strip.text=ggplot2::element_text(size = 8),
+          axis.text.y=ggplot2::element_text(size = 7),
+          axis.text.x = ggplot2::element_text(angle = 45, hjust = 1, size = 7))
   
     p_cr <- ggplot(y) + 
     geom_ribbon(aes(x=biomarker_ids,ymax=antibody_level,ymin=0),fill='grey70',col="black") + 
@@ -88,7 +91,10 @@ plot_antibody_model <- function(pars,
     ylab("Antibody level") +
     theme_pubr()+
     theme(legend.position="bottom",
-          axis.text.x = ggplot2::element_text(angle = 45, hjust = 1, size = 6))
+          axis.title=ggplot2::element_text(size = 8),
+          strip.text=ggplot2::element_text(size = 8),
+          axis.text.y=ggplot2::element_text(size = 7),
+          axis.text.x = ggplot2::element_text(angle = 45, hjust = 1, size = 7))
   
   return(list(p_long,p_cr))
 }
