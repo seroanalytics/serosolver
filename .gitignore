@@ -29,9 +29,6 @@ inst/extdata/cs1_sim/*.csv
 inst/extdata/cs2_real/*.csv
 inst/extdata/cs2_sim/*.csv
 
-!inst/extdata/quick_start/
-!inst/extdata/quick_start/*
-
 !inst/extdata/guide/
 !inst/extdata/guide/guide_*_chain.csv
 !inst/extdata/guide/guide_*_infection_histories.csv
@@ -47,15 +44,12 @@ doc
 Meta
 /doc/
 /Meta/
-working_practice.md
 ..Rcheck/00check.log
 AGENTS.md
-documentation_audit_stage1.md
-documentation_contract_stage2.md
 readme_log.txt
 readme_serosolver_settings.RData
 vignettes/readme_log.txt
 vignettes/readme_serosolver_settings.RData
-end_of_day_handover_2026-09-11.md
+vignettes/inst/
 Rplots.pdf
-for_gpt/*
+for_gpt/

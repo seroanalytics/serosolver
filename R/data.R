@@ -129,34 +129,3 @@
 #' @format A list of length 4, as returned by \code{\link{load_mcmc_chains}}.
 #' @family case_study_data
 "cs2_chains_sim"
-
-
-#' MCMC chains case study 1, real
-#'
-#' MCMC outputs from case study 1 analysis on real data. This example data object contains 3 MCMC chains thinned down to 100 samples from the posterior for each chain. The structure of the data is as returned from \code{\link{load_mcmc_chains}}.
-#' @docType data
-#' @usage data(cs1_chains_real)
-#' @format A list of length 4, as returned by \code{\link{load_mcmc_chains}}.
-#' @family case_study_data
-"cs1_chains_real"
-
-
-#' MCMC chains case study 1, sim
-#'
-#' MCMC outputs from case study 1 analysis on simulated data. This example data object contains 3 MCMC chains thinned down to 100 samples from the posterior for each chain. The structure of the data is as returned from \code{\link{load_mcmc_chains}}.
-#' @docType data
-#' @usage data(cs1_chains_sim)
-#' @format A list of length 4, as returned by \code{\link{load_mcmc_chains}}.
-#' @family case_study_data
-"cs1_chains_sim"
-
-
-
-#' MCMC chains case study 1, real, for sim
-#'
-#' MCMC outputs from case study 1 analysis on real data, for the second call of load_mcmc_chains. This example data object contains 3 MCMC chains thinned down to 100 samples from the posterior for each chain. The structure of the data is as returned from \code{\link{load_mcmc_chains}}.
-#' @docType data
-#' @usage data(cs1_chains_real_b)
-#' @format A list of length 4, as returned by \code{\link{load_mcmc_chains}}.
-#' @family case_study_data
-"cs1_chains_real_b"

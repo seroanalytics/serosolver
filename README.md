@@ -87,13 +87,13 @@ install.packages(c(required_packages, additional_packages))
 ## Resources
 
 Read the
-[guide](https://seroanalytics.github.io/serosolver/articles/serosolver-quick_start_guide.html)
+[guide](https://seroanalytics.github.io/serosolver/articles/serosolver-guide.html)
 to set up and run a simple implementation with a simulation model.
 
 Additional vignettes:
 
 - [Longitudinal
-  data](https://seroanalytics.github.io/serosolver/articles/cs1_vignette.html):
+  data](https://seroanalytics.github.io/serosolver/articles/cs1_hong_kong.html):
   estimating infection timings using longitudinal data, example of
   influenza A/H1N1p in Hong Kong
 - [Cross-sectional
@@ -102,15 +102,15 @@ Additional vignettes:
   example of influenza A/H3N2 from the [Fluscape
   cohort](https://pubmed.ncbi.nlm.nih.gov/26875566/)
 - [Optional
-  features](https://seroanalytics.github.io/serosolver/articles/serosolver-quick_start_guide.html):
+  features](https://seroanalytics.github.io/serosolver/articles/serosolver-guide.html):
   walkthrough of additional `serosolver` features and use cases, such as
   inclusion of biomarker-specific measurement offsets
 - [Multiple
-  measurements](https://seroanalytics.github.io/serosolver/articles/serosolver-quick_start_guide.html):
+  measurements](https://seroanalytics.github.io/serosolver/articles/serosolver-guide.html):
   fitting `serosolver` to multiple biomarker types, example of binding
   avidity and ELISA measurements per sample
 - [Group-level
-  differences](https://seroanalytics.github.io/serosolver/articles/serosolver-quick_start_guide.html):
+  differences](https://seroanalytics.github.io/serosolver/articles/serosolver-guide.html):
   estimating demographic differences in antibody kinetics and attack
   rates
 - [Naming
@@ -144,12 +144,14 @@ plot_antibody_data(example_antibody_data,example_antigenic_map$inf_times,n_indiv
 
 ``` r
 ## Run serosolver
+readme_mcmc_dir <- file.path("inst", "extdata", "readme", "chains")
+dir.create(readme_mcmc_dir, recursive = TRUE, showWarnings = FALSE)
 output <- serosolver::serosolver(example_par_tab, example_antibody_data, antigenic_map=example_antigenic_map,
-                filename="readme", n_chains=3,parallel=TRUE,
+                filename=file.path(readme_mcmc_dir, "readme"), n_chains=3,parallel=TRUE,
                 mcmc_pars=c(adaptive_iterations=10000, iterations=50000),verbose=TRUE)
 #> ================================ Running serosolver ================================
 #> Requested 3 chains in parallel, setting up parallel session using the parallel package
-#> Progress messages will be piped to readme_log.txt when `parallel` is set to true
+#> Progress messages will be piped to inst/extdata/readme/chains/readme_log.txt when `parallel` is set to true
 #> Model fitting started
 #> Model fitting done!
 #> Generating MCMC diagnostics

@@ -19,7 +19,8 @@ knitr::opts_chunk$set(
   collapse = TRUE,
   echo=TRUE,
   comment = "#>",
-  eval=TRUE
+  eval=TRUE,
+  dpi=300
 )
 ```
 # Overview

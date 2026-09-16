@@ -27,7 +27,8 @@ knitr::opts_chunk$set(
   comment = "#>",
   eval = TRUE,
   fig.width = 8,
-  fig.height = 6
+  fig.height = 6,
+  dpi = 300
 )
 options(digits = 3)
 ```

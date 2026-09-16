@@ -28,6 +28,7 @@ knitr::opts_chunk$set(
   comment = "#>",
   fig.width = 8,
   fig.height = 6,
+  dpi = 300,
   fig.path = file.path(tempdir(), "serosolver_guide_figures/")
 )
 
