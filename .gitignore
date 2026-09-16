@@ -44,6 +44,10 @@ inst/extdata/case_study_2/prior_mcmc_chains/*
 inst/extdata/case_study_2/fluscape_mcmc_chains/*
 inst/extdata/case_study_2/simulation_mcmc_chains/*
 
+inst/extdata/demographics_covariates/mcmc_chains/*
+inst/extdata/demographics_covariates/prior_mcmc_chains/*
+inst/extdata/demographics_covariates/variant_mcmc_chains/*
+
 doc
 Meta
 /doc/

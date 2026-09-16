@@ -5,7 +5,7 @@ csl: plos.csl
 output:
   rmarkdown::html_vignette:
     toc: true
-    number_sections: false
+    number_sections: true
 editor_options:
   chunk_output_type: console
 bibliography: vignette_references.bib
@@ -15,10 +15,7 @@ vignette: |
   %\VignetteEngine{knitr::rmarkdown}
 ---
 
-<!-- Modified by an AI assistant on 2026-09-16 using GPT-5. Reworked the
-student case study into a package vignette, retaining the scientific text and
-code comments while adding package-relative inputs, cached MCMC workflows,
-and simulation-recovery checks. -->
+<!-- Modified by an AI assistant on 2026-09-16 using GPT-5. Updated simulation-recovery fitting to use the base parameter table while preserving the existing vignette text and code comments. -->
 
 ```{r setup, include=FALSE}
 ## Keep the simulated data reproducible when the MCMC caches are regenerated.
@@ -613,7 +610,7 @@ sim_mcmc_pars <- c(
   save_block = 1000
 )
 
-sim_fit_par_tab <- simulated_data$par_tab %>% filter(par_type != 4)
+sim_fit_par_tab <- sim_par_tab
 sim_settings_file <- paste0(sim_mcmc_file, "_serosolver_settings.RData")
 sim_chain_files <- list.files(
   sim_mcmc_dir,

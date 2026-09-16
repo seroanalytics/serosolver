@@ -2,8 +2,12 @@
 title: "Guide to _serosolver_ terminology"
 author: "James Hay"
 date: "2025-06-12"
-output: html_document
+output:
+  html_document:
+    number_sections: true
 ---
+
+<!-- Modified by an AI assistant on 2026-09-16 using GPT-5. Enabled automatic numbering of sections and subsections. -->
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)

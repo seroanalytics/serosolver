@@ -1,10 +1,11 @@
-# Modified by an AI assistant on 2026-09-16 using GPT-5. Clarified the roxygen
-# documentation for the simulation and observation-model functions without changing their implementations.
+# Modified by an AI assistant on 2026-09-16 using GPT-5. Added a readable
+# coefficient-values input for simulation truth while preserving the existing
+# simulation workflow.
 #'
 #' Simulate full data set
 #'
 #' Simulates a full data set for a given set of parameters and sampling design.
-#' @param par_tab the full parameter table controlling parameter ranges and values
+#' @param par_tab the parameter table controlling parameter ranges and values. When stratification is requested, coefficient rows are added automatically; use `coefficient_values` to set selected coefficient values for the simulated truth.
 #' @param group which group index to give this simulated data
 #' @param n_indiv number of individuals to simulate
 #' @param antigenic_map (optional) A data frame of antigenic x and y coordinates. Must have column names: x_coord; y_coord; inf_times. See \code{\link{example_antigenic_map}}.
@@ -24,6 +25,7 @@
 #' @param verbose if TRUE, prints additional messages
 #' @param starting_levels a data frame or function giving the starting biomarker level for each individual, `biomarker_group`, and `biomarker_id` combination. If NULL, starting levels are assumed to be 0.
 #' @param exponential_waning if TRUE, uses exponential waning function rather than linear waning
+#' @param coefficient_values optional data frame specifying coefficient values used when simulating stratified parameters. It must contain `parameter`, `stratification`, `stratification_level`, `biomarker_group`, and `value` columns. `parameter` is the base parameter name in `par_tab`, and `value` is the coefficient for the specified stratification level. If NULL, generated coefficients retain their existing default values.
 #' @return A list containing `antibody_data`, `infection_histories`, `attack_rates`, `phis`, `par_tab`, `population_groups`, `demographic_groups`, and `start_levels`.
 #' @family simulation_functions
 #' @examples
@@ -62,7 +64,8 @@ simulate_data <- function(par_tab,
                           demographics=NULL,
                           verbose=FALSE,
                           starting_levels=NULL,
-                          exponential_waning=FALSE) {
+                          exponential_waning=FALSE,
+                          coefficient_values=NULL) {
     #########################################################
     ## CHECK FOR BIOMARKER GROUPS
     #########################################################
@@ -157,6 +160,7 @@ simulate_data <- function(par_tab,
     if(!(4 %in% unique(par_tab$par_type))){
       par_tab <- add_scale_pars(par_tab,antibody_data, timevarying_demographics)
     }
+    par_tab <- apply_coefficient_values(par_tab, coefficient_values)
     par_tab <- check_par_tab(par_tab)
     
     #########################################################

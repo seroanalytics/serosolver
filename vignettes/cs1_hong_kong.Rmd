@@ -5,7 +5,7 @@ csl: plos.csl
 output:
   rmarkdown::html_vignette:
     toc: true
-    number_sections: false
+    number_sections: true
 editor_options:
   chunk_output_type: console
 bibliography: vignette_references.bib
@@ -15,7 +15,7 @@ vignette: |
   %\VignetteEngine{knitr::rmarkdown}
 ---
 
-<!-- Modified by an AI assistant on 2026-09-16 using GPT-5. Adapted the student practical into a package vignette while retaining its scientific explanation and code comments, and extended the simulation-recovery section with a runnable MCMC fit and recovery comparisons. -->
+<!-- Modified by an AI assistant on 2026-09-16 using GPT-5. Updated simulation-recovery fitting to use the base parameter table while preserving the existing vignette text and code comments. -->
 
 ```{r setup, include=FALSE}
 ## Keep the simulated data reproducible when the MCMC caches are regenerated.
@@ -584,9 +584,9 @@ sim_mcmc_pars <- c(
   save_block = 1000
 )
 
-## `simulate_data()` returns the parameter table with derived stratification
-## rows already added; serosolver adds these rows when fitting the data.
-sim_fit_par_tab <- simulated_data$par_tab %>% filter(par_type != 4)
+## Fit using the same base parameter table; serosolver adds stratification
+## coefficient rows from par_tab$stratification.
+sim_fit_par_tab <- sim_par_tab
 
 sim_settings_file <- paste0(sim_mcmc_file, "_serosolver_settings.RData")
 sim_chain_files <- list.files(

@@ -1,0 +1,815 @@
+---
+title: "Demographic variables and covariates"
+subtitle: Using fixed and time-varying demographic information in `serosolver`
+output:
+  rmarkdown::html_vignette:
+    toc: true
+    number_sections: true
+editor_options:
+  chunk_output_type: console
+bibliography: vignette_references.bib
+vignette: |
+  %\VignetteEncoding{UTF-8}
+  %\VignetteIndexEntry{Demographic variables and covariates}
+  %\VignetteEngine{knitr::rmarkdown}
+---
+
+<!-- Modified by an AI assistant on 2026-09-16 using GPT-5. Added the user-facing coefficient-values table and clarified the project-specific variant-stratification simulation workaround. -->
+
+```{r setup, include=FALSE}
+set.seed(1)
+knitr::opts_chunk$set(
+  collapse = TRUE, echo = TRUE, comment = "#>", eval = TRUE,
+  fig.width = 8, fig.height = 6, dpi = 300, out.width = "100%"
+)
+options(digits = 3)
+vignette_dir <- dirname(knitr::current_input())
+cache_dir <- file.path(vignette_dir, "..", "inst", "extdata", "demographics_covariates")
+```
+
+# Overview
+
+Demographic and other covariate information is useful when infection rates or
+antibody kinetics are expected to differ between groups. `serosolver` treats
+these as separate choices. `population_group` defines groups with different
+infection-history priors and is used when summarising attack rates. The
+`stratification` column in `par_tab` defines demographic effects on
+antibody-model parameters such as antibody boosting or waning rates
+
+You can mix and match different covariates to affect different parameters. For example, location could define
+different infection rates by location, while vaccination status and age group could affect antibody
+kinetics. `serosolver` has a flexible interface for specifying these covariates. For example, fixed covariates can be included as variables in `antibody_data` or in a
+separate one-row-per-individual `demographics` table. Users can also allow covariate membership to vary over time using the
+demographics table with one row for each individual and possible exposure time combination, which is a suitable approach for covariates which change with time, such as treatment group or age.
+
+This vignette uses a synthetic longitudinal dataset with continuous antibody measurements, five samples per individual, 25 possible
+exposure times, two infection-rate groups, fixed vaccination and location covariates, and a time-varying age group. Variant-specific parameters are introduced in a separate major section below; other extensions are covered in the advanced-features vignette.
+
+When known stratification effects are needed for a simulation-recovery check,
+they can be supplied to `simulate_data()` in a `coefficient_values` data
+frame. Each row gives the base parameter, stratification variable, non-baseline
+level, biomarker group, and coefficient value. The same base `par_tab` is then
+used for fitting; `serosolver()` creates the coefficient rows from its
+`stratification` entries.
+
+```{r packages, message=FALSE, warning=FALSE}
+## Install serosolver from GitHub when needed.
+## remotes::install_github("seroanalytics/serosolver")
+library(serosolver)
+library(ggplot2)
+library(dplyr)
+library(tidyr)
+library(doParallel)
+library(coda)
+```
+
+# Create and inspect the synthetic data
+
+```{r create-data}
+set.seed(123)
+
+n_indiv <- 100
+possible_exposure_times <- 1:25
+sample_times <- c(5, 8, 11, 14, 17)
+
+## Covariate factors are zero-based; population_group IDs are one-based.
+## Create a version of the demographics data frame which has fixed covariate membership
+fixed_demographics <- data.frame(
+  individual = seq_len(n_indiv),
+  birth = sample(1:5, n_indiv, replace = TRUE),
+  vaccinated = rep(0:1, length.out = n_indiv),
+  location = rep(0:1, each = n_indiv / 2)
+) %>%
+  mutate(population_group = location + 1L)
+
+## Create a version of the demographics data frame with time-varying covariate membership
+timevarying_demographics <- tidyr::expand_grid(
+  fixed_demographics, time = possible_exposure_times
+) %>%
+  arrange(individual, time) %>%
+  mutate(age_group = as.integer(time - birth >= 5))
+
+## Use one stratified table both to simulate and to fit the data.
+data(example_par_tab)
+par_tab <- example_par_tab
+par_tab$stratification <- NA_character_
+
+## Simplfy the kinetics model
+par_tab[par_tab$names %in% c("cr_long", "cr_short", "wane_long"), "fixed"] <- 1
+par_tab[par_tab$names %in% c("cr_long", "cr_short", "wane_long"), "values"] <- 0
+par_tab[par_tab$names == "min_measurement", c("values", "lower_bound", "upper_bound")] <- 0
+par_tab[par_tab$names == "max_measurement", c("values", "lower_bound", "upper_bound")] <- 10
+
+## Stratify attack rates by population group
+par_tab[par_tab$names %in% c(
+  "infection_model_prior_shape1", "infection_model_prior_shape2"
+), "stratification"] <- "population_group"
+
+## Stratify short-term boosting magnitude by age group and vaccination status
+par_tab[par_tab$names == "boost_short", "stratification"] <- "age_group, vaccinated"
+
+## Set known, well-separated coefficient values for the simulation. The
+## coefficient table uses the same parameter and biomarker-group labels as
+## par_tab, but does not need the generated coefficient names.
+coefficient_values <- data.frame(
+  parameter = c("boost_short", "boost_short"),
+  stratification = c("age_group", "vaccinated"),
+  stratification_level = c(1, 1),
+  biomarker_group = c(1, 1),
+  value = c(1.5, -1.5)
+)
+
+sim_attack_rates <- simulate_attack_rates(
+  possible_exposure_times, mean_par = c(0.05, 0.35),
+  sd_par = c(0.05, 0.05), n_groups = 2
+)
+
+## Continuous observations use data_type = 2.
+simulated_data <- simulate_data(
+  par_tab = par_tab, n_indiv = n_indiv,
+  possible_exposure_times = possible_exposure_times,
+  measured_biomarker_ids = 25, sampling_times = sample_times,
+  nsamps = length(sample_times), demographics = timevarying_demographics,
+  attack_rates = sim_attack_rates, data_type = 2,
+  coefficient_values = coefficient_values, verbose = FALSE
+)
+antibody_data <- check_data(simulated_data$antibody_data)
+```
+
+
+```{r create-data1, echo=FALSE, results='hide', message=FALSE, warning=FALSE}
+## Use the generated coefficient rows when summarising model outputs.
+diagnostic_par_tab <- simulated_data$par_tab
+fit_par_tab <- par_tab
+```
+
+
+```{r data-plot}
+plot_antibody_data(
+  antibody_data, possible_exposure_times = possible_exposure_times,
+  n_indivs = 12, study_design = "longitudinal"
+) +
+  facet_wrap(~ individual, ncol = 4) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+# Ways to pass fixed covariates
+
+Fixed demographic values can be included directly in `antibody_data` when
+they are constant for each individual.
+
+```{r fixed-in-antibody-data}
+fixed_covariates <- fixed_demographics %>%
+  select(individual, vaccinated, location, population_group)
+antibody_data_with_fixed_covariates <- antibody_data %>%
+  left_join(fixed_covariates, by = "individual")
+head(check_data(antibody_data_with_fixed_covariates))
+```
+
+Alternatively, use a separate demographics table to pass any covariate information separately.
+
+```{r fixed-demographics}
+fixed_demographics_for_model <- fixed_demographics %>%
+  select(individual, birth, vaccinated, location, population_group)
+head(check_demographics(fixed_demographics_for_model))
+```
+
+# Time-varying demographic variables
+
+A time-varying table has `individual`, `birth`, and `time` columns at a minimum,
+together with the covariates that change over time. Here, `age_group` is
+calculated from birth and model time, as individuals change age groups as time progresses. In this version, every individual must have a row for
+every possible exposure time.
+
+```{r time-varying-demographics}
+head(check_demographics(timevarying_demographics))
+```
+
+# Set up `par_tab`
+
+`par_tab` is the model control table. In this example, the infection-history prior
+parameters are stratified by the `population_group` ID, while
+`boost_short` has additive antibody-kinetics effects for `age_group`
+and `vaccinated`.
+
+```{r model-setup}
+check_par_tab(
+  par_tab, mcmc = TRUE,
+  possible_exposure_times = possible_exposure_times, version = 2
+)
+par_tab %>%
+  filter(!is.na(stratification)) %>%
+  select(names, stratification)
+simulated_data$par_tab %>%
+  filter(par_type == 4) %>%
+  select(names, values, par_type, biomarker_group)
+fixed_demographics %>%
+  select(location, population_group) %>%
+  distinct() %>%
+  arrange(location)
+```
+
+Covariate levels used for parameter stratification are zero-based, with level
+0 as the baseline. `population_group` is different: it is one-based. Here,
+location 0 maps to population group 1 and location 1 maps to population group 2.
+
+# How covariate coefficients are used
+
+When a parameter is stratified, the value in its original `par_tab` row is the
+value for the level-0 baseline group. `serosolver` adds a `par_type = 4`
+coefficient row for each additional level. For example, a coefficient for
+`boost_short` and `vaccinated = 1` describes the change from the
+`vaccinated = 0` value; it is not a second independent value for
+`boost_short`.
+
+The coefficient is combined with the baseline value on a scale that keeps the
+parameter within its allowed range. If the parameter is unbounded, the value
+for group `g` is
+
+\[
+x_g = x_0 + \beta_g,
+\]
+
+where `x_0` is the baseline value and `beta_g` is the coefficient. For a
+positive parameter such as `boost_short`, the coefficient is added on the log
+scale:
+
+\[
+x_g = \exp\{\log(x_0) + \beta_g\}
+    = x_0\exp(\beta_g).
+\]
+
+For a parameter bounded between 0 and 1, it is added on the logit scale:
+
+\[
+x_g = \operatorname{logit}^{-1}
+       \{\operatorname{logit}(x_0) + \beta_g\}.
+\]
+
+When more than one covariate is listed in `stratification`, the corresponding
+coefficients are added together on the relevant transformed scale. Every
+coefficient row added in this way must therefore be included in the prior
+function used by the Bayesian model.
+
+For example, with age group `a` and vaccination status `v`, the combined
+effect can be written as
+
+\[
+h(x_{a,v}) = h(x_0) + \beta^{\mathrm{age}}_a
+                    + \beta^{\mathrm{vaccinated}}_v,
+\]
+
+where `h` is the identity, log, or logit transformation described above.
+The natural-scale value is obtained by applying the inverse transformation
+after the coefficients have been added.
+
+# Priors for stratification coefficients
+
+The following function identifies the added coefficient rows by their names and
+applies a weak standard normal prior to them.
+
+```{r prior-function}
+prior_func <- function(par_tab) {
+  par_names <- par_tab$names
+  coef_pars <- which(grepl("coef", par_names))
+  function(pars) {
+    names(pars) <- par_names
+    ## Place normal prior on the stratification coefficients
+    prior_p <- sum(dnorm(pars[coef_pars], 0, 1, log = TRUE))
+    prior_p <- prior_p + dlnorm(pars["boost_long"], log(2), 0.5, log = TRUE)
+    prior_p <- prior_p + dlnorm(pars["boost_short"], log(2), 0.5, log = TRUE)
+    prior_p <- prior_p + dbeta(pars["wane_short"], 4, 8, log = TRUE)
+    prior_p <- prior_p + dlnorm(pars["obs_sd"], log(1), 0.5, log = TRUE)
+    prior_p
+  }
+}
+
+simulated_data$par_tab %>%
+  filter(par_type == 4) %>%
+  select(names, values)
+```
+
+A standard normal prior on a coefficient for a positive parameter such as
+`boost_short` corresponds to a multiplicative effect on the natural scale.
+
+```{r coefficient-prior,fig.height=4,fig.width=6}
+coefficient_prior <- tibble(
+  coefficient = rnorm(10000), multiplier = exp(coefficient)
+)
+ggplot(coefficient_prior, aes(multiplier)) +
+  geom_histogram(bins = 60, fill = "grey70", colour = "white") +
+  labs(x = "Multiplicative effect relative to baseline", y = "Prior draws") +
+  theme_classic()
+```
+
+# Combining covariates
+
+Several covariates can be listed in one `stratification` entry, separated by a
+comma. For example, `age_group, vaccinated` tells `serosolver` to estimate one
+set of age-group coefficients and one set of vaccination coefficients for the
+parameter. These effects are added together on the appropriate transformed
+scale, so this does not automatically create a separate parameter for every
+age and vaccination combination. For example, the effect for an older,
+vaccinated individual is the baseline value plus the age effect plus the
+vaccination effect.
+
+The infection-history priors are grouped using `population_group`, which is a
+single group identifier for each individual. If infection rates should differ
+according to a combination of fixed covariates, create one `population_group`
+column representing those combined groups before fitting. The mapping between
+the original covariates and the resulting group IDs should then be checked
+before the model is run.
+
+```{r combined-covariates}
+fixed_demographics %>%
+  count(population_group, location, vaccinated) %>%
+  arrange(population_group, location, vaccinated)
+par_tab %>%
+  filter(names == "boost_short" | grepl("infection_model_prior", names)) %>%
+  select(names, stratification)
+```
+
+# Variant-stratified parameters and simulation recovery
+
+The demographic examples above allow antibody parameters to differ according
+to who was infected, or according to a person's demographic characteristics at
+the time of infection. A related but different question is whether the
+antibody response depends on which variant or strain caused the infection.
+This is useful when the same biomarker can be boosted by infections with
+several variants, and the model should estimate different kinetics for those
+variants.
+
+Variant stratification is not a demographic grouping of individuals. Instead,
+it attaches a group to each possible infection time in the `antigenic_map`.
+The `exposure_group` column identifies the variant associated with that time,
+so the model can use the appropriate variant-specific parameters when an
+infection is assigned to that time. Demographic effects are still attached to
+individuals through `demographics` and `par_tab$stratification`; variant
+effects use the antigenic map and therefore follow a separate workflow.
+
+This section uses the same synthetic individuals and demographic information
+as the first analysis, but creates two antibody-parameter blocks. The two
+blocks have different short-term boosting values, and the simulated data are
+then fitted to test whether those differences can be recovered.
+
+The implementation of variant stratification currently reuses the
+`biomarker_group` structure that normally represents different observation
+types. This is a crude workaround developed for a specific project. It means
+that variant stratification cannot currently be combined with genuinely
+multiple observed biomarker groups in the same model. The code below therefore
+temporarily creates two groups for `simulate_data()`, then retains only group 1
+as the observed data used for fitting. The second group is not a second
+biomarker measurement in this analysis.
+
+There are three different group labels in this workflow. `biomarker_group` is
+normally used to identify separate observed data types, such as antibody and
+avidity measurements. In this variant-specific workaround it is instead
+reused in `par_tab` and the antigenic map to label separate
+antibody-parameter blocks. `exposure_group` is attached to the possible
+infection times in `antigenic_map` and tells the model which parameter block to
+use for an infection at that time. For example, if times 1--10 have
+`exposure_group = 1` and times 11--25 have `exposure_group = 2`, an infection
+assigned to time 15 uses the parameters for exposure group 2. The duplicated
+map rows provide a corresponding map block for each parameter block; they do
+not represent separate observed biomarker measurements in the fitted model.
+
+`population_group` has a different role. It is attached to people (or to
+people at particular times when demographics vary over time) and selects the
+infection-history prior used for that person. It is used for group-specific
+infection histories and attack-rate summaries; it does not identify the
+variant that caused an infection or select the variant-specific antibody
+parameters.
+
+```{r variant-simulation, results='hide'}
+variant_map_one_group <- data.frame(
+  x_coord = if_else(
+    possible_exposure_times <= 12,
+    possible_exposure_times / 12,
+    2 + possible_exposure_times / 12
+  ),
+  y_coord = if_else(possible_exposure_times <= 12, 0, 2),
+  inf_times = possible_exposure_times,
+  exposure_group = if_else(possible_exposure_times <= 12, 1L, 2L),
+  biomarker_group = 1L
+)
+
+## The antigenic map has one copy for each antibody-parameter block.
+variant_antigenic_map <- bind_rows(
+  variant_map_one_group,
+  variant_map_one_group %>% mutate(biomarker_group = 2L)
+)
+
+## Duplicate the base antibody-parameter rows for the second variant block.
+variant_par_rows <- par_tab %>%
+  filter(!names %in% c(
+    "infection_model_prior_shape1", "infection_model_prior_shape2"
+  )) %>%
+  mutate(biomarker_group = 2L)
+variant_par_tab <- bind_rows(par_tab, variant_par_rows)
+variant_par_tab[
+  variant_par_tab$biomarker_group == 2 & variant_par_tab$names == "boost_short",
+  "values"
+] <- 3.5
+
+variant_coefficient_values <- bind_rows(
+  coefficient_values,
+  coefficient_values %>% mutate(biomarker_group = 2L)
+)
+
+## serosolver creates demographic coefficient rows when fitting.
+variant_fit_par_tab <- variant_par_tab
+
+variant_simulated_data <- simulate_data(
+  par_tab = variant_par_tab, n_indiv = n_indiv,
+  antigenic_map = variant_antigenic_map,
+  possible_exposure_times = possible_exposure_times,
+  measured_biomarker_ids = possible_exposure_times,
+  sampling_times = sample_times, nsamps = length(sample_times),
+  demographics = timevarying_demographics,
+  attack_rates = sim_attack_rates, data_type = c(2, 2),
+  coefficient_values = variant_coefficient_values, verbose = FALSE
+)
+## simulate_data creates both groups because variant_par_tab contains both
+## parameter blocks. Retain one observed group for the fitted model.
+variant_antibody_data <- variant_simulated_data$antibody_data %>%
+  filter(biomarker_group == 1) %>%
+  check_data()
+```
+
+The map assigns exposure groups to infection times rather than to people.
+The temporary simulation contains two antibody groups, with continuous
+measurements for each group. Only group 1 is retained as observed data for the
+fitted model, so this example does not demonstrate multiple observed
+biomarker groups alongside variant stratification.
+
+```{r variant-map}
+ggplot(variant_map_one_group, aes(x_coord, y_coord, colour = factor(exposure_group))) +
+  geom_point(size = 2) +
+  labs(colour = "Exposure group", x = "Antigenic x coordinate", y = "Antigenic y coordinate") +
+  theme_classic()
+```
+
+```{r variant-parameter-blocks}
+variant_par_tab %>%
+  filter(names == "boost_short") %>%
+  select(names, biomarker_group, values)
+variant_antibody_data %>%
+  count(biomarker_group, sample_time) %>%
+  summarise(n_groups = n_distinct(biomarker_group),
+            n_samples = n_distinct(sample_time), .groups = "drop")
+```
+
+The parameter values used to generate the two blocks are deliberately
+different. This makes the simulation-recovery comparison informative rather
+than testing two nearly identical models.
+
+```{r variant-prior-function, include=FALSE}
+variant_prior_func <- function(par_tab) {
+  par_names <- par_tab$names
+  coef_pars <- which(grepl("coef", par_names))
+  boost_long_pars <- which(par_names == "boost_long")
+  boost_short_pars <- which(par_names == "boost_short")
+  wane_short_pars <- which(par_names == "wane_short")
+  obs_sd_pars <- which(par_names == "obs_sd")
+  function(pars) {
+    names(pars) <- par_names
+    prior_p <- sum(dnorm(pars[coef_pars], 0, 1, log = TRUE))
+    prior_p <- prior_p + sum(dlnorm(pars[boost_long_pars], log(2), 0.5, log = TRUE))
+    prior_p <- prior_p + sum(dlnorm(pars[boost_short_pars], log(2), 0.5, log = TRUE))
+    prior_p <- prior_p + sum(dbeta(pars[wane_short_pars], 4, 8, log = TRUE))
+    prior_p <- prior_p + sum(dlnorm(pars[obs_sd_pars], log(1), 0.5, log = TRUE))
+    prior_p
+  }
+}
+```
+
+The complete variant-stratified fit is:
+
+```{r variant-fit-call, eval=FALSE}
+variant_mcmc_pars <- c(
+  adaptive_iterations = 5000, iterations = 10000, thin = 20,
+  thin_inf_hist = 100, save_block = 1000
+)
+variant_res <- serosolver(
+  par_tab = variant_fit_par_tab,
+  antibody_data = variant_antibody_data,
+  demographics = timevarying_demographics,
+  antigenic_map = variant_antigenic_map,
+  possible_exposure_times = possible_exposure_times,
+  filename = "variant_fit",
+  prior_func = variant_prior_func,
+  data_type = 2, n_chains = 3, parallel = TRUE,
+  mcmc_pars = variant_mcmc_pars, verbose = TRUE
+)
+```
+
+```{r variant-fit, include=FALSE, message=FALSE, warning=FALSE}
+variant_mcmc_dir <- file.path(cache_dir, "variant_mcmc_chains")
+variant_mcmc_file <- file.path(variant_mcmc_dir, "variant_fit")
+variant_mcmc_pars <- c(
+  adaptive_iterations = 5000, iterations = 10000, thin = 20,
+  thin_inf_hist = 100, save_block = 1000
+)
+dir.create(variant_mcmc_dir, recursive = TRUE, showWarnings = FALSE)
+variant_settings_file <- paste0(variant_mcmc_file, "_serosolver_settings.RData")
+variant_chain_files <- list.files(
+  variant_mcmc_dir, pattern = "^variant_fit_[0-9]+_chain\\.csv$",
+  full.names = TRUE
+)
+variant_history_files <- sub(
+  "_chain\\.csv$", "_infection_histories.csv", variant_chain_files
+)
+variant_fit_available <- length(variant_chain_files) == 3L &&
+  file.exists(variant_settings_file) && all(file.exists(variant_history_files))
+
+if (variant_fit_available) {
+  load(variant_settings_file)
+  variant_fit_available <- length(unique(
+    serosolver_settings$antibody_data$biomarker_group
+  )) == 1L
+}
+
+if (!variant_fit_available) {
+  variant_res <- serosolver(
+    par_tab = variant_fit_par_tab,
+    antibody_data = variant_antibody_data,
+    demographics = timevarying_demographics,
+    antigenic_map = variant_antigenic_map,
+    possible_exposure_times = possible_exposure_times,
+    filename = variant_mcmc_file,
+    prior_func = variant_prior_func,
+    data_type = 2, n_chains = 3, parallel = TRUE,
+    mcmc_pars = variant_mcmc_pars, verbose = FALSE
+  )
+} else {
+  variant_settings <- serosolver_settings
+  variant_chains <- load_mcmc_chains(
+    location = variant_mcmc_dir, par_tab = variant_fit_par_tab,
+    burnin = variant_mcmc_pars[["adaptive_iterations"]], thin = 1,
+    convert_mcmc = FALSE, verbose = FALSE
+  )
+  variant_res <- list(
+    all_diagnostics = plot_mcmc_diagnostics(
+      location = variant_mcmc_dir, par_tab = variant_par_tab,
+      burnin = variant_mcmc_pars[["adaptive_iterations"]]
+    ),
+    settings = variant_settings,
+    mcmc_chains = variant_chains
+  )
+}
+variant_chains <- variant_res$mcmc_chains
+variant_settings <- variant_res$settings
+```
+
+The fitted attack rates show whether the infection-history part of the model
+still recovers the simulated population-group differences.
+
+```{r variant-attack-rates}
+plot_attack_rates(
+  variant_chains$inf_chain,
+  true_ar = variant_simulated_data$attack_rates %>% filter(is.finite(AR)),
+  settings = variant_settings, by_group = TRUE, plot_den = FALSE
+) + theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+The parameter table comparison focuses on the variant-specific boosting values
+and the demographic coefficients. The duplicated names are made unique in the
+same order used in the MCMC output.
+
+```{r variant-parameter-recovery}
+variant_truth <- variant_simulated_data$par_tab %>%
+  filter(fixed == 0) %>%
+  mutate(chain_name = make.unique(names)) %>%
+  select(chain_name, names, biomarker_group, true = values)
+variant_res$all_diagnostics$theta_estimates %>%
+  rename(chain_name = names) %>%
+  left_join(variant_truth, by = "chain_name") %>%
+  filter(grepl("boost_short|coef", names)) %>%
+  select(names, biomarker_group, true, median, lower95_CrI, upper95_CrI) %>%
+  knitr::kable(digits = 3)
+```
+
+Finally, the fitted antibody model and the model-fit plot show how the
+variant-specific parameterisation affects the inferred antibody trajectories.
+The dashed infection lines in the final plot are the simulated infection
+times; they should generally overlap darker regions of high posterior
+probability.
+
+```{r variant-antibody-model}
+plot_estimated_antibody_model(
+  variant_chains$theta_chain, settings = variant_settings,
+  solve_times = possible_exposure_times, data_type = 2,
+  by_group = FALSE
+) + coord_cartesian(ylim = c(0, 10))
+```
+
+```{r variant-model-fits}
+plot_model_fits(
+  variant_chains$theta_chain, variant_chains$inf_chain,
+  known_infection_history = variant_simulated_data$infection_histories,
+  individuals = 1:9, orientation = "longitudinal", settings = variant_settings,
+  p_ncol = 3, data_type = 2, expand_to_all_times = TRUE
+)[[1]] + theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+# Fit and inspect the model
+
+The complete call below uses separate time-varying demographics, continuous
+observations, and the explicit `prior_func`. It is shown without evaluation
+so the full workflow is visible.
+
+```{r fit-model-call, eval=FALSE}
+mcmc_pars <- c(
+  adaptive_iterations = 5000, iterations = 10000, thin = 20,
+  thin_inf_hist = 100, save_block = 1000
+)
+res <- serosolver(
+  par_tab = fit_par_tab, antibody_data = antibody_data,
+  demographics = timevarying_demographics,
+  possible_exposure_times = possible_exposure_times,
+  filename = "demographic_fit",
+  prior_func = prior_func, data_type = 2, n_chains = 3,
+  parallel = TRUE, mcmc_pars = mcmc_pars, verbose = TRUE
+)
+```
+
+```{r prior-predictive, include=FALSE}
+prior_dir <- file.path(cache_dir, "prior_mcmc_chains")
+prior_file <- file.path(prior_dir, "prior_covariates")
+prior_mcmc_pars <- c(
+  adaptive_iterations = 5000, iterations = 10000, thin = 20,
+  thin_inf_hist = 100, save_block = 1000
+)
+dir.create(prior_dir, recursive = TRUE, showWarnings = FALSE)
+prior_settings_file <- paste0(prior_file, "_serosolver_settings.RData")
+prior_chain_files <- list.files(
+  prior_dir, pattern = "^prior_covariates_[0-9]+_chain\\.csv$", full.names = TRUE
+)
+prior_history_files <- sub(
+  "_chain\\.csv$", "_infection_histories.csv", prior_chain_files
+)
+prior_cache_available <- length(prior_chain_files) == 3L &&
+  file.exists(prior_settings_file) && all(file.exists(prior_history_files))
+
+if (!prior_cache_available) {
+  prior_res <- serosolver(
+    par_tab = fit_par_tab, antibody_data = antibody_data,
+    demographics = timevarying_demographics,
+    possible_exposure_times = possible_exposure_times,
+    filename = prior_file, prior_func = prior_func, data_type = 2,
+    solve_likelihood = FALSE, n_chains = 3, parallel = TRUE,
+    mcmc_pars = prior_mcmc_pars, verbose = FALSE
+  )
+} else {
+  load(prior_settings_file)
+  prior_settings <- serosolver_settings
+  prior_chains <- load_mcmc_chains(
+    location = prior_dir, par_tab = fit_par_tab,
+    burnin = prior_mcmc_pars[["adaptive_iterations"]],
+    thin = 1, convert_mcmc = FALSE,
+    verbose = FALSE
+  )
+  prior_res <- list(
+    all_diagnostics = plot_mcmc_diagnostics(
+      location = prior_dir, par_tab = diagnostic_par_tab,
+      burnin = prior_mcmc_pars[["adaptive_iterations"]]
+    ),
+    settings = prior_settings,
+    mcmc_chains = prior_chains
+  )
+}
+```
+
+```{r fit-model, include=FALSE}
+mcmc_dir <- file.path(cache_dir, "mcmc_chains")
+mcmc_file <- file.path(mcmc_dir, "demographic_fit")
+mcmc_pars <- c(
+  adaptive_iterations = 5000, iterations = 10000, thin = 20,
+  thin_inf_hist = 100, save_block = 1000
+)
+dir.create(mcmc_dir, recursive = TRUE, showWarnings = FALSE)
+mcmc_settings_file <- paste0(mcmc_file, "_serosolver_settings.RData")
+mcmc_chain_files <- list.files(
+  mcmc_dir, pattern = "^demographic_fit_[0-9]+_chain\\.csv$", full.names = TRUE
+)
+mcmc_history_files <- sub(
+  "_chain\\.csv$", "_infection_histories.csv", mcmc_chain_files
+)
+mcmc_cache_available <- length(mcmc_chain_files) == 3L &&
+  file.exists(mcmc_settings_file) && all(file.exists(mcmc_history_files))
+
+if (!mcmc_cache_available) {
+  res <- serosolver(
+    par_tab = fit_par_tab, antibody_data = antibody_data,
+    demographics = timevarying_demographics,
+    possible_exposure_times = possible_exposure_times,
+    filename = mcmc_file, prior_func = prior_func, data_type = 2,
+    n_chains = 3, parallel = TRUE, mcmc_pars = mcmc_pars, verbose = FALSE
+  )
+} else {
+  load(mcmc_settings_file)
+  fit_settings <- serosolver_settings
+  chains <- load_mcmc_chains(
+    location = mcmc_dir, par_tab = fit_par_tab,
+    burnin = mcmc_pars[["adaptive_iterations"]],
+    thin = 1, convert_mcmc = FALSE, verbose = FALSE
+  )
+  max_samps <- nrow(chains$theta_chain)
+  res <- list(
+    all_diagnostics = plot_mcmc_diagnostics(
+      location = mcmc_dir, par_tab = diagnostic_par_tab,
+      burnin = mcmc_pars[["adaptive_iterations"]]
+    ),
+    settings = fit_settings,
+    antibody_predictions = plot_antibody_predictions(
+      chains$theta_chain, chains$inf_chain, settings = fit_settings,
+      nsamp = max_samps
+    ),
+    plot_attack_rates = plot_attack_rates(
+      chains$inf_chain, settings = fit_settings,
+      by_group = TRUE, plot_den = FALSE
+    ),
+    plot_antibody_model = plot_estimated_antibody_model(
+      chains$theta_chain, settings = fit_settings,
+      solve_times = possible_exposure_times, data_type = 2
+    ),
+    mcmc_chains = chains
+  )
+}
+chains <- res$mcmc_chains
+serosolver_settings <- res$settings
+```
+
+The prior-predictive results below show the range of values implied by the
+chosen priors for the main antibody parameters.
+
+```{r prior-output}
+prior_res$all_diagnostics$theta_estimates %>%
+  filter(names %in% c("boost_long", "boost_short", "wane_short")) %>%
+  select(names, median, lower95_CrI, upper95_CrI)
+```
+
+The fitted attack rates are compared with the known simulated values. The
+points and intervals are inferred from the antibody data; the simulated
+values provide a recovery check rather than additional fitted data.
+
+```{r attack-rate-output}
+plot_attack_rates(
+  chains$inf_chain,
+  true_ar = simulated_data$attack_rates %>% filter(is.finite(AR)),
+  settings = serosolver_settings, by_group = TRUE, plot_den = FALSE
+) + theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+```{r antibody-and-coefficients}
+res$plot_antibody_model + coord_cartesian(ylim = c(0, 10))
+
+coefficient_estimates <- res$all_diagnostics$theta_estimates %>%
+  filter(grepl("coef", names)) %>%
+  select(names, median, lower95_CrI, upper95_CrI, ess)
+coefficient_truth <- simulated_data$par_tab %>%
+  filter(par_type == 4) %>% select(names, true_value = values)
+left_join(coefficient_estimates, coefficient_truth, by = "names")
+```
+
+The fitted kinetics can also be shown with the demographic groups overlaid in
+each panel. Set `by_group = FALSE` to
+colour the group-specific trajectories in the same panel, or `by_group = TRUE` to plot them as separate panels.
+
+```{r antibody-model-overlaid}
+plot_estimated_antibody_model(
+  chains$theta_chain, settings = serosolver_settings,
+  solve_times = possible_exposure_times, data_type = 2, by_group = FALSE
+) + coord_cartesian(ylim = c(0, 10))
+```
+
+# Simulation recovery and interpretation
+
+Because this is synthetic data, the attack rates and coefficient values used
+to generate the observations are known. Recovery is assessed by checking
+whether true attack-rate curves lie within posterior intervals and whether true
+coefficient values are compatible with their credible intervals. Agreement is
+not expected at every time point, particularly when a group has few people or
+few infections.
+
+Baseline antibody parameters describe the group coded 0 for each stratifying
+covariate. A coefficient describes the change relative to that baseline.
+`population_group` selects a group-specific infection-history prior; it
+is not an antibody-kinetics coefficient. Sparse groups can produce weakly
+identified coefficients, so the prior may contribute substantial uncertainty
+to the implied group differences.
+
+```{r recovery-summary}
+simulated_data$attack_rates %>%
+  select(population_group, time, prob_infection) %>%
+  group_by(population_group) %>%
+  summarise(mean_simulated_probability = mean(prob_infection), .groups = "drop")
+res$all_diagnostics$theta_estimates %>%
+  filter(grepl("coef", names)) %>%
+  select(names, median, lower95_CrI, upper95_CrI)
+```
+
+# References
+
+The separate advanced-features vignette will cover starting antibody levels,
+measurement offsets, exponential waning, and multiple biomarker groups.

@@ -1,6 +1,5 @@
-# Modified by an AI assistant on 2026-09-16 using GPT-5. Fixed static
-# demographic tables being treated as time-varying when they lack a `time`
-# column.
+# Modified by an AI assistant on 2026-09-16 using GPT-5. Added the internal
+# helper that applies user-specified stratification coefficients for simulation.
 
 #' Add scaling parameters to par_tab
 #'
@@ -49,6 +48,59 @@ add_scale_pars <- function(par_tab, antibody_data, timevarying_demographics=NULL
     par_tab <- bind_rows(par_tab, tmp_par_tab)
   }
   return(par_tab)
+}
+
+## Replace generated stratification-coefficient values used for simulation truth.
+apply_coefficient_values <- function(par_tab, coefficient_values) {
+  if (is.null(coefficient_values)) {
+    return(par_tab)
+  }
+
+  required_columns <- c(
+    "parameter", "stratification", "stratification_level",
+    "biomarker_group", "value"
+  )
+  if (!is.data.frame(coefficient_values)) {
+    stop("coefficient_values must be a data frame.")
+  }
+  missing_columns <- setdiff(required_columns, names(coefficient_values))
+  if (length(missing_columns) > 0) {
+    stop(
+      "coefficient_values is missing required columns: ",
+      paste(missing_columns, collapse = ", ")
+    )
+  }
+  if (anyNA(coefficient_values[required_columns])) {
+    stop("coefficient_values must not contain missing values in its required columns.")
+  }
+  if (!is.numeric(coefficient_values$value) ||
+      any(!is.finite(coefficient_values$value))) {
+    stop("coefficient_values$value must contain finite numeric values.")
+  }
+
+  coefficient_names <- paste0(
+    coefficient_values$parameter,
+    "_biomarker_", coefficient_values$biomarker_group,
+    "_coef_", coefficient_values$stratification,
+    "_", coefficient_values$stratification_level
+  )
+  if (anyDuplicated(coefficient_names)) {
+    stop("coefficient_values contains duplicate coefficient specifications.")
+  }
+
+  coefficient_indices <- match(coefficient_names, par_tab$names)
+  if (anyNA(coefficient_indices)) {
+    stop(
+      "The following coefficient specifications do not match generated rows in par_tab: ",
+      paste(coefficient_names[is.na(coefficient_indices)], collapse = ", ")
+    )
+  }
+  if (any(par_tab$par_type[coefficient_indices] != 4)) {
+    stop("coefficient_values must refer to stratification coefficient rows.")
+  }
+
+  par_tab$values[coefficient_indices] <- coefficient_values$value
+  par_tab
 }
 
 

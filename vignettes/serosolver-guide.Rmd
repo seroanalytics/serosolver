@@ -4,7 +4,7 @@ subtitle: Getting started
 output: 
   rmarkdown::html_vignette:
     toc: true
-    number_sections: false
+    number_sections: true
 csl: plos.csl
 bibliography: vignette_references.bib
 vignette: |
