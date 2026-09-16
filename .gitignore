@@ -29,16 +29,20 @@ inst/extdata/cs1_sim/*.csv
 inst/extdata/cs2_real/*.csv
 inst/extdata/cs2_sim/*.csv
 
-!inst/extdata/guide/
-!inst/extdata/guide/guide_*_chain.csv
-!inst/extdata/guide/guide_*_infection_histories.csv
-!inst/extdata/guide/guide_serosolver_settings.RData
-!inst/extdata/guide/guide_log.txt
+inst/extdata/guide/*
+inst/extdata/readme/chains/*
+inst/extdata/readme_longitudinal/chains/*
+inst/extdata/readme_multiple_biomarker_groups/chains/*
 
 !inst/extdata/case_study_1/
 inst/extdata/case_study_1/prior_mcmc_chains/*
 inst/extdata/case_study_1/simulation_mcmc_chains/*
 inst/extdata/case_study_1/hong_kong_mcmc_chains/*
+
+!inst/extdata/case_study_2/
+inst/extdata/case_study_2/prior_mcmc_chains/*
+inst/extdata/case_study_2/fluscape_mcmc_chains/*
+inst/extdata/case_study_2/simulation_mcmc_chains/*
 
 doc
 Meta
