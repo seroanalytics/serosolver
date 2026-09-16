@@ -164,10 +164,7 @@ load_theta_chains <- function(location = getwd(), par_tab = NULL, estimated_only
 #' Load MCMC chains from CSV files for infection histories
 #'
 #' Searches the given working directory for MCMC outputs from \code{\link{serosolver}} ending "infection_histories.csv", loads these in, subsets for burn in and thinning, and formats as both lists and a combined data table.
-#' @param location Character string path to the directory containing the chain files. Defaults to `getwd()`.
-#' @param thin Integer; keeps every `thin`th saved MCMC sample. Defaults to `1` (no thinning).
-#' @param burnin Integer; discards samples with `samp_no <= burnin`. Defaults to `0`.
-#' @param verbose Logical; whether to print progress messages.
+#' @inheritParams load_theta_chains
 #' @param chain_subset if not NULL, a vector of indices to only load and store a subset of the chains detected. For example, `chain_subset = 1:3` processes only the first three detected files.
 #' @return A list with two entries: `list`, containing each infection-history chain separately, and `chain`, containing the combined chains with a `chain_no` column. These are data tables rather than `coda` objects.
 #' @family load_data_functions

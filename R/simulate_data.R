@@ -1,30 +1,30 @@
-# Modified by an AI assistant on 2026-09-15 using GPT-5. Added a check to stop
-# `simulate_antibody_model()` before an overlong `times` vector can index past
-# the supplied antigenic map.
+# Modified by an AI assistant on 2026-09-16 using GPT-5. Clarified the roxygen
+# documentation for the simulation and observation-model functions without changing their implementations.
 #'
 #' Simulate full data set
 #'
-#' Simulates a full data set for a given set of parameters etc.
+#' Simulates a full data set for a given set of parameters and sampling design.
 #' @param par_tab the full parameter table controlling parameter ranges and values
 #' @param group which group index to give this simulated data
 #' @param n_indiv number of individuals to simulate
 #' @param antigenic_map (optional) A data frame of antigenic x and y coordinates. Must have column names: x_coord; y_coord; inf_times. See \code{\link{example_antigenic_map}}.
 #' @param possible_exposure_times (optional) If no antigenic map is specified, this argument gives the vector of times at which individuals can be infected
-#' @param measured_biomarker_ids vector of biomarker IDs that have titres measured matching entries in possible_exposure_times
-#' @param sampling_times possible sampling times for the individuals, matching entries in possible_exposure_times
-#' @param nsamps the number of samples each individual has (eg. nsamps=2 gives each individual 2 random sampling times from sampling_times)
-#' @param missing_data numeric between 0 and 1, used to censor a proportion of titre observations at random (MAR)
+#' @param measured_biomarker_ids vector of biomarker IDs that have measurements, matching entries in possible_exposure_times
+#' @param sampling_times possible sample times for the individuals, matching the model time scale
+#' @param nsamps the number of samples each individual has (for example, `nsamps = 2` gives each individual two random sample times from `sampling_times`)
+#' @param missing_data numeric between 0 and 1, used to censor a proportion of observations at random (MAR)
 #' @param age_min simulated age minimum
 #' @param age_max simulated age maximum
-#' @param attack_rates a vector of attack_rates for each entry in possible_exposure_times to be used in the simulation (between 0 and 1)
+#' @param age_group_bounds optional age-group boundaries used when creating demographic groups
+#' @param attack_rates a vector or table of attack rates for each entry in possible_exposure_times to be used in the simulation (between 0 and 1). See \code{\link{simulate_attack_rates}}.
 #' @param repeats number of repeat observations for each year
-#' @param measurement_indices default NULL, optional vector giving the index of `measurement_bias` that each antigen/biomarker ID uses the measurement shift from from. eg. if there's 6 circulation years and 3 strain clusters, then this might be c(1,1,2,2,3,3)
-#' @param data_type if not NULL, then a vector of data types to use for each biomarker_group
-#' @param demographics if not NULL, then a tibble for each individual (1:n_indiv) giving demographic variable entries. Most importantly must include "birth" as the birth time. This is used if, for example, you have a stratification grouping in `par_tab`
+#' @param measurement_bias default NULL, optional vector of measurement shifts used when generating the simulated antibody levels
+#' @param data_type if not NULL, a vector of observation-model types to use for each `biomarker_group`
+#' @param demographics if not NULL, a data frame giving demographic variables for each individual (1:n_indiv). It must include `birth` and can include `population_group` or variables used for stratification in `par_tab`.
 #' @param verbose if TRUE, prints additional messages
-#' @param starting_levels a data frame giving the starting biomarker level for each individual, biomarker_group and biomarker_id combination. If NULL, then starting levels are assumed to be 0.
+#' @param starting_levels a data frame or function giving the starting biomarker level for each individual, `biomarker_group`, and `biomarker_id` combination. If NULL, starting levels are assumed to be 0.
 #' @param exponential_waning if TRUE, uses exponential waning function rather than linear waning
-#' @return a list with: 1) the data frame of antibody data as returned by \code{\link{simulate_group}}; 2) a matrix of infection histories as returned by \code{\link{simulate_infection_histories}}; 3) a vector of ages
+#' @return A list containing `antibody_data`, `infection_histories`, `attack_rates`, `phis`, `par_tab`, `population_groups`, `demographic_groups`, and `start_levels`.
 #' @family simulation_functions
 #' @examples
 #' data(example_par_tab)
@@ -42,8 +42,7 @@
 #'                                    sampling_times=2010:2015, nsamps=2, antigenic_map=example_antigenic_map, 
 #'                                    age_min=10,age_max=75,
 #'                                    attack_rates=attack_rates, repeats=2)
-#' antibody_data <- all_simulated_data$data
-#' antibody_data <- merge(antibody_data, all_simulated_data$ages)
+#' antibody_data <- all_simulated_data$antibody_data
 #' @export
 simulate_data <- function(par_tab,
                           group = 1,
@@ -275,11 +274,13 @@ simulate_data <- function(par_tab,
 
 #' Add noise
 #'
-#' Adds truncated noise to antibody data
-#' @param y the titre
-#' @param theta a vector with max_measurement and error parameters
-#' @param data_type integer, currently accepting 1 or 2. Set to 1 for discretized, bounded data, or 2 for continuous, bounded data. 3 is for continuous data assuming that true negatives follow a different distribution -- the vast majority return the min_measurement, but with a rate fp_rate, a random draw from a uniform distribution within the limits of detection is generated.
-#' @return a noisy titre
+#' Adds observation noise to antibody data and truncates the result to the specified measurement limits.
+#' @param y the underlying antibody level
+#' @param theta a named parameter vector containing `min_measurement`, `max_measurement`, and the relevant error parameters
+#' @param measurement_bias optional vector of measurement shifts
+#' @param indices optional integer vector selecting the shift to apply to each value of `y`
+#' @param data_type integer, currently accepting 1, 2, or 3. Set to 1 for discrete, bounded data; 2 for continuous, bounded data; or 3 for continuous data in which true negatives can produce false-positive measurements.
+#' @return A vector of noisy, bounded antibody measurements.
 #' @export
 #' @examples
 #' \dontrun{
@@ -340,14 +341,14 @@ add_noise <- function(y, theta, measurement_bias = NULL, indices = NULL,data_typ
 
 #' Simulate attack rates
 #'
-#' Given a number of possible infection years, simulates attack rates from a log normal distribution with specified mean and standard deviation.
-#' @param infection_years the number of infection years
-#' @param mean_par the mean of the log normal
-#' @param sd_par the sd of the log normal
-#' @param large_first_year simulate an extra large attach rate in the first year?
-#' @param big_year_mean if large first year, what mean to use?
-#' @param n_groups defaults to 1, otherwise gives an attack rate vector for each group
-#' @return a matrix of attack rates for each group
+#' Given a vector of possible infection times, simulates attack rates from a log-normal distribution with specified mean and log-scale standard deviation.
+#' @param infection_years vector of possible infection times
+#' @param mean_par target mean attack rate, either one value or one value per population group
+#' @param sd_par standard deviation on the log scale, either one value or one value per population group
+#' @param large_first_year logical value indicating whether to simulate an extra-large attack rate in the first time period
+#' @param big_year_mean target mean for the first time period when `large_first_year = TRUE`
+#' @param n_groups number of population groups to simulate
+#' @return A long-format data frame with `population_group`, `time`, and `prob_infection` columns.
 #' @family simulation_functions
 #' @export
 simulate_attack_rates <- function(infection_years, mean_par = 0.15, sd_par = 0.5,
@@ -380,11 +381,11 @@ simulate_attack_rates <- function(infection_years, mean_par = 0.15, sd_par = 0.5
 
 #' Simulate infection histories
 #'
-#' Given a vector of infection probabilities and potential infection times, simulates infections for each element of ages (ie. each element is an individual age. Only adds infections for alive individuals)
-#' @param p_inf a vector of attack rates (infection probabilities) for each year
+#' Given infection probabilities and potential infection times, simulates infections for each individual in `demographics`. Infections are only added while an individual is alive and within their observation period.
+#' @param p_inf a vector or data frame of attack rates (infection probabilities) for each possible exposure time and population group
 #' @param possible_exposure_times the vector of possible infection times
-#' @param demographics data frame giving the population group, birth and last_sample time for each individual. Optionally can set these values for all "time"
-#' @return a list with a matrix of infection histories for each individual in ages and the true attack rate for each epoch
+#' @param demographics data frame giving `individual`, `birth`, and `population_group` for each individual. `last_sample` and time-varying demographic values can also be supplied.
+#' @return A list containing an infection-history matrix and a data frame of empirical attack rates for each population group and exposure time.
 #' @family simulation_functions
 #' @examples
 #' possible_exposure_times <- seq_len(25)
@@ -438,12 +439,13 @@ simulate_infection_histories <- function(p_inf, possible_exposure_times=1:ncol(p
 #' 
 #' Simulates the trajectory of the serosolver antibody model using specified parameters and optionally a specified antigenic map and infection history.
 #' @param pars either the original `par_tab` object (a data frame), or the vector of named model parameters, including `boost_long`, `boost_short`,`boost_delay`,`wane_long`,`wane_short`,`cr_long`, and `cr_short`.
-#' @param times the vector of times to solve the model over. A continuous vector of discrete timepoints. Can be left to NULL if this information is included in the `antigenic_map` argument.
-#' @param infection_history the vector of times matching entries in `times` to simulate infections in.
-#' @param antigenic_map the antigenic map to solve the model with. Can be left to NULL to ssume all biomarker IDs have the same antigenic coordinates.
+#' @param times the vector of time points at which to solve the model. Can be left to NULL if these times are included in `antigenic_map`.
+#' @param infection_history the vector of infection times, each of which must be present in `times`. If NULL, an infection is simulated at the first value of `times`.
+#' @param antigenic_map the antigenic map to solve the model with. Can be left to NULL to assume all biomarker IDs have the same antigenic coordinates.
 #' @param exponential_waning if TRUE, then waning is exponential rather than linear
-#' @return a data frame with variables `sample_times`, `biomarker_id` and `antibody_level`
+#' @return A data frame with `sample_times`, `biomarker_ids`, and `antibody_level` columns.
 #' @examples
+#' data(example_antigenic_map)
 #' simulate_antibody_model(c("boost_long"=2,"boost_short"=3,"boost_delay"=1,"wane_short"=0.2,"wane_long"=0.01, "antigenic_seniority"=0,"cr_long"=0.1,"cr_short"=0.03), times=seq(1,25,by=1),infection_history=NULL,antigenic_map=example_antigenic_map)
 #'  
 #' @export

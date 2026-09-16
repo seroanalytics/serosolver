@@ -1,16 +1,18 @@
 # Modified by an AI assistant on 2026-09-15 using GPT-5. Added a message when
 # R-hat is skipped because only one MCMC chain is available.
+# Modified by an AI assistant on 2026-09-16 using GPT-5. Clarified the roxygen
+# documentation for antibody, attack-rate, parameter, and diagnostic plots without changing their implementations.
 #'
 #' Plot raw data
 #'
 #' Plots measured antibody measurements and known infection histories for all individuals, faceted by sample time (multi-antigen panel) or biomarker_id variable (longitudinal single antigen)
 #' @param antibody_data the data frame of antibody data
 #' @param possible_exposure_times the vector of times at which individuals could be infected
-#' @param n_indivs integer of how many individuals to plot, or vector of which individuals to plot
-#' @param infection_histories the infection history matrix
+#' @param n_indivs either the number of individuals to sample at random, or a vector of individual IDs to plot
+#' @param infection_histories optional infection-history matrix with rows in the same individual order as `antibody_data`
 #' @param study_design default "cross-sectional" facets by sample time. "longitudinal" gives sample time on the x-axis and colours by `biomarker_id`
 #' @param measurement_ranges data frame or tibble stating for each `biomarker_group` the `min_measurement` and `max_measurement`. If NULL, this is extracted from `antibody_data`
-#' @return a ggplot object
+#' @return A ggplot object showing the antibody measurements and, when supplied, known infection times.
 #' @family infection_history_plots
 #' @examples
 #' \dontrun{
@@ -107,6 +109,12 @@ plot_antibody_data <- function(antibody_data,
     return(p1)
 }
 
+#' Plot joint posterior densities for two parameters
+#'
+#' @param chain the MCMC parameter chain
+#' @param par1 the name of the first parameter column in `chain`
+#' @param par2 the name of the second parameter column in `chain`
+#' @return A ggplot object showing the joint posterior density, coloured by MCMC chain.
 #' @family theta_plots
 #' @export
 plot_2d_density <- function(chain, par1, par2) {
@@ -125,7 +133,7 @@ plot_2d_density <- function(chain, par1, par2) {
 #' Plot time between serum samples
 #'
 #' @param antibody_data the data frame of antibody data, including labels for individuals and time sample was taken
-#' @return a ggplot2 object
+#' @return A ggplot2 object showing the distribution of time intervals between samples from the same individual.
 #' @family theta_plots
 #' @examples
 #' \dontrun{
@@ -141,6 +149,12 @@ plot_samples_distances <- function(antibody_data) {
     ggplot(distances) + geom_histogram(aes(x = V1), binwidth = 1) + theme_bw() + xlab("Time points between samples")
 }
 
+#' Plot posterior parameter traces and densities
+#'
+#' @param chain the MCMC parameter chain
+#' @param par_tab the model control table used to identify estimated parameters and parameter types
+#' @return A list of trace and density plots for the main parameters, infection-history prior parameters, measurement-shift parameters, and stratification parameters. Entries are `NULL` when the corresponding parameter type is absent.
+#' @family theta_plots
 #' @export
 plot_posteriors_theta <- function(chain,par_tab){
   par_tab_tmp <- par_tab[par_tab$fixed == 0,]
@@ -235,6 +249,15 @@ plot_posteriors_theta <- function(chain,par_tab){
        p_trace_strat, p_density_strat)
 }
 
+#' Plot MCMC diagnostics
+#'
+#' Calculates posterior parameter summaries, effective sample sizes, and R-hat values when more than one chain is available. It also returns the parameter and infection-history diagnostic plots.
+#' @param location character string giving the directory containing the saved MCMC chain files
+#' @param par_tab the model control table used to identify estimated parameters
+#' @param burnin number of initial MCMC samples to discard when loading the chains
+#' @param inf_hist_mcmc_summaries if TRUE, calculates infection-history summaries and plots as well as parameter diagnostics
+#' @return A list containing `theta_estimates`, `p_thetas`, `inf_hist_estimates`, and `p_inf_hists`.
+#' @family theta_plots
 #' @export
 plot_mcmc_diagnostics <- function(location, par_tab, burnin, inf_hist_mcmc_summaries=TRUE){
   chains <- load_mcmc_chains(location=location,par_tab=par_tab,burnin=burnin,estimated_only=TRUE)

@@ -1,14 +1,18 @@
+# Modified by an AI assistant on 2026-09-16 using GPT-5. Clarified the roxygen
+# documentation for attack-rate plots without changing the implementation.
+
 #' Plot historical attack rates with pointrange plots
 #'
 #' Plots inferred historical attack rates from the MCMC output on infection histories, with pointrange plots for per-time incidence estimates
 #' @param infection_histories the MCMC chain for infection histories
 #' @param antibody_data the data frame of antibody data
+#' @param demographics optional demographic data used to assign population groups
+#' @param par_tab the model control table used when demographic groups are present
 #' @param possible_exposure_times vector of the epochs of potential infection
-#' @param n_alive vector with the number of people alive in each year of possible infection Can be left as NULL, and the `birth` variable in `antibody_data` will be used to calculate the number alive
-#' @param resolution divides `possible_exposure_times` by this number for x axis labels
-#' @param pointsize graphics option, numeric - how big should each point be?
-#' @param fatten graphics option, numeric - fatten parameter for ggplot pointrange
-#' @param pad_chain if TRUE, fills the infection history data table with entries for non-infection events (ie. 0s). Can be switched to FALSE for speed to get a rough idea of what the attack rates look like.
+#' @param n_alive optional number-alive data. If NULL, the number alive is calculated from `antibody_data` and `birth`.
+#' @param pointsize graphics option controlling point size
+#' @param fatten graphics option controlling the width of pointrange end caps
+#' @param pad_chain if TRUE, fills the infection-history data table with entries for non-infection events (0s). Set to FALSE for a faster, approximate plot.
 #' @param prior_pars if not NULL, a list of parameters for the attack rate prior, giving the assumed prior_version along with infection_model_prior_shape1 and infection_model_prior_shape2
 #' @param plot_den if TRUE, produces a violin plot of attack rates rather than pointrange
 #' @param plot_ribbon if TRUE, plots a ribbon over time for the attack rate estimates, otherwise plots a pointrange plot
@@ -18,8 +22,11 @@
 #' @param plot_residuals if TRUE, plots the residuals between inferred and true attack rate
 #' @param colour_by_taken if TRUE, then colours the attack rates by whether or not titres against the circulating antigen at that time were measured
 #' @param by_val frequency of x-axis labels
-#' @param settings if not NULL, list of serosolver settings as returned from the main serosolver function
-#' @return a ggplot2 object with the inferred attack rates for each potential epoch of circulation
+#' @param min_time minimum time shown on the x-axis
+#' @param max_time maximum time shown on the x-axis
+#' @param settings if not NULL, list of serosolver settings as returned from the main serosolver function, such as `res$settings`
+#' @param verbose if TRUE, prints messages when settings are used
+#' @return A ggplot2 object showing inferred attack rates for each potential infection time, either as pointranges, ribbons, or density plots depending on the plotting options.
 #' @export
 plot_attack_rates <- function(infection_histories, 
                               antibody_data=NULL, 

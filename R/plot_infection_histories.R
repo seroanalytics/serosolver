@@ -1,15 +1,20 @@
+# Modified by an AI assistant on 2026-09-16 using GPT-5. Clarified the roxygen
+# documentation for infection-history posterior plots without changing the implementation.
+# Modified by an AI assistant on 2026-09-16 using GPT-5. Clarified the roxygen
+# documentation for the infection-history chain plotting functions without changing their implementations.
+
 #' Plot inferred posteriors infection histories
 #'
-#' Plots and calculates many summary statistics from the infection history MCMC chain
-#' @param inf_chain the data table with infection history samples from \code{\link{serosolver}}
-#' @param possible_exposure_times vector of the epochs of potential circulation
-#' @param n_alive_group vector with the number of people alive in each year of circulation.
-#' @param known_ar data frame of known attack rates, if known.
-#' @param known_infection_history data frame of known infection histories.
-#' @param burnin if not already discarded, discard burn in from chain (takes rows where samp_no > burnin)
-#' @param samples how many samples from the chain to take
-#' @param pad_chain if TRUE, pads the infection history MCMC chain with non-infection events
-#' @return a list of ggplot objects and data frame of posterior estimates
+#' Plots and calculates summary statistics from the infection-history MCMC chain.
+#' @param inf_chain the infection-history chain returned by \code{\link{load_mcmc_chains}}, in long format
+#' @param possible_exposure_times vector of possible exposure times, in the same order as the infection-history columns
+#' @param n_alive data frame giving the number of people alive for each exposure time and population group. This is used to calculate attack rates.
+#' @param known_ar optional data frame of known attack rates, with `j`, `population_group`, and `AR` columns
+#' @param known_infection_history optional matrix or data frame of known infection histories, with individuals in rows and possible exposure times in columns
+#' @param burnin if not already discarded, discards rows with `samp_no <= burnin`
+#' @param samples number of MCMC samples to use for the plots
+#' @param pad_chain if TRUE, adds zero-valued entries for infection events that are absent from the sparse chain
+#' @return A list containing trace plots by time and individual, a plot of the number of infections per individual, and the posterior estimates returned by \code{\link{calculate_infection_history_statistics}}.
 #' @family infection_history_plots
 #' @examples
 #' \dontrun{
@@ -84,12 +89,13 @@ plot_infection_history_posteriors <- function(inf_chain,
 
 #' Plot MCMC trace for infections per year
 #'
-#' @param inf_chain the data table with infection history samples from \code{\link{serosolver}}
-#' @param burnin optionally remove all samp_no < burnin from the chain
-#' @param times vector of integers, if not NULL, only plots a subset of years (where 1 is the first year eg. 1968)
-#' @param n_alive if not NULL, then divides number of infections per year by number alive to give attack rates rather than total infections
-#' @param pad_chain if TRUE, pads the infection history MCMC chain to have entries for non-infection events
-#' @return a list of two ggplot objects - the MCMC trace and MCMC densities
+#' Plots the MCMC trace and posterior density of inferred infections for selected exposure times.
+#' @param inf_chain the infection-history chain returned by \code{\link{load_mcmc_chains}}, in long format
+#' @param burnin if not already discarded, discards rows with `samp_no <= burnin`
+#' @param times optional vector of `j` indices identifying the exposure times to plot
+#' @param n_alive optional data frame containing `j` and `n_alive`. If supplied, infection counts are divided by the number alive to show attack rates.
+#' @param pad_chain if TRUE, adds zero-valued entries for infection events that are absent from the sparse chain
+#' @return A list containing the MCMC trace plot and posterior density plot.
 #' @seealso \code{\link{plot_infection_history_chains_indiv}}
 #' @family infection_history_plots
 #' @examples
@@ -137,9 +143,10 @@ plot_infection_history_chains_time <- function(inf_chain, burnin = 0, times = NU
 
 #' Plot MCMC trace for infections per individual
 #'
+#' Plots the MCMC trace and posterior density of the inferred total number of infections for selected individuals.
 #' @inheritParams plot_infection_history_chains_time
-#' @param indivs vector of integers, if not NULL, only plots a subset of individuals (where 1 is the first individual)
-#' @return a list of two ggplot objects - the MCMC trace and MCMC densities
+#' @param indivs optional vector of individual IDs, as recorded in `inf_chain$i`, to plot
+#' @return A list containing the MCMC trace plot and posterior density plot.
 #' @seealso \code{\link{plot_infection_history_chains_indiv}}
 #' @family infection_history_plots
 #' @examples
@@ -178,9 +185,9 @@ plot_infection_history_chains_indiv <- function(inf_chain, burnin = 0, indivs = 
 
 #' Total number of infections
 #'
-#' Plots the total number of inferred infections in the MCMC chain as a trace plot and density plot
+#' Plots the total number of inferred infections in the MCMC chain as a trace plot and density plot.
 #' @inheritParams plot_infection_history_chains_time
-#' @return two ggplot2 objects
+#' @return A list containing the MCMC trace plot and posterior density plot.
 #' @family infection_history_plots
 #' @examples
 #' \dontrun{
@@ -208,8 +215,9 @@ plot_total_number_infections <- function(inf_chain, pad_chain = TRUE) {
 
 #' Plot point range number infections per individual
 #'
+#' Plots the posterior median and 95% interval for the total number of inferred infections for each individual. Individuals are ordered by their posterior median.
 #' @inheritParams plot_infection_history_chains_time
-#' @return a ggplot object
+#' @return A ggplot object.
 #' @family infection_history_plots
 #' @examples
 #' \dontrun{

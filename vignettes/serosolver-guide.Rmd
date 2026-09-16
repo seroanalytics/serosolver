@@ -16,6 +16,9 @@ vignette: |
 
 <!-- Modified by an AI assistant on 2026-09-16 using GPT-5. Added the package logo to the opening guide layout. -->
 
+<!-- Modified by an AI assistant on 2026-09-16 using GPT-5. Added an example
+of comparing observed measurements with predictions from posterior draws. -->
+
 ```{r setup, include = FALSE}
 knitr::opts_chunk$set(
   collapse = TRUE,
@@ -604,6 +607,18 @@ plot_estimated_antibody_model(
   settings = serosolver_settings,
   solve_times = serosolver_settings$possible_exposure_times
 )
+```
+
+To compare the observed measurements with predictions from individual posterior draws, use `plot_antibody_predictions()`. The `p_hist_draws` plot shows the observations alongside a random selection of posterior draws, with a separate facet for each draw. This gives a visual check of the variation represented by the fitted observation model, rather than only showing the posterior median.
+
+```{r, eval=TRUE, fig.cap="Observed antibody measurements compared with predictions from randomly selected posterior draws.", fig.height=6, fig.width=8}
+prediction_plots <- plot_antibody_predictions(
+  chain = chains$theta_chain,
+  infection_histories = chains$inf_chain,
+  settings = serosolver_settings,
+  nsamp = 100
+)
+print(prediction_plots$p_hist_draws)
 ```
 
 Both approaches are shown because the returned plots are the quickest way to inspect a fit, whereas reading the chains and calling the plotting functions directly gives more control over post-processing and plotting.

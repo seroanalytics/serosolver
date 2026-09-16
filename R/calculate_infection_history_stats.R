@@ -1,9 +1,13 @@
+# Modified by an AI assistant on 2026-09-16 using GPT-5. Clarified the roxygen
+# documentation for infection-history summary outputs without changing the implementation.
+
 #' Get posterior information for estimated infection histories
 #'
-#' Finds the median, mean and 95% credible intervals for the attack rates and total number of infections per individual
-#' @param solve_cumulative if TRUE, finds the cumulative infection histories for each individual. This takes a while, so is left FALSE by default.
+#' Finds the median, mean and 95% credible intervals for the attack rates and total number of infections per individual.
 #' @inheritParams plot_infection_history_posteriors
-#' @return a list of data frames with summary statistics
+#' @param group_ids optional data frame assigning individuals to `population_group` values for group-specific summaries
+#' @param solve_cumulative if TRUE, also finds cumulative infection histories for each individual. This takes a while, so is left FALSE by default.
+#' @return A list with `by_year`, `by_indiv`, `by_year_cumu`, and `by_indiv_cumu` data frames containing posterior summaries. The cumulative individual result is `NULL` unless `solve_cumulative = TRUE`.
 #' @family infection_history_plots
 #' @examples
 #' data(example_inf_chain)

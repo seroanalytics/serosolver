@@ -3,14 +3,16 @@
 # infection history in `plot_antibody_model()` to use the first supplied time.
 # Modified by an AI assistant on 2026-09-16 using GPT-5. Updated the roxygen
 # documentation for `plot_model_fits()` without changing its implementation.
+# Modified by an AI assistant on 2026-09-16 using GPT-5. Clarified the roxygen
+# documentation for the remaining antibody-model plotting functions without changing their implementations.
 #'
 #' Antibody dependent boosting relationship
 #'
 #' Calculates the inferred antibody dependent boosting relationship from the MCMC chain
-#' @param chain the MCMC chain
-#' @param n number of samples to take
-#' @param titres the vector of titres to calculate boosting values at
-#' @return a data frame of quantiles for the inferred boost from different titre levels
+#' @param chain the MCMC chain containing the antibody kinetics parameters
+#' @param n number of posterior samples to use
+#' @param titres the antibody levels at which to calculate the boosting relationship
+#' @return A matrix of posterior 2.5%, 50%, and 97.5% quantiles for the inferred boost at each value of `titres`.
 #' @export
 plot_antibody_dependent_boosting <- function(chain, n, titres = seq(0, 8, by = 0.1)) {
   samp_nos <- sample(unique(chain$samp_no), n)
@@ -34,8 +36,9 @@ plot_antibody_dependent_boosting <- function(chain, n, titres = seq(0, 8, by = 0
 
 #' Plot the antibody model
 #' 
-#' Plots the trajectory of the serosolver antibody model using specified parameters and optionally a specified antigenic map and infection history.
+#' Plots the trajectory of the serosolver antibody model using specified parameters and optionally a specified antigenic map and infection history. If no infection history is supplied, the first supplied model time is used as a default infection time.
 #' @inheritParams simulate_antibody_model
+#' @param label_parameters if TRUE, adds parameter values to the plot labels
 #' @return a list with two ggplot objects, one showing the simulated antibody kinetics over time, stratified by biomarker ID, the other showing simulated antibody kinetics for each biomarker ID, stratified by sample time
 #' @examples
 #' plot_antibody_model(c("boost_long"=2,"boost_short"=3,"boost_delay"=1,"wane_short"=0.2,"wane_long"=0.01, "antigenic_seniority"=0,"cr_long"=0.1,"cr_short"=0.03), times=seq(2000,2015,by=1),infection_history=NULL,antigenic_map=example_antigenic_map)
@@ -113,6 +116,7 @@ plot_antibody_model <- function(pars,
 #' @param settings if not NULL, list of serosolver settings as returned from the main serosolver function, such as `res$settings`
 #' @param expand_to_all_biomarker_ids if TRUE, solves predictions for all biomarker IDs in the antigenic map while retaining the sample times in antibody_data
 #' @param exponential_waning if TRUE, assumes exponential rather than linear waning
+#' @param verbose if TRUE, prints messages when settings are used or predictions are prepared
 #' @return a list of ggplot2 objects
 #' @family infection_history_plots
 #' @examples
@@ -398,7 +402,9 @@ theme_pubr <- function (base_size = 12, base_family = "", border = FALSE, margin
 
 #' Plots model predicted titers against observations
 #'
+#' Compares observed antibody measurements with posterior predictions and returns the prediction data and comparison plots.
 #' @inheritParams plot_model_fits
+#' @param verbose if TRUE, prints messages when settings are used or predictions are prepared
 #' @return a list with: 
 #' \itemize{
 #' \item a data frame with all posterior estimates for each observation; 
@@ -561,9 +567,13 @@ plot_antibody_predictions <- function(chain, infection_histories,
 
 #' Plots estimated antibody kinetics model
 #'
+#' Plots the posterior antibody kinetics implied by the fitted model, optionally including prediction intervals for observed measurements.
 #' @inheritParams plot_model_fits
 #' @param solve_times vector of times to solve model over
 #' @param set_infections numeric vector giving the corresponding times in possible_exposure_histories to simulate infections
+#' @param by_group if TRUE, plots separate trajectories for each biomarker ID; otherwise combines the trajectories
+#' @param add_prediction_intervals if TRUE, adds intervals for predicted observations as well as the underlying antibody model
+#' @param verbose if TRUE, prints messages when settings are used or predictions are prepared
 #' @return a ggplot2 object giving model-predicted antibody level and predicted observations over time since infection
 #' @family infection_history_plots
 #' @export
