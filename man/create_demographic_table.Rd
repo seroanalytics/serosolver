@@ -9,7 +9,7 @@ create_demographic_table(antibody_data, par_tab)
 \arguments{
 \item{antibody_data}{the antibody data data frame, see \code{\link{example_antibody_data}}.}
 
-\item{par_tab}{the parameter table, including a column called stratification which is NA if no stratification is requested, for with a character value matching an entry in antibody_data}
+\item{par_tab}{the parameter table, including a column called stratification which is NA if no stratification is requested, or a character value matching an entry in antibody_data}
 }
 \value{
 a data frame of unique stratification level combinations. Each column is a stratification variable, and each row is a unique combination of levels
@@ -17,3 +17,10 @@ a data frame of unique stratification level combinations. Each column is a strat
 \description{
 Takes all stratifications requested in par_tab and checks antibody_data for all unique levels of that stratification. If no stratifications are requested, then returns a data frame with a single row and a column called "all" with value 0.
 }
+\seealso{
+Other stratification:
+\code{\link[=add_scale_pars]{add_scale_pars()}},
+\code{\link[=get_demographic_groups]{get_demographic_groups()}},
+\code{\link[=setup_stratification_table]{setup_stratification_table()}}
+}
+\concept{stratification}

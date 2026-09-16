@@ -26,3 +26,10 @@ a list with three entries: 1) the names of the demographic groups used, 2) a dat
 \description{
 Takes antibody_data and demographics and returns a list with the stratification groups used to group the antibody kinetics model. If timevarying_demographics are provided, then these are used to create the demographic groups. If not, then antibody_data is used.
 }
+\seealso{
+Other stratification:
+\code{\link[=add_scale_pars]{add_scale_pars()}},
+\code{\link[=create_demographic_table]{create_demographic_table()}},
+\code{\link[=setup_stratification_table]{setup_stratification_table()}}
+}
+\concept{stratification}

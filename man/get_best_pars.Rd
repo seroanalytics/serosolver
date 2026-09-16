@@ -10,10 +10,10 @@ get_best_pars(chain)
 \item{chain}{the MCMC chain}
 }
 \value{
-a name vector of the best parameters
+a named vector of parameter values from the maximum-posterior row
 }
 \description{
-Given an MCMC chain, returns the set of best fitting parameters (MLE)
+Given an MCMC chain, returns the parameter values from the row with the highest posterior probability.
 }
 \examples{
 \dontrun{

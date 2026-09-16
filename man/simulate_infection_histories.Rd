@@ -11,17 +11,17 @@ simulate_infection_histories(
 )
 }
 \arguments{
-\item{p_inf}{a vector of attack rates (infection probabilities) for each year}
+\item{p_inf}{a vector or data frame of attack rates (infection probabilities) for each possible exposure time and population group}
 
 \item{possible_exposure_times}{the vector of possible infection times}
 
-\item{demographics}{data frame giving the population group, birth and last_sample time for each individual. Optionally can set these values for all "time"}
+\item{demographics}{data frame giving `individual`, `birth`, and `population_group` for each individual. `last_sample` and time-varying demographic values can also be supplied.}
 }
 \value{
-a list with a matrix of infection histories for each individual in ages and the true attack rate for each epoch
+A list containing an infection-history matrix and a data frame of empirical attack rates for each population group and exposure time.
 }
 \description{
-Given a vector of infection probabilities and potential infection times, simulates infections for each element of ages (ie. each element is an individual age. Only adds infections for alive individuals)
+Given infection probabilities and potential infection times, simulates infections for each individual in `demographics`. Infections are only added while an individual is alive and within their observation period.
 }
 \examples{
 possible_exposure_times <- seq_len(25)

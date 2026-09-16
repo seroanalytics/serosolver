@@ -14,7 +14,7 @@ infection_history_prior(pars, infection_history, age_mask)
 \item{age_mask}{the age mask, giving the first index of the infection_history matrix that each individual can be exposed to. One entry per individual}
 }
 \value{
-a prior probability for each individual
+the log prior contribution for each individual
 }
 \description{
 Calculates the beta binomial infection history prior for each individual, taking into account the number of years they could be infected.
@@ -25,6 +25,8 @@ Other priors:
 \code{\link[=calc_phi_probs_indiv]{calc_phi_probs_indiv()}},
 \code{\link[=calc_phi_probs_spline]{calc_phi_probs_spline()}},
 \code{\link[=create_prob_shifts]{create_prob_shifts()}},
+\code{\link[=dbb_prior]{dbb_prior()}},
+\code{\link[=density_beta_binom]{density_beta_binom()}},
 \code{\link[=find_beta_prior_mode]{find_beta_prior_mode()}},
 \code{\link[=find_beta_prior_with_mean]{find_beta_prior_with_mean()}},
 \code{\link[=find_beta_prior_with_mean_var]{find_beta_prior_with_mean_var()}},

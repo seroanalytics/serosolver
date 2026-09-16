@@ -2,7 +2,7 @@
 % Please edit documentation in R/stratification.R
 \name{align_antibody_demographic_dat}
 \alias{align_antibody_demographic_dat}
-\title{Internal function -- merges antibody_data and demographics such that antibody_data has correct variables}
+\title{Merge antibody data and demographics}
 \usage{
 align_antibody_demographic_dat(
   antibody_data,
@@ -10,6 +10,16 @@ align_antibody_demographic_dat(
   verbose = FALSE
 )
 }
+\arguments{
+\item{antibody_data}{antibody data frame}
+
+\item{demographics}{optional fixed or time-varying demographic data}
+
+\item{verbose}{if TRUE, prints warnings about overlapping columns}
+}
+\value{
+the antibody data with demographic variables added
+}
 \description{
-Internal function -- merges antibody_data and demographics such that antibody_data has correct variables
+Internal helper that merges demographic variables into `antibody_data`, using `sample_time` to align time-varying demographics.
 }

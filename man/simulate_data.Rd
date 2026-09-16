@@ -38,39 +38,41 @@ simulate_data(
 
 \item{possible_exposure_times}{(optional) If no antigenic map is specified, this argument gives the vector of times at which individuals can be infected}
 
-\item{measured_biomarker_ids}{vector of biomarker IDs that have titres measured matching entries in possible_exposure_times}
+\item{measured_biomarker_ids}{vector of biomarker IDs that have measurements, matching entries in possible_exposure_times}
 
-\item{sampling_times}{possible sampling times for the individuals, matching entries in possible_exposure_times}
+\item{sampling_times}{possible sample times for the individuals, matching the model time scale}
 
-\item{nsamps}{the number of samples each individual has (eg. nsamps=2 gives each individual 2 random sampling times from sampling_times)}
+\item{nsamps}{the number of samples each individual has (for example, `nsamps = 2` gives each individual two random sample times from `sampling_times`)}
 
-\item{missing_data}{numeric between 0 and 1, used to censor a proportion of titre observations at random (MAR)}
+\item{missing_data}{numeric between 0 and 1, used to censor a proportion of observations at random (MAR)}
 
 \item{age_min}{simulated age minimum}
 
 \item{age_max}{simulated age maximum}
 
-\item{attack_rates}{a vector of attack_rates for each entry in possible_exposure_times to be used in the simulation (between 0 and 1)}
+\item{age_group_bounds}{optional age-group boundaries used when creating demographic groups}
+
+\item{attack_rates}{a vector or table of attack rates for each entry in possible_exposure_times to be used in the simulation (between 0 and 1). See \code{\link{simulate_attack_rates}}.}
 
 \item{repeats}{number of repeat observations for each year}
 
-\item{data_type}{if not NULL, then a vector of data types to use for each biomarker_group}
+\item{measurement_bias}{default NULL, optional vector of measurement shifts used when generating the simulated antibody levels}
 
-\item{demographics}{if not NULL, then a tibble for each individual (1:n_indiv) giving demographic variable entries. Most importantly must include "birth" as the birth time. This is used if, for example, you have a stratification grouping in `par_tab`}
+\item{data_type}{if not NULL, a vector of observation-model types to use for each `biomarker_group`}
+
+\item{demographics}{if not NULL, a data frame giving demographic variables for each individual (1:n_indiv). It must include `birth` and can include `population_group` or variables used for stratification in `par_tab`.}
 
 \item{verbose}{if TRUE, prints additional messages}
 
-\item{starting_levels}{a data frame giving the starting biomarker level for each individual, biomarker_group and biomarker_id combination. If NULL, then starting levels are assumed to be 0.}
+\item{starting_levels}{a data frame or function giving the starting biomarker level for each individual, `biomarker_group`, and `biomarker_id` combination. If NULL, starting levels are assumed to be 0.}
 
 \item{exponential_waning}{if TRUE, uses exponential waning function rather than linear waning}
-
-\item{measurement_indices}{default NULL, optional vector giving the index of `measurement_bias` that each antigen/biomarker ID uses the measurement shift from from. eg. if there's 6 circulation years and 3 strain clusters, then this might be c(1,1,2,2,3,3)}
 }
 \value{
-a list with: 1) the data frame of antibody data as returned by \code{\link{simulate_group}}; 2) a matrix of infection histories as returned by \code{\link{simulate_infection_histories}}; 3) a vector of ages
+A list containing `antibody_data`, `infection_histories`, `attack_rates`, `phis`, `par_tab`, `population_groups`, `demographic_groups`, and `start_levels`.
 }
 \description{
-Simulates a full data set for a given set of parameters etc.
+Simulates a full data set for a given set of parameters and sampling design.
 }
 \examples{
 data(example_par_tab)
@@ -88,8 +90,7 @@ all_simulated_data <- simulate_data(par_tab=example_par_tab, group=1, n_indiv=50
                                    sampling_times=2010:2015, nsamps=2, antigenic_map=example_antigenic_map, 
                                    age_min=10,age_max=75,
                                    attack_rates=attack_rates, repeats=2)
-antibody_data <- all_simulated_data$data
-antibody_data <- merge(antibody_data, all_simulated_data$ages)
+antibody_data <- all_simulated_data$antibody_data
 }
 \seealso{
 Other simulation_functions:

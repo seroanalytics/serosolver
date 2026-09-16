@@ -22,29 +22,33 @@ plot_antibody_predictions(
 )
 }
 \arguments{
-\item{chain}{the full MCMC chain to generate antibody level trajectories from}
+\item{chain}{the full MCMC chain to generate antibody level trajectories from, usually `chains$theta_chain`}
 
-\item{infection_histories}{the MCMC chain for infection histories}
+\item{infection_histories}{the MCMC chain for infection histories, usually `chains$inf_chain`}
 
-\item{antibody_data}{the data frame of antibody level data}
+\item{antibody_data}{the antibody data frame, with one row per measurement}
 
-\item{par_tab}{the table controlling the parameters in the MCMC chain}
+\item{demographics}{optional data frame identifying the demographic group for each individual. This is used when model parameters are stratified by demographics. See the [demographic stratification and covariate vignette](DEMOGRAPHICS_VIGNETTE_LINK).}
 
-\item{antigenic_map}{(optional) a data frame of antigenic x and y coordinates. Must have column names: x_coord; y_coord; inf_times. See \code{\link{example_antigenic_map}}}
+\item{par_tab}{the model control table specifying the parameters in the MCMC chain}
+
+\item{antigenic_map}{(optional) a data frame of antigenic x and y coordinates. Must have column names: x_coord; y_coord; inf_times. The `inf_times` column identifies the circulation or exposure time represented by each map entry. See \code{\link{example_antigenic_map}}}
 
 \item{possible_exposure_times}{(optional) if no antigenic map is specified, this argument gives the vector of times at which individuals can be infected}
 
-\item{nsamp}{number of samples to take from posterior}
+\item{nsamp}{number of draws to take from the posterior}
 
-\item{measurement_bias}{default NULL, optional data frame giving the index of `rho` that each biomarker_id and biomarker_group which uses the measurement shift from from. eg. if there's 6 circulation years and 3 strain clusters}
+\item{measurement_bias}{default NULL, optional data frame mapping each `biomarker_id` and `biomarker_group` combination to the `rho_index` of the measurement-shift parameter that it uses. See the [advanced features vignette](ADVANCED_FEATURES_VIGNETTE_LINK).}
 
-\item{data_type}{integer, currently accepting 1 or 2. Set to 1 for discretized, bounded data, or 2 for continuous, bounded data.}
+\item{data_type}{integer, currently accepting 1, 2, or 3. Set to 1 for discrete, bounded data, 2 for continuous, bounded data, or 3 for continuous data with the false-positive observation model. For bounded data, the limits are given by `min_measurement` and `max_measurement` in par_tab.}
 
-\item{start_level}{"none"}
+\item{start_level}{`"none"` or a starting-level summary or data frame. A starting level is the antibody level assigned before the modelled infection history begins. With `"none"`, starting levels are set to zero. See the [advanced features vignette](ADVANCED_FEATURES_VIGNETTE_LINK).}
 
-\item{settings}{if not NULL, list of serosolver settings as returned from the main serosolver function}
+\item{settings}{if not NULL, list of serosolver settings as returned from the main serosolver function, such as `res$settings`}
 
 \item{exponential_waning}{if TRUE, assumes exponential rather than linear waning}
+
+\item{verbose}{if TRUE, prints messages when settings are used or predictions are prepared}
 }
 \value{
 a list with: 
@@ -57,7 +61,7 @@ a list with:
 }
 }
 \description{
-Plots model predicted titers against observations
+Compares observed antibody measurements with posterior predictions and returns the prediction data and comparison plots.
 }
 \seealso{
 Other infection_history_plots:

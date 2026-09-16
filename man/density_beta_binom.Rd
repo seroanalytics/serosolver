@@ -6,6 +6,35 @@
 \usage{
 density_beta_binom(x, N, u, v)
 }
-\description{
-Beta binomial density
+\arguments{
+\item{x}{number of successes}
+
+\item{N}{number of trials}
+
+\item{u}{first shape parameter of the Beta distribution}
+
+\item{v}{second shape parameter of the Beta distribution}
 }
+\value{
+the beta binomial probability
+}
+\description{
+Calculates the beta binomial probability mass function for `x` successes out of `N` trials.
+}
+\seealso{
+Other priors:
+\code{\link[=calc_phi_probs]{calc_phi_probs()}},
+\code{\link[=calc_phi_probs_indiv]{calc_phi_probs_indiv()}},
+\code{\link[=calc_phi_probs_spline]{calc_phi_probs_spline()}},
+\code{\link[=create_prob_shifts]{create_prob_shifts()}},
+\code{\link[=dbb_prior]{dbb_prior()}},
+\code{\link[=find_beta_prior_mode]{find_beta_prior_mode()}},
+\code{\link[=find_beta_prior_with_mean]{find_beta_prior_with_mean()}},
+\code{\link[=find_beta_prior_with_mean_var]{find_beta_prior_with_mean_var()}},
+\code{\link[=fit_beta_prior]{fit_beta_prior()}},
+\code{\link[=fit_normal_prior]{fit_normal_prior()}},
+\code{\link[=inf_mat_prior]{inf_mat_prior()}},
+\code{\link[=infection_history_prior]{infection_history_prior()}},
+\code{\link[=prob_shifts]{prob_shifts()}}
+}
+\concept{priors}

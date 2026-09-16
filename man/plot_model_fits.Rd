@@ -30,31 +30,33 @@ plot_model_fits(
 )
 }
 \arguments{
-\item{chain}{the full MCMC chain to generate antibody level trajectories from}
+\item{chain}{the full MCMC chain to generate antibody level trajectories from, usually `chains$theta_chain`}
 
-\item{infection_histories}{the MCMC chain for infection histories}
+\item{infection_histories}{the MCMC chain for infection histories, usually `chains$inf_chain`}
 
-\item{antibody_data}{the data frame of antibody level data}
+\item{antibody_data}{the antibody data frame, with one row per measurement}
 
-\item{individuals}{the subset of individuals to generate credible intervals for}
+\item{demographics}{optional data frame identifying the demographic group for each individual. This is used when model parameters are stratified by demographics. See the [demographic stratification and covariate vignette](DEMOGRAPHICS_VIGNETTE_LINK).}
 
-\item{par_tab}{the table controlling the parameters in the MCMC chain}
+\item{individuals}{the subset of individual IDs to generate credible intervals for}
 
-\item{antigenic_map}{(optional) a data frame of antigenic x and y coordinates. Must have column names: x_coord; y_coord; inf_times. See \code{\link{example_antigenic_map}}}
+\item{par_tab}{the model control table specifying the parameters in the MCMC chain}
+
+\item{antigenic_map}{(optional) a data frame of antigenic x and y coordinates. Must have column names: x_coord; y_coord; inf_times. The `inf_times` column identifies the circulation or exposure time represented by each map entry. See \code{\link{example_antigenic_map}}}
 
 \item{possible_exposure_times}{(optional) if no antigenic map is specified, this argument gives the vector of times at which individuals can be infected}
 
-\item{nsamp}{number of samples to take from posterior}
+\item{nsamp}{number of draws to take from the posterior}
 
-\item{known_infection_history}{nxm matrix of known infection histories}
+\item{known_infection_history}{n-by-m matrix of known infection histories, with one row for each individual and one column for each possible exposure time. Use 1 for a known infection and 0 otherwise.}
 
-\item{measurement_bias}{default NULL, optional data frame giving the index of `rho` that each biomarker_id and biomarker_group which uses the measurement shift from from. eg. if there's 6 circulation years and 3 strain clusters}
+\item{measurement_bias}{default NULL, optional data frame mapping each `biomarker_id` and `biomarker_group` combination to the `rho_index` of the measurement-shift parameter that it uses. See the [advanced features vignette](ADVANCED_FEATURES_VIGNETTE_LINK).}
 
 \item{p_ncol}{integer giving the number of columns of subplots to create if using orientation = "longitudinal"}
 
-\item{data_type}{integer, currently accepting 1 or 2. Set to 1 for discretized, bounded data, or 2 for continuous, bounded data.}
+\item{data_type}{integer, currently accepting 1, 2, or 3. Set to 1 for discrete, bounded data, 2 for continuous, bounded data, or 3 for continuous data with the false-positive observation model. For bounded data, the limits are given by `min_measurement` and `max_measurement` in par_tab.}
 
-\item{expand_to_all_times}{TRUE/FALSE value. If TRUE, solves antibody level predictions for all possible infection times (i.e., for the range in possible_exposure_times). If left FALSE, then only solves for the infections times at which a antibody level against the circulating biomarker_id was measured in antibody_data.}
+\item{expand_to_all_times}{TRUE/FALSE value. If TRUE, uses all possible exposure times as sample times when expanding the prediction data. If FALSE, only the sample times represented in antibody_data are used.}
 
 \item{expand_to_all_biomarker_ids}{if TRUE, solves predictions for all biomarker IDs in the antigenic map while retaining the sample times in antibody_data}
 
@@ -62,17 +64,21 @@ plot_model_fits(
 
 \item{subset_biomarker_ids}{if not NULL, then a vector giving the entries of biomarker_id to include in the longitudinal plot}
 
-\item{start_level}{"none"}
+\item{subset_biomarker_groups}{if not NULL, then a vector giving the biomarker groups to include in the plot}
 
-\item{settings}{if not NULL, list of serosolver settings as returned from the main serosolver function}
+\item{start_level}{`"none"` or a starting-level summary or data frame. A starting level is the antibody level assigned before the modelled infection history begins. With `"none"`, starting levels are set to zero. See the [advanced features vignette](ADVANCED_FEATURES_VIGNETTE_LINK).}
+
+\item{settings}{if not NULL, list of serosolver settings as returned from the main serosolver function, such as `res$settings`}
 
 \item{exponential_waning}{if TRUE, assumes exponential rather than linear waning}
+
+\item{verbose}{if TRUE, prints messages when settings are used or predictions are prepared}
 }
 \value{
-a ggplot2 object
+a list of ggplot2 objects
 }
 \description{
-Given outputs from an MCMC run and the data used for fitting, generates an NxM matrix of plots where N is the number of individuals to be plotted and M is the range of sampling times. Where data are available, plots the observed antibody measurements and model predicted trajectories. Unlike plot_infection_histories_cross_sectional, places biomarker\_id on the x-axis and facets by sample time and individual.
+Given outputs from an MCMC run and the data used for fitting, generates an NxM matrix of plots where N is the number of individuals to be plotted and M is the range of sampling times. Where data are available, plots the observed antibody measurements and model predicted trajectories. In the longitudinal orientation, places biomarker\_id on the x-axis and facets by sample time and individual.
 }
 \examples{
 \dontrun{
@@ -82,7 +88,7 @@ data(example_antibody_data)
 data(example_antigenic_map)
 data(example_par_tab)
 
-model_fit_plot <- plot_model_fits(example_theta_chain, example_inf_chain, example_antibody_data, 
+model_fit_plot <- plot_model_fits(example_theta_chain, example_inf_chain, example_antibody_data,
                                            1:10, example_antigenic_map, example_par_tab,orientation="longitudinal")
 }
 }

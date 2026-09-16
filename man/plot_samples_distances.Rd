@@ -10,7 +10,7 @@ plot_samples_distances(antibody_data)
 \item{antibody_data}{the data frame of antibody data, including labels for individuals and time sample was taken}
 }
 \value{
-a ggplot2 object
+A ggplot2 object showing the distribution of time intervals between samples from the same individual.
 }
 \description{
 Plot time between serum samples
@@ -20,5 +20,11 @@ Plot time between serum samples
 data(example_antibody_data)
 plot_samples_distances(example_antibody_data)
 }
+}
+\seealso{
+Other theta_plots:
+\code{\link[=plot_2d_density]{plot_2d_density()}},
+\code{\link[=plot_mcmc_diagnostics]{plot_mcmc_diagnostics()}},
+\code{\link[=plot_posteriors_theta]{plot_posteriors_theta()}}
 }
 \concept{theta_plots}

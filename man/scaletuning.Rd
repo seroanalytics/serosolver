@@ -17,10 +17,11 @@ scaletuning(step, target_acceptance_rate_theta, pcur)
 the scaled step size
 }
 \description{
-Scales the given step size (between 0 and 1) based on the current acceptance rate to get closed to the desired acceptance rate
+Scales the given step size (between 0 and 1) based on the current acceptance rate to get closer to the desired acceptance rate
 }
 \seealso{
 Other mcmc:
+\code{\link[=expand_summary_inf_chain]{expand_summary_inf_chain()}},
 \code{\link[=generate_start_tab]{generate_start_tab()}},
 \code{\link[=rm_scale]{rm_scale()}},
 \code{\link[=save_infection_history_to_disk]{save_infection_history_to_disk()}},

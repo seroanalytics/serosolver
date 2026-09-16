@@ -10,6 +10,10 @@ to.svg(expr, filename, ..., verbose = TRUE)
 \item{expr}{expression to give plot}
 
 \item{filename}{filename to print to}
+
+\item{...}{additional arguments passed to `svg()`}
+
+\item{verbose}{if TRUE, prints the output filename}
 }
 \description{
 Prints to SVG, but turns dev off if fails

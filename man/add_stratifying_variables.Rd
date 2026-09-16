@@ -11,6 +11,18 @@ add_stratifying_variables(
   use_demographic_groups = NULL
 )
 }
+\arguments{
+\item{antibody_data}{antibody data frame}
+
+\item{timevarying_demographics}{optional time-varying demographic data}
+
+\item{par_tab}{the parameter table containing requested stratifications}
+
+\item{use_demographic_groups}{optional demographic grouping variables}
+}
+\value{
+a list containing updated data, group tables, and individual group indices
+}
 \description{
-Align stratification levels for serosolver infection history and antibody kinetics models
+Internal helper that adds demographic and population-group indices used by the infection-history and antibody-kinetics models.
 }

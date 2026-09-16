@@ -31,7 +31,7 @@ create_posterior_func(
 \arguments{
 \item{par_tab}{the parameter table controlling information such as bounds, initial values etc. See \code{\link{example_par_tab}}}
 
-\item{antibody_data}{the data frame of data to be fitted. Must have columns: group (index of group); individual (integer ID of individual); samples (numeric time of sample taken); virus (numeric time of when the virus was circulating); biomarker_group (integer of the observation group type, using a unique value for each distinctive type of observation underpinned by the same generative model); titre (integer of titre value against the given virus at that sampling time). See \code{\link{example_antibody_data}}}
+\item{antibody_data}{the data frame of data to be fitted. Must have columns: individual (integer ID of individual); sample_time (numeric time of sample taken); biomarker_id (numeric ID of the biomarker); measurement (antibody measurement); and birth (birth time). `biomarker_group`, `repeat_number`, and `population_group` are optional. `population_group` identifies groups with different infection rates or attack rates; if it is absent, all individuals are assigned to group 1. See \code{\link{example_antibody_data}}}
 
 \item{antigenic_map}{(optional) a data frame of antigenic x and y coordinates. Must have column names: x_coord; y_coord; inf_times. See \code{\link{example_antigenic_map}}}
 
@@ -43,27 +43,33 @@ create_posterior_func(
 
 \item{age_mask}{see \code{\link{create_age_mask}} - a vector with one entry for each individual specifying the first epoch of circulation in which an individual could have been exposed}
 
-\item{measurement_bias}{if not NULL, then use these indices to specify which measurement bias parameter index corresponds to which time}
+\item{measurement_bias}{if not NULL, then use these indices to specify which measurement bias parameter index corresponds to which time. See the [advanced features vignette](ADVANCED_FEATURES_VIGNETTE_LINK) for this optional workflow.}
 
 \item{n_alive}{if not NULL, uses this as the number alive in a given year rather than calculating from the ages. This is needed if the number of alive individuals is known, but individual birth dates are not}
 
-\item{function_type}{integer specifying which version of this function to use. Specify 1 to give a posterior solving function; 2 to give the gibbs sampler for infection history proposals; otherwise just solves the titre model and returns predicted titres. NOTE that this is not the same as the attack rate prior argument, \code{version}!}
+\item{function_type}{integer specifying which version of this function to use. Specify 1 to give a posterior solving function; 2 to give the gibbs sampler for infection history proposals; otherwise just solves the antibody model and returns predicted antibody levels. Note that this is not the same as the attack rate prior argument, `prior_version`.}
+
+\item{antibody_level_before_infection}{TRUE/FALSE value. If TRUE, solves antibody level predictions, but gives the predicted antibody level at a given time point BEFORE any infection during that time occurs.}
 
 \item{data_type}{integer or vector, with an entry for each unique data type in `antibody_data`. Set to 1 for discrete data (e.g., fold dilution) or 2 for continuous (e.g., ELISA optical density).}
 
 \item{biomarker_groups_weights}{integer or vector, giving a factor to multiply the log-likelihood contribution of this data type towards the overall likelihood.}
 
-\item{start_level}{character, to tell the model how to treat initial antibody levels. This uses the observed data to either select starting values for each unique `individual`, `biomarker_id` and `biomarker_group` combination. See \code{\link{create_start_level_data}}. One of "min", "max", "mean", "median", or "full_random". Any other entry assumes all antibody starting levels are set to 0. Can also pass a tibble or data frame of starting levels matching the output of \code{\link{create_start_level_data}}.}
+\item{start_level}{character, to tell the model how to treat initial antibody levels. This uses the observed data to either select starting values for each unique `individual`, `biomarker_id` and `biomarker_group` combination. See \code{\link{create_start_level_data}}. One of "min", "max", "mean", "median", or "full_random". Any other entry assumes all antibody starting levels are set to 0. Can also pass a tibble or data frame of starting levels matching the output of \code{\link{create_start_level_data}}. See the [advanced features vignette](ADVANCED_FEATURES_VIGNETTE_LINK) for this optional workflow.}
 
 \item{start_level_randomize}{if TRUE, and data is discretized, then sets the starting antibody level to a random value between floor(x) and floor(x) + 1. Does nothing if using continuous data.}
 
-\item{demographics}{if not NULL, then a tibble for each individual (1:n_indiv) giving demographic variable entries. Most importantly must include "birth" as the birth time. This is used if, for example, you have a stratification grouping in `par_tab`}
+\item{demographics}{if not NULL, then a tibble for each individual (1:n_indiv) giving demographic variable entries. Most importantly must include "birth" as the birth time. This is used if, for example, you have a stratification grouping in `par_tab`. See the [demographics and covariates vignette](DEMOGRAPHICS_VIGNETTE_LINK) for this optional workflow.}
+
+\item{demographic_groups}{optional data frame of demographic-group combinations. If NULL, these are created from `demographics` or `antibody_data` and `par_tab`.}
+
+\item{fixed_inf_hists}{optional data frame with columns `individual`, `time`, and `value`, giving infection states that should be fixed during the MCMC run. See the [advanced features vignette](ADVANCED_FEATURES_VIGNETTE_LINK) for this optional workflow.}
 
 \item{verbose}{if TRUE, prints warning messages}
 
-\item{...}{other arguments to pass to the posterior solving function}
+\item{exponential_waning}{if TRUE, assumes exponential rather than linear waning of antibody levels. See the [advanced features vignette](ADVANCED_FEATURES_VIGNETTE_LINK) for this optional workflow.}
 
-\item{titre_before_infection}{TRUE/FALSE value. If TRUE, solves titre predictions, but gives the predicted titre at a given time point BEFORE any infection during that time occurs.}
+\item{...}{other arguments to pass to the posterior solving function}
 }
 \value{
 a single function pointer that takes only pars and infection_histories as unnamed arguments. This function goes on to return a vector of posterior values for each individual

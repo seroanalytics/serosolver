@@ -7,15 +7,15 @@
 plot_individual_number_infections(inf_chain, pad_chain = TRUE)
 }
 \arguments{
-\item{inf_chain}{the data table with infection history samples from \code{\link{serosolver}}}
+\item{inf_chain}{the infection-history chain returned by \code{\link{load_mcmc_chains}}, in long format}
 
-\item{pad_chain}{if TRUE, pads the infection history MCMC chain to have entries for non-infection events}
+\item{pad_chain}{if TRUE, adds zero-valued entries for infection events that are absent from the sparse chain}
 }
 \value{
-a ggplot object
+A ggplot object.
 }
 \description{
-Plot point range number infections per individual
+Plots the posterior median and 95% interval for the total number of inferred infections for each individual. Individuals are ordered by their posterior median.
 }
 \examples{
 \dontrun{

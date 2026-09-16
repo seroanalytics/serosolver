@@ -16,8 +16,7 @@ mvr_proposal(
 \arguments{
 \item{values}{the vector of current parameter values}
 
-\item{fixed}{set of flags corresponding to the parameter vector indicating which parameters are fixed
-Takes into account parameter covariance and ensures containment condition with beta, if cov_mat0 (the identity matrix) is specified.}
+\item{fixed}{indices of the parameters to update}
 
 \item{cov_mat}{the 2D covariance matrix for all of the parameters}
 

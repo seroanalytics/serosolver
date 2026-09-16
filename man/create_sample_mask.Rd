@@ -17,8 +17,14 @@ a vector giving the last index of possible_exposure_times that an individual can
 \description{
 Converts a data frame of individual sampling times to give the index of the last infection that individual could have had (as we can't observe anything after the last observation)
 }
-\concept{create_masks
+\examples{
 data(example_antibody_data)
 data(example_antigenic_map)
 times <- example_antigenic_map$inf_times
-sample_mask <- create_sample_mask(example_antibody_data, times)}
+sample_mask <- create_sample_mask(example_antibody_data, times)
+}
+\seealso{
+Other create_masks:
+\code{\link[=create_age_mask]{create_age_mask()}}
+}
+\concept{create_masks}

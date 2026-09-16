@@ -7,17 +7,21 @@
 add_noise(y, theta, measurement_bias = NULL, indices = NULL, data_type = 1)
 }
 \arguments{
-\item{y}{the titre}
+\item{y}{the underlying antibody level}
 
-\item{theta}{a vector with max_measurement and error parameters}
+\item{theta}{a named parameter vector containing `min_measurement`, `max_measurement`, and the relevant error parameters}
 
-\item{data_type}{integer, currently accepting 1 or 2. Set to 1 for discretized, bounded data, or 2 for continuous, bounded data. 3 is for continuous data assuming that true negatives follow a different distribution -- the vast majority return the min_measurement, but with a rate fp_rate, a random draw from a uniform distribution within the limits of detection is generated.}
+\item{measurement_bias}{optional vector of measurement shifts}
+
+\item{indices}{optional integer vector selecting the shift to apply to each value of `y`}
+
+\item{data_type}{integer, currently accepting 1, 2, or 3. Set to 1 for discrete, bounded data; 2 for continuous, bounded data; or 3 for continuous data in which true negatives can produce false-positive measurements.}
 }
 \value{
-a noisy titre
+A vector of noisy, bounded antibody measurements.
 }
 \description{
-Adds truncated noise to antibody data
+Adds observation noise to antibody data and truncates the result to the specified measurement limits.
 }
 \examples{
 \dontrun{

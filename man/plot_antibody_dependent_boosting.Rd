@@ -7,14 +7,14 @@
 plot_antibody_dependent_boosting(chain, n, titres = seq(0, 8, by = 0.1))
 }
 \arguments{
-\item{chain}{the MCMC chain}
+\item{chain}{the MCMC chain containing the antibody kinetics parameters}
 
-\item{n}{number of samples to take}
+\item{n}{number of posterior samples to use}
 
-\item{titres}{the vector of titres to calculate boosting values at}
+\item{titres}{the antibody levels at which to calculate the boosting relationship}
 }
 \value{
-a data frame of quantiles for the inferred boost from different titre levels
+A matrix of posterior 2.5%, 50%, and 97.5% quantiles for the inferred boost at each value of `titres`.
 }
 \description{
 Calculates the inferred antibody dependent boosting relationship from the MCMC chain

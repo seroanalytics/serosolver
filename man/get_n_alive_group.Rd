@@ -2,7 +2,7 @@
 % Please edit documentation in R/helpers.R
 \name{get_n_alive_group}
 \alias{get_n_alive_group}
-\title{Get number alive by location}
+\title{Get number alive by population group}
 \usage{
 get_n_alive_group(antibody_data, times, demographics = NULL, melt_data = FALSE)
 }
@@ -11,13 +11,15 @@ get_n_alive_group(antibody_data, times, demographics = NULL, melt_data = FALSE)
 
 \item{times}{the vector of times to calculate number alive for}
 
+\item{demographics}{optional time-varying demographic data containing `individual`, `time`, and `population_group`}
+
 \item{melt_data}{if TRUE, returns a melted data frame. Returns a wide matrix otherwise.}
 }
 \value{
-a matrix giving the number alive in each time point in each location
+a matrix giving the number alive in each time point and population group, or a long data frame with `population_group`, `j`, and `n_alive` when `melt_data = TRUE`
 }
 \description{
-Given the antibody_data data frame with entries for location, calculates the number that are alive (alive to be infected, that is) for each time in times by location
+Given the antibody_data data frame with entries for population group, calculates the number that are alive (alive to be infected, that is) for each time in times by population group
 }
 \examples{
 data(example_antibody_data)

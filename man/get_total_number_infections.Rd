@@ -7,12 +7,12 @@
 get_total_number_infections(inf_chain, pad_chain = TRUE)
 }
 \arguments{
-\item{inf_chain}{the data table with infection history samples from \code{\link{serosolver}}}
+\item{inf_chain}{data table containing the infection-history chain, with `samp_no`, `chain_no`, `i`, `j`, and `x` columns.}
 
-\item{pad_chain}{if TRUE, pads the infection history MCMC chain to have entries for non-infection events}
+\item{pad_chain}{if TRUE, adds zero-valued entries for infection events that are absent from the sparse chain.}
 }
 \value{
-a data table
+a data table with `chain_no`, `samp_no`, and the total number of infections for each MCMC sample
 }
 \description{
 Finds the total number of infections for each iteration of an MCMC chain

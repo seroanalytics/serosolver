@@ -21,7 +21,8 @@ Checks the entries of demographics data frame used for parameter stratification
 }
 \examples{
 data(example_antibody_data)
-check_data(example_antibody_data)
+demographics <- unique(example_antibody_data[, c("individual", "birth")])
+check_demographics(demographics)
 }
 \seealso{
 Other check_inputs:

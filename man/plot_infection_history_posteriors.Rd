@@ -16,27 +16,27 @@ plot_infection_history_posteriors(
 )
 }
 \arguments{
-\item{inf_chain}{the data table with infection history samples from \code{\link{serosolver}}}
+\item{inf_chain}{the infection-history chain returned by \code{\link{load_mcmc_chains}}, in long format}
 
-\item{possible_exposure_times}{vector of the epochs of potential circulation}
+\item{possible_exposure_times}{vector of possible exposure times, in the same order as the infection-history columns}
 
-\item{known_ar}{data frame of known attack rates, if known.}
+\item{n_alive}{data frame giving the number of people alive for each exposure time and population group. This is used to calculate attack rates.}
 
-\item{known_infection_history}{data frame of known infection histories.}
+\item{known_ar}{optional data frame of known attack rates, with `j`, `population_group`, and `AR` columns}
 
-\item{burnin}{if not already discarded, discard burn in from chain (takes rows where samp_no > burnin)}
+\item{known_infection_history}{optional matrix or data frame of known infection histories, with individuals in rows and possible exposure times in columns}
 
-\item{samples}{how many samples from the chain to take}
+\item{burnin}{if not already discarded, discards rows with `samp_no <= burnin`}
 
-\item{pad_chain}{if TRUE, pads the infection history MCMC chain with non-infection events}
+\item{samples}{number of MCMC samples to use for the plots}
 
-\item{n_alive_group}{vector with the number of people alive in each year of circulation.}
+\item{pad_chain}{if TRUE, adds zero-valued entries for infection events that are absent from the sparse chain}
 }
 \value{
-a list of ggplot objects and data frame of posterior estimates
+A list containing trace plots by time and individual, a plot of the number of infections per individual, and the posterior estimates returned by \code{\link{calculate_infection_history_statistics}}.
 }
 \description{
-Plots and calculates many summary statistics from the infection history MCMC chain
+Plots and calculates summary statistics from the infection-history MCMC chain.
 }
 \examples{
 \dontrun{
@@ -56,7 +56,7 @@ known_ar <- data.frame("j"=possible_exposure_times,"AR"=known_ar,"population_gro
 known_inf_hist <- data.frame(example_inf_hist)
 colnames(known_inf_hist) <- possible_exposure_times
 
-n_alive_group <- get_n_alive_group(example_antibody_data, possible_exposure_times,melt_dat = TRUE)
+n_alive_group <- get_n_alive_group(example_antibody_data, possible_exposure_times,melt_data = TRUE)
 n_alive_group$j <- possible_exposure_times[n_alive_group$j]
 all_plots <- plot_infection_history_posteriors(example_inf_chain, possible_exposure_times, n_alive_group,
                                      known_ar=known_ar,known_infection_history = known_inf_hist,

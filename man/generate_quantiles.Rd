@@ -16,7 +16,7 @@ generate_quantiles(x, sig_f = 3, qs = c(0.025, 0.5, 0.975), as_text = TRUE)
 \item{as_text}{if TRUE, formats nicely as text rather than a vector of numbers}
 }
 \value{
-the formatted quantiles
+if `as_text = TRUE`, a formatted median and interval; otherwise, the requested quantiles as a numeric vector
 }
 \description{
 Given a vector of MCMC samples, generates and formats the desired quantile estimates

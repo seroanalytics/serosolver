@@ -7,15 +7,15 @@
 plot_total_number_infections(inf_chain, pad_chain = TRUE)
 }
 \arguments{
-\item{inf_chain}{the data table with infection history samples from \code{\link{serosolver}}}
+\item{inf_chain}{the infection-history chain returned by \code{\link{load_mcmc_chains}}, in long format}
 
-\item{pad_chain}{if TRUE, pads the infection history MCMC chain to have entries for non-infection events}
+\item{pad_chain}{if TRUE, adds zero-valued entries for infection events that are absent from the sparse chain}
 }
 \value{
-two ggplot2 objects
+A list containing the MCMC trace plot and posterior density plot.
 }
 \description{
-Plots the total number of inferred infections in the MCMC chain as a trace plot and density plot
+Plots the total number of inferred infections in the MCMC chain as a trace plot and density plot.
 }
 \examples{
 \dontrun{

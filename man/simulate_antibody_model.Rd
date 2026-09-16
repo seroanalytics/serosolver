@@ -15,21 +15,22 @@ simulate_antibody_model(
 \arguments{
 \item{pars}{either the original `par_tab` object (a data frame), or the vector of named model parameters, including `boost_long`, `boost_short`,`boost_delay`,`wane_long`,`wane_short`,`cr_long`, and `cr_short`.}
 
-\item{times}{the vector of times to solve the model over. A continuous vector of discrete timepoints. Can be left to NULL if this information is included in the `antigenic_map` argument.}
+\item{times}{the vector of time points at which to solve the model. Can be left to NULL if these times are included in `antigenic_map`.}
 
-\item{infection_history}{the vector of times matching entries in `times` to simulate infections in.}
+\item{infection_history}{the vector of infection times, each of which must be present in `times`. If NULL, an infection is simulated at the first value of `times`.}
 
-\item{antigenic_map}{the antigenic map to solve the model with. Can be left to NULL to ssume all biomarker IDs have the same antigenic coordinates.}
+\item{antigenic_map}{the antigenic map to solve the model with. Can be left to NULL to assume all biomarker IDs have the same antigenic coordinates.}
 
 \item{exponential_waning}{if TRUE, then waning is exponential rather than linear}
 }
 \value{
-a data frame with variables `sample_times`, `biomarker_id` and `antibody_level`
+A data frame with `sample_times`, `biomarker_ids`, and `antibody_level` columns.
 }
 \description{
 Simulates the trajectory of the serosolver antibody model using specified parameters and optionally a specified antigenic map and infection history.
 }
 \examples{
+data(example_antigenic_map)
 simulate_antibody_model(c("boost_long"=2,"boost_short"=3,"boost_delay"=1,"wane_short"=0.2,"wane_long"=0.01, "antigenic_seniority"=0,"cr_long"=0.1,"cr_short"=0.03), times=seq(1,25,by=1),infection_history=NULL,antigenic_map=example_antigenic_map)
  
 }

@@ -36,7 +36,7 @@ infection_history_symmetric(
 a matrix of infection histories matching the input new_inf_hist
 }
 \description{
-Performs a flipping/swapping infection history update step for a matrix of infection histories. 50/50 chance of performing a flip or a swap
+Performs a flipping/swapping infection history update step for a matrix of infection histories. The choice is controlled by `proposal_inf_hist_indiv_swap_ratio`; with the default value of 0.5, it is approximately a 50/50 choice.
 }
 \examples{
 data(example_inf_hist)

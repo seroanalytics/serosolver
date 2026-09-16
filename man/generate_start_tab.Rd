@@ -21,6 +21,7 @@ start_tab <- generate_start_tab(example_par_tab)
 }
 \seealso{
 Other mcmc:
+\code{\link[=expand_summary_inf_chain]{expand_summary_inf_chain()}},
 \code{\link[=rm_scale]{rm_scale()}},
 \code{\link[=save_infection_history_to_disk]{save_infection_history_to_disk()}},
 \code{\link[=scaletuning]{scaletuning()}},

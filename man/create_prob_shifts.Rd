@@ -10,7 +10,7 @@ create_prob_shifts(par_tab)
 \item{par_tab}{the parameter table as in \code{\link{create_posterior_func}}}
 }
 \value{
-a function pointer to solve the measurement shifts prior
+a function to calculate the log prior probability of the measurement shifts
 }
 \description{
 Creates a function to calculate the prior probability of a set of measurement shifts. Assumes normally distributed random effects
@@ -20,6 +20,8 @@ Other priors:
 \code{\link[=calc_phi_probs]{calc_phi_probs()}},
 \code{\link[=calc_phi_probs_indiv]{calc_phi_probs_indiv()}},
 \code{\link[=calc_phi_probs_spline]{calc_phi_probs_spline()}},
+\code{\link[=dbb_prior]{dbb_prior()}},
+\code{\link[=density_beta_binom]{density_beta_binom()}},
 \code{\link[=find_beta_prior_mode]{find_beta_prior_mode()}},
 \code{\link[=find_beta_prior_with_mean]{find_beta_prior_with_mean()}},
 \code{\link[=find_beta_prior_with_mean_var]{find_beta_prior_with_mean_var()}},

@@ -17,25 +17,29 @@ calculate_infection_history_statistics(
 )
 }
 \arguments{
-\item{inf_chain}{the data table with infection history samples from \code{\link{serosolver}}}
+\item{inf_chain}{the infection-history chain returned by \code{\link{load_mcmc_chains}}, in long format}
 
-\item{burnin}{if not already discarded, discard burn in from chain (takes rows where samp_no > burnin)}
+\item{burnin}{if not already discarded, discards rows with `samp_no <= burnin`}
 
-\item{possible_exposure_times}{vector of the epochs of potential circulation}
+\item{possible_exposure_times}{vector of possible exposure times, in the same order as the infection-history columns}
 
-\item{known_ar}{data frame of known attack rates, if known.}
+\item{n_alive}{data frame giving the number of people alive for each exposure time and population group. This is used to calculate attack rates.}
 
-\item{known_infection_history}{data frame of known infection histories.}
+\item{known_ar}{optional data frame of known attack rates, with `j`, `population_group`, and `AR` columns}
 
-\item{solve_cumulative}{if TRUE, finds the cumulative infection histories for each individual. This takes a while, so is left FALSE by default.}
+\item{group_ids}{optional data frame assigning individuals to `population_group` values for group-specific summaries}
 
-\item{pad_chain}{if TRUE, pads the infection history MCMC chain with non-infection events}
+\item{known_infection_history}{optional matrix or data frame of known infection histories, with individuals in rows and possible exposure times in columns}
+
+\item{solve_cumulative}{if TRUE, also finds cumulative infection histories for each individual. This takes a while, so is left FALSE by default.}
+
+\item{pad_chain}{if TRUE, adds zero-valued entries for infection events that are absent from the sparse chain}
 }
 \value{
-a list of data frames with summary statistics
+A list with `by_year`, `by_indiv`, `by_year_cumu`, and `by_indiv_cumu` data frames containing posterior summaries. The cumulative individual result is `NULL` unless `solve_cumulative = TRUE`.
 }
 \description{
-Finds the median, mean and 95% credible intervals for the attack rates and total number of infections per individual
+Finds the median, mean and 95% credible intervals for the attack rates and total number of infections per individual.
 }
 \examples{
 data(example_inf_chain)
@@ -55,7 +59,7 @@ known_inf_hist <- data.frame(example_inf_hist)
 colnames(known_inf_hist) <- possible_exposure_times
 
 ## Need to get population_group specific n_alive and adjust to correct time frame 
-n_alive_group <- get_n_alive_group(example_antibody_data, possible_exposure_times,melt_dat = TRUE)
+n_alive_group <- get_n_alive_group(example_antibody_data, possible_exposure_times,melt_data = TRUE)
 n_alive_group$j <- possible_exposure_times[n_alive_group$j]
 results <- calculate_infection_history_statistics(example_inf_chain, 0, possible_exposure_times,
                                                   n_alive=n_alive_group, known_ar=known_ar,

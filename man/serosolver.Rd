@@ -37,9 +37,9 @@ serosolver(
 \arguments{
 \item{par_tab}{The parameter table controlling information such as bounds, initial values etc. See \code{\link{example_par_tab}}}
 
-\item{antibody_data}{The data frame of serological measurements to be fitted. It should contain \code{individual}, \code{sample_time}, \code{biomarker_id}, \code{measurement}, and \code{birth}; \code{biomarker_group} and \code{repeat_number} are added when they are not supplied. See \code{\link{example_antibody_data}}}
+\item{antibody_data}{The data frame of serological measurements to be fitted. It should contain \code{individual}, \code{sample_time}, \code{biomarker_id}, \code{measurement}, and \code{birth}; \code{biomarker_group}, \code{repeat_number}, and \code{population_group} are optional. If \code{population_group} is absent, all individuals are assigned to group 1. See \code{\link{example_antibody_data}}}
 
-\item{demographics}{if not NULL, a data frame giving demographic variables for each individual. It must include \code{individual} and \code{birth}, and must include any variables used to stratify parameters in \code{par_tab}. Demographic variables may be fixed for each individual or vary over time.}
+\item{demographics}{if not NULL, a data frame giving demographic variables for each individual. It must include \code{individual} and \code{birth}, and must include any variables used to stratify parameters in \code{par_tab}. Demographic variables may be fixed for each individual or vary over time. See the \href{DEMOGRAPHICS_VIGNETTE_LINK}{demographic stratification and covariate vignette}.}
 
 \item{antigenic_map}{(optional) A data frame of antigenic x and y coordinates. Must have column names: x_coord; y_coord; inf_times. See \code{\link{example_antigenic_map}}}
 
@@ -55,15 +55,17 @@ serosolver(
 
 \item{start_inf_hist}{Infection history matrix to start MCMC at. Can be left NULL. See \code{\link{example_inf_hist}}}
 
+\item{fixed_inf_hists}{(optional) Data frame with columns \code{individual}, \code{time}, and \code{value}, giving infection states that should be fixed during the MCMC run. See the \href{ADVANCED_FEATURES_VIGNETTE_LINK}{advanced features vignette}.}
+
 \item{filename}{The file path and prefix for the MCMC output. The chain files are saved with \verb{_chain.csv} and \verb{_infection_histories.csv} appended, and the model settings are saved with \verb{_serosolver_settings.RData} appended. When parallel chains are used, progress messages are written to a matching \verb{_log.txt} file.}
 
 \item{prior_func}{User function of prior for model parameters. Should take parameter values only}
 
 \item{prior_version}{which infection history assumption prior_version to use? See \code{\link{describe_priors}} for options. Can be 1, 2, 3 or 4}
 
-\item{measurement_bias}{optional NULL. For measurement bias function. Vector of indices of length equal to number of circulation times. For each year, gives the index of parameters named "rho" that correspond to each time period}
+\item{measurement_bias}{optional NULL. A data frame mapping each \code{biomarker_id} and \code{biomarker_group} combination to the \code{rho_index} of the measurement-shift parameter that it uses. See the \href{ADVANCED_FEATURES_VIGNETTE_LINK}{advanced features vignette}.}
 
-\item{proposal_ratios}{optional NULL. Can set the relative sampling weights of the infection state times. Should be an integer vector of length matching nrow(antigenic_map). Otherwise, leave as NULL for uniform sampling.}
+\item{proposal_ratios}{optional NULL. Can set the relative sampling weights of the infection state times. Should be an integer vector of length matching the number of infection-history time points. Otherwise, leave as NULL for uniform sampling.}
 
 \item{solve_likelihood}{if FALSE, returns only the prior and does not solve the likelihood. Use this if you wish to sample directly from the prior}
 
@@ -71,7 +73,7 @@ serosolver(
 
 \item{random_start_parameters}{if FALSE, uses whatever parameter values were passed in \code{par_tab} as the starting positions for the MCMC chain}
 
-\item{start_level}{either \code{"none"} or a data frame giving the starting biomarker level for each individual, \code{biomarker_group}, and \code{biomarker_id} combination. With \code{"none"}, starting levels are assumed to be 0.}
+\item{start_level}{either \code{"none"} or a data frame giving the starting biomarker level for each individual, \code{biomarker_group}, and \code{biomarker_id} combination. With \code{"none"}, starting levels are assumed to be 0. See the \href{ADVANCED_FEATURES_VIGNETTE_LINK}{advanced features vignette}.}
 
 \item{data_type}{integer identifying the observation model: 1 for discrete, bounded data; 2 for continuous, bounded data; or 3 for continuous data with the false-positive observation model.}
 
@@ -81,13 +83,11 @@ serosolver(
 
 \item{inf_hist_mcmc_summaries}{if TRUE, calculates MCMC summaries of the infection history posterior draws. Set to FALSE to decrease run time, as this is a slow operation.}
 
-\item{exponential_waning}{if TRUE, assumes exponential waning of antibody levels rather than linear waning. This also changes the cross-reactivity model from a linear decline with antigenic distance to an exponential decline.}
+\item{exponential_waning}{if TRUE, assumes exponential waning of antibody levels rather than linear waning. This also changes the cross-reactivity model from a linear decline with antigenic distance to an exponential decline. See the \href{ADVANCED_FEATURES_VIGNETTE_LINK}{advanced features vignette}.}
 
 \item{plot_outputs}{if TRUE, calculates diagnostic summaries and returns model-fit, attack-rate, and antibody-model plots. Defaults to TRUE.}
 
 \item{...}{Other arguments passed to the posterior function.}
-
-\item{fixed_inf_hists}{(optional) Data frame with columns \code{individual}, \code{time}, and \code{value}, giving infection states that should be fixed during the MCMC run.}
 }
 \value{
 A list containing the paths to the parameter and infection-history chain files, diagnostic summaries and warnings, the settings used for the fit, fitted antibody predictions, plots when \code{plot_outputs = TRUE}, and the loaded MCMC chains.
@@ -98,7 +98,7 @@ Core serosolver function running the adaptive Metropolis-within-Gibbs algorithm.
 \details{
 The \code{mcmc_pars} argument is a named vector allowing control over many MCMC options. The key options are:
 \itemize{
-\item iterations (number of post adaptive period iterations to run)
+\item iterations (number of post-adaptation iterations to run)
 \item adaptive_iterations (for this many iterations, change proposal step size adaptively every \code{adaptive_frequency} iterations)
 \item adaptive_frequency (adapt proposal step size every adaptive_frequency iterations)
 \item thin (save every n iterations from kinetics parameters samples, advised for long chains, advised to set such that iterations/thin is no more than 1000)
@@ -133,6 +133,7 @@ res <- serosolver(example_par_tab, example_antibody_data, example_antigenic_map)
 }
 \seealso{
 Other mcmc:
+\code{\link[=expand_summary_inf_chain]{expand_summary_inf_chain()}},
 \code{\link[=generate_start_tab]{generate_start_tab()}},
 \code{\link[=rm_scale]{rm_scale()}},
 \code{\link[=save_infection_history_to_disk]{save_infection_history_to_disk()}},

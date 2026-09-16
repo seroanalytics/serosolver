@@ -15,25 +15,25 @@ load_mcmc_chains(
 )
 }
 \arguments{
-\item{location}{Character string path to the directory to search. Defaults to `getwd()`.}
+\item{location}{Character string path to the directory containing the chain files. Defaults to `getwd()`.}
 
-\item{par_tab}{Data frame; optional parameter table for filtering. Defaults to `NULL`.}
+\item{par_tab}{Data frame; optional model control table used to select estimated parameters. Defaults to `NULL`.}
 
-\item{estimated_only}{if TRUE, only returns free model parameters (par_tab$fixed == 0) if par_tab specified}
+\item{estimated_only}{if TRUE, only returns free model parameters (`par_tab$fixed == 0`) when `par_tab` is supplied. Defaults to `FALSE` for this wrapper.}
 
-\item{thin}{Integer; thinning interval to apply to the MCMC samples. Defaults to `1` (no thinning).}
+\item{thin}{Integer; keeps every `thin`th saved MCMC sample. Defaults to `1` (no thinning).}
 
-\item{burnin}{Integer; number of initial samples to discard. Defaults to `0`.}
+\item{burnin}{Integer; discards samples with `samp_no <= burnin`. Defaults to `0`.}
 
-\item{convert_mcmc}{Logical; whether to convert output to `coda::mcmc.list`. Defaults to `TRUE`.}
+\item{convert_mcmc}{if TRUE, converts the returned parameter chains to `coda::mcmc` objects. Defaults to `FALSE`.}
 
-\item{verbose}{Logical; whether to print progress messages}
+\item{verbose}{Logical; whether to print progress messages.}
 }
 \value{
-a list of the concatenated and individual chains (4 elements, either data frames of coda::mcmc objects)
+A list with four entries: `theta_chain` and `inf_chain` contain the combined parameter and infection-history chains; `theta_list_chains` and `inf_list_chains` contain the corresponding chains separately. If `convert_mcmc = TRUE`, the parameter chains are converted to `coda::mcmc` objects; the infection-history chains remain data tables.
 }
 \description{
-Reads in all MCMC chains for theta and infection histories from the specified directory matcing files ending "_chain.csv", adding in the total number of infections
+Reads in all MCMC chains for theta and infection histories from the specified directory matching files ending "_chain.csv", adding in the total number of infections.
 }
 \examples{
 \dontrun{load_mcmc_chains(par_tab=par_tab, estimated_only=TRUE,thin=10,burnin=5000,convert_mcmc=TRUE)}

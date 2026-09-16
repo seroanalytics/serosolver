@@ -7,7 +7,7 @@
 check_data(data, verbose = FALSE)
 }
 \arguments{
-\item{data}{the data frame of data to be fitted. Must have columns: group (index of group); individual (integer ID of individual); samples (numeric time of sample taken); virus (numeric time of when the virus was circulating); titre (integer of titre value against the given virus at that sampling time)}
+\item{data}{the data frame of data to be fitted. It must have columns: individual (integer ID of individual); sample_time (numeric time of sample taken); biomarker_id (numeric ID of the biomarker); measurement (antibody measurement); birth (birth date). `biomarker_group` and `repeat_number` are optional and are added with a value of 1 when missing. `population_group` is optional; if it is absent, downstream setup treats all individuals as belonging to group 1.}
 
 \item{verbose}{if TRUE, prints warning messages}
 }

@@ -13,21 +13,21 @@ plot_infection_history_chains_time(
 )
 }
 \arguments{
-\item{inf_chain}{the data table with infection history samples from \code{\link{serosolver}}}
+\item{inf_chain}{the infection-history chain returned by \code{\link{load_mcmc_chains}}, in long format}
 
-\item{burnin}{optionally remove all samp_no < burnin from the chain}
+\item{burnin}{if not already discarded, discards rows with `samp_no <= burnin`}
 
-\item{times}{vector of integers, if not NULL, only plots a subset of years (where 1 is the first year eg. 1968)}
+\item{times}{optional vector of `j` indices identifying the exposure times to plot}
 
-\item{n_alive}{if not NULL, then divides number of infections per year by number alive to give attack rates rather than total infections}
+\item{n_alive}{optional data frame containing `j` and `n_alive`. If supplied, infection counts are divided by the number alive to show attack rates.}
 
-\item{pad_chain}{if TRUE, pads the infection history MCMC chain to have entries for non-infection events}
+\item{pad_chain}{if TRUE, adds zero-valued entries for infection events that are absent from the sparse chain}
 }
 \value{
-a list of two ggplot objects - the MCMC trace and MCMC densities
+A list containing the MCMC trace plot and posterior density plot.
 }
 \description{
-Plot MCMC trace for infections per year
+Plots the MCMC trace and posterior density of inferred infections for selected exposure times.
 }
 \examples{
 \dontrun{
@@ -35,9 +35,9 @@ data(example_inf_chain)
 data(example_antibody_data)
 data(example_antigenic_map)
 times <- example_antigenic_map$inf_times
-n_alive_group <- get_n_alive_group(example_antibody_data, possible_exposure_times,melt_dat = TRUE)
-n_alive_group$j <- possible_exposure_times[n_alive_group$j]
-plot_infection_history_chains_time(example_inf_chain, 0, sample(1:length(times),10),n_alive,FALSE)
+n_alive_group <- get_n_alive_group(example_antibody_data, times,melt_data = TRUE)
+n_alive_group$j <- times[n_alive_group$j]
+plot_infection_history_chains_time(example_inf_chain, 0, sample(seq_along(times),10),n_alive_group,FALSE)
 }
 }
 \seealso{

@@ -6,6 +6,16 @@
 \usage{
 db(x, a, b)
 }
+\arguments{
+\item{x}{infection probability}
+
+\item{a}{first shape parameter of the Beta distribution}
+
+\item{b}{second shape parameter of the Beta distribution}
+}
+\value{
+the density value
+}
 \description{
-Beta prior on an infection
+Calculates the Beta-density term used for an infection probability.
 }

@@ -21,10 +21,10 @@ inf_hist_swap(
 
 \item{proposal_inf_hist_distance}{How many time points away should be chosen as candidate swaps?}
 
-\item{proposal_ratios}{optional NULL. Can set the relative sampling weights of the infection state times. Should be an integer vector of length matching nrow(antigenic_map). Otherwise, leave as NULL for uniform sampling.}
+\item{proposal_ratios}{optional NULL. Can set the relative sampling weights of the infection state times. Should be an integer vector of length matching the number of columns in `infection_history`. Otherwise, leave as NULL for uniform sampling.}
 }
 \value{
-the same infection_history matrix, but with two columns swapped
+A list containing the infection history matrix with two columns swapped.
 }
 \description{
 Swaps the entire contents of two columns of the infection history matrix, adhering to age and sample time limitations.

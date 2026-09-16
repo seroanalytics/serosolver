@@ -6,6 +6,16 @@
 \usage{
 toUnitScale(x, min, max)
 }
+\arguments{
+\item{x}{value to convert}
+
+\item{min}{lower bound of the original scale}
+
+\item{max}{upper bound of the original scale}
+}
+\value{
+the value on the 0--1 scale
+}
 \description{
-Convert to unit scale
+Converts a value from a bounded scale to the 0--1 scale.
 }

@@ -26,8 +26,15 @@ an n (number of individuals) by m (number of possible exposure times) matrix con
 \description{
 Creates a random infection history matrix by sampling from the infection history model under prior version 2
 }
-\concept{setup_infection_histories
+\examples{
 data(example_antibody_data)
 data(example_antigenic_map)
 times <- example_antigenic_map$inf_times
-setup_infection_histories_prior(example_antibody_data, times, 1, 1)}
+setup_infection_histories_prior(example_antibody_data, times, 1, 1)
+}
+\seealso{
+Other setup_infection_histories:
+\code{\link[=setup_infection_histories]{setup_infection_histories()}},
+\code{\link[=setup_infection_histories_antibody_level]{setup_infection_histories_antibody_level()}}
+}
+\concept{setup_infection_histories}

@@ -17,12 +17,14 @@ r_likelihood(
 
 \item{data}{vector of observed discrete measurements}
 
+\item{theta}{named parameter vector containing `min_measurement`, `max_measurement`, and `obs_sd`}
+
 \item{expected_indices}{the indices of the measurement_shifts vector that each predicted antibody level needs adding to it}
 
 \item{measurement_shifts}{the vector of measurement shifts for each cluster to add to the predicted antibody levels}
 }
 \value{
-a vector with the likelihood of making each observation given the predictions
+a vector of log-likelihood contributions for each observation
 }
 \description{
 Calculates the likelihood of observing a set of discrete measurements given a corresponding set of predicted antibody levels

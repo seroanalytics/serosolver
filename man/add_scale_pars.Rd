@@ -13,7 +13,7 @@ add_scale_pars(
 )
 }
 \arguments{
-\item{par_tab}{the parameter table, including a column called stratification which is NA if no stratification is requested, for with a character value matching an entry in antibody_data or timevarying_demographics}
+\item{par_tab}{the parameter table, including a column called stratification which is NA if no stratification is requested, or a character value matching an entry in antibody_data or timevarying_demographics}
 
 \item{antibody_data}{the antibody data data frame, see \code{\link{example_antibody_data}}. If NULL, then uses timevarying_demographics}
 
@@ -24,8 +24,15 @@ add_scale_pars(
 \item{scale_par_upper}{the upper bound of any used scale parameters}
 }
 \value{
-the updated par_tab
+the updated `par_tab`, including rows for any added scale parameters
 }
 \description{
 Adds entries to par_tab to stratify parameters by requested stratification levels. antibody_data and timevarying_demographics are used to find how many levels of each stratification have been requested
 }
+\seealso{
+Other stratification:
+\code{\link[=create_demographic_table]{create_demographic_table()}},
+\code{\link[=get_demographic_groups]{get_demographic_groups()}},
+\code{\link[=setup_stratification_table]{setup_stratification_table()}}
+}
+\concept{stratification}

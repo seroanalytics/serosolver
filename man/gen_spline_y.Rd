@@ -2,10 +2,26 @@
 % Please edit documentation in R/infection_model_likelihoods.R
 \name{gen_spline_y}
 \alias{gen_spline_y}
-\title{Generates a spline for \code{\link{generate_phis}} - INACTIVE}
+\title{Generates a spline for \code{\link{generate_phis}} - INACTIVE
+Evaluate a spline for the inactive seasonal FOI model}
 \usage{
 gen_spline_y(x, knots, degree, theta, intercept = TRUE)
 }
+\arguments{
+\item{x}{positions at which to evaluate the spline}
+
+\item{knots}{spline knot positions}
+
+\item{degree}{spline degree}
+
+\item{theta}{spline coefficients}
+
+\item{intercept}{if TRUE, includes an intercept in the spline basis}
+}
+\value{
+the evaluated spline values
+}
 \description{
 Generates a spline for \code{\link{generate_phis}} - INACTIVE
+Evaluate a spline for the inactive seasonal FOI model
 }

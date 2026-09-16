@@ -14,7 +14,7 @@ add_rhos_par_tab(par_tab, sampled_viruses, n_obs_types = 1)
 \item{n_obs_types}{number of biomarker_groups}
 }
 \value{
-the updated parameter table
+a list containing the updated parameter table and a table mapping each biomarker ID and biomarker group to a measurement-shift parameter index
 }
 \description{
 Add measurement offset values to par_tab

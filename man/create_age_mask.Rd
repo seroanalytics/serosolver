@@ -24,4 +24,8 @@ times <- example_antigenic_map$inf_times
 DOBs <- unique(example_antibody_data[,c("individual","birth")])
 age_mask <- create_age_mask(DOBs$birth, times)
 }
+\seealso{
+Other create_masks:
+\code{\link[=create_sample_mask]{create_sample_mask()}}
+}
 \concept{create_masks}

@@ -18,16 +18,16 @@ plot_antibody_data(
 
 \item{possible_exposure_times}{the vector of times at which individuals could be infected}
 
-\item{n_indivs}{integer of how many individuals to plot, or vector of which individuals to plot}
+\item{n_indivs}{either the number of individuals to sample at random, or a vector of individual IDs to plot}
 
-\item{infection_histories}{the infection history matrix}
+\item{infection_histories}{optional infection-history matrix with rows in the same individual order as `antibody_data`}
 
 \item{study_design}{default "cross-sectional" facets by sample time. "longitudinal" gives sample time on the x-axis and colours by `biomarker_id`}
 
 \item{measurement_ranges}{data frame or tibble stating for each `biomarker_group` the `min_measurement` and `max_measurement`. If NULL, this is extracted from `antibody_data`}
 }
 \value{
-a ggplot object
+A ggplot object showing the antibody measurements and, when supplied, known infection times.
 }
 \description{
 Plots measured antibody measurements and known infection histories for all individuals, faceted by sample time (multi-antigen panel) or biomarker_id variable (longitudinal single antigen)

@@ -19,13 +19,13 @@ get_best_draw(chain, inf_chain, max_indivs = NULL, max_times = NULL)
 a list with a vector of the best parameters and a matrix of the best infection history
 }
 \description{
-Given an MCMC chain of theta parameters and infection histories, returns the MAP infection history
+Given MCMC chains of theta parameters and infection histories, returns the MAP infection history
 }
 \examples{
 \dontrun{
 mcmc_chains <- load_theta_chains()
 inf_chains <- load_infection_chains()
-best_pars <- get_best_draw(mcmc_chains$chain)
+best_draw <- get_best_draw(mcmc_chains$chain, inf_chains$chain)
 }
 }
 \seealso{

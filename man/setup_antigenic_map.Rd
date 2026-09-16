@@ -17,20 +17,22 @@ setup_antigenic_map(
 
 \item{possible_exposure_times}{a vector of possible exposure times, which will be used to align the antigenic map}
 
-\item{n_biomarker_groups}{the number of biomarker groups in the antigenic map}
+\item{n_biomarker_groups}{the number of biomarker groups in the antigenic map when the map is expanded for multiple groups}
 
-\item{unique_biomarker_groups}{a vector of unique biomarker groups in the antigenic map}
+\item{unique_biomarker_groups}{a vector of labels for the biomarker groups in the antigenic map}
 
 \item{verbose}{if TRUE, prints messages about the process}
 }
 \value{
-list with three entries: 1) the updated antigenic map, 2) the updated possible_exposure_times vector, 3) a set of indices matching possible_exposure_times to entries in the antigenic map
+list with three entries: 1) the updated antigenic map, 2) the updated possible_exposure_times vector, 3) a set of zero-based indices matching possible_exposure_times to entries in the antigenic map for use by the model
 }
 \description{
 Cleans up an antigenic_map data frame based on provided inputs. Two checks are carried out. First, it will check if an antigenic map is provided, and if so, it will align its entries with possible_exposure_times. If no antigenic map is provided, it will create a dummy map where all pathogens have the same position on the map. Second, it will enumerate the antigenic map for each unique biomarker group, unless the antigenic map has already been enumerated.
 }
 \seealso{
 Other antigenic_maps:
-\code{\link[=generate_antigenic_map_flexible]{generate_antigenic_map_flexible()}}
+\code{\link[=euc_distance]{euc_distance()}},
+\code{\link[=generate_antigenic_map_flexible]{generate_antigenic_map_flexible()}},
+\code{\link[=melt_antigenic_coords]{melt_antigenic_coords()}}
 }
 \concept{antigenic_maps}

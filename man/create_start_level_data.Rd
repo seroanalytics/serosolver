@@ -13,12 +13,12 @@ create_start_level_data(
 \arguments{
 \item{antibody_data}{the antibody data, see \code{\link{example_antibody_data}}}
 
-\item{start_level_summary}{string telling the function how to use the `antibody_data` object to create starting values. One of: min, max, mean, median, full_random.}
+\item{start_level_summary}{string telling the function how to use the `antibody_data` object to create starting values. One of: min, max, mean, median, full_random. Any other value sets starting levels to 0.}
 
 \item{randomize}{if TRUE and data is discretized, then sets the starting level to a random value between floor(x) and floor(x)+1}
 }
 \value{
-a list with two objects: 1) a tibble giving the starting antibody level for each individual, biomarker group and biomarker_id combinations; 2) a list of indices (starting at 0) of length matching `nrow(antibody_data)` giving the index of the antibody starting level to use for each measurement
+a data frame containing the input antibody data with `starting_level` and `start_index` columns
 }
 \description{
 Generates either random or data-driven starting antibody levels for each measured biomarker group/id combination per individual. This is mostly used elsewhere in the serosolver model

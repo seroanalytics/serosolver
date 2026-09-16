@@ -6,6 +6,9 @@
 \usage{
 describe_priors()
 }
+\value{
+`NULL`, invisibly
+}
 \description{
-Describe infection history priors
+Prints a short description of the available infection-history prior versions.
 }

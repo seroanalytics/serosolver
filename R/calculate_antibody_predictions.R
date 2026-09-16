@@ -1,6 +1,6 @@
 # Modified by an AI assistant on 2026-09-15 using GPT-5. Added an option to
 # solve predictions for all biomarker IDs in the antigenic map at observed sample times,
-# with a warning when missing starting levels are filled with zero.
+# with a warning when partially supplied starting levels are filled with zero.
 # Modified by an AI assistant on 2026-09-16 using GPT-5. Updated the roxygen
 # documentation for `get_antibody_level_predictions()` without changing its implementation.
 #'
@@ -190,13 +190,16 @@ get_antibody_level_predictions <- function(chain, infection_histories, antibody_
         dplyr::distinct() %>%
         dplyr::anti_join(start_level_complete,
                          by=c("individual","biomarker_id","biomarker_group"))
-      if(nrow(missing_start_levels) > 0){
+      # Warn only when a user-supplied table is incomplete; automatic summaries use zero silently.
+      if(nrow(missing_start_levels) > 0 && inherits(start_level, "data.frame")){
         warning(paste0(
           "No starting levels were supplied for ", nrow(missing_start_levels),
           " individual-biomarker combinations created by expanding to all biomarker IDs. ",
           "These starting levels have been set to zero. This may give unexpected predictions,",
           " particularly when an unobserved biomarker ID lies between observed IDs with non-zero starting levels."
         ), call.=FALSE)
+      }
+      if(nrow(missing_start_levels) > 0){
         missing_start_levels <- missing_start_levels %>%
           dplyr::mutate(starting_level=0,
                         start_index=max(start_level_complete$start_index) + dplyr::row_number())

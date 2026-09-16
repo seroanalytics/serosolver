@@ -1,5 +1,5 @@
 # Modified by an AI assistant on 2026-09-16 using GPT-5. Clarified the roxygen
-# documentation for attack-rate plots without changing the implementation.
+# documentation and removed unused fill scales from pointrange plots.
 
 #' Plot historical attack rates with pointrange plots
 #'
@@ -190,7 +190,6 @@ plot_attack_rates <- function(infection_histories,
         size = pointsize,
         fatten = fatten
         )  +
-          scale_fill_manual(name="Samples taken",values=c("No"="darkorange","Yes"="blue","Prior"="grey40"))+
           scale_color_manual(name="Samples taken",values=c("No"="darkorange","Yes"="blue","Prior"="grey40"))
       } else {
         p <- p + geom_pointrange(aes(
@@ -200,7 +199,6 @@ plot_attack_rates <- function(infection_histories,
         size = pointsize,
         fatten = fatten
         )+
-          scale_fill_manual(name="Biomarker tested",values=c("No"="darkorange","Yes"="blue","Prior"="grey40"))+
           scale_color_manual(name="Biomarker tested",values=c("No"="darkorange","Yes"="blue","Prior"="grey40"))
       }
     } else {

@@ -13,7 +13,7 @@ load_antibody_data(location = getwd())
 A data frame with antibody data, or `NULL` if no matching file is found.
 }
 \description{
-Searches the specified working directory for a csv file with "antibody_data.csv" or "titer_dat.csv" in the name and reads in the first file found as a data frame.
+Searches the specified working directory for a csv file with "antibody_data.csv" or "titre_dat.csv" in the name and reads in the first file found as a data frame.
 }
 \examples{
 \dontrun{

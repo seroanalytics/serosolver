@@ -13,36 +13,39 @@ fit_normal_prior(
 )
 }
 \arguments{
-\item{chain_samples}{the MCMC chain data frame to be fit to}
+\item{chain_samples}{numeric vector of posterior samples to fit}
 
-\item{par_name}{the column label to fit to}
+\item{par_name}{optional parameter name used in the plot title}
 
-\item{error_tol}{= 9999999999999, what's the error tolerance on the fit? Might take some tweaking}
+\item{error_tol}{tolerance for the optimisation error}
 
-\item{try_attempts}{= 10 how many fitting attempts to try before giving up}
+\item{try_attempts}{maximum number of fitting attempts before giving up}
 
-\item{plot_fit}{= TRUE, if TRUE, plots the fit to the MCMC chain}
+\item{plot_fit}{if TRUE, plots the fitted distribution against the posterior density}
 }
 \value{
-the model fit object as returned by optim
+the model fit object returned by `optim`, or a list with missing parameters if fitting fails
 }
 \description{
 Attempts to fit a normal distribution to a data frame of MCMC output from a previous run.
 }
-\seealso{
-\code{\link{fit_normal_prior}}
-#' @examples
+\examples{
 \dontrun{
-## Output from a previous serosolver chain
-chain <- read.csv("madeup_chain.csv")
+## Posterior draws from a previous serosolver chain
+chain <- rnorm(100, mean = 0, sd = 1)
 results <- fit_normal_prior(chain, par_name="mu",plot_fit=FALSE)
 }
+}
+\seealso{
+\code{\link{fit_normal_prior}}
 
 Other priors:
 \code{\link[=calc_phi_probs]{calc_phi_probs()}},
 \code{\link[=calc_phi_probs_indiv]{calc_phi_probs_indiv()}},
 \code{\link[=calc_phi_probs_spline]{calc_phi_probs_spline()}},
 \code{\link[=create_prob_shifts]{create_prob_shifts()}},
+\code{\link[=dbb_prior]{dbb_prior()}},
+\code{\link[=density_beta_binom]{density_beta_binom()}},
 \code{\link[=find_beta_prior_mode]{find_beta_prior_mode()}},
 \code{\link[=find_beta_prior_with_mean]{find_beta_prior_with_mean()}},
 \code{\link[=find_beta_prior_with_mean_var]{find_beta_prior_with_mean_var()}},

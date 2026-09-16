@@ -2,15 +2,30 @@
 % Please edit documentation in R/mcmc_help.R
 \name{rm_scale}
 \alias{rm_scale}
-\title{Robins and Monro scaler, thanks to Michael White}
+\title{Robbins--Monro scaler, thanks to Michael White}
 \usage{
 rm_scale(step_scale, mc, target_acceptance_rate_theta, log_prob, N_adapt)
 }
+\arguments{
+\item{step_scale}{the current step-size multiplier}
+
+\item{mc}{the current adaptation iteration}
+
+\item{target_acceptance_rate_theta}{the desired acceptance rate}
+
+\item{log_prob}{the log acceptance probability}
+
+\item{N_adapt}{the number of adaptation iterations}
+}
+\value{
+the updated step-size multiplier
+}
 \description{
-Robins and Monro scaler, thanks to Michael White
+Updates an MCMC proposal step-size multiplier using the current acceptance probability.
 }
 \seealso{
 Other mcmc:
+\code{\link[=expand_summary_inf_chain]{expand_summary_inf_chain()}},
 \code{\link[=generate_start_tab]{generate_start_tab()}},
 \code{\link[=save_infection_history_to_disk]{save_infection_history_to_disk()}},
 \code{\link[=scaletuning]{scaletuning()}},

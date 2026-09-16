@@ -10,30 +10,27 @@ check_inf_hist(
   inf_hist,
   verbose = FALSE
 )
-
-check_inf_hist(
-  antibody_data,
-  possible_exposure_times,
-  inf_hist,
-  verbose = FALSE
-)
 }
 \arguments{
-\item{antibody_data}{the data frame of titer data}
+\item{antibody_data}{the data frame of antibody data}
 
-\item{possible_exposure_times}{the vector of times corresponding to entries in DOB}
+\item{possible_exposure_times}{vector of times at which individuals could be exposed e.g., `seq(1968,2015,by=1)`}
 
-\item{inf_hist}{the starting infection history matrix}
+\item{inf_hist}{the infection history matrix, with nrows = number indivs and ncols = length(possible_exposure_times)}
 
 \item{verbose}{if TRUE, prints warning messages}
 }
 \value{
 a single boolean value, FALSE if the check passes, otherwise throws an error
-
-nothing, prints a warning
 }
 \description{
 Checks that the infection history matrix is allowable given the birth dates and sampling times of the data
+}
+\examples{
+data(example_antibody_data)
+data(example_inf_hist)
+times <- 1968:2015
+check_inf_hist(example_antibody_data, times, example_inf_hist)
 }
 \seealso{
 Other check_inputs:
@@ -44,8 +41,3 @@ Other check_inputs:
 \code{\link[=check_proposals]{check_proposals()}}
 }
 \concept{check_inputs}
-\concept{check_inputs
-data(example_antibody_data)
-data(example_inf_hist)
-times <- 1968:2015
-check_inf_hist(example_antibody_data, times, example_inf_hist)}

@@ -19,7 +19,7 @@ setup_antibody_data_for_posterior_func(
 \arguments{
 \item{par_tab}{the parameter table controlling information such as bounds, initial values etc. See \code{\link{example_par_tab}}}
 
-\item{antibody_data}{the data frame of data to be fitted. Must have columns: group (index of group); individual (integer ID of individual); samples (numeric time of sample taken); virus (numeric time of when the virus was circulating); biomarker_group (integer of the observation group type, using a unique value for each distinctive type of observation underpinned by the same generative model); titre (integer of titre value against the given virus at that sampling time). See \code{\link{example_antibody_data}}}
+\item{antibody_data}{the data frame of data to be fitted. Must have columns: individual (integer ID of individual); sample_time (numeric time of sample taken); biomarker_id (numeric ID of the biomarker); measurement (antibody measurement); and birth (birth time). `biomarker_group`, `repeat_number`, and `population_group` are optional. `population_group` identifies groups with different infection rates or attack rates; if it is absent, all individuals are assigned to group 1. See \code{\link{example_antibody_data}}}
 
 \item{antigenic_map}{(optional) a data frame of antigenic x and y coordinates. Must have column names: x_coord; y_coord; inf_times. See \code{\link{example_antigenic_map}}}
 
@@ -36,11 +36,11 @@ setup_antibody_data_for_posterior_func(
 \item{timevarying_demographics}{if not NULL, then calculates an individual's demographic group over the entire time period of the simulation rather than assuming fixed demographics}
 }
 \value{
-a very long list. See source code directly.
+a list of pre-processed data vectors, indices, masks, demographic groups, and numbers alive used by the posterior function.
 }
 \description{
 Sets up a large list of pre-indexing and pre-processing to speed up the model solving during MCMC fitting.
-Note that this should be `antibody_data` after subsetting to only `run==1`, as we will figure out elsewhere which solves to use as repeats
+Note that this should be `antibody_data` after subsetting to only `repeat_number == 1`, as we will figure out elsewhere which solves to use as repeats.
 }
 \seealso{
 \code{\link{create_posterior_func}}

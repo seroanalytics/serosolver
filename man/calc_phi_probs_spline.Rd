@@ -28,6 +28,8 @@ Other priors:
 \code{\link[=calc_phi_probs]{calc_phi_probs()}},
 \code{\link[=calc_phi_probs_indiv]{calc_phi_probs_indiv()}},
 \code{\link[=create_prob_shifts]{create_prob_shifts()}},
+\code{\link[=dbb_prior]{dbb_prior()}},
+\code{\link[=density_beta_binom]{density_beta_binom()}},
 \code{\link[=find_beta_prior_mode]{find_beta_prior_mode()}},
 \code{\link[=find_beta_prior_with_mean]{find_beta_prior_with_mean()}},
 \code{\link[=find_beta_prior_with_mean_var]{find_beta_prior_with_mean_var()}},

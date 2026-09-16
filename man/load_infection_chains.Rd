@@ -13,18 +13,18 @@ load_infection_chains(
 )
 }
 \arguments{
-\item{location}{Character string path to the directory to search. Defaults to `getwd()`.}
+\item{location}{character string giving the directory containing the chain files. Defaults to the current working directory.}
 
-\item{thin}{Integer; thinning interval to apply to the MCMC samples. Defaults to `1` (no thinning).}
+\item{thin}{integer; keeps every `thin`th saved MCMC sample. Defaults to 1.}
 
-\item{burnin}{Integer; number of initial samples to discard. Defaults to `0`.}
+\item{burnin}{integer; discards samples with `samp_no <= burnin`. Defaults to 0.}
 
-\item{chain_subset}{if not NULL, a vector of indices to only load and store a subset of the chains detected. eg. chain_subset = 1:3 means that only the first 3 detected files will be processed.}
+\item{chain_subset}{if not NULL, a vector of indices to only load and store a subset of the chains detected. For example, `chain_subset = 1:3` processes only the first three detected files.}
 
-\item{verbose}{Logical; whether to print progress messages}
+\item{verbose}{logical; whether to print progress messages.}
 }
 \value{
-a list with a) a list of each chain as a data table separately; b) a combined data table, indexing each iteration by which chain it comes from
+A list with two entries: `list`, containing each infection-history chain separately, and `chain`, containing the combined chains with a `chain_no` column. These are data tables rather than `coda` objects.
 }
 \description{
 Searches the given working directory for MCMC outputs from \code{\link{serosolver}} ending "infection_histories.csv", loads these in, subsets for burn in and thinning, and formats as both lists and a combined data table.

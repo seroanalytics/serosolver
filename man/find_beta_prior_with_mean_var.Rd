@@ -9,7 +9,7 @@ find_beta_prior_with_mean_var(mean, var, make_plot = FALSE)
 \arguments{
 \item{mean}{the mean of the beta distribution (between 0 and 1)}
 
-\item{var}{the variance of the beta distribution (this is likely going to be somewhere less than 0.25)}
+\item{var}{the variance of the beta distribution (between 0 and 0.25)}
 
 \item{make_plot}{if TRUE, plots the resulting Beta distribution to the R device}
 }
@@ -17,7 +17,7 @@ find_beta_prior_with_mean_var(mean, var, make_plot = FALSE)
 a list with shape1 and shape2
 }
 \description{
-Finds the shape1 and shape2 parameters for a Beta distribution that gives the desired mean and variance
+Finds the shape1 and shape2 parameters for a Beta distribution that gives the desired mean and variance.
 }
 \examples{
 find_beta_prior_with_mean_var(0.15,0.1,FALSE)
@@ -28,6 +28,8 @@ Other priors:
 \code{\link[=calc_phi_probs_indiv]{calc_phi_probs_indiv()}},
 \code{\link[=calc_phi_probs_spline]{calc_phi_probs_spline()}},
 \code{\link[=create_prob_shifts]{create_prob_shifts()}},
+\code{\link[=dbb_prior]{dbb_prior()}},
+\code{\link[=density_beta_binom]{density_beta_binom()}},
 \code{\link[=find_beta_prior_mode]{find_beta_prior_mode()}},
 \code{\link[=find_beta_prior_with_mean]{find_beta_prior_with_mean()}},
 \code{\link[=fit_beta_prior]{fit_beta_prior()}},

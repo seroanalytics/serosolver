@@ -7,7 +7,7 @@
 get_n_alive(antibody_data, times)
 }
 \arguments{
-\item{antibody_data}{the data frame of titre data. See \code{\link{example_antibody_data}}}
+\item{antibody_data}{the data frame of antibody data. See \code{\link{example_antibody_data}}}
 
 \item{times}{the vector of times to calculate number alive for}
 }

@@ -14,23 +14,23 @@ simulate_attack_rates(
 )
 }
 \arguments{
-\item{infection_years}{the number of infection years}
+\item{infection_years}{vector of possible infection times}
 
-\item{mean_par}{the mean of the log normal}
+\item{mean_par}{target mean attack rate, either one value or one value per population group}
 
-\item{sd_par}{the sd of the log normal}
+\item{sd_par}{standard deviation on the log scale, either one value or one value per population group}
 
-\item{large_first_year}{simulate an extra large attach rate in the first year?}
+\item{large_first_year}{logical value indicating whether to simulate an extra-large attack rate in the first time period}
 
-\item{big_year_mean}{if large first year, what mean to use?}
+\item{big_year_mean}{target mean for the first time period when `large_first_year = TRUE`}
 
-\item{n_groups}{defaults to 1, otherwise gives an attack rate vector for each group}
+\item{n_groups}{number of population groups to simulate}
 }
 \value{
-a matrix of attack rates for each group
+A long-format data frame with `population_group`, `time`, and `prob_infection` columns.
 }
 \description{
-Given a number of possible infection years, simulates attack rates from a log normal distribution with specified mean and standard deviation.
+Given a vector of possible infection times, simulates attack rates from a log-normal distribution with specified mean and log-scale standard deviation.
 }
 \seealso{
 Other simulation_functions:

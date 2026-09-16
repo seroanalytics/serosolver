@@ -16,7 +16,7 @@ pad_inf_chain(inf_chain, pad_by_group = FALSE, times = NULL, indivs = NULL)
 \item{indivs}{if not NULL, uses this as a vector of individuals to replace i when expanding to all combinations}
 }
 \value{
-the same inf_chain that was passed in, but with 0s for missing i/j/samp_no combinations
+the same `inf_chain` with 0s added for missing `i`/`j`/`samp_no` combinations, and `population_group` combinations when `pad_by_group = TRUE`
 }
 \description{
 Given that the MCMC sampler only stores present infections (ie. there are no entries for 0s from the infection history matrix), for some summaries we need to add these 0s back in to avoid bias.

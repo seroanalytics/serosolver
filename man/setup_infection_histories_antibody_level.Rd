@@ -13,7 +13,7 @@ setup_infection_histories_antibody_level(
 )
 }
 \arguments{
-\item{antibody_data}{the matrix of titres data with columns for individual, sample, and antibody level}
+\item{antibody_data}{the data frame of antibody data with columns for individual, sample time, biomarker ID, and measurement}
 
 \item{possible_exposure_times}{vector of real times for all strains}
 
@@ -37,6 +37,7 @@ start_inf <- setup_infection_histories_antibody_level(example_antibody_data, exa
 }
 \seealso{
 Other setup_infection_histories:
-\code{\link[=setup_infection_histories]{setup_infection_histories()}}
+\code{\link[=setup_infection_histories]{setup_infection_histories()}},
+\code{\link[=setup_infection_histories_prior]{setup_infection_histories_prior()}}
 }
 \concept{setup_infection_histories}

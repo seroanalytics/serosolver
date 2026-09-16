@@ -15,7 +15,7 @@ find_beta_prior_mode(mode1, k)
 a list with shape1 and shape2 parameters for the Beta distribution
 }
 \description{
-Calculates the necessary parameters for the Beta distribution to give the desired mode and certainty, k
+Calculates the necessary parameters for the Beta distribution to give the desired mode and certainty, `k`.
 }
 \examples{
 find_beta_prior_mode(0.15, 10)
@@ -26,6 +26,8 @@ Other priors:
 \code{\link[=calc_phi_probs_indiv]{calc_phi_probs_indiv()}},
 \code{\link[=calc_phi_probs_spline]{calc_phi_probs_spline()}},
 \code{\link[=create_prob_shifts]{create_prob_shifts()}},
+\code{\link[=dbb_prior]{dbb_prior()}},
+\code{\link[=density_beta_binom]{density_beta_binom()}},
 \code{\link[=find_beta_prior_with_mean]{find_beta_prior_with_mean()}},
 \code{\link[=find_beta_prior_with_mean_var]{find_beta_prior_with_mean_var()}},
 \code{\link[=fit_beta_prior]{fit_beta_prior()}},

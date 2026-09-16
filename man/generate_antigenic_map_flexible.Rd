@@ -17,23 +17,23 @@ generate_antigenic_map_flexible(
 \arguments{
 \item{antigenic_distances}{a data frame of antigenic coordinates, with columns labelled X, Y and Strain for x coord, y coord and Strain label respectively. "Strain" should be a single number giving the year of circulation of that strain. See \code{\link{example_antigenic_map}}}
 
-\item{buckets}{= 1 the number of epochs per year. 1 means that each year has 1 strain; 12 means that each year has 12 strains (monthly resolution)}
+\item{buckets}{the number of epochs per year. 1 means that each year has 1 strain; 12 means that each year has 12 strains (monthly resolution). Defaults to 1.}
 
-\item{clusters}{= NULL a data frame of cluster labels, indicating which cluster each circulation year belongs to. Note that each row (year) gets repeated by the number of buckets. Column names "year" and "cluster_used"}
+\item{clusters}{optional data frame of cluster labels, indicating which cluster each circulation year belongs to. Each row (year) is repeated by the number of buckets. Column names should be `year` and `cluster_used`.}
 
-\item{use_clusters}{= FALSE if TRUE, uses the clusters data frame above, otherwise just returns as normal}
+\item{use_clusters}{if TRUE, uses the clusters data frame; otherwise, returns the usual fitted map. Defaults to FALSE.}
 
-\item{spar}{= 0.3 to be passed to smooth.spline}
+\item{spar}{smoothing parameter passed to `smooth.spline`. Defaults to 0.3.}
 
-\item{year_min}{= 1968 first year in the antigenic map (usually 1968)}
+\item{year_min}{first year in the antigenic map. Defaults to 1968.}
 
-\item{year_max}{= 2016 last year in the antigenic map}
+\item{year_max}{last year in the antigenic map. Defaults to 2016.}
 }
 \value{
 a fitted antigenic map
 }
 \description{
-Fits a smoothing spline through a set of antigenic coordinates, and uses this to predict antigenic coordinates for all potential infection time points. This version is more flexible than \code{\link{generate_antigenic_map}}, and allows the user to specify "clusters" to assume that strains circulating in a given period are all identical, rather than on a continuous path through space as a function of time.
+Fits a smoothing spline through a set of antigenic coordinates, and uses this to predict antigenic coordinates for all potential infection time points. It allows the user to specify "clusters" to assume that strains circulating in a given period are all identical, rather than on a continuous path through space as a function of time.
 }
 \examples{
 \dontrun{
@@ -53,9 +53,9 @@ antigenic_map <- generate_antigenic_map_flexible(antigenic_coords, buckets=1,
 }
 }
 \seealso{
-\code{\link{generate_antigenic_map}}
-
 Other antigenic_maps:
+\code{\link[=euc_distance]{euc_distance()}},
+\code{\link[=melt_antigenic_coords]{melt_antigenic_coords()}},
 \code{\link[=setup_antigenic_map]{setup_antigenic_map()}}
 }
 \concept{antigenic_maps}

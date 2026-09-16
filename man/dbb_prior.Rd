@@ -6,6 +6,35 @@
 \usage{
 dbb_prior(x, N, u, v)
 }
-\description{
-Beta binomial prior used here (no choose constant)
+\arguments{
+\item{x}{number of infections}
+
+\item{N}{number of possible infection times}
+
+\item{u}{first shape parameter of the Beta distribution}
+
+\item{v}{second shape parameter of the Beta distribution}
 }
+\value{
+the beta-binomial prior term
+}
+\description{
+Calculates the beta-binomial term used for the infection-history prior without the binomial choose constant.
+}
+\seealso{
+Other priors:
+\code{\link[=calc_phi_probs]{calc_phi_probs()}},
+\code{\link[=calc_phi_probs_indiv]{calc_phi_probs_indiv()}},
+\code{\link[=calc_phi_probs_spline]{calc_phi_probs_spline()}},
+\code{\link[=create_prob_shifts]{create_prob_shifts()}},
+\code{\link[=density_beta_binom]{density_beta_binom()}},
+\code{\link[=find_beta_prior_mode]{find_beta_prior_mode()}},
+\code{\link[=find_beta_prior_with_mean]{find_beta_prior_with_mean()}},
+\code{\link[=find_beta_prior_with_mean_var]{find_beta_prior_with_mean_var()}},
+\code{\link[=fit_beta_prior]{fit_beta_prior()}},
+\code{\link[=fit_normal_prior]{fit_normal_prior()}},
+\code{\link[=inf_mat_prior]{inf_mat_prior()}},
+\code{\link[=infection_history_prior]{infection_history_prior()}},
+\code{\link[=prob_shifts]{prob_shifts()}}
+}
+\concept{priors}

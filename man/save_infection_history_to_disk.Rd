@@ -31,6 +31,7 @@ Write given infection history to disk
 }
 \seealso{
 Other mcmc:
+\code{\link[=expand_summary_inf_chain]{expand_summary_inf_chain()}},
 \code{\link[=generate_start_tab]{generate_start_tab()}},
 \code{\link[=rm_scale]{rm_scale()}},
 \code{\link[=scaletuning]{scaletuning()}},

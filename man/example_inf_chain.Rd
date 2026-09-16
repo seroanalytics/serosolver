@@ -5,7 +5,7 @@
 \alias{example_inf_chain}
 \title{Example MCMC chain for infection histories}
 \format{
-A data table, with entries for each MCMC sample for each individual (i) and time period (j) for which there was an infection inferred (x) for each saved MCMC sample (samp_no)
+A data table with 17236 rows and 4 variables: `i` (individual), `j` (time period), `x` (inferred infection), and `sampno` (saved MCMC sample).
 }
 \usage{
 data(example_inf_chain)

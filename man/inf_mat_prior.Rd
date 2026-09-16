@@ -21,10 +21,10 @@ inf_mat_prior(
 \item{infection_model_prior_shape2}{shape2 parameter for the Beta distribution}
 }
 \value{
-a prior probability for each individual
+the total log prior for the infection history
 }
 \description{
-R implementation of the infection history prior assuming common infection risk across individuals in a given year
+R implementation of the infection history prior assuming common infection risk across individuals in a given year.
 }
 \seealso{
 Other priors:
@@ -32,6 +32,8 @@ Other priors:
 \code{\link[=calc_phi_probs_indiv]{calc_phi_probs_indiv()}},
 \code{\link[=calc_phi_probs_spline]{calc_phi_probs_spline()}},
 \code{\link[=create_prob_shifts]{create_prob_shifts()}},
+\code{\link[=dbb_prior]{dbb_prior()}},
+\code{\link[=density_beta_binom]{density_beta_binom()}},
 \code{\link[=find_beta_prior_mode]{find_beta_prior_mode()}},
 \code{\link[=find_beta_prior_with_mean]{find_beta_prior_with_mean()}},
 \code{\link[=find_beta_prior_with_mean_var]{find_beta_prior_with_mean_var()}},

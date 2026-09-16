@@ -10,6 +10,10 @@ to.png(expr, filename, ..., verbose = TRUE)
 \item{expr}{expression to give plot}
 
 \item{filename}{filename to print to}
+
+\item{...}{additional arguments passed to `png()`}
+
+\item{verbose}{if TRUE, prints the output filename}
 }
 \description{
 Prints to png, but turns dev off if fails

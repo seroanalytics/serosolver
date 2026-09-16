@@ -2,7 +2,7 @@
 % Please edit documentation in R/antigenic_map.R
 \name{melt_antigenic_coords}
 \alias{melt_antigenic_coords}
-\title{Create useable antigenic map}
+\title{Create usable antigenic map}
 \usage{
 melt_antigenic_coords(anti.map.in)
 }
@@ -10,8 +10,15 @@ melt_antigenic_coords(anti.map.in)
 \item{anti.map.in}{can either be a 1D antigenic line to calculate distance from, or a two dimensional matrix with x and y coordinates on an antigenic map}
 }
 \value{
-the euclidean antigenic distance between each pair of viruses in anti.map.in
+a matrix of Euclidean antigenic distances between each pair of entries in `anti.map.in`
 }
 \description{
 Creates an antigenic map from an input data frame that can be used to calculate cross reactivity. This will end up being an NxN matrix, where there are N strains circulating.
 }
+\seealso{
+Other antigenic_maps:
+\code{\link[=euc_distance]{euc_distance()}},
+\code{\link[=generate_antigenic_map_flexible]{generate_antigenic_map_flexible()}},
+\code{\link[=setup_antigenic_map]{setup_antigenic_map()}}
+}
+\concept{antigenic_maps}

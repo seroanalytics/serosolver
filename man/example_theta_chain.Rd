@@ -5,7 +5,7 @@
 \alias{example_theta_chain}
 \title{Example MCMC chain for kinetics parameters}
 \format{
-A data frame with 100 rows (each corresponding to a sample from the posterior), and each column corresponding to one variable in \code{\link{example_par_tab}}
+A data frame with 100 rows (each corresponding to a sample from the posterior) and 24 columns containing the saved sample number, parameter draws, likelihood values, and prior probabilities.
 }
 \usage{
 data(example_theta_chain)

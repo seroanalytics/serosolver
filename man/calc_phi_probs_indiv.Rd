@@ -12,9 +12,11 @@ calc_phi_probs_indiv(phis, infection_history, age_mask, sample_mask)
 \item{infection_history}{the matrix of infection histories}
 
 \item{age_mask}{the age mask vector as returned by \code{\link{create_age_mask}}}
+
+\item{sample_mask}{the sample mask vector giving the last possible infection-time index for each individual}
 }
 \value{
-a vector of log probabilities for each individual
+a vector of log probabilities, one for each individual
 }
 \description{
 Given a vector of FOIs for all circulating years, a matrix of infection histories and the vector specifying if individuals were alive or not, returns the log probability of the FOIs given the infection histories.
@@ -24,6 +26,8 @@ Other priors:
 \code{\link[=calc_phi_probs]{calc_phi_probs()}},
 \code{\link[=calc_phi_probs_spline]{calc_phi_probs_spline()}},
 \code{\link[=create_prob_shifts]{create_prob_shifts()}},
+\code{\link[=dbb_prior]{dbb_prior()}},
+\code{\link[=density_beta_binom]{density_beta_binom()}},
 \code{\link[=find_beta_prior_mode]{find_beta_prior_mode()}},
 \code{\link[=find_beta_prior_with_mean]{find_beta_prior_with_mean()}},
 \code{\link[=find_beta_prior_with_mean_var]{find_beta_prior_with_mean_var()}},

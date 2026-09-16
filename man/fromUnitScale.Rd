@@ -6,6 +6,16 @@
 \usage{
 fromUnitScale(x, min, max)
 }
+\arguments{
+\item{x}{value on the 0--1 scale}
+
+\item{min}{lower bound of the original scale}
+
+\item{max}{upper bound of the original scale}
+}
+\value{
+the value on the original scale
+}
 \description{
-Convert from unit scale to original scale
+Converts a value from the 0--1 scale to its original bounded scale.
 }

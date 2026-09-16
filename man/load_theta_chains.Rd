@@ -15,22 +15,22 @@ load_theta_chains(
 )
 }
 \arguments{
-\item{location}{Character string path to the directory to search. Defaults to `getwd()`.}
+\item{location}{Character string path to the directory containing the chain files. Defaults to `getwd()`.}
 
-\item{par_tab}{Data frame; optional parameter table for filtering. Defaults to `NULL`.}
+\item{par_tab}{Data frame; optional model control table used to select estimated parameters. Defaults to `NULL`.}
 
-\item{estimated_only}{if TRUE, only returns free model parameters (par_tab$fixed == 0) if par_tab specified}
+\item{estimated_only}{if TRUE and `par_tab` is supplied, only returns parameters with `par_tab$fixed == 0`.}
 
-\item{thin}{Integer; thinning interval to apply to the MCMC samples. Defaults to `1` (no thinning).}
+\item{thin}{Integer; keeps every `thin`th saved MCMC sample. Defaults to `1` (no thinning).}
 
-\item{burnin}{Integer; number of initial samples to discard. Defaults to `0`.}
+\item{burnin}{Integer; discards samples with `samp_no <= burnin`. Defaults to `0`.}
 
-\item{convert_mcmc}{Logical; whether to convert output to `coda::mcmc.list`. Defaults to `TRUE`.}
+\item{convert_mcmc}{Logical; if TRUE, also converts the chains to `coda::mcmc` or `coda::mcmc.list` objects. Defaults to `TRUE`.}
 
-\item{verbose}{Logical; whether to print progress messages}
+\item{verbose}{Logical; whether to print progress messages.}
 }
 \value{
-a list with a) a list of each chain separately; b) a combined data frame, indexing each iteration by which chain it comes from
+A list with two entries: `list`, containing the chains separately, and `chain`, containing the combined chains with a `chain_no` column. If `convert_mcmc = TRUE`, these entries are converted to `coda::mcmc.list` and `coda::mcmc` objects.
 }
 \description{
 Searches the given working directory for MCMC outputs from \code{\link{serosolver}} matching "_chain.csv", reads these in, subsets for burn in and thinning, and formats as both lists and a combined data frame.

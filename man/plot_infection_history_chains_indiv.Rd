@@ -12,19 +12,19 @@ plot_infection_history_chains_indiv(
 )
 }
 \arguments{
-\item{inf_chain}{the data table with infection history samples from \code{\link{serosolver}}}
+\item{inf_chain}{the infection-history chain returned by \code{\link{load_mcmc_chains}}, in long format}
 
-\item{burnin}{optionally remove all samp_no < burnin from the chain}
+\item{burnin}{if not already discarded, discards rows with `samp_no <= burnin`}
 
-\item{indivs}{vector of integers, if not NULL, only plots a subset of individuals (where 1 is the first individual)}
+\item{indivs}{optional vector of individual IDs, as recorded in `inf_chain$i`, to plot}
 
-\item{pad_chain}{if TRUE, pads the infection history MCMC chain to have entries for non-infection events}
+\item{pad_chain}{if TRUE, adds zero-valued entries for infection events that are absent from the sparse chain}
 }
 \value{
-a list of two ggplot objects - the MCMC trace and MCMC densities
+A list containing the MCMC trace plot and posterior density plot.
 }
 \description{
-Plot MCMC trace for infections per individual
+Plots the MCMC trace and posterior density of the inferred total number of infections for selected individuals.
 }
 \examples{
 \dontrun{

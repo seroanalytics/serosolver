@@ -10,6 +10,10 @@ to.pdf(expr, filename, ..., verbose = TRUE)
 \item{expr}{expression to give plot}
 
 \item{filename}{filename to print to}
+
+\item{...}{additional arguments passed to `pdf()`}
+
+\item{verbose}{if TRUE, prints the output filename}
 }
 \description{
 Prints to pdf, but turns dev off if fails

@@ -11,6 +11,9 @@ pad_infection_model_prior_parameters(par_tab, n_times)
 
 \item{n_times}{the number of additional rows to add for each alpha and beta}
 }
+\value{
+the parameter table with the additional prior-shape rows
+}
 \description{
 Pads par_tab with a new row for each infection epoch, such that each epoch has its own shape1 and shape2
 }

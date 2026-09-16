@@ -7,7 +7,7 @@
 setup_stratification_table(par_tab, unique_demographic_combinations)
 }
 \arguments{
-\item{par_tab}{the parameter table, including a column called stratification which is NA if no stratification is requested, for with a character value matching an entry in antibody_data or timevarying_demographics}
+\item{par_tab}{the parameter table, including a column called stratification which is NA if no stratification is requested, or a character value matching an entry in antibody_data or timevarying_demographics}
 
 \item{unique_demographic_combinations}{table of unique stratification combinations. Columns give stratification variable, rows give each unique combinations}
 }
@@ -17,3 +17,10 @@ a list with two entries: 1) a list of matrices with entries for each stratificat
 \description{
 Creates an indexing table to tell serosolver which scale parameter to add to which model parameter.
 }
+\seealso{
+Other stratification:
+\code{\link[=add_scale_pars]{add_scale_pars()}},
+\code{\link[=create_demographic_table]{create_demographic_table()}},
+\code{\link[=get_demographic_groups]{get_demographic_groups()}}
+}
+\concept{stratification}

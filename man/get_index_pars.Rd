@@ -11,12 +11,12 @@ get_index_pars(chain, samp_no = NULL, index = NULL, chain_no = NULL)
 
 \item{samp_no}{the sample number}
 
-\item{index}{if not using `samp_no`, `index returns the desired row number`}
+\item{index}{if not using `samp_no`, the desired row number}
 
 \item{chain_no}{the chain number to subset}
 }
 \value{
-a named vector of the best parameters
+a named vector of parameter values at the selected sample
 }
 \description{
 Given an MCMC chain, returns the parameters at the specified index
