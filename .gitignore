@@ -39,21 +39,9 @@ inst/extdata/cs2_sim/*.csv
 !inst/extdata/guide/guide_log.txt
 
 !inst/extdata/case_study_1/
-!inst/extdata/case_study_1/prior_mcmc_chains/
-!inst/extdata/case_study_1/prior_mcmc_chains/prior_*_chain.csv
-!inst/extdata/case_study_1/prior_mcmc_chains/prior_*_infection_histories.csv
-!inst/extdata/case_study_1/prior_mcmc_chains/prior_serosolver_settings.RData
-!inst/extdata/case_study_1/prior_mcmc_chains/prior_log.txt
-!inst/extdata/case_study_1/simulation_mcmc_chains/
-!inst/extdata/case_study_1/simulation_mcmc_chains/simulated_*_chain.csv
-!inst/extdata/case_study_1/simulation_mcmc_chains/simulated_*_infection_histories.csv
-!inst/extdata/case_study_1/simulation_mcmc_chains/simulated_serosolver_settings.RData
-!inst/extdata/case_study_1/simulation_mcmc_chains/simulated_log.txt
-!inst/extdata/case_study_1/hong_kong_mcmc_chains/
-!inst/extdata/case_study_1/hong_kong_mcmc_chains/hong_kong_*_chain.csv
-!inst/extdata/case_study_1/hong_kong_mcmc_chains/hong_kong_*_infection_histories.csv
-!inst/extdata/case_study_1/hong_kong_mcmc_chains/hong_kong_serosolver_settings.RData
-!inst/extdata/case_study_1/hong_kong_mcmc_chains/hong_kong_log.txt
+inst/extdata/case_study_1/prior_mcmc_chains/*
+inst/extdata/case_study_1/simulation_mcmc_chains/*
+inst/extdata/case_study_1/hong_kong_mcmc_chains/*
 
 doc
 Meta

@@ -499,7 +499,7 @@ plot_cumulative_infection_histories(
   inf_chain = chains$inf_chain,
   indivs = 1:9,
   possible_exposure_times = possible_exposure_times
-)[[2]] + x_axis
+)[[2]] + x_axis + theme(axis.text.x = element_text(angle = 45, hjust = 1))
 ```
 
 The main model estimates are the antibody kinetics, attack rates, and infection timings.
@@ -619,7 +619,7 @@ if (!sim_cache_available) {
 } else {
   sim_chains <- load_mcmc_chains(
     location = sim_mcmc_dir,
-    par_tab = sim_fit_par_tab,
+    par_tab = simulated_data$par_tab,
     burnin = sim_mcmc_pars[["adaptive_iterations"]],
     thin = sim_mcmc_pars[["thin"]],
     convert_mcmc = FALSE,
@@ -628,7 +628,7 @@ if (!sim_cache_available) {
   sim_res <- list(
     all_diagnostics = plot_mcmc_diagnostics(
       location = sim_mcmc_dir,
-      par_tab = sim_fit_par_tab,
+      par_tab = simulated_data$par_tab,
       burnin = sim_mcmc_pars[["adaptive_iterations"]]
     ),
     settings = sim_settings,
@@ -652,6 +652,8 @@ sim_res$all_diagnostics$theta_estimates %>%
   knitr::kable(digits = 3)
 ```
 
+The recovery is good when the estimated medians are close to the true parameter values and the 95% credible intervals generally include them.
+
 The attack-rate estimates and model fits can be compared with their simulated values and infection histories:
 
 ```{r simulation-attack-rates,fig.width = 7,fig.height = 5}
@@ -664,6 +666,8 @@ plot_attack_rates(
 ) + x_axis
 ```
 
+The estimated attack rates should be close to the true simulated values for both vaccination groups.
+
 ```{r simulation-model-fits}
 plot_model_fits(
   sim_chains$theta_chain,
@@ -675,3 +679,5 @@ plot_model_fits(
   p_ncol = 5
 )[[1]] + x_axis + facet_wrap(~individual,ncol=3)
 ```
+
+In the final plot, the dashed lines show the true infection times. These should generally pass through dark orange regions, which indicate a high posterior probability of infection.
