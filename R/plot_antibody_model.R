@@ -106,7 +106,7 @@ plot_antibody_model <- function(pars,
 
 #' Plots infection histories and antibody model
 #'
-#' Given outputs from an MCMC run and the data used for fitting, generates an NxM matrix of plots where N is the number of individuals to be plotted and M is the range of sampling times. Where data are available, plots the observed antibody measurements and model predicted trajectories. Unlike plot_infection_histories_cross_sectional, places biomarker\_id on the x-axis and facets by sample time and individual.
+#' Given outputs from an MCMC run and the data used for fitting, generates an NxM matrix of plots where N is the number of individuals to be plotted and M is the range of sampling times. Where data are available, plots the observed antibody measurements and model predicted trajectories. In the longitudinal orientation, places biomarker\_id on the x-axis and facets by sample time and individual.
 #' @inheritParams get_antibody_level_predictions
 #' @param known_infection_history n-by-m matrix of known infection histories, with one row for each individual and one column for each possible exposure time. Use 1 for a known infection and 0 otherwise.
 #' @param p_ncol integer giving the number of columns of subplots to create if using orientation = "longitudinal"
@@ -570,7 +570,7 @@ plot_antibody_predictions <- function(chain, infection_histories,
 #' Plots the posterior antibody kinetics implied by the fitted model, optionally including prediction intervals for observed measurements.
 #' @inheritParams plot_model_fits
 #' @param solve_times vector of times to solve model over
-#' @param set_infections numeric vector giving the corresponding times in possible_exposure_histories to simulate infections
+#' @param set_infections numeric vector giving the corresponding times in `possible_exposure_times` to simulate infections
 #' @param by_group if TRUE, plots separate trajectories for each biomarker ID; otherwise combines the trajectories
 #' @param add_prediction_intervals if TRUE, adds intervals for predicted observations as well as the underlying antibody model
 #' @param verbose if TRUE, prints messages when settings are used or predictions are prepared

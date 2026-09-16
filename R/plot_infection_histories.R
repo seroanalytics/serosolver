@@ -34,7 +34,7 @@
 #' known_inf_hist <- data.frame(example_inf_hist)
 #' colnames(known_inf_hist) <- possible_exposure_times
 #' 
-#' n_alive_group <- get_n_alive_group(example_antibody_data, possible_exposure_times,melt_dat = TRUE)
+#' n_alive_group <- get_n_alive_group(example_antibody_data, possible_exposure_times,melt_data = TRUE)
 #' n_alive_group$j <- possible_exposure_times[n_alive_group$j]
 #' all_plots <- plot_infection_history_posteriors(example_inf_chain, possible_exposure_times, n_alive_group,
 #'                                      known_ar=known_ar,known_infection_history = known_inf_hist,
@@ -104,9 +104,9 @@ plot_infection_history_posteriors <- function(inf_chain,
 #' data(example_antibody_data)
 #' data(example_antigenic_map)
 #' times <- example_antigenic_map$inf_times
-#' n_alive_group <- get_n_alive_group(example_antibody_data, possible_exposure_times,melt_dat = TRUE)
-#' n_alive_group$j <- possible_exposure_times[n_alive_group$j]
-#' plot_infection_history_chains_time(example_inf_chain, 0, sample(1:length(times),10),n_alive,FALSE)
+#' n_alive_group <- get_n_alive_group(example_antibody_data, times,melt_data = TRUE)
+#' n_alive_group$j <- times[n_alive_group$j]
+#' plot_infection_history_chains_time(example_inf_chain, 0, sample(seq_along(times),10),n_alive_group,FALSE)
 #' }
 #' @export
 plot_infection_history_chains_time <- function(inf_chain, burnin = 0, times = NULL,

@@ -4,7 +4,7 @@
 #' Get number alive
 #'
 #' Given the antibody_data data frame, calculates the number that are alive (alive to be infected, that is) for each time in times
-#' @param antibody_data the data frame of titre data. See \code{\link{example_antibody_data}}
+#' @param antibody_data the data frame of antibody data. See \code{\link{example_antibody_data}}
 #' @param times the vector of times to calculate number alive for
 #' @return a vector giving the number alive in each time point
 #' @family get_summary
@@ -37,16 +37,15 @@ get_DOBs <- function(antibody_data){
     DOBs <- unique(antibody_data[,c("individual","birth")])
 }
 
-#' Get number alive by location
+#' Get number alive by population group
 #'
-#' Given the antibody_data data frame with entries for location, calculates the number that are alive (alive to be infected, that is) for each time in times by location
+#' Given the antibody_data data frame with entries for population group, calculates the number that are alive (alive to be infected, that is) for each time in times by population group
 #' @param antibody_data the data frame of antibody data. See \code{\link{example_antibody_data}}
 #' @param times the vector of times to calculate number alive for
 #' @param demographics optional time-varying demographic data containing `individual`, `time`, and `population_group`
 #' @param melt_data if TRUE, returns a melted data frame. Returns a wide matrix otherwise.
 #' @return a matrix giving the number alive in each time point and population group, or a long data frame with `population_group`, `j`, and `n_alive` when `melt_data = TRUE`
 #' @family get_summary
-#' @examples
 #' @examples
 #' data(example_antibody_data)
 #' data(example_antigenic_map)
@@ -254,7 +253,7 @@ get_best_pars <- function(chain) {
 
 #' Best infection history and theta parameters
 #'
-#' Given an MCMC chain of theta parameters and infection histories, returns the MAP infection history
+#' Given MCMC chains of theta parameters and infection histories, returns the MAP infection history
 #' @param chain the MCMC chain for theta parameters
 #' @param inf_chain the MCMC chain for infection histories
 #' @param max_indivs the maximum number of individuals in the infection history matrix (default is max individual in inf_chain)
@@ -264,7 +263,6 @@ get_best_pars <- function(chain) {
 #' @examples
 #' \dontrun{
 #' mcmc_chains <- load_theta_chains()
-#' inf_chains <- load_infection_chains()
 #' inf_chains <- load_infection_chains()
 #' best_draw <- get_best_draw(mcmc_chains$chain, inf_chains$chain)
 #' }
@@ -382,7 +380,7 @@ to.svg <- function(expr, filename, ..., verbose = TRUE) {
 
 #' Protect function
 #'
-#' Wrapper function to protect calls to a function. If the function does not compute correctly, returns -100000.
+#' Wrapper function to protect calls to a function. If the function does not compute correctly, returns -10000000.
 #' @param f the function to be protected
 #' @return the protected function
 #' @useDynLib serosolver
@@ -397,7 +395,7 @@ protect <- function(f) {
 
 #' Protect function (posterior function)
 #'
-#' Wrapper function to protect calls to the posterior function. If posterior does not compute correctly, returns -100000.
+#' Wrapper function to protect calls to the posterior function. If posterior does not compute correctly, returns -10000000.
 #' @param f the function to be protected
 #' @return the protected function
 #' @useDynLib serosolver
@@ -509,7 +507,7 @@ row.match <- function(x, table, nomatch = NA) {
 #' Setup antibody data indices
 #'
 #' Sets up a large list of pre-indexing and pre-processing to speed up the model solving during MCMC fitting.
-#' Note that this should be `antibody_data` after subsetting to only `run==1`, as we will figure out elsewhere which solves to use as repeats
+#' Note that this should be `antibody_data` after subsetting to only `repeat_number == 1`, as we will figure out elsewhere which solves to use as repeats.
 #' @inheritParams create_posterior_func
 #' @param verbose if TRUE, brings warning messages
 #' @param use_demographic_groups vector of variable names in `antibody_data` which should form the stratification for the antibody kinetics model
@@ -702,7 +700,7 @@ unregister_dopar <- function() {
 #'
 #' Generates either random or data-driven starting antibody levels for each measured biomarker group/id combination per individual. This is mostly used elsewhere in the serosolver model
 #' @param antibody_data the antibody data, see \code{\link{example_antibody_data}}
-#' @param start_level_summary string telling the function how to use the `antibody_data` object to create starting values. One of: min, max, mean, median, full_random.
+#' @param start_level_summary string telling the function how to use the `antibody_data` object to create starting values. One of: min, max, mean, median, full_random. Any other value sets starting levels to 0.
 #' @param randomize if TRUE and data is discretized, then sets the starting level to a random value between floor(x) and floor(x)+1
 #' @return a data frame containing the input antibody data with `starting_level` and `start_index` columns
 #' @examples

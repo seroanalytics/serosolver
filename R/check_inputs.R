@@ -1,15 +1,17 @@
-# Modified by an AI assistant on 2026-09-16 using GPT-5. Updated the roxygen
-# documentation for the main input checks without changing their implementation.
+# Modified by an AI assistant on 2026-09-16 using GPT-5. Merged the duplicate
+# `check_inf_hist()` definitions into one validator without changing its public
+# arguments.
 #
 #' Check infection history matrix
 #'
 #' Checks that the infection history matrix is allowable given the birth dates and sampling times of the data
-#' @param antibody_data the data frame of titre data
+#' @param antibody_data the data frame of antibody data
 #' @param possible_exposure_times vector of times at which individuals could be exposed e.g., `seq(1968,2015,by=1)`
 #' @param verbose if TRUE, prints warning messages
 #' @param inf_hist the infection history matrix, with nrows = number indivs and ncols = length(possible_exposure_times)
 #' @return a single boolean value, FALSE if the check passes, otherwise throws an error
 #' @family check_inputs
+#' @examples
 #' data(example_antibody_data)
 #' data(example_inf_hist)
 #' times <- 1968:2015
@@ -39,7 +41,7 @@ check_inf_hist <- function(antibody_data, possible_exposure_times, inf_hist,verb
         message(cat("Which infections before birth: ", which(before_born), "\n"))
         message(cat("Which infections after last sample: ", which(after_sample), "\n"))
       }
-        stop("Error in inf hist - infections occuring before individuals are born of after their latest sample\n")
+        stop("Error in infection history: infections occur before individuals are born or after their latest sample.\n")
     }
     return(any(res))
 }
@@ -170,7 +172,8 @@ check_data <- function(data,verbose=FALSE) {
 #' @family check_inputs
 #' @examples
 #' data(example_antibody_data)
-#' check_data(example_antibody_data)
+#' demographics <- unique(example_antibody_data[, c("individual", "birth")])
+#' check_demographics(demographics)
 #' @export
 check_demographics <- function(demographics, par_tab=NULL, verbose=FALSE) {
   ## Check that all columns are present
@@ -235,22 +238,4 @@ check_attack_rates <- function(attack_rates, possible_exposure_times) {
 #' @export
 check_proposals <- function(version, mvr_pars) {
     if (all(version == 1, !is.null(mvr_pars))) warning("The multivariate proposal can be inefficient for version 1.")
-}
-
-#' Check if the starting infection history table and titre data are consistent
-#' @param antibody_data the data frame of titer data
-#' @param possible_exposure_times the vector of times corresponding to entries in DOB
-#' @param inf_hist the starting infection history matrix
-#' @param verbose if TRUE, prints warning messages
-#' @return nothing, prints a warning
-#' @family check_inputs
-#' @export
-check_inf_hist <- function(antibody_data,possible_exposure_times, inf_hist,verbose=FALSE){
-    DOBs <- create_age_mask(antibody_data %>% select(individual, birth) %>% distinct() %>% pull(birth),
-                            possible_exposure_times)
-    correct_dob <- rep(0,length(DOBs))
-    for(i in seq_along(DOBs)){
-        if(DOBs[i] > 1 & any(inf_hist[i,1:(DOBs[i]-1)] > 0)) correct_dob[i] <- 1
-    }
-    return(correct_dob)
 }

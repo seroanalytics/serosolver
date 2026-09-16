@@ -27,7 +27,7 @@
 #' colnames(known_inf_hist) <- possible_exposure_times
 #'
 #' ## Need to get population_group specific n_alive and adjust to correct time frame 
-#' n_alive_group <- get_n_alive_group(example_antibody_data, possible_exposure_times,melt_dat = TRUE)
+#' n_alive_group <- get_n_alive_group(example_antibody_data, possible_exposure_times,melt_data = TRUE)
 #' n_alive_group$j <- possible_exposure_times[n_alive_group$j]
 #' results <- calculate_infection_history_statistics(example_inf_chain, 0, possible_exposure_times,
 #'                                                   n_alive=n_alive_group, known_ar=known_ar,

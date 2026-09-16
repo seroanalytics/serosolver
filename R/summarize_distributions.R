@@ -38,7 +38,8 @@ generate_quantiles <- function(x, sig_f = 3, qs = c(0.025, 0.5, 0.975), as_text 
 #' Get total number of infections
 #'
 #' Finds the total number of infections for each iteration of an MCMC chain
-#' @inheritParams plot_infection_history_chains_time
+#' @param inf_chain data table containing the infection-history chain, with `samp_no`, `chain_no`, `i`, `j`, and `x` columns.
+#' @param pad_chain if TRUE, adds zero-valued entries for infection events that are absent from the sparse chain.
 #' @return a data table with `chain_no`, `samp_no`, and the total number of infections for each MCMC sample
 #' @examples
 #' \dontrun{

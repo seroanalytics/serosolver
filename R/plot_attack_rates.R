@@ -16,7 +16,7 @@
 #' @param prior_pars if not NULL, a list of parameters for the attack rate prior, giving the assumed prior_version along with infection_model_prior_shape1 and infection_model_prior_shape2
 #' @param plot_den if TRUE, produces a violin plot of attack rates rather than pointrange
 #' @param plot_ribbon if TRUE, plots a ribbon over time for the attack rate estimates, otherwise plots a pointrange plot
-#' @param true_ar data frame of true attack rates, with first column `time` matching `possible_exposure_times`, and second column `AR` giving the attack rate. Column names: population_group, time, AR
+#' @param true_ar data frame of true attack rates with columns `population_group`, `time`, and `AR`; `time` should match `possible_exposure_times`
 #' @param by_group if TRUE, facets the plot by population_group ID
 #' @param group_subset if not NULL, plots only this subset of groups eg. 1:5
 #' @param plot_residuals if TRUE, plots the residuals between inferred and true attack rate

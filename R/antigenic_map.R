@@ -93,14 +93,14 @@ melt_antigenic_coords <- function(anti.map.in) { # anti.map.in can be vector or 
 
 #' Generate antigenic map, flexible
 #'
-#' Fits a smoothing spline through a set of antigenic coordinates, and uses this to predict antigenic coordinates for all potential infection time points. This version is more flexible than \code{\link{generate_antigenic_map}}, and allows the user to specify "clusters" to assume that strains circulating in a given period are all identical, rather than on a continuous path through space as a function of time.
+#' Fits a smoothing spline through a set of antigenic coordinates, and uses this to predict antigenic coordinates for all potential infection time points. It allows the user to specify "clusters" to assume that strains circulating in a given period are all identical, rather than on a continuous path through space as a function of time.
 #' @param antigenic_distances a data frame of antigenic coordinates, with columns labelled X, Y and Strain for x coord, y coord and Strain label respectively. "Strain" should be a single number giving the year of circulation of that strain. See \code{\link{example_antigenic_map}}
-#' @param buckets = 1 the number of epochs per year. 1 means that each year has 1 strain; 12 means that each year has 12 strains (monthly resolution)
-#' @param clusters = NULL a data frame of cluster labels, indicating which cluster each circulation year belongs to. Note that each row (year) gets repeated by the number of buckets. Column names "year" and "cluster_used"
-#' @param use_clusters = FALSE if TRUE, uses the clusters data frame above, otherwise just returns as normal
-#' @param spar = 0.3 to be passed to smooth.spline
-#' @param year_min = 1968 first year in the antigenic map (usually 1968)
-#' @param year_max = 2016 last year in the antigenic map
+#' @param buckets the number of epochs per year. 1 means that each year has 1 strain; 12 means that each year has 12 strains (monthly resolution). Defaults to 1.
+#' @param clusters optional data frame of cluster labels, indicating which cluster each circulation year belongs to. Each row (year) is repeated by the number of buckets. Column names should be `year` and `cluster_used`.
+#' @param use_clusters if TRUE, uses the clusters data frame; otherwise, returns the usual fitted map. Defaults to FALSE.
+#' @param spar smoothing parameter passed to `smooth.spline`. Defaults to 0.3.
+#' @param year_min first year in the antigenic map. Defaults to 1968.
+#' @param year_max last year in the antigenic map. Defaults to 2016.
 #' @return a fitted antigenic map
 #' @family antigenic_maps
 #' @examples
@@ -119,7 +119,6 @@ melt_antigenic_coords <- function(anti.map.in) { # anti.map.in can be vector or 
 #'                                                 clusters=clusters,use_clusters=TRUE,
 #'                                                 year_min=1968, year_max=2010,spar=0.5)
 #' }
-#' @seealso \code{\link{generate_antigenic_map}}
 #' @export
 generate_antigenic_map_flexible <- function(antigenic_distances, buckets = 1, clusters = NULL,
                                             use_clusters = FALSE, spar = 0.3, year_min = 1968, year_max = 2016) {

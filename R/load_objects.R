@@ -31,7 +31,7 @@ load_start_tab <- function(location = getwd()) {
 
 #' Load serological antibody data from CSV file
 #'
-#' Searches the specified working directory for a csv file with "antibody_data.csv" or "titer_dat.csv" in the name and reads in the first file found as a data frame.
+#' Searches the specified working directory for a csv file with "antibody_data.csv" or "titre_dat.csv" in the name and reads in the first file found as a data frame.
 #' @inheritParams load_start_tab
 #' @return A data frame with antibody data, or `NULL` if no matching file is found.
 #' @family load_data_functions
@@ -164,8 +164,11 @@ load_theta_chains <- function(location = getwd(), par_tab = NULL, estimated_only
 #' Load MCMC chains from CSV files for infection histories
 #'
 #' Searches the given working directory for MCMC outputs from \code{\link{serosolver}} ending "infection_histories.csv", loads these in, subsets for burn in and thinning, and formats as both lists and a combined data table.
-#' @inheritParams load_theta_chains
+#' @param location character string giving the directory containing the chain files. Defaults to the current working directory.
+#' @param thin integer; keeps every `thin`th saved MCMC sample. Defaults to 1.
+#' @param burnin integer; discards samples with `samp_no <= burnin`. Defaults to 0.
 #' @param chain_subset if not NULL, a vector of indices to only load and store a subset of the chains detected. For example, `chain_subset = 1:3` processes only the first three detected files.
+#' @param verbose logical; whether to print progress messages.
 #' @return A list with two entries: `list`, containing each infection-history chain separately, and `chain`, containing the combined chains with a `chain_no` column. These are data tables rather than `coda` objects.
 #' @family load_data_functions
 #' @seealso [load_mcmc_chains()], [load_start_tab()], [plot_infection_histories()]
