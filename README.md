@@ -170,6 +170,7 @@ output$plot_fits_cross_sectional
 
 AI assistance was used during development of this package for documentation
 drafting, repository audits, code review, and selected implementation edits.
+Most of this assistance was provided using OpenAI's GPT-5 model.
 The package author is responsible for reviewing and approving all changes.
 The core of `serosolver` remains the same as the published version; new
 advanced features were developed and implemented manually, with some
