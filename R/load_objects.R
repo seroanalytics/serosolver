@@ -1,3 +1,6 @@
+# Modified by an AI assistant on 2026-09-16 using GPT-5. Clarified the roxygen
+# documentation for the MCMC chain-loading functions without changing their implementations.
+
 #' Load a starting parameter table from file
 #'
 #' Searches the specified working directory for a file matching "start_tab.csv" and reads in the first matching file as a data frame. This is typically used to initialize MCMC parameter values.
@@ -83,14 +86,14 @@ load_antigenic_map <- function(location = getwd()) {
 #' Load MCMC chains from CSV files for antibody kinetics parameters (theta)
 #'
 #' Searches the given working directory for MCMC outputs from \code{\link{serosolver}} matching "_chain.csv", reads these in, subsets for burn in and thinning, and formats as both lists and a combined data frame.
-#' @param location Character string path to the directory to search. Defaults to `getwd()`.
-#' @param par_tab Data frame; optional parameter table for filtering. Defaults to `NULL`.
-#' @param estimated_only if TRUE, only returns free model parameters (par_tab$fixed == 0) if par_tab specified
-#' @param thin Integer; thinning interval to apply to the MCMC samples. Defaults to `1` (no thinning).
-#' @param burnin Integer; number of initial samples to discard. Defaults to `0`.
-#' @param convert_mcmc Logical; whether to convert output to `coda::mcmc.list`. Defaults to `TRUE`.
-#' @param verbose Logical; whether to print progress messages
-#' @return a list with a) a list of each chain separately; b) a combined data frame, indexing each iteration by which chain it comes from
+#' @param location Character string path to the directory containing the chain files. Defaults to `getwd()`.
+#' @param par_tab Data frame; optional model control table used to select estimated parameters. Defaults to `NULL`.
+#' @param estimated_only if TRUE and `par_tab` is supplied, only returns parameters with `par_tab$fixed == 0`.
+#' @param thin Integer; keeps every `thin`th saved MCMC sample. Defaults to `1` (no thinning).
+#' @param burnin Integer; discards samples with `samp_no <= burnin`. Defaults to `0`.
+#' @param convert_mcmc Logical; if TRUE, also converts the chains to `coda::mcmc` or `coda::mcmc.list` objects. Defaults to `TRUE`.
+#' @param verbose Logical; whether to print progress messages.
+#' @return A list with two entries: `list`, containing the chains separately, and `chain`, containing the combined chains with a `chain_no` column. If `convert_mcmc = TRUE`, these entries are converted to `coda::mcmc.list` and `coda::mcmc` objects.
 #' @family load_data_functions
 #' @examples
 #' \dontrun{load_theta_chains(location="mcmc_chains", par_tab=par_tab, estimated_only=TRUE,thin=10,burnin=5000,convert_mcmc=TRUE)}
@@ -161,9 +164,12 @@ load_theta_chains <- function(location = getwd(), par_tab = NULL, estimated_only
 #' Load MCMC chains from CSV files for infection histories
 #'
 #' Searches the given working directory for MCMC outputs from \code{\link{serosolver}} ending "infection_histories.csv", loads these in, subsets for burn in and thinning, and formats as both lists and a combined data table.
-#' @inheritParams load_theta_chains
-#' @param chain_subset if not NULL, a vector of indices to only load and store a subset of the chains detected. eg. chain_subset = 1:3 means that only the first 3 detected files will be processed.
-#' @return a list with a) a list of each chain as a data table separately; b) a combined data table, indexing each iteration by which chain it comes from
+#' @param location Character string path to the directory containing the chain files. Defaults to `getwd()`.
+#' @param thin Integer; keeps every `thin`th saved MCMC sample. Defaults to `1` (no thinning).
+#' @param burnin Integer; discards samples with `samp_no <= burnin`. Defaults to `0`.
+#' @param verbose Logical; whether to print progress messages.
+#' @param chain_subset if not NULL, a vector of indices to only load and store a subset of the chains detected. For example, `chain_subset = 1:3` processes only the first three detected files.
+#' @return A list with two entries: `list`, containing each infection-history chain separately, and `chain`, containing the combined chains with a `chain_no` column. These are data tables rather than `coda` objects.
 #' @family load_data_functions
 #' @seealso [load_mcmc_chains()], [load_start_tab()], [plot_infection_histories()]
 #' @examples
@@ -205,9 +211,11 @@ load_infection_chains <- function(location = getwd(), thin = 1, burnin = 0, chai
 
 #' Load MCMC chains for the antibody kinetics parameters and infection histories from CSV outputs
 #'
-#' Reads in all MCMC chains for theta and infection histories from the specified directory matcing files ending "_chain.csv", adding in the total number of infections
+#' Reads in all MCMC chains for theta and infection histories from the specified directory matching files ending "_chain.csv", adding in the total number of infections.
 #' @inheritParams load_theta_chains
-#' @return a list of the concatenated and individual chains (4 elements, either data frames of coda::mcmc objects)
+#' @param estimated_only if TRUE, only returns free model parameters (`par_tab$fixed == 0`) when `par_tab` is supplied. Defaults to `FALSE` for this wrapper.
+#' @param convert_mcmc if TRUE, converts the returned parameter chains to `coda::mcmc` objects. Defaults to `FALSE`.
+#' @return A list with four entries: `theta_chain` and `inf_chain` contain the combined parameter and infection-history chains; `theta_list_chains` and `inf_list_chains` contain the corresponding chains separately. If `convert_mcmc = TRUE`, the parameter chains are converted to `coda::mcmc` objects; the infection-history chains remain data tables.
 #' @family load_data_functions
 #' @examples
 #' \dontrun{load_mcmc_chains(par_tab=par_tab, estimated_only=TRUE,thin=10,burnin=5000,convert_mcmc=TRUE)}
