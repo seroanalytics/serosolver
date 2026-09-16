@@ -1,3 +1,6 @@
+// Modified by an AI assistant on 2026-09-16 using GPT-5. Updated Rcpp export
+// metadata only; no helper implementation code was changed.
+
 #include "helpers.h"
 
 //' Takes a subset of a Nullable NumericVector, but only if it isn't NULL
@@ -86,9 +89,8 @@ NumericMatrix transform_parameters_cpp(NumericVector pars, List scale_table,
   return theta;
 }
 
-//' @export
  // [[Rcpp::export]]
- NumericVector get_starting_antibody_levels(const int n_measurements, 
+ NumericVector get_starting_antibody_levels(const int n_measurements,
                              const double min_measurement, 
                              const Nullable<NumericVector> &starting_antibody_levels = R_NilValue) {
    if(starting_antibody_levels.isNotNull()){
@@ -106,7 +108,6 @@ NumericMatrix transform_parameters_cpp(NumericVector pars, List scale_table,
 //' @param liks NumericVector of likelihoods
 //' @param indices IntegerVector of indices of same length as liks, where the max value of this should be the same as n_indivs - 1
 //' @param n_indivs int, number of individuals to generate bucketed likelihoods for
-//' @export
 //[[Rcpp::export]]
 NumericVector sum_likelihoods(NumericVector liks, IntegerVector indices, int n_indivs){
   NumericVector results(n_indivs);
@@ -144,7 +145,6 @@ NumericVector create_cross_reactivity_vector(NumericVector x, double cr_gradient
 //' @param a the vector to be bucketed
 //' @param buckets the vector of bucket sizes to sum a over
 //' @return the vector of summed a
-//' @export
 //[[Rcpp::export]]
 NumericVector sum_buckets(NumericVector a, NumericVector buckets){
   int buckets_size = buckets.size();
@@ -163,7 +163,6 @@ NumericVector sum_buckets(NumericVector a, NumericVector buckets){
 
 //' Count infections by group and time
 //'
-//' @export
 //[[Rcpp::export]]
 IntegerMatrix sum_infections_by_group(IntegerMatrix inf_hist, NumericVector group_ids_vec, int n_groups, bool timevarying_groups){
   int n_times = inf_hist.ncol();
@@ -196,9 +195,8 @@ IntegerMatrix sum_infections_by_group(IntegerMatrix inf_hist, NumericVector grou
 //' @param start_index_in_data int the first index of to_add and predicted_antibody_levels to combine
 //' @param end_index_in_data int the end index of to_add and predicted_antibody_levels to combine
 //' @return nothing
-//' @export
 //[[Rcpp::export]]
-void add_measurement_shifts(NumericVector &predicted_antibody_levels, 
+void add_measurement_shifts(NumericVector &predicted_antibody_levels,
 			    const NumericVector &to_add,
 			    const int &start_index_in_data,
 			    const int &end_index_in_data

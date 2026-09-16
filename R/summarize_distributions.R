@@ -8,7 +8,6 @@
 #' @examples
 #' x <- runif(1000)
 #' y <- estimate_mode(x)
-#' @export
 estimate_mode <- function(x) {
   d <- density(x)
   d$x[which.max(d$y)]

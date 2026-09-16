@@ -10,7 +10,6 @@
 #' @param sample_mask the sample mask vector giving the last possible infection-time index for each individual
 #' @return a single log probability for the infection histories
 #' @family priors
-#' @export
 calc_phi_probs <- function(phis, infection_history, age_mask, sample_mask) {
   lik <- 0
   for (i in 1:ncol(infection_history)) {
@@ -27,7 +26,6 @@ calc_phi_probs <- function(phis, infection_history, age_mask, sample_mask) {
 #' @inheritParams calc_phi_probs
 #' @return a vector of log probabilities, one for each individual
 #' @family priors
-#' @export
 calc_phi_probs_indiv <- function(phis, infection_history, age_mask, sample_mask) {
   lik <- numeric(nrow(infection_history))
   for (i in 1:ncol(infection_history)) {

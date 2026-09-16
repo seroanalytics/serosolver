@@ -9,7 +9,6 @@
 #' @param age_mask the age mask, giving the first index of the infection_history matrix that each individual can be exposed to. One entry per individual
 #' @return the log prior contribution for each individual
 #' @family priors
-#' @export
 infection_history_prior <- function(pars, infection_history, age_mask) {
   N <- ncol(infection_history) - age_mask + 1
   a <- pars["infection_model_prior_shape1"]
@@ -30,7 +29,6 @@ infection_history_prior <- function(pars, infection_history, age_mask) {
 #' @param v second shape parameter of the Beta distribution
 #' @return the beta binomial probability
 #' @family priors
-#' @export
 density_beta_binom <- function(x, N, u, v) {
   (beta(x + u, N - x + v) / beta(u, v)) * choose(N, x)
 }
@@ -44,7 +42,6 @@ density_beta_binom <- function(x, N, u, v) {
 #' @param v second shape parameter of the Beta distribution
 #' @return the beta-binomial prior term
 #' @family priors
-#' @export
 dbb_prior <- function(x, N, u, v) {
   (beta(x + u, N - x + v) / beta(u, v))
 }
@@ -69,7 +66,6 @@ db <- function(x, a, b) {
 #' @param infection_model_prior_shape2 shape2 parameter for the Beta distribution
 #' @return the total log prior for the infection history
 #' @family priors
-#' @export
 inf_mat_prior <- function(infection_history, age_mask, infection_model_prior_shape1, infection_model_prior_shape2) {
   n_alive <- sapply(1:ncol(infection_history), function(x) length(age_mask[age_mask <= x]))
   lk <- 0

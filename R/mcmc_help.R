@@ -28,7 +28,6 @@ generate_start_tab <- function(par_tab){
 #' @param target_acceptance_rate_theta the desired acceptance rate
 #' @param pcur the current acceptance rate
 #' @return the scaled step size
-#' @export
 #' @family mcmc
 #' @useDynLib serosolver
 scaletuning <- function(step, target_acceptance_rate_theta, pcur) {
@@ -49,7 +48,6 @@ scaletuning <- function(step, target_acceptance_rate_theta, pcur) {
 #' @param target_acceptance_rate_theta the desired acceptance rate
 #' @param pcur the current acceptance rate
 #' @return the scaled step size
-#' @export
 #' @family mcmc
 #' @useDynLib serosolver
 scaletuning_alt <- function(step, target_acceptance_rate_theta, pcur) {
@@ -75,7 +73,6 @@ scaletuning_alt <- function(step, target_acceptance_rate_theta, pcur) {
 #' @param N_adapt the number of adaptation iterations
 #' @return the updated step-size multiplier
 #' @family mcmc
-#' @export
 rm_scale <- function(step_scale, mc, target_acceptance_rate_theta, log_prob, N_adapt) {
   dd <- exp(log_prob)
   if (dd < -30) {
@@ -291,7 +288,6 @@ save_infection_history_to_disk <- function(infection_history, file, samp_no, app
 #' @param j_vec optional vector of infection-time indices to expand the infection history chain for
 #' @return a data table with zero entries added for missing infection events and one column for each infection-time index
 #' @family mcmc
-#' @export
 expand_summary_inf_chain <- function(inf_chain, j_vec = NULL) {
   if (is.null(j_vec)) j_vec <- 1:max(inf_chain$j)
   full_inf_chain <- data.table::CJ(i = min(inf_chain$i):max(inf_chain$i), j = j_vec, samp_no = sort(unique(inf_chain$samp_no)),chain_no=sort(unique(inf_chain$chain_no)))

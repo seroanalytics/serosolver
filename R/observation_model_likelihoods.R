@@ -10,7 +10,6 @@
 #' @param expected_indices the indices of the measurement_shifts vector that each predicted antibody level needs adding to it
 #' @param measurement_shifts the vector of measurement shifts for each cluster to add to the predicted antibody levels
 #' @return a vector of log-likelihood contributions for each observation
-#' @export
 r_likelihood <- function(expected, data, theta, expected_indices = NULL, measurement_shifts = NULL) {
   if (!is.null(expected_indices) & !is.null(measurement_shifts)) {
     expected <- expected + measurement_shifts[expected_indices]
@@ -39,7 +38,6 @@ r_likelihood <- function(expected, data, theta, expected_indices = NULL, measure
 #' @param expected_indices the indices of the measurement_shifts vector that each predicted antibody levels needs adding to it
 #' @param measurement_shifts the vector of measurement shifts for each cluster to add to the predicted antibody levels
 #' @return a vector of log-likelihood contributions for each observation
-#' @export
 r_likelihood_continuous <- function(expected, data, theta, expected_indices = NULL, measurement_shifts = NULL) {
   if (!is.null(expected_indices) & !is.null(measurement_shifts)) {
     expected <- expected + measurement_shifts[expected_indices]
@@ -65,7 +63,6 @@ r_likelihood_continuous <- function(expected, data, theta, expected_indices = NU
 #' @param pars vector of parameters, including rho_mean and rho_sd for the normal distribution
 #' @return a single log prior probability
 #' @family priors
-#' @export
 prob_shifts <- function(rhos, pars) {
   rho_mean <- pars["rho_mean"]
   rho_sd <- pars["rho_sd"]
@@ -79,7 +76,6 @@ prob_shifts <- function(rhos, pars) {
 #' @param par_tab the parameter table as in \code{\link{create_posterior_func}}
 #' @return a function to calculate the log prior probability of the measurement shifts
 #' @family priors
-#' @export
 create_prob_shifts <- function(par_tab) {
   par_names <- par_tab$names
   rho_indices <- which(par_tab$type == 3)

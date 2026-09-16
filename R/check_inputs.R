@@ -235,7 +235,6 @@ check_attack_rates <- function(attack_rates, possible_exposure_times) {
 #' @param mvr_pars Leave NULL to use univariate proposals. Otherwise, a list of parameters if using a multivariate proposal. Must contain an initial covariance matrix, weighting for adapting cov matrix, and an initial scaling parameter (0-1)
 #' @return nothing at the moment
 #' @family check_inputs
-#' @export
 check_proposals <- function(version, mvr_pars) {
     if (all(version == 1, !is.null(mvr_pars))) warning("The multivariate proposal can be inefficient for version 1.")
 }

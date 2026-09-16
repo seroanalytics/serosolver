@@ -1,3 +1,6 @@
+// Modified by an AI assistant on 2026-09-16 using GPT-5. Updated Rcpp export
+// metadata only; no likelihood implementation code was changed.
+
 #include "likelihood_funcs.h"
 
 #include <iostream>
@@ -9,7 +12,6 @@
 //' @param shape1 double, shape1 (alpha) parameter for beta distribution prior
 //' @param shape2 double, shape2 (beta) parameter for beta distribution prior
 //' @return a single prior probability
-//' @export
 //' @family inf_mat_prior
 // [[Rcpp::export]]
 double inf_mat_prior_cpp(const IntegerMatrix& infection_history, const IntegerVector& n_alive, double shape1, double shape2){
@@ -32,7 +34,6 @@ double inf_mat_prior_cpp(const IntegerMatrix& infection_history, const IntegerVe
 //' @param shape1s NumericVector, shape1 (alpha) parameters for beta distribution prior, one for each time unit
 //' @param shape2s NumericVector, shape2 (beta) parameters for beta distribution prior, one for each time unit
 //' @return a single prior probability
-//' @export
 //' @family inf_mat_prior
 // [[Rcpp::export]]
 double inf_mat_prior_cpp_vector(const IntegerMatrix& infection_history, const IntegerVector& n_alive, 
@@ -58,7 +59,6 @@ double inf_mat_prior_cpp_vector(const IntegerMatrix& infection_history, const In
 //' @param shape1 NumericVector, shape1 (alpha) parameters for beta distribution prior, one entry for each unique group
 //' @param shape2 NumericVector, shape2 (beta) parameters for beta distribution prior, one entry for each unique group
 //' @return a single prior probability
-//' @export
 //' @family inf_mat_prior
 // [[Rcpp::export]]
 double inf_mat_prior_group_cpp(const IntegerMatrix& n_infections, const IntegerMatrix& n_alive, const double shape1,  const double shape2){
@@ -86,7 +86,6 @@ double inf_mat_prior_group_cpp(const IntegerMatrix& n_infections, const IntegerM
 //' @param shape1s NumericVector, shape1 (alpha) parameters for beta distribution prior, one for each time unit
 //' @param shape2s NumericVector, shape2 (beta) parameters for beta distribution prior, one for each time unit
 //' @return a single prior probability
-//' @export
 //' @family inf_mat_prior
 // [[Rcpp::export]]
 double inf_mat_prior_group_cpp_vector(const IntegerMatrix& n_infections, const IntegerMatrix& n_alive, 
@@ -111,7 +110,6 @@ double inf_mat_prior_group_cpp_vector(const IntegerMatrix& n_infections, const I
 //' @param shape1 double, shape1 (alpha) parameter for beta distribution prior
 //' @param shape2 double, shape2 (beta) parameter for beta distribution prior
 //' @return a single prior probability
-//' @export
 //' @family inf_mat_prior
 // [[Rcpp::export]]
 double inf_mat_prior_total_group_cpp(const IntegerVector& n_infections_group, const IntegerVector& n_alive_group, double shape1, double shape2){
@@ -133,7 +131,6 @@ double inf_mat_prior_total_group_cpp(const IntegerVector& n_infections_group, co
 //' @param predicted_antibody_levels NumericVector, the vector of predicted log antibody levels
 //' @param a vector of same length as the input data giving the probability of observing each observation given the predictions
 //' @return a likelihood for each observed antibody level
-//' @export
 //' @family likelihood_functions
 // [[Rcpp::export(rng = false)]]
 NumericVector likelihood_func_fast(const NumericVector &theta, const NumericVector &obs, const NumericVector &predicted_antibody_levels){
@@ -169,7 +166,6 @@ NumericVector likelihood_func_fast(const NumericVector &theta, const NumericVect
 //' @param predicted_antibody_levels NumericVector, the vector of predicted log antibody levels
 //' @param a vector of same length as the input data giving the probability of observing each observation given the predictions
 //' @return a likelihood for each observed antibody level
-//' @export
 //' @family likelihood_functions
 // [[Rcpp::export(rng = false)]]
 NumericVector likelihood_func_fast_continuous(const NumericVector &theta, const NumericVector &obs, const NumericVector &predicted_antibody_levels){
@@ -206,7 +202,6 @@ NumericVector likelihood_func_fast_continuous(const NumericVector &theta, const 
 //' @param predicted_antibody_levels NumericVector, the vector of predicted log antibody levels
 //' @param a vector of same length as the input data giving the probability of observing each observation given the predictions
 //' @return a likelihood for each observed antibody level
-//' @export
 //' @family likelihood_functions
 // [[Rcpp::export(rng = false)]]
 NumericVector likelihood_func_fast_continuous_fp(const NumericVector &theta, const NumericVector &obs, const NumericVector &predicted_antibody_levels){

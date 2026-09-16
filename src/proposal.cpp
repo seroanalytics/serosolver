@@ -1,3 +1,6 @@
+// Modified by an AI assistant on 2026-09-16 using GPT-5. Updated Rcpp export
+// metadata only; no proposal implementation code was changed.
+
 #include <RcppArmadilloExtensions/sample.h>
 #include "antibody_models_individual.h"
 #include "likelihood_funcs.h"
@@ -18,7 +21,6 @@
 //' @param shape2 double, shape2 (beta) parameter of the beta binomial
 //' @param rand_ns NumericVector, a vector of random numbers for each sampled individual. The idea is to pre-specify whether an individual experiences an add/remove step or a swap step to avoid random number sampling in C++
 //' @return a matrix of 1s and 0s corresponding to the infection histories for all individuals
-//' @export
 //' @family infection_history_proposal
 // [[Rcpp::export]]
 arma::mat inf_hist_prop_prior_v3(arma::mat infection_history_mat, 
@@ -158,7 +160,6 @@ arma::mat inf_hist_prop_prior_v3(arma::mat infection_history_mat,
 //' @param solve_likelihood bool, if FALSE does not solve likelihood when calculating acceptance probability
 //' @param data_type int, defaults to 1 for discretized, bounded data. Set to 2 for continuous, bounded data
 //' @return an R list with 6 entries: 1) the vector replacing likelihoods_pre_proposal, corresponding to the new likelihoods per individual; 2) the matrix of 1s and 0s corresponding to the new infection histories for all individuals; 3-6) the updated entries for proposal_iter, accepted_iter, proposal_swap and accepted_swap.
-//' @export
 //' @family infection_history_proposal
 // [[Rcpp::export]]
 List inf_hist_prop_prior_v2_and_v4(

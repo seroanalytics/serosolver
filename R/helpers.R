@@ -32,7 +32,6 @@ get_n_alive <- function(antibody_data, times) {
 #' @examples
 #' data(example_antibody_data)
 #' get_DOBs(antibody_data)
-#' @export
 get_DOBs <- function(antibody_data){
     DOBs <- unique(antibody_data[,c("individual","birth")])
 }
@@ -207,26 +206,6 @@ create_sample_mask <- function(antibody_data, possible_exposure_times) {
     max(which(max(sample_times) >= possible_exposure_times))
   })
   return(sample_mask)
-}
-
-
-#' Expands default MCMC saved inf_chain
-#'
-#' The MCMC function saves sparse matrix summaries of the infection history chain to
-#' save space and run time. This function returns the expanded infection history chain,
-#' as in the original version of the code. Returned value is a data table with leftmost columns
-#' giving sample number and individual, with columns expanded to the right for each infection
-#' period.
-#' @param inf_chain a data table with the MCMC saved infection history chain
-#' @return the MCMC saved infection history expanded with infection times as columns
-expand_summary_inf_chain <- function(inf_chain) {
-  full_inf_chain <- data.table::CJ(i = 1:max(inf_chain$i), j = 1:max(inf_chain$j), samp_no = min(inf_chain$samp_no):max(inf_chain$samp_no))
-  inf_chain <- data.table::data.table(apply(inf_chain, 2, as.numeric))
-  summary_with_non_infections <- merge(inf_chain, full_inf_chain, by = c("samp_no", "j", "i"), all = TRUE)
-  summary_with_non_infections[is.na(summary_with_non_infections$x), "x"] <- 0
-  colnames(summary_with_non_infections) <- c("samp_no", "j", "individual", "x")
-  expanded_chain <- data.table::dcast(summary_with_non_infections, samp_no + individual ~ j, value.var = "x")
-  return(expanded_chain)
 }
 
 
@@ -449,7 +428,7 @@ describe_priors <- function() {
 #' @param x value to transform
 #' @param maxX upper bound of the transformed scale
 #' @return the transformed value between 0 and `maxX`
-logistic_transform <- function(x, maxX) {
+logistic_transform_bounded <- function(x, maxX) {
   return(maxX / (1 + exp(-x)))
 }
 #' Inverse bounded logistic transform
@@ -457,7 +436,7 @@ logistic_transform <- function(x, maxX) {
 #' @param p value on the bounded scale
 #' @param maxX upper bound of the bounded scale
 #' @return the value on the unbounded scale
-logit_transform <- function(p, maxX) {
+logit_transform_bounded <- function(p, maxX) {
   return(log(p / (maxX - p)))
 }
 
@@ -472,7 +451,6 @@ logit_transform <- function(p, maxX) {
 #' n_times <- 40
 #' data(example_par_tab)
 #' new_par_tab <- pad_infection_model_prior_parameters(example_par_tab, n_times)
-#' @export
 pad_infection_model_prior_parameters <- function(par_tab, n_times) {
   shape1_row <- par_tab[par_tab$names == "infection_model_prior_shape1", ]
   shape2_row <- par_tab[par_tab$names == "infection_model_prior_shape2", ]
@@ -690,7 +668,6 @@ pad_inf_chain <- function(inf_chain, pad_by_group=FALSE, times=NULL,indivs=NULL)
 #'
 #' When the serosolver function uses a parallel backend but is not closed correctly, this can confuse `dopar` if the function is called again. This function tidies the parallel backend and corrects the error.
 #' @return NULL
-#' @export
 unregister_dopar <- function() {
   env <- foreach:::.foreachGlobals
   rm(list=ls(name=env), pos=env)

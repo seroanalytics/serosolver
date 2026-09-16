@@ -1,3 +1,6 @@
+// Modified by an AI assistant on 2026-09-16 using GPT-5. Updated Rcpp export
+// metadata only; no model implementation code was changed.
+
 #include <cmath>
 #include "antibody_models_individual.h"
 #include "helpers.h"
@@ -21,7 +24,6 @@
 //' @param antigenic_distances NumericVector, the collapsed cross reactivity map giving euclidean antigenic distances, see \code{\link{create_cross_reactivity_vector}}
 //' @param boost_before_infection bool to indicate if calculated antibody level for that time should be before the infection has occurred, used to calculate antibody-mediated immunity
 //' @return NumericVector of predicted antibody levels for each entry in biomarker_id_indices
-//' @export
 //' @family antibody_models
 // [[Rcpp::export(rng = false)]]
 NumericVector antibody_model(const NumericMatrix theta, 

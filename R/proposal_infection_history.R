@@ -20,7 +20,6 @@
 #' age_mask <- create_age_mask(ages$birth, times)
 #' sample_mask <- create_sample_mask(example_antibody_data, times)
 #' new_inf_hist <- inf_hist_swap(example_inf_hist, age_mask,sample_mask, 1,3)[[1]]
-#' @export
 inf_hist_swap <- function(infection_history, inf_hist_masks, proposal_inf_hist_indiv_swap_ratio, proposal_inf_hist_distance, proposal_ratios=NULL) {
     use_ratios <- NULL
     if(!is.null(proposal_ratios)){
@@ -82,7 +81,6 @@ inf_hist_swap <- function(infection_history, inf_hist_masks, proposal_inf_hist_i
 #' phis <- runif(length(times))
 #' n_alive <- get_n_alive(example_antibody_data,times)
 #' new_inf_hist <- inf_hist_swap_phi(example_inf_hist, phis, age_mask,sample_mask, 1,3, n_alive)
-#' @export
 inf_hist_swap_phi <- function(infection_history, phis, age_mask, sample_mask, proposal_inf_hist_indiv_swap_ratio, proposal_inf_hist_distance, n_alive) {
   ## This first bit of code is the same as inf_hist_swap
   y1 <- sample(1:ncol(infection_history), 1)
@@ -178,7 +176,6 @@ inf_hist_swap_phi <- function(infection_history, phis, age_mask, sample_mask, pr
 #' rand_ns <- runif(n_indiv)
 #'
 #' new_inf_hist <- infection_history_symmetric(example_inf_hist, indivs,age_mask ,sample_mask, proposal_inf_hist_distances, n_infs, rand_ns, 0.5)
-#' @export
 infection_history_symmetric <- function(new_inf_hist, sampled_indivs, age_mask, sample_mask, proposal_inf_hist_distances, n_infs, rand_ns, proposal_inf_hist_indiv_swap_ratio = 0.5) {
   new_inf <- new_inf_hist
   ks <- rpois(length(sampled_indivs), n_infs)

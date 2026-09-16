@@ -281,7 +281,6 @@ simulate_data <- function(par_tab,
 #' @param indices optional integer vector selecting the shift to apply to each value of `y`
 #' @param data_type integer, currently accepting 1, 2, or 3. Set to 1 for discrete, bounded data; 2 for continuous, bounded data; or 3 for continuous data in which true negatives can produce false-positive measurements.
 #' @return A vector of noisy, bounded antibody measurements.
-#' @export
 #' @examples
 #' \dontrun{
 #' ## ... example in simulate_individual
