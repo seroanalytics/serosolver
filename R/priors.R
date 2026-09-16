@@ -50,6 +50,12 @@ dbb_prior <- function(x, N, u, v) {
 }
 
 #' Beta prior on an infection
+#'
+#' Calculates the Beta-density term used for an infection probability.
+#' @param x infection probability
+#' @param a first shape parameter of the Beta distribution
+#' @param b second shape parameter of the Beta distribution
+#' @return the density value
 db <- function(x, a, b) {
   x^(a - 1) * (1 - x^(b - 1)) / beta(a, b)
 }
@@ -231,10 +237,18 @@ find_beta_prior_with_mean <- function(desired_annual_mean, buckets) {
 }
 
 
+#' Calculate the first Beta shape parameter from a mode and certainty value
+#' @param mode1 desired mode
+#' @param k certainty value
+#' @return the first Beta shape parameter
 calc_a <- function(mode1, k) {
   mode1 * (k - 2) + 1
 }
 
+#' Calculate the second Beta shape parameter from a mode and certainty value
+#' @param mode1 desired mode
+#' @param k certainty value
+#' @return the second Beta shape parameter
 calc_b <- function(mode1, k) {
   (1 - mode1) * (k - 2) + 1
 }

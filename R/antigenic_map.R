@@ -1,6 +1,6 @@
-# Modified by an AI assistant on 2026-09-16 using GPT-5. Updated the roxygen
-# documentation for `setup_antigenic_map()` without changing its implementation.
-#
+# Modified by an AI assistant on 2026-09-16 using GPT-5. Completed the roxygen
+# documentation pass for the antigenic-map helpers without changing their implementations.
+
 #' Setup antigenic map for serosolver
 #'
 #' Cleans up an antigenic_map data frame based on provided inputs. Two checks are carried out. First, it will check if an antigenic map is provided, and if so, it will align its entries with possible_exposure_times. If no antigenic map is provided, it will create a dummy map where all pathogens have the same position on the map. Second, it will enumerate the antigenic map for each unique biomarker group, unless the antigenic map has already been enumerated.
@@ -49,17 +49,26 @@ setup_antigenic_map <- function(antigenic_map=NULL, possible_exposure_times=NULL
 
 
 
+#' Calculate Euclidean antigenic distance
+#'
+#' Calculates the Euclidean distance between two rows of an antigenic map.
+#' @param i1 index of the first map entry
+#' @param i2 index of the second map entry
+#' @param fit_data data frame containing `x_coord` and `y_coord`
+#' @return the Euclidean distance between the two map entries
+#' @family antigenic_maps
 #' @export
 euc_distance <- function(i1, i2, fit_data) {
   return(sqrt((fit_data[i1, "x_coord"] - fit_data[i2, "x_coord"])^2 + (fit_data[i1, "y_coord"] - fit_data[i2, "y_coord"])^2))
 }
 
 
-#' Create useable antigenic map
+#' Create usable antigenic map
 #'
 #' Creates an antigenic map from an input data frame that can be used to calculate cross reactivity. This will end up being an NxN matrix, where there are N strains circulating.
 #' @param anti.map.in can either be a 1D antigenic line to calculate distance from, or a two dimensional matrix with x and y coordinates on an antigenic map
-#' @return the euclidean antigenic distance between each pair of viruses in anti.map.in
+#' @return a matrix of Euclidean antigenic distances between each pair of entries in `anti.map.in`
+#' @family antigenic_maps
 #' @export
 melt_antigenic_coords <- function(anti.map.in) { # anti.map.in can be vector or matrix - rows give inf_times, columns give location
   # Calculate antigenic distances

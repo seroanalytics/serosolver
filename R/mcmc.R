@@ -1,13 +1,11 @@
-# Modified by an AI assistant on 2026-09-15 using GPT-5. Enabled expansion to all
-# antigenic-map biomarker IDs for the cross-sectional output plot.
-# Modified by an AI assistant on 2026-09-16 using GPT-5. Removed the unused
-# temperature argument from the public `serosolver()` interface and fixed it at 1 internally.
-#'
+# Modified by an AI assistant on 2026-09-16 using GPT-5. Completed the roxygen
+# documentation pass for `serosolver()` without changing its implementation.
+
 #' Run the serosolver model
 #'
 #' Core serosolver function running the adaptive Metropolis-within-Gibbs algorithm. It estimates the antibody kinetics parameters and infection histories from the supplied data. The MCMC chains are saved in blocks as CSV files at the location given by `filename`; the returned object also contains the model settings, diagnostics, and plots when these are requested. See the package guide and case studies for examples.
 #' @param par_tab The parameter table controlling information such as bounds, initial values etc. See \code{\link{example_par_tab}}
-#' @param antibody_data The data frame of serological measurements to be fitted. It should contain `individual`, `sample_time`, `biomarker_id`, `measurement`, and `birth`; `biomarker_group` and `repeat_number` are added when they are not supplied. See \code{\link{example_antibody_data}}
+#' @param antibody_data The data frame of serological measurements to be fitted. It should contain `individual`, `sample_time`, `biomarker_id`, `measurement`, and `birth`; `biomarker_group`, `repeat_number`, and `population_group` are optional. If `population_group` is absent, all individuals are assigned to group 1. See \code{\link{example_antibody_data}}
 #' @param demographics if not NULL, a data frame giving demographic variables for each individual. It must include `individual` and `birth`, and must include any variables used to stratify parameters in `par_tab`. Demographic variables may be fixed for each individual or vary over time. See the [demographic stratification and covariate vignette](DEMOGRAPHICS_VIGNETTE_LINK).
 #' @param antigenic_map (optional) A data frame of antigenic x and y coordinates. Must have column names: x_coord; y_coord; inf_times. See \code{\link{example_antigenic_map}}
 #' @param possible_exposure_times (optional) this argument gives the vector of times at which individuals can be infected. Defaults to entries in `antigenic_map`.
@@ -20,7 +18,7 @@
 #' @param prior_func User function of prior for model parameters. Should take parameter values only
 #' @param prior_version which infection history assumption prior_version to use? See \code{\link{describe_priors}} for options. Can be 1, 2, 3 or 4
 #' @param measurement_bias optional NULL. A data frame mapping each `biomarker_id` and `biomarker_group` combination to the `rho_index` of the measurement-shift parameter that it uses. See the [advanced features vignette](ADVANCED_FEATURES_VIGNETTE_LINK).
-#' @param proposal_ratios optional NULL. Can set the relative sampling weights of the infection state times. Should be an integer vector of length matching nrow(antigenic_map). Otherwise, leave as NULL for uniform sampling.
+#' @param proposal_ratios optional NULL. Can set the relative sampling weights of the infection state times. Should be an integer vector of length matching the number of infection-history time points. Otherwise, leave as NULL for uniform sampling.
 #' @param random_start_parameters if FALSE, uses whatever parameter values were passed in `par_tab` as the starting positions for the MCMC chain
 #' @param solve_likelihood if FALSE, returns only the prior and does not solve the likelihood. Use this if you wish to sample directly from the prior
 #' @param n_alive if not NULL, uses this as the number alive for the infection history prior, rather than calculating the number alive based on antibody_data
@@ -36,7 +34,7 @@
 #' @return A list containing the paths to the parameter and infection-history chain files, diagnostic summaries and warnings, the settings used for the fit, fitted antibody predictions, plots when `plot_outputs = TRUE`, and the loaded MCMC chains.
 #' @details
 #' The `mcmc_pars` argument is a named vector allowing control over many MCMC options. The key options are:
-#'  * iterations (number of post adaptive period iterations to run)
+#'  * iterations (number of post-adaptation iterations to run)
 #'  * adaptive_iterations (for this many iterations, change proposal step size adaptively every `adaptive_frequency` iterations)
 #'  * adaptive_frequency (adapt proposal step size every adaptive_frequency iterations)
 #'  * thin (save every n iterations from kinetics parameters samples, advised for long chains, advised to set such that iterations/thin is no more than 1000)

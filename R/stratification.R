@@ -196,7 +196,13 @@ get_demographic_groups <- function(par_tab, antibody_data, timevarying_demograph
   return(list(use_demographic_groups=use_demographic_groups, demographic_groups=demographic_groups,timevarying_demographics=use_timevarying_demographics))
 }
 
-#' Internal function -- merges antibody_data and demographics such that antibody_data has correct variables
+#' Merge antibody data and demographics
+#'
+#' Internal helper that merges demographic variables into `antibody_data`, using `sample_time` to align time-varying demographics.
+#' @param antibody_data antibody data frame
+#' @param demographics optional fixed or time-varying demographic data
+#' @param verbose if TRUE, prints warnings about overlapping columns
+#' @return the antibody data with demographic variables added
 align_antibody_demographic_dat <- function(antibody_data, demographics=NULL,verbose=FALSE){
   if(!is.null(demographics)){
     overlapping_colnames <- intersect(colnames(antibody_data),colnames(demographics))
@@ -214,8 +220,13 @@ align_antibody_demographic_dat <- function(antibody_data, demographics=NULL,verb
 }
 
 #' Align stratification levels for serosolver infection history and antibody kinetics models
-#' 
-#' 
+#'
+#' Internal helper that adds demographic and population-group indices used by the infection-history and antibody-kinetics models.
+#' @param antibody_data antibody data frame
+#' @param timevarying_demographics optional time-varying demographic data
+#' @param par_tab the parameter table containing requested stratifications
+#' @param use_demographic_groups optional demographic grouping variables
+#' @return a list containing updated data, group tables, and individual group indices
 add_stratifying_variables <- function(antibody_data, timevarying_demographics=NULL, par_tab, use_demographic_groups=NULL){
     # Any stratification of population attack rates?
   ## Pull out any parameters related to attack rates

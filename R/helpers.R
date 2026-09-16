@@ -1,3 +1,6 @@
+# Modified by an AI assistant on 2026-09-16 using GPT-5. Completed the remaining
+# roxygen documentation pass for helper functions without changing their implementations.
+
 #' Get number alive
 #'
 #' Given the antibody_data data frame, calculates the number that are alive (alive to be infected, that is) for each time in times
@@ -39,9 +42,11 @@ get_DOBs <- function(antibody_data){
 #' Given the antibody_data data frame with entries for location, calculates the number that are alive (alive to be infected, that is) for each time in times by location
 #' @param antibody_data the data frame of antibody data. See \code{\link{example_antibody_data}}
 #' @param times the vector of times to calculate number alive for
+#' @param demographics optional time-varying demographic data containing `individual`, `time`, and `population_group`
 #' @param melt_data if TRUE, returns a melted data frame. Returns a wide matrix otherwise.
-#' @return a matrix giving the number alive in each time point in each location
+#' @return a matrix giving the number alive in each time point and population group, or a long data frame with `population_group`, `j`, and `n_alive` when `melt_data = TRUE`
 #' @family get_summary
+#' @examples
 #' @examples
 #' data(example_antibody_data)
 #' data(example_antigenic_map)
@@ -104,6 +109,15 @@ get_n_alive_group <- function(antibody_data, times, demographics=NULL, melt_data
   n_alive
 }
 
+#' Create infection-history prior lookup table
+#'
+#' Pre-calculates beta-binomial log-prior values for each possible number of infections and exposure time.
+#' @param antibody_data the antibody data used to calculate the number alive at each exposure time
+#' @param possible_exposure_times the vector of possible exposure times
+#' @param infection_model_prior_shape1 first shape parameter of the Beta distribution
+#' @param beta1 second shape parameter of the Beta distribution
+#' @param n_alive optional number alive at each exposure time. If NULL, this is calculated from `antibody_data`.
+#' @return a matrix of beta-binomial log-prior values
 create_prior_lookup <- function(antibody_data, possible_exposure_times, infection_model_prior_shape1, beta1, n_alive=NULL){
     if(is.null(n_alive)){
         n_alive <- get_n_alive(antibody_data, possible_exposure_times)
@@ -121,6 +135,16 @@ create_prior_lookup <- function(antibody_data, possible_exposure_times, infectio
     lookup_tab
 }
 
+#' Create grouped infection-history prior lookup table
+#'
+#' Pre-calculates beta-binomial log-prior values for each population group, possible number of infections, and exposure time.
+#' @param antibody_data the antibody data used to calculate the number alive in each population group
+#' @param demographics optional time-varying demographic data used to calculate group-specific numbers alive
+#' @param possible_exposure_times the vector of possible exposure times
+#' @param infection_model_prior_shape1 first shape parameter of the Beta distribution
+#' @param beta1 second shape parameter of the Beta distribution
+#' @param n_alive optional matrix of numbers alive by population group and exposure time
+#' @return an array of beta-binomial log-prior values
 create_prior_lookup_groups <- function(antibody_data, demographics=NULL, possible_exposure_times, infection_model_prior_shape1, beta1, n_alive=NULL){
     if(is.null(n_alive)){
         n_alive <- get_n_alive_group(antibody_data, demographics, possible_exposure_times)
@@ -172,6 +196,7 @@ create_age_mask <- function(DOBs, possible_exposure_times) {
 #' @param possible_exposure_times the vector of times that individuals can be infected
 #' @return a vector giving the last index of possible_exposure_times that an individual can be infected
 #' @family create_masks
+#' @examples
 #' data(example_antibody_data)
 #' data(example_antigenic_map)
 #' times <- example_antigenic_map$inf_times
@@ -208,9 +233,9 @@ expand_summary_inf_chain <- function(inf_chain) {
 
 #' Best pars
 #'
-#' Given an MCMC chain, returns the set of best fitting parameters (MLE)
+#' Given an MCMC chain, returns the parameter values from the row with the highest posterior probability.
 #' @param chain the MCMC chain
-#' @return a name vector of the best parameters
+#' @return a named vector of parameter values from the maximum-posterior row
 #' @family mcmc_diagnostics
 #' @examples
 #' \dontrun{
@@ -240,7 +265,8 @@ get_best_pars <- function(chain) {
 #' \dontrun{
 #' mcmc_chains <- load_theta_chains()
 #' inf_chains <- load_infection_chains()
-#' best_pars <- get_best_draw(mcmc_chains$chain)
+#' inf_chains <- load_infection_chains()
+#' best_draw <- get_best_draw(mcmc_chains$chain, inf_chains$chain)
 #' }
 #' @export
 #' @useDynLib serosolver
@@ -273,9 +299,9 @@ get_best_draw <- function(chain, inf_chain, max_indivs=NULL,max_times=NULL) {
 #' Given an MCMC chain, returns the parameters at the specified index
 #' @param chain the MCMC chain
 #' @param samp_no the sample number
-#' @param index if not using `samp_no`, `index returns the desired row number`
+#' @param index if not using `samp_no`, the desired row number
 #' @param chain_no the chain number to subset
-#' @return a named vector of the best parameters
+#' @return a named vector of parameter values at the selected sample
 #' @family mcmc_diagnostics
 #' @examples
 #' \dontrun{
@@ -307,6 +333,8 @@ get_index_pars <- function(chain, samp_no=NULL,index=NULL,chain_no=NULL) {
 #' Prints to pdf, but turns dev off if fails
 #' @param expr expression to give plot
 #' @param filename filename to print to
+#' @param ... additional arguments passed to `pdf()`
+#' @param verbose if TRUE, prints the output filename
 #' @family safe_plot_saving
 to.pdf <- function(expr, filename, ..., verbose = TRUE) {
   if (verbose) {
@@ -322,6 +350,8 @@ to.pdf <- function(expr, filename, ..., verbose = TRUE) {
 #' Prints to png, but turns dev off if fails
 #' @param expr expression to give plot
 #' @param filename filename to print to
+#' @param ... additional arguments passed to `png()`
+#' @param verbose if TRUE, prints the output filename
 #' @family safe_plot_saving
 to.png <- function(expr, filename, ..., verbose = TRUE) {
   if (verbose) {
@@ -337,6 +367,8 @@ to.png <- function(expr, filename, ..., verbose = TRUE) {
 #' Prints to SVG, but turns dev off if fails
 #' @param expr expression to give plot
 #' @param filename filename to print to
+#' @param ... additional arguments passed to `svg()`
+#' @param verbose if TRUE, prints the output filename
 #' @family safe_plot_saving
 to.svg <- function(expr, filename, ..., verbose = TRUE) {
   if (verbose) {
@@ -380,16 +412,31 @@ protect_posterior <- function(f) {
 }
 
 #' Convert to unit scale
+#'
+#' Converts a value from a bounded scale to the 0--1 scale.
+#' @param x value to convert
+#' @param min lower bound of the original scale
+#' @param max upper bound of the original scale
+#' @return the value on the 0--1 scale
 toUnitScale <- function(x, min, max) {
   return((x - min) / (max - min))
 }
 
 #' Convert from unit scale to original scale
+#'
+#' Converts a value from the 0--1 scale to its original bounded scale.
+#' @param x value on the 0--1 scale
+#' @param min lower bound of the original scale
+#' @param max upper bound of the original scale
+#' @return the value on the original scale
 fromUnitScale <- function(x, min, max) {
   return(min + (max - min) * x)
 }
 
 #' Describe infection history priors
+#'
+#' Prints a short description of the available infection-history prior versions.
+#' @return `NULL`, invisibly
 #' @export
 describe_priors <- function() {
   message("Which version to use in serosolver? The following text describes the proposal step for updating infection histories.")
@@ -399,9 +446,19 @@ describe_priors <- function() {
   message("Version 4: Beta prior on probability of any infection. Gibbs sampling of infection histories using total number of infections across all times and all individuals as the prior")
 }
 
+#' Transform a value to a bounded logistic scale
+#'
+#' @param x value to transform
+#' @param maxX upper bound of the transformed scale
+#' @return the transformed value between 0 and `maxX`
 logistic_transform <- function(x, maxX) {
   return(maxX / (1 + exp(-x)))
 }
+#' Inverse bounded logistic transform
+#'
+#' @param p value on the bounded scale
+#' @param maxX upper bound of the bounded scale
+#' @return the value on the unbounded scale
 logit_transform <- function(p, maxX) {
   return(log(p / (maxX - p)))
 }
@@ -412,6 +469,7 @@ logit_transform <- function(p, maxX) {
 #' Pads par_tab with a new row for each infection epoch, such that each epoch has its own shape1 and shape2
 #' @param par_tab as per usual
 #' @param n_times the number of additional rows to add for each alpha and beta
+#' @return the parameter table with the additional prior-shape rows
 #' @examples
 #' n_times <- 40
 #' data(example_par_tab)
@@ -427,7 +485,15 @@ pad_infection_model_prior_parameters <- function(par_tab, n_times) {
   par_tab
 }
 
-## From prodlim package - finds matching rows between two data frames. "Thus the function returns a vector with the row numbers of (first) matches of its first argument in its second.", https://www.rdocumentation.org/packages/prodlim/versions/2018.04.18/topics/row.match
+#' Find matching rows in two data frames
+#'
+#' Returns the row number of the first matching row in `table` for each row of `x`.
+#' @param x data frame or vector of rows to match
+#' @param table data frame or matrix in which to search
+#' @param nomatch value returned when no match is found
+#' @return an integer vector of matching row numbers
+#'
+#' This helper is based on the `row.match` function from the prodlim package.
 row.match <- function(x, table, nomatch = NA) {
   if (class(table) == "matrix") {
     table <- as.data.frame(table)
@@ -448,7 +514,7 @@ row.match <- function(x, table, nomatch = NA) {
 #' @param verbose if TRUE, brings warning messages
 #' @param use_demographic_groups vector of variable names in `antibody_data` which should form the stratification for the antibody kinetics model
 #' @param timevarying_demographics if not NULL, then calculates an individual's demographic group over the entire time period of the simulation rather than assuming fixed demographics
-#' @return a very long list. See source code directly.
+#' @return a list of pre-processed data vectors, indices, masks, demographic groups, and numbers alive used by the posterior function.
 #' @seealso \code{\link{create_posterior_func}}
 setup_antibody_data_for_posterior_func <- function(
     par_tab,antibody_data, antigenic_map=NULL, possible_exposure_times=NULL,
@@ -573,7 +639,7 @@ setup_antibody_data_for_posterior_func <- function(
 #' @param pad_by_group if TRUE, accounts for population group when expanding
 #' @param times if not NULL, uses this as a vector of times to replace j when expanding to all combinations
 #' @param indivs if not NULL, uses this as a vector of individuals to replace i when expanding to all combinations
-#' @return the same inf_chain that was passed in, but with 0s for missing i/j/samp_no combinations
+#' @return the same `inf_chain` with 0s added for missing `i`/`j`/`samp_no` combinations, and `population_group` combinations when `pad_by_group = TRUE`
 #' @export
 pad_inf_chain <- function(inf_chain, pad_by_group=FALSE, times=NULL,indivs=NULL) {
   if (is.null(inf_chain$chain_no)) {
@@ -638,7 +704,7 @@ unregister_dopar <- function() {
 #' @param antibody_data the antibody data, see \code{\link{example_antibody_data}}
 #' @param start_level_summary string telling the function how to use the `antibody_data` object to create starting values. One of: min, max, mean, median, full_random.
 #' @param randomize if TRUE and data is discretized, then sets the starting level to a random value between floor(x) and floor(x)+1
-#' @return a list with two objects: 1) a tibble giving the starting antibody level for each individual, biomarker group and biomarker_id combinations; 2) a list of indices (starting at 0) of length matching `nrow(antibody_data)` giving the index of the antibody starting level to use for each measurement
+#' @return a data frame containing the input antibody data with `starting_level` and `start_index` columns
 #' @examples
 #' \dontrun{
 #' create_start_level_data(example_antibody_data,"min",FALSE)
@@ -697,7 +763,7 @@ create_start_level_data <- function(antibody_data, start_level_summary = "min", 
 #' @param par_tab the parameter table to add the measurement offsets to
 #' @param sampled_viruses the vector of measured biomarker_ids to add offset terms for
 #' @param n_obs_types number of biomarker_groups
-#' @return the updated parameter table
+#' @return a list containing the updated parameter table and a table mapping each biomarker ID and biomarker group to a measurement-shift parameter index
 #' @export
 add_rhos_par_tab <- function(par_tab, sampled_viruses,n_obs_types=1){
   par_tab_rhos <- as.data.frame(expand_grid(names="rho",values=rep(0,length(sampled_viruses)),fixed=0,
@@ -734,4 +800,3 @@ extend_par_tab_biomarker_groups <- function(par_tab, n_obs_types){
   rownames(par_tab) <- NULL
   return(par_tab=par_tab_all)
 }
-

@@ -82,6 +82,14 @@ generate_phis <- function(foi, knots, theta, n_years, buckets, degree = 2) {
 }
 
 #' Generates a spline for \code{\link{generate_phis}} - INACTIVE
+#' Evaluate a spline for the inactive seasonal FOI model
+#'
+#' @param x positions at which to evaluate the spline
+#' @param knots spline knot positions
+#' @param degree spline degree
+#' @param theta spline coefficients
+#' @param intercept if TRUE, includes an intercept in the spline basis
+#' @return the evaluated spline values
 gen_spline_y <- function(x, knots, degree, theta, intercept = TRUE) {
   basis <- bs(
     x = x, knots = knots, degree = degree,
@@ -92,6 +100,16 @@ gen_spline_y <- function(x, knots, degree, theta, intercept = TRUE) {
   return(as.vector(y.spline))
 }
 
+#' Calculate grouped FOI log probabilities by individual
+#'
+#' Internal helper that applies group-specific infection probabilities to each individual's infection history.
+#' @param phis vector of force-of-infection values
+#' @param group_probs vector of relative probabilities for the population groups
+#' @param infection_history matrix of infection histories
+#' @param age_mask vector giving the first possible infection-time index for each individual
+#' @param sample_mask vector giving the last possible infection-time index for each individual
+#' @param group_indices population-group index for each individual
+#' @return a vector of log probabilities, one for each individual
 calc_phi_loc_probs_indiv <- function(phis, group_probs, infection_history, age_mask, sample_mask, group_indices) {
   lik <- numeric(nrow(infection_history))
   max_group_p <- max(group_probs)
