@@ -18,6 +18,8 @@ Other example_data:
 \code{\link{example_antibody_data}},
 \code{\link{example_antigenic_map}},
 \code{\link{example_inf_chain}},
+\code{\link{example_longitudinal_antibody_data}},
+\code{\link{example_multiple_biomarker_groups_data}},
 \code{\link{example_par_tab}},
 \code{\link{example_theta_chain}}
 }

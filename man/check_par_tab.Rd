@@ -2,7 +2,7 @@
 % Please edit documentation in R/check_inputs.R
 \name{check_par_tab}
 \alias{check_par_tab}
-\title{Check par_tab for simulate_data}
+\title{Check and prepare a model parameter table}
 \usage{
 check_par_tab(
   par_tab,
@@ -13,25 +13,44 @@ check_par_tab(
 )
 }
 \arguments{
-\item{par_tab}{the parameter table controlling information such as bounds, initial values etc}
+\item{par_tab}{A data frame containing the model parameter table. It must
+contain `names`, `values`, `fixed`, `lower_bound`, `upper_bound`,
+`lower_start`, `upper_start`, and `par_type`. A missing `par_type` column
+is added with value 1 when possible.}
 
-\item{mcmc}{logical, if TRUE then checks are performed for the MCMC algorithm. Use FALSE when simulating data}
+\item{mcmc}{Logical; if `TRUE`, also prepares and checks fields required by
+the MCMC algorithm. Use `FALSE` when checking a table for simulation.}
 
-\item{version}{which version of the posterior function is being used? See \code{\link{create_posterior_func}}}
+\item{version}{Optional infection-history prior version. If omitted, version
+2 is used, matching the default in `serosolver()`. Version 1 is the
+phi-based prior; versions 2--4 use the newer prior formulations. This
+argument is mainly used internally when `serosolver()` or
+`create_posterior_func()` passes a selected prior version.}
 
-\item{possible_exposure_times}{optional vector of possible exposure times}
+\item{possible_exposure_times}{Optional vector of possible exposure times.
+For version 1, this is used to ensure that the table has one `phi` row for
+each possible exposure time.}
 
-\item{verbose}{if TRUE, prints warning messages}
+\item{verbose}{Logical; if `TRUE`, print messages when optional columns are
+added or version-specific rows are changed.}
 }
 \value{
-the same par_tab object with corrections if needed
+The checked parameter table, with any required default columns or
+  version-specific rows added or removed.
 }
 \description{
-Checks the entries of par_tab used in simulate_data
+Checks and prepares a `par_tab` table for use by `simulate_data()` or the
+MCMC fitting workflow in `serosolver()`. The table supplies parameter names,
+starting values, fixed values, bounds, and parameter types. When required,
+the function adds default proposal steps, adds missing version-1 `phi`
+rows, or removes `phi` rows that are not used by prior versions 2--4.
+It also checks the infection-history prior parameters and the bounds used
+for random starting values.
 }
 \examples{
 data(example_par_tab)
-check_par_tab(example_par_tab, FALSE, version=1)
+checked_par_tab <- check_par_tab(example_par_tab)
+checked_par_tab_mcmc <- check_par_tab(example_par_tab, mcmc = TRUE)
 }
 \seealso{
 Other check_inputs:

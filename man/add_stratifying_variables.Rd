@@ -14,7 +14,7 @@ add_stratifying_variables(
 \arguments{
 \item{antibody_data}{antibody data frame}
 
-\item{timevarying_demographics}{optional time-varying demographic data}
+\item{timevarying_demographics}{optional demographic data. Include `time` for time-varying groups; without it, fixed demographic values are merged into antibody_data.}
 
 \item{par_tab}{the parameter table containing requested stratifications}
 

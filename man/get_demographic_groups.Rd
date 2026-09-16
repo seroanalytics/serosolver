@@ -16,7 +16,7 @@ get_demographic_groups(
 
 \item{antibody_data}{the antibody data data frame. See \code{\link{example_antibody_data}} for an example.}
 
-\item{timevarying_demographics}{optional. a data frame of timevarying demographics, with columns individual, time and any stratification variables. If NULL, then uses antibody_data}
+\item{timevarying_demographics}{optional demographic data. Include `individual`, any stratification variables, and `time` for time-varying demographics. Without `time`, the table is treated as fixed for each individual. If NULL, then uses antibody_data.}
 
 \item{demographic_groups}{optional. a data frame of demographic groups, with columns for each demographic group and rows for each unique combination of demographic groups. If NULL, then create this from antibody_data or timevarying_demographics}
 }

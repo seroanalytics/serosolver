@@ -9,7 +9,6 @@ plot_antibody_model(
   times = NULL,
   infection_history = NULL,
   antigenic_map = NULL,
-  label_parameters = FALSE,
   exponential_waning = FALSE
 )
 }
@@ -22,12 +21,13 @@ plot_antibody_model(
 
 \item{antigenic_map}{the antigenic map to solve the model with. Can be left to NULL to assume all biomarker IDs have the same antigenic coordinates.}
 
-\item{label_parameters}{if TRUE, adds parameter values to the plot labels}
-
 \item{exponential_waning}{if TRUE, then waning is exponential rather than linear}
 }
 \value{
-a list with two ggplot objects, one showing the simulated antibody kinetics over time, stratified by biomarker ID, the other showing simulated antibody kinetics for each biomarker ID, stratified by sample time
+If `antigenic_map` is `NULL`, a ggplot object showing simulated
+antibody kinetics over time. Otherwise, a list with two ggplot objects: the
+longitudinal antibody kinetics plot and the antibody landscape plot showing
+simulated antibody kinetics for each biomarker ID, stratified by sample time.
 }
 \description{
 Plots the trajectory of the serosolver antibody model using specified parameters and optionally a specified antigenic map and infection history. If no infection history is supplied, the first supplied model time is used as a default infection time.

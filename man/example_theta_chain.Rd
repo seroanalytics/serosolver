@@ -5,7 +5,7 @@
 \alias{example_theta_chain}
 \title{Example MCMC chain for kinetics parameters}
 \format{
-A data frame with 100 rows (each corresponding to a sample from the posterior) and 24 columns containing the saved sample number, parameter draws, likelihood values, and prior probabilities.
+A data frame with 3,003 rows (each corresponding to a saved sample from one of three chains) and 22 columns containing the saved sample number, chain number, parameter draws, likelihood and prior probabilities, and total numbers of infections.
 }
 \usage{
 data(example_theta_chain)
@@ -19,6 +19,8 @@ Other example_data:
 \code{\link{example_antigenic_map}},
 \code{\link{example_inf_chain}},
 \code{\link{example_inf_hist}},
+\code{\link{example_longitudinal_antibody_data}},
+\code{\link{example_multiple_biomarker_groups_data}},
 \code{\link{example_par_tab}}
 }
 \concept{example_data}

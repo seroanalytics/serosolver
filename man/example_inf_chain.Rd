@@ -5,7 +5,7 @@
 \alias{example_inf_chain}
 \title{Example MCMC chain for infection histories}
 \format{
-A data table with 17236 rows and 4 variables: `i` (individual), `j` (time period), `x` (inferred infection), and `sampno` (saved MCMC sample).
+A data table with 777,368 rows and 5 variables: `i` (individual), `j` (time-period index), `x` (inferred infection), `samp_no` (saved MCMC sample), and `chain_no` (chain number).
 }
 \usage{
 data(example_inf_chain)
@@ -18,6 +18,8 @@ Other example_data:
 \code{\link{example_antibody_data}},
 \code{\link{example_antigenic_map}},
 \code{\link{example_inf_hist}},
+\code{\link{example_longitudinal_antibody_data}},
+\code{\link{example_multiple_biomarker_groups_data}},
 \code{\link{example_par_tab}},
 \code{\link{example_theta_chain}}
 }

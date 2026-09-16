@@ -17,7 +17,7 @@ add_scale_pars(
 
 \item{antibody_data}{the antibody data data frame, see \code{\link{example_antibody_data}}. If NULL, then uses timevarying_demographics}
 
-\item{timevarying_demographics}{a data frame of timevarying demographics, with columns individual, time and any stratification variables. If NULL, then uses antibody_data}
+\item{timevarying_demographics}{optional demographic data. Include `individual`, any stratification variables, and `time` for time-varying demographics. Without `time`, the table is treated as fixed for each individual. If NULL, then uses antibody_data.}
 
 \item{scale_par_lower}{the lower bound of any used scale parameters}
 
