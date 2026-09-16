@@ -1,6 +1,8 @@
 
 # Modified by an AI assistant on 2026-09-15 using GPT-5. Fixed the default
 # infection history in `plot_antibody_model()` to use the first supplied time.
+# Modified by an AI assistant on 2026-09-16 using GPT-5. Updated the roxygen
+# documentation for `plot_model_fits()` without changing its implementation.
 #'
 #' Antibody dependent boosting relationship
 #'
@@ -99,18 +101,19 @@ plot_antibody_model <- function(pars,
   return(list(p_long,p_cr))
 }
 
-#' Plots infection histories and antibody model 
+#' Plots infection histories and antibody model
 #'
 #' Given outputs from an MCMC run and the data used for fitting, generates an NxM matrix of plots where N is the number of individuals to be plotted and M is the range of sampling times. Where data are available, plots the observed antibody measurements and model predicted trajectories. Unlike plot_infection_histories_cross_sectional, places biomarker\_id on the x-axis and facets by sample time and individual.
 #' @inheritParams get_antibody_level_predictions
-#' @param known_infection_history nxm matrix of known infection histories
+#' @param known_infection_history n-by-m matrix of known infection histories, with one row for each individual and one column for each possible exposure time. Use 1 for a known infection and 0 otherwise.
 #' @param p_ncol integer giving the number of columns of subplots to create if using orientation = "longitudinal"
 #' @param orientation either "cross-sectional" or "longitudinal"
 #' @param subset_biomarker_ids if not NULL, then a vector giving the entries of biomarker_id to include in the longitudinal plot
-#' @param settings if not NULL, list of serosolver settings as returned from the main serosolver function
+#' @param subset_biomarker_groups if not NULL, then a vector giving the biomarker groups to include in the plot
+#' @param settings if not NULL, list of serosolver settings as returned from the main serosolver function, such as `res$settings`
 #' @param expand_to_all_biomarker_ids if TRUE, solves predictions for all biomarker IDs in the antigenic map while retaining the sample times in antibody_data
 #' @param exponential_waning if TRUE, assumes exponential rather than linear waning
-#' @return a ggplot2 object
+#' @return a list of ggplot2 objects
 #' @family infection_history_plots
 #' @examples
 #' \dontrun{
@@ -120,7 +123,7 @@ plot_antibody_model <- function(pars,
 #' data(example_antigenic_map)
 #' data(example_par_tab)
 #'
-#' model_fit_plot <- plot_model_fits(example_theta_chain, example_inf_chain, example_antibody_data, 
+#' model_fit_plot <- plot_model_fits(example_theta_chain, example_inf_chain, example_antibody_data,
 #'                                            1:10, example_antigenic_map, example_par_tab,orientation="longitudinal")
 #' }
 #' @export

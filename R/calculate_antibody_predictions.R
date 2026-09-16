@@ -1,29 +1,32 @@
 # Modified by an AI assistant on 2026-09-15 using GPT-5. Added an option to
 # solve predictions for all biomarker IDs in the antigenic map at observed sample times,
 # with a warning when missing starting levels are filled with zero.
+# Modified by an AI assistant on 2026-09-16 using GPT-5. Updated the roxygen
+# documentation for `get_antibody_level_predictions()` without changing its implementation.
 #'
 #' Generate antibody level credible intervals
 #'
 #' Generates credible intervals on antibody levels and infection histories from an MCMC chain output.
-#' @param chain the full MCMC chain to generate antibody level trajectories from
-#' @param infection_histories the MCMC chain for infection histories
-#' @param antibody_data the data frame of antibody level data
-#' @param individuals the subset of individuals to generate credible intervals for
-#' @param antigenic_map (optional) a data frame of antigenic x and y coordinates. Must have column names: x_coord; y_coord; inf_times. See \code{\link{example_antigenic_map}}
+#' @param chain the full MCMC chain to generate antibody level trajectories from, usually `chains$theta_chain`
+#' @param infection_histories the MCMC chain for infection histories, usually `chains$inf_chain`
+#' @param antibody_data the antibody data frame, with one row per measurement
+#' @param demographics optional data frame identifying the demographic group for each individual. This is used when model parameters are stratified by demographics. See the [demographic stratification and covariate vignette](DEMOGRAPHICS_VIGNETTE_LINK).
+#' @param individuals the subset of individual IDs to generate credible intervals for
+#' @param antigenic_map (optional) a data frame of antigenic x and y coordinates. Must have column names: x_coord; y_coord; inf_times. The `inf_times` column identifies the circulation or exposure time represented by each map entry. See \code{\link{example_antigenic_map}}
 #' @param possible_exposure_times (optional) if no antigenic map is specified, this argument gives the vector of times at which individuals can be infected
-#' @param par_tab the table controlling the parameters in the MCMC chain
-#' @param nsamp number of samples to take from posterior
+#' @param par_tab the model control table specifying the parameters in the MCMC chain
+#' @param nsamp number of draws to take from the posterior
 #' @param add_residuals if true, returns an extra output summarising residuals between the model prediction and data
-#' @param measurement_bias default NULL, optional data frame giving the index of `rho` that each biomarker_id and biomarker_group which uses the measurement shift from from. eg. if there's 6 circulation years and 3 strain clusters
+#' @param measurement_bias default NULL, optional data frame mapping each `biomarker_id` and `biomarker_group` combination to the `rho_index` of the measurement-shift parameter that it uses. See the [advanced features vignette](ADVANCED_FEATURES_VIGNETTE_LINK).
 #' @param for_res_plot TRUE/FALSE value. If using the output of this for plotting of residuals, returns the actual data points rather than summary statistics
-#' @param expand_antibody_data TRUE/FALSE value. If TRUE, solves antibody level predictions for the entire study period (i.e., between the range of antibody_data$sample_time). If left FALSE, then only solves for the infections times at which a antibody level against the circulating biomarker_id was measured in antibody_data.
-#' @param expand_to_all_times TRUE/FALSE value. If TRUE, solves antibody level predictions for all possible infection times (i.e., for the range in possible_exposure_times). If left FALSE, then only solves for the infections times at which a antibody level against the circulating biomarker_id was measured in antibody_data.
-#' @param expand_to_all_biomarker_ids TRUE/FALSE value. If TRUE, solves antibody level predictions for all biomarker IDs in the antigenic map while retaining the sample times in antibody_data.
+#' @param expand_antibody_data TRUE/FALSE value. If TRUE, solves antibody level predictions for every observed biomarker ID at every sample time in the study period. If FALSE, only the biomarker IDs and sample times present in antibody_data are used.
+#' @param expand_to_all_times TRUE/FALSE value. If TRUE, uses all possible exposure times as sample times when expanding the prediction data. If FALSE, only the sample times represented in antibody_data are used.
+#' @param expand_to_all_biomarker_ids TRUE/FALSE value. If TRUE, solves antibody level predictions for every biomarker ID in the antigenic map while retaining the sample times in antibody_data.
 #' @param antibody_level_before_infection TRUE/FALSE value. If TRUE, solves antibody level predictions, but gives the predicted antibody level at a given time point BEFORE any infection during that time occurs.
 #' @param for_regression if TRUE, returns posterior draws rather than posterior summaries
-#' @param data_type integer, currently accepting 1 or 2. Set to 1 for discretized, bounded data, or 2 for continuous, bounded data. 
-#' @param start_level "none"
-#' @param exponential waning if TRUE, assumes exponential rather than linear waning
+#' @param data_type integer, currently accepting 1, 2, or 3. Set to 1 for discrete, bounded data, 2 for continuous, bounded data, or 3 for continuous data with the false-positive observation model. For bounded data, the limits are given by `min_measurement` and `max_measurement` in par_tab.
+#' @param start_level `"none"` or a starting-level summary or data frame. A starting level is the antibody level assigned before the modelled infection history begins. With `"none"`, starting levels are set to zero. See the [advanced features vignette](ADVANCED_FEATURES_VIGNETTE_LINK).
+#' @param exponential_waning if TRUE, assumes exponential rather than linear waning
 #' @return a list with the antibody level predictions (95% credible intervals, median and multivariate posterior mode) and the probabilities of infection for each individual in each epoch
 #' @examples
 #' \dontrun{
@@ -33,9 +36,15 @@
 #' data(example_antigenic_map)
 #' data(example_par_tab)
 #'
-#' y <- get_antibody_level_predictions(example_theta_chain, example_inf_chain, example_antibody_data,
-#'                           unique(example_antibody_data$individual), example_antigenic_map,
-#'                           example_par_tab,expand_antibody_data = FALSE)
+#' y <- get_antibody_level_predictions(
+#'   chain = example_theta_chain,
+#'   infection_histories = example_inf_chain,
+#'   antibody_data = example_antibody_data,
+#'   individuals = unique(example_antibody_data$individual),
+#'   antigenic_map = example_antigenic_map,
+#'   par_tab = example_par_tab,
+#'   expand_antibody_data = FALSE
+#' )
 #' }
 #' @export
 get_antibody_level_predictions <- function(chain, infection_histories, antibody_data,

@@ -1,12 +1,15 @@
+# Modified by an AI assistant on 2026-09-16 using GPT-5. Updated the roxygen
+# documentation for `setup_antigenic_map()` without changing its implementation.
+#
 #' Setup antigenic map for serosolver
 #'
-#' Cleans up an antigenic_map data frame based on provided inputs. Two checks are carried out. First, it will check if an antigenic map is provided, and if so, it will align its entries with possible_exposure_times. If no antigenic map is provided, it will create a dummy map where all pathogens have the same position on the map. Second, it will enumerate the antigenic map for each unique biomarker group, unless the antigenic map has already been enumerated. 
+#' Cleans up an antigenic_map data frame based on provided inputs. Two checks are carried out. First, it will check if an antigenic map is provided, and if so, it will align its entries with possible_exposure_times. If no antigenic map is provided, it will create a dummy map where all pathogens have the same position on the map. Second, it will enumerate the antigenic map for each unique biomarker group, unless the antigenic map has already been enumerated.
 #' @param antigenic_map the antigenic map data frame
 #' @param possible_exposure_times a vector of possible exposure times, which will be used to align the antigenic map
-#' @param n_biomarker_groups the number of biomarker groups in the antigenic map
-#' @param unique_biomarker_groups a vector of unique biomarker groups in the antigenic map
+#' @param n_biomarker_groups the number of biomarker groups in the antigenic map when the map is expanded for multiple groups
+#' @param unique_biomarker_groups a vector of labels for the biomarker groups in the antigenic map
 #' @param verbose if TRUE, prints messages about the process
-#' @return list with three entries: 1) the updated antigenic map, 2) the updated possible_exposure_times vector, 3) a set of indices matching possible_exposure_times to entries in the antigenic map
+#' @return list with three entries: 1) the updated antigenic map, 2) the updated possible_exposure_times vector, 3) a set of zero-based indices matching possible_exposure_times to entries in the antigenic map for use by the model
 #' @export
 #' @family antigenic_maps
 setup_antigenic_map <- function(antigenic_map=NULL, possible_exposure_times=NULL, n_biomarker_groups=1,unique_biomarker_groups=c(1), verbose=TRUE){

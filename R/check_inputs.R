@@ -1,3 +1,6 @@
+# Modified by an AI assistant on 2026-09-16 using GPT-5. Updated the roxygen
+# documentation for the main input checks without changing their implementation.
+#
 #' Check infection history matrix
 #'
 #' Checks that the infection history matrix is allowable given the birth dates and sampling times of the data
@@ -129,7 +132,7 @@ check_par_tab <- function(par_tab, mcmc = FALSE, version = NULL,possible_exposur
 }
 
 #' Checks the entries of data used in serosolver
-#' @param data the data frame of data to be fitted. Must have columns: group (index of group); individual (integer ID of individual); samples (numeric time of sample taken); virus (numeric time of when the virus was circulating); titre (integer of titre value against the given virus at that sampling time)
+#' @param data the data frame of data to be fitted. It must have columns: individual (integer ID of individual); sample_time (numeric time of sample taken); biomarker_id (numeric ID of the biomarker); measurement (antibody measurement); birth (birth date). biomarker_group (index of biomarker group) and repeat_number (repeat number) are optional and are added with a value of 1 when missing.
 #' @param verbose if TRUE, prints warning messages
 #' @return the same data object with corrections if needed
 #' @family check_inputs
@@ -251,5 +254,3 @@ check_inf_hist <- function(antibody_data,possible_exposure_times, inf_hist,verbo
     }
     return(correct_dob)
 }
-
-

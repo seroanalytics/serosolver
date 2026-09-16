@@ -8,28 +8,28 @@
 #' Core serosolver function running the adaptive Metropolis-within-Gibbs algorithm. It estimates the antibody kinetics parameters and infection histories from the supplied data. The MCMC chains are saved in blocks as CSV files at the location given by `filename`; the returned object also contains the model settings, diagnostics, and plots when these are requested. See the package guide and case studies for examples.
 #' @param par_tab The parameter table controlling information such as bounds, initial values etc. See \code{\link{example_par_tab}}
 #' @param antibody_data The data frame of serological measurements to be fitted. It should contain `individual`, `sample_time`, `biomarker_id`, `measurement`, and `birth`; `biomarker_group` and `repeat_number` are added when they are not supplied. See \code{\link{example_antibody_data}}
-#' @param demographics if not NULL, a data frame giving demographic variables for each individual. It must include `individual` and `birth`, and must include any variables used to stratify parameters in `par_tab`. Demographic variables may be fixed for each individual or vary over time.
+#' @param demographics if not NULL, a data frame giving demographic variables for each individual. It must include `individual` and `birth`, and must include any variables used to stratify parameters in `par_tab`. Demographic variables may be fixed for each individual or vary over time. See the [demographic stratification and covariate vignette](DEMOGRAPHICS_VIGNETTE_LINK).
 #' @param antigenic_map (optional) A data frame of antigenic x and y coordinates. Must have column names: x_coord; y_coord; inf_times. See \code{\link{example_antigenic_map}}
 #' @param possible_exposure_times (optional) this argument gives the vector of times at which individuals can be infected. Defaults to entries in `antigenic_map`.
 #' @param mcmc_pars Named numeric vector with parameters for the MCMC procedure. See details.
 #' @param n_chains Number of MCMC chains to run
 #' @param parallel if TRUE, runs multiple chains in parallel using the `doParallel` package
 #' @param start_inf_hist Infection history matrix to start MCMC at. Can be left NULL. See \code{\link{example_inf_hist}}
-#' @param fixed_inf_hists (optional) Data frame with columns `individual`, `time`, and `value`, giving infection states that should be fixed during the MCMC run.
+#' @param fixed_inf_hists (optional) Data frame with columns `individual`, `time`, and `value`, giving infection states that should be fixed during the MCMC run. See the [advanced features vignette](ADVANCED_FEATURES_VIGNETTE_LINK).
 #' @param filename The file path and prefix for the MCMC output. The chain files are saved with `_chain.csv` and `_infection_histories.csv` appended, and the model settings are saved with `_serosolver_settings.RData` appended. When parallel chains are used, progress messages are written to a matching `_log.txt` file.
 #' @param prior_func User function of prior for model parameters. Should take parameter values only
 #' @param prior_version which infection history assumption prior_version to use? See \code{\link{describe_priors}} for options. Can be 1, 2, 3 or 4
-#' @param measurement_bias optional NULL. For measurement bias function. Vector of indices of length equal to number of circulation times. For each year, gives the index of parameters named "rho" that correspond to each time period
+#' @param measurement_bias optional NULL. A data frame mapping each `biomarker_id` and `biomarker_group` combination to the `rho_index` of the measurement-shift parameter that it uses. See the [advanced features vignette](ADVANCED_FEATURES_VIGNETTE_LINK).
 #' @param proposal_ratios optional NULL. Can set the relative sampling weights of the infection state times. Should be an integer vector of length matching nrow(antigenic_map). Otherwise, leave as NULL for uniform sampling.
 #' @param random_start_parameters if FALSE, uses whatever parameter values were passed in `par_tab` as the starting positions for the MCMC chain
 #' @param solve_likelihood if FALSE, returns only the prior and does not solve the likelihood. Use this if you wish to sample directly from the prior
 #' @param n_alive if not NULL, uses this as the number alive for the infection history prior, rather than calculating the number alive based on antibody_data
-#' @param start_level either `"none"` or a data frame giving the starting biomarker level for each individual, `biomarker_group`, and `biomarker_id` combination. With `"none"`, starting levels are assumed to be 0.
+#' @param start_level either `"none"` or a data frame giving the starting biomarker level for each individual, `biomarker_group`, and `biomarker_id` combination. With `"none"`, starting levels are assumed to be 0. See the [advanced features vignette](ADVANCED_FEATURES_VIGNETTE_LINK).
 #' @param data_type integer identifying the observation model: 1 for discrete, bounded data; 2 for continuous, bounded data; or 3 for continuous data with the false-positive observation model.
 #' @param mv_proposals If TRUE, uses a multivariate normal distribution for the proposal distribution. FALSE uses univariate proposals. It is advised to leave this as FALSE, multivariate proposals seems to generally be inefficient for serosolver.
 #' @param verbose if TRUE, prints progress updates during the run
 #' @param verbose_dev if TRUE, prints additional messages regarding step sizes, acceptance rates etc
-#' @param exponential_waning if TRUE, assumes exponential waning of antibody levels rather than linear waning. This also changes the cross-reactivity model from a linear decline with antigenic distance to an exponential decline.
+#' @param exponential_waning if TRUE, assumes exponential waning of antibody levels rather than linear waning. This also changes the cross-reactivity model from a linear decline with antigenic distance to an exponential decline. See the [advanced features vignette](ADVANCED_FEATURES_VIGNETTE_LINK).
 #' @param inf_hist_mcmc_summaries if TRUE, calculates MCMC summaries of the infection history posterior draws. Set to FALSE to decrease run time, as this is a slow operation.
 #' @param plot_outputs if TRUE, calculates diagnostic summaries and returns model-fit, attack-rate, and antibody-model plots. Defaults to TRUE.
 #' @param ... Other arguments passed to the posterior function.
