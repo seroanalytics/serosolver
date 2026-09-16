@@ -14,6 +14,8 @@ vignette: |
 
 <!-- Modified by an AI assistant on 2026-09-15 using GPT-5. Updated the guide's MCMC cache handling so missing cached chains trigger the hidden fitting workflow, with the cache stored in the package's inst/extdata directory. -->
 
+<!-- Modified by an AI assistant on 2026-09-16 using GPT-5. Added the package logo to the opening guide layout. -->
+
 ```{r setup, include = FALSE}
 knitr::opts_chunk$set(
   collapse = TRUE,
@@ -38,6 +40,8 @@ if (dir.exists(source_mcmc_dir)) {
 mcmc_file <- file.path(mcmc_dir, "guide")
 ```
 
+<img src="../figure/logo.png" alt="serosolver logo" align="right" width="250"/>
+
 ## Overview
 
 `serosolver` jointly infers antibody kinetics, infection histories and attack rates from cross-sectional or longitudinal serological data, originally described by Kucharski *et al.* @kucharski2018 and developed further by Hay *et al.* @hay2020 . `serosolver` exploits the predictability of antibody kinetics over time following exposure, using one or more antibody level measurements combined with an antibody kinetics model to back-calculate (i.e., extrapolate backwards) the timing of individual infections.
@@ -45,6 +49,8 @@ mcmc_file <- file.path(mcmc_dir, "guide")
 What distinguishes `serosolver` from other [time-since-infection models](https://doi.org/10.1016/j.epidem.2024.100806) is a) jointly inferring an antibody kinetics model and infection histories within the same framework; b) the ability to infer multiple infections per person; and c) supporting multi-antigen systems as well as single-antigen problems.
 
 The core of the package is the `serosolver` function, which takes all of the data and model assumptions as inputs and saves Markov chain Monte Carlo (MCMC) outputs to disk. `serosolver` implements a flexible, hierarchical model, meaning that users must be aware of a number of model design decisions. In this vignette, we will show how longitudinal, multi-strain serological data can be cleaned for use in `serosolver`, and walk through the core functionality of the package and post-processing functions. It is a long vignette, but worth stepping through to make sure you understand how this fairly complex model works!
+
+<br clear="right">
 
 ## Contents
 

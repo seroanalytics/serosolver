@@ -1,9 +1,11 @@
 
-<!-- Modified by an AI assistant on 2026-09-11 using GPT-5. Changes in this pass are limited to README wording/code tidying, package requirements, and links to existing documentation. -->
+<!-- Modified by an AI assistant on 2026-09-11 using GPT-5. Changes in this pass are limited to README wording/code tidying, package requirements, links to existing documentation, and page layout. -->
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
 
 # serosolver
+
+<img src="figure/logo.png" align="right" width="250" alt="serosolver logo">
 
 [![Project Status: Active – The project has reached a stable, usable
 state and is being actively
@@ -20,6 +22,8 @@ timings during a study period using longitudinal measurements against a
 single antigen, or lifetime infection histories using multi-antigen
 serology panels. The package and model are described by Hay *et al.*
 [here](https://doi.org/10.1371/journal.pcbi.1007840).
+
+<br clear="right">
 
 ## New features
 

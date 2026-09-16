@@ -1,39 +1,39 @@
 # Modified by an AI assistant on 2026-09-15 using GPT-5. Enabled expansion to all
 # antigenic-map biomarker IDs for the cross-sectional output plot.
+# Modified by an AI assistant on 2026-09-16 using GPT-5. Removed the unused
+# temperature argument from the public `serosolver()` interface and fixed it at 1 internally.
 #'
 #' Run the serosolver model
 #'
-#' Core serosolver function running the adaptive Metropolis-within-Gibbs algorithm. Given a starting point and the necessary MCMC parameters as set out below, performs a random-walk of the posterior space to produce an MCMC chain that can be used to generate MCMC density and iteration plots. The algorithm undergoes an adaptive period, where it changes the step size of the random walk for each parameter to approach the desired acceptance rate, target_acceptance_rate_theta. The algorithm then uses \code{\link{univ_proposal}} or \code{\link{mvr_proposal}} to explore parameter space, recording the value and posterior value at each step. The MCMC chain is saved in blocks as a .csv file at the location given by filename. This version of the algorithm is also designed to explore posterior densities for infection histories. See the package vignettes for examples. 
+#' Core serosolver function running the adaptive Metropolis-within-Gibbs algorithm. It estimates the antibody kinetics parameters and infection histories from the supplied data. The MCMC chains are saved in blocks as CSV files at the location given by `filename`; the returned object also contains the model settings, diagnostics, and plots when these are requested. See the package guide and case studies for examples.
 #' @param par_tab The parameter table controlling information such as bounds, initial values etc. See \code{\link{example_par_tab}}
-#' @param antibody_data The data frame of titre data to be fitted. Must have columns: group (index of group); individual (integer ID of individual); samples (numeric time of sample taken); virus (numeric time of when the virus was circulating); titre (integer of titre value against the given virus at that sampling time); run (integer giving the repeated number of this titre); DOB (integer giving date of birth matching time units used in model). See \code{\link{example_antibody_data}}
-#' @param demographics if not NULL, then a tibble for each individual (1:n_indiv) giving demographic variable entries. Most importantly must include "birth" as the birth time. This is used if, for example, you have a stratification grouping in `par_tab`
+#' @param antibody_data The data frame of serological measurements to be fitted. It should contain `individual`, `sample_time`, `biomarker_id`, `measurement`, and `birth`; `biomarker_group` and `repeat_number` are added when they are not supplied. See \code{\link{example_antibody_data}}
+#' @param demographics if not NULL, a data frame giving demographic variables for each individual. It must include `individual` and `birth`, and must include any variables used to stratify parameters in `par_tab`. Demographic variables may be fixed for each individual or vary over time.
 #' @param antigenic_map (optional) A data frame of antigenic x and y coordinates. Must have column names: x_coord; y_coord; inf_times. See \code{\link{example_antigenic_map}}
 #' @param possible_exposure_times (optional) this argument gives the vector of times at which individuals can be infected. Defaults to entries in `antigenic_map`.
-#' @param mcmc_pars Named vector named vector with parameters for the MCMC procedure. See details
+#' @param mcmc_pars Named numeric vector with parameters for the MCMC procedure. See details.
 #' @param n_chains Number of MCMC chains to run
 #' @param parallel if TRUE, runs multiple chains in parallel using the `doParallel` package
 #' @param start_inf_hist Infection history matrix to start MCMC at. Can be left NULL. See \code{\link{example_inf_hist}}
-#' @param fixed_inf_hist (optional) Data frame with columns "individual", "time" and "value", giving infection states that should be fixed during the MCMC run
-#' @param filename The full filepath at which the MCMC chain should be saved. "_chain.csv" will be appended to the end of this, so filename should have no file extensions
+#' @param fixed_inf_hists (optional) Data frame with columns `individual`, `time`, and `value`, giving infection states that should be fixed during the MCMC run.
+#' @param filename The file path and prefix for the MCMC output. The chain files are saved with `_chain.csv` and `_infection_histories.csv` appended, and the model settings are saved with `_serosolver_settings.RData` appended. When parallel chains are used, progress messages are written to a matching `_log.txt` file.
 #' @param prior_func User function of prior for model parameters. Should take parameter values only
 #' @param prior_version which infection history assumption prior_version to use? See \code{\link{describe_priors}} for options. Can be 1, 2, 3 or 4
 #' @param measurement_bias optional NULL. For measurement bias function. Vector of indices of length equal to number of circulation times. For each year, gives the index of parameters named "rho" that correspond to each time period
 #' @param proposal_ratios optional NULL. Can set the relative sampling weights of the infection state times. Should be an integer vector of length matching nrow(antigenic_map). Otherwise, leave as NULL for uniform sampling.
 #' @param random_start_parameters if FALSE, uses whatever parameter values were passed in `par_tab` as the starting positions for the MCMC chain
-#' @param temp Temperature term for parallel tempering, raises likelihood to this value. Just used for testing at this point
 #' @param solve_likelihood if FALSE, returns only the prior and does not solve the likelihood. Use this if you wish to sample directly from the prior
 #' @param n_alive if not NULL, uses this as the number alive for the infection history prior, rather than calculating the number alive based on antibody_data
-#' @param start_level a data frame giving the starting biomarker level for each individual, biomarker_group and biomarker_id combination. If NULL, then starting levels are assumed to be 0.
-#' @param data_type int, defaults to 1 for discretized, bounded data. Set to 2 for continuous, bounded data
+#' @param start_level either `"none"` or a data frame giving the starting biomarker level for each individual, `biomarker_group`, and `biomarker_id` combination. With `"none"`, starting levels are assumed to be 0.
+#' @param data_type integer identifying the observation model: 1 for discrete, bounded data; 2 for continuous, bounded data; or 3 for continuous data with the false-positive observation model.
 #' @param mv_proposals If TRUE, uses a multivariate normal distribution for the proposal distribution. FALSE uses univariate proposals. It is advised to leave this as FALSE, multivariate proposals seems to generally be inefficient for serosolver.
 #' @param verbose if TRUE, prints progress updates during the run
 #' @param verbose_dev if TRUE, prints additional messages regarding step sizes, acceptance rates etc
-#' @param exponential_waning if TRUE, assumes exponential waning of antibody titres rather than linear waning
-#' @param ... Other arguments to pass to posterior_func
+#' @param exponential_waning if TRUE, assumes exponential waning of antibody levels rather than linear waning. This also changes the cross-reactivity model from a linear decline with antigenic distance to an exponential decline.
 #' @param inf_hist_mcmc_summaries if TRUE, calculates MCMC summaries of the infection history posterior draws. Set to FALSE to decrease run time, as this is a slow operation.
-#' @param plot_outputs if TRUE, returns MCMC diagnostic plots. Defaults to TRUE.
-#' @param ... Other arguments to pass to create_posterior_func
-#' @return A list with: 1) relative file path at which the MCMC chain is saved as a .csv file; 2) relative file path at which the infection history chain is saved as a .csv file; 3) the last used covariance matrix if mvr_pars != NULL; 4) the last used scale/step size (if multivariate proposals) or vector of step sizes (if univariate proposals)
+#' @param plot_outputs if TRUE, calculates diagnostic summaries and returns model-fit, attack-rate, and antibody-model plots. Defaults to TRUE.
+#' @param ... Other arguments passed to the posterior function.
+#' @return A list containing the paths to the parameter and infection-history chain files, diagnostic summaries and warnings, the settings used for the fit, fitted antibody predictions, plots when `plot_outputs = TRUE`, and the loaded MCMC chains.
 #' @details
 #' The `mcmc_pars` argument is a named vector allowing control over many MCMC options. The key options are:
 #'  * iterations (number of post adaptive period iterations to run)
@@ -55,6 +55,8 @@
 #'  * proposal_inf_hist_group_swap_ratio (proportion of infection history proposal steps to swap proposal_inf_hist_group_swap_prop of two time periods' contents, between 0 and 1)
 #'  * proposal_inf_hist_group_swap_prop (when swapping contents of two time points, what proportion of individuals should have their contents swapped, between 0 and 1)
 #'  * propose_from_prior (set to 1 to sample directly from the infection history prior, or 0 for independent proposals. Sometimes one version works better than the other, so try switching if you are getting poor infection history convergence)
+#'
+#' The parameter and infection-history chains are written to disk during the run, in blocks controlled by `save_block`. The `thin` and `thin_inf_hist` settings control how often parameter and infection-history draws are saved. The settings file records the inputs needed to read the chains back into R with \code{\link{load_mcmc_chains}}.
 #' @md
 #' @family mcmc
 #' @examples
@@ -81,7 +83,6 @@ serosolver <- function(par_tab,
                      prior_version = 2,
                      measurement_bias = NULL,
                      proposal_ratios = NULL,
-                     temp = 1,
                      solve_likelihood = TRUE,
                      n_alive = NULL,
                      random_start_parameters=TRUE,
@@ -93,6 +94,7 @@ serosolver <- function(par_tab,
                      exponential_waning=FALSE,
                      plot_outputs=TRUE,
                      ...) {
+  temp <- 1
   message(cat("================================ Running serosolver ================================\n"))
   on.exit(unregister_dopar())
   ###################################################################
