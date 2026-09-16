@@ -5,6 +5,8 @@
 # Modified by an AI assistant on 2026-09-16 using GPT-5. Limited the starting-
 # bounds warning to estimated parameters, so fixed parameters do not generate
 # a warning from their unused starting ranges.
+# Modified by an AI assistant on 2026-09-16 using GPT-5. Excluded the one-based
+# `population_group` identifier from the zero-based covariate-level check.
 #
 #' Check infection history matrix
 #'
@@ -243,7 +245,7 @@ check_demographics <- function(demographics, par_tab=NULL, verbose=FALSE) {
       if(verbose) message(paste(c("The following column(s) are missing from demographics but requested in par_tab: ", stratifications), collapse = " "))
     }
   }  
-  test_colnames <- actual_colnames[!(actual_colnames %in% c(col.names,"time","age"))]
+  test_colnames <- actual_colnames[!(actual_colnames %in% c(col.names,"time","age","population_group"))]
   for(col in test_colnames){
     unique_levels <- unique(as.data.frame(demographics)[,col])
     if(min(unique_levels) != 0) warning(paste("Column ",col," in demographics should start at 0."))

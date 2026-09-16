@@ -15,14 +15,19 @@ vignette: |
   %\VignetteEngine{knitr::rmarkdown}
 ---
 
-<!-- Modified by an AI assistant on 2026-09-16 using GPT-5. Adapted the student practical into a package vignette while retaining its scientific explanation and code comments. -->
+<!-- Modified by an AI assistant on 2026-09-16 using GPT-5. Adapted the student practical into a package vignette while retaining its scientific explanation and code comments, and extended the simulation-recovery section with a runnable MCMC fit and recovery comparisons. -->
 
 ```{r setup, include=FALSE}
+## Keep the simulated data reproducible when the MCMC caches are regenerated.
+set.seed(1)
+
 knitr::opts_chunk$set(
   collapse = TRUE,
   echo = TRUE,
   comment = "#>",
-  eval = TRUE
+  eval = TRUE,
+  fig.width = 8,
+  fig.height = 6
 )
 options(digits = 3)
 ```
@@ -111,7 +116,7 @@ table(antibody_data$sample_time)
 table(antibody_data$age_group, antibody_data$vaccinated)
 ```
 
-```{r data-plot, fig.height=5, fig.width=8}
+```{r data-plot,fig.width = 7,fig.height = 7}
 ## Individual-level plots
 plot_antibody_data(
   antibody_data,
@@ -162,7 +167,7 @@ The parameter table controls which parameters are estimated, their starting valu
 
 The assumed antibody kinetics can be inspected before fitting the model:
 
-```{r antibody-model, fig.height=5, fig.width=7}
+```{r antibody-model,fig.width = 7,fig.height = 4}
 plot_antibody_model(
   pars = par_tab,
   infection_history = possible_exposure_times[1],
@@ -176,7 +181,7 @@ plot_antibody_model(
 
 For this case study, the prior function places a standard normal prior on stratification coefficients, log-normal priors on the boost parameters, and a Beta prior on the short-term waning parameter.
 
-```{r priors}
+```{r priors,fig.width = 5,fig.height = 3}
 ## Prior distributions for attack rates and antibody boosts.
 hist(rbeta(1000, 1, 10), breaks = 50, main = "Prior attack rate", xlab = "Attack rate")
 hist(rlnorm(1000, log(2), 0.5), breaks = 50, main = "Prior antibody boost", xlab = "Boost")
@@ -214,25 +219,74 @@ The infection-history prior uses the Beta shape parameters in `par_tab`. These c
 
 The prior predictive model is run without evaluating the likelihood. Its returned parameter and antibody-model plots show the implications of the prior assumptions before fitting to the observed data.
 
-```{r prior-predictive, eval=TRUE}
+```{r prior-predictive, eval=TRUE, echo=FALSE, results='hide', message=FALSE, warning=FALSE}
 ## Run serosolver using the priors without evaluating the likelihood.
-prior_dir <- "prior_mcmc_chains_hong_kong"
-dir.create(prior_dir, showWarnings = FALSE)
-
-prior_res <- serosolver(
-  par_tab = par_tab,
-  antibody_data = antibody_data,
-  demographics = demographics,
-  possible_exposure_times = possible_exposure_times,
-  filename = file.path(prior_dir, "prior"),
-  prior_func = prior_func,
-  data_type = 1,
-  solve_likelihood = FALSE,
-  n_chains = 3,
-  parallel = TRUE,
-  mcmc_pars = c(adaptive_iterations = 20000, iterations = 50000),
-  verbose = TRUE
+vignette_dir <- dirname(knitr::current_input())
+cache_dir <- file.path(vignette_dir, "..", "inst", "extdata", "case_study_1")
+prior_dir <- file.path(cache_dir, "prior_mcmc_chains")
+prior_file <- file.path(prior_dir, "prior")
+prior_n_chains <- 3
+prior_mcmc_pars <- c(
+  adaptive_iterations = 20000,
+  iterations = 50000,
+  thin = 10,
+  thin_inf_hist = 100,
+  save_block = 1000
 )
+dir.create(prior_dir, recursive = TRUE, showWarnings = FALSE)
+
+prior_settings_file <- paste0(prior_file, "_serosolver_settings.RData")
+prior_chain_files <- list.files(
+  prior_dir,
+  pattern = "^prior_[0-9]+_chain\\.csv$",
+  full.names = TRUE
+)
+prior_history_files <- sub("_chain\\.csv$", "_infection_histories.csv", prior_chain_files)
+prior_cache_available <- length(prior_chain_files) == prior_n_chains &&
+  file.exists(prior_settings_file) &&
+  all(file.exists(prior_history_files))
+
+if (!prior_cache_available) {
+  prior_res <- serosolver(
+    par_tab = par_tab,
+    antibody_data = antibody_data,
+    demographics = NULL,
+    possible_exposure_times = possible_exposure_times,
+    filename = prior_file,
+    prior_func = prior_func,
+    data_type = 1,
+    solve_likelihood = FALSE,
+    n_chains = prior_n_chains,
+    parallel = TRUE,
+    mcmc_pars = prior_mcmc_pars,
+    verbose = FALSE
+  )
+} else {
+  load(prior_settings_file)
+  prior_settings <- serosolver_settings
+  prior_chains <- load_mcmc_chains(
+    location = prior_dir,
+    par_tab = par_tab,
+    burnin = prior_mcmc_pars[["adaptive_iterations"]],
+    thin = prior_mcmc_pars[["thin"]],
+    convert_mcmc = FALSE,
+    verbose = FALSE
+  )
+  prior_res <- list(
+    all_diagnostics = plot_mcmc_diagnostics(
+      location = prior_dir,
+      par_tab = par_tab,
+      burnin = prior_mcmc_pars[["adaptive_iterations"]]
+    ),
+    settings = prior_settings,
+    plot_antibody_model = plot_estimated_antibody_model(
+      prior_chains$theta_chain,
+      settings = prior_settings,
+      solve_times = possible_exposure_times
+    ),
+    mcmc_chains = prior_chains
+  )
+}
 
 prior_res$all_diagnostics$p_thetas[[2]]
 prior_res$plot_antibody_model
@@ -259,16 +313,12 @@ The model is fitted using the main `serosolver` function, which takes the `par_t
 
 MCMC chains are saved to the location specified by `filename`, along with a progress log and a settings file. If running in parallel, the progress text file gives updates and an estimated run time.
 
-```{r fit-model, eval=TRUE}
-## Fit the serosolver model.
-mcmc_dir <- "mcmc_chains_hong_kong"
-dir.create(mcmc_dir, showWarnings = FALSE)
-
+```{r fit-model-call, eval=FALSE}
 mcmc_pars <- c(
   adaptive_iterations = 50000,
   iterations = 100000,
   thin = 100,
-  thin_inf_hist = 100,
+  thin_inf_hist = 1000,
   save_block = 1000
 )
 
@@ -285,6 +335,98 @@ res <- serosolver(
   mcmc_pars = mcmc_pars,
   verbose = TRUE
 )
+```
+
+```{r fit-model, eval=TRUE, echo=FALSE, results='hide', message=FALSE, warning=FALSE}
+## Fit the model once, then use the saved chains for subsequent renders.
+mcmc_dir <- file.path(cache_dir, "hong_kong_mcmc_chains")
+mcmc_file <- file.path(mcmc_dir, "hong_kong")
+dir.create(mcmc_dir, recursive = TRUE, showWarnings = FALSE)
+
+mcmc_pars <- c(
+  adaptive_iterations = 50000,
+  iterations = 100000,
+  thin = 100,
+  thin_inf_hist = 1000,
+  save_block = 1000
+)
+
+mcmc_settings_file <- paste0(mcmc_file, "_serosolver_settings.RData")
+mcmc_chain_files <- list.files(
+  mcmc_dir,
+  pattern = "^hong_kong_[0-9]+_chain\\.csv$",
+  full.names = TRUE
+)
+mcmc_history_files <- sub("_chain\\.csv$", "_infection_histories.csv", mcmc_chain_files)
+mcmc_cache_available <- length(mcmc_chain_files) == 3L &&
+  file.exists(mcmc_settings_file) &&
+  all(file.exists(mcmc_history_files))
+
+if (!mcmc_cache_available) {
+  res <- serosolver(
+    par_tab = par_tab,
+    antibody_data = antibody_data,
+    demographics = demographics,
+    possible_exposure_times = possible_exposure_times,
+    filename = mcmc_file,
+    prior_func = prior_func,
+    data_type = 1,
+    n_chains = 3,
+    parallel = TRUE,
+    mcmc_pars = mcmc_pars,
+    verbose = FALSE
+  )
+} else {
+  load(mcmc_settings_file)
+  chains <- load_mcmc_chains(
+    location = mcmc_dir,
+    par_tab = par_tab,
+    burnin = mcmc_pars[["adaptive_iterations"]],
+    thin = mcmc_pars[["thin"]],
+    convert_mcmc = FALSE,
+    verbose = FALSE
+  )
+  all_diagnostics <- plot_mcmc_diagnostics(
+    location = mcmc_dir,
+    par_tab = par_tab,
+    burnin = mcmc_pars[["adaptive_iterations"]]
+  )
+  max_samps <- min(
+    mcmc_pars[["iterations"]] / mcmc_pars[["thin"]],
+    nrow(chains$theta_chain)
+  )
+  res <- list(
+    all_diagnostics = all_diagnostics,
+    settings = serosolver_settings,
+    antibody_predictions = plot_antibody_predictions(
+      chains$theta_chain,
+      chains$inf_chain,
+      settings = serosolver_settings,
+      nsamp = max_samps
+    ),
+    plot_fits_longitudinal = plot_model_fits(
+      chains$theta_chain,
+      chains$inf_chain,
+      individuals = 1:min(length(unique(antibody_data$individual)), 5),
+      known_infection_history = NULL,
+      settings = serosolver_settings,
+      orientation = "longitudinal",
+      expand_to_all_times = TRUE
+    ),
+    plot_attack_rates = plot_attack_rates(
+      chains$inf_chain,
+      settings = serosolver_settings,
+      by_group = TRUE,
+      plot_den = FALSE
+    ),
+    plot_antibody_model = plot_estimated_antibody_model(
+      chains$theta_chain,
+      settings = serosolver_settings,
+      solve_times = possible_exposure_times
+    ),
+    mcmc_chains = chains
+  )
+}
 ```
 
 # Post-fit analyses
@@ -330,7 +472,7 @@ res$plot_fits_longitudinal[[1]] ## Compare individual-level predictions to the o
 
 The same plots can be regenerated manually from the saved chains. This is useful when changing the individuals, number of posterior draws, or other plotting options without rerunning the model.
 
-```{r manual-plots, eval=TRUE}
+```{r manual-plots1, eval=TRUE}
 ## Read in all MCMC draws to plot additional model fits.
 plot_model_fits(
   chain = chains$theta_chain,
@@ -340,13 +482,18 @@ plot_model_fits(
   settings = serosolver_settings,
   p_ncol = 5
 )[[1]] + x_axis
+```
 
+
+```{r manual-plots2, eval=TRUE,fig.width = 6,fig.height = 3}
 ## Compare attack-rate estimates between population groups.
 plot_attack_rates(
   infection_histories = chains$inf_chain,
   settings = serosolver_settings
 ) + x_axis
+```
 
+```{r manual-plots3, eval=TRUE}
 ## Posterior estimates for infection timings.
 plot_cumulative_infection_histories(
   inf_chain = chains$inf_chain,
@@ -357,11 +504,14 @@ plot_cumulative_infection_histories(
 
 The main model estimates are the antibody kinetics, attack rates, and infection timings.
 
-```{r model-estimates, eval=TRUE}
+```{r model-estimates1, eval=TRUE,fig.width = 7,fig.height = 5}
 ## Antibody kinetics model and estimated attack rates.
 res$plot_antibody_model
 res$plot_attack_rates + coord_cartesian(ylim = c(0, 0.4)) + x_axis
+```
 
+
+```{r model-estimates2, eval=TRUE,fig.width = 8,fig.height = 6}
 ## Posterior estimates for infection timings.
 plot_cumulative_infection_histories(
   inf_chain = chains$inf_chain,
@@ -376,7 +526,7 @@ Simulation-recovery assesses whether the inference machinery can recover known p
 
 The fitted parameter estimates provide a starting point for simulating a new data set.
 
-```{r simulation-setup, eval=TRUE}
+```{r simulation-setup, eval=TRUE,fig.width = 7,fig.height = 7}
 ## Extract the best parameter estimates from the real-data fit.
 best_pars <- get_best_pars(chains$theta_chain)
 best_pars <- best_pars[names(best_pars) != "total_infections"]
@@ -416,4 +566,112 @@ plot_antibody_data(
 ) + facet_wrap(~ individual, ncol = 4) + x_axis
 ```
 
-The simulated data can then be fitted using the same `serosolver()` call as above, with a different output filename. The returned infection histories, attack rates, and antibody predictions can be compared with `simulated_data$infection_histories`, `simulated_data$attack_rates`, and the parameter values in `sim_par_tab`.
+The simulated data are fitted using the same workflow, with shorter MCMC settings for this vignette.
+
+```{r simulation-fit, eval=TRUE, echo=FALSE, results='hide', message=FALSE, warning=FALSE}
+sim_mcmc_dir <- file.path(cache_dir, "simulation_mcmc_chains")
+sim_mcmc_file <- file.path(sim_mcmc_dir, "simulated")
+sim_n_chains <- 3
+dir.create(sim_mcmc_dir, recursive = TRUE, showWarnings = FALSE)
+
+sim_mcmc_pars <- c(
+  adaptive_iterations = 10000,
+  iterations = 20000,
+  thin = 10,
+  thin_inf_hist = 100,
+  save_block = 1000
+)
+
+## `simulate_data()` returns the parameter table with derived stratification
+## rows already added; serosolver adds these rows when fitting the data.
+sim_fit_par_tab <- simulated_data$par_tab %>% filter(par_type != 4)
+
+sim_settings_file <- paste0(sim_mcmc_file, "_serosolver_settings.RData")
+sim_chain_files <- list.files(
+  sim_mcmc_dir,
+  pattern = "^simulated_[0-9]+_chain\\.csv$",
+  full.names = TRUE
+)
+sim_history_files <- sub("_chain\\.csv$", "_infection_histories.csv", sim_chain_files)
+sim_cache_available <- length(sim_chain_files) == sim_n_chains &&
+  file.exists(sim_settings_file) &&
+  all(file.exists(sim_history_files))
+if (sim_cache_available) {
+  load(sim_settings_file)
+  sim_settings <- serosolver_settings
+  sim_cache_available <- !anyDuplicated(sim_settings$par_tab$names)
+}
+
+if (!sim_cache_available) {
+  sim_res <- serosolver(
+    par_tab = sim_fit_par_tab,
+    antibody_data = simulated_data$antibody_data,
+    demographics = demographics,
+    possible_exposure_times = possible_exposure_times,
+    filename = sim_mcmc_file,
+    prior_func = prior_func,
+    data_type = 1,
+    n_chains = sim_n_chains,
+    parallel = TRUE,
+    mcmc_pars = sim_mcmc_pars,
+    verbose = FALSE
+  )
+} else {
+  sim_chains <- load_mcmc_chains(
+    location = sim_mcmc_dir,
+    par_tab = sim_fit_par_tab,
+    burnin = sim_mcmc_pars[["adaptive_iterations"]],
+    thin = sim_mcmc_pars[["thin"]],
+    convert_mcmc = FALSE,
+    verbose = FALSE
+  )
+  sim_res <- list(
+    all_diagnostics = plot_mcmc_diagnostics(
+      location = sim_mcmc_dir,
+      par_tab = sim_fit_par_tab,
+      burnin = sim_mcmc_pars[["adaptive_iterations"]]
+    ),
+    settings = sim_settings,
+    mcmc_chains = sim_chains
+  )
+}
+
+sim_chains <- sim_res$mcmc_chains
+```
+
+The parameter estimates can be compared directly with the values used to simulate the data:
+
+```{r simulation-parameter-recovery}
+sim_res$all_diagnostics$theta_estimates %>%
+  filter(names != "total_infections") %>%
+  left_join(
+    simulated_data$par_tab %>% select(names, true = values),
+    by = "names"
+  ) %>%
+  select(names, true, median, lower95_CrI, upper95_CrI) %>%
+  knitr::kable(digits = 3)
+```
+
+The attack-rate estimates and model fits can be compared with their simulated values and infection histories:
+
+```{r simulation-attack-rates,fig.width = 7,fig.height = 5}
+plot_attack_rates(
+  sim_chains$inf_chain,
+  settings = sim_res$settings,
+  true_ar = simulated_data$attack_rates,
+  by_group = TRUE,
+  plot_den = FALSE
+) + x_axis
+```
+
+```{r simulation-model-fits}
+plot_model_fits(
+  sim_chains$theta_chain,
+  sim_chains$inf_chain,
+  known_infection_history = simulated_data$infection_histories,
+  individuals = 1:9,
+  orientation = "longitudinal",
+  settings = sim_res$settings,
+  p_ncol = 5
+)[[1]] + x_axis + facet_wrap(~individual,ncol=3)
+```

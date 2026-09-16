@@ -1,5 +1,6 @@
 ---
 title: '_serosolver_ guide'
+subtitle: Getting started
 output: 
   rmarkdown::html_vignette:
     toc: true
@@ -16,8 +17,10 @@ vignette: |
 
 <!-- Modified by an AI assistant on 2026-09-16 using GPT-5. Added the package logo to the opening guide layout. -->
 
+```{=html}
 <!-- Modified by an AI assistant on 2026-09-16 using GPT-5. Added an example
 of comparing observed measurements with predictions from posterior draws. -->
+```
 
 ```{r setup, include = FALSE}
 knitr::opts_chunk$set(

@@ -52,3 +52,14 @@ test_that("estimated parameters retain starting-bound warnings", {
     "boost_long"
   )
 })
+
+test_that("one-based population groups do not trigger covariate warnings", {
+  demographics <- data.frame(
+    individual = 1:4,
+    birth = 0,
+    population_group = c(1, 1, 2, 2),
+    covariate = c(0, 0, 1, 1)
+  )
+
+  expect_silent(check_demographics(demographics))
+})

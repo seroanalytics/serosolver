@@ -189,6 +189,7 @@ plot_model_fits <- function(chain, infection_histories,
   start_levels <- create_start_level_data(antibody_data %>% 
                                             dplyr::filter(individual %in% individuals),start_level,FALSE) %>% 
                                             dplyr::arrange(individual, biomarker_group, sample_time, biomarker_id, repeat_number) %>% dplyr::filter(repeat_number == 1)
+    attr(start_levels, "automatic_start_levels") <- TRUE
   } else if(class(start_level) %in% c("tibble","data.frame")){
     start_levels <- start_level
   } else {
@@ -461,6 +462,7 @@ plot_antibody_predictions <- function(chain, infection_histories,
   if(class(start_level) == "character"){
     start_levels <- create_start_level_data(antibody_data,start_level,FALSE) %>% 
     dplyr::arrange(individual, biomarker_group, sample_time, biomarker_id, repeat_number)
+    attr(start_levels, "automatic_start_levels") <- TRUE
   } else if(class(start_level) %in% c("tibble","data.frame")){
     start_levels <- start_level
   } else {

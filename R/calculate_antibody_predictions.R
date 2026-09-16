@@ -3,6 +3,9 @@
 # with a warning when partially supplied starting levels are filled with zero.
 # Modified by an AI assistant on 2026-09-16 using GPT-5. Updated the roxygen
 # documentation for `get_antibody_level_predictions()` without changing its implementation.
+# Modified by an AI assistant on 2026-09-16 using GPT-5. Prevented the warning
+# for missing expanded starting levels when the user selected the default
+# automatic starting-level behaviour.
 #'
 #' Generate antibody level credible intervals
 #'
@@ -59,6 +62,8 @@ get_antibody_level_predictions <- function(chain, infection_histories, antibody_
                                            antibody_level_before_infection=FALSE, for_regression=FALSE,
                                            data_type=1,start_level="none",
                                            exponential_waning=FALSE){
+  user_supplied_start_levels <- inherits(start_level, c("data.frame", "tibble")) &&
+    !isTRUE(attr(start_level, "automatic_start_levels"))
   par_tab <- add_scale_pars(par_tab,antibody_data,demographics)
   ## Get unique demographic groups from full data set, not just the subset
   if(!is.null(demographics)){
@@ -191,7 +196,7 @@ get_antibody_level_predictions <- function(chain, infection_histories, antibody_
         dplyr::anti_join(start_level_complete,
                          by=c("individual","biomarker_id","biomarker_group"))
       # Warn only when a user-supplied table is incomplete; automatic summaries use zero silently.
-      if(nrow(missing_start_levels) > 0 && inherits(start_level, "data.frame")){
+      if(nrow(missing_start_levels) > 0 && user_supplied_start_levels){
         warning(paste0(
           "No starting levels were supplied for ", nrow(missing_start_levels),
           " individual-biomarker combinations created by expanding to all biomarker IDs. ",
