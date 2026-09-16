@@ -1,5 +1,5 @@
 
-<!-- Modified by an AI assistant on 2026-09-11 using GPT-5. Changes in this pass are limited to README wording/code tidying, package requirements, links to existing documentation, and page layout. -->
+<!-- Modified by an AI assistant on 2026-09-16 using GPT-5. Added a concise AI-assistance declaration at the end of the README. -->
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
 
@@ -165,3 +165,12 @@ output$plot_fits_cross_sectional
 ```
 
 <img src="man/figures/README-example_model_fits-1.png" alt="" width="100%" />
+
+## AI assistance
+
+AI assistance was used during development of this package for documentation
+drafting, repository audits, code review, and selected implementation edits.
+The package author is responsible for reviewing and approving all changes.
+The core of `serosolver` remains the same as the published version; new
+advanced features were developed and implemented manually, with some
+AI assistance used to align complex coding workflows.

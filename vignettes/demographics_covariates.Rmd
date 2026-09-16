@@ -14,7 +14,7 @@ vignette: |
   %\VignetteEngine{knitr::rmarkdown}
 ---
 
-<!-- Modified by an AI assistant on 2026-09-16 using GPT-5. Added the user-facing coefficient-values table and clarified the project-specific variant-stratification simulation workaround. -->
+<!-- Modified by an AI assistant on 2026-09-16 using GPT-5. Restored the requested variant-stratification warning and removed unnecessary compact data checks. -->
 
 ```{r setup, include=FALSE}
 set.seed(1)
@@ -34,7 +34,7 @@ antibody kinetics are expected to differ between groups. `serosolver` treats
 these as separate choices. `population_group` defines groups with different
 infection-history priors and is used when summarising attack rates. The
 `stratification` column in `par_tab` defines demographic effects on
-antibody-model parameters such as antibody boosting or waning rates
+antibody-model parameters such as antibody boosting or waning rates.
 
 You can mix and match different covariates to affect different parameters. For example, location could define
 different infection rates by location, while vaccination status and age group could affect antibody
@@ -52,6 +52,8 @@ level, biomarker group, and coefficient value. The same base `par_tab` is then
 used for fitting; `serosolver()` creates the coefficient rows from its
 `stratification` entries.
 
+## Package setup
+
 ```{r packages, message=FALSE, warning=FALSE}
 ## Install serosolver from GitHub when needed.
 ## remotes::install_github("seroanalytics/serosolver")
@@ -63,7 +65,9 @@ library(doParallel)
 library(coda)
 ```
 
-# Create and inspect the synthetic data
+# Covariate stratification
+
+## Create and inspect the synthetic data
 
 ```{r create-data}
 set.seed(123)
@@ -94,7 +98,7 @@ data(example_par_tab)
 par_tab <- example_par_tab
 par_tab$stratification <- NA_character_
 
-## Simplfy the kinetics model
+## Simplify the kinetics model
 par_tab[par_tab$names %in% c("cr_long", "cr_short", "wane_long"), "fixed"] <- 1
 par_tab[par_tab$names %in% c("cr_long", "cr_short", "wane_long"), "values"] <- 0
 par_tab[par_tab$names == "min_measurement", c("values", "lower_bound", "upper_bound")] <- 0
@@ -116,7 +120,7 @@ coefficient_values <- data.frame(
   stratification = c("age_group", "vaccinated"),
   stratification_level = c(1, 1),
   biomarker_group = c(1, 1),
-  value = c(1.5, -1.5)
+  value = c(1, -1)
 )
 
 sim_attack_rates <- simulate_attack_rates(
@@ -153,7 +157,7 @@ plot_antibody_data(
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 ```
 
-# Ways to pass fixed covariates
+## Ways to pass fixed covariates
 
 Fixed demographic values can be included directly in `antibody_data` when
 they are constant for each individual.
@@ -174,7 +178,7 @@ fixed_demographics_for_model <- fixed_demographics %>%
 head(check_demographics(fixed_demographics_for_model))
 ```
 
-# Time-varying demographic variables
+## Time-varying demographic variables
 
 A time-varying table has `individual`, `birth`, and `time` columns at a minimum,
 together with the covariates that change over time. Here, `age_group` is
@@ -185,7 +189,7 @@ every possible exposure time.
 head(check_demographics(timevarying_demographics))
 ```
 
-# Set up `par_tab`
+## Set up `par_tab`
 
 `par_tab` is the model control table. In this example, the infection-history prior
 parameters are stratified by the `population_group` ID, while
@@ -213,7 +217,7 @@ Covariate levels used for parameter stratification are zero-based, with level
 0 as the baseline. `population_group` is different: it is one-based. Here,
 location 0 maps to population group 1 and location 1 maps to population group 2.
 
-# How covariate coefficients are used
+## How covariate coefficients are used
 
 When a parameter is stratified, the value in its original `par_tab` row is the
 value for the level-0 baseline group. `serosolver` adds a `par_type = 4`
@@ -263,7 +267,14 @@ where `h` is the identity, log, or logit transformation described above.
 The natural-scale value is obtained by applying the inverse transformation
 after the coefficients have been added.
 
-# Priors for stratification coefficients
+Baseline antibody parameters describe the group coded 0 for each stratifying
+covariate. A coefficient describes the change relative to that baseline.
+`population_group` selects a group-specific infection-history prior; it is not
+an antibody-kinetics coefficient. Sparse groups can produce weakly identified
+coefficients, so the prior may contribute substantial uncertainty to the
+implied group differences.
+
+## Priors for stratification coefficients
 
 The following function identifies the added coefficient rows by their names and
 applies a weak standard normal prior to them.
@@ -302,7 +313,7 @@ ggplot(coefficient_prior, aes(multiplier)) +
   theme_classic()
 ```
 
-# Combining covariates
+## Combining covariates
 
 Several covariates can be listed in one `stratification` entry, separated by a
 comma. For example, `age_group, vaccinated` tells `serosolver` to estimate one
@@ -329,290 +340,7 @@ par_tab %>%
   select(names, stratification)
 ```
 
-# Variant-stratified parameters and simulation recovery
-
-The demographic examples above allow antibody parameters to differ according
-to who was infected, or according to a person's demographic characteristics at
-the time of infection. A related but different question is whether the
-antibody response depends on which variant or strain caused the infection.
-This is useful when the same biomarker can be boosted by infections with
-several variants, and the model should estimate different kinetics for those
-variants.
-
-Variant stratification is not a demographic grouping of individuals. Instead,
-it attaches a group to each possible infection time in the `antigenic_map`.
-The `exposure_group` column identifies the variant associated with that time,
-so the model can use the appropriate variant-specific parameters when an
-infection is assigned to that time. Demographic effects are still attached to
-individuals through `demographics` and `par_tab$stratification`; variant
-effects use the antigenic map and therefore follow a separate workflow.
-
-This section uses the same synthetic individuals and demographic information
-as the first analysis, but creates two antibody-parameter blocks. The two
-blocks have different short-term boosting values, and the simulated data are
-then fitted to test whether those differences can be recovered.
-
-The implementation of variant stratification currently reuses the
-`biomarker_group` structure that normally represents different observation
-types. This is a crude workaround developed for a specific project. It means
-that variant stratification cannot currently be combined with genuinely
-multiple observed biomarker groups in the same model. The code below therefore
-temporarily creates two groups for `simulate_data()`, then retains only group 1
-as the observed data used for fitting. The second group is not a second
-biomarker measurement in this analysis.
-
-There are three different group labels in this workflow. `biomarker_group` is
-normally used to identify separate observed data types, such as antibody and
-avidity measurements. In this variant-specific workaround it is instead
-reused in `par_tab` and the antigenic map to label separate
-antibody-parameter blocks. `exposure_group` is attached to the possible
-infection times in `antigenic_map` and tells the model which parameter block to
-use for an infection at that time. For example, if times 1--10 have
-`exposure_group = 1` and times 11--25 have `exposure_group = 2`, an infection
-assigned to time 15 uses the parameters for exposure group 2. The duplicated
-map rows provide a corresponding map block for each parameter block; they do
-not represent separate observed biomarker measurements in the fitted model.
-
-`population_group` has a different role. It is attached to people (or to
-people at particular times when demographics vary over time) and selects the
-infection-history prior used for that person. It is used for group-specific
-infection histories and attack-rate summaries; it does not identify the
-variant that caused an infection or select the variant-specific antibody
-parameters.
-
-```{r variant-simulation, results='hide'}
-variant_map_one_group <- data.frame(
-  x_coord = if_else(
-    possible_exposure_times <= 12,
-    possible_exposure_times / 12,
-    2 + possible_exposure_times / 12
-  ),
-  y_coord = if_else(possible_exposure_times <= 12, 0, 2),
-  inf_times = possible_exposure_times,
-  exposure_group = if_else(possible_exposure_times <= 12, 1L, 2L),
-  biomarker_group = 1L
-)
-
-## The antigenic map has one copy for each antibody-parameter block.
-variant_antigenic_map <- bind_rows(
-  variant_map_one_group,
-  variant_map_one_group %>% mutate(biomarker_group = 2L)
-)
-
-## Duplicate the base antibody-parameter rows for the second variant block.
-variant_par_rows <- par_tab %>%
-  filter(!names %in% c(
-    "infection_model_prior_shape1", "infection_model_prior_shape2"
-  )) %>%
-  mutate(biomarker_group = 2L)
-variant_par_tab <- bind_rows(par_tab, variant_par_rows)
-variant_par_tab[
-  variant_par_tab$biomarker_group == 2 & variant_par_tab$names == "boost_short",
-  "values"
-] <- 3.5
-
-variant_coefficient_values <- bind_rows(
-  coefficient_values,
-  coefficient_values %>% mutate(biomarker_group = 2L)
-)
-
-## serosolver creates demographic coefficient rows when fitting.
-variant_fit_par_tab <- variant_par_tab
-
-variant_simulated_data <- simulate_data(
-  par_tab = variant_par_tab, n_indiv = n_indiv,
-  antigenic_map = variant_antigenic_map,
-  possible_exposure_times = possible_exposure_times,
-  measured_biomarker_ids = possible_exposure_times,
-  sampling_times = sample_times, nsamps = length(sample_times),
-  demographics = timevarying_demographics,
-  attack_rates = sim_attack_rates, data_type = c(2, 2),
-  coefficient_values = variant_coefficient_values, verbose = FALSE
-)
-## simulate_data creates both groups because variant_par_tab contains both
-## parameter blocks. Retain one observed group for the fitted model.
-variant_antibody_data <- variant_simulated_data$antibody_data %>%
-  filter(biomarker_group == 1) %>%
-  check_data()
-```
-
-The map assigns exposure groups to infection times rather than to people.
-The temporary simulation contains two antibody groups, with continuous
-measurements for each group. Only group 1 is retained as observed data for the
-fitted model, so this example does not demonstrate multiple observed
-biomarker groups alongside variant stratification.
-
-```{r variant-map}
-ggplot(variant_map_one_group, aes(x_coord, y_coord, colour = factor(exposure_group))) +
-  geom_point(size = 2) +
-  labs(colour = "Exposure group", x = "Antigenic x coordinate", y = "Antigenic y coordinate") +
-  theme_classic()
-```
-
-```{r variant-parameter-blocks}
-variant_par_tab %>%
-  filter(names == "boost_short") %>%
-  select(names, biomarker_group, values)
-variant_antibody_data %>%
-  count(biomarker_group, sample_time) %>%
-  summarise(n_groups = n_distinct(biomarker_group),
-            n_samples = n_distinct(sample_time), .groups = "drop")
-```
-
-The parameter values used to generate the two blocks are deliberately
-different. This makes the simulation-recovery comparison informative rather
-than testing two nearly identical models.
-
-```{r variant-prior-function, include=FALSE}
-variant_prior_func <- function(par_tab) {
-  par_names <- par_tab$names
-  coef_pars <- which(grepl("coef", par_names))
-  boost_long_pars <- which(par_names == "boost_long")
-  boost_short_pars <- which(par_names == "boost_short")
-  wane_short_pars <- which(par_names == "wane_short")
-  obs_sd_pars <- which(par_names == "obs_sd")
-  function(pars) {
-    names(pars) <- par_names
-    prior_p <- sum(dnorm(pars[coef_pars], 0, 1, log = TRUE))
-    prior_p <- prior_p + sum(dlnorm(pars[boost_long_pars], log(2), 0.5, log = TRUE))
-    prior_p <- prior_p + sum(dlnorm(pars[boost_short_pars], log(2), 0.5, log = TRUE))
-    prior_p <- prior_p + sum(dbeta(pars[wane_short_pars], 4, 8, log = TRUE))
-    prior_p <- prior_p + sum(dlnorm(pars[obs_sd_pars], log(1), 0.5, log = TRUE))
-    prior_p
-  }
-}
-```
-
-The complete variant-stratified fit is:
-
-```{r variant-fit-call, eval=FALSE}
-variant_mcmc_pars <- c(
-  adaptive_iterations = 5000, iterations = 10000, thin = 20,
-  thin_inf_hist = 100, save_block = 1000
-)
-variant_res <- serosolver(
-  par_tab = variant_fit_par_tab,
-  antibody_data = variant_antibody_data,
-  demographics = timevarying_demographics,
-  antigenic_map = variant_antigenic_map,
-  possible_exposure_times = possible_exposure_times,
-  filename = "variant_fit",
-  prior_func = variant_prior_func,
-  data_type = 2, n_chains = 3, parallel = TRUE,
-  mcmc_pars = variant_mcmc_pars, verbose = TRUE
-)
-```
-
-```{r variant-fit, include=FALSE, message=FALSE, warning=FALSE}
-variant_mcmc_dir <- file.path(cache_dir, "variant_mcmc_chains")
-variant_mcmc_file <- file.path(variant_mcmc_dir, "variant_fit")
-variant_mcmc_pars <- c(
-  adaptive_iterations = 5000, iterations = 10000, thin = 20,
-  thin_inf_hist = 100, save_block = 1000
-)
-dir.create(variant_mcmc_dir, recursive = TRUE, showWarnings = FALSE)
-variant_settings_file <- paste0(variant_mcmc_file, "_serosolver_settings.RData")
-variant_chain_files <- list.files(
-  variant_mcmc_dir, pattern = "^variant_fit_[0-9]+_chain\\.csv$",
-  full.names = TRUE
-)
-variant_history_files <- sub(
-  "_chain\\.csv$", "_infection_histories.csv", variant_chain_files
-)
-variant_fit_available <- length(variant_chain_files) == 3L &&
-  file.exists(variant_settings_file) && all(file.exists(variant_history_files))
-
-if (variant_fit_available) {
-  load(variant_settings_file)
-  variant_fit_available <- length(unique(
-    serosolver_settings$antibody_data$biomarker_group
-  )) == 1L
-}
-
-if (!variant_fit_available) {
-  variant_res <- serosolver(
-    par_tab = variant_fit_par_tab,
-    antibody_data = variant_antibody_data,
-    demographics = timevarying_demographics,
-    antigenic_map = variant_antigenic_map,
-    possible_exposure_times = possible_exposure_times,
-    filename = variant_mcmc_file,
-    prior_func = variant_prior_func,
-    data_type = 2, n_chains = 3, parallel = TRUE,
-    mcmc_pars = variant_mcmc_pars, verbose = FALSE
-  )
-} else {
-  variant_settings <- serosolver_settings
-  variant_chains <- load_mcmc_chains(
-    location = variant_mcmc_dir, par_tab = variant_fit_par_tab,
-    burnin = variant_mcmc_pars[["adaptive_iterations"]], thin = 1,
-    convert_mcmc = FALSE, verbose = FALSE
-  )
-  variant_res <- list(
-    all_diagnostics = plot_mcmc_diagnostics(
-      location = variant_mcmc_dir, par_tab = variant_par_tab,
-      burnin = variant_mcmc_pars[["adaptive_iterations"]]
-    ),
-    settings = variant_settings,
-    mcmc_chains = variant_chains
-  )
-}
-variant_chains <- variant_res$mcmc_chains
-variant_settings <- variant_res$settings
-```
-
-The fitted attack rates show whether the infection-history part of the model
-still recovers the simulated population-group differences.
-
-```{r variant-attack-rates}
-plot_attack_rates(
-  variant_chains$inf_chain,
-  true_ar = variant_simulated_data$attack_rates %>% filter(is.finite(AR)),
-  settings = variant_settings, by_group = TRUE, plot_den = FALSE
-) + theme(axis.text.x = element_text(angle = 45, hjust = 1))
-```
-
-The parameter table comparison focuses on the variant-specific boosting values
-and the demographic coefficients. The duplicated names are made unique in the
-same order used in the MCMC output.
-
-```{r variant-parameter-recovery}
-variant_truth <- variant_simulated_data$par_tab %>%
-  filter(fixed == 0) %>%
-  mutate(chain_name = make.unique(names)) %>%
-  select(chain_name, names, biomarker_group, true = values)
-variant_res$all_diagnostics$theta_estimates %>%
-  rename(chain_name = names) %>%
-  left_join(variant_truth, by = "chain_name") %>%
-  filter(grepl("boost_short|coef", names)) %>%
-  select(names, biomarker_group, true, median, lower95_CrI, upper95_CrI) %>%
-  knitr::kable(digits = 3)
-```
-
-Finally, the fitted antibody model and the model-fit plot show how the
-variant-specific parameterisation affects the inferred antibody trajectories.
-The dashed infection lines in the final plot are the simulated infection
-times; they should generally overlap darker regions of high posterior
-probability.
-
-```{r variant-antibody-model}
-plot_estimated_antibody_model(
-  variant_chains$theta_chain, settings = variant_settings,
-  solve_times = possible_exposure_times, data_type = 2,
-  by_group = FALSE
-) + coord_cartesian(ylim = c(0, 10))
-```
-
-```{r variant-model-fits}
-plot_model_fits(
-  variant_chains$theta_chain, variant_chains$inf_chain,
-  known_infection_history = variant_simulated_data$infection_histories,
-  individuals = 1:9, orientation = "longitudinal", settings = variant_settings,
-  p_ncol = 3, data_type = 2, expand_to_all_times = TRUE
-)[[1]] + theme(axis.text.x = element_text(angle = 45, hjust = 1))
-```
-
-# Fit and inspect the model
+# Fit and inspect the covariate-stratified model
 
 The complete call below uses separate time-varying demographics, continuous
 observations, and the explicit `prior_func`. It is shown without evaluation
@@ -783,33 +511,354 @@ plot_estimated_antibody_model(
 ) + coord_cartesian(ylim = c(0, 10))
 ```
 
-# Simulation recovery and interpretation
+# Variant-stratified parameters
 
-Because this is synthetic data, the attack rates and coefficient values used
-to generate the observations are known. Recovery is assessed by checking
-whether true attack-rate curves lie within posterior intervals and whether true
-coefficient values are compatible with their credible intervals. Agreement is
-not expected at every time point, particularly when a group has few people or
-few infections.
+> **Warning:** Variant stratification is not a generally supported package
+> workflow. This implementation is a project-specific workaround used solely
+> for the analysis in [McCormack *et al.* [@mccormack2026]](https://www.medrxiv.org/content/10.64898/2026.04.16.26351029v1).
+> Hence, the example code below is fairly customised and complicated. You have been warned!
 
-Baseline antibody parameters describe the group coded 0 for each stratifying
-covariate. A coefficient describes the change relative to that baseline.
-`population_group` selects a group-specific infection-history prior; it
-is not an antibody-kinetics coefficient. Sparse groups can produce weakly
-identified coefficients, so the prior may contribute substantial uncertainty
-to the implied group differences.
+The demographic examples above allow antibody parameters to differ according
+to who was infected, or according to a person's demographic characteristics at
+the time of infection. A related but different question is whether the
+antibody response depends on which variant or strain caused the infection.
+This is useful when the same biomarker can be boosted by infections with
+several variants, and the model should estimate different kinetics for those
+variants.
 
-```{r recovery-summary}
-simulated_data$attack_rates %>%
-  select(population_group, time, prob_infection) %>%
-  group_by(population_group) %>%
-  summarise(mean_simulated_probability = mean(prob_infection), .groups = "drop")
-res$all_diagnostics$theta_estimates %>%
-  filter(grepl("coef", names)) %>%
-  select(names, median, lower95_CrI, upper95_CrI)
+Variant stratification is not a demographic grouping of individuals. Instead,
+it attaches a group to each possible infection time in the `antigenic_map`.
+The `exposure_group` column identifies the variant associated with that time,
+so the model can use the appropriate variant-specific parameters when an
+infection is assigned to that time. This example leaves demographic effects
+out of the variant fit so that the variant-specific parameterisation is shown
+on its own.
+
+This section uses the same number of synthetic individuals and sample times as
+the first analysis, but does not use demographic or covariate stratification.
+It creates two antibody-parameter blocks with different short-term boosting
+values, and fits the simulated data to test whether those differences can be
+recovered.
+
+The implementation of variant stratification currently reuses the
+`biomarker_group` structure that normally represents different observation
+types. This is a crude workaround developed for a specific project. It means
+that variant stratification cannot currently be combined with genuinely
+multiple observed biomarker groups in the same model. The code below therefore
+temporarily creates two groups for `simulate_data()`, then retains only group 1
+as the observed data used for fitting. The second group is not a second
+biomarker measurement in this analysis.
+
+There are three different group labels in this workflow. `biomarker_group` is
+normally used to identify separate observed data types, such as antibody and
+avidity measurements. In this variant-specific workaround it is instead
+reused in `par_tab` and the antigenic map to label separate
+antibody-parameter blocks. `exposure_group` is attached to the possible
+infection times in `antigenic_map` and tells the model which parameter block to
+use for an infection at that time. For example, if times 1--10 have
+`exposure_group = 1` and times 11--25 have `exposure_group = 2`, an infection
+assigned to time 15 uses the parameters for exposure group 2. The duplicated
+map rows provide a corresponding map block for each parameter block; they do
+not represent separate observed biomarker measurements in the fitted model.
+
+`population_group` has a different role. It is attached to people (or to
+people at particular times when demographics vary over time) and selects the
+infection-history prior used for that person. It is used for group-specific
+infection histories and attack-rate summaries; it does not identify the
+variant that caused an infection or select the variant-specific antibody
+parameters.
+In this example everyone is assigned to population group 1, so there is no
+demographic stratification in the variant fit.
+
+## Set up the variant map and parameter blocks
+
+```{r variant-simulation, results='hide'}
+variant_map_one_group <- data.frame(
+  x_coord = if_else(
+    possible_exposure_times <= 12,
+    possible_exposure_times / 12,
+    2 + possible_exposure_times / 12
+  ),
+  y_coord = if_else(possible_exposure_times <= 12, 0, 2),
+  inf_times = possible_exposure_times,
+  exposure_group = if_else(possible_exposure_times <= 12, 1L, 2L),
+  biomarker_group = 1L
+)
+
+## The antigenic map has one copy for each antibody-parameter block.
+variant_antigenic_map <- bind_rows(
+  variant_map_one_group,
+  variant_map_one_group %>% mutate(biomarker_group = 2L)
+)
+
+## Use an unstratified table for the variant-specific example.
+variant_base_par_tab <- par_tab
+variant_base_par_tab$stratification <- NA_character_
+
+## Duplicate the base antibody-parameter rows for the second variant block.
+variant_par_rows <- variant_base_par_tab %>%
+  filter(!names %in% c(
+    "infection_model_prior_shape1", "infection_model_prior_shape2"
+  )) %>%
+  mutate(biomarker_group = 2L)
+variant_par_tab <- bind_rows(variant_base_par_tab, variant_par_rows)
+variant_par_tab[
+  variant_par_tab$biomarker_group == 2 & variant_par_tab$names == "boost_short",
+  "values"
+] <- 3.5
+
+variant_fit_par_tab <- variant_par_tab
+variant_demographics <- timevarying_demographics %>%
+  select(individual, birth, time) %>%
+  mutate(population_group = 1L)
+variant_sim_attack_rates <- simulate_attack_rates(
+  possible_exposure_times, mean_par = 0.2, sd_par = 0.05, n_groups = 1
+)
+
+variant_simulated_data <- simulate_data(
+  par_tab = variant_par_tab, n_indiv = n_indiv,
+  antigenic_map = variant_antigenic_map,
+  possible_exposure_times = possible_exposure_times,
+  measured_biomarker_ids = possible_exposure_times,
+  sampling_times = sample_times, nsamps = length(sample_times),
+  demographics = variant_demographics,
+  attack_rates = variant_sim_attack_rates, data_type = c(2, 2),
+  verbose = FALSE
+)
+## simulate_data creates both groups because variant_par_tab contains both
+## parameter blocks. Retain one observed group for the fitted model.
+variant_antibody_data <- variant_simulated_data$antibody_data %>%
+  filter(biomarker_group == 1) %>%
+  check_data()
+```
+
+The map assigns exposure groups to infection times rather than to people.
+In this workaround, `biomarker_group` labels the variant-specific parameter
+blocks rather than two distinct observed antibody measurements. Because
+`simulate_data()` uses the same labels when constructing simulated data, it
+initially returns rows for both labels. Only group 1 is retained as the single
+observed biomarker group for fitting; group 2 is the duplicated simulation
+block needed to implement the variant-specific parameterisation.
+
+```{r variant-map,fig.height=4,fig.width=6}
+ggplot(variant_map_one_group, aes(x_coord, y_coord, colour = factor(exposure_group))) +
+  geom_point(size = 2) +
+  labs(colour = "Exposure group", x = "Antigenic x coordinate", y = "Antigenic y coordinate") +
+  theme_classic()
+```
+
+```{r variant-parameter-blocks}
+variant_par_tab %>%
+  filter(names == "boost_short") %>%
+  select(names, biomarker_group, values)
+variant_antibody_data %>%
+  count(biomarker_group, sample_time) %>%
+  summarise(n_groups = n_distinct(biomarker_group),
+            n_samples = n_distinct(sample_time), .groups = "drop")
+```
+
+The parameter values used to generate the two blocks are deliberately
+different. This makes the simulation-recovery comparison informative rather
+than testing two nearly identical models.
+
+```{r variant-prior-function, include=FALSE}
+variant_prior_func <- function(par_tab) {
+  par_names <- par_tab$names
+  boost_long_pars <- which(par_names == "boost_long")
+  boost_short_pars <- which(par_names == "boost_short")
+  wane_short_pars <- which(par_names == "wane_short")
+  obs_sd_pars <- which(par_names == "obs_sd")
+  function(pars) {
+    names(pars) <- par_names
+    prior_p <- sum(dlnorm(pars[boost_long_pars], log(2), 0.5, log = TRUE))
+    prior_p <- prior_p + sum(dlnorm(pars[boost_short_pars], log(2), 0.5, log = TRUE))
+    prior_p <- prior_p + sum(dbeta(pars[wane_short_pars], 4, 8, log = TRUE))
+    prior_p <- prior_p + sum(dlnorm(pars[obs_sd_pars], log(1), 0.5, log = TRUE))
+    prior_p
+  }
+}
+```
+
+## Fit the variant-stratified model
+
+The complete variant-stratified fit is:
+
+```{r variant-fit-call, eval=FALSE}
+variant_mcmc_pars <- c(
+  adaptive_iterations = 5000, iterations = 10000, thin = 20,
+  thin_inf_hist = 100, save_block = 1000
+)
+variant_res <- serosolver(
+  par_tab = variant_fit_par_tab,
+  antibody_data = variant_antibody_data,
+  demographics = variant_demographics,
+  antigenic_map = variant_antigenic_map,
+  possible_exposure_times = possible_exposure_times,
+  filename = "variant_fit",
+  prior_func = variant_prior_func,
+  data_type = 2, n_chains = 3, parallel = TRUE,
+  mcmc_pars = variant_mcmc_pars, verbose = TRUE
+)
+```
+
+```{r variant-fit, include=FALSE, message=FALSE, warning=FALSE}
+variant_mcmc_dir <- file.path(cache_dir, "variant_mcmc_chains")
+variant_mcmc_file <- file.path(variant_mcmc_dir, "variant_fit")
+variant_mcmc_pars <- c(
+  adaptive_iterations = 5000, iterations = 10000, thin = 20,
+  thin_inf_hist = 100, save_block = 1000
+)
+dir.create(variant_mcmc_dir, recursive = TRUE, showWarnings = FALSE)
+variant_settings_file <- paste0(variant_mcmc_file, "_serosolver_settings.RData")
+variant_chain_files <- list.files(
+  variant_mcmc_dir, pattern = "^variant_fit_[0-9]+_chain\\.csv$",
+  full.names = TRUE
+)
+variant_history_files <- sub(
+  "_chain\\.csv$", "_infection_histories.csv", variant_chain_files
+)
+variant_fit_available <- length(variant_chain_files) == 3L &&
+  file.exists(variant_settings_file) && all(file.exists(variant_history_files))
+
+if (variant_fit_available) {
+  load(variant_settings_file)
+  variant_fit_available <- length(unique(
+    serosolver_settings$antibody_data$biomarker_group
+  )) == 1L
+}
+
+if (!variant_fit_available) {
+  variant_res <- serosolver(
+    par_tab = variant_fit_par_tab,
+    antibody_data = variant_antibody_data,
+    demographics = variant_demographics,
+    antigenic_map = variant_antigenic_map,
+    possible_exposure_times = possible_exposure_times,
+    filename = variant_mcmc_file,
+    prior_func = variant_prior_func,
+    data_type = 2, n_chains = 3, parallel = TRUE,
+    mcmc_pars = variant_mcmc_pars, verbose = FALSE
+  )
+} else {
+  variant_settings <- serosolver_settings
+  variant_chains <- load_mcmc_chains(
+    location = variant_mcmc_dir, par_tab = variant_fit_par_tab,
+    burnin = variant_mcmc_pars[["adaptive_iterations"]], thin = 1,
+    convert_mcmc = FALSE, verbose = FALSE
+  )
+  variant_res <- list(
+    all_diagnostics = plot_mcmc_diagnostics(
+      location = variant_mcmc_dir, par_tab = variant_par_tab,
+      burnin = variant_mcmc_pars[["adaptive_iterations"]]
+    ),
+    settings = variant_settings,
+    mcmc_chains = variant_chains
+  )
+}
+variant_chains <- variant_res$mcmc_chains
+variant_settings <- variant_res$settings
+```
+
+## Simulation recovery
+
+The fitted attack rates show whether the infection-history part of the model
+still recovers the simulated population-group differences.
+
+```{r variant-attack-rates}
+plot_attack_rates(
+  variant_chains$inf_chain,
+  true_ar = variant_simulated_data$attack_rates %>% filter(is.finite(AR)),
+  settings = variant_settings, by_group = TRUE, plot_den = FALSE
+) + theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+The parameter table comparison focuses on the variant-specific boosting values.
+The duplicated names are made unique in the same order used in the MCMC output.
+
+```{r variant-parameter-recovery}
+variant_truth <- variant_simulated_data$par_tab %>%
+  filter(fixed == 0) %>%
+  mutate(chain_name = make.unique(names)) %>%
+  select(chain_name, names, biomarker_group, true = values)
+variant_res$all_diagnostics$theta_estimates %>%
+  rename(chain_name = names) %>%
+  left_join(variant_truth, by = "chain_name") %>%
+  filter(names == "boost_short") %>%
+  select(names, biomarker_group, true, median, lower95_CrI, upper95_CrI) %>%
+  knitr::kable(digits = 3)
+```
+
+The fitted chain contains two sets of antibody-kinetics parameters: one for
+each variant-specific block. Because this workaround stores the second block
+using the `biomarker_group` structure, its parameter names have a `.1` suffix
+in the chain. The fitted antibody data still contain only one observed
+biomarker group, so the code below does not add a second set of observations
+or fit another model. Instead, it uses `plot_estimated_antibody_model()` to
+make two model-implied trajectories. It chooses one possible infection time
+from each `exposure_group`; the model then uses the corresponding fitted
+parameter block. The trajectories are combined in one plot, using one
+representative biomarker ID to keep the comparison readable.
+
+```{r variant-kinetics-comparison,fig.height=4,fig.width=6}
+variant_infection_times <- c(
+  "Exposure group 1" = 6,
+  "Exposure group 2" = 18
+)
+representative_biomarker_id <- max(
+  as.numeric(as.character(variant_antibody_data$biomarker_id))
+)
+
+variant_kinetics <- lapply(seq_along(variant_infection_times), function(i) {
+  infection_time <- variant_infection_times[i]
+  plot_estimated_antibody_model(
+    variant_chains$theta_chain,
+    antibody_data = variant_antibody_data,
+    demographics = variant_demographics,
+    antigenic_map = variant_antigenic_map,
+    possible_exposure_times = possible_exposure_times,
+    par_tab = variant_fit_par_tab,
+    solve_times = seq(infection_time, infection_time + 10, by = 0.1),
+    set_infections = infection_time,
+    data_type = 2, settings = variant_settings,
+    by_group = TRUE, nsamp = 1000
+  )$data %>%
+    filter(as.numeric(as.character(biomarker_id)) == representative_biomarker_id) %>%
+    mutate(
+      time_since_infection = sample_time - infection_time,
+      exposure_group = names(variant_infection_times)[i]
+    )
+}) %>%
+  bind_rows()
+
+ggplot(variant_kinetics,
+       aes(time_since_infection, median,
+           colour = exposure_group, fill = exposure_group)) +
+  geom_ribbon(aes(ymin = lower, ymax = upper), alpha = 0.2, colour = NA) +
+  geom_line() +
+  coord_cartesian(ylim = c(0, 10)) +
+  labs(
+    x = "Time since infection",
+    y = "Antibody level",
+    colour = "Variant exposure group",
+    fill = "Variant exposure group"
+  ) +
+  theme_classic()
 ```
 
 # References
 
-The separate advanced-features vignette will cover starting antibody levels,
-measurement offsets, exponential waning, and multiple biomarker groups.
+This vignette focuses on demographic and covariate information, followed by the
+project-specific variant-stratification workaround. Related material is
+available in the following vignettes:
+
+- the [serosolver guide](SEROSOLVER_GUIDE_LINK) for the main workflow and
+  general model options;
+- the [Hong Kong case study](CASE_STUDY_1_VIGNETTE_LINK) for a longitudinal
+  example;
+- the [Fluscape case study](CASE_STUDY_2_VIGNETTE_LINK) for a cross-sectional
+  example; and
+- the [advanced-features vignette](ADVANCED_FEATURES_VIGNETTE_LINK) for
+  starting antibody levels, measurement offsets, exponential waning, and
+  multiple observed biomarker groups.
+
+<!-- TODO: replace the placeholder vignette links above with the final links. -->
