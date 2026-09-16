@@ -1,3 +1,6 @@
+# Modified by an AI assistant on 2026-09-16 using GPT-5. Clarified the roxygen
+# documentation for infection-history proposal helpers without changing their implementations.
+
 #' Swap infection history years
 #'
 #' Swaps the entire contents of two columns of the infection history matrix, adhering to age and sample time limitations.
@@ -5,8 +8,8 @@
 #' @param inf_hist_masks matrix of 1s and 0s corresponding to infection_history, with a 1 where the infection state is eligible to be updated and a 0 otherwise
 #' @param proposal_inf_hist_indiv_swap_ratio what proportion of infections should be swapped?
 #' @param proposal_inf_hist_distance How many time points away should be chosen as candidate swaps?
-#' @param proposal_ratios optional NULL. Can set the relative sampling weights of the infection state times. Should be an integer vector of length matching nrow(antigenic_map). Otherwise, leave as NULL for uniform sampling.
-#' @return the same infection_history matrix, but with two columns swapped
+#' @param proposal_ratios optional NULL. Can set the relative sampling weights of the infection state times. Should be an integer vector of length matching the number of columns in `infection_history`. Otherwise, leave as NULL for uniform sampling.
+#' @return A list containing the infection history matrix with two columns swapped.
 #' @family proposals
 #' @examples
 #' data(example_inf_hist)
@@ -61,6 +64,8 @@ inf_hist_swap <- function(infection_history, inf_hist_masks, proposal_inf_hist_i
 #'
 #' Swaps the entire contents of two columns of the infection history matrix, adhering to age and strain limitations. Also swaps the values of phi that correspond to these years
 #' @inheritParams inf_hist_swap
+#' @param age_mask the age mask, giving the first index of the infection_history matrix that each individual can be exposed to. One entry per individual
+#' @param sample_mask the sample mask, giving the last index of the infection_history matrix that each individual can be exposed to. One entry per individual
 #' @param phis vector of force of infection parameters for each column
 #' @param n_alive number of individuals alive in each entry of phis
 #' @return a list: the same infection_history matrix, but with two columns swapped; also the swapped phis
@@ -138,7 +143,7 @@ inf_hist_swap_phi <- function(infection_history, phis, age_mask, sample_mask, pr
 
 #' Brute force infection history proposal
 #'
-#' Performs a flipping/swapping infection history update step for a matrix of infection histories. 50/50 chance of performing a flip or a swap
+#' Performs a flipping/swapping infection history update step for a matrix of infection histories. The choice is controlled by `proposal_inf_hist_indiv_swap_ratio`; with the default value of 0.5, it is approximately a 50/50 choice.
 #' @param new_inf_hist a matrix of infection histories - rows for individuals, columns for infection epochs. Contents should be 1s and 0s
 #' @param sampled_indivs a vector of indices describing rows in the infection history matrix that should be updated
 #' @param age_mask a vector (one value for each individual) giving the first infection epoch that an individual could have been exposed in. That is, if an individual was born in the 7th epoch, their entry in age_mask would be 7.

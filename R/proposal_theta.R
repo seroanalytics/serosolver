@@ -1,3 +1,6 @@
+# Modified by an AI assistant on 2026-09-16 using GPT-5. Clarified the roxygen
+# documentation for parameter proposal helpers without changing their implementations.
+
 #' MCMC proposal function
 #'
 #' Proposal function for MCMC random walk, taking random steps of a given size.
@@ -6,7 +9,7 @@
 #' @param upper_bounds a vector of the upper allowable bounds for the proposal
 #' @param steps a vector of step sizes for the proposal
 #' @param index numeric value for the index of the parameter to be moved from the param table and vector
-#' @param gaussian_proposal if TRUE, then samples moves from a Gaussian distribution centered around the current value
+#' @param gaussian_proposal retained for compatibility with the current interface
 #' @return the parameter vector after step
 #' @family proposals
 #' @useDynLib serosolver
@@ -53,8 +56,7 @@ univ_proposal <- function(values, lower_bounds, upper_bounds, steps, index, gaus
 #'
 #' Given the current parameters and a covariance matrix, returns a vector for a proposed jump from a multivariate normal distribution. Takes into account parameter covariance and ensures containment condition with beta, if cov_mat0 (the identity matrix) is specified.
 #' @param values the vector of current parameter values
-#' @param fixed set of flags corresponding to the parameter vector indicating which parameters are fixed
-#' Takes into account parameter covariance and ensures containment condition with beta, if cov_mat0 (the identity matrix) is specified.
+#' @param fixed indices of the parameters to update
 #' @param cov_mat the 2D covariance matrix for all of the parameters
 #' @param cov_mat0 optional, usually the identity matrix for theta
 #' @param use_log flag. If TRUE, propose on log scale

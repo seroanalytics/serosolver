@@ -1,10 +1,13 @@
+# Modified by an AI assistant on 2026-09-16 using GPT-5. Clarified the roxygen
+# documentation for prior and prior-fitting helpers without changing their implementations.
+
 #' Beta binomial infection history prior
 #'
 #' Calculates the beta binomial infection history prior for each individual, taking into account the number of years they could be infected.
 #' @param pars the named parameter vector with infection_model_prior_shape1 and infection_model_prior_shape2 corresponding to the beta binomial distribution
 #' @param infection_history the infection history matrix
 #' @param age_mask the age mask, giving the first index of the infection_history matrix that each individual can be exposed to. One entry per individual
-#' @return a prior probability for each individual
+#' @return the log prior contribution for each individual
 #' @family priors
 #' @export
 infection_history_prior <- function(pars, infection_history, age_mask) {
@@ -19,12 +22,28 @@ infection_history_prior <- function(pars, infection_history, age_mask) {
 }
 
 #' Beta binomial density
+#'
+#' Calculates the beta binomial probability mass function for `x` successes out of `N` trials.
+#' @param x number of successes
+#' @param N number of trials
+#' @param u first shape parameter of the Beta distribution
+#' @param v second shape parameter of the Beta distribution
+#' @return the beta binomial probability
+#' @family priors
 #' @export
 density_beta_binom <- function(x, N, u, v) {
   (beta(x + u, N - x + v) / beta(u, v)) * choose(N, x)
 }
 
 #' Beta binomial prior used here (no choose constant)
+#'
+#' Calculates the beta-binomial term used for the infection-history prior without the binomial choose constant.
+#' @param x number of infections
+#' @param N number of possible infection times
+#' @param u first shape parameter of the Beta distribution
+#' @param v second shape parameter of the Beta distribution
+#' @return the beta-binomial prior term
+#' @family priors
 #' @export
 dbb_prior <- function(x, N, u, v) {
   (beta(x + u, N - x + v) / beta(u, v))
@@ -37,12 +56,12 @@ db <- function(x, a, b) {
 
 #' Infection history prior R
 #'
-#' R implementation of the infection history prior assuming common infection risk across individuals in a given year
+#' R implementation of the infection history prior assuming common infection risk across individuals in a given year.
 #' @param infection_history the infection history matrix
 #' @param age_mask the age mask, giving the first index of the infection_history matrix that each individual can be exposed to. One entry per individual
 #' @param infection_model_prior_shape1 shape1 parameter for the Beta distribution
 #' @param infection_model_prior_shape2 shape2 parameter for the Beta distribution
-#' @return a prior probability for each individual
+#' @return the total log prior for the infection history
 #' @family priors
 #' @export
 inf_mat_prior <- function(infection_history, age_mask, infection_model_prior_shape1, infection_model_prior_shape2) {
@@ -57,18 +76,18 @@ inf_mat_prior <- function(infection_history, age_mask, infection_model_prior_sha
 #' Fit beta distribution to MCMC output
 #'
 #' Attempts to fit a beta distribution to a data frame of MCMC output from a previous run.
-#' @param chain_samples the MCMC chain data frame to be fit to
-#' @param par_name the column label to fit to
-#' @param error_tol = 9999999999999, what's the error tolerance on the fit? Might take some tweaking
-#' @param try_attempts = 10 how many fitting attempts to try before giving up
-#' @param plot_fit = TRUE, if TRUE, plots the fit to the MCMC chain
-#' @return the model fit object as returned by optim
+#' @param chain_samples numeric vector of posterior samples to fit
+#' @param par_name optional parameter name used in the plot title
+#' @param error_tol tolerance for the optimisation error
+#' @param try_attempts maximum number of fitting attempts before giving up
+#' @param plot_fit if TRUE, plots the fitted distribution against the posterior density
+#' @return the model fit object returned by `optim`, or a list with missing parameters if fitting fails
 #' @seealso \code{\link{fit_normal_prior}}
 #' @family priors
 #' @examples
 #' \dontrun{
-#' ## Output from a previous serosolver chain
-#' chain <- read.csv("madeup_chain.csv")
+#' ## Posterior draws from a previous serosolver chain
+#' chain <- rbeta(100, 2, 8)
 #' results <- fit_beta_prior(chain, par_name="sigma1",plot_fit=FALSE)
 #' }
 fit_beta_prior <- function(chain_samples, par_name = "", error_tol = 999999999, try_attempts = 10, plot_fit = TRUE) {
@@ -108,18 +127,18 @@ fit_beta_prior <- function(chain_samples, par_name = "", error_tol = 999999999, 
 #' Fit normal distribution to MCMC output
 #'
 #' Attempts to fit a normal distribution to a data frame of MCMC output from a previous run.
-#' @param chain_samples the MCMC chain data frame to be fit to
-#' @param par_name the column label to fit to
-#' @param error_tol = 9999999999999, what's the error tolerance on the fit? Might take some tweaking
-#' @param try_attempts = 10 how many fitting attempts to try before giving up
-#' @param plot_fit = TRUE, if TRUE, plots the fit to the MCMC chain
-#' @return the model fit object as returned by optim
+#' @param chain_samples numeric vector of posterior samples to fit
+#' @param par_name optional parameter name used in the plot title
+#' @param error_tol tolerance for the optimisation error
+#' @param try_attempts maximum number of fitting attempts before giving up
+#' @param plot_fit if TRUE, plots the fitted distribution against the posterior density
+#' @return the model fit object returned by `optim`, or a list with missing parameters if fitting fails
 #' @family priors
 #' @seealso \code{\link{fit_normal_prior}}
-#' #' @examples
+#' @examples
 #' \dontrun{
-#' ## Output from a previous serosolver chain
-#' chain <- read.csv("madeup_chain.csv")
+#' ## Posterior draws from a previous serosolver chain
+#' chain <- rnorm(100, mean = 0, sd = 1)
 #' results <- fit_normal_prior(chain, par_name="mu",plot_fit=FALSE)
 #' }
 fit_normal_prior <- function(chain_samples, par_name = "", error_tol = 999999999, try_attempts = 10, plot_fit = TRUE) {
@@ -161,9 +180,9 @@ fit_normal_prior <- function(chain_samples, par_name = "", error_tol = 999999999
 
 #' Find beta parameters for mean and variance
 #'
-#' Finds the shape1 and shape2 parameters for a Beta distribution that gives the desired mean and variance
+#' Finds the shape1 and shape2 parameters for a Beta distribution that gives the desired mean and variance.
 #' @param mean the mean of the beta distribution (between 0 and 1)
-#' @param var the variance of the beta distribution (this is likely going to be somewhere less than 0.25)
+#' @param var the variance of the beta distribution (between 0 and 0.25)
 #' @param make_plot if TRUE, plots the resulting Beta distribution to the R device
 #' @return a list with shape1 and shape2
 #' @family priors
@@ -183,10 +202,10 @@ find_beta_prior_with_mean_var <- function(mean, var, make_plot = FALSE) {
 
 #' Find beta parameters with maximum variance
 #'
-#' Given a desired annual mean attack rate and the number of epochs to consider per year, gives the shape1 and shape2 parameters with the desired mean but maximum variance
-#' @param desired_annual_mean the desired ANNUAL mean attack rate
-#' @param the number of buckets to split each year into
-#' @return a list with shape1 and shape2
+#' Given a desired annual mean attack rate and the number of epochs to consider per year, gives the shape1 and shape2 parameters with the desired mean but maximum variance.
+#' @param desired_annual_mean the desired annual mean attack rate
+#' @param buckets the number of time intervals to split each year into
+#' @return a list with `shape1` and `shape2`
 #' @family priors
 #' @export
 #' @examples
@@ -222,7 +241,7 @@ calc_b <- function(mode1, k) {
 
 #' Find Beta distribution parameters with mode
 #'
-#' Calculates the necessary parameters for the Beta distribution to give the desired mode and certainty, k
+#' Calculates the necessary parameters for the Beta distribution to give the desired mode and certainty, `k`.
 #' @param mode1 the desired mode
 #' @param k the desired certainty in the prior, must be at least 2. The higher this number, the "stronger" the prior
 #' @return a list with shape1 and shape2 parameters for the Beta distribution
