@@ -1,23 +1,28 @@
 # Modified by an AI assistant on 2026-09-16 using GPT-5. Clarified the roxygen
 # documentation for the exported stratification helpers without changing their implementations.
+# Modified by an AI assistant on 2026-09-16 using GPT-5. Fixed static
+# demographic tables being treated as time-varying when they lack a `time`
+# column.
 
 #' Add scaling parameters to par_tab
 #'
 #' Adds entries to par_tab to stratify parameters by requested stratification levels. antibody_data and timevarying_demographics are used to find how many levels of each stratification have been requested
 #' @param par_tab the parameter table, including a column called stratification which is NA if no stratification is requested, or a character value matching an entry in antibody_data or timevarying_demographics
 #' @param antibody_data the antibody data data frame, see \code{\link{example_antibody_data}}. If NULL, then uses timevarying_demographics
-#' @param timevarying_demographics a data frame of timevarying demographics, with columns individual, time and any stratification variables. If NULL, then uses antibody_data
+#' @param timevarying_demographics optional demographic data. Include `individual`, any stratification variables, and `time` for time-varying demographics. Without `time`, the table is treated as fixed for each individual. If NULL, then uses antibody_data.
 #' @param scale_par_lower the lower bound of any used scale parameters
 #' @param scale_par_upper the upper bound of any used scale parameters
 #' @return the updated `par_tab`, including rows for any added scale parameters
 #' @family stratification
 add_scale_pars <- function(par_tab, antibody_data, timevarying_demographics=NULL, scale_par_lower=-25,scale_par_upper=25){
   ## Check if timevarying demographics are used. If so, then use these to create demographic table and add scale parameters
-  if(!is.null(timevarying_demographics)){
+  if(!is.null(timevarying_demographics) && "time" %in% colnames(timevarying_demographics)){
     timevarying_demographics <- timevarying_demographics %>% dplyr::arrange(individual, time)
     timevarying_demographics <- as.data.frame(timevarying_demographics)
     demographics <- create_demographic_table(timevarying_demographics,par_tab)
     ## Otherwise, base stratification parameters on the antibody data
+  } else if(!is.null(timevarying_demographics)) {
+    demographics <- create_demographic_table(timevarying_demographics, par_tab)
   } else {
     demographics <- create_demographic_table(antibody_data,par_tab)
   }
@@ -167,18 +172,23 @@ setup_stratification_table <- function(par_tab, unique_demographic_combinations)
 #' Takes antibody_data and demographics and returns a list with the stratification groups used to group the antibody kinetics model. If timevarying_demographics are provided, then these are used to create the demographic groups. If not, then antibody_data is used.
 #' @param par_tab the parameter table. See \code{\link{example_par_tab}} for an example.
 #' @param antibody_data the antibody data data frame. See \code{\link{example_antibody_data}} for an example.
-#' @param timevarying_demographics optional. a data frame of timevarying demographics, with columns individual, time and any stratification variables. If NULL, then uses antibody_data
+#' @param timevarying_demographics optional demographic data. Include `individual`, any stratification variables, and `time` for time-varying demographics. Without `time`, the table is treated as fixed for each individual. If NULL, then uses antibody_data.
 #' @param demographic_groups optional. a data frame of demographic groups, with columns for each demographic group and rows for each unique combination of demographic groups. If NULL, then create this from antibody_data or timevarying_demographics
 #' @return a list with three entries: 1) the names of the demographic groups used, 2) a data frame of demographic groups, with each row a unique combination of demographic groups, and 3) a boolean indicating whether timevarying demographics were used
 #' @family stratification
 get_demographic_groups <- function(par_tab, antibody_data, timevarying_demographics=NULL,demographic_groups=NULL){
   ## Setup data vectors and extract
-  if(!is.null(timevarying_demographics)){
+  if(!is.null(timevarying_demographics) && "time" %in% colnames(timevarying_demographics)){
     timevarying_demographics <- timevarying_demographics %>% arrange(individual, time)
     timevarying_demographics <- as.data.frame(timevarying_demographics)
     use_timevarying_demographics <- TRUE
     if(is.null(demographic_groups)){
       demographic_groups <- create_demographic_table(timevarying_demographics,par_tab)
+    }
+  } else if(!is.null(timevarying_demographics)) {
+    use_timevarying_demographics <- FALSE
+    if(is.null(demographic_groups)){
+      demographic_groups <- create_demographic_table(timevarying_demographics, par_tab)
     }
   } else {
     use_timevarying_demographics <- FALSE
@@ -219,7 +229,7 @@ align_antibody_demographic_dat <- function(antibody_data, demographics=NULL,verb
 #'
 #' Internal helper that adds demographic and population-group indices used by the infection-history and antibody-kinetics models.
 #' @param antibody_data antibody data frame
-#' @param timevarying_demographics optional time-varying demographic data
+#' @param timevarying_demographics optional demographic data. Include `time` for time-varying groups; without it, fixed demographic values are merged into antibody_data.
 #' @param par_tab the parameter table containing requested stratifications
 #' @param use_demographic_groups optional demographic grouping variables
 #' @return a list containing updated data, group tables, and individual group indices
@@ -247,6 +257,12 @@ add_stratifying_variables <- function(antibody_data, timevarying_demographics=NU
   population_group_strats <- population_group_strats[!is.na(population_group_strats)]
   if(length(population_group_strats) == 0) population_group_strats <- NA
   
+  if(!is.null(timevarying_demographics) && !("time" %in% colnames(timevarying_demographics))) {
+    ## Static demographics are merged into antibody_data and then handled by the fixed-group path below.
+    antibody_data <- align_antibody_demographic_dat(antibody_data, timevarying_demographics)
+    timevarying_demographics <- NULL
+  }
+
   if(!is.null(timevarying_demographics)){
     antibody_data <- align_antibody_demographic_dat(antibody_data, timevarying_demographics)
   }

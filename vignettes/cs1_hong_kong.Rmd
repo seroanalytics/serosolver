@@ -155,7 +155,7 @@ par_tab$stratification <- NA_character_
 par_tab[par_tab$names == "boost_short", "stratification"] <- "vaccinated1"
 
 ## Check the parameter table before fitting.
-check_par_tab(par_tab, mcmc = TRUE, possible_exposure_times = possible_exposure_times)
+check_par_tab(par_tab, mcmc = TRUE, possible_exposure_times = possible_exposure_times, version=2)
 ```
 
 The parameter table controls which parameters are estimated, their starting values, and their allowable ranges. The `stratification` entry above allows the short-term boost to differ between vaccinated and unvaccinated individuals. Population groups are supplied separately through `population_group` and are used when summarising infection histories and attack rates.
@@ -166,7 +166,6 @@ The assumed antibody kinetics can be inspected before fitting the model:
 plot_antibody_model(
   pars = par_tab,
   infection_history = possible_exposure_times[1],
-  possible_exposure_times = possible_exposure_times,
   times = possible_exposure_times
 )
 ```
@@ -215,7 +214,7 @@ The infection-history prior uses the Beta shape parameters in `par_tab`. These c
 
 The prior predictive model is run without evaluating the likelihood. Its returned parameter and antibody-model plots show the implications of the prior assumptions before fitting to the observed data.
 
-```{r prior-predictive, eval=FALSE}
+```{r prior-predictive, eval=TRUE}
 ## Run serosolver using the priors without evaluating the likelihood.
 prior_dir <- "prior_mcmc_chains_hong_kong"
 dir.create(prior_dir, showWarnings = FALSE)
@@ -227,7 +226,6 @@ prior_res <- serosolver(
   possible_exposure_times = possible_exposure_times,
   filename = file.path(prior_dir, "prior"),
   prior_func = prior_func,
-  prior_version = 2,
   data_type = 1,
   solve_likelihood = FALSE,
   n_chains = 3,
@@ -261,7 +259,7 @@ The model is fitted using the main `serosolver` function, which takes the `par_t
 
 MCMC chains are saved to the location specified by `filename`, along with a progress log and a settings file. If running in parallel, the progress text file gives updates and an estimated run time.
 
-```{r fit-model, eval=FALSE}
+```{r fit-model, eval=TRUE}
 ## Fit the serosolver model.
 mcmc_dir <- "mcmc_chains_hong_kong"
 dir.create(mcmc_dir, showWarnings = FALSE)
@@ -293,7 +291,7 @@ res <- serosolver(
 
 After fitting, read the saved chains back into R. The `burnin` value should match the adaptive period that was excluded from the analysis.
 
-```{r load-chains, eval=FALSE, message=FALSE, warning=FALSE}
+```{r load-chains, eval=TRUE, message=FALSE, warning=FALSE}
 chains <- load_mcmc_chains(
   location = mcmc_dir,
   par_tab = par_tab,
@@ -310,7 +308,7 @@ It is important with any model to check diagnostics for how well the algorithm h
 
 Ideally, effective sample sizes would be greater than 200, and $\hat{R}$ would be less than 1.1 (values close to 1 indicate that the different chains have converged to the same posterior distribution). Current best practice is more stringent than this, and models written with Stan will often give ESS values in the thousands and $\hat{R}$ < 1.01. The less efficient `serosolver` sampler motivates somewhat more relaxed criteria here. Low ESS or high $\hat{R}$ indicate that more iterations or a different model structure may be needed.
 
-```{r diagnostics, eval=FALSE}
+```{r diagnostics, eval=TRUE}
 ## MCMC convergence diagnostics -- most important!
 ## We would probably want to run this for many more iterations in a final version.
 print(res$all_diagnostics$p_thetas[[1]])
@@ -323,7 +321,7 @@ knitr::kable(res$all_diagnostics$inf_hist_estimates$by_year)
 
 In addition to checking that the MCMC algorithm has behaved, we want to check whether the model can describe the data. The returned `res` object contains standard plots for the predicted antibody levels, attack rates, and antibody kinetics model:
 
-```{r automatic-plots, eval=FALSE}
+```{r automatic-plots, eval=TRUE}
 res$antibody_predictions$p_pointrange ## Compare predicted antibody titres to the observed data.
 res$antibody_predictions$p_hist_draws ## Compare predicted antibody titres from different posterior draws.
 res$antibody_predictions$proportion_correct ## Check whether predicted observations cover the actual observations.
@@ -332,7 +330,7 @@ res$plot_fits_longitudinal[[1]] ## Compare individual-level predictions to the o
 
 The same plots can be regenerated manually from the saved chains. This is useful when changing the individuals, number of posterior draws, or other plotting options without rerunning the model.
 
-```{r manual-plots, eval=FALSE}
+```{r manual-plots, eval=TRUE}
 ## Read in all MCMC draws to plot additional model fits.
 plot_model_fits(
   chain = chains$theta_chain,
@@ -359,7 +357,7 @@ plot_cumulative_infection_histories(
 
 The main model estimates are the antibody kinetics, attack rates, and infection timings.
 
-```{r model-estimates, eval=FALSE}
+```{r model-estimates, eval=TRUE}
 ## Antibody kinetics model and estimated attack rates.
 res$plot_antibody_model
 res$plot_attack_rates + coord_cartesian(ylim = c(0, 0.4)) + x_axis
@@ -378,7 +376,7 @@ Simulation-recovery assesses whether the inference machinery can recover known p
 
 The fitted parameter estimates provide a starting point for simulating a new data set.
 
-```{r simulation-setup, eval=FALSE}
+```{r simulation-setup, eval=TRUE}
 ## Extract the best parameter estimates from the real-data fit.
 best_pars <- get_best_pars(chains$theta_chain)
 best_pars <- best_pars[names(best_pars) != "total_infections"]

@@ -1,6 +1,10 @@
 # Modified by an AI assistant on 2026-09-16 using GPT-5. Merged the duplicate
 # `check_inf_hist()` definitions into one validator without changing its public
-# arguments.
+# arguments. Updated `check_par_tab()` to support direct user checks and to
+# make its prior-version argument optional for the usual `serosolver()` workflow.
+# Modified by an AI assistant on 2026-09-16 using GPT-5. Limited the starting-
+# bounds warning to estimated parameters, so fixed parameters do not generate
+# a warning from their unused starting ranges.
 #
 #' Check infection history matrix
 #'
@@ -47,29 +51,59 @@ check_inf_hist <- function(antibody_data, possible_exposure_times, inf_hist,verb
 }
 
 
-#' Check par_tab for simulate_data
+#' Check and prepare a model parameter table
 #'
-#' Checks the entries of par_tab used in simulate_data
-#' @param par_tab the parameter table controlling information such as bounds, initial values etc
-#' @param mcmc logical, if TRUE then checks are performed for the MCMC algorithm. Use FALSE when simulating data
-#' @param version which version of the posterior function is being used? See \code{\link{create_posterior_func}}
-#' @param possible_exposure_times optional vector of possible exposure times
-#' @param verbose if TRUE, prints warning messages
-#' @return the same par_tab object with corrections if needed
+#' Checks and prepares a `par_tab` table for use by `simulate_data()` or the
+#' MCMC fitting workflow in `serosolver()`. The table supplies parameter names,
+#' starting values, fixed values, bounds, and parameter types. When required,
+#' the function adds default proposal steps, adds missing version-1 `phi`
+#' rows, or removes `phi` rows that are not used by prior versions 2--4.
+#' It also checks the infection-history prior parameters and the bounds used
+#' for random starting values.
+#' @param par_tab A data frame containing the model parameter table. It must
+#'   contain `names`, `values`, `fixed`, `lower_bound`, `upper_bound`,
+#'   `lower_start`, `upper_start`, and `par_type`. A missing `par_type` column
+#'   is added with value 1 when possible.
+#' @param mcmc Logical; if `TRUE`, also prepares and checks fields required by
+#'   the MCMC algorithm. Use `FALSE` when checking a table for simulation.
+#' @param version Optional infection-history prior version. If omitted, version
+#'   2 is used, matching the default in `serosolver()`. Version 1 is the
+#'   phi-based prior; versions 2--4 use the newer prior formulations. This
+#'   argument is mainly used internally when `serosolver()` or
+#'   `create_posterior_func()` passes a selected prior version.
+#' @param possible_exposure_times Optional vector of possible exposure times.
+#'   For version 1, this is used to ensure that the table has one `phi` row for
+#'   each possible exposure time.
+#' @param verbose Logical; if `TRUE`, print messages when optional columns are
+#'   added or version-specific rows are changed.
+#' @return The checked parameter table, with any required default columns or
+#'   version-specific rows added or removed.
 #' @family check_inputs
 #' @examples
 #' data(example_par_tab)
-#' check_par_tab(example_par_tab, FALSE, version=1)
+#' checked_par_tab <- check_par_tab(example_par_tab)
+#' checked_par_tab_mcmc <- check_par_tab(example_par_tab, mcmc = TRUE)
 #' @export
-check_par_tab <- function(par_tab, mcmc = FALSE, version = NULL,possible_exposure_times=NULL, verbose=FALSE) {
+check_par_tab <- function(par_tab, mcmc = FALSE, version = NULL, possible_exposure_times = NULL, verbose = FALSE) {
+    ## Version 2 is the default used by serosolver; direct users do not need to set it.
+    if (is.null(version)) version <- 2L
+    if (length(version) != 1L || !version %in% 1:4) {
+        stop("version must be one of 1, 2, 3, or 4.")
+    }
+
     ## Checks that should happen in simulate_data and serosolver
     essential_names <- c("names","values","fixed","lower_bound","upper_bound","lower_start","upper_start","par_type")
     if (!all(essential_names %in% colnames(par_tab))) {
-        message(paste(c("Some column names missing from par_tab: ", setdiff(essential_names,colnames(par_tab)),"\n"),collapse=" "))
-     
-        if(!("type" %in% colnames(par_tab))){
-          if(verbose) message(cat("Adding \"par_type\" to par_tab variables.\n"))
+        missing_names <- setdiff(essential_names, colnames(par_tab))
+        if (verbose) message("Missing columns in par_tab: ", paste(missing_names, collapse = ", "))
+
+        if (!("par_type" %in% colnames(par_tab))) {
+          if (verbose) message("Adding \"par_type\" to par_tab.")
           par_tab$par_type <- 1
+          missing_names <- setdiff(essential_names, colnames(par_tab))
+        }
+        if (length(missing_names) > 0) {
+          stop("par_tab is missing required columns: ", paste(missing_names, collapse = ", "))
         }
     }
     pars <- par_tab$values
@@ -120,9 +154,15 @@ check_par_tab <- function(par_tab, mcmc = FALSE, version = NULL,possible_exposur
               par_tab <- par_tab[par_tab$names != "phi",]
             }
         }
-        ## Check bounds are equal to starting bounds
-        if (any(par_tab$upper_start > par_tab$upper_bound) | any(par_tab$lower_start < par_tab$lower_bound)) {
-            warning("lower_start and upper_start are not equal to the starting lower_bound and upper_bound. If par_tab was used to create starting values, starting values may be out of bounds.\n ")
+        ## Check starting bounds only for parameters that will receive random starting values.
+        invalid_start_bounds <- (par_tab$upper_start > par_tab$upper_bound |
+                                   par_tab$lower_start < par_tab$lower_bound) &
+          par_tab$fixed == 0
+        if (any(invalid_start_bounds, na.rm = TRUE)) {
+            warning(
+              "Starting-value bounds fall outside the allowed bounds for estimated parameters: ",
+              paste(par_tab$names[invalid_start_bounds], collapse = ", ")
+            )
         }
     }
     ## Check that alpha and beta there for beta distribution

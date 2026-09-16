@@ -5,6 +5,10 @@
 # documentation for `plot_model_fits()` without changing its implementation.
 # Modified by an AI assistant on 2026-09-16 using GPT-5. Clarified the roxygen
 # documentation for the remaining antibody-model plotting functions without changing their implementations.
+# Modified by an AI assistant on 2026-09-16 using GPT-5. Made the antibody
+# model plot return only the longitudinal plot when no antigenic map is supplied.
+# Modified by an AI assistant on 2026-09-16 using GPT-5. Removed the unused
+# plot-label argument from `plot_antibody_model()`.
 #'
 #' Antibody dependent boosting relationship
 #'
@@ -38,8 +42,10 @@ plot_antibody_dependent_boosting <- function(chain, n, titres = seq(0, 8, by = 0
 #' 
 #' Plots the trajectory of the serosolver antibody model using specified parameters and optionally a specified antigenic map and infection history. If no infection history is supplied, the first supplied model time is used as a default infection time.
 #' @inheritParams simulate_antibody_model
-#' @param label_parameters if TRUE, adds parameter values to the plot labels
-#' @return a list with two ggplot objects, one showing the simulated antibody kinetics over time, stratified by biomarker ID, the other showing simulated antibody kinetics for each biomarker ID, stratified by sample time
+#' @return If `antigenic_map` is `NULL`, a ggplot object showing simulated
+#' antibody kinetics over time. Otherwise, a list with two ggplot objects: the
+#' longitudinal antibody kinetics plot and the antibody landscape plot showing
+#' simulated antibody kinetics for each biomarker ID, stratified by sample time.
 #' @examples
 #' plot_antibody_model(c("boost_long"=2,"boost_short"=3,"boost_delay"=1,"wane_short"=0.2,"wane_long"=0.01, "antigenic_seniority"=0,"cr_long"=0.1,"cr_short"=0.03), times=seq(2000,2015,by=1),infection_history=NULL,antigenic_map=example_antigenic_map)
 #' @export
@@ -47,7 +53,6 @@ plot_antibody_model <- function(pars,
                                 times=NULL, 
                                 infection_history=NULL, 
                                 antigenic_map=NULL,
-                                label_parameters=FALSE,
                                 exponential_waning=FALSE){
   ## Check if passed parameters as vector or just using par_tab
   if(class(pars) == "data.frame" & "names" %in% colnames(pars)){
@@ -101,7 +106,10 @@ plot_antibody_model <- function(pars,
           axis.text.y=ggplot2::element_text(size = 7),
           axis.text.x = ggplot2::element_text(angle = 45, hjust = 1, size = 7))
   
-  return(list(p_long,p_cr))
+  if (is.null(antigenic_map)) {
+    return(p_long)
+  }
+  return(list(p_long, p_cr))
 }
 
 #' Plots infection histories and antibody model
