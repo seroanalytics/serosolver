@@ -1,13 +1,16 @@
+# Modified by an AI assistant on 2026-09-16 using GPT-5. Clarified the roxygen
+# documentation for the exported stratification helpers without changing their implementations.
 
 #' Add scaling parameters to par_tab
 #'
 #' Adds entries to par_tab to stratify parameters by requested stratification levels. antibody_data and timevarying_demographics are used to find how many levels of each stratification have been requested
-#' @param par_tab the parameter table, including a column called stratification which is NA if no stratification is requested, for with a character value matching an entry in antibody_data or timevarying_demographics
+#' @param par_tab the parameter table, including a column called stratification which is NA if no stratification is requested, or a character value matching an entry in antibody_data or timevarying_demographics
 #' @param antibody_data the antibody data data frame, see \code{\link{example_antibody_data}}. If NULL, then uses timevarying_demographics
 #' @param timevarying_demographics a data frame of timevarying demographics, with columns individual, time and any stratification variables. If NULL, then uses antibody_data
 #' @param scale_par_lower the lower bound of any used scale parameters
 #' @param scale_par_upper the upper bound of any used scale parameters
-#' @return the updated par_tab
+#' @return the updated `par_tab`, including rows for any added scale parameters
+#' @family stratification
 #' @export
 add_scale_pars <- function(par_tab, antibody_data, timevarying_demographics=NULL, scale_par_lower=-25,scale_par_upper=25){
   ## Check if timevarying demographics are used. If so, then use these to create demographic table and add scale parameters
@@ -51,8 +54,9 @@ add_scale_pars <- function(par_tab, antibody_data, timevarying_demographics=NULL
 #'
 #' Takes all stratifications requested in par_tab and checks antibody_data for all unique levels of that stratification. If no stratifications are requested, then returns a data frame with a single row and a column called "all" with value 0.
 #' @param antibody_data the antibody data data frame, see \code{\link{example_antibody_data}}. 
-#' @param par_tab the parameter table, including a column called stratification which is NA if no stratification is requested, for with a character value matching an entry in antibody_data
+#' @param par_tab the parameter table, including a column called stratification which is NA if no stratification is requested, or a character value matching an entry in antibody_data
 #' @return a data frame of unique stratification level combinations. Each column is a stratification variable, and each row is a unique combination of levels
+#' @family stratification
 #' @export
 create_demographic_table <- function(antibody_data, par_tab){
   strsplit1 <- function(x){
@@ -92,9 +96,10 @@ create_demographic_table <- function(antibody_data, par_tab){
 #' Create indexing table for parameter stratifications
 #'
 #' Creates an indexing table to tell serosolver which scale parameter to add to which model parameter.
-#' @param par_tab the parameter table, including a column called stratification which is NA if no stratification is requested, for with a character value matching an entry in antibody_data or timevarying_demographics
+#' @param par_tab the parameter table, including a column called stratification which is NA if no stratification is requested, or a character value matching an entry in antibody_data or timevarying_demographics
 #' @param unique_demographic_combinations table of unique stratification combinations. Columns give stratification variable, rows give each unique combinations
 #' @return a list with two entries: 1) a list of matrices with entries for each stratification level, with number of columns equal to the number of parameters, and number of rows equal to the number of stratification levels. Each entry is the index of the scale parameter to use for that stratification level and parameter; 2) a vector of scale parameters
+#' @family stratification
 #' @export
 setup_stratification_table <- function(par_tab, unique_demographic_combinations){
   unique_demographic_combinations <- as.data.frame(unique_demographic_combinations)
@@ -168,6 +173,7 @@ setup_stratification_table <- function(par_tab, unique_demographic_combinations)
 #' @param timevarying_demographics optional. a data frame of timevarying demographics, with columns individual, time and any stratification variables. If NULL, then uses antibody_data
 #' @param demographic_groups optional. a data frame of demographic groups, with columns for each demographic group and rows for each unique combination of demographic groups. If NULL, then create this from antibody_data or timevarying_demographics
 #' @return a list with three entries: 1) the names of the demographic groups used, 2) a data frame of demographic groups, with each row a unique combination of demographic groups, and 3) a boolean indicating whether timevarying demographics were used
+#' @family stratification
 #' @export
 get_demographic_groups <- function(par_tab, antibody_data, timevarying_demographics=NULL,demographic_groups=NULL){
   ## Setup data vectors and extract

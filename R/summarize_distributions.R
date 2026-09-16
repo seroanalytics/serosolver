@@ -1,3 +1,6 @@
+# Modified by an AI assistant on 2026-09-16 using GPT-5. Clarified return values
+# and input descriptions for distribution and infection-history summaries without changing their implementations.
+
 #' Estimate vector mode
 #'
 #' @param x the vector to be estimated
@@ -18,7 +21,7 @@ estimate_mode <- function(x) {
 #' @param sig_f how many significant figures to print
 #' @param qs the vector of quantiles
 #' @param as_text if TRUE, formats nicely as text rather than a vector of numbers
-#' @return the formatted quantiles
+#' @return if `as_text = TRUE`, a formatted median and interval; otherwise, the requested quantiles as a numeric vector
 #' @examples
 #' data(example_theta_chain)
 #' x <- example_theta_chain$boost_long
@@ -36,7 +39,7 @@ generate_quantiles <- function(x, sig_f = 3, qs = c(0.025, 0.5, 0.975), as_text 
 #'
 #' Finds the total number of infections for each iteration of an MCMC chain
 #' @inheritParams plot_infection_history_chains_time
-#' @return a data table
+#' @return a data table with `chain_no`, `samp_no`, and the total number of infections for each MCMC sample
 #' @examples
 #' \dontrun{
 #' inf_chain <- load_infection_chains(thin=10,burnin=5000,chain_subset=1:3)
@@ -82,7 +85,7 @@ summarize_run_lengths <- function(inf_chain){
 #'
 #' For each individual and MCMC iteration, uses the infection history MCMC chain and detects runs of consecutive infections.
 #' @param inf_chain data table of the infection histories posterior
-#' @return a tibble giving the consecutive infection run length, the start and end time of each run, which index the run is (ie., which distinct infection), and the time from the end of the previous run, for each i and samp_no
+#' @return a tibble giving the consecutive infection run length, the start and end time of each run, which index the run is (i.e., which distinct infection), and the time from the end of the previous run, for each `i` and `samp_no`
 #' @examples
 #' \dontrun{
 #' identify_run_lengths(inf_chain)

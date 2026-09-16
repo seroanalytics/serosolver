@@ -1,3 +1,5 @@
+# Modified by an AI assistant on 2026-09-16 using GPT-5. Clarified missing
+# arguments and log-probability returns without changing the implementations.
 
 #' Calculate FOI log probability
 #'
@@ -5,7 +7,8 @@
 #' @param phis a vector of FOIs
 #' @param infection_history the matrix of infection histories
 #' @param age_mask the age mask vector as returned by \code{\link{create_age_mask}}
-#' @return a single log probability
+#' @param sample_mask the sample mask vector giving the last possible infection-time index for each individual
+#' @return a single log probability for the infection histories
 #' @family priors
 #' @export
 calc_phi_probs <- function(phis, infection_history, age_mask, sample_mask) {
@@ -22,7 +25,7 @@ calc_phi_probs <- function(phis, infection_history, age_mask, sample_mask) {
 #'
 #' Given a vector of FOIs for all circulating years, a matrix of infection histories and the vector specifying if individuals were alive or not, returns the log probability of the FOIs given the infection histories.
 #' @inheritParams calc_phi_probs
-#' @return a vector of log probabilities for each individual
+#' @return a vector of log probabilities, one for each individual
 #' @family priors
 #' @export
 calc_phi_probs_indiv <- function(phis, infection_history, age_mask, sample_mask) {

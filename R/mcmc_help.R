@@ -1,3 +1,6 @@
+# Modified by an AI assistant on 2026-09-16 using GPT-5. Clarified missing and
+# outdated roxygen details for MCMC helper functions without changing their implementations.
+
 #' Generate starting parameter table
 #'
 #' Generates a version of \code{par_tab} with random values between \code{lower_start} and \code{upper_start}
@@ -20,7 +23,7 @@ generate_start_tab <- function(par_tab){
 
 #' Scale step sizes
 #'
-#' Scales the given step size (between 0 and 1) based on the current acceptance rate to get closed to the desired acceptance rate
+#' Scales the given step size (between 0 and 1) based on the current acceptance rate to get closer to the desired acceptance rate
 #' @param step the current step size
 #' @param target_acceptance_rate_theta the desired acceptance rate
 #' @param pcur the current acceptance rate
@@ -41,7 +44,7 @@ scaletuning <- function(step, target_acceptance_rate_theta, pcur) {
 
 #' Scale step sizes
 #'
-#' Scales the given step size (between 0 and 1) based on the current acceptance rate to get closed to the desired acceptance rate
+#' Scales the given step size (between 0 and 1) based on the current acceptance rate to get closer to the desired acceptance rate
 #' @param step the current step size
 #' @param target_acceptance_rate_theta the desired acceptance rate
 #' @param pcur the current acceptance rate
@@ -62,7 +65,15 @@ scaletuning_alt <- function(step, target_acceptance_rate_theta, pcur) {
   return(step)
 }
 
-#' Robins and Monro scaler, thanks to Michael White
+#' Robbins--Monro scaler, thanks to Michael White
+#'
+#' Updates an MCMC proposal step-size multiplier using the current acceptance probability.
+#' @param step_scale the current step-size multiplier
+#' @param mc the current adaptation iteration
+#' @param target_acceptance_rate_theta the desired acceptance rate
+#' @param log_prob the log acceptance probability
+#' @param N_adapt the number of adaptation iterations
+#' @return the updated step-size multiplier
 #' @family mcmc
 #' @export
 rm_scale <- function(step_scale, mc, target_acceptance_rate_theta, log_prob, N_adapt) {
@@ -90,6 +101,7 @@ rm_scale <- function(step_scale, mc, target_acceptance_rate_theta, log_prob, N_a
 #' @param infection_model_prior_shape2 shape parameter 2 (beta) of the Beta distribution
 #' @return an n (number of individuals) by m (number of possible exposure times) matrix containing 1s and 0s, representing infections
 #' @family setup_infection_histories
+#' @examples
 #' data(example_antibody_data)
 #' data(example_antigenic_map)
 #' times <- example_antigenic_map$inf_times
@@ -120,7 +132,7 @@ setup_infection_histories_prior <- function(antibody_data, possible_exposure_tim
 #'
 #' Very similar to \code{\link{setup_infection_histories}}, but is not restricted to placing starting infections against antigens to which an individual has a measurable antibody level Given a matrix of antibody data, proposes plausible initial infection histories from which to begin MCMC sampling.
 #' The idea is to move along time and look at an individual's antibody level against each antigen/variant Where antibodies are elevated, this suggests an infection. However, to avoid suggesting multiple infections for regions of high antigenic similarity, we place a necessary gap (defined by `space`) between proposed infection times.
-#' @param antibody_data the matrix of titres data with columns for individual, sample, and antibody level
+#' @param antibody_data the data frame of antibody data with columns for individual, sample time, biomarker ID, and measurement
 #' @param possible_exposure_times vector of real times for all strains
 #' @param space how many epochs must separate proposed infections
 #' @param antibody_cutoff specifies how high the antibody level must be to imply an infection
@@ -276,8 +288,9 @@ save_infection_history_to_disk <- function(infection_history, file, samp_no, app
 #' Expand sparse infection history matrix
 #'
 #' @param inf_chain the data table with the saved sparse infection history matrix
-#' @param j optional vector of js to expand the infection history chain for
-#' @return long format, full infection history matrix chain
+#' @param j_vec optional vector of infection-time indices to expand the infection history chain for
+#' @return a data table with zero entries added for missing infection events and one column for each infection-time index
+#' @family mcmc
 #' @export
 expand_summary_inf_chain <- function(inf_chain, j_vec = NULL) {
   if (is.null(j_vec)) j_vec <- 1:max(inf_chain$j)

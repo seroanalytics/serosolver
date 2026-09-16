@@ -1,11 +1,15 @@
+# Modified by an AI assistant on 2026-09-16 using GPT-5. Clarified missing
+# arguments and log-likelihood returns without changing the implementations.
+
 #' Likelihood function given discrete data (normal)
 #'
 #' Calculates the likelihood of observing a set of discrete measurements given a corresponding set of predicted antibody levels
 #' @param expected vector of expected antibody levels
 #' @param data vector of observed discrete measurements
+#' @param theta named parameter vector containing `min_measurement`, `max_measurement`, and `obs_sd`
 #' @param expected_indices the indices of the measurement_shifts vector that each predicted antibody level needs adding to it
 #' @param measurement_shifts the vector of measurement shifts for each cluster to add to the predicted antibody levels
-#' @return a vector with the likelihood of making each observation given the predictions
+#' @return a vector of log-likelihood contributions for each observation
 #' @export
 r_likelihood <- function(expected, data, theta, expected_indices = NULL, measurement_shifts = NULL) {
   if (!is.null(expected_indices) & !is.null(measurement_shifts)) {
@@ -31,9 +35,10 @@ r_likelihood <- function(expected, data, theta, expected_indices = NULL, measure
 #' Calculates the likelihood of observing a set of continuous and bounded measurements given a corresponding set of predicted antibody levels
 #' @param expected vector of expected antibody levels
 #' @param data vector of observed continuous measurements
+#' @param theta named parameter vector containing `min_measurement`, `max_measurement`, and `obs_sd`
 #' @param expected_indices the indices of the measurement_shifts vector that each predicted antibody levels needs adding to it
 #' @param measurement_shifts the vector of measurement shifts for each cluster to add to the predicted antibody levels
-#' @return a vector with the likelihood of making each observation given the predictions
+#' @return a vector of log-likelihood contributions for each observation
 #' @export
 r_likelihood_continuous <- function(expected, data, theta, expected_indices = NULL, measurement_shifts = NULL) {
   if (!is.null(expected_indices) & !is.null(measurement_shifts)) {
@@ -58,7 +63,7 @@ r_likelihood_continuous <- function(expected, data, theta, expected_indices = NU
 #' Assumes measurement shifts are drawn from a normal distribution (random effects) with given standard deviation and mean. Code is commented out to assume log normally distributied
 #' @param rhos vector of measurement shifts
 #' @param pars vector of parameters, including rho_mean and rho_sd for the normal distribution
-#' @return a single prior probability
+#' @return a single log prior probability
 #' @family priors
 #' @export
 prob_shifts <- function(rhos, pars) {
@@ -72,7 +77,7 @@ prob_shifts <- function(rhos, pars) {
 #'
 #' Creates a function to calculate the prior probability of a set of measurement shifts. Assumes normally distributed random effects
 #' @param par_tab the parameter table as in \code{\link{create_posterior_func}}
-#' @return a function pointer to solve the measurement shifts prior
+#' @return a function to calculate the log prior probability of the measurement shifts
 #' @family priors
 #' @export
 create_prob_shifts <- function(par_tab) {
