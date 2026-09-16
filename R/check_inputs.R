@@ -132,7 +132,7 @@ check_par_tab <- function(par_tab, mcmc = FALSE, version = NULL,possible_exposur
 }
 
 #' Checks the entries of data used in serosolver
-#' @param data the data frame of data to be fitted. It must have columns: individual (integer ID of individual); sample_time (numeric time of sample taken); biomarker_id (numeric ID of the biomarker); measurement (antibody measurement); birth (birth date). biomarker_group (index of biomarker group) and repeat_number (repeat number) are optional and are added with a value of 1 when missing.
+#' @param data the data frame of data to be fitted. It must have columns: individual (integer ID of individual); sample_time (numeric time of sample taken); biomarker_id (numeric ID of the biomarker); measurement (antibody measurement); birth (birth date). `biomarker_group` and `repeat_number` are optional and are added with a value of 1 when missing. `population_group` is optional; if it is absent, downstream setup treats all individuals as belonging to group 1.
 #' @param verbose if TRUE, prints warning messages
 #' @return the same data object with corrections if needed
 #' @family check_inputs
