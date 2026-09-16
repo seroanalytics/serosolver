@@ -1,3 +1,4 @@
+## Modified by an AI assistant on 2026-09-16 using GPT-5. Added saving of the first example MCMC chains as packaged RData objects.
 ## Script to run the entire README pipeline, simulating the data, saving the example data structures, and testing the MCMC runs
 set.seed(1234)
 #library(serosolver)
@@ -67,6 +68,10 @@ output <- serosolver(example_par_tab, example_antibody_data, antigenic_map=examp
 output$all_diagnostics$p_thetas
 
 chains <- load_mcmc_chains(location="~/Documents/GitHub/serosolver/inst/extdata/readme/chains/",par_tab=example_par_tab,burnin = 2000)
+example_theta_chain <- chains$theta_chain
+example_inf_chain <- chains$inf_chain
+save(example_theta_chain,file="~/Documents/GitHub/serosolver/data/example_theta_chain.RData")
+save(example_inf_chain,file="~/Documents/GitHub/serosolver/data/example_inf_chain.RData")
 plot_model_fits(chain = chains$theta_chain,
                 infection_histories = chains$inf_chain,
                 known_infection_history = example_inf_hist,

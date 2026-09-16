@@ -1,5 +1,5 @@
-# Modified by an AI assistant on 2026-09-16 using GPT-5. Added documentation for
-# the regenerated longitudinal and multiple-biomarker example datasets.
+# Modified by an AI assistant on 2026-09-16 using GPT-5. Updated the example
+# MCMC chain documentation to match the regenerated chain objects.
 
 #' Example parameter table
 #'
@@ -89,7 +89,7 @@
 #' Outputs of a quick MCMC run corresponding to the example data. See \code{\link{example_inf_chain}} for corresponding infection history chain output
 #' @docType data
 #' @usage data(example_theta_chain)
-#' @format A data frame with 100 rows (each corresponding to a sample from the posterior) and 24 columns containing the saved sample number, parameter draws, likelihood values, and prior probabilities.
+#' @format A data frame with 3,003 rows (each corresponding to a saved sample from one of three chains) and 22 columns containing the saved sample number, chain number, parameter draws, likelihood and prior probabilities, and total numbers of infections.
 #' @family example_data
 "example_theta_chain"
 
@@ -98,7 +98,7 @@
 #' Outputs of a quick MCMC run corresponding to the example data. See \code{\link{example_theta_chain}} for corresponding theta chain output. Note that this was run with prior version 2
 #' @docType data
 #' @usage data(example_inf_chain)
-#' @format A data table with 17236 rows and 4 variables: `i` (individual), `j` (time period), `x` (inferred infection), and `sampno` (saved MCMC sample).
+#' @format A data table with 777,368 rows and 5 variables: `i` (individual), `j` (time-period index), `x` (inferred infection), `samp_no` (saved MCMC sample), and `chain_no` (chain number).
 #' @family example_data
 "example_inf_chain"
 

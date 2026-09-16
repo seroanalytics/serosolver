@@ -1,0 +1,421 @@
+---
+title: "Case study 1: longitudinal data"
+subtitle: Inferring pandemic A/H1N1 attack rates using longitudinal serology
+csl: plos.csl
+output:
+  rmarkdown::html_vignette:
+    toc: true
+    number_sections: false
+editor_options:
+  chunk_output_type: console
+bibliography: vignette_references.bib
+vignette: |
+  %\VignetteEncoding{UTF-8}
+  %\VignetteIndexEntry{Serosolver Case Study 1: Hong Kong}
+  %\VignetteEngine{knitr::rmarkdown}
+---
+
+<!-- Modified by an AI assistant on 2026-09-16 using GPT-5. Adapted the student practical into a package vignette while retaining its scientific explanation and code comments. -->
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  echo = TRUE,
+  comment = "#>",
+  eval = TRUE
+)
+options(digits = 3)
+```
+
+# Overview
+
+This vignette is intended as a reference for using `serosolver` to reconstruct antibody kinetics and infection histories from longitudinal, single antigen data. It uses data from a cohort study in Hong Kong during and after the [2009 A/H1N1pdm09 outbreak](https://link.springer.com/article/10.1186/s12879-017-2432-7). With repeat serological samples tested against a given virus, `serosolver` can reconstruct the unobserved infection dynamics from measured titres collected several months apart. It is also possible to examine these infection dynamics stratified by available demographic variables, such as vaccination status and age.
+
+This case study aims to reconstruct the unobserved infection dynamics from measured antibody titres collected over time, examine infection rates stratified by vaccination status and age group, and estimate biological parameters describing the short-term antibody response.
+
+The first part of the vignette sets up and explains the input parameters and data, with exploratory plots showing how the model relates to the observations.
+
+The second part applies the model to real data from a longitudinal serosurvey in Hong Kong and presents the model outputs and MCMC convergence diagnostics.
+
+The third part repeats the analysis using synthetic data to assess whether the inference machinery recovers known infection histories and model parameters.
+
+The analysis uses quarterly infection states between 2009 and 2012. The data contain titres against a single biomarker, so no antigenic map is required for fitting this example.
+
+# Setup
+
+```{r packages, message=FALSE, warning=FALSE}
+## Install serosolver from GitHub
+## remotes::install_github("seroanalytics/serosolver")
+
+library(serosolver)
+library(ggplot2)
+library(dplyr)
+library(doParallel)
+library(coda)
+```
+
+## Preparing the data
+
+The data used in this analysis are haemagglutination inhibition (HI) titres against A/H1N1pdm09 -- an antigenically novel lineage of influenza descended from the 1918 influenza pandemic strain, which began circulating in 2009 and replaced the existing lineage of seasonal A/H1N1 viruses.
+
+In this dataset, serum samples were taken between 2009 and 2012 (A/H1N1pdm09 only started circulating in March 2009) and therefore all time variables are constrained to this time period. We are interested in inferring infections and attack rates at a 3-month resolution. `serosolver` works in discrete time, and thus we convert calendar time into discrete time intervals.
+
+The data are already in the format expected by `serosolver`, including individual IDs, sample times, biomarker IDs, measurements, repeats, and birth times. The age and vaccination variables are used below to define demographic and population groups.
+
+```{r data-preparation}
+hk_data_path <- system.file(
+  "extdata", "case_study_1", "HKdata_h1n1.csv", package = "serosolver"
+)
+antibody_data <- read.csv(hk_data_path)
+
+## Create a factor version of the vaccination status and age group, indexed starting from 0 (used later)
+antibody_data <- antibody_data %>%
+  mutate(
+    vaccinated1 = as.integer(factor(vaccinated, levels = c("No", "Yes"))) - 1,
+    age1 = as.integer(factor(age_group, levels = c("<19", "19-64", ">64"))) - 1,
+    population_group = vaccinated1 + 1
+  )
+
+demographics <- antibody_data %>%
+  select(individual, birth, vaccinated1, age1, population_group) %>%
+  distinct()
+
+factor_key <- antibody_data %>%
+  select(vaccinated, vaccinated1, age_group, age1) %>%
+  distinct()
+
+## Define the vector of times over which individuals might be infected. We work with quarters here, so we multiply the years by 4 to get the quarter number.
+possible_exposure_times <- seq(2009 * 4 + 1, 2012 * 4, by = 1)
+
+## Create x-axis labels to allow conversion between the integers used in the model and the actual calendar time.
+x_breaks <- possible_exposure_times[seq(1, length(possible_exposure_times), by = 2)]
+x_labels <- c(
+  "Q1-2009", "Q3-2009", "Q1-2010", "Q3-2010", "Q1-2011", "Q3-2011"
+)
+x_axis <- scale_x_continuous(breaks = x_breaks, labels = x_labels)
+
+## Validate the data and demographic information.
+antibody_data <- check_data(antibody_data)
+demographics <- check_demographics(demographics)
+```
+
+The data are visualised and summarised before model fitting to show their structure and the groups represented in the analysis. The `serosolver` data plot shows the observations in the format used by the model, providing a check that the data are correctly structured for fitting. The data contain 420 individuals and seven sample times. The model uses the same quarterly time scale for `sample_time`, `birth`, and `possible_exposure_times`.
+
+Simple criteria could also be used to assign infections between sampling rounds and compare inferred seroconversion rates between age groups and over time. The model-based analysis below uses all of the antibody measurements rather than relying on a fixed seroconversion threshold.
+
+
+```{r data-summary}
+## Summarise the observed measurements and the groups represented in the data.
+range(antibody_data$measurement)
+table(antibody_data$sample_time)
+table(antibody_data$age_group, antibody_data$vaccinated)
+```
+
+```{r data-plot, fig.height=5, fig.width=8}
+## Individual-level plots
+plot_antibody_data(
+  antibody_data,
+  possible_exposure_times = possible_exposure_times,
+  n_indivs = 16,
+  study_design = "longitudinal"
+) +
+  facet_wrap(~ individual, ncol = 4) +
+  x_axis
+```
+
+## Model assumptions and parameter table
+
+The assumptions of the fitted model are controlled through the parameter table. `serosolver` allows particular parameters to be estimated or fixed, and we recommend iterative comparison of model structures when identifiability or convergence is a concern.
+
+```{r model-setup}
+## Prepare the model settings.
+## Read in the par_tab object - this is used to control the model parameters.
+data(example_par_tab)
+par_tab <- example_par_tab
+
+## Fix cross-reactivity parameters, as we are only investigating a single antigen.
+par_tab[par_tab$names %in% c("cr_long", "cr_short"), "fixed"] <- 1
+par_tab[par_tab$names %in% c("cr_long", "cr_short"), "values"] <- 0
+
+## Turn off long-term waning.
+par_tab[par_tab$names == "wane_long", "fixed"] <- 1
+par_tab[par_tab$names == "wane_long", "values"] <- 0
+
+## Set the minimum measurement to be 0, as the data are log-transformed and the lowest observed titre is 1 (log(1) = 0).
+## Also set the maximum measurement to the highest recorded level in the data.
+par_tab[par_tab$names == "min_measurement", c("values", "lower_bound", "upper_bound")] <- 0
+par_tab[par_tab$names == "max_measurement", c("values", "lower_bound", "upper_bound")] <- max(antibody_data$measurement)
+
+## Set the delay from infection to peak antibody response to be one time period (3 months).
+par_tab[par_tab$names == "boost_delay", "values"] <- 1
+
+## Estimate different antibody kinetics parameters by vaccination status.
+## These are estimated as coefficients added to a base parameter (reference group 0).
+par_tab$stratification <- NA_character_
+par_tab[par_tab$names == "boost_short", "stratification"] <- "vaccinated1"
+
+## Check the parameter table before fitting.
+check_par_tab(par_tab, mcmc = TRUE, possible_exposure_times = possible_exposure_times)
+```
+
+The parameter table controls which parameters are estimated, their starting values, and their allowable ranges. The `stratification` entry above allows the short-term boost to differ between vaccinated and unvaccinated individuals. Population groups are supplied separately through `population_group` and are used when summarising infection histories and attack rates.
+
+The assumed antibody kinetics can be inspected before fitting the model:
+
+```{r antibody-model, fig.height=5, fig.width=7}
+plot_antibody_model(
+  pars = par_tab,
+  infection_history = possible_exposure_times[1],
+  possible_exposure_times = possible_exposure_times,
+  times = possible_exposure_times
+)
+```
+
+## Priors
+
+`serosolver` is a Bayesian model, so prior distributions must be specified for all model parameters. Prior predictive plots, produced by running the model without evaluating the likelihood, show whether the priors generate plausible antibody responses and infection rates, or whether they are too strong or weak.
+
+For this case study, the prior function places a standard normal prior on stratification coefficients, log-normal priors on the boost parameters, and a Beta prior on the short-term waning parameter.
+
+```{r priors}
+## Prior distributions for attack rates and antibody boosts.
+hist(rbeta(1000, 1, 10), breaks = 50, main = "Prior attack rate", xlab = "Attack rate")
+hist(rlnorm(1000, log(2), 0.5), breaks = 50, main = "Prior antibody boost", xlab = "Boost")
+
+## Function used by serosolver to set priors for the model parameters.
+prior_func <- function(par_tab) {
+  ## Finds any stratification coefficient parameters.
+  coef_pars <- which(grepl("coef", par_tab$names))
+  par_names <- par_tab$names
+
+  function(pars) {
+    ## This places a standard normal prior on each model coefficient.
+    names(pars) <- par_names
+    prior_p <- sum(dnorm(pars[coef_pars], 0, 1, log = TRUE))
+
+    ## These priors can be changed to reflect prior knowledge about the antibody response.
+    prior_p <- prior_p + dlnorm(pars["boost_long"], log(2), 0.5, log = TRUE)
+    prior_p <- prior_p + dlnorm(pars["boost_short"], log(2), 0.5, log = TRUE)
+    prior_p <- prior_p + dbeta(pars["wane_short"], 4, 8, log = TRUE)
+    prior_p
+  }
+}
+```
+
+The infection-history prior can be set to a modal value consistent with seasonal influenza, such as an annual attack rate of around 15%, while retaining a fairly large variance. `serosolver` provides functions for constructing these Beta priors.
+
+```{r infection-prior}
+## Set the prior mode for the infection-history model.
+ar_priors <- find_beta_prior_mode(0.15, 4)
+par_tab[par_tab$names == "infection_model_prior_shape1", "values"] <- ar_priors$shape1
+par_tab[par_tab$names == "infection_model_prior_shape2", "values"] <- ar_priors$shape2
+```
+
+The infection-history prior uses the Beta shape parameters in `par_tab`. These can be changed to represent a different prior attack rate before fitting.
+
+The prior predictive model is run without evaluating the likelihood. Its returned parameter and antibody-model plots show the implications of the prior assumptions before fitting to the observed data.
+
+```{r prior-predictive, eval=FALSE}
+## Run serosolver using the priors without evaluating the likelihood.
+prior_dir <- "prior_mcmc_chains_hong_kong"
+dir.create(prior_dir, showWarnings = FALSE)
+
+prior_res <- serosolver(
+  par_tab = par_tab,
+  antibody_data = antibody_data,
+  demographics = demographics,
+  possible_exposure_times = possible_exposure_times,
+  filename = file.path(prior_dir, "prior"),
+  prior_func = prior_func,
+  prior_version = 2,
+  data_type = 1,
+  solve_likelihood = FALSE,
+  n_chains = 3,
+  parallel = TRUE,
+  mcmc_pars = c(adaptive_iterations = 20000, iterations = 50000),
+  verbose = TRUE
+)
+
+prior_res$all_diagnostics$p_thetas[[2]]
+prior_res$plot_antibody_model
+```
+
+## Stratifying model parameters
+
+`serosolver` allows model parameters to be stratified by covariates. Antibody boosting, for example, can vary by age group, vaccination status, or another demographic variable. The `par_tab$stratification` variable specifies the covariate, while `NA` indicates that the same parameter applies to all individuals.
+
+The chosen variable must be a factor e.g., vaccinated = 0 or 1, age group = 0, 1, or 2. `serosolver` will estimate a coefficient for each stratification level beyond the baseline, with a link function depending on the bounds of the parameter. For example, for an unbounded parameter (-Inf to Inf), the transformation is $x'=x + \beta_V$, where $x$ is the parameter value in the baseline group and $\beta_V$ is an additive coefficient given stratification level $V$. For positively bounded parameters, the transformation is $x' = exp(log(x) + \beta_V)$, and for parameters with an upper and lower bound the transformation is $x' = logistic(logit(x) + \beta_V))$. We can then interpret any stratification-varying effect by investigating the $\beta$ coefficients.
+
+```{r stratification}
+## Parameter stratification by vaccination status.
+## Estimate different antibody kinetics parameters by vaccination status.
+par_tab[par_tab$names == "boost_short", "stratification"] <- "vaccinated1"
+
+## Model individuals as being under a different infection process depending on vaccination status.
+par_tab[par_tab$names %in% c("infection_model_prior_shape1", "infection_model_prior_shape2"), "stratification"] <- "vaccinated1"
+```
+
+# Fitting `serosolver`
+
+The model is fitted using the main `serosolver` function, which takes the `par_tab` object, antibody data, demographic information, and possible exposure times, among other arguments. The MCMC settings are controlled by `mcmc_pars`; the number of chains and parallel execution can also be specified.
+
+MCMC chains are saved to the location specified by `filename`, along with a progress log and a settings file. If running in parallel, the progress text file gives updates and an estimated run time.
+
+```{r fit-model, eval=FALSE}
+## Fit the serosolver model.
+mcmc_dir <- "mcmc_chains_hong_kong"
+dir.create(mcmc_dir, showWarnings = FALSE)
+
+mcmc_pars <- c(
+  adaptive_iterations = 50000,
+  iterations = 100000,
+  thin = 100,
+  thin_inf_hist = 100,
+  save_block = 1000
+)
+
+res <- serosolver(
+  par_tab = par_tab,
+  antibody_data = antibody_data,
+  demographics = demographics,
+  possible_exposure_times = possible_exposure_times,
+  filename = file.path(mcmc_dir, "hong_kong"),
+  prior_func = prior_func,
+  data_type = 1,
+  n_chains = 3,
+  parallel = TRUE,
+  mcmc_pars = mcmc_pars,
+  verbose = TRUE
+)
+```
+
+# Post-fit analyses
+
+After fitting, read the saved chains back into R. The `burnin` value should match the adaptive period that was excluded from the analysis.
+
+```{r load-chains, eval=FALSE, message=FALSE, warning=FALSE}
+chains <- load_mcmc_chains(
+  location = mcmc_dir,
+  par_tab = par_tab,
+  burnin = mcmc_pars["adaptive_iterations"],
+  convert_mcmc = FALSE
+)
+
+serosolver_settings <- res$settings
+```
+
+## Diagnostics
+
+It is important with any model to check diagnostics for how well the algorithm has run. With MCMC, this amounts to checking whether the chains have converged to the same posterior distribution, and whether we have taken a sufficient number of proposed draws to give a high effective sample size (ESS). ESS is the sample size adjusted for autocorrelation between draws. In `serosolver`, these diagnostics can be found in the `res$all_diagnostics` object.
+
+Ideally, effective sample sizes would be greater than 200, and $\hat{R}$ would be less than 1.1 (values close to 1 indicate that the different chains have converged to the same posterior distribution). Current best practice is more stringent than this, and models written with Stan will often give ESS values in the thousands and $\hat{R}$ < 1.01. The less efficient `serosolver` sampler motivates somewhat more relaxed criteria here. Low ESS or high $\hat{R}$ indicate that more iterations or a different model structure may be needed.
+
+```{r diagnostics, eval=FALSE}
+## MCMC convergence diagnostics -- most important!
+## We would probably want to run this for many more iterations in a final version.
+print(res$all_diagnostics$p_thetas[[1]])
+print(res$all_diagnostics$p_thetas[[2]])
+knitr::kable(res$all_diagnostics$theta_estimates)
+knitr::kable(res$all_diagnostics$inf_hist_estimates$by_year)
+```
+
+## Model fits and posterior predictive checks
+
+In addition to checking that the MCMC algorithm has behaved, we want to check whether the model can describe the data. The returned `res` object contains standard plots for the predicted antibody levels, attack rates, and antibody kinetics model:
+
+```{r automatic-plots, eval=FALSE}
+res$antibody_predictions$p_pointrange ## Compare predicted antibody titres to the observed data.
+res$antibody_predictions$p_hist_draws ## Compare predicted antibody titres from different posterior draws.
+res$antibody_predictions$proportion_correct ## Check whether predicted observations cover the actual observations.
+res$plot_fits_longitudinal[[1]] ## Compare individual-level predictions to the observed data.
+```
+
+The same plots can be regenerated manually from the saved chains. This is useful when changing the individuals, number of posterior draws, or other plotting options without rerunning the model.
+
+```{r manual-plots, eval=FALSE}
+## Read in all MCMC draws to plot additional model fits.
+plot_model_fits(
+  chain = chains$theta_chain,
+  infection_histories = chains$inf_chain,
+  individuals = 1:25,
+  orientation = "longitudinal",
+  settings = serosolver_settings,
+  p_ncol = 5
+)[[1]] + x_axis
+
+## Compare attack-rate estimates between population groups.
+plot_attack_rates(
+  infection_histories = chains$inf_chain,
+  settings = serosolver_settings
+) + x_axis
+
+## Posterior estimates for infection timings.
+plot_cumulative_infection_histories(
+  inf_chain = chains$inf_chain,
+  indivs = 1:9,
+  possible_exposure_times = possible_exposure_times
+)[[2]] + x_axis
+```
+
+The main model estimates are the antibody kinetics, attack rates, and infection timings.
+
+```{r model-estimates, eval=FALSE}
+## Antibody kinetics model and estimated attack rates.
+res$plot_antibody_model
+res$plot_attack_rates + coord_cartesian(ylim = c(0, 0.4)) + x_axis
+
+## Posterior estimates for infection timings.
+plot_cumulative_infection_histories(
+  inf_chain = chains$inf_chain,
+  indivs = 1:25,
+  possible_exposure_times = possible_exposure_times
+)[[2]] + x_axis + theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+## Simulation recovery
+
+Simulation-recovery assesses whether the inference machinery can recover known parameter values. Data are simulated from the model using known values and then refitted to compare the estimates with those values.
+
+The fitted parameter estimates provide a starting point for simulating a new data set.
+
+```{r simulation-setup, eval=FALSE}
+## Extract the best parameter estimates from the real-data fit.
+best_pars <- get_best_pars(chains$theta_chain)
+best_pars <- best_pars[names(best_pars) != "total_infections"]
+
+## Use these values for the simulated data set.
+sim_par_tab <- par_tab
+sim_par_tab$values <- best_pars[match(sim_par_tab$names, names(best_pars))]
+
+## Simulate attack rates for the two vaccination groups.
+sim_attack_rates <- simulate_attack_rates(
+  infection_years = possible_exposure_times,
+  mean_par = 0.05,
+  sd_par = 0.1,
+  n_groups = 2
+)
+
+## Simulate the serosurvey data.
+simulated_data <- simulate_data(
+  par_tab = sim_par_tab,
+  n_indiv = length(unique(demographics$individual)),
+  possible_exposure_times = possible_exposure_times,
+  measured_biomarker_ids = unique(antibody_data$biomarker_id),
+  sampling_times = sort(unique(antibody_data$sample_time)),
+  nsamps = 4,
+  demographics = demographics,
+  attack_rates = sim_attack_rates,
+  data_type = 1
+)
+
+## Plot the simulated serological data and include the true infection histories.
+plot_antibody_data(
+  simulated_data$antibody_data,
+  possible_exposure_times = possible_exposure_times,
+  n_indivs = 16,
+  study_design = "longitudinal",
+  infection_histories = simulated_data$infection_histories
+) + facet_wrap(~ individual, ncol = 4) + x_axis
+```
+
+The simulated data can then be fitted using the same `serosolver()` call as above, with a different output filename. The returned infection histories, attack rates, and antibody predictions can be compared with `simulated_data$infection_histories`, `simulated_data$attack_rates`, and the parameter values in `sim_par_tab`.
