@@ -1,5 +1,3 @@
-# Modified by an AI assistant on 2026-09-16 using GPT-5. Clarified the roxygen
-# documentation for the exported stratification helpers without changing their implementations.
 # Modified by an AI assistant on 2026-09-16 using GPT-5. Fixed static
 # demographic tables being treated as time-varying when they lack a `time`
 # column.

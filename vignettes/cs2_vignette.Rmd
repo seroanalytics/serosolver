@@ -20,7 +20,8 @@ knitr::opts_chunk$set(
   echo=TRUE,
   comment = "#>",
   eval=TRUE,
-  dpi=300
+  dpi=300,
+  out.width = "100%"
 )
 ```
 # Overview

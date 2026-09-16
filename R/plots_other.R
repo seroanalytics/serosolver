@@ -1,5 +1,3 @@
-# Modified by an AI assistant on 2026-09-15 using GPT-5. Added a message when
-# R-hat is skipped because only one MCMC chain is available.
 # Modified by an AI assistant on 2026-09-16 using GPT-5. Clarified the roxygen
 # documentation for antibody, attack-rate, parameter, and diagnostic plots without changing their implementations.
 #'

@@ -1,10 +1,3 @@
-# Modified by an AI assistant on 2026-09-16 using GPT-5. Merged the duplicate
-# `check_inf_hist()` definitions into one validator without changing its public
-# arguments. Updated `check_par_tab()` to support direct user checks and to
-# make its prior-version argument optional for the usual `serosolver()` workflow.
-# Modified by an AI assistant on 2026-09-16 using GPT-5. Limited the starting-
-# bounds warning to estimated parameters, so fixed parameters do not generate
-# a warning from their unused starting ranges.
 # Modified by an AI assistant on 2026-09-16 using GPT-5. Excluded the one-based
 # `population_group` identifier from the zero-based covariate-level check.
 #

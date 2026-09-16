@@ -1,6 +1,4 @@
 # Modified by an AI assistant on 2026-09-16 using GPT-5. Clarified the roxygen
-# documentation for infection-history posterior plots without changing the implementation.
-# Modified by an AI assistant on 2026-09-16 using GPT-5. Clarified the roxygen
 # documentation for the infection-history chain plotting functions without changing their implementations.
 
 #' Plot inferred posteriors infection histories

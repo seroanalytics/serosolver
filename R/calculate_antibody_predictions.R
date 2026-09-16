@@ -1,8 +1,3 @@
-# Modified by an AI assistant on 2026-09-15 using GPT-5. Added an option to
-# solve predictions for all biomarker IDs in the antigenic map at observed sample times,
-# with a warning when partially supplied starting levels are filled with zero.
-# Modified by an AI assistant on 2026-09-16 using GPT-5. Updated the roxygen
-# documentation for `get_antibody_level_predictions()` without changing its implementation.
 # Modified by an AI assistant on 2026-09-16 using GPT-5. Prevented the warning
 # for missing expanded starting levels when the user selected the default
 # automatic starting-level behaviour.

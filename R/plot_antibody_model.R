@@ -1,12 +1,3 @@
-
-# Modified by an AI assistant on 2026-09-15 using GPT-5. Fixed the default
-# infection history in `plot_antibody_model()` to use the first supplied time.
-# Modified by an AI assistant on 2026-09-16 using GPT-5. Updated the roxygen
-# documentation for `plot_model_fits()` without changing its implementation.
-# Modified by an AI assistant on 2026-09-16 using GPT-5. Clarified the roxygen
-# documentation for the remaining antibody-model plotting functions without changing their implementations.
-# Modified by an AI assistant on 2026-09-16 using GPT-5. Made the antibody
-# model plot return only the longitudinal plot when no antigenic map is supplied.
 # Modified by an AI assistant on 2026-09-16 using GPT-5. Removed the unused
 # plot-label argument from `plot_antibody_model()`.
 #'

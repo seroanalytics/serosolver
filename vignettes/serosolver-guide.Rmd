@@ -13,10 +13,6 @@ vignette: |
   %\VignetteEncoding{UTF-8}
 ---
 
-<!-- Modified by an AI assistant on 2026-09-15 using GPT-5. Updated the guide's MCMC cache handling so missing cached chains trigger the hidden fitting workflow, with the cache stored in the package's inst/extdata directory. -->
-
-<!-- Modified by an AI assistant on 2026-09-16 using GPT-5. Added the package logo to the opening guide layout. -->
-
 ```{=html}
 <!-- Modified by an AI assistant on 2026-09-16 using GPT-5. Added an example
 of comparing observed measurements with predictions from posterior draws. -->
@@ -29,6 +25,7 @@ knitr::opts_chunk$set(
   fig.width = 8,
   fig.height = 6,
   dpi = 300,
+  out.width = "100%",
   fig.path = file.path(tempdir(), "serosolver_guide_figures/")
 )
 
@@ -634,8 +631,10 @@ To evaluate model performance, trace and density plots should be produced by plo
 These checks follow typical Bayesian modelling best practice: burn-in is discarded, posterior and prior predictive checks are recommended, chains are compared using R-hat, and effective sample size (ESS) is considered when judging whether estimates are reliable. Because `serosolver` uses a less efficient MCMC sampler than methods such as Stan, we generally use somewhat more relaxed criteria for R-hat and ESS (roughly R-hat \< 1.1 and ESS \> 200). The [Stan reference manual](https://mc-stan.org/docs/reference-manual/analysis.html) provides a useful general explanation of these diagnostics. In general, if the model has failed to pass these convergence thresholds, the chains must be re-run with more iterations. Often you will need to increase the number of iterations run by an order of magnitude to go from non-converging chains to converging chains.
 
 ```{r,eval=TRUE}
-print(res$all_diagnostics$p_thetas[[1]])
-print(res$all_diagnostics$p_inf_hists$by_time_trace)
+print(res$all_diagnostics$p_thetas[[1]] +
+        ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 45, hjust = 1)))
+print(res$all_diagnostics$p_inf_hists$by_time_trace +
+        ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 45, hjust = 1)))
 ```
 
 The diagnostics can also be regenerated from the saved files:
@@ -644,7 +643,8 @@ The diagnostics can also be regenerated from the saved files:
 diagnostics <- plot_mcmc_diagnostics(
   location = mcmc_dir, par_tab = example_par_tab, burnin = 500
 )
-print(diagnostics$p_thetas[[1]])
+print(diagnostics$p_thetas[[1]] +
+        ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 45, hjust = 1)))
 ```
 
 ## 6. Output estimates
