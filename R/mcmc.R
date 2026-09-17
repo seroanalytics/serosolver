@@ -1,5 +1,5 @@
-# Modified by an AI assistant on 2026-09-17 using GPT-5. Added par_tab-based
-# control of exponential waning while retaining the legacy argument.
+# Modified by an AI assistant on 2026-09-17 using GPT-5. Namespace-qualified
+# parallel MCMC calls without changing the model or public interface.
 
 #' Run the serosolver model
 #'
@@ -380,34 +380,31 @@ serosolver <- function(par_tab,
   ## Set up parallel cluster if requests
   if(n_chains > 1){
     if(parallel){
-      library(doRNG)
-      library(foreach)
-      library(parallel)
       #library(doFuture)
       #doFuture::registerDoFuture()
-      `%execute%` <- `%dorng%`
+      `%execute%` <- doRNG::`%dorng%`
       #`%execute%` <- `%dofuture%`
       if(verbose) {
         message(cat("Requested", n_chains, "chains in parallel, setting up parallel session using the parallel package\n",sep=" "))
         message(cat("Progress messages will be piped to ", filename, "_log.txt when `parallel` is set to true\n",sep=""))
       }
-      cl <- makeCluster(min(n_chains,detectCores()))
-      registerDoParallel(cl)
-      on.exit(stopCluster(cl))
+      cl <- parallel::makeCluster(min(n_chains, parallel::detectCores()))
+      doParallel::registerDoParallel(cl)
+      on.exit(parallel::stopCluster(cl), add = TRUE)
       #future::plan(multisession,workers=min(n_chains,detectCores()))
       #on.exit(plan(sequential))
       
     } else {
-      `%execute%` <- `%do%`
+      `%execute%` <- foreach::`%do%`
       if(verbose) message(cat("Requested", n_chains, "MCMC chains\n",sep=" "))
     }
   } else {
     if(verbose) message(cat("Requested", n_chains, "MCMC chains\n",sep=" "))
-    `%execute%` <- `%do%`
+    `%execute%` <- foreach::`%do%`
   }
   par_tab_global <- par_tab
   if(verbose) message(cat("Model fitting started\n"))
-  result <- foreach(chain = 1:n_chains, 
+  result <- foreach::foreach(chain = 1:n_chains,
                     .packages =c("serosolver","data.table","dplyr","tidyr")
                     #.options.future =list(seed = TRUE,packages = c("serosolver","data.table","dplyr","tidyr"),globals=structure(TRUE,add="steps_global"))
                     ) %execute% {

@@ -2,3 +2,23 @@
 ^Meta$
 ^codemeta\.json$
 ^README\.Rmd$
+
+# Local build and check artefacts
+^\.git$
+^\.gitignore$
+^\.DS_Store$
+^.*\.DS_Store$
+^\.Rhistory$
+^\.Rapp\.history$
+^\.Rcheck$
+^\.\.Rcheck$
+^src/.*\.(o|so|dll|dylib)$
+^src/.*\.o\.tmp$
+^vignettes/.*\.(html|pdf)$
+
+# MCMC cache outputs used when knitting locally
+^inst/extdata/.*/.*_chain\.csv$
+^inst/extdata/.*/.*_infection_histories\.csv$
+^inst/extdata/.*/.*_log\.txt$
+^inst/extdata/.*/.*_serosolver_settings\.RData$
+^tests/testthat/tmp.*$

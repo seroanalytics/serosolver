@@ -768,9 +768,6 @@ variant_settings <- variant_res$settings
 
 ## Simulation recovery
 
-The fitted attack rates show whether the infection-history part of the model
-still recovers the simulated population-group differences.
-
 ```{r variant-attack-rates}
 plot_attack_rates(
   variant_chains$inf_chain,

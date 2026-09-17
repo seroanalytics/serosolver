@@ -1,5 +1,5 @@
-# Modified by an AI assistant on 2026-09-16 using GPT-5. Clarified the roxygen
-# documentation for infection-history summary outputs without changing the implementation.
+# Modified by an AI assistant on 2026-09-17 using GPT-5. Updated the example to
+# provide the required population group and pad sparse infection-history chains.
 
 #' Get posterior information for estimated infection histories
 #'
@@ -14,6 +14,7 @@
 #' data(example_antigenic_map)
 #' data(example_antibody_data)
 #' data(example_inf_hist)
+#' example_antibody_data$population_group <- 1
 #' possible_exposure_times <- example_antigenic_map$inf_times
 #' ## Find number alive in each time period
 #' n_alive <- get_n_alive(example_antibody_data, possible_exposure_times)
@@ -31,7 +32,8 @@
 #' n_alive_group$j <- possible_exposure_times[n_alive_group$j]
 #' results <- calculate_infection_history_statistics(example_inf_chain, 0, possible_exposure_times,
 #'                                                   n_alive=n_alive_group, known_ar=known_ar,
-#'                                                   known_infection_history=known_inf_hist)
+#'                                                   known_infection_history=known_inf_hist,
+#'                                                   pad_chain=TRUE)
 #' @export
 calculate_infection_history_statistics <- function(inf_chain, 
                                                    burnin = 0, 
