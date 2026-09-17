@@ -16,7 +16,7 @@ test_that("simulate_data handles multiple numeric observation types", {
     sampling_times = 1:5,
     nsamps = 2,
     attack_rates = simulate_attack_rates(1:5, mean_par = 0.1, sd_par = 0),
-    data_type = c(1, 2)
+    data_type = c("discrete", "continuous")
   )
 
   discrete <- simulated$antibody_data$biomarker_group == 1
@@ -25,6 +25,25 @@ test_that("simulate_data handles multiple numeric observation types", {
                     floor(simulated$antibody_data$measurement[discrete])))
   expect_true(any(simulated$antibody_data$measurement[continuous] !=
                     floor(simulated$antibody_data$measurement[continuous])))
+})
+
+test_that("observation-type labels map to the existing numeric codes", {
+  expect_equal(
+    serosolver:::normalize_data_type(
+      c("discrete", "continuous", "false_positive")
+    ),
+    c(1L, 2L, 3L)
+  )
+  expect_equal(serosolver:::normalize_data_type("continuous", 2), c(2L, 2L))
+  expect_equal(serosolver:::normalize_data_type(2, 2), c(2L, 2L))
+  expect_error(
+    serosolver:::normalize_data_type(c("continuous", "unknown")),
+    "data_type"
+  )
+  expect_error(
+    serosolver:::normalize_data_type(c("continuous", "discrete"), 3),
+    "one value per biomarker_group"
+  )
 })
 
 test_that("coefficient_values sets generated stratification coefficients", {

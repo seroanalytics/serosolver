@@ -1,5 +1,6 @@
 
-<!-- Modified by an AI assistant on 2026-09-16 using GPT-5. Added a concise AI-assistance declaration at the end of the README. -->
+<!-- Modified by an AI assistant on 2026-09-17 using GPT-5. Updated the worked
+data_type example to use character observation-model labels. -->
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
 
@@ -147,7 +148,7 @@ plot_antibody_data(example_antibody_data,example_antigenic_map$inf_times,n_indiv
 readme_mcmc_dir <- file.path("inst", "extdata", "readme", "chains")
 dir.create(readme_mcmc_dir, recursive = TRUE, showWarnings = FALSE)
 output <- serosolver::serosolver(example_par_tab, example_antibody_data, antigenic_map=example_antigenic_map,
-                filename=file.path(readme_mcmc_dir, "readme"), n_chains=3,parallel=TRUE,data_type=2,
+                filename=file.path(readme_mcmc_dir, "readme"), n_chains=3,parallel=TRUE,data_type="continuous",
                 mcmc_pars=c(adaptive_iterations=10000, iterations=50000),verbose=TRUE)
 #> ================================ Running serosolver ================================
 #> Requested 3 chains in parallel, setting up parallel session using the parallel package

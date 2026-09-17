@@ -1,5 +1,5 @@
-# Modified by an AI assistant on 2026-09-17 using GPT-5. Excluded parameter
-# rows without a biomarker group from the model-fit plotting loop.
+# Modified by an AI assistant on 2026-09-17 using GPT-5. Added text observation-
+# model labels to the user-facing prediction and model-fit plotting functions.
 #'
 #' Antibody dependent boosting relationship
 #'
@@ -165,6 +165,12 @@ plot_model_fits <- function(chain, infection_histories,
     if(is.null(exponential_waning)) exponential_waning <- settings$exponential_waning
     if(missing(data_type)) data_type <- settings$data_type
   }
+  n_biomarker_groups <- if ("biomarker_group" %in% colnames(antibody_data)) {
+    length(unique(antibody_data$biomarker_group))
+  } else {
+    1L
+  }
+  data_type <- normalize_data_type(data_type, n_biomarker_groups)
   if(is.null(settings) & is.null(exponential_waning)) exponential_waning <- FALSE
   individuals <- individuals[order(individuals)]
   
@@ -443,6 +449,12 @@ plot_antibody_predictions <- function(chain, infection_histories,
     if(is.null(exponential_waning)) exponential_waning <- settings$exponential_waning
     if(missing(data_type)) data_type <- settings$data_type
   }
+  n_biomarker_groups <- if ("biomarker_group" %in% colnames(antibody_data)) {
+    length(unique(antibody_data$biomarker_group))
+  } else {
+    1L
+  }
+  data_type <- normalize_data_type(data_type, n_biomarker_groups)
   if(is.null(settings) & is.null(exponential_waning)) exponential_waning <- FALSE
   
   ## Setup antigenic map and exposure times
@@ -609,6 +621,12 @@ plot_estimated_antibody_model <- function(chain,
     if(missing(data_type)) data_type <- settings$data_type
     if(is.null(exponential_waning)) exponential_waning <- settings$exponential_waning
   }
+  n_biomarker_groups <- if ("biomarker_group" %in% colnames(antibody_data)) {
+    length(unique(antibody_data$biomarker_group))
+  } else {
+    1L
+  }
+  data_type <- normalize_data_type(data_type, n_biomarker_groups)
   if(is.null(settings) & is.null(exponential_waning)) exponential_waning <- FALSE
   
   par_tab <- add_scale_pars(par_tab,antibody_data,demographics)

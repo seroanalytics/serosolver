@@ -1,5 +1,5 @@
-# Modified by an AI assistant on 2026-09-17 using GPT-5. Updated the automatic
-# cross-sectional plot to avoid expanding measurement-offset fits to unmeasured biomarker IDs.
+# Modified by an AI assistant on 2026-09-17 using GPT-5. Added support for text
+# labels in the user-facing observation-model input while retaining numeric codes.
 
 #' Run the serosolver model
 #'
@@ -23,7 +23,7 @@
 #' @param solve_likelihood if FALSE, returns only the prior and does not solve the likelihood. Use this if you wish to sample directly from the prior
 #' @param n_alive if not NULL, uses this as the number alive for the infection history prior, rather than calculating the number alive based on antibody_data
 #' @param start_level either `"none"` or a data frame giving the starting biomarker level for each individual, `biomarker_group`, and `biomarker_id` combination. With `"none"`, starting levels are assumed to be 0. See the [advanced features vignette](ADVANCED_FEATURES_VIGNETTE_LINK).
-#' @param data_type integer identifying the observation model: 1 for discrete, bounded data; 2 for continuous, bounded data; or 3 for continuous data with the false-positive observation model.
+#' @param data_type numeric or text value identifying the observation model: `1` or `"discrete"` for discrete, bounded data; `2` or `"continuous"` for continuous, bounded data; or `3` or `"false_positive"` for continuous data with the false-positive observation model. Supply one value per biomarker group, or one value to use for all groups.
 #' @param mv_proposals If TRUE, uses a multivariate normal distribution for the proposal distribution. FALSE uses univariate proposals. It is advised to leave this as FALSE, multivariate proposals seems to generally be inefficient for serosolver.
 #' @param verbose if TRUE, prints progress updates during the run
 #' @param verbose_dev if TRUE, prints additional messages regarding step sizes, acceptance rates etc
@@ -216,6 +216,9 @@ serosolver <- function(par_tab,
   ##############
   ## Check the antibody_data input
   antibody_data <- check_data(antibody_data,verbose=verbose)
+  data_type <- normalize_data_type(
+    data_type, length(unique(antibody_data$biomarker_group))
+  )
   n_indiv <- length(unique(antibody_data$individual)) # How many individuals in the antibody_data?
   
   ## Create age mask

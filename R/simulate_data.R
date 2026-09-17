@@ -1,6 +1,5 @@
-# Modified by an AI assistant on 2026-09-16 using GPT-5. Added a readable
-# coefficient-values input for simulation truth while preserving the existing
-# simulation workflow.
+# Modified by an AI assistant on 2026-09-17 using GPT-5. Added text labels for
+# observation-model types while retaining the existing numeric codes.
 #'
 #' Simulate full data set
 #'
@@ -20,7 +19,7 @@
 #' @param attack_rates a vector or table of attack rates for each entry in possible_exposure_times to be used in the simulation (between 0 and 1). See \code{\link{simulate_attack_rates}}.
 #' @param repeats number of repeat observations for each year
 #' @param measurement_bias default NULL, optional vector of measurement shifts used when generating the simulated antibody levels
-#' @param data_type if not NULL, a vector of observation-model types to use for each `biomarker_group`
+#' @param data_type numeric or text observation-model types to use for each `biomarker_group`: `1` or `"discrete"` for discrete, bounded observations; `2` or `"continuous"` for continuous, bounded observations; or `3` or `"false_positive"` for continuous observations with the false-positive model. A single value is used for all biomarker groups.
 #' @param demographics if not NULL, a data frame giving demographic variables for each individual (1:n_indiv). It must include `birth` and can include `population_group` or variables used for stratification in `par_tab`.
 #' @param verbose if TRUE, prints additional messages
 #' @param starting_levels a data frame or function giving the starting biomarker level for each individual, `biomarker_group`, and `biomarker_id` combination. If NULL, starting levels are assumed to be 0.
@@ -77,6 +76,7 @@ simulate_data <- function(par_tab,
     ## Get unique observation types
     unique_biomarker_groups <- unique(par_tab$biomarker_group)
     n_biomarker_groups <- length(unique_biomarker_groups)
+    data_type <- normalize_data_type(data_type, n_biomarker_groups)
     
     #########################################################
     ## SETUP ANTIGENIC MAP
@@ -283,7 +283,7 @@ simulate_data <- function(par_tab,
 #' @param theta a named parameter vector containing `min_measurement`, `max_measurement`, and the relevant error parameters
 #' @param measurement_bias optional vector of measurement shifts
 #' @param indices optional integer vector selecting the shift to apply to each value of `y`
-#' @param data_type integer, currently accepting 1, 2, or 3. Set to 1 for discrete, bounded data; 2 for continuous, bounded data; or 3 for continuous data in which true negatives can produce false-positive measurements.
+#' @param data_type numeric or text observation-model type: `1` or `"discrete"` for discrete, bounded data; `2` or `"continuous"` for continuous, bounded data; or `3` or `"false_positive"` for continuous data with the false-positive observation model.
 #' @return A vector of noisy, bounded antibody measurements.
 #' @examples
 #' \dontrun{

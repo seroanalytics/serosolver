@@ -15,6 +15,8 @@ vignette: |
   %\VignetteEngine{knitr::rmarkdown}
 ---
 
+<!-- Modified by an AI assistant on 2026-09-17 using GPT-5. Updated worked
+observation-model examples to use character data_type labels. -->
 <!-- Modified by an AI assistant on 2026-09-16 using GPT-5. Updated simulation-recovery fitting to use the base parameter table while preserving the existing vignette text and code comments. -->
 
 ```{r setup, include=FALSE}
@@ -259,7 +261,7 @@ if (!prior_cache_available) {
     possible_exposure_times = possible_exposure_times,
     filename = prior_file,
     prior_func = prior_func,
-    data_type = 1,
+    data_type = "discrete",
     solve_likelihood = FALSE,
     n_chains = prior_n_chains,
     parallel = TRUE,
@@ -332,7 +334,7 @@ res <- serosolver(
   possible_exposure_times = possible_exposure_times,
   filename = mcmc_file,
   prior_func = prior_func,
-  data_type = 1,
+  data_type = "discrete",
   n_chains = 3,
   parallel = TRUE,
   mcmc_pars = mcmc_pars,
@@ -378,7 +380,7 @@ if (!mcmc_cache_available) {
     possible_exposure_times = possible_exposure_times,
     filename = mcmc_file,
     prior_func = prior_func,
-    data_type = 1,
+    data_type = "discrete",
     n_chains = mcmc_n_chains,
     parallel = TRUE,
     mcmc_pars = mcmc_pars,
@@ -564,7 +566,7 @@ simulated_data <- simulate_data(
   sampling_times = sample_year,
   nsamps = 1,
   attack_rates = sim_attack_rates,
-  data_type = 1,
+  data_type = "discrete",
   measured_biomarker_ids = unique(antibody_data$biomarker_id)
 )
 
@@ -588,7 +590,7 @@ sim_res <- serosolver(
   possible_exposure_times = possible_exposure_times,
   filename = sim_mcmc_file,
   prior_func = prior_func,
-  data_type = 1,
+  data_type = "discrete",
   n_chains = 3,
   parallel = TRUE,
   mcmc_pars = sim_mcmc_pars,
@@ -630,7 +632,7 @@ if (!sim_cache_available) {
     possible_exposure_times = possible_exposure_times,
     filename = sim_mcmc_file,
     prior_func = prior_func,
-    data_type = 1,
+    data_type = "discrete",
     n_chains = sim_n_chains,
     parallel = TRUE,
     mcmc_pars = sim_mcmc_pars,

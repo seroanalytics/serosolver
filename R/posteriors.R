@@ -1,6 +1,6 @@
 
-# Modified by an AI assistant on 2026-09-17 using GPT-5. Fixed version-1
-# `phi` selection and parameter-table handling with missing `biomarker_group` values.
+# Modified by an AI assistant on 2026-09-17 using GPT-5. Added normalisation of
+# numeric and text observation-model inputs before constructing the posterior.
 
 #' Posterior function pointer
 #'
@@ -16,7 +16,7 @@
 #' @param n_alive if not NULL, uses this as the number alive in a given year rather than calculating from the ages. This is needed if the number of alive individuals is known, but individual birth dates are not
 #' @param function_type integer specifying which version of this function to use. Specify 1 to give a posterior solving function; 2 to give the gibbs sampler for infection history proposals; otherwise just solves the antibody model and returns predicted antibody levels. Note that this is not the same as the attack rate prior argument, `prior_version`.
 #' @param antibody_level_before_infection TRUE/FALSE value. If TRUE, solves antibody level predictions, but gives the predicted antibody level at a given time point BEFORE any infection during that time occurs.
-#' @param data_type integer or vector, with an entry for each unique data type in `antibody_data`. Set to 1 for discrete data (e.g., fold dilution) or 2 for continuous (e.g., ELISA optical density). 
+#' @param data_type numeric or text value, with an entry for each biomarker group in `antibody_data`: `1` or `"discrete"` for discrete data (e.g., fold dilution), `2` or `"continuous"` for continuous data (e.g., ELISA optical density), or `3` or `"false_positive"` for continuous data with the false-positive observation model. A single value is used for all groups.
 #' @param biomarker_groups_weights integer or vector, giving a factor to multiply the log-likelihood contribution of this data type towards the overall likelihood.
 #' @param start_level character, to tell the model how to treat initial antibody levels. This uses the observed data to either select starting values for each unique `individual`, `biomarker_id` and `biomarker_group` combination. See \code{\link{create_start_level_data}}. One of "min", "max", "mean", "median", or "full_random". Any other entry assumes all antibody starting levels are set to 0. Can also pass a tibble or data frame of starting levels matching the output of \code{\link{create_start_level_data}}. See the [advanced features vignette](ADVANCED_FEATURES_VIGNETTE_LINK) for this optional workflow.
 #' @param start_level_randomize if TRUE, and data is discretized, then sets the starting antibody level to a random value between floor(x) and floor(x) + 1. Does nothing if using continuous data.
@@ -100,14 +100,11 @@ create_posterior_func <- function(par_tab,
     unique_biomarker_groups <- unique(antibody_data$biomarker_group)
     unique_biomarker_groups <- unique_biomarker_groups[order(unique_biomarker_groups)]
     n_biomarker_groups <- length(unique_biomarker_groups)
+    data_type <- normalize_data_type(data_type, n_biomarker_groups)
     
     n_indivs <- length(unique(antibody_data$individual))
     
     ## Likelihood versions for different obs types
-    if(length(data_type) ==1 & n_biomarker_groups > 1){
-        data_type <- rep(data_type, n_biomarker_groups)
-    }
-    
     if(length(biomarker_groups_weights) ==1 & n_biomarker_groups > 1){
         biomarker_groups_weights <- rep(1, n_biomarker_groups)
     }

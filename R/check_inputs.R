@@ -1,6 +1,41 @@
-# Modified by an AI assistant on 2026-09-16 using GPT-5. Excluded the one-based
-# `population_group` identifier from the zero-based covariate-level check.
-#
+# Modified by an AI assistant on 2026-09-17 using GPT-5. Added one internal
+# helper to convert numeric and text observation-type inputs to model codes.
+
+normalize_data_type <- function(data_type, n_biomarker_groups = NULL) {
+  if (is.null(data_type)) data_type <- 1L
+  if (is.factor(data_type)) data_type <- as.character(data_type)
+
+  if (is.character(data_type)) {
+    data_type <- tolower(trimws(data_type))
+    data_type <- unname(c(
+      discrete = 1L,
+      continuous = 2L,
+      false_positive = 3L
+    )[data_type])
+    if (anyNA(data_type)) {
+      stop("data_type must be 1, 2, 3, 'discrete', 'continuous', or 'false_positive'.")
+    }
+  } else {
+    if (!is.numeric(data_type) || length(data_type) == 0 ||
+        any(!is.finite(data_type)) || any(data_type != as.integer(data_type)) ||
+        any(!data_type %in% 1:3)) {
+      stop("data_type must contain only 1, 2, or 3, or the corresponding text labels.")
+    }
+    data_type <- as.integer(data_type)
+  }
+
+  if (!is.null(n_biomarker_groups)) {
+    if (length(data_type) == 1L && n_biomarker_groups > 1L) {
+      data_type <- rep(data_type, n_biomarker_groups)
+    }
+    if (length(data_type) != n_biomarker_groups) {
+      stop("data_type must have one value per biomarker_group, or a single value to use for all groups.")
+    }
+  }
+
+  data_type
+}
+
 #' Check infection history matrix
 #'
 #' Checks that the infection history matrix is allowable given the birth dates and sampling times of the data

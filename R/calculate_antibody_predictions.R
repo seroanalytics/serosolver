@@ -1,6 +1,5 @@
-# Modified by an AI assistant on 2026-09-17 using GPT-5. Prevented warnings for
-# default automatic starting levels and reindexed supplied starting levels
-# after restricting predictions to a subset of individuals.
+# Modified by an AI assistant on 2026-09-17 using GPT-5. Added support for text
+# observation-model labels in antibody prediction inputs.
 #'
 #' Generate antibody level credible intervals
 #'
@@ -22,7 +21,7 @@
 #' @param expand_to_all_biomarker_ids TRUE/FALSE value. If TRUE, solves antibody level predictions for every biomarker ID in the antigenic map while retaining the sample times in antibody_data.
 #' @param antibody_level_before_infection TRUE/FALSE value. If TRUE, solves antibody level predictions, but gives the predicted antibody level at a given time point BEFORE any infection during that time occurs.
 #' @param for_regression if TRUE, returns posterior draws rather than posterior summaries
-#' @param data_type integer, currently accepting 1, 2, or 3. Set to 1 for discrete, bounded data, 2 for continuous, bounded data, or 3 for continuous data with the false-positive observation model. For bounded data, the limits are given by `min_measurement` and `max_measurement` in par_tab.
+#' @param data_type numeric or text value: `1` or `"discrete"` for discrete, bounded data; `2` or `"continuous"` for continuous, bounded data; or `3` or `"false_positive"` for continuous data with the false-positive observation model. Supply one value per biomarker group, or one value to use for all groups. For bounded data, the limits are given by `min_measurement` and `max_measurement` in par_tab.
 #' @param start_level `"none"` or a starting-level summary or data frame. A starting level is the antibody level assigned before the modelled infection history begins. With `"none"`, starting levels are set to zero. See the [advanced features vignette](ADVANCED_FEATURES_VIGNETTE_LINK).
 #' @param exponential_waning if TRUE, assumes exponential rather than linear waning
 #' @return a list with the antibody level predictions (95% credible intervals, median and multivariate posterior mode) and the probabilities of infection for each individual in each epoch
@@ -124,6 +123,7 @@ get_antibody_level_predictions <- function(chain, infection_histories, antibody_
     antibody_data$biomarker_group <- 1
   }
   unique_biomarker_groups <- unique(antibody_data$biomarker_group)
+  data_type <- normalize_data_type(data_type, length(unique_biomarker_groups))
   
   ## Empty data structures to save output to
   infection_history_dens <- NULL

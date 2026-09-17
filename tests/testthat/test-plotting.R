@@ -64,7 +64,8 @@ test_that("antibody predictions use the current prediction helper", {
     individuals = 1:3,
     antigenic_map = example_antigenic_map,
     par_tab = example_par_tab,
-    nsamp = 3
+    nsamp = 3,
+    data_type = "continuous"
   )
 
   expect_named(

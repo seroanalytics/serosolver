@@ -14,6 +14,8 @@ vignette: |
   %\VignetteEngine{knitr::rmarkdown}
 ---
 
+<!-- Modified by an AI assistant on 2026-09-17 using GPT-5. Updated worked
+observation-model examples to use character data_type labels. -->
 <!-- Modified by an AI assistant on 2026-09-17 using GPT-5. Completed a consistency pass over the advanced-feature workflows, including the offset comparison, prior-version-1 outputs, and biomarker-group labels. -->
 
 ```{r setup, include=FALSE}
@@ -145,7 +147,7 @@ simulated_data <- simulate_data(
   measured_biomarker_ids = measured_biomarker_ids,
   sampling_times = sampling_times, nsamps = length(sampling_times),
   antigenic_map = antigenic_map, attack_rates = attack_rates,
-  data_type = 1, demographics = demographics
+  data_type = "discrete", demographics = demographics
 )
 antibody_data <- as.data.frame(simulated_data$antibody_data)
 head(check_data(antibody_data))
@@ -185,7 +187,7 @@ fixed_fit <- serosolver(
   antigenic_map = antigenic_map,
   possible_exposure_times = possible_exposure_times,
   fixed_inf_hists = fixed_inf_hists,
-  filename = "fixed_infection_states", data_type = 1,
+  filename = "fixed_infection_states", data_type = "discrete",
   n_chains = 3, parallel = TRUE, mcmc_pars = mcmc_pars
 )
 ```
@@ -196,7 +198,7 @@ fixed_fit <- fit_or_load(
   cache_folder = "fixed_infection_states", file_stem = "fixed_infection_states",
   mcmc_pars = mcmc_pars, antigenic_map = antigenic_map,
   possible_exposure_times = possible_exposure_times,
-  fixed_inf_hists = fixed_inf_hists, data_type = 1
+  fixed_inf_hists = fixed_inf_hists, data_type = "discrete"
 )
 ```
 
@@ -274,7 +276,7 @@ starting_simulated_data <- simulate_data(
   measured_biomarker_ids = max(possible_exposure_times),
   sampling_times = starting_sampling_times, nsamps = length(starting_sampling_times),
   antigenic_map = starting_antigenic_map, attack_rates = starting_attack_rates,
-  data_type = 1, demographics = demographics,
+  data_type = "discrete", demographics = demographics,
   starting_levels = starting_level_function
 )
 starting_antibody_data <- as.data.frame(starting_simulated_data$antibody_data)
@@ -289,7 +291,7 @@ starting_fit <- serosolver(
   antigenic_map = starting_antigenic_map,
   possible_exposure_times = possible_exposure_times,
   start_level = starting_levels_explicit,
-  filename = "starting_levels_one_biomarker", data_type = 1,
+  filename = "starting_levels_one_biomarker", data_type = "discrete",
   n_chains = 3, parallel = TRUE, mcmc_pars = mcmc_pars
 )
 ```
@@ -305,7 +307,7 @@ starting_fit <- fit_or_load(
   cache_folder = "starting_levels", file_stem = "starting_levels_one_biomarker",
   mcmc_pars = mcmc_pars, antigenic_map = starting_antigenic_map,
   possible_exposure_times = possible_exposure_times,
-  start_level = starting_levels_explicit, data_type = 1
+  start_level = starting_levels_explicit, data_type = "discrete"
 )
 ```
 
@@ -334,7 +336,7 @@ plot_model_fits(
   possible_exposure_times = possible_exposure_times,
   known_infection_history = starting_infection_matrix,
   start_level = starting_levels_plot,
-  data_type = 1,
+  data_type = "discrete",
   orientation = "longitudinal",
   expand_to_all_times = TRUE
 )[[1]]
@@ -383,7 +385,7 @@ offset_fit <- serosolver(
   antigenic_map = antigenic_map,
   possible_exposure_times = possible_exposure_times,
   measurement_bias = measurement_indices,
-  filename = "measurement_bias", data_type = 1,
+  filename = "measurement_bias", data_type = "discrete",
   n_chains = 3, parallel = TRUE, mcmc_pars = mcmc_pars
 )
 ```
@@ -396,7 +398,7 @@ offset_simulated <- simulate_data(
   measured_biomarker_ids = measured_biomarker_ids,
   sampling_times = sampling_times, nsamps = length(sampling_times),
   antigenic_map = antigenic_map, attack_rates = attack_rates,
-  data_type = 1, demographics = demographics,
+  data_type = "discrete", demographics = demographics,
   measurement_bias = measurement_indices
 )
 offset_data <- as.data.frame(offset_simulated$antibody_data)
@@ -407,7 +409,7 @@ unshifted_simulated <- simulate_data(
   measured_biomarker_ids = measured_biomarker_ids,
   sampling_times = sampling_times, nsamps = length(sampling_times),
   antigenic_map = antigenic_map, attack_rates = attack_rates,
-  data_type = 1, demographics = demographics
+  data_type = "discrete", demographics = demographics
 )
 unshifted_data <- as.data.frame(unshifted_simulated$antibody_data)
 offset_fit <- fit_or_load(
@@ -415,7 +417,7 @@ offset_fit <- fit_or_load(
   cache_folder = "measurement_bias", file_stem = "measurement_bias",
   mcmc_pars = mcmc_pars, antigenic_map = antigenic_map,
   possible_exposure_times = possible_exposure_times,
-  measurement_bias = measurement_indices, data_type = 1
+  measurement_bias = measurement_indices, data_type = "discrete"
 )
 ```
 
@@ -487,7 +489,7 @@ exponential_fit <- serosolver(
   antigenic_map = antigenic_map,
   possible_exposure_times = possible_exposure_times,
   exponential_waning = TRUE,
-  filename = "exponential_waning", data_type = 1,
+  filename = "exponential_waning", data_type = "discrete",
   n_chains = 3, parallel = TRUE, mcmc_pars = mcmc_pars
 )
 ```
@@ -499,7 +501,7 @@ exponential_simulated <- simulate_data(
   measured_biomarker_ids = measured_biomarker_ids,
   sampling_times = sampling_times, nsamps = length(sampling_times),
   antigenic_map = antigenic_map, attack_rates = attack_rates,
-  data_type = 1, demographics = demographics, exponential_waning = TRUE
+  data_type = "discrete", demographics = demographics, exponential_waning = TRUE
 )
 exponential_data <- as.data.frame(exponential_simulated$antibody_data)
 exponential_fit <- fit_or_load(
@@ -507,7 +509,7 @@ exponential_fit <- fit_or_load(
   cache_folder = "exponential_waning", file_stem = "exponential_waning",
   mcmc_pars = mcmc_pars, antigenic_map = antigenic_map,
   possible_exposure_times = possible_exposure_times,
-  exponential_waning = TRUE, data_type = 1
+  exponential_waning = TRUE, data_type = "discrete"
 )
 ```
 
@@ -557,7 +559,7 @@ multi_simulated <- simulate_data(
   measured_biomarker_ids = measured_biomarker_ids,
   sampling_times = sampling_times, nsamps = length(sampling_times),
   antigenic_map = multi_antigenic_map, attack_rates = attack_rates,
-  data_type = c(1, 2), demographics = demographics
+  data_type = c("discrete", "continuous"), demographics = demographics
 )
 multi_data <- as.data.frame(multi_simulated$antibody_data)
 table(multi_data$biomarker_group)
@@ -573,7 +575,7 @@ multi_fit <- serosolver(
   par_tab = multi_par_tab, antibody_data = multi_data,
   antigenic_map = multi_antigenic_map,
   possible_exposure_times = possible_exposure_times,
-  data_type = c(1, 2), filename = "multiple_biomarker_groups",
+  data_type = c("discrete", "continuous"), filename = "multiple_biomarker_groups",
   n_chains = 3, parallel = TRUE, mcmc_pars = mcmc_pars
 )
 ```
@@ -584,7 +586,8 @@ multi_fit <- fit_or_load(
   cache_folder = "multiple_biomarker_groups",
   file_stem = "multiple_biomarker_groups", mcmc_pars = mcmc_pars,
   antigenic_map = multi_antigenic_map,
-  possible_exposure_times = possible_exposure_times, data_type = c(1, 2)
+  possible_exposure_times = possible_exposure_times,
+  data_type = c("discrete", "continuous")
 )
 ```
 
@@ -748,7 +751,7 @@ prior1_fit <- serosolver(
   antigenic_map = antigenic_map,
   possible_exposure_times = possible_exposure_times,
   prior_version = 1, prior_func = prior1_prior_func,
-  filename = "prior_version_1", data_type = 1,
+  filename = "prior_version_1", data_type = "discrete",
   n_chains = 3, parallel = TRUE, mcmc_pars = mcmc_pars
 )
 ```
@@ -759,7 +762,7 @@ prior1_fit <- fit_or_load(
   cache_folder = "prior_version_1", file_stem = "prior_version_1",
   mcmc_pars = mcmc_pars, antigenic_map = antigenic_map,
   possible_exposure_times = possible_exposure_times,
-  prior_version = 1, prior_func = prior1_prior_func, data_type = 1
+  prior_version = 1, prior_func = prior1_prior_func, data_type = "discrete"
 )
 ```
 

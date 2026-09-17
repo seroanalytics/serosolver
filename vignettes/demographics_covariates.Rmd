@@ -14,6 +14,8 @@ vignette: |
   %\VignetteEngine{knitr::rmarkdown}
 ---
 
+<!-- Modified by an AI assistant on 2026-09-17 using GPT-5. Updated worked
+observation-model examples to use character data_type labels. -->
 <!-- Modified by an AI assistant on 2026-09-16 using GPT-5. Restored the requested variant-stratification warning and removed unnecessary compact data checks. -->
 
 ```{r setup, include=FALSE}
@@ -128,13 +130,13 @@ sim_attack_rates <- simulate_attack_rates(
   sd_par = c(0.05, 0.05), n_groups = 2
 )
 
-## Continuous observations use data_type = 2.
+## Continuous observations use data_type = "continuous".
 simulated_data <- simulate_data(
   par_tab = par_tab, n_indiv = n_indiv,
   possible_exposure_times = possible_exposure_times,
   measured_biomarker_ids = 25, sampling_times = sample_times,
   nsamps = length(sample_times), demographics = timevarying_demographics,
-  attack_rates = sim_attack_rates, data_type = 2,
+  attack_rates = sim_attack_rates, data_type = "continuous",
   coefficient_values = coefficient_values, verbose = FALSE
 )
 antibody_data <- check_data(simulated_data$antibody_data)
@@ -356,7 +358,7 @@ res <- serosolver(
   demographics = timevarying_demographics,
   possible_exposure_times = possible_exposure_times,
   filename = "demographic_fit",
-  prior_func = prior_func, data_type = 2, n_chains = 3,
+  prior_func = prior_func, data_type = "continuous", n_chains = 3,
   parallel = TRUE, mcmc_pars = mcmc_pars, verbose = TRUE
 )
 ```
@@ -384,7 +386,7 @@ if (!prior_cache_available) {
     par_tab = fit_par_tab, antibody_data = antibody_data,
     demographics = timevarying_demographics,
     possible_exposure_times = possible_exposure_times,
-    filename = prior_file, prior_func = prior_func, data_type = 2,
+    filename = prior_file, prior_func = prior_func, data_type = "continuous",
     solve_likelihood = FALSE, n_chains = 3, parallel = TRUE,
     mcmc_pars = prior_mcmc_pars, verbose = FALSE
   )
@@ -431,7 +433,7 @@ if (!mcmc_cache_available) {
     par_tab = fit_par_tab, antibody_data = antibody_data,
     demographics = timevarying_demographics,
     possible_exposure_times = possible_exposure_times,
-    filename = mcmc_file, prior_func = prior_func, data_type = 2,
+    filename = mcmc_file, prior_func = prior_func, data_type = "continuous",
     n_chains = 3, parallel = TRUE, mcmc_pars = mcmc_pars, verbose = FALSE
   )
 } else {
@@ -459,7 +461,7 @@ if (!mcmc_cache_available) {
     ),
     plot_antibody_model = plot_estimated_antibody_model(
       chains$theta_chain, settings = fit_settings,
-      solve_times = possible_exposure_times, data_type = 2
+      solve_times = possible_exposure_times, data_type = "continuous"
     ),
     mcmc_chains = chains
   )
@@ -507,7 +509,7 @@ colour the group-specific trajectories in the same panel, or `by_group = TRUE` t
 ```{r antibody-model-overlaid}
 plot_estimated_antibody_model(
   chains$theta_chain, settings = serosolver_settings,
-  solve_times = possible_exposure_times, data_type = 2, by_group = FALSE
+  solve_times = possible_exposure_times, data_type = "continuous", by_group = FALSE
 ) + coord_cartesian(ylim = c(0, 10))
 ```
 
@@ -622,7 +624,8 @@ variant_simulated_data <- simulate_data(
   measured_biomarker_ids = possible_exposure_times,
   sampling_times = sample_times, nsamps = length(sample_times),
   demographics = variant_demographics,
-  attack_rates = variant_sim_attack_rates, data_type = c(2, 2),
+  attack_rates = variant_sim_attack_rates,
+  data_type = c("continuous", "continuous"),
   verbose = FALSE
 )
 ## simulate_data creates both groups because variant_par_tab contains both
@@ -696,7 +699,7 @@ variant_res <- serosolver(
   possible_exposure_times = possible_exposure_times,
   filename = "variant_fit",
   prior_func = variant_prior_func,
-  data_type = 2, n_chains = 3, parallel = TRUE,
+  data_type = "continuous", n_chains = 3, parallel = TRUE,
   mcmc_pars = variant_mcmc_pars, verbose = TRUE
 )
 ```
@@ -736,7 +739,7 @@ if (!variant_fit_available) {
     possible_exposure_times = possible_exposure_times,
     filename = variant_mcmc_file,
     prior_func = variant_prior_func,
-    data_type = 2, n_chains = 3, parallel = TRUE,
+    data_type = "continuous", n_chains = 3, parallel = TRUE,
     mcmc_pars = variant_mcmc_pars, verbose = FALSE
   )
 } else {
@@ -819,7 +822,7 @@ variant_kinetics <- lapply(seq_along(variant_infection_times), function(i) {
     par_tab = variant_fit_par_tab,
     solve_times = seq(infection_time, infection_time + 10, by = 0.1),
     set_infections = infection_time,
-    data_type = 2, settings = variant_settings,
+    data_type = "continuous", settings = variant_settings,
     by_group = TRUE, nsamp = 1000
   )$data %>%
     filter(as.numeric(as.character(biomarker_id)) == representative_biomarker_id) %>%
