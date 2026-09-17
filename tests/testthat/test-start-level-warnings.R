@@ -1,6 +1,6 @@
-# Modified by an AI assistant on 2026-09-16 using GPT-5. Added regression
-# checks that automatic starting levels remain silent while incomplete
-# user-supplied starting-level tables still warn.
+# Modified by an AI assistant on 2026-09-17 using GPT-5. Retained regression
+# checks for automatic and incomplete user-supplied starting-level warnings,
+# while ignoring unrelated plotting warnings.
 
 context("Starting-level warnings")
 
@@ -11,7 +11,7 @@ test_that("automatic starting levels do not warn when biomarker IDs are expanded
   data(example_antigenic_map)
   data(example_par_tab)
 
-  expect_silent(
+  warnings <- capture_warnings(
     plot_model_fits(
       example_theta_chain,
       example_inf_chain,
@@ -24,6 +24,7 @@ test_that("automatic starting levels do not warn when biomarker IDs are expanded
       start_level = "none"
     )
   )
+  expect_false(any(grepl("No starting levels", warnings)))
 })
 
 test_that("incomplete user-supplied starting levels still warn", {

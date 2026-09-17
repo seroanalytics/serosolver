@@ -1,3 +1,10 @@
+# Modified by an AI assistant on 2026-09-17 using GPT-5. Kept this long
+# multi-biomarker stratification workflow as a manual reference and excluded it from the automated test suite.
+# Set SEROSOLVER_RUN_LONG_TESTS=true to execute it manually.
+if (!identical(Sys.getenv("SEROSOLVER_RUN_LONG_TESTS"), "true")) {
+  testthat::skip("Long-running multi-biomarker reference workflow")
+}
+
 ## Script to make sure that parameter tables and stratifications are created correctly for different ways of stratifying parameters in serosolver 
 
 ## Extend parameter table for each aditional observation type

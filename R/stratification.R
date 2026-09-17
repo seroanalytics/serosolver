@@ -1,5 +1,5 @@
-# Modified by an AI assistant on 2026-09-16 using GPT-5. Added the internal
-# helper that applies user-specified stratification coefficients for simulation.
+# Modified by an AI assistant on 2026-09-17 using GPT-5. Replaced the deprecated
+# tidyselect external-vector syntax in demographic-column alignment.
 
 #' Add scaling parameters to par_tab
 #'
@@ -267,9 +267,9 @@ align_antibody_demographic_dat <- function(antibody_data, demographics=NULL,verb
       if(verbose) message(paste0("Warning: antibody_data and demographics have overlapping column names: ", paste(overlapping_colnames, collapse=", "), ". Using the values given in demographics."))
     }
     if("time" %in% colnames(demographics)){
-      antibody_data <- suppressMessages(antibody_data %>% select(-overlapping_colnames) %>% left_join(demographics %>% dplyr::rename(sample_time = time)))
+      antibody_data <- suppressMessages(antibody_data %>% select(-all_of(overlapping_colnames)) %>% left_join(demographics %>% dplyr::rename(sample_time = time)))
     } else {
-      antibody_data <- suppressMessages(antibody_data %>% select(-overlapping_colnames) %>% left_join(demographics))
+      antibody_data <- suppressMessages(antibody_data %>% select(-all_of(overlapping_colnames)) %>% left_join(demographics))
     }
   }
   antibody_data

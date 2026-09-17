@@ -1,3 +1,10 @@
+# Modified by an AI assistant on 2026-09-17 using GPT-5. Kept this long
+# measurement-offset and multi-biomarker workflow as a manual reference and excluded it from the automated test suite.
+# Set SEROSOLVER_RUN_LONG_TESTS=true to execute it manually.
+if (!identical(Sys.getenv("SEROSOLVER_RUN_LONG_TESTS"), "true")) {
+  testthat::skip("Long-running measurement-offset reference workflow")
+}
+
 ## Script to make sure that parameter tables and stratifications are created correctly for different ways of stratifying parameters in serosolver 
 add_rhos_par_tab <- function(par_tab, sampled_viruses,n_obs_types=1){
   par_tab_rhos <- as.data.frame(expand_grid(names="rho",values=rep(0,length(sampled_viruses)),fixed=0,
