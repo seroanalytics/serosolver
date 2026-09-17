@@ -14,7 +14,7 @@ vignette: |
   %\VignetteEngine{knitr::rmarkdown}
 ---
 
-<!-- Modified by an AI assistant on 2026-09-17 using GPT-5. Created a standalone vignette covering fitted examples of the advanced model features without changing package code. -->
+<!-- Modified by an AI assistant on 2026-09-17 using GPT-5. Updated the prior-version-1 example to use time-specific phi probabilities, priors, and interior starting ranges. -->
 
 ```{r setup, include=FALSE}
 set.seed(1)
@@ -361,7 +361,7 @@ offset_setup <- add_rhos_par_tab(
 offset_par_tab <- offset_setup[[1]]
 measurement_indices <- offset_setup[[2]]
 offset_par_tab$values[offset_par_tab$names == "rho"] <-
-  seq(-0.6, 0.6, length.out = length(measured_biomarker_ids))
+  seq(-2, 2, length.out = length(measured_biomarker_ids))
 offset_par_tab %>%
   filter(names == "rho") %>%
   select(names, par_type, biomarker_group, values, lower_bound, upper_bound)
@@ -389,6 +389,7 @@ offset_fit <- serosolver(
 ```
 
 ```{r measurement-bias-data-fit, include=FALSE}
+set.seed(124)
 offset_simulated <- simulate_data(
   par_tab = offset_par_tab, n_indiv = n_indiv,
   possible_exposure_times = possible_exposure_times,
@@ -399,6 +400,16 @@ offset_simulated <- simulate_data(
   measurement_bias = measurement_indices
 )
 offset_data <- as.data.frame(offset_simulated$antibody_data)
+set.seed(124)
+unshifted_simulated <- simulate_data(
+  par_tab = base_par_tab, n_indiv = n_indiv,
+  possible_exposure_times = possible_exposure_times,
+  measured_biomarker_ids = measured_biomarker_ids,
+  sampling_times = sampling_times, nsamps = length(sampling_times),
+  antigenic_map = antigenic_map, attack_rates = attack_rates,
+  data_type = 1, demographics = demographics
+)
+unshifted_data <- as.data.frame(unshifted_simulated$antibody_data)
 offset_fit <- fit_or_load(
   par_tab = offset_par_tab, antibody_data = offset_data,
   cache_folder = "measurement_bias", file_stem = "measurement_bias",
@@ -408,24 +419,55 @@ offset_fit <- fit_or_load(
 )
 ```
 
-```{r measurement-bias-output}
-offset_fit$all_diagnostics$theta_estimates %>%
-  filter(names == "rho") %>%
-  select(names, median, lower95_CrI, upper95_CrI)
+The histograms below compare observations generated from the same simulated
+infection histories, with and without the measurement offsets. Three biomarker
+IDs are shown to make the shifts easy to see.
 
-plot_antibody_predictions(
-  offset_fit$mcmc_chains$theta_chain, offset_fit$mcmc_chains$inf_chain,
-  settings = offset_fit$settings, nsamp = 100
-)$p_pointrange
+```{r measurement-bias-simulation-plot}
+comparison_ids <- measured_biomarker_ids
+offset_comparison <- bind_rows(
+  offset_data %>% mutate(offset = "With measurement offsets"),
+  unshifted_data %>% mutate(offset = "Without measurement offsets")
+) %>%
+  filter(biomarker_id %in% comparison_ids)
+
+ggplot(offset_comparison, aes(x = measurement, fill = offset)) +
+  geom_histogram(binwidth = 1, boundary = 0, position = "identity", alpha = 0.5) +
+  facet_wrap(~biomarker_id) +
+  labs(x = "Observed measurement", y = "Number of observations", fill = NULL) +
+  theme_bw()
+```
+
+The point ranges below show the posterior medians and 95% credible intervals
+for the `rho` parameters. The open points show the values used to simulate the
+data. Repeated `rho` rows are given unique names when the chains are read, so
+they appear as `rho`, `rho.1`, `rho.2`, and so on.
+
+```{r measurement-bias-output}
+rho_estimates <- offset_fit$all_diagnostics$theta_estimates %>%
+  filter(grepl("^rho(\\.[0-9]+)?$", names)) %>%
+  select(names, median, lower95_CrI, upper95_CrI)
+rho_truth <- offset_par_tab %>%
+  filter(names == "rho") %>%
+  transmute(names = make.unique(as.character(names)), true = values)
+rho_plot_data <- left_join(rho_estimates, rho_truth, by = "names") %>%
+  mutate(names = factor(names, levels = names))
+
+ggplot(rho_plot_data, aes(x = names, y = median)) +
+  geom_pointrange(aes(ymin = lower95_CrI, ymax = upper95_CrI)) +
+  geom_point(aes(y = true), shape = 21, fill = "white", size = 2.5) +
+  geom_hline(yintercept = 0, linetype = "dashed", colour = "grey50") +
+  labs(x = "Measurement offset parameter", y = "rho") +
+  theme_bw() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
 ```
 
 # Exponential waning
 
-The standard model uses linear waning, which means that an antibody response
-falls by a fixed amount per unit of time until it reaches its lower limit.
-Some responses are better represented by a proportional decline, in which case
-the response falls quickly at first and then more slowly. Setting
-`exponential_waning = TRUE` uses this exponential form for the short- and
+The standard model assumes linear waning of log antibody levels, which means that the remaining boost
+falls by a fixed proportion per unit of time until it reaches zero.
+We have found that some data are better described by assuming exponential waning of log antibody levels. This can be achieved by setting
+`exponential_waning = TRUE`, which uses this exponential form for the short- and
 long-term responses. It also changes the cross-reactivity model from a linear
 decline with antigenic distance to an exponential decline.
 
@@ -481,6 +523,20 @@ complementary information about the same infections.
 
 ```{r multiple-biomarker-setup}
 multi_par_tab <- extend_par_tab_biomarker_groups(base_par_tab, 2)
+multi_par_tab$values[multi_par_tab$biomarker_group == 2 &
+                     multi_par_tab$names == "boost_long"] <- 5.5
+multi_par_tab$values[multi_par_tab$biomarker_group == 2 &
+                     multi_par_tab$names == "boost_short"] <- 4.5
+multi_par_tab$values[multi_par_tab$biomarker_group == 2 &
+                     multi_par_tab$names == "boost_delay"] <- 1.5
+multi_par_tab$values[multi_par_tab$biomarker_group == 2 &
+                     multi_par_tab$names == "wane_long"] <- 0.08
+multi_par_tab$values[multi_par_tab$biomarker_group == 2 &
+                     multi_par_tab$names == "wane_short"] <- 0.6
+multi_par_tab$values[multi_par_tab$biomarker_group == 2 &
+                     multi_par_tab$names == "cr_long"] <- 0.25
+multi_par_tab$values[multi_par_tab$biomarker_group == 2 &
+                     multi_par_tab$names == "cr_short"] <- 0.75
 multi_antigenic_map <- bind_rows(
   antigenic_map %>% mutate(biomarker_group = 1),
   antigenic_map %>% mutate(biomarker_group = 2)
@@ -532,44 +588,113 @@ plot_estimated_antibody_model(
   multi_fit$mcmc_chains$theta_chain, settings = multi_fit$settings,
   solve_times = possible_exposure_times, by_group = TRUE
 ) + coord_cartesian(ylim = c(0, 10))
-
-plot_model_fits(
-  multi_fit$mcmc_chains$theta_chain, multi_fit$mcmc_chains$inf_chain,
-  settings = multi_fit$settings, individuals = 1:3,
-  orientation = "longitudinal", expand_to_all_times = TRUE
-)[[1]] + theme(axis.text.x = element_text(angle = 45, hjust = 1))
 ```
 
+Model fits for biomarker group 1 observations.
+```{r multiple-biomarker-output1}
+## Biomarker group 1
+plot_model_fits(
+  multi_fit$mcmc_chains$theta_chain, multi_fit$mcmc_chains$inf_chain,
+  known_infection_history = multi_simulated$infection_histories,
+  settings = multi_fit$settings, individuals = 1:3,
+  orientation = "cross-sectional", expand_to_all_times = TRUE
+)[[1]]
+```
+
+Model fits for biomarker group 2 observations.
+```{r multiple-biomarker-output2}
+## Biomarker group 1
+plot_model_fits(
+  multi_fit$mcmc_chains$theta_chain, multi_fit$mcmc_chains$inf_chain,
+  known_infection_history = multi_simulated$infection_histories,
+  settings = multi_fit$settings, individuals = 1:3,
+  orientation = "cross-sectional", expand_to_all_times = TRUE
+)[[2]]
+```
 # Prior version 1
 
 The infection-history prior controls how the model describes the probability of
 infection across the possible exposure times and how new histories are
-proposed during MCMC. `prior_version = 1` uses an explicit infection
-probability parameter for each possible exposure time. This is useful when
-there is a reason to work directly with those time-specific probabilities; the
-other versions use different representations of the same broad prior idea.
+proposed during MCMC. In the default `prior_version = 2`, the infection-history
+prior is described using the beta-distributed infection-rate parameters in
+`par_tab`; the model then integrates over the corresponding time-specific
+probabilities.
+
+`prior_version = 1` instead has a separate `phi` parameter for every possible
+exposure time. At a given parameter draw, `phi` is directly the probability of
+infection at that time. This gives more direct control over the assumed
+infection pattern: the starting value, bounds, and prior can vary by time, and
+individual probabilities can be fixed when they are known or assumed.
+`infection_model_prior_shape1` and `infection_model_prior_shape2` are still
+required entries in the parameter table, but they do not provide the
+time-specific infection probabilities in this version.
 
 ```{r prior-version-1-setup}
 prior1_par_tab <- check_par_tab(
   base_par_tab, mcmc = TRUE, version = 1,
   possible_exposure_times = possible_exposure_times, verbose = FALSE
 )
-prior1_par_tab %>%
-  filter(names == "phi") %>%
-  select(names, values, fixed, lower_bound, upper_bound) %>%
-  head()
 
+phi_rows <- which(prior1_par_tab$names == "phi")
+phi_start_values <- seq(0.03, 0.18, length.out = length(phi_rows))
+phi_start_values[c(1, 13, 25)] <- c(0.02, 0.35, 0.08)
+prior1_par_tab$values[phi_rows] <- phi_start_values
+prior1_par_tab$lower_start[phi_rows] <- pmax(phi_start_values - 0.05, 0.001)
+prior1_par_tab$upper_start[phi_rows] <- pmin(phi_start_values + 0.05, 0.999)
+
+## Fix two time-specific infection probabilities.
+fixed_phi_times <- c(1, 25)
+fixed_phi_rows <- phi_rows[match(fixed_phi_times, possible_exposure_times)]
+prior1_par_tab$fixed[fixed_phi_rows] <- 1
+
+## These are separate, time-specific priors on phi, not the prior-version-2
+## infection_model_prior_shape1 and infection_model_prior_shape2 entries.
+phi_prior_shape1 <- rep(1, length(phi_rows))
+phi_prior_shape2 <- rep(9, length(phi_rows))
+phi_prior_shape1[13] <- 4
+phi_prior_shape2[13] <- 6
+
+prior1_prior_func <- function(par_tab) {
+  phi_rows <- which(par_tab$names == "phi")
+  function(pars) {
+    sum(dbeta(
+      pars[phi_rows], phi_prior_shape1, phi_prior_shape2, log = TRUE
+    ))
+  }
+}
+
+phi_table <- prior1_par_tab %>%
+  filter(names == "phi") %>%
+  transmute(
+    time = possible_exposure_times,
+    probability = values,
+    fixed = fixed,
+    prior_mean = phi_prior_shape1 / (phi_prior_shape1 + phi_prior_shape2)
+  )
+phi_table
+
+ggplot(phi_table, aes(time, probability)) +
+  geom_line() +
+  geom_point(aes(colour = factor(fixed))) +
+  scale_colour_discrete(name = "Fixed in fit", labels = c("No", "Yes")) +
+  labs(x = "Possible exposure time", y = "phi: probability of infection") +
+  theme_classic()
+
+## Show the attack-rate distributions implied by three of the phi priors.
+n_alive <- get_n_alive(antibody_data, possible_exposure_times)
+prior_prediction_times <- c(5, 13, 20)
 set.seed(103)
-prior_attack_rate_draws <- rbeta(
-  10000,
-  prior1_par_tab$values[prior1_par_tab$names ==
-                          "infection_model_prior_shape1"][1],
-  prior1_par_tab$values[prior1_par_tab$names ==
-                          "infection_model_prior_shape2"][1]
-)
-ggplot(data.frame(attack_rate = prior_attack_rate_draws), aes(attack_rate)) +
+prior_attack_rate_draws <- bind_rows(lapply(prior_prediction_times, function(i) {
+  phi_draws <- rbeta(10000, phi_prior_shape1[i], phi_prior_shape2[i])
+  data.frame(
+    time = possible_exposure_times[i],
+    attack_rate = rbinom(length(phi_draws), n_alive[i], phi_draws) / n_alive[i]
+  )
+}))
+ggplot(prior_attack_rate_draws, aes(attack_rate)) +
   geom_histogram(bins = 50, fill = "grey70", colour = "white") +
-  labs(x = "Attack rate in one exposure period", y = "Prior draws") +
+  facet_wrap(~time) +
+  labs(x = "Attack rate in one exposure period", y = "Prior predictive draws") +
   theme_classic()
 ```
 
@@ -578,7 +703,8 @@ prior1_fit <- serosolver(
   par_tab = prior1_par_tab, antibody_data = antibody_data,
   antigenic_map = antigenic_map,
   possible_exposure_times = possible_exposure_times,
-  prior_version = 1, filename = "prior_version_1", data_type = 1,
+  prior_version = 1, prior_func = prior1_prior_func,
+  filename = "prior_version_1", data_type = 1,
   n_chains = 3, parallel = TRUE, mcmc_pars = mcmc_pars
 )
 ```
@@ -589,7 +715,7 @@ prior1_fit <- fit_or_load(
   cache_folder = "prior_version_1", file_stem = "prior_version_1",
   mcmc_pars = mcmc_pars, antigenic_map = antigenic_map,
   possible_exposure_times = possible_exposure_times,
-  prior_version = 1, data_type = 1
+  prior_version = 1, prior_func = prior1_prior_func, data_type = 1
 )
 ```
 
@@ -607,7 +733,3 @@ file handling, and general diagnostics. The [demographic variables and
 covariates vignette](demographics_covariates.html) covers fixed and
 time-varying covariates and the separate variant-specific workaround. The
 case-study vignettes provide longer examples using real datasets.
-
-The package currently uses `coda` for MCMC summaries and convergence
-diagnostics. A future update should assess whether parts of this workflow
-would be better supported by `posterior` and `bayesplot`.

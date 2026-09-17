@@ -1,6 +1,6 @@
 
-# Modified by an AI assistant on 2026-09-16 using GPT-5. Corrected outdated
-# argument names and documented active optional arguments without changing the implementation.
+# Modified by an AI assistant on 2026-09-17 using GPT-5. Fixed parameter-table
+# selection when version-1 `phi` rows have missing `biomarker_group` values.
 
 #' Posterior function pointer
 #'
@@ -309,7 +309,7 @@ create_posterior_func <- function(par_tab,
     ## Extract parameter type indices from par_tab, to split up
     ## similar parameters in model solving functions
     ## In general we are just going to use the indices for a single observation type
-    par_tab_unique <- par_tab[!is.na(par_tab$biomarker_group) & par_tab$biomarker_group == min(par_tab$biomarker_group),]
+    par_tab_unique <- par_tab[!is.na(par_tab$biomarker_group) & par_tab$biomarker_group == min(par_tab$biomarker_group, na.rm = TRUE),]
 
     ## These will be different for each biomarker_group
     theta_indices <- which(par_tab$par_type %in% c(0, 1)) ## Which parameters are for the antibody kinetics model?
