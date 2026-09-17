@@ -69,6 +69,107 @@ test_that("coefficient_values sets generated stratification coefficients", {
   expect_equal(coefficient$par_type, 4)
 })
 
+test_that("coefficient_values supports additive covariates and biomarker groups", {
+  data(example_par_tab)
+
+  par_tab <- extend_par_tab_biomarker_groups(example_par_tab, 2)
+  par_tab$stratification <- NA_character_
+  par_tab[par_tab$names == "boost_short", "stratification"] <- "urban, location"
+  demographics <- data.frame(
+    individual = 1:12,
+    birth = 0,
+    urban = rep(0:1, each = 6),
+    location = rep(0:1, 6)
+  )
+  coefficient_values <- expand.grid(
+    parameter = "boost_short",
+    stratification = c("urban", "location"),
+    stratification_level = 1,
+    biomarker_group = 1:2,
+    value = c(0.4, -0.2, 0.8, -0.6)
+  )
+  coefficient_values <- coefficient_values[
+    c(1, 3, 2, 4),
+    c("parameter", "stratification", "stratification_level",
+      "biomarker_group", "value")
+  ]
+
+  set.seed(3)
+  simulated <- simulate_data(
+    par_tab = par_tab,
+    n_indiv = 12,
+    possible_exposure_times = 1:5,
+    measured_biomarker_ids = c(4, 5),
+    sampling_times = 1:5,
+    nsamps = 2,
+    demographics = demographics,
+    attack_rates = simulate_attack_rates(1:5, mean_par = 0.1, sd_par = 0),
+    data_type = c(1, 2),
+    coefficient_values = coefficient_values
+  )
+
+  expected_names <- c(
+    "boost_short_biomarker_1_coef_urban_1",
+    "boost_short_biomarker_1_coef_location_1",
+    "boost_short_biomarker_2_coef_urban_1",
+    "boost_short_biomarker_2_coef_location_1"
+  )
+  coefficient_rows <- simulated$par_tab[
+    simulated$par_tab$names %in% expected_names,
+    c("names", "values"), drop = FALSE
+  ]
+  expected_values <- setNames(coefficient_values$value, expected_names)
+
+  expect_equal(nrow(coefficient_rows), 4)
+  expect_equal(
+    setNames(coefficient_rows$values, coefficient_rows$names),
+    expected_values
+  )
+  expect_false(any(grepl("_coef_(urban|location)_0$", simulated$par_tab$names)))
+  expect_equal(
+    simulated$par_tab$values[simulated$par_tab$names == "boost_short"],
+    c(2, 2)
+  )
+})
+
+test_that("coefficient_values rejects duplicate and unmatched specifications", {
+  data(example_par_tab)
+  par_tab <- example_par_tab
+  par_tab$stratification <- NA_character_
+  par_tab[par_tab$names == "boost_short", "stratification"] <- "urban"
+  demographics <- data.frame(individual = 1:4, birth = 0, urban = 0:1)
+  antibody_data <- data.frame(
+    individual = rep(1:4, each = 2),
+    biomarker_id = 5,
+    biomarker_group = 1,
+    sample_time = 1,
+    birth = 0,
+    measurement = 1,
+    repeat_number = 1,
+    urban = rep(0:1, each = 2)
+  )
+  generated <- add_scale_pars(par_tab, antibody_data, demographics)
+  specification <- data.frame(
+    parameter = "boost_short",
+    stratification = "urban",
+    stratification_level = 1,
+    biomarker_group = 1,
+    value = 0.5
+  )
+
+  expect_error(
+    serosolver:::apply_coefficient_values(
+      generated, rbind(specification, specification)
+    ),
+    "duplicate"
+  )
+  specification$parameter <- "not_a_parameter"
+  expect_error(
+    serosolver:::apply_coefficient_values(generated, specification),
+    "do not match"
+  )
+})
+
 test_that("starting-level and measurement-offset helpers return aligned tables", {
   data(example_antibody_data)
   data(example_par_tab)
