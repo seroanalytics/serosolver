@@ -48,6 +48,13 @@ inst/extdata/demographics_covariates/mcmc_chains/*
 inst/extdata/demographics_covariates/prior_mcmc_chains/*
 inst/extdata/demographics_covariates/variant_mcmc_chains/*
 
+inst/extdata/advanced_features/fixed_infection_states/*
+inst/extdata/advanced_features/starting_levels/*
+inst/extdata/advanced_features/measurement_bias/*
+inst/extdata/advanced_features/exponential_waning/*
+inst/extdata/advanced_features/multiple_biomarker_groups/*
+inst/extdata/advanced_features/prior_version_1/*
+
 doc
 Meta
 /doc/

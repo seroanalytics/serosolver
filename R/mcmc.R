@@ -1,5 +1,5 @@
-# Modified by an AI assistant on 2026-09-16 using GPT-5. Completed the roxygen
-# documentation pass for `serosolver()` without changing its implementation.
+# Modified by an AI assistant on 2026-09-17 using GPT-5. Updated the automatic
+# cross-sectional plot to avoid expanding measurement-offset fits to unmeasured biomarker IDs.
 
 #' Run the serosolver model
 #'
@@ -1090,7 +1090,9 @@ serosolver <- function(par_tab,
     plot_cross_sectional <- plot_model_fits(chains$theta_chain,chains$inf_chain,individuals = 1:min(n_indiv, 5),
                               known_infection_history=NULL, ## Set this to NULL for real data
                               settings=serosolver_settings,orientation="cross-sectional",expand_to_all_times = FALSE,
-                              expand_to_all_biomarker_ids = TRUE)
+                              ## Do not expand to unmeasured biomarker IDs when rho parameters
+                              ## are supplied, because those IDs have no measurement offset.
+                              expand_to_all_biomarker_ids = is.null(measurement_bias))
     
     p_ar <- plot_attack_rates(chains$inf_chain,settings = serosolver_settings,by_group=TRUE,plot_den = FALSE)
     p_ab_model <- plot_estimated_antibody_model(chains$theta_chain,settings=serosolver_settings,solve_times = possible_exposure_times)

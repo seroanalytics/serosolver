@@ -147,7 +147,7 @@ plot_antibody_data(example_antibody_data,example_antigenic_map$inf_times,n_indiv
 readme_mcmc_dir <- file.path("inst", "extdata", "readme", "chains")
 dir.create(readme_mcmc_dir, recursive = TRUE, showWarnings = FALSE)
 output <- serosolver::serosolver(example_par_tab, example_antibody_data, antigenic_map=example_antigenic_map,
-                filename=file.path(readme_mcmc_dir, "readme"), n_chains=3,parallel=TRUE,
+                filename=file.path(readme_mcmc_dir, "readme"), n_chains=3,parallel=TRUE,data_type=2,
                 mcmc_pars=c(adaptive_iterations=10000, iterations=50000),verbose=TRUE)
 #> ================================ Running serosolver ================================
 #> Requested 3 chains in parallel, setting up parallel session using the parallel package
@@ -168,10 +168,11 @@ output$plot_fits_cross_sectional
 
 ## AI assistance
 
-AI assistance was used during development of this package for documentation
-drafting, repository audits, code review, and selected implementation edits.
-Most of this assistance was provided using OpenAI's GPT-5 model.
-The package author is responsible for reviewing and approving all changes.
-The core of `serosolver` remains the same as the published version; new
-advanced features were developed and implemented manually, with some
-AI assistance used to align complex coding workflows.
+AI assistance was used during development of this package for
+documentation drafting, repository audits, code review, and selected
+implementation edits. Most of this assistance was provided using
+OpenAI’s GPT-5 model. The package author is responsible for reviewing
+and approving all changes. The core of `serosolver` remains the same as
+the published version; new advanced features were developed and
+implemented manually, with some AI assistance used to align complex
+coding workflows.

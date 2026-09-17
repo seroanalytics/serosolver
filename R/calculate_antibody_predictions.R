@@ -1,6 +1,6 @@
-# Modified by an AI assistant on 2026-09-16 using GPT-5. Prevented the warning
-# for missing expanded starting levels when the user selected the default
-# automatic starting-level behaviour.
+# Modified by an AI assistant on 2026-09-17 using GPT-5. Prevented warnings for
+# default automatic starting levels and reindexed supplied starting levels
+# after restricting predictions to a subset of individuals.
 #'
 #' Generate antibody level credible intervals
 #'
@@ -95,14 +95,15 @@ get_antibody_level_predictions <- function(chain, infection_histories, antibody_
   antibody_data$individual <- match(antibody_data$individual, individuals)
   infection_histories$i <- match(infection_histories$i, individuals)
   if(class(start_level) %in% c("data.frame","tibble")){
-    start_level$individual <- match(start_level$individual, individuals)
+    ## Reindex starting levels after restricting predictions to these individuals.
+    start_level <- start_level %>%
+      dplyr::filter(individual %in% individuals) %>%
+      dplyr::mutate(individual = match(individual, individuals)) %>%
+      dplyr::select(individual, biomarker_id, biomarker_group, starting_level) %>%
+      dplyr::distinct() %>%
+      dplyr::arrange(individual, biomarker_group, biomarker_id) %>%
+      dplyr::mutate(start_index = dplyr::row_number())
   }
-  #if(class(start_level) %in% c("data.frame","tibble")){
-  #  start_index_tmp <- start_level$start_index
-  #  start_level <- start_level[start_level$individual %in% individuals,]
-  #  start_level$individual <- match(start_level$individual, individuals)
-  #  start_level$start_index <- 1:nrow(start_level)# match(start_level$start_index, start_index_tmp)
-  #}
   ## Format the antigenic map to solve the model 
   ## Check if an antigenic map is provided. If not, then create a dummy map where all pathogens have the same position on the map
   if (!is.null(antigenic_map)) {

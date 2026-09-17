@@ -682,16 +682,25 @@ unregister_dopar <- function() {
 #' @return a data frame containing the input antibody data with `starting_level` and `start_index` columns
 #' @examples
 #' \dontrun{
+#' ## Use the minimum of the earliest measurements for each individual and biomarker.
+#' ## For discrete data, the TRUE calls below randomize the result between its
+#' ## floor and floor + 1; the FALSE calls retain the summary value.
 #' create_start_level_data(example_antibody_data,"min",FALSE)
 #' create_start_level_data(example_antibody_data,"min",TRUE)
+#' ## Use the maximum of the earliest measurements.
 #' create_start_level_data(example_antibody_data,"max",FALSE)
 #' create_start_level_data(example_antibody_data,"max",TRUE)
+#' ## Use the mean of the earliest measurements.
 #' create_start_level_data(example_antibody_data,"mean",FALSE)
 #' create_start_level_data(example_antibody_data,"mean",TRUE)
+#' ## Use the median of the earliest measurements.
 #' create_start_level_data(example_antibody_data,"median",FALSE)
 #' create_start_level_data(example_antibody_data,"median",TRUE)
+#' ## An unrecognised summary sets starting levels to zero.
 #' create_start_level_data(example_antibody_data,"other",FALSE)
 #' create_start_level_data(example_antibody_data,"other",TRUE)
+#' ## Draw starting levels uniformly between the observed minimum and maximum
+#' ## for each biomarker group.
 #' create_start_level_data(example_antibody_data,"full_random",FALSE)
 #' create_start_level_data(example_antibody_data,"full_random",TRUE)
 #' }
