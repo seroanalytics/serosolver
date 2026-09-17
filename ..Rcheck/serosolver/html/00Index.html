@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html>
+<head><title>R: Inference Framework for Serological Data</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+<link rel="stylesheet" type="text/css" href="R.css">
+</head><body><div class="container">
+<h1> Inference Framework for Serological Data
+<img class="toplogo" src="../../../doc/html/Rlogo.svg" alt="[R logo]">
+</h1>
+<hr>
+<div style="text-align: center;">
+<a href="../../../doc/html/packages.html"><img class="arrow" src="../../../doc/html/left.jpg" alt="[Up]"></a>
+<a href="../../../doc/html/index.html"><img class="arrow" src="../../../doc/html/up.jpg" alt="[Top]"></a>
+</div><h2>Documentation for package &lsquo;serosolver&rsquo; version 1.2.0</h2>
+
+<ul><li><a href="../DESCRIPTION" type="text/plain; charset=utf-8">DESCRIPTION file</a></li>
+<li><a href="../README.md">Package README</a></li>
+</ul>
+
+<h2>Help Pages</h2>
+
+
+<p style="text-align: center;">
+<a href="#A">A</a>
+<a href="#C">C</a>
+<a href="#D">D</a>
+<a href="#E">E</a>
+<a href="#F">F</a>
+<a href="#G">G</a>
+<a href="#I">I</a>
+<a href="#L">L</a>
+<a href="#M">M</a>
+<a href="#P">P</a>
+<a href="#R">R</a>
+<a href="#S">S</a>
+<a href="#T">T</a>
+<a href="#U">U</a>
+</p>
+
+
+<h2><a id="A">-- A --</a></h2>
+
+<table style="width: 100%;">
+<tr><td style="width: 25%;"><a href="add_measurement_shifts.html">add_measurement_shifts</a></td>
+<td>Add measurement shifts to predictions</td></tr>
+<tr><td style="width: 25%;"><a href="add_noise.html">add_noise</a></td>
+<td>Add noise</td></tr>
+<tr><td style="width: 25%;"><a href="add_rhos_par_tab.html">add_rhos_par_tab</a></td>
+<td>Add measurement offset values to par_tab</td></tr>
+<tr><td style="width: 25%;"><a href="add_scale_pars.html">add_scale_pars</a></td>
+<td>Add scaling parameters to par_tab</td></tr>
+<tr><td style="width: 25%;"><a href="add_stratifying_variables.html">add_stratifying_variables</a></td>
+<td>Align stratification levels for serosolver infection history and antibody kinetics models</td></tr>
+<tr><td style="width: 25%;"><a href="align_antibody_demographic_dat.html">align_antibody_demographic_dat</a></td>
+<td>Merge antibody data and demographics</td></tr>
+<tr><td style="width: 25%;"><a href="antibody_model.html">antibody_model</a></td>
+<td>Overall model function, fast implementation</td></tr>
+</table>
+
+<h2><a id="C">-- C --</a></h2>
+
+<table style="width: 100%;">
+<tr><td style="width: 25%;"><a href="calculate_infection_history_statistics.html">calculate_infection_history_statistics</a></td>
+<td>Get posterior information for estimated infection histories</td></tr>
+<tr><td style="width: 25%;"><a href="calc_a.html">calc_a</a></td>
+<td>Calculate the first Beta shape parameter from a mode and certainty value</td></tr>
+<tr><td style="width: 25%;"><a href="calc_b.html">calc_b</a></td>
+<td>Calculate the second Beta shape parameter from a mode and certainty value</td></tr>
+<tr><td style="width: 25%;"><a href="calc_phi_loc_probs_indiv.html">calc_phi_loc_probs_indiv</a></td>
+<td>Calculate grouped FOI log probabilities by individual</td></tr>
+<tr><td style="width: 25%;"><a href="calc_phi_probs.html">calc_phi_probs</a></td>
+<td>Calculate FOI log probability</td></tr>
+<tr><td style="width: 25%;"><a href="calc_phi_probs_indiv.html">calc_phi_probs_indiv</a></td>
+<td>Calculate FOI log probability vector</td></tr>
+<tr><td style="width: 25%;"><a href="calc_phi_probs_spline.html">calc_phi_probs_spline</a></td>
+<td>Calculate FOI from spline - INACTIVE</td></tr>
+<tr><td style="width: 25%;"><a href="check_attack_rates.html">check_attack_rates</a></td>
+<td>Checks the attack_rates supplied in simulate_data</td></tr>
+<tr><td style="width: 25%;"><a href="check_data.html">check_data</a></td>
+<td>Checks the entries of data used in serosolver</td></tr>
+<tr><td style="width: 25%;"><a href="check_demographics.html">check_demographics</a></td>
+<td>Checks the entries of demographics data frame used for parameter stratification</td></tr>
+<tr><td style="width: 25%;"><a href="check_inf_hist.html">check_inf_hist</a></td>
+<td>Check infection history matrix</td></tr>
+<tr><td style="width: 25%;"><a href="check_par_tab.html">check_par_tab</a></td>
+<td>Check and prepare a model parameter table</td></tr>
+<tr><td style="width: 25%;"><a href="check_proposals.html">check_proposals</a></td>
+<td>Checks if the multivariate proposal is being used with the FOI proposal</td></tr>
+<tr><td style="width: 25%;"><a href="create_age_mask.html">create_age_mask</a></td>
+<td>Create age mask</td></tr>
+<tr><td style="width: 25%;"><a href="create_cross_reactivity_vector.html">create_cross_reactivity_vector</a></td>
+<td>Convert melted antigenic map to cross reactivity</td></tr>
+<tr><td style="width: 25%;"><a href="create_demographic_table.html">create_demographic_table</a></td>
+<td>Create a demographics data frame of unique stratification levels</td></tr>
+<tr><td style="width: 25%;"><a href="create_posterior_func.html">create_posterior_func</a></td>
+<td>Posterior function pointer</td></tr>
+<tr><td style="width: 25%;"><a href="create_prior_lookup.html">create_prior_lookup</a></td>
+<td>Create infection-history prior lookup table</td></tr>
+<tr><td style="width: 25%;"><a href="create_prior_lookup_groups.html">create_prior_lookup_groups</a></td>
+<td>Create grouped infection-history prior lookup table</td></tr>
+<tr><td style="width: 25%;"><a href="create_prob_shifts.html">create_prob_shifts</a></td>
+<td>Measurement shift creation</td></tr>
+<tr><td style="width: 25%;"><a href="create_sample_mask.html">create_sample_mask</a></td>
+<td>Create sample mask</td></tr>
+<tr><td style="width: 25%;"><a href="create_start_level_data.html">create_start_level_data</a></td>
+<td>Generate starting antibody levels</td></tr>
+<tr><td style="width: 25%;"><a href="cs2_chains_real.html">cs2_chains_real</a></td>
+<td>MCMC chains case study 2, real</td></tr>
+<tr><td style="width: 25%;"><a href="cs2_chains_real_b.html">cs2_chains_real_b</a></td>
+<td>MCMC chains case study 2, real, for sim</td></tr>
+<tr><td style="width: 25%;"><a href="cs2_chains_sim.html">cs2_chains_sim</a></td>
+<td>MCMC chains case study 2, sim</td></tr>
+</table>
+
+<h2><a id="D">-- D --</a></h2>
+
+<table style="width: 100%;">
+<tr><td style="width: 25%;"><a href="db.html">db</a></td>
+<td>Beta prior on an infection</td></tr>
+<tr><td style="width: 25%;"><a href="dbb_prior.html">dbb_prior</a></td>
+<td>Beta binomial prior used here (no choose constant)</td></tr>
+<tr><td style="width: 25%;"><a href="density_beta_binom.html">density_beta_binom</a></td>
+<td>Beta binomial density</td></tr>
+<tr><td style="width: 25%;"><a href="describe_priors.html">describe_priors</a></td>
+<td>Describe infection history priors</td></tr>
+</table>
+
+<h2><a id="E">-- E --</a></h2>
+
+<table style="width: 100%;">
+<tr><td style="width: 25%;"><a href="estimate_mode.html">estimate_mode</a></td>
+<td>Estimate vector mode</td></tr>
+<tr><td style="width: 25%;"><a href="euc_distance.html">euc_distance</a></td>
+<td>Calculate Euclidean antigenic distance</td></tr>
+<tr><td style="width: 25%;"><a href="example_antibody_data.html">example_antibody_data</a></td>
+<td>Example antibody data</td></tr>
+<tr><td style="width: 25%;"><a href="example_antigenic_map.html">example_antigenic_map</a></td>
+<td>Example antigenic map</td></tr>
+<tr><td style="width: 25%;"><a href="example_inf_chain.html">example_inf_chain</a></td>
+<td>Example MCMC chain for infection histories</td></tr>
+<tr><td style="width: 25%;"><a href="example_inf_hist.html">example_inf_hist</a></td>
+<td>Example infection history matrix</td></tr>
+<tr><td style="width: 25%;"><a href="example_longitudinal_antibody_data.html">example_longitudinal_antibody_data</a></td>
+<td>Example longitudinal antibody data</td></tr>
+<tr><td style="width: 25%;"><a href="example_multiple_biomarker_groups_data.html">example_multiple_biomarker_groups_data</a></td>
+<td>Example antibody data with multiple biomarker groups</td></tr>
+<tr><td style="width: 25%;"><a href="example_par_tab.html">example_par_tab</a></td>
+<td>Example parameter table</td></tr>
+<tr><td style="width: 25%;"><a href="example_theta_chain.html">example_theta_chain</a></td>
+<td>Example MCMC chain for kinetics parameters</td></tr>
+<tr><td style="width: 25%;"><a href="expand_summary_inf_chain.html">expand_summary_inf_chain</a></td>
+<td>Expand sparse infection history matrix</td></tr>
+<tr><td style="width: 25%;"><a href="extend_par_tab_biomarker_groups.html">extend_par_tab_biomarker_groups</a></td>
+<td>Extend parameter table for multiple biomarker_groups</td></tr>
+</table>
+
+<h2><a id="F">-- F --</a></h2>
+
+<table style="width: 100%;">
+<tr><td style="width: 25%;"><a href="Fast-observation-error-function-continuous.html">Fast observation error function continuous</a></td>
+<td>Fast observation error function continuous Calculate the probability of a set of observed antibody levels given a corresponding set of predicted antibody levels assuming continuous, bounded observations.</td></tr>
+<tr><td style="width: 25%;"><a href="find_beta_prior_mode.html">find_beta_prior_mode</a></td>
+<td>Find Beta distribution parameters with mode</td></tr>
+<tr><td style="width: 25%;"><a href="find_beta_prior_with_mean.html">find_beta_prior_with_mean</a></td>
+<td>Find beta parameters with maximum variance</td></tr>
+<tr><td style="width: 25%;"><a href="find_beta_prior_with_mean_var.html">find_beta_prior_with_mean_var</a></td>
+<td>Find beta parameters for mean and variance</td></tr>
+<tr><td style="width: 25%;"><a href="fit_beta_prior.html">fit_beta_prior</a></td>
+<td>Fit beta distribution to MCMC output</td></tr>
+<tr><td style="width: 25%;"><a href="fit_normal_prior.html">fit_normal_prior</a></td>
+<td>Fit normal distribution to MCMC output</td></tr>
+<tr><td style="width: 25%;"><a href="fromUnitScale.html">fromUnitScale</a></td>
+<td>Convert from unit scale to original scale</td></tr>
+</table>
+
+<h2><a id="G">-- G --</a></h2>
+
+<table style="width: 100%;">
+<tr><td style="width: 25%;"><a href="generate_antigenic_map_flexible.html">generate_antigenic_map_flexible</a></td>
+<td>Generate antigenic map, flexible</td></tr>
+<tr><td style="width: 25%;"><a href="generate_phis.html">generate_phis</a></td>
+<td>Generate FOI phis - INACTIVE</td></tr>
+<tr><td style="width: 25%;"><a href="generate_quantiles.html">generate_quantiles</a></td>
+<td>Formatted quantiles</td></tr>
+<tr><td style="width: 25%;"><a href="generate_start_tab.html">generate_start_tab</a></td>
+<td>Generate starting parameter table</td></tr>
+<tr><td style="width: 25%;"><a href="gen_spline_y.html">gen_spline_y</a></td>
+<td>Generates a spline for 'generate_phis' - INACTIVE Evaluate a spline for the inactive seasonal FOI model</td></tr>
+<tr><td style="width: 25%;"><a href="get_antibody_level_predictions.html">get_antibody_level_predictions</a></td>
+<td>Generate antibody level credible intervals</td></tr>
+<tr><td style="width: 25%;"><a href="get_best_draw.html">get_best_draw</a></td>
+<td>Best infection history and theta parameters</td></tr>
+<tr><td style="width: 25%;"><a href="get_best_pars.html">get_best_pars</a></td>
+<td>Best pars</td></tr>
+<tr><td style="width: 25%;"><a href="get_demographic_groups.html">get_demographic_groups</a></td>
+<td>Get stratification groups used to group infection history model</td></tr>
+<tr><td style="width: 25%;"><a href="get_DOBs.html">get_DOBs</a></td>
+<td>Get DOBs</td></tr>
+<tr><td style="width: 25%;"><a href="get_index_pars.html">get_index_pars</a></td>
+<td>Index pars</td></tr>
+<tr><td style="width: 25%;"><a href="get_n_alive.html">get_n_alive</a></td>
+<td>Get number alive</td></tr>
+<tr><td style="width: 25%;"><a href="get_n_alive_group.html">get_n_alive_group</a></td>
+<td>Get number alive by population group</td></tr>
+<tr><td style="width: 25%;"><a href="get_total_number_infections.html">get_total_number_infections</a></td>
+<td>Get total number of infections</td></tr>
+</table>
+
+<h2><a id="I">-- I --</a></h2>
+
+<table style="width: 100%;">
+<tr><td style="width: 25%;"><a href="identify_run_lengths.html">identify_run_lengths</a></td>
+<td>Identify runs of infections from posterior</td></tr>
+<tr><td style="width: 25%;"><a href="infection_history_prior.html">infection_history_prior</a></td>
+<td>Beta binomial infection history prior</td></tr>
+<tr><td style="width: 25%;"><a href="infection_history_symmetric.html">infection_history_symmetric</a></td>
+<td>Brute force infection history proposal</td></tr>
+<tr><td style="width: 25%;"><a href="inf_hist_prop_prior_v2_and_v4.html">inf_hist_prop_prior_v2_and_v4</a></td>
+<td>Infection history gibbs proposal</td></tr>
+<tr><td style="width: 25%;"><a href="inf_hist_prop_prior_v3.html">inf_hist_prop_prior_v3</a></td>
+<td>Infection history proposal function</td></tr>
+<tr><td style="width: 25%;"><a href="inf_hist_swap.html">inf_hist_swap</a></td>
+<td>Swap infection history years</td></tr>
+<tr><td style="width: 25%;"><a href="inf_hist_swap_phi.html">inf_hist_swap_phi</a></td>
+<td>Swap infection history years with phi term</td></tr>
+<tr><td style="width: 25%;"><a href="inf_mat_prior.html">inf_mat_prior</a></td>
+<td>Infection history prior R</td></tr>
+<tr><td style="width: 25%;"><a href="inf_mat_prior_cpp.html">inf_mat_prior_cpp</a></td>
+<td>Marginal prior probability (p(Z)) of a particular infection history matrix single prior Prior is independent contribution from each year</td></tr>
+<tr><td style="width: 25%;"><a href="inf_mat_prior_cpp_vector.html">inf_mat_prior_cpp_vector</a></td>
+<td>Marginal prior probability (p(Z)) of a particular infection history matrix vector prior Prior is independent contribution from each year, but each year has its own shape parameters</td></tr>
+<tr><td style="width: 25%;"><a href="inf_mat_prior_group_cpp.html">inf_mat_prior_group_cpp</a></td>
+<td>Marginal prior probability (p(Z)) of infection history matrix with groups Prior is independent contribution from each year and group</td></tr>
+<tr><td style="width: 25%;"><a href="inf_mat_prior_group_cpp_vector.html">inf_mat_prior_group_cpp_vector</a></td>
+<td>Marginal prior probability (p(Z)) of a particular infection history matrix vector prior by group Prior is independent contribution from each time, but each time has its own shape parameters</td></tr>
+<tr><td style="width: 25%;"><a href="inf_mat_prior_total_group_cpp.html">inf_mat_prior_total_group_cpp</a></td>
+<td>Marginal prior probability (p(Z)) of a particular infection history matrix total prior Prior here is on the total number of infections across all individuals and times</td></tr>
+</table>
+
+<h2><a id="L">-- L --</a></h2>
+
+<table style="width: 100%;">
+<tr><td style="width: 25%;"><a href="likelihood_func_fast.html">likelihood_func_fast</a></td>
+<td>Fast observation error function Calculate the probability of a set of observed antibody levels given a corresponding set of predicted antibody levels.</td></tr>
+<tr><td style="width: 25%;"><a href="Fast-observation-error-function-continuous.html">likelihood_func_fast_continuous</a></td>
+<td>Fast observation error function continuous Calculate the probability of a set of observed antibody levels given a corresponding set of predicted antibody levels assuming continuous, bounded observations.</td></tr>
+<tr><td style="width: 25%;"><a href="Fast-observation-error-function-continuous.html">likelihood_func_fast_continuous_fp</a></td>
+<td>Fast observation error function continuous Calculate the probability of a set of observed antibody levels given a corresponding set of predicted antibody levels assuming continuous, bounded observations.</td></tr>
+<tr><td style="width: 25%;"><a href="load_antibody_data.html">load_antibody_data</a></td>
+<td>Load serological antibody data from CSV file</td></tr>
+<tr><td style="width: 25%;"><a href="load_antigenic_map.html">load_antigenic_map</a></td>
+<td>Load in antigenic map file from CSV</td></tr>
+<tr><td style="width: 25%;"><a href="load_infection_chains.html">load_infection_chains</a></td>
+<td>Load MCMC chains from CSV files for infection histories</td></tr>
+<tr><td style="width: 25%;"><a href="load_mcmc_chains.html">load_mcmc_chains</a></td>
+<td>Load MCMC chains for the antibody kinetics parameters and infection histories from CSV outputs</td></tr>
+<tr><td style="width: 25%;"><a href="load_start_tab.html">load_start_tab</a></td>
+<td>Load a starting parameter table from file</td></tr>
+<tr><td style="width: 25%;"><a href="load_theta_chains.html">load_theta_chains</a></td>
+<td>Load MCMC chains from CSV files for antibody kinetics parameters (theta)</td></tr>
+<tr><td style="width: 25%;"><a href="logistic_transform_bounded.html">logistic_transform_bounded</a></td>
+<td>Transform a value to a bounded logistic scale</td></tr>
+<tr><td style="width: 25%;"><a href="logit_transform_bounded.html">logit_transform_bounded</a></td>
+<td>Inverse bounded logistic transform</td></tr>
+</table>
+
+<h2><a id="M">-- M --</a></h2>
+
+<table style="width: 100%;">
+<tr><td style="width: 25%;"><a href="melt_antigenic_coords.html">melt_antigenic_coords</a></td>
+<td>Create usable antigenic map</td></tr>
+<tr><td style="width: 25%;"><a href="mvr_proposal.html">mvr_proposal</a></td>
+<td>Multivariate proposal function</td></tr>
+</table>
+
+<h2><a id="P">-- P --</a></h2>
+
+<table style="width: 100%;">
+<tr><td style="width: 25%;"><a href="pad_infection_model_prior_parameters.html">pad_infection_model_prior_parameters</a></td>
+<td>Pad par_tab with Beta distribution shape parameters</td></tr>
+<tr><td style="width: 25%;"><a href="pad_inf_chain.html">pad_inf_chain</a></td>
+<td>Pad infection history chain</td></tr>
+<tr><td style="width: 25%;"><a href="plot_2d_density.html">plot_2d_density</a></td>
+<td>Plot joint posterior densities for two parameters</td></tr>
+<tr><td style="width: 25%;"><a href="plot_antibody_data.html">plot_antibody_data</a></td>
+<td>Plot raw data</td></tr>
+<tr><td style="width: 25%;"><a href="plot_antibody_dependent_boosting.html">plot_antibody_dependent_boosting</a></td>
+<td>Antibody dependent boosting relationship</td></tr>
+<tr><td style="width: 25%;"><a href="plot_antibody_model.html">plot_antibody_model</a></td>
+<td>Plot the antibody model</td></tr>
+<tr><td style="width: 25%;"><a href="plot_antibody_predictions.html">plot_antibody_predictions</a></td>
+<td>Plots model predicted titers against observations</td></tr>
+<tr><td style="width: 25%;"><a href="plot_attack_rates.html">plot_attack_rates</a></td>
+<td>Plot historical attack rates with pointrange plots</td></tr>
+<tr><td style="width: 25%;"><a href="plot_cumulative_infection_histories.html">plot_cumulative_infection_histories</a></td>
+<td>Plot cumulative and per time posterior infection probability densities</td></tr>
+<tr><td style="width: 25%;"><a href="plot_estimated_antibody_model.html">plot_estimated_antibody_model</a></td>
+<td>Plots estimated antibody kinetics model</td></tr>
+<tr><td style="width: 25%;"><a href="plot_individual_number_infections.html">plot_individual_number_infections</a></td>
+<td>Plot point range number infections per individual</td></tr>
+<tr><td style="width: 25%;"><a href="plot_infection_history_chains_indiv.html">plot_infection_history_chains_indiv</a></td>
+<td>Plot MCMC trace for infections per individual</td></tr>
+<tr><td style="width: 25%;"><a href="plot_infection_history_chains_time.html">plot_infection_history_chains_time</a></td>
+<td>Plot MCMC trace for infections per year</td></tr>
+<tr><td style="width: 25%;"><a href="plot_infection_history_posteriors.html">plot_infection_history_posteriors</a></td>
+<td>Plot inferred posteriors infection histories</td></tr>
+<tr><td style="width: 25%;"><a href="plot_mcmc_diagnostics.html">plot_mcmc_diagnostics</a></td>
+<td>Plot MCMC diagnostics</td></tr>
+<tr><td style="width: 25%;"><a href="plot_model_fits.html">plot_model_fits</a></td>
+<td>Plots infection histories and antibody model</td></tr>
+<tr><td style="width: 25%;"><a href="plot_posteriors_theta.html">plot_posteriors_theta</a></td>
+<td>Plot posterior parameter traces and densities</td></tr>
+<tr><td style="width: 25%;"><a href="plot_samples_distances.html">plot_samples_distances</a></td>
+<td>Plot time between serum samples</td></tr>
+<tr><td style="width: 25%;"><a href="plot_total_number_infections.html">plot_total_number_infections</a></td>
+<td>Total number of infections</td></tr>
+<tr><td style="width: 25%;"><a href="prob_shifts.html">prob_shifts</a></td>
+<td>Prior on measurement shifts</td></tr>
+<tr><td style="width: 25%;"><a href="protect.html">protect</a></td>
+<td>Protect function</td></tr>
+<tr><td style="width: 25%;"><a href="protect_posterior.html">protect_posterior</a></td>
+<td>Protect function (posterior function)</td></tr>
+</table>
+
+<h2><a id="R">-- R --</a></h2>
+
+<table style="width: 100%;">
+<tr><td style="width: 25%;"><a href="rm_scale.html">rm_scale</a></td>
+<td>Robbins-Monro scaler, thanks to Michael White</td></tr>
+<tr><td style="width: 25%;"><a href="row.match.html">row.match</a></td>
+<td>Find matching rows in two data frames</td></tr>
+<tr><td style="width: 25%;"><a href="r_likelihood.html">r_likelihood</a></td>
+<td>Likelihood function given discrete data (normal)</td></tr>
+<tr><td style="width: 25%;"><a href="r_likelihood_continuous.html">r_likelihood_continuous</a></td>
+<td>Likelihood function given continuous data (normal)</td></tr>
+</table>
+
+<h2><a id="S">-- S --</a></h2>
+
+<table style="width: 100%;">
+<tr><td style="width: 25%;"><a href="save_infection_history_to_disk.html">save_infection_history_to_disk</a></td>
+<td>Write given infection history to disk</td></tr>
+<tr><td style="width: 25%;"><a href="scaletuning.html">scaletuning</a></td>
+<td>Scale step sizes</td></tr>
+<tr><td style="width: 25%;"><a href="scaletuning_alt.html">scaletuning_alt</a></td>
+<td>Scale step sizes</td></tr>
+<tr><td style="width: 25%;"><a href="serosolver.html">serosolver</a></td>
+<td>Run the serosolver model</td></tr>
+<tr><td style="width: 25%;"><a href="setup_antibody_data_for_posterior_func.html">setup_antibody_data_for_posterior_func</a></td>
+<td>Setup antibody data indices</td></tr>
+<tr><td style="width: 25%;"><a href="setup_antigenic_map.html">setup_antigenic_map</a></td>
+<td>Setup antigenic map for serosolver</td></tr>
+<tr><td style="width: 25%;"><a href="setup_infection_histories.html">setup_infection_histories</a></td>
+<td>Propose initial infection histories</td></tr>
+<tr><td style="width: 25%;"><a href="setup_infection_histories_antibody_level.html">setup_infection_histories_antibody_level</a></td>
+<td>Propose initial infection histories based on antibody levels</td></tr>
+<tr><td style="width: 25%;"><a href="setup_infection_histories_prior.html">setup_infection_histories_prior</a></td>
+<td>Generate random infection history matrix</td></tr>
+<tr><td style="width: 25%;"><a href="setup_stratification_table.html">setup_stratification_table</a></td>
+<td>Create indexing table for parameter stratifications</td></tr>
+<tr><td style="width: 25%;"><a href="simulate_antibody_model.html">simulate_antibody_model</a></td>
+<td>Simulate the antibody model</td></tr>
+<tr><td style="width: 25%;"><a href="simulate_attack_rates.html">simulate_attack_rates</a></td>
+<td>Simulate attack rates</td></tr>
+<tr><td style="width: 25%;"><a href="simulate_data.html">simulate_data</a></td>
+<td>Simulate full data set</td></tr>
+<tr><td style="width: 25%;"><a href="simulate_infection_histories.html">simulate_infection_histories</a></td>
+<td>Simulate infection histories</td></tr>
+<tr><td style="width: 25%;"><a href="subset_nullable_vector.html">subset_nullable_vector</a></td>
+<td>Takes a subset of a Nullable NumericVector, but only if it isn't NULL</td></tr>
+<tr><td style="width: 25%;"><a href="summarize_run_lengths.html">summarize_run_lengths</a></td>
+<td>Summarize runs of infections from posterior</td></tr>
+<tr><td style="width: 25%;"><a href="sum_buckets.html">sum_buckets</a></td>
+<td>Sums a vector based on bucket sizes</td></tr>
+<tr><td style="width: 25%;"><a href="sum_infections_by_group.html">sum_infections_by_group</a></td>
+<td>Count infections by group and time</td></tr>
+<tr><td style="width: 25%;"><a href="sum_likelihoods.html">sum_likelihoods</a></td>
+<td>Sum likelihoods into buckets</td></tr>
+</table>
+
+<h2><a id="T">-- T --</a></h2>
+
+<table style="width: 100%;">
+<tr><td style="width: 25%;"><a href="to.pdf.html">to.pdf</a></td>
+<td>PDF - Rich's function to print to device without potential for bad errors</td></tr>
+<tr><td style="width: 25%;"><a href="to.png.html">to.png</a></td>
+<td>PNG - Rich's function to print to device without potential for bad errors</td></tr>
+<tr><td style="width: 25%;"><a href="to.svg.html">to.svg</a></td>
+<td>SVG - Rich's function to print to device without potential for bad errors</td></tr>
+<tr><td style="width: 25%;"><a href="toUnitScale.html">toUnitScale</a></td>
+<td>Convert to unit scale</td></tr>
+</table>
+
+<h2><a id="U">-- U --</a></h2>
+
+<table style="width: 100%;">
+<tr><td style="width: 25%;"><a href="univ_proposal.html">univ_proposal</a></td>
+<td>MCMC proposal function</td></tr>
+<tr><td style="width: 25%;"><a href="unregister_dopar.html">unregister_dopar</a></td>
+<td>Unregister parallel backgrounds forcefully</td></tr>
+</table>
+</div></body></html>

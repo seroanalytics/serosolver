@@ -1,5 +1,5 @@
 # Modified by an AI assistant on 2026-09-17 using GPT-5. Kept fixed model-option
-# rows global when parameter tables are extended across biomarker groups.
+# rows global and excluded their missing biomarker-group values from variant map setup.
 
 #' Get number alive
 #'
@@ -506,7 +506,7 @@ setup_antibody_data_for_posterior_func <- function(
   ## Check if stratifying by exposure group in antigenic_map, if so, we use this as the "biomarker_group"
   if("exposure_group" %in% colnames(antigenic_map)){
     n_exposure_groups <- length(unique(par_tab$biomarker_group))
-    unique_groups_map <- unique(par_tab$biomarker_group)
+    unique_groups_map <- unique(par_tab$biomarker_group[!is.na(par_tab$biomarker_group)])
     n_groups_map <- n_exposure_groups
   } else {
     n_exposure_groups <- NULL

@@ -63,13 +63,12 @@ A working C++14 compiler is needed. The package uses `Rcpp`, `RcppArmadillo`, an
 ```{r package_installation, eval=FALSE}
 required_packages <- c(
   "data.table", "ggplot2", "dplyr", "tidyr", "Rcpp", "coda",
-  "foreach", "Matrix", "MASS", "reshape2", "RcppArmadillo",
-  "RcppParallel"
+  "doParallel", "doRNG", "foreach", "Matrix", "MASS", "reshape2",
+  "tibble", "RcppArmadillo", "RcppParallel"
 )
 
 additional_packages <- c(
-  "remotes", "doParallel", "doRNG", "devtools", "plyr", "bayesplot",
-  "viridis", "ggpubr"
+  "remotes", "devtools", "plyr", "tidyverse"
 )
 
 install.packages(c(required_packages, additional_packages))

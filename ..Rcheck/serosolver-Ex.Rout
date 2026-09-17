@@ -1,0 +1,81 @@
+
+R version 4.6.1 (2026-06-24) -- "Happy Hop"
+Copyright (C) 2026 The R Foundation for Statistical Computing
+Platform: aarch64-apple-darwin23
+
+R is free software and comes with ABSOLUTELY NO WARRANTY.
+You are welcome to redistribute it under certain conditions.
+Type 'license()' or 'licence()' for distribution details.
+
+  Natural language support but running in an English locale
+
+R is a collaborative project with many contributors.
+Type 'contributors()' for more information and
+'citation()' on how to cite R or R packages in publications.
+
+Type 'demo()' for some demos, 'help()' for on-line help, or
+'help.start()' for an HTML browser interface to help.
+Type 'q()' to quit R.
+
+> pkgname <- "serosolver"
+> source(file.path(R.home("share"), "R", "examples-header.R"))
+> options(warn = 1)
+> library('serosolver')
+> 
+> base::assign(".oldSearch", base::search(), pos = 'CheckExEnv')
+> base::assign(".old_wd", base::getwd(), pos = 'CheckExEnv')
+> cleanEx()
+> nameEx("add_noise")
+> ### * add_noise
+> 
+> flush(stderr()); flush(stdout())
+> 
+> ### Name: add_noise
+> ### Title: Add noise
+> ### Aliases: add_noise
+> 
+> ### ** Examples
+> 
+> ## Not run: 
+> ##D ## ... example in simulate_individual
+> ##D pars <- c("obs_sd"=1)
+> ##D y <- runif(100)
+> ##D noisy_y <- add_noise(y, pars)
+> ## End(Not run)
+> 
+> 
+> 
+> cleanEx()
+> nameEx("calculate_infection_history_statistics")
+> ### * calculate_infection_history_statistics
+> 
+> flush(stderr()); flush(stdout())
+> 
+> ### Name: calculate_infection_history_statistics
+> ### Title: Get posterior information for estimated infection histories
+> ### Aliases: calculate_infection_history_statistics
+> 
+> ### ** Examples
+> 
+> data(example_inf_chain)
+> data(example_antigenic_map)
+> data(example_antibody_data)
+> data(example_inf_hist)
+> possible_exposure_times <- example_antigenic_map$inf_times
+> ## Find number alive in each time period
+> n_alive <- get_n_alive(example_antibody_data, possible_exposure_times)
+> ## Get actual number of infections per time
+> n_infs <- colSums(example_inf_hist)
+> ## Create data frame of true ARs
+> known_ar <- n_infs/n_alive
+> known_ar <- data.frame("j"=possible_exposure_times,"AR"=known_ar,"population_group"=1)
+> ## Get true infection histories
+> known_inf_hist <- data.frame(example_inf_hist)
+> colnames(known_inf_hist) <- possible_exposure_times
+> 
+> ## Need to get population_group specific n_alive and adjust to correct time frame 
+> n_alive_group <- get_n_alive_group(example_antibody_data, possible_exposure_times,melt_data = TRUE)
+Error in `[.data.frame`(antibody_data, , c("individual", "population_group",  : 
+  undefined columns selected
+Calls: get_n_alive_group -> unique -> [ -> [.data.frame
+Execution halted

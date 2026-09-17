@@ -114,8 +114,7 @@ guide. The [advanced-features vignette](advanced_features.html) shows priors
 for starting levels, measurement offsets, multiple biomarker groups, and
 prior version 1. The [demographics and covariates vignette](demographics_covariates.html)
 shows how to specify priors for covariate coefficients. Check both the
-distribution and the bounds in `par_tab`; a prior cannot put mass outside the
-parameter bounds.
+distribution and the bounds in `par_tab`.
 
 ## How are MCMC chains saved and read back into R?
 

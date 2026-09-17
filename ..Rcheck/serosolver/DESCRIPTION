@@ -1,5 +1,5 @@
 Package: serosolver
-Title: Infection history and antibody kinetics inference using serological data
+Title: Inference Framework for Serological Data
 Version: 1.2.0
 Authors@R: 
     c(person(given = "James",
@@ -25,41 +25,21 @@ Authors@R:
              email="s.riley@imperial.ac.uk"))
 Author: James Hay [aut, cre], Adam Kucharski [aut], Kylie Ainslie [aut], Amanda Minter [aut], Steven Riley [aut]
 Maintainer: James Hay <jameshay218@gmail.com>
-Description: A Bayesian framework for inferring antibody kinetics, individual infection histories, and infection rates from cross-sectional or longitudinal serological data, including multistrain serology.
+Description: Given a table of serological data for a population, infers the
+    presence and timing of infections based on raised titres.
 License: GPL-3
 LazyData: TRUE
-URL: https://github.com/seroanalytics/serosolver, https://seroanalytics.github.io/serosolver/
+URL: https://github.com/seroanalytics/serosolver,
+        https://seroanalytics.github.io/serosolver/
 BugReports: https://github.com/seroanalytics/serosolver/issues
 Depends: R (>= 3.5.0)
-Imports:
-    data.table,
-    ggplot2,
-    dplyr,
-    tidyr,
-    Rcpp,
-    coda,
-    doParallel,
-    doRNG,
-    foreach,
-    grid,
-    Matrix,
-    MASS,
-    parallel,
-    reshape2,
-    tibble
-Suggests:
-    devtools,
-    remotes,
-    knitr,
-    rmarkdown,
-    testthat,
-    plyr,
-    tidyverse
-LinkingTo: 
-    Rcpp,
-    RcppArmadillo,
-    RcppParallel
+Imports: data.table, ggplot2, dplyr, tidyr, Rcpp, coda, doParallel,
+        doRNG, foreach, grid, Matrix, MASS, parallel, reshape2, tibble
+Suggests: devtools, remotes, knitr, rmarkdown, testthat, plyr,
+        tidyverse
+LinkingTo: Rcpp, RcppArmadillo, RcppParallel
 SystemRequirements: C++14
 VignetteBuilder: knitr
 Encoding: UTF-8
 Config/roxygen2/version: 8.1.0
+Built: R 4.6.1; aarch64-apple-darwin23; 2026-09-17 20:02:05 UTC; unix
