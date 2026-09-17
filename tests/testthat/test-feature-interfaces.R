@@ -1,5 +1,6 @@
 # Modified by an AI assistant on 2026-09-17 using GPT-5. Added fast checks for
-# advanced simulation inputs, parameter helpers, and fixed/free phi loading.
+# advanced simulation inputs, parameter helpers, fixed/free phi loading, and
+# the par_tab-based exponential-waning setting.
 
 context("Feature interfaces")
 
@@ -217,16 +218,68 @@ test_that("the antibody model exposes distinct linear and exponential options", 
 
   linear <- simulate_antibody_model(
     pars, infection_history = 1, antigenic_map = antigenic_map,
-    times = 1:5, exponential_waning = FALSE
+    times = 1:5
   )
-  exponential <- simulate_antibody_model(
+  exponential <- expect_warning(simulate_antibody_model(
     pars, infection_history = 1, antigenic_map = antigenic_map,
     times = 1:5, exponential_waning = TRUE
-  )
+  ), "deprecated")
 
   expect_equal(nrow(linear), nrow(exponential))
   expect_false(isTRUE(all.equal(linear$antibody_level,
                                 exponential$antibody_level)))
+})
+
+test_that("par_tab controls the waning form", {
+  data(example_par_tab)
+  exponential_par_tab <- example_par_tab
+  exponential_par_tab$values[
+    exponential_par_tab$names == "exponential_waning"
+  ] <- 1
+
+  expect_false(serosolver:::resolve_exponential_waning(example_par_tab))
+  expect_true(serosolver:::resolve_exponential_waning(exponential_par_tab))
+  linear_option_tab <- exponential_par_tab
+  linear_option_tab$values[linear_option_tab$names == "exponential_waning"] <- 0
+  expect_false(serosolver:::resolve_exponential_waning(linear_option_tab))
+  expect_warning(
+    serosolver:::resolve_exponential_waning(
+      example_par_tab, TRUE, supplied = TRUE, warn = TRUE
+    ),
+    "deprecated"
+  )
+  expect_warning(
+    serosolver:::resolve_exponential_waning(
+      exponential_par_tab, FALSE, supplied = TRUE, warn = TRUE
+    ),
+    "par_tab value"
+  )
+
+  checked <- check_par_tab(exponential_par_tab)
+  expect_equal(
+    checked$values[checked$names == "exponential_waning"],
+    1
+  )
+  expect_error(
+    check_par_tab(transform(
+      exponential_par_tab,
+      fixed = ifelse(names == "exponential_waning", 0, fixed)
+    )),
+    "fixed = 1"
+  )
+
+  exponential <- simulate_antibody_model(
+    exponential_par_tab, infection_history = 1,
+    antigenic_map = data.frame(inf_times = 1:5, x_coord = 1:5, y_coord = 1:5),
+    times = 1:5
+  )
+  legacy_exponential <- expect_warning(simulate_antibody_model(
+    setNames(example_par_tab$values, example_par_tab$names),
+    infection_history = 1,
+    antigenic_map = data.frame(inf_times = 1:5, x_coord = 1:5, y_coord = 1:5),
+    times = 1:5, exponential_waning = TRUE
+  ), "deprecated")
+  expect_equal(exponential$antibody_level, legacy_exponential$antibody_level)
 })
 
 test_that("fixed and free duplicated phi columns are loaded correctly", {

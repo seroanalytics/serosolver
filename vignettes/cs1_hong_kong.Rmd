@@ -134,7 +134,7 @@ plot_antibody_data(
 
 ## Model assumptions and parameter table
 
-The assumptions of the fitted model are controlled through the parameter table. `serosolver` allows particular parameters to be estimated or fixed, and we recommend iterative comparison of model structures when identifiability or convergence is a concern.
+The assumptions of the fitted model are controlled through the parameter table. `serosolver` allows particular parameters to be estimated or fixed, and we recommend iterative comparison of model structures when identifiability or convergence is a concern. This case study uses the default linear waning form; exponential waning is selected through a fixed `exponential_waning` row in `par_tab`, as described in the [advanced features vignette](ADVANCED_FEATURES_VIGNETTE_LINK).
 
 ```{r model-setup}
 ## Prepare the model settings.

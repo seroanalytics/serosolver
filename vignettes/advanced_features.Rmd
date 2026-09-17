@@ -15,7 +15,7 @@ vignette: |
 ---
 
 <!-- Modified by an AI assistant on 2026-09-17 using GPT-5. Updated worked
-observation-model examples to use character data_type labels. -->
+observation-model and exponential-waning examples. -->
 <!-- Modified by an AI assistant on 2026-09-17 using GPT-5. Completed a consistency pass over the advanced-feature workflows, including the offset comparison, prior-version-1 outputs, and biomarker-group labels. -->
 
 ```{r setup, include=FALSE}
@@ -478,17 +478,22 @@ ggplot(rho_plot_data, aes(x = names, y = median)) +
 
 The standard model assumes linear waning of log antibody levels, which means that the remaining boost
 falls by a fixed proportion per unit of time until it reaches zero.
-We have found that some data are better described by assuming exponential waning of log antibody levels. This can be achieved by setting
-`exponential_waning = TRUE`, which uses this exponential form for the short- and
-long-term responses. It also changes the cross-reactivity model from a linear
-decline with antigenic distance to an exponential decline.
+We have found that some data are better described by assuming exponential waning of log antibody levels. This can be achieved by adding a fixed model-option row named `exponential_waning` to `par_tab`, with `values = 1` and `par_type = 0`. This row selects the exponential form for the short- and long-term responses. It also changes the cross-reactivity model from a linear decline with antigenic distance to an exponential decline. If the row is absent, the model uses the standard linear form; `values = 0` explicitly selects that form.
+
+The old `exponential_waning` argument is retained for compatibility but is
+being deprecated. When both the argument and the `par_tab` row are supplied,
+the `par_tab` row takes precedence.
+
+```{r exponential-setup}
+exponential_par_tab <- base_par_tab
+exponential_par_tab$values[exponential_par_tab$names == "exponential_waning"] <- 1
+```
 
 ```{r exponential-call, eval=FALSE}
 exponential_fit <- serosolver(
-  par_tab = base_par_tab, antibody_data = exponential_data,
+  par_tab = exponential_par_tab, antibody_data = exponential_data,
   antigenic_map = antigenic_map,
   possible_exposure_times = possible_exposure_times,
-  exponential_waning = TRUE,
   filename = "exponential_waning", data_type = "discrete",
   n_chains = 3, parallel = TRUE, mcmc_pars = mcmc_pars
 )
@@ -496,20 +501,20 @@ exponential_fit <- serosolver(
 
 ```{r exponential-fit, include=FALSE}
 exponential_simulated <- simulate_data(
-  par_tab = base_par_tab, n_indiv = n_indiv,
+  par_tab = exponential_par_tab, n_indiv = n_indiv,
   possible_exposure_times = possible_exposure_times,
   measured_biomarker_ids = measured_biomarker_ids,
   sampling_times = sampling_times, nsamps = length(sampling_times),
   antigenic_map = antigenic_map, attack_rates = attack_rates,
-  data_type = "discrete", demographics = demographics, exponential_waning = TRUE
+  data_type = "discrete", demographics = demographics
 )
 exponential_data <- as.data.frame(exponential_simulated$antibody_data)
 exponential_fit <- fit_or_load(
-  par_tab = base_par_tab, antibody_data = exponential_data,
+  par_tab = exponential_par_tab, antibody_data = exponential_data,
   cache_folder = "exponential_waning", file_stem = "exponential_waning",
   mcmc_pars = mcmc_pars, antigenic_map = antigenic_map,
   possible_exposure_times = possible_exposure_times,
-  exponential_waning = TRUE, data_type = "discrete"
+  data_type = "discrete"
 )
 ```
 

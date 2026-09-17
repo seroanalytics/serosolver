@@ -440,7 +440,7 @@ $$
 W(t)=\max\{0,1-\omega t\}
 $$
 
-Alternatively, users can model waning as exponential decay *on the log scale* (so exponential-on-exponential on the natural scale) by setting `exponential_waning=TRUE` in the `serosolver` call:
+Alternatively, users can model waning as exponential decay *on the log scale* (so exponential-on-exponential on the natural scale). Add a fixed model-option row named `exponential_waning` to `par_tab`, with `values = 1` and `par_type = 0`:
 
 $$
 W(t) = e^{-\omega t}
@@ -449,16 +449,18 @@ $$
 Note that this setting also changes the cross-reactivity model below. The rationale behind these waning models is described in this [publication](https://doi.org/10.64898/2026.04.16.26351029).
 
 ```{r}
+exponential_par_tab <- example_par_tab
+exponential_par_tab$values[exponential_par_tab$names == "exponential_waning"] <- 1
+
 plot_antibody_model(
-  pars = example_par_tab,
+  pars = exponential_par_tab,
   infection_history = 1975,
   antigenic_map = example_antigenic_map,
-  times = example_antigenic_map$inf_times[1:25],
-  exponential_waning=TRUE
+  times = example_antigenic_map$inf_times[1:25]
 )[[1]]
 ```
 
-If the default `exponential_waning=FALSE` is assumed, then the range of the waning parameters (lower and upper bounds) should be 0-1. Otherwise, if `exponential_waning=TRUE`, then the parameters should be assumed to be positively bounded.
+If the `exponential_waning` row is absent, or its `values` entry is 0, the model uses linear waning and the waning parameters should be bounded between 0 and 1. With `values = 1`, the waning parameters should be positively bounded. The old `exponential_waning` argument remains available for compatibility but is deprecated; the `par_tab` row takes precedence when both are supplied.
 
 #### 2.2.3 Cross-reactivity
 
@@ -472,7 +474,7 @@ As with the waning model, cross-reactivity can instead be assumed to decline exp
 $$
 B_{x,y}=\mu_{long}e^{-\sigma_{long} \delta_{x,y}} + \mu_{short}e^{-\sigma_{short} \delta_{x,y}} $$
 
-If the default `exponential_waning=FALSE` is assumed, then the range of the cross-reactivity parameters (lower and upper bounds) should be 0-1. Otherwise, if `exponential_waning=TRUE`, then the parameters should be assumed to be positively bounded.
+If the linear form is used, the cross-reactivity parameters should be bounded between 0 and 1. With the exponential form selected in `par_tab`, the cross-reactivity parameters should be positively bounded.
 
 If fixing either the long-term or short-term boosting arms to 0, then it is recommended to also fix the corresponding cross-reactivity parameters at 0.
 

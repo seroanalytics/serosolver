@@ -1,4 +1,5 @@
-## Modified by an AI assistant on 2026-09-16 using GPT-5. Added saving of the first example MCMC chains as packaged RData objects.
+## Modified by an AI assistant on 2026-09-17 using GPT-5. Added the fixed
+## exponential_waning option to the example parameter-table workflow.
 ## Script to run the entire README pipeline, simulating the data, saving the example data structures, and testing the MCMC runs
 set.seed(1234)
 #library(serosolver)
@@ -92,6 +93,7 @@ plot_attack_rates( infection_histories = chains$inf_chain,true_ar=all_simulated_
 par_tab <- read.csv(system.file("extdata/readme/par_tab.csv", package = "serosolver"))
 antigenic_map <- NULL
 possible_exposure_times <- 2000:2024
+par_tab[par_tab$names == "exponential_waning", "values"] <- 1
 
 ## Vector of antigens that have biomarker measurements (note only one representative antigen per time)
 sampled_antigens <- 2024
@@ -120,9 +122,7 @@ par_tab[par_tab$names == "wane_long","values"] <- 0
 par_tab[par_tab$names =="obs_sd","values"] <- 1
 par_tab[par_tab$names =="boost_delay","values"] <- 1
 
-pars <- par_tab$values
-names(pars) <- par_tab$names
-plot_antibody_model(pars,times=1:50,exponential_waning = TRUE)[[1]]
+plot_antibody_model(par_tab, times=1:50)[[1]]
 
 ## Simulate a full serosurvey with these parameters
 all_simulated_data <- simulate_data(par_tab=par_tab, group=1, n_indiv=100,
@@ -132,8 +132,7 @@ all_simulated_data <- simulate_data(par_tab=par_tab, group=1, n_indiv=100,
                                     antigenic_map=antigenic_map,
                                     age_min=10,age_max=75,
                                     attack_rates=attack_rates, repeats=1,
-                                    data_type=c(2),
-                                    exponential_waning = TRUE)
+                                    data_type=c(2))
 
 ## Pull out the simulated titre data and infection histories
 antibody_data <- all_simulated_data$antibody_data
@@ -148,7 +147,7 @@ plot_antibody_data(antibody_data,possible_exposure_times,1:25,infection_historie
 #par_tab[par_tab$names =="wane_long","fixed"] <- 0
 output <- serosolver(par_tab, antibody_data, NULL,possible_exposure_times = possible_exposure_times,
                      filename="~/Documents/GitHub/serosolver/inst/extdata/readme_longitudinal/chains/readme", n_chains=3,parallel=TRUE,data_type=c(2),start_level="none",
-                     mcmc_pars=c(adaptive_iterations=10000, iterations=20000),verbose=TRUE,exponential_waning = TRUE)
+                     mcmc_pars=c(adaptive_iterations=10000, iterations=20000),verbose=TRUE)
 output$all_diagnostics$p_thetas
 output$plot_fits_longitudinal
 chains <- load_mcmc_chains(location="~/Documents/GitHub/serosolver/inst/extdata/readme_longitudinal/chains/",par_tab=example_par_tab,burnin = 10000)

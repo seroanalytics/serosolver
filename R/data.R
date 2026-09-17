@@ -1,12 +1,12 @@
-# Modified by an AI assistant on 2026-09-16 using GPT-5. Updated the example
-# MCMC chain documentation to match the regenerated chain objects.
+# Modified by an AI assistant on 2026-09-17 using GPT-5. Documented the fixed
+# par_tab row used to select exponential waning.
 
 #' Example parameter table
 #'
 #' Example of the parameter table used through \code{serosolver}. This data frame is used to control everything related to the model parameters, including values, names, fixed/estimates, and uniform prior bounds.
 #' @docType data
 #' @usage data(example_par_tab)
-#' @format A data frame with 16 rows and 10 variables:
+#' @format A data frame with 17 rows and 10 variables:
 #' \describe{
 #'     \item{names}{string names of the model parameters}
 #'     \item{values}{numeric values of the parameters}
@@ -15,7 +15,7 @@
 #'     \item{upper_bound}{upper numeric bound for the parameter during fitting (upper uniform prior bound)}
 #'     \item{lower_start}{can be used to set the lower allowable random starting value for the MCMC}
 #'     \item{upper_start}{can be used to set the upper allowable random starting value for the MCMC}
-#'     \item{par_type}{used for bookkeeping during MCMC, set to 1 for normal model parameters, 0 for model options, 2 for attack rate terms, phi, or 3 for measurement offset terms, rho}
+#'     \item{par_type}{used for bookkeeping during MCMC, set to 1 for normal model parameters, 0 for fixed model options such as exponential_waning, 2 for attack rate terms, phi, or 3 for measurement offset terms, rho}
 #'     \item{stratification}{optional demographic variable or variables used to stratify a parameter}
 #'     \item{biomarker_group}{gives the biomarker group each parameter corresponds to, matching entries in the antibody_data object}
 #' }

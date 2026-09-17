@@ -1,5 +1,5 @@
-# Modified by an AI assistant on 2026-09-17 using GPT-5. Added text observation-
-# model labels to the user-facing prediction and model-fit plotting functions.
+# Modified by an AI assistant on 2026-09-17 using GPT-5. Documented the
+# par_tab-based exponential-waning setting in prediction and plotting helpers.
 #'
 #' Antibody dependent boosting relationship
 #'
@@ -45,19 +45,17 @@ plot_antibody_model <- function(pars,
                                 infection_history=NULL, 
                                 antigenic_map=NULL,
                                 exponential_waning=FALSE){
-  ## Check if passed parameters as vector or just using par_tab
-  if(class(pars) == "data.frame" & "names" %in% colnames(pars)){
-    pars_use <- pars$values
-    names(pars_use) <- pars$names
-    pars <- pars_use
-  }
   if(is.null(infection_history)){
     infection_history <- if(!is.null(times)) times[1] else antigenic_map$inf_times[1]
     infection_history_intercept <- infection_history
   } else {
       infection_history_intercept <- infection_history
   }
-  y <- simulate_antibody_model(pars,times, infection_history,antigenic_map, exponential_waning)
+  if (missing(exponential_waning)) {
+    y <- simulate_antibody_model(pars, times, infection_history, antigenic_map)
+  } else {
+    y <- simulate_antibody_model(pars, times, infection_history, antigenic_map, exponential_waning)
+  }
   y$biomarker_id_label <- paste0("Biomarker ID: ", y$biomarker_ids)
   y$sample_label <- paste0("Sample time: ", y$sample_times)
   
@@ -114,7 +112,7 @@ plot_antibody_model <- function(pars,
 #' @param subset_biomarker_groups if not NULL, then a vector giving the biomarker groups to include in the plot
 #' @param settings if not NULL, list of serosolver settings as returned from the main serosolver function, such as `res$settings`
 #' @param expand_to_all_biomarker_ids if TRUE, solves predictions for all biomarker IDs in the antigenic map while retaining the sample times in antibody_data
-#' @param exponential_waning if TRUE, assumes exponential rather than linear waning
+#' @param exponential_waning Deprecated compatibility argument. Prefer a fixed `exponential_waning` row in `par_tab`, with `values = 1` and `par_type = 0`.
 #' @param verbose if TRUE, prints messages when settings are used or predictions are prepared
 #' @return a list of ggplot2 objects
 #' @family infection_history_plots

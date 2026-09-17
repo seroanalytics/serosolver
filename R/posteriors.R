@@ -1,6 +1,6 @@
 
 # Modified by an AI assistant on 2026-09-17 using GPT-5. Added normalisation of
-# numeric and text observation-model inputs before constructing the posterior.
+# observation-model inputs and par_tab-based exponential-waning control.
 
 #' Posterior function pointer
 #'
@@ -24,7 +24,7 @@
 #' @param demographic_groups optional data frame of demographic-group combinations. If NULL, these are created from `demographics` or `antibody_data` and `par_tab`.
 #' @param fixed_inf_hists optional data frame with columns `individual`, `time`, and `value`, giving infection states that should be fixed during the MCMC run. See the [advanced features vignette](ADVANCED_FEATURES_VIGNETTE_LINK) for this optional workflow.
 #' @param verbose if TRUE, prints warning messages
-#' @param exponential_waning if TRUE, assumes exponential rather than linear waning of antibody levels. See the [advanced features vignette](ADVANCED_FEATURES_VIGNETTE_LINK) for this optional workflow.
+#' @param exponential_waning Deprecated compatibility argument. The preferred setting is a fixed `exponential_waning` row in `par_tab`, with `values = 1` and `par_type = 0`. See the [advanced features vignette](ADVANCED_FEATURES_VIGNETTE_LINK).
 #' @param ... other arguments to pass to the posterior solving function
 #' @return a single function pointer that takes only pars and infection_histories as unnamed arguments. This function goes on to return a vector of posterior values for each individual
 #' @examples
@@ -64,6 +64,9 @@ create_posterior_func <- function(par_tab,
                                   verbose=FALSE,
                                   exponential_waning=FALSE,
                                   ...) {
+    exponential_waning <- resolve_exponential_waning(
+      par_tab, exponential_waning, supplied = FALSE, warn = FALSE
+    )
     check_par_tab(par_tab, TRUE, prior_version,verbose)
     antibody_data <- as.data.frame(antibody_data)
     ## Add a dummy observation type variable if not provided
@@ -309,14 +312,14 @@ create_posterior_func <- function(par_tab,
     par_tab_unique <- par_tab[!is.na(par_tab$biomarker_group) & par_tab$biomarker_group == min(par_tab$biomarker_group, na.rm = TRUE),]
 
     ## These will be different for each biomarker_group
-    theta_indices <- which(par_tab$par_type %in% c(0, 1)) ## Which parameters are for the antibody kinetics model?
+    theta_indices <- which(par_tab$par_type %in% c(0, 1) & par_tab$names != "exponential_waning") ## Which parameters are for the antibody kinetics model?
 
     scale_par_indices <- which(par_tab$par_type == 4) ## Which parameters are to scale the parameter values by groups?
     measurement_indices_par_tab <- which(par_tab$par_type == 3) ## Which parameters are measurement offsets?
     
     theta_meas_comb_indices <- c(theta_indices, measurement_indices_par_tab) #which(par_tab$par_type %in% c(0,1,3)) ## Both measurement offset and kinetics parameters
     
-    theta_indices_unique <- which(par_tab_unique$par_type %in% c(0, 1)) ## Which parameters are for the antibody kinetics model, if we only had one biomarker group?
+    theta_indices_unique <- which(par_tab_unique$par_type %in% c(0, 1) & par_tab_unique$names != "exponential_waning") ## Which parameters are for the antibody kinetics model, if we only had one biomarker group?
     rho_indices_unique <- which(par_tab_unique$par_type == 3)
     theta_meas_comb_indices_unique <- which(par_tab_unique$par_type %in% c(0,1,3))
     

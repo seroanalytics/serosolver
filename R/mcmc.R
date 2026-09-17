@@ -1,5 +1,5 @@
-# Modified by an AI assistant on 2026-09-17 using GPT-5. Added support for text
-# labels in the user-facing observation-model input while retaining numeric codes.
+# Modified by an AI assistant on 2026-09-17 using GPT-5. Added par_tab-based
+# control of exponential waning while retaining the legacy argument.
 
 #' Run the serosolver model
 #'
@@ -27,7 +27,7 @@
 #' @param mv_proposals If TRUE, uses a multivariate normal distribution for the proposal distribution. FALSE uses univariate proposals. It is advised to leave this as FALSE, multivariate proposals seems to generally be inefficient for serosolver.
 #' @param verbose if TRUE, prints progress updates during the run
 #' @param verbose_dev if TRUE, prints additional messages regarding step sizes, acceptance rates etc
-#' @param exponential_waning if TRUE, assumes exponential waning of antibody levels rather than linear waning. This also changes the cross-reactivity model from a linear decline with antigenic distance to an exponential decline. See the [advanced features vignette](ADVANCED_FEATURES_VIGNETTE_LINK).
+#' @param exponential_waning Deprecated. If TRUE, assumes exponential waning of antibody levels rather than linear waning, and changes the cross-reactivity model from a linear decline with antigenic distance to an exponential decline. Prefer a fixed `exponential_waning` row in `par_tab`, with `values = 1` and `par_type = 0`. See the [advanced features vignette](ADVANCED_FEATURES_VIGNETTE_LINK).
 #' @param inf_hist_mcmc_summaries if TRUE, calculates MCMC summaries of the infection history posterior draws. Set to FALSE to decrease run time, as this is a slow operation.
 #' @param plot_outputs if TRUE, calculates diagnostic summaries and returns model-fit, attack-rate, and antibody-model plots. Defaults to TRUE.
 #' @param ... Other arguments passed to the posterior function.
@@ -92,6 +92,7 @@ serosolver <- function(par_tab,
                      exponential_waning=FALSE,
                      plot_outputs=TRUE,
                      ...) {
+  exponential_waning_supplied <- !missing(exponential_waning)
   temp <- 1
   message(cat("================================ Running serosolver ================================\n"))
   on.exit(unregister_dopar())
@@ -164,6 +165,9 @@ serosolver <- function(par_tab,
   ## Add stratifications to par_tab based on what's available in antibody_data or demographics
   par_tab <- add_scale_pars(par_tab,antibody_data, demographics)
   par_tab <- check_par_tab(par_tab, TRUE,possible_exposure_times=possible_exposure_times, version=prior_version,verbose_dev)
+  exponential_waning <- resolve_exponential_waning(
+    par_tab, exponential_waning, supplied = exponential_waning_supplied, warn = TRUE
+  )
     
   if(!is.null(start_inf_hist)){
     check_inf_hist(antibody_data, possible_exposure_times, start_inf_hist,verbose=verbose_dev)

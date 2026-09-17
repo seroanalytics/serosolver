@@ -1,5 +1,5 @@
-# Modified by an AI assistant on 2026-09-16 using GPT-5. Completed the remaining
-# roxygen documentation pass for helper functions without changing their implementations.
+# Modified by an AI assistant on 2026-09-17 using GPT-5. Kept fixed model-option
+# rows global when parameter tables are extended across biomarker groups.
 
 #' Get number alive
 #'
@@ -772,11 +772,16 @@ add_rhos_par_tab <- function(par_tab, sampled_viruses,n_obs_types=1){
 #' @return the updated parameter table
 #' @export
 extend_par_tab_biomarker_groups <- function(par_tab, n_obs_types){
-  par_tab_all <- par_tab %>% mutate(biomarker_group=1)
+  global_pars <- par_tab %>% filter(par_type == 0)
+  grouped_pars <- par_tab %>% filter(par_type != 0)
+  par_tab_all <- bind_rows(
+    grouped_pars %>% mutate(biomarker_group = 1),
+    global_pars
+  )
   
   if(n_obs_types > 1){
     for(i in 2:n_obs_types){
-      par_tab_tmp <- par_tab
+      par_tab_tmp <- grouped_pars
       par_tab_tmp$biomarker_group <- i
       par_tab_all <- bind_rows(par_tab_all %>% filter(!(names %in% c("infection_model_prior_shape1","infection_model_prior_shape2"))), par_tab_tmp)
     }

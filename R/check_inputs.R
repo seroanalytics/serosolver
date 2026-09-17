@@ -1,5 +1,5 @@
-# Modified by an AI assistant on 2026-09-17 using GPT-5. Added one internal
-# helper to convert numeric and text observation-type inputs to model codes.
+# Modified by an AI assistant on 2026-09-17 using GPT-5. Added internal helpers
+# for observation-type inputs and the par_tab-based waning setting.
 
 normalize_data_type <- function(data_type, n_biomarker_groups = NULL) {
   if (is.null(data_type)) data_type <- 1L
@@ -34,6 +34,51 @@ normalize_data_type <- function(data_type, n_biomarker_groups = NULL) {
   }
 
   data_type
+}
+
+resolve_exponential_waning <- function(par_tab, exponential_waning = FALSE,
+                                       supplied = FALSE, warn = FALSE) {
+  option_rows <- if (is.null(par_tab)) {
+    integer(0)
+  } else {
+    which(as.character(par_tab$names) == "exponential_waning")
+  }
+  if (length(option_rows) > 1L) {
+    stop("par_tab can contain only one exponential_waning row.")
+  }
+
+  if (length(option_rows) == 1L) {
+    option_row <- option_rows[1]
+    if (par_tab$par_type[option_row] != 0 || par_tab$fixed[option_row] != 1) {
+      stop("The exponential_waning row in par_tab must have par_type = 0 and fixed = 1.")
+    }
+    option_value <- par_tab$values[option_row]
+    if (length(option_value) != 1L || is.na(option_value) ||
+        !is.numeric(option_value) || !option_value %in% c(0, 1)) {
+      stop("The exponential_waning value in par_tab must be 0 or 1.")
+    }
+    if (warn && supplied) {
+      warning(
+        "`exponential_waning` is deprecated; use the fixed `exponential_waning` row in par_tab instead. The par_tab value is being used.",
+        call. = FALSE
+      )
+    }
+    return(as.logical(option_value))
+  }
+
+  if (warn && supplied) {
+    warning(
+      "`exponential_waning` is deprecated; add a fixed `exponential_waning` row to par_tab instead. The supplied value is being used for now.",
+      call. = FALSE
+    )
+  }
+  if (is.null(exponential_waning)) return(FALSE)
+  if (length(exponential_waning) != 1L ||
+      (!is.logical(exponential_waning) && !is.numeric(exponential_waning)) ||
+      is.na(exponential_waning) || !exponential_waning %in% c(FALSE, TRUE, 0, 1)) {
+    stop("exponential_waning must be TRUE, FALSE, 1, or 0.")
+  }
+  isTRUE(as.logical(exponential_waning))
 }
 
 #' Check infection history matrix
@@ -93,7 +138,8 @@ check_inf_hist <- function(antibody_data, possible_exposure_times, inf_hist,verb
 #' @param par_tab A data frame containing the model parameter table. It must
 #'   contain `names`, `values`, `fixed`, `lower_bound`, `upper_bound`,
 #'   `lower_start`, `upper_start`, and `par_type`. A missing `par_type` column
-#'   is added with value 1 when possible.
+#'   is added with value 1 when possible. To use exponential waning, add one
+#'   fixed row named `exponential_waning` with `par_type = 0` and `values = 1`.
 #' @param mcmc Logical; if `TRUE`, also prepares and checks fields required by
 #'   the MCMC algorithm. Use `FALSE` when checking a table for simulation.
 #' @param version Optional infection-history prior version. If omitted, version
@@ -134,6 +180,22 @@ check_par_tab <- function(par_tab, mcmc = FALSE, version = NULL, possible_exposu
         }
         if (length(missing_names) > 0) {
           stop("par_tab is missing required columns: ", paste(missing_names, collapse = ", "))
+        }
+    }
+    exponential_rows <- which(as.character(par_tab$names) == "exponential_waning")
+    if (length(exponential_rows) > 1L) {
+        stop("par_tab can contain only one exponential_waning row.")
+    }
+    if (length(exponential_rows) == 1L) {
+        exponential_row <- exponential_rows[1]
+        if (par_tab$par_type[exponential_row] != 0 || par_tab$fixed[exponential_row] != 1) {
+            stop("The exponential_waning row in par_tab must have par_type = 0 and fixed = 1.")
+        }
+        if (length(par_tab$values[exponential_row]) != 1L ||
+            is.na(par_tab$values[exponential_row]) ||
+            !is.numeric(par_tab$values[exponential_row]) ||
+            !par_tab$values[exponential_row] %in% c(0, 1)) {
+            stop("The exponential_waning value in par_tab must be 0 or 1.")
         }
     }
     pars <- par_tab$values

@@ -15,3 +15,4 @@ fp_rate,0,1,0,1,0,1,1,NA,1
 infection_model_prior_shape1,1,1,0,1000,0,1000,2,NA,1
 infection_model_prior_shape2,10,1,0,1000,0,1000,2,NA,1
 antibody_dependent_boosting,0,1,0,1,0,1,1,NA,1
+exponential_waning,0,1,0,1,0,1,0,NA,NA

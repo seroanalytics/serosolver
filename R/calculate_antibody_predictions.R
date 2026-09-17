@@ -1,5 +1,5 @@
-# Modified by an AI assistant on 2026-09-17 using GPT-5. Added support for text
-# observation-model labels in antibody prediction inputs.
+# Modified by an AI assistant on 2026-09-17 using GPT-5. Added par_tab-based
+# exponential-waning control to antibody predictions.
 #'
 #' Generate antibody level credible intervals
 #'
@@ -23,7 +23,7 @@
 #' @param for_regression if TRUE, returns posterior draws rather than posterior summaries
 #' @param data_type numeric or text value: `1` or `"discrete"` for discrete, bounded data; `2` or `"continuous"` for continuous, bounded data; or `3` or `"false_positive"` for continuous data with the false-positive observation model. Supply one value per biomarker group, or one value to use for all groups. For bounded data, the limits are given by `min_measurement` and `max_measurement` in par_tab.
 #' @param start_level `"none"` or a starting-level summary or data frame. A starting level is the antibody level assigned before the modelled infection history begins. With `"none"`, starting levels are set to zero. See the [advanced features vignette](ADVANCED_FEATURES_VIGNETTE_LINK).
-#' @param exponential_waning if TRUE, assumes exponential rather than linear waning
+#' @param exponential_waning Deprecated compatibility argument. The preferred setting is a fixed `exponential_waning` row in `par_tab`, with `values = 1` and `par_type = 0`.
 #' @return a list with the antibody level predictions (95% credible intervals, median and multivariate posterior mode) and the probabilities of infection for each individual in each epoch
 #' @examples
 #' \dontrun{
@@ -56,6 +56,9 @@ get_antibody_level_predictions <- function(chain, infection_histories, antibody_
                                            antibody_level_before_infection=FALSE, for_regression=FALSE,
                                            data_type=1,start_level="none",
                                            exponential_waning=FALSE){
+  exponential_waning <- resolve_exponential_waning(
+    par_tab, exponential_waning, supplied = FALSE, warn = FALSE
+  )
   user_supplied_start_levels <- inherits(start_level, c("data.frame", "tibble")) &&
     !isTRUE(attr(start_level, "automatic_start_levels"))
   par_tab <- add_scale_pars(par_tab,antibody_data,demographics)

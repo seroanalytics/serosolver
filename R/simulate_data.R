@@ -1,5 +1,5 @@
-# Modified by an AI assistant on 2026-09-17 using GPT-5. Added text labels for
-# observation-model types while retaining the existing numeric codes.
+# Modified by an AI assistant on 2026-09-17 using GPT-5. Added par_tab-based
+# control of exponential waning while retaining the legacy argument.
 #'
 #' Simulate full data set
 #'
@@ -23,7 +23,7 @@
 #' @param demographics if not NULL, a data frame giving demographic variables for each individual (1:n_indiv). It must include `birth` and can include `population_group` or variables used for stratification in `par_tab`.
 #' @param verbose if TRUE, prints additional messages
 #' @param starting_levels a data frame or function giving the starting biomarker level for each individual, `biomarker_group`, and `biomarker_id` combination. If NULL, starting levels are assumed to be 0.
-#' @param exponential_waning if TRUE, uses exponential waning function rather than linear waning
+#' @param exponential_waning Deprecated compatibility argument. If TRUE, uses exponential waning rather than linear waning. Prefer a fixed `exponential_waning` row in `par_tab`, with `values = 1` and `par_type = 0`.
 #' @param coefficient_values optional data frame specifying coefficient values used when simulating stratified parameters. It must contain `parameter`, `stratification`, `stratification_level`, `biomarker_group`, and `value` columns. `parameter` is the base parameter name in `par_tab`, and `value` is the coefficient for the specified stratification level. If NULL, generated coefficients retain their existing default values.
 #' @return A list containing `antibody_data`, `infection_histories`, `attack_rates`, `phis`, `par_tab`, `population_groups`, `demographic_groups`, and `start_levels`.
 #' @family simulation_functions
@@ -65,6 +65,7 @@ simulate_data <- function(par_tab,
                           starting_levels=NULL,
                           exponential_waning=FALSE,
                           coefficient_values=NULL) {
+    exponential_waning_supplied <- !missing(exponential_waning)
     #########################################################
     ## CHECK FOR BIOMARKER GROUPS
     #########################################################
@@ -74,7 +75,7 @@ simulate_data <- function(par_tab,
     }
   
     ## Get unique observation types
-    unique_biomarker_groups <- unique(par_tab$biomarker_group)
+    unique_biomarker_groups <- unique(par_tab$biomarker_group[!is.na(par_tab$biomarker_group)])
     n_biomarker_groups <- length(unique_biomarker_groups)
     data_type <- normalize_data_type(data_type, n_biomarker_groups)
     
@@ -162,6 +163,9 @@ simulate_data <- function(par_tab,
     }
     par_tab <- apply_coefficient_values(par_tab, coefficient_values)
     par_tab <- check_par_tab(par_tab)
+    exponential_waning <- resolve_exponential_waning(
+      par_tab, exponential_waning, supplied = exponential_waning_supplied, warn = TRUE
+    )
     
     #########################################################
     ## ALIGN DEMOGRAPHICS AND POPULATION GROUPS
@@ -445,7 +449,7 @@ simulate_infection_histories <- function(p_inf, possible_exposure_times=1:ncol(p
 #' @param times the vector of time points at which to solve the model. Can be left to NULL if these times are included in `antigenic_map`.
 #' @param infection_history the vector of infection times, each of which must be present in `times`. If NULL, an infection is simulated at the first value of `times`.
 #' @param antigenic_map the antigenic map to solve the model with. Can be left to NULL to assume all biomarker IDs have the same antigenic coordinates.
-#' @param exponential_waning if TRUE, then waning is exponential rather than linear
+#' @param exponential_waning Deprecated compatibility argument. The preferred setting is a fixed `exponential_waning` row in `par_tab` when using a parameter table.
 #' @return A data frame with `sample_times`, `biomarker_ids`, and `antibody_level` columns.
 #' @examples
 #' data(example_antigenic_map)
@@ -457,10 +461,16 @@ simulate_antibody_model <- function(pars,
                                 infection_history=NULL, 
                                 antigenic_map=NULL,
                                 exponential_waning=FALSE){
+  exponential_waning_supplied <- !missing(exponential_waning)
   if(is.null(times) & is.null(antigenic_map)){
     stop("Must provide one of times or antigenic_map to give the possible infection times and biomarker IDs over which to solve the model.")
   }
   
+  par_tab <- if (is.data.frame(pars) && "names" %in% colnames(pars)) pars else NULL
+  exponential_waning <- resolve_exponential_waning(
+    par_tab, exponential_waning, supplied = exponential_waning_supplied, warn = TRUE
+  )
+
   ## Check if passed parameters as vector or just using par_tab
   if(class(pars) == "data.frame" & "names" %in% colnames(pars)){
     pars_use <- pars$values
