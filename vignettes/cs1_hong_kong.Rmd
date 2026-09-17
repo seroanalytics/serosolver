@@ -538,6 +538,9 @@ best_pars <- best_pars[names(best_pars) != "total_infections"]
 ## Use these values for the simulated data set.
 sim_par_tab <- par_tab
 sim_par_tab$values <- best_pars[match(sim_par_tab$names, names(best_pars))]
+## Fixed model options are not stored in the theta chain, so retain them.
+sim_par_tab$values[sim_par_tab$names == "exponential_waning"] <-
+  par_tab$values[par_tab$names == "exponential_waning"]
 
 ## Simulate attack rates for the two vaccination groups.
 sim_attack_rates <- simulate_attack_rates(

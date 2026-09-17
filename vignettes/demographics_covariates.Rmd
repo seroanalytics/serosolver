@@ -278,8 +278,11 @@ implied group differences.
 
 ## Priors for stratification coefficients
 
-The following function identifies the added coefficient rows by their names and
-applies a weak standard normal prior to them.
+Every coefficient row generated from `par_tab$stratification` is an estimated
+parameter and needs a prior. The following function identifies the added
+coefficient rows by their names and applies a weak standard normal prior to
+them. It is passed to both the prior-predictive and fitted `serosolver()` calls
+below.
 
 ```{r prior-function}
 prior_func <- function(par_tab) {

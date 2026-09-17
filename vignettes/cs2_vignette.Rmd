@@ -550,6 +550,9 @@ best_pars <- get_best_pars(chains$theta_chain)
 best_pars <- best_pars[names(best_pars) != "total_infections"]
 sim_par_tab <- par_tab
 sim_par_tab$values <- best_pars[match(sim_par_tab$names, names(best_pars))]
+## Fixed model options are not stored in the theta chain, so retain them.
+sim_par_tab$values[sim_par_tab$names == "exponential_waning"] <-
+  par_tab$values[par_tab$names == "exponential_waning"]
 
 ## Simulate annual attack rates and a cross-sectional serosurvey.
 sim_attack_rates <- simulate_attack_rates(

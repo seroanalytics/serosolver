@@ -14,9 +14,9 @@ vignette: |
   %\VignetteEngine{knitr::rmarkdown}
 ---
 
-<!-- Modified by an AI assistant on 2026-09-17 using GPT-5. Updated worked
-observation-model and exponential-waning examples. -->
-<!-- Modified by an AI assistant on 2026-09-17 using GPT-5. Completed a consistency pass over the advanced-feature workflows, including the offset comparison, prior-version-1 outputs, and biomarker-group labels. -->
+<!-- Modified by an AI assistant on 2026-09-17 using GPT-5. Added concise,
+evaluated prior_func examples for measurement offsets, multiple biomarker
+groups, and prior version 1. -->
 
 ```{r setup, include=FALSE}
 set.seed(1)
@@ -256,6 +256,14 @@ observation window and vary between individuals, while retaining the usual
 simulated infection histories. To keep this example focused on starting
 levels, it uses one antigenic coordinate and one measured biomarker ID.
 
+## Priors for starting levels
+
+Starting levels supplied through `start_level` are fixed inputs used to begin
+the antibody trajectories; they are not estimated MCMC parameters. The choice
+of starting-level summary or explicit values should therefore be treated as a
+modelling assumption and checked with sensitivity analyses when it is
+uncertain.
+
 ```{r starting-level-options}
 starting_levels_default <- "none"
 starting_levels_median <- "median"
@@ -356,6 +364,8 @@ contain the biomarker IDs themselves, so the accompanying
 `measurement_indices` table provides the link: `rho_index = 1` refers to the
 first `rho` row, `rho_index = 2` to the second, and so on.
 
+## Priors for measurement offsets
+
 ```{r measurement-bias-setup}
 offset_setup <- add_rhos_par_tab(
   base_par_tab, sampled_viruses = measured_biomarker_ids, n_obs_types = 1
@@ -368,6 +378,17 @@ offset_par_tab %>%
   filter(names == "rho") %>%
   select(names, par_type, biomarker_group, values, lower_bound, upper_bound)
 head(measurement_indices)
+```
+
+```{r measurement-bias-prior}
+rho_prior_func <- function(par_tab) {
+  par_names <- as.character(par_tab$names)
+  rho_rows <- which(par_names == "rho")
+  function(pars) {
+    names(pars) <- par_names
+    sum(dnorm(pars[rho_rows], mean = 0, sd = 1, log = TRUE))
+  }
+}
 ```
 
 The simulated data below include different known shifts for the measured
@@ -385,6 +406,7 @@ offset_fit <- serosolver(
   antigenic_map = antigenic_map,
   possible_exposure_times = possible_exposure_times,
   measurement_bias = measurement_indices,
+  prior_func = rho_prior_func,
   filename = "measurement_bias", data_type = "discrete",
   n_chains = 3, parallel = TRUE, mcmc_pars = mcmc_pars
 )
@@ -417,7 +439,8 @@ offset_fit <- fit_or_load(
   cache_folder = "measurement_bias", file_stem = "measurement_bias",
   mcmc_pars = mcmc_pars, antigenic_map = antigenic_map,
   possible_exposure_times = possible_exposure_times,
-  measurement_bias = measurement_indices, data_type = "discrete"
+  measurement_bias = measurement_indices, prior_func = rho_prior_func,
+  data_type = "discrete"
 )
 ```
 
@@ -483,6 +506,13 @@ We have found that some data are better described by assuming exponential waning
 The old `exponential_waning` argument is retained for compatibility but is
 being deprecated. When both the argument and the `par_tab` row are supplied,
 the `par_tab` row takes precedence.
+
+## Priors for exponential waning
+
+Priors are still needed for any estimated waning and
+cross-reactivity parameters. Under the exponential form these parameters
+should be given positive bounds and priors on a positive scale, such as a
+log-normal prior.
 
 ```{r exponential-setup}
 exponential_par_tab <- base_par_tab
@@ -575,11 +605,42 @@ continuous and bounded. The distinction is specified by the corresponding
 entries in `data_type`; both groups still contribute to the same
 infection-history inference.
 
+## Priors for multiple biomarker groups
+
+```{r multiple-biomarker-prior}
+multi_prior_func <- function(par_tab) {
+  par_names <- as.character(par_tab$names)
+  biomarker_group <- par_tab$biomarker_group
+  boost_long_1 <- which(par_names == "boost_long" & biomarker_group == 1)
+  boost_long_2 <- which(par_names == "boost_long" & biomarker_group == 2)
+  boost_short_1 <- which(par_names == "boost_short" & biomarker_group == 1)
+  boost_short_2 <- which(par_names == "boost_short" & biomarker_group == 2)
+  wane_short_1 <- which(par_names == "wane_short" & biomarker_group == 1)
+  wane_short_2 <- which(par_names == "wane_short" & biomarker_group == 2)
+  obs_sd_1 <- which(par_names == "obs_sd" & biomarker_group == 1)
+  obs_sd_2 <- which(par_names == "obs_sd" & biomarker_group == 2)
+  function(pars) {
+    names(pars) <- par_names
+    sum(
+      dlnorm(pars[boost_long_1], log(2), 0.5, log = TRUE),
+      dlnorm(pars[boost_long_2], log(5), 0.5, log = TRUE),
+      dlnorm(pars[boost_short_1], log(2), 0.5, log = TRUE),
+      dlnorm(pars[boost_short_2], log(4), 0.5, log = TRUE),
+      dbeta(pars[wane_short_1], 4, 8, log = TRUE),
+      dbeta(pars[wane_short_2], 8, 4, log = TRUE),
+      dlnorm(pars[obs_sd_1], log(1), 0.5, log = TRUE),
+      dlnorm(pars[obs_sd_2], log(0.7), 0.5, log = TRUE)
+    )
+  }
+}
+```
+
 ```{r multiple-biomarker-call, eval=FALSE}
 multi_fit <- serosolver(
   par_tab = multi_par_tab, antibody_data = multi_data,
   antigenic_map = multi_antigenic_map,
   possible_exposure_times = possible_exposure_times,
+  prior_func = multi_prior_func,
   data_type = c("discrete", "continuous"), filename = "multiple_biomarker_groups",
   n_chains = 3, parallel = TRUE, mcmc_pars = mcmc_pars
 )
@@ -592,6 +653,7 @@ multi_fit <- fit_or_load(
   file_stem = "multiple_biomarker_groups", mcmc_pars = mcmc_pars,
   antigenic_map = multi_antigenic_map,
   possible_exposure_times = possible_exposure_times,
+  prior_func = multi_prior_func,
   data_type = c("discrete", "continuous")
 )
 ```
@@ -675,6 +737,8 @@ parameters by integrating over the time-specific infection probabilities under
 their beta prior when evaluating the infection-history prior. Prior version 1
 is useful when those probabilities need to be controlled separately, but is
 usually more difficult to fit.
+
+## Priors for `phi`
 
 ```{r prior-version-1-setup,fig.height=4,fig.width=7}
 prior1_par_tab <- check_par_tab(

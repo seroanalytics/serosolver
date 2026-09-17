@@ -13,8 +13,10 @@ vignette: |
   %\VignetteEncoding{UTF-8}
 ---
 
+```{=html}
 <!-- Modified by an AI assistant on 2026-09-17 using GPT-5. Updated worked
 observation-model examples to use character data_type labels. -->
+```
 
 ```{=html}
 <!-- Modified by an AI assistant on 2026-09-16 using GPT-5. Added an example
@@ -49,7 +51,7 @@ mcmc_file <- file.path(mcmc_dir, "guide")
 
 <img src="../figure/logo.png" alt="serosolver logo" align="right" width="250"/>
 
-## Overview
+## Overview {.unnumbered}
 
 `serosolver` jointly infers antibody kinetics, infection histories and attack rates from cross-sectional or longitudinal serological data, originally described by Kucharski *et al.* @kucharski2018 and developed further by Hay *et al.* @hay2020 . `serosolver` exploits the predictability of antibody kinetics over time following exposure, using one or more antibody level measurements combined with an antibody kinetics model to back-calculate (i.e., extrapolate backwards) the timing of individual infections.
 
@@ -59,7 +61,7 @@ The core of the package is the `serosolver` function, which takes all of the dat
 
 <br clear="right">
 
-## Contents
+## Contents {.unnumbered}
 
 This guide provides an overview of the key components for fitting a `serosolver` model. For more in depth instructions on specific features and detailed methods, see the case study vignettes. We will discuss the following workflow:
 
@@ -230,11 +232,11 @@ additional_packages <- c(
 install.packages(c(required_packages, additional_packages))
 ```
 
-## 1. Input data
+## Input data
 
 `serosolver` expects several inputs, including the serological data, a data frame controlling the model parameters (`par_tab`), an antigenic map or vector of possible exposure times (`antigenic_map` or `possible_exposure_times`), and optionally a data frame of demographic data (`demographics`). This section will walk the users through creating each of these inputs.
 
-### 1.1 Serological data
+### Serological data
 
 `serosolver` expects a data frame of serological data in long format (i.e., there is a row for each observation), referred to as `antibody_data` in most function arguments, giving the individual ID, sample time, biomarkers or antigens measured, serological measurement, and demographic information:
 
@@ -270,7 +272,7 @@ plot_antibody_data(example_antibody_data,example_antigenic_map$inf_times,n_indiv
 plot_antibody_data(dplyr::filter(example_antibody_data, biomarker_id %in% c(1968,2004,2012)),2010:2015,n_indivs=1:3,study_design = "longitudinal")
 ```
 
-### 1.2 Antigenic map
+### Antigenic map
 
 `serosolver` was designed to treat `biomarker_id` as interchangeable with the time variables, such that one antigen ID is assumed to circulate in one time period. For example, `biomarker_id=1968` refers to the antigen assumed to be circulating in 1968. Note that at present, `serosolver` supports only one antigen/biomarker per time period. However, a single `biomarker_id` can be assumed to circulate and dominate for multiple time periods, which can be specified by modifying the `antigenic_map` object.
 
@@ -293,7 +295,7 @@ data.frame(x_coord = rep(seq(1,3,by=1),each=3), y_coord=rep(seq(1,3,by=1),each=3
 data.frame(x_coord=1,y_coord=1,inf_times=rep(1:10,2),biomarker_group=rep(c(1,2),each=10))
 ```
 
-### 1.3 Covariate data {#covariates}
+### Covariate data {#covariates}
 
 Individuals can't be infected before they're born, and we can't infer infections which occurred after the final sample from each individual. `serosolver` uses the `birth` and `sample_time` variables to constrain when and which `biomarker_id`s an individual can have been infected by.
 
@@ -324,7 +326,7 @@ There are a few ways the user can implement this depending on their desired mode
 
 `serosolver` can also estimate different antibody kinetics for different variants or strains that circulated at different times. This follows a slightly different workflow, because the grouping is linked to the infection or exposure variant rather than directly to the individual, and is also explained in the [demographic stratification vignette](DEMOGRAPHICS_VIGNETTE_LINK).
 
-### 1.4 The parameter table (`par_tab`)
+### The parameter table (`par_tab`)
 
 `par_tab` is the model control object. It contains one row for each model parameter and tells `serosolver` which values to use, which values to estimate, and the allowed ranges.
 
@@ -357,15 +359,15 @@ par_tab[par_tab$names == "wane_short", "values"] <- 0.25
 par_tab[par_tab$names == "wane_short", "fixed"] <- 1
 ```
 
-## 2 Model decisions
+## Model decisions
 
 Before fitting a model, think about the timescale and range of infection times that you would like to estimate and the features of the antibody kinetics model you'd like to fit. These choices determine how `serosolver` interprets the dataset and the resulting estimates. In particular, make sure that all time variables use the same reference and resolution, and that assay limits and measurement types are correctly represented in `par_tab`.
 
-### 2.1 Infection history model and priors
+### Infection history model and priors
 
 One of the most confusing model design decision in `serosolver` is setting the infection history model. First, we need to understand the epidemiological question we seek to address. If our main objective is to estimate attack rates, we need to think about the power/information we have to estimate attack rates and infection histories at a chosen time resolution (e.g., annual attack rates or per month). If instead our main objective is to understand antibody kinetics, we might wish to simplify the infection history model to allow a more complex antibody kinetics model. The rationale is the same as any other statistical model: practical parameter identifiability is limited by the data, and thus we should choose as simple a model structure as possible to answer our question.
 
-#### 2.1.1 Model time resolution
+#### Model time resolution
 
 It is possible to estimate infection states just for the duration of the serostudy, or to estimate infection histories for an arbitrary number of time periods prior to the study. For example, we might use serosolver to estimate infections that occurred between two serum sample collection times in the same way we would measure seroconversion rates. Alternatively, we might only have serum samples for recent time periods, but aim to estimate infection histories all the way back to the time of birth.
 
@@ -395,7 +397,7 @@ A useful feature of `serosolver` is to use *mixed* time resolutions. For example
 possible_exposure_times <- c(seq(1990, 2019,by=4), seq(2020,2025,by=1))
 ```
 
-#### 2.1.2 Infection history priors
+#### Infection history priors
 
 A very important consideration, but one which is highly technical and unimportant for most users, is the structure of the prior to place on the individual infection histories. Most of the supplementary material of the main [publication](https://pubmed.ncbi.nlm.nih.gov/32365062/) is about this decision.
 
@@ -405,7 +407,7 @@ Note that `serosolver` assumes the same Beta prior applies to all individuals an
 
 It is possible to assume different priors for the infection history model, but this is complex and not necessary for most use cases. You can read more about the different priors in the main [publication](https://pubmed.ncbi.nlm.nih.gov/32365062/), and if you really know what you're doing you can change the prior model with the `prior_version` argument of the main `serosolver` function.
 
-### 2.2 Antibody kinetics model and priors
+### Antibody kinetics model and priors
 
 `serosolver` models antibody measurements as arising from antibody responses following one or more infections. Users can specify the size and timing of short- and long-term boosts, antibody waning, antigenic seniority, and cross-reactivity between biomarkers using an antigenic map. The model is described fully in the main [publication](https://pubmed.ncbi.nlm.nih.gov/32365062/). In the parameter file, the column `fixed` indicates if each parameter value is fixed (`fixed=1`) or should be estimated (`fixed=0`). A brief summary of each model level is described here.
 
@@ -422,7 +424,7 @@ plot_antibody_model(
 
 The first plot shows the modelled antibody level over time (on the x-axis) stratified by each biomarker ID in the antigenic map. The second plot shows the antibody landscape at each sample time (as facets) with biomarker ID on the x-axis.
 
-#### 2.2.1 Boosting
+#### Boosting
 
 Following infection, `serosolver` assumes that an individual's antibody level against the infecting strain/variant increases by $\mu_{long} + \mu_{short}$, coded as `boost_short + boost_long` units over `boost_delay` time units. Note that `boost_delay` should be in integer units matching the timescale of the model. Estimating `boost_short` and `boost_long` jointly may be challenging without sufficient data, particularly longitudinal data to distinguish a short-term, transient response from the long-term, persistent response. Users may therefore wish to fix one of these parameters either at a known value or at 0.
 
@@ -432,7 +434,7 @@ par_tab[par_tab$names == "boost_short","fixed"] <- 1
 par_tab[par_tab$names == "boost_short","values"] <- 0
 ```
 
-#### 2.2.2 Waning
+#### Waning
 
 Both the short- and long-term boosts can be set to wane over time. These rates are set by $\omega_{short}$ and $\omega_{long}$, coded as `wane_short` and `wane_long` respectively. In practice, we have found it difficult to identify both waning rates, and usually fix `wane_long` at 0. Note that this parameter is not an exponential (on the natural scale) waning rate parameter by default: it describes the proportion of the boost lost per time unit since infection, $t$:
 
@@ -462,7 +464,7 @@ plot_antibody_model(
 
 If the `exponential_waning` row is absent, or its `values` entry is 0, the model uses linear waning and the waning parameters should be bounded between 0 and 1. With `values = 1`, the waning parameters should be positively bounded. The old `exponential_waning` argument remains available for compatibility but is deprecated; the `par_tab` row takes precedence when both are supplied.
 
-#### 2.2.3 Cross-reactivity
+#### Cross-reactivity
 
 Cross-reactivity between biomarker IDs is modelled using the antigenic map input. Separate cross-reactivity parameters are used for the short- and long-term boosts, usually because short-term boosting is antigenically broader than the long-term boost. Cross-reactivity is modelled as a declining boost with increasing antigenic distance from the infecting strain: the degree of boosting to the infecting strain, $x$, is just `boost_long+boost_short`, but for heterologous strains, $y$, this declines as a linear function of antigenic distance such that the degree of boosting of antibody levels to strain $y$ given infection with strain $x$ is:
 
@@ -478,7 +480,7 @@ If the linear form is used, the cross-reactivity parameters should be bounded be
 
 If fixing either the long-term or short-term boosting arms to 0, then it is recommended to also fix the corresponding cross-reactivity parameters at 0.
 
-#### 2.2.4 Antigenic seniority
+#### Antigenic seniority
 
 `serosolver` can model the overall level of antibody boosting to decline with each successive infection using the antigenic seniority parameter, $\tau$, or `antigenic_seniority`. Antigenic seniority is modelled here as a simple phenomenological effect and thus we caution against overinterpretation. It simply suppresses each successive boost as a function of the number of prior infections as:
 
@@ -488,7 +490,7 @@ $$
 
 where $k-1$ gives the number of infections prior to the current one. Thus, the first infection has $S_{1}=1$, the second has $S(2)=\text{max}\{0, 1-\tau\}$, and the third has $S(3)=\text{max}\{0, 1-2\tau\}$, etc. Setting $\tau=0$ means that there is no reduction. This model stems from the paper by [Kucharski et al](https://doi.org/10.1371/journal.pbio.1002082) and should not be over-interpreted as mechanistically representing antigenic seniority, back-boosting, or antibody ceiling effects.
 
-### 2.3 Observation model
+### Observation model
 
 Most applications of `serosolver` involve fitting to antibody titre or concentration data. The model asumes that observations are distributed around some true value predicted by the model i.e., it accounts for observation noise.
 
@@ -509,21 +511,99 @@ par_tab[par_tab$names=="max_measurement" & par_tab$biomarker_group == 2,"values"
 data_type <- c("discrete", "continuous", "false_positive") ## used in `serosolver::serosolver`, `serosolver::simulate_data` etc
 ```
 
-### 2.4 Setting priors
+### Priors
 
-The prior distributions should be plotted before fitting the model. This is useful for checking that the model gives reasonable weight to the infection histories, attack rates, and antibody kinetics that you consider plausible.
+The prior distributions should be checked before fitting the model. This is useful for checking that the model gives reasonable weight to the infection histories, attack rates, and antibody kinetics that you consider plausible.
 
-For example, the infection-history prior can be viewed by plotting draws from the Beta distribution used for the per-time infection probability:
+#### Fixed and estimated parameters
+
+The `fixed` column in `par_tab` controls whether a value is kept fixed or estimated by MCMC. Set `fixed = 1` when a value is known or is being held at a chosen value, and set `fixed = 0` when the value should be estimated. Fixed values do not have posterior uncertainty. For an estimated parameter, `values` is the starting value when `random_start_parameters = FALSE`; when random starting values are used, `lower_start` and `upper_start` are used to generate the starting value.
+
+For example, this fixes the short-term waning parameter at `0.25`:
+
+```{r, eval=FALSE}
+par_tab[par_tab$names == "wane_short", "values"] <- 0.25
+par_tab[par_tab$names == "wane_short", "fixed"] <- 1
+```
+
+#### Bounds in `par_tab`
+
+`lower_bound` and `upper_bound` are hard limits for an estimated parameter. MCMC proposals outside these limits are not accepted. They therefore restrict the range over which a prior can put weight, but they are not prior means or standard deviations. The `lower_start` and `upper_start` columns only control random starting values and do not define the prior.
+
+The bounds should match the parameter scale. For example, a probability is usually bounded between 0 and 1, while a positive antibody boost can have a lower bound of 0 and a larger upper bound. The bounds also determine the transformation used internally for many parameters, so they should be set before fitting and checked with `check_par_tab()`.
+
+#### Antibody-kinetics parameter priors
+
+The `prior_func` argument can be used to specify prior distributions for the antibody-kinetics parameters. It is an outer function that receives `par_tab` once and returns a function that receives the current parameter values during the MCMC run. The returned function should return one log-prior value, usually by adding the log densities for the parameters to which priors have been assigned.
+
+For example, the following uses log-normal priors for positive parameters and a Beta prior for a parameter bounded between 0 and 1:
+
+```{r, eval=FALSE}
+prior_func <- function(par_tab) {
+  par_names <- as.character(par_tab$names)
+  boost_long <- which(par_names == "boost_long")
+  boost_short <- which(par_names == "boost_short")
+  wane_short <- which(par_names == "wane_short")
+  obs_sd <- which(par_names == "obs_sd")
+
+  function(pars) {
+    names(pars) <- par_names
+    sum(
+      dlnorm(pars[boost_long], log(2), 0.5, log = TRUE),
+      dlnorm(pars[boost_short], log(2), 0.5, log = TRUE),
+      dbeta(pars[wane_short], 4, 8, log = TRUE),
+      dlnorm(pars[obs_sd], log(1), 0.5, log = TRUE)
+    )
+  }
+}
+```
+
+The function is passed to `serosolver(prior_func = prior_func)`. If a parameter is stratified, include every generated coefficient row in the prior function; this is illustrated in the [demographic variables and covariates vignette](DEMOGRAPHICS_VIGNETTE_LINK).
+
+#### Infection-history shape priors
+
+For most users, the prior on the per-time probability of infection is defined by the two rows named `infection_model_prior_shape1` and `infection_model_prior_shape2`. If these values are $\alpha$ and $\beta$, the per-time infection probability has a Beta distribution:
+
+$$
+p_t \sim \operatorname{Beta}(\alpha, \beta), \qquad
+E[p_t] = \frac{\alpha}{\alpha + \beta}.
+$$
+
+The sum $\alpha + \beta$ controls how concentrated the prior is around its mean. For example, `alpha = 0.5` and `beta = 10` gives a prior with mean about 5% and places substantial weight near low probabilities. The same Beta prior is applied across people and exposure times unless it is stratified by `population_group` or another demographic variable.
+
+The corresponding prior can be inspected with `rbeta()`:
 
 ```{r, eval=TRUE,fig.height=4,fig.width=6}
 prior_attack_rate <- rbeta(10000, 0.5, 10)
 hist(prior_attack_rate, breaks = 50,
-     main = "Prior attack rate", xlab = "Attack rate")
+     main = "Prior attack rate", xlab = "Per-time probability of infection")
 ```
 
-<!-- More complete checks of prior attack-rate distributions, demographic-group priors, simulated consequences, and prior bounds will be added after the prior specification and plotting functions have been improved. -->
+Under the default prior version 2, the attack rates shown after fitting are calculated from the inferred infection histories. They are therefore realised sample proportions implied by those histories, rather than direct draws of the Beta parameters. Prior version 1 instead estimates a separate `phi` for each exposure time; this distinction is demonstrated in the [advanced features vignette](ADVANCED_FEATURES_VIGNETTE_LINK).
 
-### 2.5 Advanced features
+#### Sampling from the priors
+
+Set `solve_likelihood = FALSE` to run the MCMC without using the antibody observations in the likelihood. This samples from the specified parameter and infection-history priors, allowing prior predictive checks before fitting the data. The resulting chains can be inspected with the usual plotting and summary functions, for example:
+
+```{r, eval=FALSE}
+prior_fit <- serosolver(
+  par_tab = par_tab, antibody_data = antibody_data,
+  antigenic_map = example_antigenic_map,
+  possible_exposure_times = possible_exposure_times,
+  prior_func = prior_func, solve_likelihood = FALSE,
+  filename = "prior_predictive", n_chains = 3,
+  parallel = TRUE, mcmc_pars = mcmc_pars
+)
+
+plot_attack_rates(
+  prior_fit$mcmc_chains$inf_chain,
+  settings = prior_fit$settings
+)
+```
+
+This separates the assumptions made before seeing the data from the posterior results obtained after the likelihood is included.
+
+### Advanced features
 
 `serosolver` has a number of advanced features for greater control over the model assumptions and inputs. Users can fix selected infection states, provide starting antibody levels, include measurement offsets (for systematic measurement biases), use exponential rather than linear antibody waning, and fit multiple biomarker groups such as antibody titre and avidity together.
 
@@ -531,7 +611,7 @@ These features require additional data preparation and model decisions. They are
 
 <!-- TODO: replace ADVANCED_FEATURES_VIGNETTE_LINK with the final vignette link. -->
 
-## 3. Running *serosolver*
+## Running *serosolver*
 
 After much data cleaning and model decision making, you are ready to pass your data and model inputs into `serosolver`. The main `serosolver()` function runs a custom, adaptive Metropolis-Within-Gibbs algorithm to sample from the posterior distribution for the model parameters given the input data. In other words, it estimates the antibody kinetics model parameters and infection histories in a Bayesian framework. Attack rates are calculated from these infection-history draws. The function saves the draws to files and returns a list containing the saved-file locations, model settings, diagnostics, and plots when these are requested.
 
@@ -572,7 +652,7 @@ chains <- load_mcmc_chains(
 load(paste0(mcmc_file, "_serosolver_settings.RData"))
 ```
 
-## 4. Output posteriors {#output-posteriors}
+## Output posteriors {#output-posteriors}
 
 `serosolver` generates numerous plots to visualise results and evaluate model performance. The vast majority of these are generated automatically by the `serosolver()` function as part of the return object. A few examples are shown below, but take a look at all of the objects in the list returned by `serosolver()`:
 
@@ -629,7 +709,7 @@ print(prediction_plots$p_hist_draws)
 
 Both approaches are shown because the returned plots are the quickest way to inspect a fit, whereas reading the chains and calling the plotting functions directly gives more control over post-processing and plotting.
 
-## 5. Output diagnostics
+## Output diagnostics
 
 To evaluate model performance, trace and density plots should be produced by plotting the MCMC chains. In the below example the adaptive period and burn-in from the MCMC are excluded in the diagnostic plots.
 
@@ -652,7 +732,7 @@ print(diagnostics$p_thetas[[1]] +
         ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 45, hjust = 1)))
 ```
 
-## 6. Output estimates
+## Output estimates
 
 The fitted parameter estimates are available directly from the returned `res` object. The antibody kinetics model parameters are returned as:
 
