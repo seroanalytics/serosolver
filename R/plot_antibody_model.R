@@ -1,5 +1,5 @@
-# Modified by an AI assistant on 2026-09-16 using GPT-5. Removed the unused
-# plot-label argument from `plot_antibody_model()`.
+# Modified by an AI assistant on 2026-09-17 using GPT-5. Excluded parameter
+# rows without a biomarker group from the model-fit plotting loop.
 #'
 #' Antibody dependent boosting relationship
 #'
@@ -250,6 +250,9 @@ plot_model_fits <- function(chain, infection_histories,
   
   if(is.null(subset_biomarker_groups)){
     subset_biomarker_groups_use <- unique(par_tab$biomarker_group)
+    subset_biomarker_groups_use <- subset_biomarker_groups_use[
+      !is.na(subset_biomarker_groups_use)
+    ]
   } else {
     subset_biomarker_groups_use <- subset_biomarker_groups
   }

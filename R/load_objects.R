@@ -1,5 +1,5 @@
-# Modified by an AI assistant on 2026-09-16 using GPT-5. Clarified the roxygen
-# documentation for the MCMC chain-loading functions without changing their implementations.
+# Modified by an AI assistant on 2026-09-17 using GPT-5. Fixed selection of
+# estimated MCMC columns when duplicated parameter names include fixed rows.
 
 #' Load a starting parameter table from file
 #'
@@ -125,14 +125,12 @@ load_theta_chains <- function(location = getwd(), par_tab = NULL, estimated_only
   
   ## Get the estimated parameters only
   if (estimated_only & !is.null(par_tab)) {
-    fixed <- par_tab$fixed
-    fixed_names <- par_tab$names[which(fixed == 0)]
-    ## Go through the vector of strings called fixed_names and append a number to each non-unique name
-    if (length(fixed_names) > 0) {
-      fixed_names <- make.unique(fixed_names)
-    }
+    ## Make the chain column names from the full parameter table before
+    ## removing fixed rows, so duplicated names retain their original positions.
+    parameter_names <- make.unique(as.character(par_tab$names))
+    estimated_names <- parameter_names[par_tab$fixed == 0]
     
-    use_colnames <- intersect(c("samp_no", fixed_names, "posterior_prob", "likelihood", "prior_prob", "chain_no"), colnames(read_chains[[1]]))
+    use_colnames <- intersect(c("samp_no", estimated_names, "posterior_prob", "likelihood", "prior_prob", "chain_no"), colnames(read_chains[[1]]))
     read_chains <- lapply(read_chains, function(x) x[, use_colnames])
   }
   

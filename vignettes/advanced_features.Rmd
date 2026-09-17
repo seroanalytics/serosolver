@@ -14,7 +14,7 @@ vignette: |
   %\VignetteEngine{knitr::rmarkdown}
 ---
 
-<!-- Modified by an AI assistant on 2026-09-17 using GPT-5. Updated the prior-version-1 example to use time-specific phi probabilities, priors, and interior starting ranges. -->
+<!-- Modified by an AI assistant on 2026-09-17 using GPT-5. Completed a consistency pass over the advanced-feature workflows, including the offset comparison, prior-version-1 outputs, and biomarker-group labels. -->
 
 ```{r setup, include=FALSE}
 set.seed(1)
@@ -28,8 +28,8 @@ library(serosolver)
 library(ggplot2)
 library(dplyr)
 library(tidyr)
-vignette_dir <- dirname("vignettes/advanced_features.Rmd")
-#vignette_dir <- dirname(knitr::current_input())
+#vignette_dir <- dirname("vignettes/advanced_features.Rmd")
+vignette_dir <- dirname(knitr::current_input())
 cache_root <- file.path(
   vignette_dir, "..", "inst", "extdata", "advanced_features"
 )
@@ -81,8 +81,8 @@ fit_or_load <- function(par_tab, antibody_data, cache_folder, file_stem,
 }
 
 mcmc_pars <- c(
-  adaptive_iterations = 5000, iterations = 10000,
-  thin = 20, thin_inf_hist = 100, save_block = 1000
+  adaptive_iterations = 5000, iterations = 100000,
+  thin = 200, thin_inf_hist = 1000, save_block = 1000
 )
 ```
 
@@ -148,7 +148,7 @@ simulated_data <- simulate_data(
   data_type = 1, demographics = demographics
 )
 antibody_data <- as.data.frame(simulated_data$antibody_data)
-check_data(antibody_data)
+head(check_data(antibody_data))
 ```
 
 # Fixed infection states
@@ -424,7 +424,9 @@ infection histories, with and without the measurement offsets. Three biomarker
 IDs are shown to make the shifts easy to see.
 
 ```{r measurement-bias-simulation-plot}
-comparison_ids <- measured_biomarker_ids
+comparison_ids <- measured_biomarker_ids[
+  c(1, ceiling(length(measured_biomarker_ids) / 2), length(measured_biomarker_ids))
+]
 offset_comparison <- bind_rows(
   offset_data %>% mutate(offset = "With measurement offsets"),
   unshifted_data %>% mutate(offset = "Without measurement offsets")
@@ -443,7 +445,7 @@ for the `rho` parameters. The open points show the values used to simulate the
 data. Repeated `rho` rows are given unique names when the chains are read, so
 they appear as `rho`, `rho.1`, `rho.2`, and so on.
 
-```{r measurement-bias-output}
+```{r measurement-bias-output,fig.width=7,fig.height=4}
 rho_estimates <- offset_fit$all_diagnostics$theta_estimates %>%
   filter(grepl("^rho(\\.[0-9]+)?$", names)) %>%
   select(names, median, lower95_CrI, upper95_CrI)
@@ -454,9 +456,17 @@ rho_plot_data <- left_join(rho_estimates, rho_truth, by = "names") %>%
   mutate(names = factor(names, levels = names))
 
 ggplot(rho_plot_data, aes(x = names, y = median)) +
-  geom_pointrange(aes(ymin = lower95_CrI, ymax = upper95_CrI)) +
-  geom_point(aes(y = true), shape = 21, fill = "white", size = 2.5) +
+  geom_pointrange(
+    aes(ymin = lower95_CrI, ymax = upper95_CrI,
+        colour = "Posterior median and 95% CrI")
+  ) +
+  geom_point(
+    aes(y = true, shape = "True simulated rho"),
+    colour = "black", fill = "white", size = 2.5
+  ) +
   geom_hline(yintercept = 0, linetype = "dashed", colour = "grey50") +
+  scale_colour_manual(name = NULL, values = c("Posterior median and 95% CrI" = "#0072B2")) +
+  scale_shape_manual(name = NULL, values = c("True simulated rho" = 21)) +
   labs(x = "Measurement offset parameter", y = "rho") +
   theme_bw() +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
@@ -501,7 +511,7 @@ exponential_fit <- fit_or_load(
 )
 ```
 
-```{r exponential-output}
+```{r exponential-output,fig.height=6,fig.width=8}
 exponential_fit$all_diagnostics$theta_estimates %>%
   filter(names %in% c("wane_short", "wane_long", "cr_short", "cr_long")) %>%
   select(names, median, lower95_CrI, upper95_CrI)
@@ -578,7 +588,7 @@ multi_fit <- fit_or_load(
 )
 ```
 
-```{r multiple-biomarker-output}
+```{r multiple-biomarker-output,fig.height=5,fig.width=8}
 multi_fit$all_diagnostics$theta_estimates %>%
   filter(names %in% c("boost_short", "obs_sd", "min_measurement",
                       "max_measurement")) %>%
@@ -603,7 +613,7 @@ plot_model_fits(
 
 Model fits for biomarker group 2 observations.
 ```{r multiple-biomarker-output2}
-## Biomarker group 1
+## Biomarker group 2
 plot_model_fits(
   multi_fit$mcmc_chains$theta_chain, multi_fit$mcmc_chains$inf_chain,
   known_infection_history = multi_simulated$infection_histories,
@@ -629,15 +639,51 @@ individual probabilities can be fixed when they are known or assumed.
 required entries in the parameter table, but they do not provide the
 time-specific infection probabilities in this version.
 
-```{r prior-version-1-setup}
+This gives two related but different ways to describe infection rates. Under
+prior version 1, each `phi` is an estimated parameter representing the
+probability of infection in one particular exposure period, conditional on an
+individual being alive and at risk. These parameters can therefore be read as
+time-specific modelled attack rates, with a posterior distribution for each
+time. They are probabilities used to describe the infection-history prior;
+they are not the realised fraction infected in this finite simulated sample.
+
+The attack rates shown by `plot_attack_rates()` are calculated differently.
+For each posterior draw, the function counts the inferred infection states at
+each time and divides by the number of people at risk. This is the posterior
+attack rate implied by the latent infection histories. It is the main attack
+rate summary under prior version 2, where the infection-history prior is
+controlled by beta-distributed parameters rather than a separate `phi` for
+each time. The same infection-history summary can also be plotted for a
+prior-version-1 fit, but it should not be confused with the posterior density
+of the `phi` parameters.
+
+Prior version 2 is the default because the per-time `phi` parameters are
+strongly correlated with the latent infection states. For example, a higher
+value of `phi` at a particular time can often be offset by changing which
+individuals are assigned an infection at that time. Sampling both quantities
+directly therefore makes the MCMC explore the posterior inefficiently and can
+lead to slow mixing. Prior version 2 avoids this extra set of sampled
+parameters by integrating over the time-specific infection probabilities under
+their beta prior when evaluating the infection-history prior. Prior version 1
+is useful when those probabilities need to be controlled separately, but is
+usually more difficult to fit.
+
+```{r prior-version-1-setup,fig.height=4,fig.width=7}
 prior1_par_tab <- check_par_tab(
   base_par_tab, mcmc = TRUE, version = 1,
   possible_exposure_times = possible_exposure_times, verbose = FALSE
 )
 
 phi_rows <- which(prior1_par_tab$names == "phi")
-phi_start_values <- seq(0.03, 0.18, length.out = length(phi_rows))
-phi_start_values[c(1, 13, 25)] <- c(0.02, 0.35, 0.08)
+true_phi <- simulated_data$attack_rates %>%
+  filter(population_group == 1) %>%
+  arrange(time) %>%
+  pull(prob_infection)
+stopifnot(length(true_phi) == length(phi_rows))
+
+## Use the generating probabilities rather than the realised attack rates.
+## The latter are random sample proportions from the simulated histories.
+phi_start_values <- true_phi
 prior1_par_tab$values[phi_rows] <- phi_start_values
 prior1_par_tab$lower_start[phi_rows] <- pmax(phi_start_values - 0.05, 0.001)
 prior1_par_tab$upper_start[phi_rows] <- pmin(phi_start_values + 0.05, 0.999)
@@ -649,13 +695,18 @@ prior1_par_tab$fixed[fixed_phi_rows] <- 1
 
 ## These are separate, time-specific priors on phi, not the prior-version-2
 ## infection_model_prior_shape1 and infection_model_prior_shape2 entries.
-phi_prior_shape1 <- rep(1, length(phi_rows))
-phi_prior_shape2 <- rep(9, length(phi_rows))
-phi_prior_shape1[13] <- 4
-phi_prior_shape2[13] <- 6
+phi_prior_concentration <- rep(10, length(phi_rows))
+phi_prior_concentration[13] <- 100
+phi_prior_shape1 <- pmax(phi_start_values * phi_prior_concentration, 0.5)
+phi_prior_shape2 <- pmax((1 - phi_start_values) * phi_prior_concentration, 0.5)
 
 prior1_prior_func <- function(par_tab) {
   phi_rows <- which(par_tab$names == "phi")
+  phi_prior_concentration <- rep(10, length(phi_rows))
+  phi_prior_concentration[13] <- 100
+  phi_start_values <- par_tab$values[phi_rows]
+  phi_prior_shape1 <- pmax(phi_start_values * phi_prior_concentration, 0.5)
+  phi_prior_shape2 <- pmax((1 - phi_start_values) * phi_prior_concentration, 0.5)
   function(pars) {
     sum(dbeta(
       pars[phi_rows], phi_prior_shape1, phi_prior_shape2, log = TRUE
@@ -669,16 +720,9 @@ phi_table <- prior1_par_tab %>%
     time = possible_exposure_times,
     probability = values,
     fixed = fixed,
-    prior_mean = phi_prior_shape1 / (phi_prior_shape1 + phi_prior_shape2)
+    prior_mean = phi_prior_shape1 / (phi_prior_shape1 + phi_prior_shape2),
+    prior_concentration = phi_prior_concentration
   )
-phi_table
-
-ggplot(phi_table, aes(time, probability)) +
-  geom_line() +
-  geom_point(aes(colour = factor(fixed))) +
-  scale_colour_discrete(name = "Fixed in fit", labels = c("No", "Yes")) +
-  labs(x = "Possible exposure time", y = "phi: probability of infection") +
-  theme_classic()
 
 ## Show the attack-rate distributions implied by three of the phi priors.
 n_alive <- get_n_alive(antibody_data, possible_exposure_times)
@@ -719,11 +763,89 @@ prior1_fit <- fit_or_load(
 )
 ```
 
+The posterior densities of the `phi` parameters show the estimated
+time-specific infection probabilities directly. The fixed `phi` values are
+shown in `phi_table` above rather than as densities, since they are point
+values rather than estimated quantities.
+
+```{r prior-version-1-phi-density}
+phi_chain_names <- make.unique(as.character(prior1_par_tab$names))
+phi_chain_names <- phi_chain_names[
+  prior1_par_tab$names == "phi" & prior1_par_tab$fixed == 0
+]
+
+prior1_fit$mcmc_chains$theta_chain %>%
+  select(samp_no, chain_no, all_of(phi_chain_names)) %>%
+  pivot_longer(-c(samp_no, chain_no), names_to = "parameter") %>%
+  mutate(parameter = factor(parameter, levels = phi_chain_names)) %>%
+  ggplot(aes(value, fill = factor(chain_no))) +
+  geom_density(alpha = 0.25) +
+  facet_wrap(~parameter, scales = "free") +
+  labs(x = "Per-time probability of infection", y = "Posterior density",
+       fill = "Chain") +
+  theme_classic()
+```
+
 ```{r prior-version-1-output}
-plot_attack_rates(
+phi_estimates <- prior1_fit$mcmc_chains$theta_chain %>%
+  select(all_of(phi_chain_names)) %>%
+  pivot_longer(everything(), names_to = "parameter") %>%
+  group_by(parameter) %>%
+  summarise(
+    median = median(value),
+    lower = quantile(value, 0.025),
+    upper = quantile(value, 0.975),
+    .groups = "drop"
+  ) %>%
+  mutate(time = possible_exposure_times[match(parameter, phi_chain_names)])
+
+true_attack_rates <- simulated_data$attack_rates %>%
+  transmute(population_group, time, AR) %>%
+  filter(is.finite(AR))
+true_phi_rates <- simulated_data$attack_rates %>%
+  transmute(population_group, time, AR = prob_infection)
+
+attack_rate_plot <- plot_attack_rates(
   prior1_fit$mcmc_chains$inf_chain, settings = prior1_fit$settings,
-  by_group = FALSE, plot_den = FALSE, pad_chain = TRUE
-) + theme(axis.text.x = element_text(angle = 45, hjust = 1))
+  by_group = FALSE, plot_den = FALSE, pad_chain = TRUE,
+  true_ar = NULL
+) +
+  labs(colour = "Estimated attack rate from inferred infection histories\n(colour indicates samples taken)") +
+  guides(
+    colour = guide_legend(nrow = 2),
+    shape = guide_legend(nrow = 2)
+  )
+
+attack_rate_plot +
+  geom_point(
+    data = true_attack_rates,
+    aes(
+      x = time - 0.18, y = AR,
+      shape = "True attack rate from simulated infection histories"
+    ),
+    inherit.aes = FALSE, colour = "black", size = 2.5
+  ) +
+  geom_pointrange(
+    data = phi_estimates,
+    aes(
+      x = time + 0.18, y = median, ymin = lower, ymax = upper,
+      shape = "Estimated phi"
+    ),
+    inherit.aes = FALSE, colour = "black", size = 0.4
+  ) +
+  geom_point(
+    data = true_phi_rates,
+    aes(x = time + 0.18, y = AR, shape = "True phi used in simulation"),
+    inherit.aes = FALSE, colour = "black", size = 2
+  ) +
+  scale_shape_manual(
+    name = "Reference and phi quantities",
+    values = c(
+      "True attack rate from simulated infection histories" = 1,
+      "Estimated phi" = 16,
+      "True phi used in simulation" = 2
+    )
+  )
 ```
 
 # References and related material

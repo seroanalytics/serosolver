@@ -1,5 +1,6 @@
-# Modified by an AI assistant on 2026-09-16 using GPT-5. Clarified the roxygen
-# documentation for antibody, attack-rate, parameter, and diagnostic plots without changing their implementations.
+# Modified by an AI assistant on 2026-09-17 using GPT-5. Aligned phi posterior
+# plots with the corrected selection of free duplicated parameter columns and
+# retained the univariate R-hat fallback for singular covariance matrices.
 #'
 #' Plot raw data
 #'
@@ -202,9 +203,10 @@ plot_posteriors_theta <- function(chain,par_tab){
   }
   
   p_trace_phi <- p_density_phi <- NULL
-  if("phi" %in% par_tab$names & "phi" %in% colnames(chain)){
-    phi_indices <- 1:nrow(par_tab_tmp[par_tab_tmp$names == "phi",])
-    phi_indices <- c("samp_no","chain_no",c("phi",paste0("phi.",phi_indices[1:(length(phi_indices)-1)])))
+  phi_indices <- make.unique(as.character(par_tab$names))
+  phi_indices <- phi_indices[par_tab$names == "phi" & par_tab$fixed == 0]
+  if(length(phi_indices) > 0 && all(phi_indices %in% colnames(chain))){
+    phi_indices <- c("samp_no", "chain_no", phi_indices)
     p_trace_phi <- chain[,phi_indices] %>%
       pivot_longer(-c(samp_no, chain_no)) %>%
       ggplot() + 
@@ -279,7 +281,13 @@ plot_mcmc_diagnostics <- function(location, par_tab, burnin, inf_hist_mcmc_summa
   
   n_chains <- length(chains$theta_list_chains)
   if(n_chains > 1){
-    gelman_res <- gelman.diag(chains1)
+    gelman_res <- tryCatch(
+      gelman.diag(chains1),
+      error = function(e) {
+        message("Multivariate R-hat could not be calculated; using univariate R-hat instead.")
+        gelman.diag(chains1, multivariate = FALSE)
+      }
+    )
     par_estimates <- cbind(par_estimates, gelman_res$psrf)
     colnames(par_estimates)[7:8] <- c("Rhat point estimate","Rhat upper CI")
   } else {

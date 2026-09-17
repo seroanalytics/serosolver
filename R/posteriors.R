@@ -1,6 +1,6 @@
 
-# Modified by an AI assistant on 2026-09-17 using GPT-5. Fixed parameter-table
-# selection when version-1 `phi` rows have missing `biomarker_group` values.
+# Modified by an AI assistant on 2026-09-17 using GPT-5. Fixed version-1
+# `phi` selection and parameter-table handling with missing `biomarker_group` values.
 
 #' Posterior function pointer
 #'
@@ -364,7 +364,7 @@ create_posterior_func <- function(par_tab,
     }
 
     ## These will be the same for each biomarker_group, as currently only one exposure type
-    phi_indices <- which(par_tab$par_type == 2)
+    phi_indices <- which(par_tab$names == "phi")
     ## weights_indices <- which(par_tab$par_type == 4) ## For functional form version of FOI
     ## knot_indices <- which(par_tab$par_type == 5) ## For functional form version of FOI
     
