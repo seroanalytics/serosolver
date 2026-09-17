@@ -14,9 +14,8 @@ vignette: |
   %\VignetteEngine{knitr::rmarkdown}
 ---
 
-<!-- Modified by an AI assistant on 2026-09-17 using GPT-5. Added concise,
-evaluated prior_func examples for measurement offsets, multiple biomarker
-groups, and prior version 1. -->
+<!-- Modified by an AI assistant on 2026-09-17 using GPT-5. Added a warning
+about the long chains and convergence requirements of prior version 1. -->
 
 ```{r setup, include=FALSE}
 set.seed(1)
@@ -449,9 +448,7 @@ infection histories, with and without the measurement offsets. Three biomarker
 IDs are shown to make the shifts easy to see.
 
 ```{r measurement-bias-simulation-plot}
-comparison_ids <- measured_biomarker_ids[
-  c(1, ceiling(length(measured_biomarker_ids) / 2), length(measured_biomarker_ids))
-]
+comparison_ids <- measured_biomarker_ids
 offset_comparison <- bind_rows(
   offset_data %>% mutate(offset = "With measurement offsets"),
   unshifted_data %>% mutate(offset = "Without measurement offsets")
@@ -691,7 +688,12 @@ plot_model_fits(
   orientation = "cross-sectional", expand_to_all_times = TRUE
 )[[2]]
 ```
+
 # Prior version 1
+
+> **Warning:** Prior version 1 is mathematically correct, but it often
+> requires very long MCMC chains to run well. With shorter chains, convergence
+> can be poor, as demonstrated in this vignette.
 
 The infection-history prior controls how the model describes the probability of
 infection across the possible exposure times and how new histories are

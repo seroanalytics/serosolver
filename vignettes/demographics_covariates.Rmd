@@ -603,7 +603,8 @@ variant_base_par_tab$stratification <- NA_character_
 ## Duplicate the base antibody-parameter rows for the second variant block.
 variant_par_rows <- variant_base_par_tab %>%
   filter(!names %in% c(
-    "infection_model_prior_shape1", "infection_model_prior_shape2"
+    "infection_model_prior_shape1", "infection_model_prior_shape2",
+    "exponential_waning"
   )) %>%
   mutate(biomarker_group = 2L)
 variant_par_tab <- bind_rows(variant_base_par_tab, variant_par_rows)

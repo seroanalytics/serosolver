@@ -2,7 +2,7 @@
 ## exponential_waning option to the example parameter-table workflow.
 ## Script to run the entire README pipeline, simulating the data, saving the example data structures, and testing the MCMC runs
 set.seed(1234)
-#library(serosolver)
+library(serosolver)
 library(ggplot2)
 library(plyr)
 library(dplyr)
@@ -10,9 +10,9 @@ library(tidyr)
 library(data.table)
 library(doParallel)
 library(coda)
-devtools::document("~/Documents/GitHub/serosolver")
-devtools::load_all("~/Documents/GitHub/serosolver")
-install.packages("~/Documents/GitHub/serosolver",type="source",repos=NULL)
+#devtools::document("~/Documents/GitHub/serosolver")
+#devtools::load_all("~/Documents/GitHub/serosolver")
+#install.packages("~/Documents/GitHub/serosolver",type="source",repos=NULL)
 
 ################################################
 ## 1. HA NAM DATA
@@ -122,7 +122,7 @@ par_tab[par_tab$names == "wane_long","values"] <- 0
 par_tab[par_tab$names =="obs_sd","values"] <- 1
 par_tab[par_tab$names =="boost_delay","values"] <- 1
 
-plot_antibody_model(par_tab, times=1:50)[[1]]
+#plot_antibody_model(par_tab, times=1:50)[[1]]
 
 ## Simulate a full serosurvey with these parameters
 all_simulated_data <- simulate_data(par_tab=par_tab, group=1, n_indiv=100,

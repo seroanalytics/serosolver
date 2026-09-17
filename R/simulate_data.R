@@ -1,5 +1,6 @@
-# Modified by an AI assistant on 2026-09-17 using GPT-5. Added par_tab-based
-# control of exponential waning while retaining the legacy argument.
+# Modified by an AI assistant on 2026-09-17 using GPT-5. Added a namespaced
+# Bernoulli draw for the false-positive observation model; retained the existing
+# simulation behaviour and par_tab-based exponential-waning control.
 #'
 #' Simulate full data set
 #'
@@ -315,12 +316,12 @@ add_noise <- function(y, theta, measurement_bias = NULL, indices = NULL,data_typ
     noise_y <- y
     
     if (!is.null(measurement_bias)) {
-      noise_y[negative_predictions] <- theta["min_measurement"] + rbernoulli(length(noise_y[negative_predictions]),theta["fp_rate"])*runif(length(noise_y[negative_predictions]), 0,theta["max_measurement"]-theta["min_measurement"]) + measurement_bias[indices[negative_predictions]]
+      noise_y[negative_predictions] <- theta["min_measurement"] + stats::rbinom(length(noise_y[negative_predictions]), size = 1, prob = theta["fp_rate"])*runif(length(noise_y[negative_predictions]), 0,theta["max_measurement"]-theta["min_measurement"]) + measurement_bias[indices[negative_predictions]]
       noise_y[positive_predictions] <- rnorm(length(y[positive_predictions]), 
                                              mean = y[positive_predictions] + measurement_bias[indices[positive_predictions]], 
                                              sd = theta["obs_sd"])
     } else {
-      noise_y[negative_predictions] <- theta["min_measurement"] + rbernoulli(length(noise_y[negative_predictions]),theta["fp_rate"])*runif(length(noise_y[negative_predictions]), 0,theta["max_measurement"]-theta["min_measurement"]) 
+      noise_y[negative_predictions] <- theta["min_measurement"] + stats::rbinom(length(noise_y[negative_predictions]), size = 1, prob = theta["fp_rate"])*runif(length(noise_y[negative_predictions]), 0,theta["max_measurement"]-theta["min_measurement"])
       
       noise_y[positive_predictions] <- rnorm(length(y[positive_predictions]), 
                                              mean = y[positive_predictions], 

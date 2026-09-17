@@ -87,12 +87,14 @@ Additional vignettes:
 * [Multiple measurements][vignette-doc]: fitting `serosolver` to multiple biomarker types, example of binding avidity and ELISA measurements per sample
 * [Group-level differences][vignette-doc]: estimating demographic differences in antibody kinetics and attack rates
 * [Naming conventions][naming-vignette-doc]: the current names for datasets, variables, and model inputs
+* [Frequently asked questions][faq-vignette-doc]: common questions about data, model fitting, diagnostics, and troubleshooting
 
 [r-project]: http://cran.r-project.org
 [vignette-doc]: https://seroanalytics.github.io/serosolver/articles/serosolver-guide.html
 [c1-vignette-doc]: https://seroanalytics.github.io/serosolver/articles/cs1_hong_kong.html
 [c2-vignette-doc]: https://seroanalytics.github.io/serosolver/articles/cs2_vignette.html
 [naming-vignette-doc]: https://seroanalytics.github.io/serosolver/articles/naming_convention.html
+[faq-vignette-doc]: https://seroanalytics.github.io/serosolver/articles/faq.html
 
 ## Example
 

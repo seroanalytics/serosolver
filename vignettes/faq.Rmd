@@ -1,0 +1,248 @@
+---
+title: "Frequently asked questions"
+subtitle: Using `serosolver`
+output:
+  rmarkdown::html_vignette:
+    toc: true
+    number_sections: false
+editor_options:
+  chunk_output_type: console
+vignette: |
+  %\VignetteEncoding{UTF-8}
+  %\VignetteIndexEntry{Frequently asked questions}
+  %\VignetteEngine{knitr::rmarkdown}
+---
+
+<!-- Modified by an AI assistant on 2026-09-17 using GPT-5. Created a concise
+question-and-answer FAQ covering common serosolver workflows, troubleshooting,
+and published applications. -->
+
+This page collects common questions about preparing data, choosing model
+options, checking fits, and interpreting `serosolver` output. The
+[_serosolver_ guide](serosolver-guide.html) gives the full workflow and the
+other vignettes give more detailed examples.
+
+## Is my dataset suitable for `serosolver`?
+
+`serosolver` uses antibody measurements to infer individual infection histories
+and antibody kinetics. The essential data are measurements linked to an
+individual, a sample time, and a biomarker or antigen identifier. You also
+need to define the possible infection times and, when there is antigenic
+variation, an antigenic map describing the relationship between the measured
+biomarkers.
+
+The model can use either longitudinal samples from the same individuals or a
+cross-sectional sample of individuals with different ages. The measurement
+scale, lower and upper measurement limits, birth times, and sample times must
+be defined consistently. See [§1, Input data](serosolver-guide.html#input-data)
+of the guide and the [longitudinal case study](cs1_hong_kong.html) and
+[cross-sectional case study](cs2_vignette.html).
+
+The package has been used with haemagglutination inhibition (HAI) data and
+several neutralisation assays. It has not yet been used with ELISA data in a
+published `serosolver` analysis, so an ELISA application would require some
+experimentation with the observation model and measurement scale. If you use
+`serosolver` with ELISA data, we would be interested to hear about your
+experience.
+
+## How do I know if my model fit has worked?
+
+Check the convergence diagnostics, compare the model predictions with the
+observations, and sense-check the inferred infection histories and parameter
+values. The fitted trajectories should provide a reasonable explanation of the
+observed measurements, without relying on implausible parameter values or
+infection histories.
+
+The [diagnostics section of the guide](serosolver-guide.html#output-diagnostics)
+describes the trace plots, effective sample size, and R-hat checks. The
+[output sections](serosolver-guide.html#output-posteriors) show how to inspect
+model fits, infection histories, and attack rates. Simulation recovery is also
+useful: fit simulated data with known infection histories and parameter values
+and check whether the analysis can recover them.
+
+## What if my MCMC chains have not converged?
+
+First check trace plots and whether the chains are exploring the same part of
+the parameter space. Depending on the problem, try running more iterations,
+using stronger or more informative priors, or fixing parameters that the data
+cannot identify well. Simplifying the model or reducing the number of possible
+infection times may also help.
+
+Before fitting the main dataset, use simulated data with a similar sample
+structure and measurement scale. This helps distinguish a problem with the
+model or MCMC settings from a problem with the information available in the
+dataset.
+
+The guide discusses the diagnostic criteria in [§5, Output
+diagnostics](serosolver-guide.html#output-diagnostics), including the more
+relaxed R-hat and effective-sample-size criteria used here because the sampler
+is less efficient than samplers such as Stan's.
+
+## What can I do if I do not have an antigenic map?
+
+If there is only one biomarker ID and no antigenic variation, an antigenic map
+is not needed. Use a single biomarker in `antibody_data` and set up `par_tab`
+for that observation group, as in the guide's [single-antigen example](serosolver-guide.html#antigenic-map).
+
+If the pathogen is antigenically variable, the model needs coordinates for the
+measured biomarkers and possible exposure times. Look for an appropriate map in
+the literature or in the data source associated with the assay. `serosolver`
+does not infer the antigenic map or the cross-reactivity structure from the
+serology data.
+
+## What timescale should I use for possible infection times?
+
+Choose a timescale that is supported by the data and by the ages and sampling
+history of the individuals. Annual infection periods are often a sensible
+starting point. Three-month or other shorter periods may be useful when the
+data contain enough information to distinguish infections at that resolution.
+
+Shorter periods create more possible infection states. This can make the model
+harder to fit and may leave too little information to distinguish neighbouring
+infection times. The guide discusses this choice in [§2.1, Model time
+resolution](serosolver-guide.html#model-time-resolution).
+
+## What priors should I use?
+
+There are two main groups of priors. Antibody-kinetics priors describe boosting,
+waning, cross-reactivity, and related features of the antibody model. Infection-
+history priors describe the probability of infection over the possible exposure
+times and therefore influence attack-rate estimates.
+
+Start with the examples in [§2.4, Priors](serosolver-guide.html#priors) of the
+guide. The [advanced-features vignette](advanced_features.html) shows priors
+for starting levels, measurement offsets, multiple biomarker groups, and
+prior version 1. The [demographics and covariates vignette](demographics_covariates.html)
+shows how to specify priors for covariate coefficients. Check both the
+distribution and the bounds in `par_tab`; a prior cannot put mass outside the
+parameter bounds.
+
+## How are MCMC chains saved and read back into R?
+
+`serosolver()` writes the chains to disk using the path and prefix supplied in
+`filename`. The output includes parameter-chain files ending in
+`_chain.csv`, infection-history files ending in `_infection_histories.csv`, a
+settings file ending in `_serosolver_settings.RData`, and, for parallel runs,
+a matching `_log.txt` progress file.
+
+The returned fit object contains the loaded chains for immediate use. Chains
+saved from an earlier run can be read back with `load_mcmc_chains()`. See
+[§3, Running `serosolver`](serosolver-guide.html#running-serosolver) and the
+function help for `load_mcmc_chains()`.
+
+## Which `data_type` should I use?
+
+Use `data_type = "discrete"` (or the backward-compatible value `1`) for
+bounded discrete observations such as integer titre categories. Use
+`data_type = "continuous"` (or `2`) for continuous bounded measurements. Use
+`data_type = "false_positive"` (or `3`) for continuous observations with the
+false-positive observation model.
+
+With several biomarker groups, supply one value for each group, or supply one
+value to use for all groups. The observation model and measurement bounds are
+described in [§2.3, Observation model](serosolver-guide.html#observation-model).
+
+## How do I include demographic covariates?
+
+Fixed covariates can be included directly in `antibody_data` or supplied in a
+separate one-row-per-individual `demographics` table. Time-varying covariates,
+such as age group, are supplied in a demographics table with the relevant
+individual and time rows. Variables used to stratify parameters are named in
+`par_tab$stratification`, and each generated coefficient needs a prior.
+
+See [§1.3, Covariate data](serosolver-guide.html#covariates) in the guide and
+the [demographic variables and covariates vignette](demographics_covariates.html).
+
+## When should I use starting levels, fixed infection states, measurement offsets, or multiple biomarker groups?
+
+Use starting levels when the first antibody level in the observation window is
+not expected to be zero and this should be represented separately from an
+infection during the modelled period. Use fixed infection states when some
+infection or non-infection states are known from external information.
+
+Use measurement offsets when different biomarkers or observation groups have a
+systematic shift that is not explained by the shared antibody kinetics model.
+Use multiple biomarker groups when different measurements, such as titre and
+avidity, are observed for the same individuals and should have separate
+observation and antibody-kinetics parameters while sharing infection histories.
+
+The [advanced-features vignette](advanced_features.html) gives examples of
+each option and describes the additional data preparation they require.
+
+## Which parameters should I fix?
+
+Fix parameters when the data do not contain enough information to estimate them
+reliably, or when they are known from external evidence. This should be guided
+by the design of the dataset. For example, without longitudinal measurements it
+is unlikely that the data can distinguish short-term from long-term antibody
+kinetics.
+
+Before fitting a complex model, simulate data with a similar number of
+individuals, sample times, measurement scale, and biomarker structure. Try a
+small number of fits and inspect the posterior distributions for convergence,
+weak identifiability, and implausible parameter trade-offs. The [priors and
+model decisions sections](serosolver-guide.html#model-decisions) give more
+detail on fixed parameters, bounds, and model assumptions.
+
+## Can I infer correlates of protection?
+
+Not directly. The current `serosolver` model infers antibody kinetics and
+infection histories, but it does not contain an explicit immunity or protection
+state. It therefore cannot directly estimate a correlate of protection.
+
+[Hay et al. (2024)](https://journals.plos.org/plosbiology/article?id=10.1371/journal.pbio.3002864)
+provides an example of using reconstructed infection histories and antibody
+profiles to investigate protection-related questions. An experimental branch
+containing a possible extension has been left in stale development, but
+resuming it would not be technically straightforward.
+
+## Which pathogens and datasets has `serosolver` been used to analyse?
+
+Published and preprint applications include:
+
+- Influenza A/H3N2 HAI data from cross-sectional serology in children, and a
+  longitudinal multi-strain HAI dataset from the Fluscape cohort in Guangzhou,
+  China. See [Minter et al.](https://pubmed.ncbi.nlm.nih.gov/32556290/) and
+  [Hay et al. (2024)](https://journals.plos.org/plosbiology/article?id=10.1371/journal.pbio.3002864).
+- Seasonal norovirus GII.4 variant serology from children in England, used to
+  estimate annual exposures and antibody kinetics across variants. See
+  [O'Reilly et al.](https://www.medrxiv.org/content/10.64898/2026.03.09.26347737v1).
+- Multiplex serology covering influenza, RSV, seasonal coronaviruses, and
+  SARS-CoV-2, using data from King County, Washington, and complementary
+  influenza data from South Africa. See
+  [Bents et al.](https://www.nature.com/articles/s41467-025-65957-9).
+- SARS-CoV-2 neutralising-antibody profiles from Malawi, including variant-
+  specific antibody dynamics and regional differences in inferred infection
+  histories. See
+  [McCormack et al.](https://www.medrxiv.org/content/10.64898/2026.04.16.26351029v1).
+
+These applications cover different pathogens, assays, sampling designs, and
+model extensions. They should therefore be treated as examples of possible
+uses rather than evidence that every assay or dataset can be analysed without
+additional model checking.
+
+## What if `serosolver()` crashes?
+
+Start with the input-checking functions `check_data()`, `check_demographics()`,
+`check_inf_hist()`, and `check_par_tab()`. Check that the input tables contain
+the required columns, have no unexpected `NA` values, use compatible time
+variables and measurement bounds, and include all required biomarker and
+demographic groups.
+
+Individual IDs are especially important: they should be recoded to a
+continuous sequence from `1` to `N`, with no gaps. Also check that the possible
+exposure times, antigenic-map times, birth times, sample times, biomarker IDs,
+and population-group IDs use the expected scales and coding.
+
+If R crashes without an error message, the problem may be in the C++ backend.
+In practice this often indicates a vector-indexing problem caused by malformed
+or internally inconsistent input data, so check the inputs before changing the
+model code.
+
+## How can I raise an issue?
+
+Please report reproducible problems, unexpected results, or documentation gaps
+on the [serosolver GitHub issue page](https://github.com/seroanalytics/serosolver/issues).
+Include the smallest example that shows the problem, the relevant error or
+warning, your R and package versions, and enough information about the input
+tables to reproduce it. Do not include sensitive data.
