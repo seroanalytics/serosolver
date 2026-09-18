@@ -3,8 +3,13 @@ title: "Guide to _serosolver_ terminology"
 author: "James Hay"
 date: "2025-06-12"
 output:
-  html_document:
+  rmarkdown::html_vignette:
+    toc: true
     number_sections: true
+vignette: |
+  %\VignetteEncoding{UTF-8}
+  %\VignetteIndexEntry{Guide to serosolver terminology}
+  %\VignetteEngine{knitr::rmarkdown}
 ---
 
 <!-- Modified by an AI assistant on 2026-09-17 using GPT-5. Corrected the

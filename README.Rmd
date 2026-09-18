@@ -29,9 +29,9 @@ library(tidyverse)
 <br clear="right">
 
 ## New features
-`serosolver` is in active development with new features and ongoing improvements.
+The current version of `serosolver` includes the following new features.
 <details>
-  <summary>List of new features:</summary>
+  <summary>New features:</summary>
   
 * Generalisation to multiple biomarker types per sample (e.g., antibody titre and avidity)
 * Support for continuous and discrete observations (e.g., ELISA data and HAI titres)
@@ -43,12 +43,6 @@ library(tidyverse)
 
 ## Installation
 
-`serosolver` is in the midst of an overhaul. Please use the `published` branch to ensure continued compatibility with existing projects.
-
-```{r, eval=FALSE}
-remotes::install_github("seroanalytics/serosolver", ref = "published")
-```
-
 Install the development version of serosolver from [GitHub](https://github.com/seroanalytics/serosolver):
 
 ```{r installation,eval=FALSE}
@@ -56,9 +50,16 @@ remotes::install_github("seroanalytics/serosolver")
 library(serosolver)
 ```
 
+Note that `serosolver` has been overhauled relative to published version. Please use the `published` branch to ensure continued compatibility with older projects.
+
+```{r, eval=FALSE}
+remotes::install_github("seroanalytics/serosolver", ref = "published")
+```
+
+
 ## Dependencies
 
-A working C++14 compiler is needed. The package uses `Rcpp`, `RcppArmadillo`, and `RcppParallel`.
+A working C++17 compiler is needed. The package uses `Rcpp`, `RcppArmadillo`, and `RcppParallel`.
 
 ```{r package_installation, eval=FALSE}
 required_packages <- c(
@@ -80,11 +81,10 @@ Read the [guide][vignette-doc] to set up and run a simple implementation with a 
 
 Additional vignettes:
 
-* [Longitudinal data][c1-vignette-doc]: estimating infection timings using longitudinal data, example of influenza A/H1N1p in Hong Kong
-* [Cross-sectional data][c2-vignette-doc]: estimating life-course infection histories from multi-strain serology, example of influenza A/H3N2 from the [Fluscape cohort](https://pubmed.ncbi.nlm.nih.gov/26875566/)
-* [Optional features][vignette-doc]: walkthrough of additional `serosolver` features and use cases, such as inclusion of biomarker-specific measurement offsets
-* [Multiple measurements][vignette-doc]: fitting `serosolver` to multiple biomarker types, example of binding avidity and ELISA measurements per sample
-* [Group-level differences][vignette-doc]: estimating demographic differences in antibody kinetics and attack rates
+* [Longitudinal case study][c1-vignette-doc]: estimating infection timings using longitudinal data, with an example from influenza A/H1N1p in Hong Kong
+* [Cross-sectional case study][c2-vignette-doc]: estimating life-course infection histories from multi-strain serology, with an example from the [Fluscape cohort](https://pubmed.ncbi.nlm.nih.gov/26875566/)
+* [Advanced features][advanced-vignette-doc]: examples of fixed infection states, starting antibody levels, measurement offsets, exponential waning, multiple biomarker groups, and prior version 1
+* [Demographic variables and covariates][demographics-vignette-doc]: estimating demographic differences in antibody kinetics and infection-history priors, with an example of variant-stratified parameters
 * [Naming conventions][naming-vignette-doc]: the current names for datasets, variables, and model inputs
 * [Frequently asked questions][faq-vignette-doc]: common questions about data, model fitting, diagnostics, and troubleshooting
 
@@ -92,6 +92,8 @@ Additional vignettes:
 [vignette-doc]: https://seroanalytics.github.io/serosolver/articles/serosolver-guide.html
 [c1-vignette-doc]: https://seroanalytics.github.io/serosolver/articles/cs1_hong_kong.html
 [c2-vignette-doc]: https://seroanalytics.github.io/serosolver/articles/cs2_vignette.html
+[advanced-vignette-doc]: https://seroanalytics.github.io/serosolver/articles/advanced_features.html
+[demographics-vignette-doc]: https://seroanalytics.github.io/serosolver/articles/demographics_covariates.html
 [naming-vignette-doc]: https://seroanalytics.github.io/serosolver/articles/naming_convention.html
 [faq-vignette-doc]: https://seroanalytics.github.io/serosolver/articles/faq.html
 

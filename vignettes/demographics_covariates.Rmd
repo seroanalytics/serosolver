@@ -885,14 +885,12 @@ This vignette focuses on demographic and covariate information, followed by the
 project-specific variant-stratification workaround. Related material is
 available in the following vignettes:
 
-- the [serosolver guide](SEROSOLVER_GUIDE_LINK) for the main workflow and
+- the [serosolver guide](serosolver-guide.html) for the main workflow and
   general model options;
-- the [Hong Kong case study](CASE_STUDY_1_VIGNETTE_LINK) for a longitudinal
+- the [Hong Kong case study](cs1_hong_kong.html) for a longitudinal
   example;
-- the [Fluscape case study](CASE_STUDY_2_VIGNETTE_LINK) for a cross-sectional
+- the [Fluscape case study](cs2_vignette.html) for a cross-sectional
   example; and
-- the [advanced-features vignette](ADVANCED_FEATURES_VIGNETTE_LINK) for
+- the [advanced-features vignette](advanced_features.html) for
   starting antibody levels, measurement offsets, exponential waning, and
   multiple observed biomarker groups.
-
-<!-- TODO: replace the placeholder vignette links above with the final links. -->

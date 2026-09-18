@@ -165,7 +165,7 @@ ggplot(antigenic_map) +
 ```
 
 ## Model assumptions
-The parameter table controls which parameters are estimated or fixed, their starting values, and their allowable ranges. With one sample per individual, the short-term antibody response is not well separated from the timing of infection. We therefore estimate long-term boosting, cross-reactivity, antigenic seniority, and observation error, while fixing the short-term parameters at zero. This case study uses the default linear waning form; exponential waning is selected through a fixed `exponential_waning` row in `par_tab`, as described in the [advanced features vignette](ADVANCED_FEATURES_VIGNETTE_LINK).
+The parameter table controls which parameters are estimated or fixed, their starting values, and their allowable ranges. With one sample per individual, the short-term antibody response is not well separated from the timing of infection. We therefore estimate long-term boosting, cross-reactivity, antigenic seniority, and observation error, while fixing the short-term parameters at zero. This case study uses the default linear waning form; exponential waning is selected through a fixed `exponential_waning` row in `par_tab`, as described in the [advanced features vignette](advanced_features.html).
 
 ```{r model-setup}
 ## The same starting parameter table is used in Case Study 1.

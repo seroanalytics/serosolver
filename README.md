@@ -28,13 +28,12 @@ serology panels. The package and model are described by Hay *et al.*
 
 ## New features
 
-`serosolver` is in active development with new features and ongoing
-improvements.
+The current version of `serosolver` includes the following new features.
 <details>
 
 <summary>
 
-List of new features:
+New features:
 </summary>
 
 - Generalisation to multiple biomarker types per sample (e.g., antibody
@@ -50,13 +49,6 @@ List of new features:
 
 ## Installation
 
-`serosolver` is in the midst of an overhaul. Please use the `published`
-branch to ensure continued compatibility with existing projects.
-
-``` r
-remotes::install_github("seroanalytics/serosolver", ref = "published")
-```
-
 Install the development version of serosolver from
 [GitHub](https://github.com/seroanalytics/serosolver):
 
@@ -65,9 +57,17 @@ remotes::install_github("seroanalytics/serosolver")
 library(serosolver)
 ```
 
+Note that `serosolver` has been overhauled relative to published
+version. Please use the `published` branch to ensure continued
+compatibility with older projects.
+
+``` r
+remotes::install_github("seroanalytics/serosolver", ref = "published")
+```
+
 ## Dependencies
 
-A working C++14 compiler is needed. The package uses `Rcpp`,
+A working C++17 compiler is needed. The package uses `Rcpp`,
 `RcppArmadillo`, and `RcppParallel`.
 
 ``` r
@@ -92,27 +92,25 @@ to set up and run a simple implementation with a simulation model.
 
 Additional vignettes:
 
-- [Longitudinal
-  data](https://seroanalytics.github.io/serosolver/articles/cs1_hong_kong.html):
-  estimating infection timings using longitudinal data, example of
-  influenza A/H1N1p in Hong Kong
-- [Cross-sectional
-  data](https://seroanalytics.github.io/serosolver/articles/cs2_vignette.html):
+- [Longitudinal case
+  study](https://seroanalytics.github.io/serosolver/articles/cs1_hong_kong.html):
+  estimating infection timings using longitudinal data, with an example
+  from influenza A/H1N1p in Hong Kong
+- [Cross-sectional case
+  study](https://seroanalytics.github.io/serosolver/articles/cs2_vignette.html):
   estimating life-course infection histories from multi-strain serology,
-  example of influenza A/H3N2 from the [Fluscape
+  with an example from the [Fluscape
   cohort](https://pubmed.ncbi.nlm.nih.gov/26875566/)
-- [Optional
-  features](https://seroanalytics.github.io/serosolver/articles/serosolver-guide.html):
-  walkthrough of additional `serosolver` features and use cases, such as
-  inclusion of biomarker-specific measurement offsets
-- [Multiple
-  measurements](https://seroanalytics.github.io/serosolver/articles/serosolver-guide.html):
-  fitting `serosolver` to multiple biomarker types, example of binding
-  avidity and ELISA measurements per sample
-- [Group-level
-  differences](https://seroanalytics.github.io/serosolver/articles/serosolver-guide.html):
-  estimating demographic differences in antibody kinetics and attack
-  rates
+- [Advanced
+  features](https://seroanalytics.github.io/serosolver/articles/advanced_features.html):
+  examples of fixed infection states, starting antibody levels,
+  measurement offsets, exponential waning, multiple biomarker groups,
+  and prior version 1
+- [Demographic variables and
+  covariates](https://seroanalytics.github.io/serosolver/articles/demographics_covariates.html):
+  estimating demographic differences in antibody kinetics and
+  infection-history priors, with an example of variant-stratified
+  parameters
 - [Naming
   conventions](https://seroanalytics.github.io/serosolver/articles/naming_convention.html):
   the current names for datasets, variables, and model inputs
@@ -170,7 +168,7 @@ output$plot_fits_cross_sectional
 
 <img src="man/figures/README-example_model_fits-1.png" alt="" width="100%" />
 
-## AI assistance
+## AI declaration
 
 AI assistance was used during development of this package for
 documentation drafting, repository audits, code review, and selected

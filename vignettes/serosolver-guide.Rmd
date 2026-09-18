@@ -333,11 +333,9 @@ antibody_data <- antibody_data %>% mutate(age_group=if_else(birth <= 1990, 1, 2)
 par_tab[par_tab$names == "wane_short","stratification"] <- "age_group"
 ```
 
-There are a few ways the user can implement this depending on their desired model (e.g., should covariates be static over the study period or change with e.g., age?). Demographic information can be supplied in a separate dataset. Covariates can be static, such as sex or location, or can change over time, such as age group or vaccination status. Multiple covariates can also be combined when defining groups, allowing the model to compare infection rates or antibody kinetics across more detailed demographic categories. These features are explained in the [demographic stratification vignette](DEMOGRAPHICS_VIGNETTE_LINK).
+There are a few ways the user can implement this depending on their desired model (e.g., should covariates be static over the study period or change with e.g., age?). Demographic information can be supplied in a separate dataset. Covariates can be static, such as sex or location, or can change over time, such as age group or vaccination status. Multiple covariates can also be combined when defining groups, allowing the model to compare infection rates or antibody kinetics across more detailed demographic categories. These features are explained in the [demographic variables and covariates vignette](demographics_covariates.html).
 
-<!-- TODO: replace DEMOGRAPHICS_VIGNETTE_LINK with the final vignette link. -->
-
-`serosolver` can also estimate different antibody kinetics for different variants or strains that circulated at different times. This follows a slightly different workflow, because the grouping is linked to the infection or exposure variant rather than directly to the individual, and is also explained in the [demographic stratification vignette](DEMOGRAPHICS_VIGNETTE_LINK).
+`serosolver` can also estimate different antibody kinetics for different variants or strains that circulated at different times. This follows a slightly different workflow, because the grouping is linked to the infection or exposure variant rather than directly to the individual, and is also explained in the [demographic variables and covariates vignette](demographics_covariates.html).
 
 ### The parameter table (`par_tab`)
 
@@ -507,7 +505,7 @@ where $k-1$ gives the number of infections prior to the current one. Thus, the f
 
 Most applications of `serosolver` involve fitting to antibody titre or concentration data. The model asumes that observations are distributed around some true value predicted by the model i.e., it accounts for observation noise.
 
-`serosolver` accommodates both continuous and discrete data, and accounts for the upper and lower limits of detection of the assay. Continuous data can take values across a range, whereas discrete data take separate values such as integer titre categories. These limits and the measurement type will need to be specified in the model using the `par_tab` object. `serosolver` also supports multiple measurement types per sample, for example, measuring both antibody titre and avidity (see the [advanced features vignette](ADVANCED_FEATURES_VIGNETTE_LINK)). These observation types are distinguished by the `biomarker_group` variable -- all observations within a `biomarker_group` are underpinned by their own antibody kinetics model parameters, but arising from the same individual-level infection histories.
+`serosolver` accommodates both continuous and discrete data, and accounts for the upper and lower limits of detection of the assay. Continuous data can take values across a range, whereas discrete data take separate values such as integer titre categories. These limits and the measurement type will need to be specified in the model using the `par_tab` object. `serosolver` also supports multiple measurement types per sample, for example, measuring both antibody titre and avidity (see the [advanced features vignette](advanced_features.html)). These observation types are distinguished by the `biomarker_group` variable -- all observations within a `biomarker_group` are underpinned by their own antibody kinetics model parameters, but arising from the same individual-level infection histories.
 
 The following inputs should be updated depending on the limits of detection of the assay used and whether the data are continuous or discrete:
 
@@ -571,7 +569,7 @@ prior_func <- function(par_tab) {
 }
 ```
 
-The function is passed to `serosolver(prior_func = prior_func)`. If a parameter is stratified, include every generated coefficient row in the prior function; this is illustrated in the [demographic variables and covariates vignette](DEMOGRAPHICS_VIGNETTE_LINK).
+The function is passed to `serosolver(prior_func = prior_func)`. If a parameter is stratified, include every generated coefficient row in the prior function; this is illustrated in the [demographic variables and covariates vignette](demographics_covariates.html).
 
 #### Infection-history shape priors
 
@@ -592,7 +590,7 @@ hist(prior_attack_rate, breaks = 50,
      main = "Prior attack rate", xlab = "Per-time probability of infection")
 ```
 
-Under the default prior version 2, the attack rates shown after fitting are calculated from the inferred infection histories. They are therefore realised sample proportions implied by those histories, rather than direct draws of the Beta parameters. Prior version 1 instead estimates a separate `phi` for each exposure time; this distinction is demonstrated in the [advanced features vignette](ADVANCED_FEATURES_VIGNETTE_LINK).
+Under the default prior version 2, the attack rates shown after fitting are calculated from the inferred infection histories. They are therefore realised sample proportions implied by those histories, rather than direct draws of the Beta parameters. Prior version 1 instead estimates a separate `phi` for each exposure time; this distinction is demonstrated in the [advanced features vignette](advanced_features.html).
 
 #### Sampling from the priors
 
@@ -620,9 +618,7 @@ This separates the assumptions made before seeing the data from the posterior re
 
 `serosolver` has a number of advanced features for greater control over the model assumptions and inputs. Users can fix selected infection states, provide starting antibody levels, include measurement offsets (for systematic measurement biases), use exponential rather than linear antibody waning, and fit multiple biomarker groups such as antibody titre and avidity together.
 
-These features require additional data preparation and model decisions. They are explained in detail in the [advanced features vignette](ADVANCED_FEATURES_VIGNETTE_LINK) and the relevant case-study material.
-
-<!-- TODO: replace ADVANCED_FEATURES_VIGNETTE_LINK with the final vignette link. -->
+These features require additional data preparation and model decisions. They are explained in detail in the [advanced features vignette](advanced_features.html) and the relevant case-study material.
 
 ## Running *serosolver*
 
