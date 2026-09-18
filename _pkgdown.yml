@@ -1,7 +1,7 @@
 url: https://seroanalytics.github.io/serosolver/
 
 development:
-  mode: unreleased
+  mode: release
 
 reference:
 - title: Fit and simulate models
