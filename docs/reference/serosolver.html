@@ -17,7 +17,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">serosolver</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.2.0</span>
+        <span class="version label label-danger" data-toggle="tooltip" data-placement="bottom" title="Unreleased version">1.2.0</span>
       </span>
     </div>
 
@@ -122,7 +122,7 @@
 
 
 <dt id="arg-demographics">demographics<a class="anchor" aria-label="anchor" href="#arg-demographics"></a></dt>
-<dd><p>if not NULL, a data frame giving demographic variables for each individual. It must include <code>individual</code> and <code>birth</code>, and must include any variables used to stratify parameters in <code>par_tab</code>. Demographic variables may be fixed for each individual or vary over time. See the <a href="DEMOGRAPHICS_VIGNETTE_LINK">demographic stratification and covariate vignette</a>.</p></dd>
+<dd><p>if not NULL, a data frame giving demographic variables for each individual. It must include <code>individual</code> and <code>birth</code>, and must include any variables used to stratify parameters in <code>par_tab</code>. Demographic variables may be fixed for each individual or vary over time. See the <a href="https://seroanalytics.github.io/serosolver/articles/demographics_covariates.html">demographic stratification and covariate vignette</a>.</p></dd>
 
 
 <dt id="arg-antigenic-map">antigenic_map<a class="anchor" aria-label="anchor" href="#arg-antigenic-map"></a></dt>
@@ -154,7 +154,7 @@
 
 
 <dt id="arg-fixed-inf-hists">fixed_inf_hists<a class="anchor" aria-label="anchor" href="#arg-fixed-inf-hists"></a></dt>
-<dd><p>(optional) Data frame with columns <code>individual</code>, <code>time</code>, and <code>value</code>, giving infection states that should be fixed during the MCMC run. See the <a href="ADVANCED_FEATURES_VIGNETTE_LINK">advanced features vignette</a>.</p></dd>
+<dd><p>(optional) Data frame with columns <code>individual</code>, <code>time</code>, and <code>value</code>, giving infection states that should be fixed during the MCMC run. See the <a href="https://seroanalytics.github.io/serosolver/articles/advanced_features.html">advanced features vignette</a>.</p></dd>
 
 
 <dt id="arg-filename">filename<a class="anchor" aria-label="anchor" href="#arg-filename"></a></dt>
@@ -170,7 +170,7 @@
 
 
 <dt id="arg-measurement-bias">measurement_bias<a class="anchor" aria-label="anchor" href="#arg-measurement-bias"></a></dt>
-<dd><p>optional NULL. A data frame mapping each <code>biomarker_id</code> and <code>biomarker_group</code> combination to the <code>rho_index</code> of the measurement-shift parameter that it uses. See the <a href="ADVANCED_FEATURES_VIGNETTE_LINK">advanced features vignette</a>.</p></dd>
+<dd><p>optional NULL. A data frame mapping each <code>biomarker_id</code> and <code>biomarker_group</code> combination to the <code>rho_index</code> of the measurement-shift parameter that it uses. See the <a href="https://seroanalytics.github.io/serosolver/articles/advanced_features.html">advanced features vignette</a>.</p></dd>
 
 
 <dt id="arg-proposal-ratios">proposal_ratios<a class="anchor" aria-label="anchor" href="#arg-proposal-ratios"></a></dt>
@@ -190,7 +190,7 @@
 
 
 <dt id="arg-start-level">start_level<a class="anchor" aria-label="anchor" href="#arg-start-level"></a></dt>
-<dd><p>either <code>"none"</code> or a data frame giving the starting biomarker level for each individual, <code>biomarker_group</code>, and <code>biomarker_id</code> combination. With <code>"none"</code>, starting levels are assumed to be 0. See the <a href="ADVANCED_FEATURES_VIGNETTE_LINK">advanced features vignette</a>.</p></dd>
+<dd><p>either <code>"none"</code> or a data frame giving the starting biomarker level for each individual, <code>biomarker_group</code>, and <code>biomarker_id</code> combination. With <code>"none"</code>, starting levels are assumed to be 0. See the <a href="https://seroanalytics.github.io/serosolver/articles/advanced_features.html">advanced features vignette</a>.</p></dd>
 
 
 <dt id="arg-data-type">data_type<a class="anchor" aria-label="anchor" href="#arg-data-type"></a></dt>
@@ -210,7 +210,7 @@
 
 
 <dt id="arg-exponential-waning">exponential_waning<a class="anchor" aria-label="anchor" href="#arg-exponential-waning"></a></dt>
-<dd><p>Deprecated. If TRUE, assumes exponential waning of antibody levels rather than linear waning, and changes the cross-reactivity model from a linear decline with antigenic distance to an exponential decline. Prefer a fixed <code>exponential_waning</code> row in <code>par_tab</code>, with <code>values = 1</code> and <code>par_type = 0</code>. See the <a href="ADVANCED_FEATURES_VIGNETTE_LINK">advanced features vignette</a>.</p></dd>
+<dd><p>Deprecated. If TRUE, assumes exponential waning of antibody levels rather than linear waning, and changes the cross-reactivity model from a linear decline with antigenic distance to an exponential decline. Prefer a fixed <code>exponential_waning</code> row in <code>par_tab</code>, with <code>values = 1</code> and <code>par_type = 0</code>. See the <a href="https://seroanalytics.github.io/serosolver/articles/advanced_features.html">advanced features vignette</a>.</p></dd>
 
 
 <dt id="arg-plot-outputs">plot_outputs<a class="anchor" aria-label="anchor" href="#arg-plot-outputs"></a></dt>

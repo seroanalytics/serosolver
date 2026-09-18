@@ -1,0 +1,48 @@
+# Modified by AI assistant on 2026-09-18 using GPT-5: updated the citation to
+# cite the accompanying method paper and the current R package version.
+
+c(
+  bibentry(
+    bibtype = "Article",
+    title = "An open source tool to infer epidemiological and immunological dynamics from serological data: serosolver",
+    author = c(
+      person("James A.", "Hay"),
+      person("Amanda", "Minter"),
+      person("Kylie E. C.", "Ainslie"),
+      person("Justin", "Lessler"),
+      person("Bingyi", "Yang"),
+      person("Derek A. T.", "Cummings"),
+      person("Adam J.", "Kucharski"),
+      person("Steven", "Riley")
+    ),
+    journal = "PLoS Computational Biology",
+    year = 2020,
+    volume = 16,
+    number = 5,
+    pages = "e1007840",
+    doi = "10.1371/journal.pcbi.1007840",
+    url = "https://doi.org/10.1371/journal.pcbi.1007840",
+    textVersion = paste(
+      "Hay JA, Minter A, Ainslie KEC, Lessler J, Yang B, Cummings DAT,",
+      "Kucharski AJ, Riley S (2020).",
+      "An open source tool to infer epidemiological and immunological dynamics",
+      "from serological data: serosolver.",
+      "PLoS Computational Biology, 16(5), e1007840.",
+      "doi:10.1371/journal.pcbi.1007840."
+    )
+  ),
+  bibentry(
+    bibtype = "Manual",
+    title = "serosolver: Infection and antibody kinetics inference using serology",
+    author = c(
+      person("James", "Hay", email = "jameshay218@gmail.com"),
+      person("Adam", "Kucharski"),
+      person("Kylie", "Ainslie"),
+      person("Amanda", "Minter"),
+      person("Steven", "Riley")
+    ),
+    year = 2026,
+    note = "R package version 1.2.0",
+    url = "https://seroanalytics.github.io/serosolver/"
+  )
+)

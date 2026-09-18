@@ -17,7 +17,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">serosolver</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.2.0</span>
+        <span class="version label label-danger" data-toggle="tooltip" data-placement="bottom" title="Unreleased version">1.2.0</span>
       </span>
     </div>
 
@@ -136,7 +136,7 @@
 
 
 <dt id="arg-measurement-bias">measurement_bias<a class="anchor" aria-label="anchor" href="#arg-measurement-bias"></a></dt>
-<dd><p>if not NULL, then use these indices to specify which measurement bias parameter index corresponds to which time. See the [advanced features vignette](ADVANCED_FEATURES_VIGNETTE_LINK) for this optional workflow.</p></dd>
+<dd><p>if not NULL, then use these indices to specify which measurement bias parameter index corresponds to which time. See the [advanced features vignette](https://seroanalytics.github.io/serosolver/articles/advanced_features.html) for this optional workflow.</p></dd>
 
 
 <dt id="arg-n-alive">n_alive<a class="anchor" aria-label="anchor" href="#arg-n-alive"></a></dt>
@@ -160,7 +160,7 @@
 
 
 <dt id="arg-start-level">start_level<a class="anchor" aria-label="anchor" href="#arg-start-level"></a></dt>
-<dd><p>character, to tell the model how to treat initial antibody levels. This uses the observed data to either select starting values for each unique `individual`, `biomarker_id` and `biomarker_group` combination. See <code><a href="create_start_level_data.html">create_start_level_data</a></code>. One of "min", "max", "mean", "median", or "full_random". Any other entry assumes all antibody starting levels are set to 0. Can also pass a tibble or data frame of starting levels matching the output of <code><a href="create_start_level_data.html">create_start_level_data</a></code>. See the [advanced features vignette](ADVANCED_FEATURES_VIGNETTE_LINK) for this optional workflow.</p></dd>
+<dd><p>character, to tell the model how to treat initial antibody levels. This uses the observed data to either select starting values for each unique `individual`, `biomarker_id` and `biomarker_group` combination. See <code><a href="create_start_level_data.html">create_start_level_data</a></code>. One of "min", "max", "mean", "median", or "full_random". Any other entry assumes all antibody starting levels are set to 0. Can also pass a tibble or data frame of starting levels matching the output of <code><a href="create_start_level_data.html">create_start_level_data</a></code>. See the [advanced features vignette](https://seroanalytics.github.io/serosolver/articles/advanced_features.html) for this optional workflow.</p></dd>
 
 
 <dt id="arg-start-level-randomize">start_level_randomize<a class="anchor" aria-label="anchor" href="#arg-start-level-randomize"></a></dt>
@@ -168,7 +168,7 @@
 
 
 <dt id="arg-demographics">demographics<a class="anchor" aria-label="anchor" href="#arg-demographics"></a></dt>
-<dd><p>if not NULL, then a tibble for each individual (1:n_indiv) giving demographic variable entries. Most importantly must include "birth" as the birth time. This is used if, for example, you have a stratification grouping in `par_tab`. See the [demographics and covariates vignette](DEMOGRAPHICS_VIGNETTE_LINK) for this optional workflow.</p></dd>
+<dd><p>if not NULL, then a tibble for each individual (1:n_indiv) giving demographic variable entries. Most importantly must include "birth" as the birth time. This is used if, for example, you have a stratification grouping in `par_tab`. See the [demographics and covariates vignette](https://seroanalytics.github.io/serosolver/articles/demographics_covariates.html) for this optional workflow.</p></dd>
 
 
 <dt id="arg-demographic-groups">demographic_groups<a class="anchor" aria-label="anchor" href="#arg-demographic-groups"></a></dt>
@@ -176,7 +176,7 @@
 
 
 <dt id="arg-fixed-inf-hists">fixed_inf_hists<a class="anchor" aria-label="anchor" href="#arg-fixed-inf-hists"></a></dt>
-<dd><p>optional data frame with columns `individual`, `time`, and `value`, giving infection states that should be fixed during the MCMC run. See the [advanced features vignette](ADVANCED_FEATURES_VIGNETTE_LINK) for this optional workflow.</p></dd>
+<dd><p>optional data frame with columns `individual`, `time`, and `value`, giving infection states that should be fixed during the MCMC run. See the [advanced features vignette](https://seroanalytics.github.io/serosolver/articles/advanced_features.html) for this optional workflow.</p></dd>
 
 
 <dt id="arg-verbose">verbose<a class="anchor" aria-label="anchor" href="#arg-verbose"></a></dt>
@@ -184,7 +184,7 @@
 
 
 <dt id="arg-exponential-waning">exponential_waning<a class="anchor" aria-label="anchor" href="#arg-exponential-waning"></a></dt>
-<dd><p>Deprecated compatibility argument. The preferred setting is a fixed `exponential_waning` row in `par_tab`, with `values = 1` and `par_type = 0`. See the [advanced features vignette](ADVANCED_FEATURES_VIGNETTE_LINK).</p></dd>
+<dd><p>Deprecated compatibility argument. The preferred setting is a fixed `exponential_waning` row in `par_tab`, with `values = 1` and `par_type = 0`. See the [advanced features vignette](https://seroanalytics.github.io/serosolver/articles/advanced_features.html).</p></dd>
 
 
 <dt id="arg--">...<a class="anchor" aria-label="anchor" href="#arg--"></a></dt>

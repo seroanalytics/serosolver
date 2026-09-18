@@ -28,7 +28,7 @@ plot_estimated_antibody_model(
 
 \item{antibody_data}{the antibody data frame, with one row per measurement}
 
-\item{demographics}{optional data frame identifying the demographic group for each individual. This is used when model parameters are stratified by demographics. See the [demographic stratification and covariate vignette](DEMOGRAPHICS_VIGNETTE_LINK).}
+\item{demographics}{optional data frame identifying the demographic group for each individual. This is used when model parameters are stratified by demographics. See the [demographic stratification and covariate vignette](https://seroanalytics.github.io/serosolver/articles/demographics_covariates.html).}
 
 \item{antigenic_map}{(optional) a data frame of antigenic x and y coordinates. Must have column names: x_coord; y_coord; inf_times. The `inf_times` column identifies the circulation or exposure time represented by each map entry. See \code{\link{example_antigenic_map}}}
 
@@ -38,7 +38,7 @@ plot_estimated_antibody_model(
 
 \item{nsamp}{number of draws to take from the posterior}
 
-\item{measurement_bias}{default NULL, optional data frame mapping each `biomarker_id` and `biomarker_group` combination to the `rho_index` of the measurement-shift parameter that it uses. See the [advanced features vignette](ADVANCED_FEATURES_VIGNETTE_LINK).}
+\item{measurement_bias}{default NULL, optional data frame mapping each `biomarker_id` and `biomarker_group` combination to the `rho_index` of the measurement-shift parameter that it uses. See the [advanced features vignette](https://seroanalytics.github.io/serosolver/articles/advanced_features.html).}
 
 \item{solve_times}{vector of times to solve model over}
 

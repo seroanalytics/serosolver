@@ -7,14 +7,14 @@
 #' @param chain the full MCMC chain to generate antibody level trajectories from, usually `chains$theta_chain`
 #' @param infection_histories the MCMC chain for infection histories, usually `chains$inf_chain`
 #' @param antibody_data the antibody data frame, with one row per measurement
-#' @param demographics optional data frame identifying the demographic group for each individual. This is used when model parameters are stratified by demographics. See the [demographic stratification and covariate vignette](DEMOGRAPHICS_VIGNETTE_LINK).
+#' @param demographics optional data frame identifying the demographic group for each individual. This is used when model parameters are stratified by demographics. See the [demographic stratification and covariate vignette](https://seroanalytics.github.io/serosolver/articles/demographics_covariates.html).
 #' @param individuals the subset of individual IDs to generate credible intervals for
 #' @param antigenic_map (optional) a data frame of antigenic x and y coordinates. Must have column names: x_coord; y_coord; inf_times. The `inf_times` column identifies the circulation or exposure time represented by each map entry. See \code{\link{example_antigenic_map}}
 #' @param possible_exposure_times (optional) if no antigenic map is specified, this argument gives the vector of times at which individuals can be infected
 #' @param par_tab the model control table specifying the parameters in the MCMC chain
 #' @param nsamp number of draws to take from the posterior
 #' @param add_residuals if true, returns an extra output summarising residuals between the model prediction and data
-#' @param measurement_bias default NULL, optional data frame mapping each `biomarker_id` and `biomarker_group` combination to the `rho_index` of the measurement-shift parameter that it uses. See the [advanced features vignette](ADVANCED_FEATURES_VIGNETTE_LINK).
+#' @param measurement_bias default NULL, optional data frame mapping each `biomarker_id` and `biomarker_group` combination to the `rho_index` of the measurement-shift parameter that it uses. See the [advanced features vignette](https://seroanalytics.github.io/serosolver/articles/advanced_features.html).
 #' @param for_res_plot TRUE/FALSE value. If using the output of this for plotting of residuals, returns the actual data points rather than summary statistics
 #' @param expand_antibody_data TRUE/FALSE value. If TRUE, solves antibody level predictions for every observed biomarker ID at every sample time in the study period. If FALSE, only the biomarker IDs and sample times present in antibody_data are used.
 #' @param expand_to_all_times TRUE/FALSE value. If TRUE, uses all possible exposure times as sample times when expanding the prediction data. If FALSE, only the sample times represented in antibody_data are used.
@@ -22,7 +22,7 @@
 #' @param antibody_level_before_infection TRUE/FALSE value. If TRUE, solves antibody level predictions, but gives the predicted antibody level at a given time point BEFORE any infection during that time occurs.
 #' @param for_regression if TRUE, returns posterior draws rather than posterior summaries
 #' @param data_type numeric or text value: `1` or `"discrete"` for discrete, bounded data; `2` or `"continuous"` for continuous, bounded data; or `3` or `"false_positive"` for continuous data with the false-positive observation model. Supply one value per biomarker group, or one value to use for all groups. For bounded data, the limits are given by `min_measurement` and `max_measurement` in par_tab.
-#' @param start_level `"none"` or a starting-level summary or data frame. A starting level is the antibody level assigned before the modelled infection history begins. With `"none"`, starting levels are set to zero. See the [advanced features vignette](ADVANCED_FEATURES_VIGNETTE_LINK).
+#' @param start_level `"none"` or a starting-level summary or data frame. A starting level is the antibody level assigned before the modelled infection history begins. With `"none"`, starting levels are set to zero. See the [advanced features vignette](https://seroanalytics.github.io/serosolver/articles/advanced_features.html).
 #' @param exponential_waning Deprecated compatibility argument. The preferred setting is a fixed `exponential_waning` row in `par_tab`, with `values = 1` and `par_type = 0`.
 #' @return a list with the antibody level predictions (95% credible intervals, median and multivariate posterior mode) and the probabilities of infection for each individual in each epoch
 #' @examples

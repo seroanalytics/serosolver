@@ -20,7 +20,7 @@ library(tidyverse)
 ```
 # serosolver
 
-<img src="figure/logo.png" align="right" width="250" alt="serosolver logo">
+<img src="logo.png" align="right" width="250" alt="serosolver logo">
 
 [![Project Status: Active – The project has reached a stable, usable state and is being actively developed.](https://www.repostatus.org/badges/latest/active.svg)](https://www.repostatus.org/#active)
 

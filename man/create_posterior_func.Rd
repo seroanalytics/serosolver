@@ -43,7 +43,7 @@ create_posterior_func(
 
 \item{age_mask}{see \code{\link{create_age_mask}} - a vector with one entry for each individual specifying the first epoch of circulation in which an individual could have been exposed}
 
-\item{measurement_bias}{if not NULL, then use these indices to specify which measurement bias parameter index corresponds to which time. See the [advanced features vignette](ADVANCED_FEATURES_VIGNETTE_LINK) for this optional workflow.}
+\item{measurement_bias}{if not NULL, then use these indices to specify which measurement bias parameter index corresponds to which time. See the [advanced features vignette](https://seroanalytics.github.io/serosolver/articles/advanced_features.html) for this optional workflow.}
 
 \item{n_alive}{if not NULL, uses this as the number alive in a given year rather than calculating from the ages. This is needed if the number of alive individuals is known, but individual birth dates are not}
 
@@ -55,19 +55,19 @@ create_posterior_func(
 
 \item{biomarker_groups_weights}{integer or vector, giving a factor to multiply the log-likelihood contribution of this data type towards the overall likelihood.}
 
-\item{start_level}{character, to tell the model how to treat initial antibody levels. This uses the observed data to either select starting values for each unique `individual`, `biomarker_id` and `biomarker_group` combination. See \code{\link{create_start_level_data}}. One of "min", "max", "mean", "median", or "full_random". Any other entry assumes all antibody starting levels are set to 0. Can also pass a tibble or data frame of starting levels matching the output of \code{\link{create_start_level_data}}. See the [advanced features vignette](ADVANCED_FEATURES_VIGNETTE_LINK) for this optional workflow.}
+\item{start_level}{character, to tell the model how to treat initial antibody levels. This uses the observed data to either select starting values for each unique `individual`, `biomarker_id` and `biomarker_group` combination. See \code{\link{create_start_level_data}}. One of "min", "max", "mean", "median", or "full_random". Any other entry assumes all antibody starting levels are set to 0. Can also pass a tibble or data frame of starting levels matching the output of \code{\link{create_start_level_data}}. See the [advanced features vignette](https://seroanalytics.github.io/serosolver/articles/advanced_features.html) for this optional workflow.}
 
 \item{start_level_randomize}{if TRUE, and data is discretized, then sets the starting antibody level to a random value between floor(x) and floor(x) + 1. Does nothing if using continuous data.}
 
-\item{demographics}{if not NULL, then a tibble for each individual (1:n_indiv) giving demographic variable entries. Most importantly must include "birth" as the birth time. This is used if, for example, you have a stratification grouping in `par_tab`. See the [demographics and covariates vignette](DEMOGRAPHICS_VIGNETTE_LINK) for this optional workflow.}
+\item{demographics}{if not NULL, then a tibble for each individual (1:n_indiv) giving demographic variable entries. Most importantly must include "birth" as the birth time. This is used if, for example, you have a stratification grouping in `par_tab`. See the [demographics and covariates vignette](https://seroanalytics.github.io/serosolver/articles/demographics_covariates.html) for this optional workflow.}
 
 \item{demographic_groups}{optional data frame of demographic-group combinations. If NULL, these are created from `demographics` or `antibody_data` and `par_tab`.}
 
-\item{fixed_inf_hists}{optional data frame with columns `individual`, `time`, and `value`, giving infection states that should be fixed during the MCMC run. See the [advanced features vignette](ADVANCED_FEATURES_VIGNETTE_LINK) for this optional workflow.}
+\item{fixed_inf_hists}{optional data frame with columns `individual`, `time`, and `value`, giving infection states that should be fixed during the MCMC run. See the [advanced features vignette](https://seroanalytics.github.io/serosolver/articles/advanced_features.html) for this optional workflow.}
 
 \item{verbose}{if TRUE, prints warning messages}
 
-\item{exponential_waning}{Deprecated compatibility argument. The preferred setting is a fixed `exponential_waning` row in `par_tab`, with `values = 1` and `par_type = 0`. See the [advanced features vignette](ADVANCED_FEATURES_VIGNETTE_LINK).}
+\item{exponential_waning}{Deprecated compatibility argument. The preferred setting is a fixed `exponential_waning` row in `par_tab`, with `values = 1` and `par_type = 0`. See the [advanced features vignette](https://seroanalytics.github.io/serosolver/articles/advanced_features.html).}
 
 \item{...}{other arguments to pass to the posterior solving function}
 }

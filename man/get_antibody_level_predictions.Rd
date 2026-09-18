@@ -34,7 +34,7 @@ get_antibody_level_predictions(
 
 \item{antibody_data}{the antibody data frame, with one row per measurement}
 
-\item{demographics}{optional data frame identifying the demographic group for each individual. This is used when model parameters are stratified by demographics. See the [demographic stratification and covariate vignette](DEMOGRAPHICS_VIGNETTE_LINK).}
+\item{demographics}{optional data frame identifying the demographic group for each individual. This is used when model parameters are stratified by demographics. See the [demographic stratification and covariate vignette](https://seroanalytics.github.io/serosolver/articles/demographics_covariates.html).}
 
 \item{individuals}{the subset of individual IDs to generate credible intervals for}
 
@@ -48,7 +48,7 @@ get_antibody_level_predictions(
 
 \item{add_residuals}{if true, returns an extra output summarising residuals between the model prediction and data}
 
-\item{measurement_bias}{default NULL, optional data frame mapping each `biomarker_id` and `biomarker_group` combination to the `rho_index` of the measurement-shift parameter that it uses. See the [advanced features vignette](ADVANCED_FEATURES_VIGNETTE_LINK).}
+\item{measurement_bias}{default NULL, optional data frame mapping each `biomarker_id` and `biomarker_group` combination to the `rho_index` of the measurement-shift parameter that it uses. See the [advanced features vignette](https://seroanalytics.github.io/serosolver/articles/advanced_features.html).}
 
 \item{for_res_plot}{TRUE/FALSE value. If using the output of this for plotting of residuals, returns the actual data points rather than summary statistics}
 
@@ -64,7 +64,7 @@ get_antibody_level_predictions(
 
 \item{data_type}{numeric or text value: `1` or `"discrete"` for discrete, bounded data; `2` or `"continuous"` for continuous, bounded data; or `3` or `"false_positive"` for continuous data with the false-positive observation model. Supply one value per biomarker group, or one value to use for all groups. For bounded data, the limits are given by `min_measurement` and `max_measurement` in par_tab.}
 
-\item{start_level}{`"none"` or a starting-level summary or data frame. A starting level is the antibody level assigned before the modelled infection history begins. With `"none"`, starting levels are set to zero. See the [advanced features vignette](ADVANCED_FEATURES_VIGNETTE_LINK).}
+\item{start_level}{`"none"` or a starting-level summary or data frame. A starting level is the antibody level assigned before the modelled infection history begins. With `"none"`, starting levels are set to zero. See the [advanced features vignette](https://seroanalytics.github.io/serosolver/articles/advanced_features.html).}
 
 \item{exponential_waning}{Deprecated compatibility argument. The preferred setting is a fixed `exponential_waning` row in `par_tab`, with `values = 1` and `par_type = 0`.}
 }

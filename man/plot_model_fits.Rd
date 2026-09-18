@@ -36,7 +36,7 @@ plot_model_fits(
 
 \item{antibody_data}{the antibody data frame, with one row per measurement}
 
-\item{demographics}{optional data frame identifying the demographic group for each individual. This is used when model parameters are stratified by demographics. See the [demographic stratification and covariate vignette](DEMOGRAPHICS_VIGNETTE_LINK).}
+\item{demographics}{optional data frame identifying the demographic group for each individual. This is used when model parameters are stratified by demographics. See the [demographic stratification and covariate vignette](https://seroanalytics.github.io/serosolver/articles/demographics_covariates.html).}
 
 \item{individuals}{the subset of individual IDs to generate credible intervals for}
 
@@ -50,7 +50,7 @@ plot_model_fits(
 
 \item{known_infection_history}{n-by-m matrix of known infection histories, with one row for each individual and one column for each possible exposure time. Use 1 for a known infection and 0 otherwise.}
 
-\item{measurement_bias}{default NULL, optional data frame mapping each `biomarker_id` and `biomarker_group` combination to the `rho_index` of the measurement-shift parameter that it uses. See the [advanced features vignette](ADVANCED_FEATURES_VIGNETTE_LINK).}
+\item{measurement_bias}{default NULL, optional data frame mapping each `biomarker_id` and `biomarker_group` combination to the `rho_index` of the measurement-shift parameter that it uses. See the [advanced features vignette](https://seroanalytics.github.io/serosolver/articles/advanced_features.html).}
 
 \item{p_ncol}{integer giving the number of columns of subplots to create if using orientation = "longitudinal"}
 
@@ -66,7 +66,7 @@ plot_model_fits(
 
 \item{subset_biomarker_groups}{if not NULL, then a vector giving the biomarker groups to include in the plot}
 
-\item{start_level}{`"none"` or a starting-level summary or data frame. A starting level is the antibody level assigned before the modelled infection history begins. With `"none"`, starting levels are set to zero. See the [advanced features vignette](ADVANCED_FEATURES_VIGNETTE_LINK).}
+\item{start_level}{`"none"` or a starting-level summary or data frame. A starting level is the antibody level assigned before the modelled infection history begins. With `"none"`, starting levels are set to zero. See the [advanced features vignette](https://seroanalytics.github.io/serosolver/articles/advanced_features.html).}
 
 \item{settings}{if not NULL, list of serosolver settings as returned from the main serosolver function, such as `res$settings`}
 

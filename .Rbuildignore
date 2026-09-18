@@ -3,6 +3,9 @@
 ^codemeta\.json$
 ^README\.Rmd$
 ^for_gpt$
+^docs$
+^_config\.yml$
+^outputs$
 
 # Local build and check artefacts
 ^\.git$
