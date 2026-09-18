@@ -103,7 +103,7 @@ plot_antibody_model <- function(pars,
 
 #' Plots infection histories and antibody model
 #'
-#' Given outputs from an MCMC run and the data used for fitting, generates an NxM matrix of plots where N is the number of individuals to be plotted and M is the range of sampling times. Where data are available, plots the observed antibody measurements and model predicted trajectories. In the longitudinal orientation, places biomarker\_id on the x-axis and facets by sample time and individual.
+#' Given outputs from an MCMC run and the data used for fitting, generates an NxM matrix of plots where N is the number of individuals to be plotted and M is the range of sampling times. Where data are available, plots the observed antibody measurements and model predicted trajectories. In the longitudinal orientation, places \code{biomarker_id} on the x-axis and facets by sample time and individual.
 #' @inheritParams get_antibody_level_predictions
 #' @param known_infection_history n-by-m matrix of known infection histories, with one row for each individual and one column for each possible exposure time. Use 1 for a known infection and 0 otherwise.
 #' @param p_ncol integer giving the number of columns of subplots to create if using orientation = "longitudinal"

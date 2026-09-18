@@ -78,7 +78,7 @@ plot_model_fits(
 a list of ggplot2 objects
 }
 \description{
-Given outputs from an MCMC run and the data used for fitting, generates an NxM matrix of plots where N is the number of individuals to be plotted and M is the range of sampling times. Where data are available, plots the observed antibody measurements and model predicted trajectories. In the longitudinal orientation, places biomarker\_id on the x-axis and facets by sample time and individual.
+Given outputs from an MCMC run and the data used for fitting, generates an NxM matrix of plots where N is the number of individuals to be plotted and M is the range of sampling times. Where data are available, plots the observed antibody measurements and model predicted trajectories. In the longitudinal orientation, places \code{biomarker_id} on the x-axis and facets by sample time and individual.
 }
 \examples{
 \dontrun{

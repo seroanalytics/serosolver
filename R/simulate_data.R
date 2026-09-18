@@ -454,7 +454,7 @@ simulate_infection_histories <- function(p_inf, possible_exposure_times=1:ncol(p
 #' @return A data frame with `sample_times`, `biomarker_ids`, and `antibody_level` columns.
 #' @examples
 #' data(example_antigenic_map)
-#' simulate_antibody_model(c("boost_long"=2,"boost_short"=3,"boost_delay"=1,"wane_short"=0.2,"wane_long"=0.01, "antigenic_seniority"=0,"cr_long"=0.1,"cr_short"=0.03), times=seq(1,25,by=1),infection_history=NULL,antigenic_map=example_antigenic_map)
+#' simulate_antibody_model(c("boost_long"=2,"boost_short"=3,"boost_delay"=1,"wane_short"=0.2,"wane_long"=0.01, "antigenic_seniority"=0,"cr_long"=0.1,"cr_short"=0.03), times=example_antigenic_map$inf_times,infection_history=NULL,antigenic_map=example_antigenic_map)
 #'  
 #' @export
 simulate_antibody_model <- function(pars, 
