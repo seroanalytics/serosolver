@@ -234,7 +234,7 @@ prior_mcmc_pars <- c(
   adaptive_iterations = 20000,
   iterations = 50000,
   thin = 10,
-  thin_inf_hist = 100,
+  thin_inf_hist = 500,
   save_block = 1000
 )
 dir.create(prior_dir, recursive = TRUE, showWarnings = FALSE)
@@ -585,7 +585,7 @@ sim_mcmc_pars <- c(
   adaptive_iterations = 10000,
   iterations = 20000,
   thin = 10,
-  thin_inf_hist = 100,
+  thin_inf_hist = 200,
   save_block = 1000
 )
 

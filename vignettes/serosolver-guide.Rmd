@@ -46,6 +46,7 @@ if (dir.exists(source_mcmc_dir)) {
 } else {
   mcmc_dir <- system.file("extdata", "guide", package = "serosolver")
 }
+dir.create(mcmc_dir, recursive = TRUE, showWarnings = FALSE)
 mcmc_file <- file.path(mcmc_dir, "guide")
 ```
 
@@ -115,8 +116,8 @@ true_inf_hist <- all_simulated_data$infection_histories
 plot_antibody_data(antibody_data,possible_exposure_times,1:4,infection_histories = true_inf_hist)
 
 ## MCMC settings used by the executable example
-mcmc_pars <- c(adaptive_iterations=200000, iterations=100000,
-               thin=10, thin_inf_hist=1000, save_block=1000)
+mcmc_pars <- c(adaptive_iterations=100000, iterations=200000,
+               thin=10, thin_inf_hist=2000, save_block=1000)
 ```
 
 ```{r fit_model_call, eval=FALSE}
@@ -626,7 +627,7 @@ Users should modify the `mcmc_pars` argument to make adjustments for run time, c
 mcmc_pars <- c("iterations"=50000,"target_acceptance_rate_theta"=0.44,"target_acceptance_rate_inf_hist"=0.44,
               "adaptive_frequency"=1000,"thin"=1,
               "adaptive_iterations"=10000, "save_block"=1000,
-              "thin_inf_hist"=10, "proposal_inf_hist_indiv_prop"=0.5,
+              "thin_inf_hist"=100, "proposal_inf_hist_indiv_prop"=0.5,
               "proposal_ratio"=2, "proposal_inf_hist_time_prop"=0.5,
               "proposal_inf_hist_distance"=5, "proposal_inf_hist_adaptive"=0,
               "proposal_inf_hist_indiv_swap_ratio"=0.5,"proposal_inf_hist_group_swap_ratio"=0.5,
@@ -636,6 +637,8 @@ res <- serosolver(par_tab = start_tab, titre_dat = titre_dat, antigenic_map = an
 ```
 
 MCMC output is written to files automatically. The `filename` argument provides the prefix of the file names; `_chain.csv` and `_infection_histories.csv` are appended for the parameter and infection-history chain files. When multiple chains are run in parallel, progress messages are written to a matching `_log.txt` file in the same directory. A settings file is also saved alongside the chains to easily read back in all of the model inputs and settings.
+
+The vignette uses saved chain output when it is available, so normal builds do not rerun the MCMC. If the saved output is absent, knitting the complete guide runs the model and may take several minutes.
 
 To read the saved chains and `serosolver_settings` back into R, point `load_mcmc_chains()` to the directory containing the files:
 
