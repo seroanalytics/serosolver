@@ -17,7 +17,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">serosolver</a>
-        <span class="version label label-danger" data-toggle="tooltip" data-placement="bottom" title="Unreleased version">1.2.0</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">1.2.0</span>
       </span>
     </div>
 
@@ -204,23 +204,24 @@
 
     <div id="ref-examples">
     <h2>Examples</h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">example_par_tab</span><span class="op">)</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">example_antigenic_map</span><span class="op">)</span></span>
-<span></span>
-<span><span class="co">## Times at which individuals can be infected</span></span>
-<span><span class="va">possible_exposure_times</span> <span class="op">&lt;-</span> <span class="va">example_antigenic_map</span><span class="op">$</span><span class="va">inf_times</span></span>
-<span><span class="co">## Simulate some random attack rates between 0 and 0.2</span></span>
-<span><span class="va">attack_rates</span> <span class="op">&lt;-</span> <span class="fu"><a href="simulate_attack_rates.html">simulate_attack_rates</a></span><span class="op">(</span><span class="va">possible_exposure_times</span>,</span>
-<span>                                      mean_par <span class="op">=</span> <span class="fl">0.1</span><span class="op">)</span></span>
-<span><span class="co">## Vector giving the circulation times of measured antigens</span></span>
-<span><span class="va">sampled_antigens</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/seq.html" class="external-link">seq</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/Extremes.html" class="external-link">min</a></span><span class="op">(</span><span class="va">possible_exposure_times</span><span class="op">)</span>, <span class="fu"><a href="https://rdrr.io/r/base/Extremes.html" class="external-link">max</a></span><span class="op">(</span><span class="va">possible_exposure_times</span><span class="op">)</span>, by<span class="op">=</span><span class="fl">2</span><span class="op">)</span></span>
-<span><span class="va">all_simulated_data</span> <span class="op">&lt;-</span> <span class="fu">simulate_data</span><span class="op">(</span>par_tab<span class="op">=</span><span class="va">example_par_tab</span>, group<span class="op">=</span><span class="fl">1</span>, n_indiv<span class="op">=</span><span class="fl">50</span>,    </span>
-<span>                                   possible_exposure_times<span class="op">=</span><span class="va">possible_exposure_times</span>,</span>
-<span>                                   measured_biomarker_ids<span class="op">=</span><span class="va">sampled_antigens</span>,</span>
-<span>                                   sampling_times<span class="op">=</span><span class="fl">2010</span><span class="op">:</span><span class="fl">2015</span>, nsamps<span class="op">=</span><span class="fl">2</span>, antigenic_map<span class="op">=</span><span class="va">example_antigenic_map</span>, </span>
-<span>                                   age_min<span class="op">=</span><span class="fl">10</span>,age_max<span class="op">=</span><span class="fl">75</span>,</span>
-<span>                                   attack_rates<span class="op">=</span><span class="va">attack_rates</span>, repeats<span class="op">=</span><span class="fl">2</span><span class="op">)</span></span>
-<span><span class="va">antibody_data</span> <span class="op">&lt;-</span> <span class="va">all_simulated_data</span><span class="op">$</span><span class="va">antibody_data</span></span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">example_par_tab</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">example_antigenic_map</span><span class="op">)</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co">## Times at which individuals can be infected</span></span></span>
+<span class="r-in"><span><span class="va">possible_exposure_times</span> <span class="op">&lt;-</span> <span class="va">example_antigenic_map</span><span class="op">$</span><span class="va">inf_times</span></span></span>
+<span class="r-in"><span><span class="co">## Simulate some random attack rates between 0 and 0.2</span></span></span>
+<span class="r-in"><span><span class="va">attack_rates</span> <span class="op">&lt;-</span> <span class="fu"><a href="simulate_attack_rates.html">simulate_attack_rates</a></span><span class="op">(</span><span class="va">possible_exposure_times</span>,</span></span>
+<span class="r-in"><span>                                      mean_par <span class="op">=</span> <span class="fl">0.1</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="co">## Vector giving the circulation times of measured antigens</span></span></span>
+<span class="r-in"><span><span class="va">sampled_antigens</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/seq.html" class="external-link">seq</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/Extremes.html" class="external-link">min</a></span><span class="op">(</span><span class="va">possible_exposure_times</span><span class="op">)</span>, <span class="fu"><a href="https://rdrr.io/r/base/Extremes.html" class="external-link">max</a></span><span class="op">(</span><span class="va">possible_exposure_times</span><span class="op">)</span>, by<span class="op">=</span><span class="fl">2</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">all_simulated_data</span> <span class="op">&lt;-</span> <span class="fu">simulate_data</span><span class="op">(</span>par_tab<span class="op">=</span><span class="va">example_par_tab</span>, group<span class="op">=</span><span class="fl">1</span>, n_indiv<span class="op">=</span><span class="fl">50</span>,    </span></span>
+<span class="r-in"><span>                                   possible_exposure_times<span class="op">=</span><span class="va">possible_exposure_times</span>,</span></span>
+<span class="r-in"><span>                                   measured_biomarker_ids<span class="op">=</span><span class="va">sampled_antigens</span>,</span></span>
+<span class="r-in"><span>                                   sampling_times<span class="op">=</span><span class="fl">2010</span><span class="op">:</span><span class="fl">2015</span>, nsamps<span class="op">=</span><span class="fl">2</span>, antigenic_map<span class="op">=</span><span class="va">example_antigenic_map</span>, </span></span>
+<span class="r-in"><span>                                   age_min<span class="op">=</span><span class="fl">10</span>,age_max<span class="op">=</span><span class="fl">75</span>,</span></span>
+<span class="r-in"><span>                                   attack_rates<span class="op">=</span><span class="va">attack_rates</span>, repeats<span class="op">=</span><span class="fl">2</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">antibody_data</span> <span class="op">&lt;-</span> <span class="va">all_simulated_data</span><span class="op">$</span><span class="va">antibody_data</span></span></span>
+</code></pre></div>
     </div>
   </div>
   <div class="col-md-3 hidden-xs hidden-sm" id="pkgdown-sidebar">

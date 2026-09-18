@@ -17,7 +17,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">serosolver</a>
-        <span class="version label label-danger" data-toggle="tooltip" data-placement="bottom" title="Unreleased version">1.2.0</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">1.2.0</span>
       </span>
     </div>
 
@@ -108,29 +108,30 @@
 
     <div id="ref-examples">
     <h2>Examples</h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="kw">if</span> <span class="op">(</span><span class="cn">FALSE</span><span class="op">)</span> <span class="op">{</span> <span class="co"># \dontrun{</span></span>
-<span><span class="co">## Use the minimum of the earliest measurements for each individual and biomarker.</span></span>
-<span><span class="co">## For discrete data, the TRUE calls below randomize the result between its</span></span>
-<span><span class="co">## floor and floor + 1; the FALSE calls retain the summary value.</span></span>
-<span><span class="fu">create_start_level_data</span><span class="op">(</span><span class="va">example_antibody_data</span>,<span class="st">"min"</span>,<span class="cn">FALSE</span><span class="op">)</span></span>
-<span><span class="fu">create_start_level_data</span><span class="op">(</span><span class="va">example_antibody_data</span>,<span class="st">"min"</span>,<span class="cn">TRUE</span><span class="op">)</span></span>
-<span><span class="co">## Use the maximum of the earliest measurements.</span></span>
-<span><span class="fu">create_start_level_data</span><span class="op">(</span><span class="va">example_antibody_data</span>,<span class="st">"max"</span>,<span class="cn">FALSE</span><span class="op">)</span></span>
-<span><span class="fu">create_start_level_data</span><span class="op">(</span><span class="va">example_antibody_data</span>,<span class="st">"max"</span>,<span class="cn">TRUE</span><span class="op">)</span></span>
-<span><span class="co">## Use the mean of the earliest measurements.</span></span>
-<span><span class="fu">create_start_level_data</span><span class="op">(</span><span class="va">example_antibody_data</span>,<span class="st">"mean"</span>,<span class="cn">FALSE</span><span class="op">)</span></span>
-<span><span class="fu">create_start_level_data</span><span class="op">(</span><span class="va">example_antibody_data</span>,<span class="st">"mean"</span>,<span class="cn">TRUE</span><span class="op">)</span></span>
-<span><span class="co">## Use the median of the earliest measurements.</span></span>
-<span><span class="fu">create_start_level_data</span><span class="op">(</span><span class="va">example_antibody_data</span>,<span class="st">"median"</span>,<span class="cn">FALSE</span><span class="op">)</span></span>
-<span><span class="fu">create_start_level_data</span><span class="op">(</span><span class="va">example_antibody_data</span>,<span class="st">"median"</span>,<span class="cn">TRUE</span><span class="op">)</span></span>
-<span><span class="co">## An unrecognised summary sets starting levels to zero.</span></span>
-<span><span class="fu">create_start_level_data</span><span class="op">(</span><span class="va">example_antibody_data</span>,<span class="st">"other"</span>,<span class="cn">FALSE</span><span class="op">)</span></span>
-<span><span class="fu">create_start_level_data</span><span class="op">(</span><span class="va">example_antibody_data</span>,<span class="st">"other"</span>,<span class="cn">TRUE</span><span class="op">)</span></span>
-<span><span class="co">## Draw starting levels uniformly between the observed minimum and maximum</span></span>
-<span><span class="co">## for each biomarker group.</span></span>
-<span><span class="fu">create_start_level_data</span><span class="op">(</span><span class="va">example_antibody_data</span>,<span class="st">"full_random"</span>,<span class="cn">FALSE</span><span class="op">)</span></span>
-<span><span class="fu">create_start_level_data</span><span class="op">(</span><span class="va">example_antibody_data</span>,<span class="st">"full_random"</span>,<span class="cn">TRUE</span><span class="op">)</span></span>
-<span><span class="op">}</span> <span class="co"># }</span></span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="kw">if</span> <span class="op">(</span><span class="cn">FALSE</span><span class="op">)</span> <span class="op">{</span> <span class="co"># \dontrun{</span></span></span>
+<span class="r-in"><span><span class="co">## Use the minimum of the earliest measurements for each individual and biomarker.</span></span></span>
+<span class="r-in"><span><span class="co">## For discrete data, the TRUE calls below randomize the result between its</span></span></span>
+<span class="r-in"><span><span class="co">## floor and floor + 1; the FALSE calls retain the summary value.</span></span></span>
+<span class="r-in"><span><span class="fu">create_start_level_data</span><span class="op">(</span><span class="va">example_antibody_data</span>,<span class="st">"min"</span>,<span class="cn">FALSE</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu">create_start_level_data</span><span class="op">(</span><span class="va">example_antibody_data</span>,<span class="st">"min"</span>,<span class="cn">TRUE</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="co">## Use the maximum of the earliest measurements.</span></span></span>
+<span class="r-in"><span><span class="fu">create_start_level_data</span><span class="op">(</span><span class="va">example_antibody_data</span>,<span class="st">"max"</span>,<span class="cn">FALSE</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu">create_start_level_data</span><span class="op">(</span><span class="va">example_antibody_data</span>,<span class="st">"max"</span>,<span class="cn">TRUE</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="co">## Use the mean of the earliest measurements.</span></span></span>
+<span class="r-in"><span><span class="fu">create_start_level_data</span><span class="op">(</span><span class="va">example_antibody_data</span>,<span class="st">"mean"</span>,<span class="cn">FALSE</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu">create_start_level_data</span><span class="op">(</span><span class="va">example_antibody_data</span>,<span class="st">"mean"</span>,<span class="cn">TRUE</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="co">## Use the median of the earliest measurements.</span></span></span>
+<span class="r-in"><span><span class="fu">create_start_level_data</span><span class="op">(</span><span class="va">example_antibody_data</span>,<span class="st">"median"</span>,<span class="cn">FALSE</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu">create_start_level_data</span><span class="op">(</span><span class="va">example_antibody_data</span>,<span class="st">"median"</span>,<span class="cn">TRUE</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="co">## An unrecognised summary sets starting levels to zero.</span></span></span>
+<span class="r-in"><span><span class="fu">create_start_level_data</span><span class="op">(</span><span class="va">example_antibody_data</span>,<span class="st">"other"</span>,<span class="cn">FALSE</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu">create_start_level_data</span><span class="op">(</span><span class="va">example_antibody_data</span>,<span class="st">"other"</span>,<span class="cn">TRUE</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="co">## Draw starting levels uniformly between the observed minimum and maximum</span></span></span>
+<span class="r-in"><span><span class="co">## for each biomarker group.</span></span></span>
+<span class="r-in"><span><span class="fu">create_start_level_data</span><span class="op">(</span><span class="va">example_antibody_data</span>,<span class="st">"full_random"</span>,<span class="cn">FALSE</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu">create_start_level_data</span><span class="op">(</span><span class="va">example_antibody_data</span>,<span class="st">"full_random"</span>,<span class="cn">TRUE</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="op">}</span> <span class="co"># }</span></span></span>
+</code></pre></div>
     </div>
   </div>
   <div class="col-md-3 hidden-xs hidden-sm" id="pkgdown-sidebar">

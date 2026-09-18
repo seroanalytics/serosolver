@@ -17,7 +17,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">serosolver</a>
-        <span class="version label label-danger" data-toggle="tooltip" data-placement="bottom" title="Unreleased version">1.2.0</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">1.2.0</span>
       </span>
     </div>
 
@@ -121,7 +121,14 @@ simulated antibody kinetics for each biomarker ID, stratified by sample time.</p
 
     <div id="ref-examples">
     <h2>Examples</h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">plot_antibody_model</span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"boost_long"</span><span class="op">=</span><span class="fl">2</span>,<span class="st">"boost_short"</span><span class="op">=</span><span class="fl">3</span>,<span class="st">"boost_delay"</span><span class="op">=</span><span class="fl">1</span>,<span class="st">"wane_short"</span><span class="op">=</span><span class="fl">0.2</span>,<span class="st">"wane_long"</span><span class="op">=</span><span class="fl">0.01</span>, <span class="st">"antigenic_seniority"</span><span class="op">=</span><span class="fl">0</span>,<span class="st">"cr_long"</span><span class="op">=</span><span class="fl">0.1</span>,<span class="st">"cr_short"</span><span class="op">=</span><span class="fl">0.03</span><span class="op">)</span>, times<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/seq.html" class="external-link">seq</a></span><span class="op">(</span><span class="fl">2000</span>,<span class="fl">2015</span>,by<span class="op">=</span><span class="fl">1</span><span class="op">)</span>,infection_history<span class="op">=</span><span class="cn">NULL</span>,antigenic_map<span class="op">=</span><span class="va">example_antigenic_map</span><span class="op">)</span></span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="fu">plot_antibody_model</span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"boost_long"</span><span class="op">=</span><span class="fl">2</span>,<span class="st">"boost_short"</span><span class="op">=</span><span class="fl">3</span>,<span class="st">"boost_delay"</span><span class="op">=</span><span class="fl">1</span>,<span class="st">"wane_short"</span><span class="op">=</span><span class="fl">0.2</span>,<span class="st">"wane_long"</span><span class="op">=</span><span class="fl">0.01</span>, <span class="st">"antigenic_seniority"</span><span class="op">=</span><span class="fl">0</span>,<span class="st">"cr_long"</span><span class="op">=</span><span class="fl">0.1</span>,<span class="st">"cr_short"</span><span class="op">=</span><span class="fl">0.03</span><span class="op">)</span>, times<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/seq.html" class="external-link">seq</a></span><span class="op">(</span><span class="fl">2000</span>,<span class="fl">2015</span>,by<span class="op">=</span><span class="fl">1</span><span class="op">)</span>,infection_history<span class="op">=</span><span class="cn">NULL</span>,antigenic_map<span class="op">=</span><span class="va">example_antigenic_map</span><span class="op">)</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [[1]]</span>
+<span class="r-plt img"><img src="plot_antibody_model-1.png" alt="" width="700" height="433"></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [[2]]</span>
+<span class="r-plt img"><img src="plot_antibody_model-2.png" alt="" width="700" height="433"></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+</code></pre></div>
     </div>
   </div>
   <div class="col-md-3 hidden-xs hidden-sm" id="pkgdown-sidebar">

@@ -17,7 +17,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">serosolver</a>
-        <span class="version label label-danger" data-toggle="tooltip" data-placement="bottom" title="Unreleased version">1.2.0</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">1.2.0</span>
       </span>
     </div>
 
@@ -152,30 +152,31 @@
 
     <div id="ref-examples">
     <h2>Examples</h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">example_inf_chain</span><span class="op">)</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">example_antigenic_map</span><span class="op">)</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">example_antibody_data</span><span class="op">)</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">example_inf_hist</span><span class="op">)</span></span>
-<span><span class="va">example_antibody_data</span><span class="op">$</span><span class="va">population_group</span> <span class="op">&lt;-</span> <span class="fl">1</span></span>
-<span><span class="va">possible_exposure_times</span> <span class="op">&lt;-</span> <span class="va">example_antigenic_map</span><span class="op">$</span><span class="va">inf_times</span></span>
-<span><span class="co">## Find number alive in each time period</span></span>
-<span><span class="va">n_alive</span> <span class="op">&lt;-</span> <span class="fu"><a href="get_n_alive.html">get_n_alive</a></span><span class="op">(</span><span class="va">example_antibody_data</span>, <span class="va">possible_exposure_times</span><span class="op">)</span></span>
-<span><span class="co">## Get actual number of infections per time</span></span>
-<span><span class="va">n_infs</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/colSums.html" class="external-link">colSums</a></span><span class="op">(</span><span class="va">example_inf_hist</span><span class="op">)</span></span>
-<span><span class="co">## Create data frame of true ARs</span></span>
-<span><span class="va">known_ar</span> <span class="op">&lt;-</span> <span class="va">n_infs</span><span class="op">/</span><span class="va">n_alive</span></span>
-<span><span class="va">known_ar</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span><span class="st">"j"</span><span class="op">=</span><span class="va">possible_exposure_times</span>,<span class="st">"AR"</span><span class="op">=</span><span class="va">known_ar</span>,<span class="st">"population_group"</span><span class="op">=</span><span class="fl">1</span><span class="op">)</span></span>
-<span><span class="co">## Get true infection histories</span></span>
-<span><span class="va">known_inf_hist</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span><span class="va">example_inf_hist</span><span class="op">)</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/colnames.html" class="external-link">colnames</a></span><span class="op">(</span><span class="va">known_inf_hist</span><span class="op">)</span> <span class="op">&lt;-</span> <span class="va">possible_exposure_times</span></span>
-<span></span>
-<span><span class="co">## Need to get population_group specific n_alive and adjust to correct time frame </span></span>
-<span><span class="va">n_alive_group</span> <span class="op">&lt;-</span> <span class="fu"><a href="get_n_alive_group.html">get_n_alive_group</a></span><span class="op">(</span><span class="va">example_antibody_data</span>, <span class="va">possible_exposure_times</span>,melt_data <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
-<span><span class="va">n_alive_group</span><span class="op">$</span><span class="va">j</span> <span class="op">&lt;-</span> <span class="va">possible_exposure_times</span><span class="op">[</span><span class="va">n_alive_group</span><span class="op">$</span><span class="va">j</span><span class="op">]</span></span>
-<span><span class="va">results</span> <span class="op">&lt;-</span> <span class="fu">calculate_infection_history_statistics</span><span class="op">(</span><span class="va">example_inf_chain</span>, <span class="fl">0</span>, <span class="va">possible_exposure_times</span>,</span>
-<span>                                                  n_alive<span class="op">=</span><span class="va">n_alive_group</span>, known_ar<span class="op">=</span><span class="va">known_ar</span>,</span>
-<span>                                                  known_infection_history<span class="op">=</span><span class="va">known_inf_hist</span>,</span>
-<span>                                                  pad_chain<span class="op">=</span><span class="cn">TRUE</span><span class="op">)</span></span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">example_inf_chain</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">example_antigenic_map</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">example_antibody_data</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">example_inf_hist</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">example_antibody_data</span><span class="op">$</span><span class="va">population_group</span> <span class="op">&lt;-</span> <span class="fl">1</span></span></span>
+<span class="r-in"><span><span class="va">possible_exposure_times</span> <span class="op">&lt;-</span> <span class="va">example_antigenic_map</span><span class="op">$</span><span class="va">inf_times</span></span></span>
+<span class="r-in"><span><span class="co">## Find number alive in each time period</span></span></span>
+<span class="r-in"><span><span class="va">n_alive</span> <span class="op">&lt;-</span> <span class="fu"><a href="get_n_alive.html">get_n_alive</a></span><span class="op">(</span><span class="va">example_antibody_data</span>, <span class="va">possible_exposure_times</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="co">## Get actual number of infections per time</span></span></span>
+<span class="r-in"><span><span class="va">n_infs</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/colSums.html" class="external-link">colSums</a></span><span class="op">(</span><span class="va">example_inf_hist</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="co">## Create data frame of true ARs</span></span></span>
+<span class="r-in"><span><span class="va">known_ar</span> <span class="op">&lt;-</span> <span class="va">n_infs</span><span class="op">/</span><span class="va">n_alive</span></span></span>
+<span class="r-in"><span><span class="va">known_ar</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span><span class="st">"j"</span><span class="op">=</span><span class="va">possible_exposure_times</span>,<span class="st">"AR"</span><span class="op">=</span><span class="va">known_ar</span>,<span class="st">"population_group"</span><span class="op">=</span><span class="fl">1</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="co">## Get true infection histories</span></span></span>
+<span class="r-in"><span><span class="va">known_inf_hist</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span><span class="va">example_inf_hist</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/colnames.html" class="external-link">colnames</a></span><span class="op">(</span><span class="va">known_inf_hist</span><span class="op">)</span> <span class="op">&lt;-</span> <span class="va">possible_exposure_times</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co">## Need to get population_group specific n_alive and adjust to correct time frame </span></span></span>
+<span class="r-in"><span><span class="va">n_alive_group</span> <span class="op">&lt;-</span> <span class="fu"><a href="get_n_alive_group.html">get_n_alive_group</a></span><span class="op">(</span><span class="va">example_antibody_data</span>, <span class="va">possible_exposure_times</span>,melt_data <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">n_alive_group</span><span class="op">$</span><span class="va">j</span> <span class="op">&lt;-</span> <span class="va">possible_exposure_times</span><span class="op">[</span><span class="va">n_alive_group</span><span class="op">$</span><span class="va">j</span><span class="op">]</span></span></span>
+<span class="r-in"><span><span class="va">results</span> <span class="op">&lt;-</span> <span class="fu">calculate_infection_history_statistics</span><span class="op">(</span><span class="va">example_inf_chain</span>, <span class="fl">0</span>, <span class="va">possible_exposure_times</span>,</span></span>
+<span class="r-in"><span>                                                  n_alive<span class="op">=</span><span class="va">n_alive_group</span>, known_ar<span class="op">=</span><span class="va">known_ar</span>,</span></span>
+<span class="r-in"><span>                                                  known_infection_history<span class="op">=</span><span class="va">known_inf_hist</span>,</span></span>
+<span class="r-in"><span>                                                  pad_chain<span class="op">=</span><span class="cn">TRUE</span><span class="op">)</span></span></span>
+</code></pre></div>
     </div>
   </div>
   <div class="col-md-3 hidden-xs hidden-sm" id="pkgdown-sidebar">
