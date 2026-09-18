@@ -108,7 +108,7 @@
 observation-model examples to use character data_type labels. -->
 <!-- Modified by an AI assistant on 2026-09-16 using GPT-5. Added an example
 of comparing observed measurements with predictions from posterior draws. -->
-<p><img src="../logo.png" alt="serosolver logo" align="right" width="250"></p>
+<p><img src="figures/logo.png" alt="serosolver logo" align="right" width="250"></p>
 <div class="section level2 unnumbered">
 <h2 class="unnumbered" id="overview">Overview<a class="anchor" aria-label="anchor" href="#overview"></a>
 </h2>
@@ -512,7 +512,7 @@ under the same force of infection, and thus we need to tell
 places:</p>
 <div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co">## Set individual 1:25 to population_group 1, and individual IDs &gt;25 to population_group 2</span></span>
-<span><span class="va">antibody_data</span> <span class="op">&lt;-</span> <span class="va">antibody_data</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span> <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate</a></span><span class="op">(</span>population_group<span class="op">=</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/if_else.html" class="external-link">if_else</a></span><span class="op">(</span><span class="va">individual</span> <span class="op">&lt;=</span> <span class="fl">25</span>, <span class="fl">1</span>, <span class="fl">2</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="va">antibody_data</span> <span class="op">&lt;-</span> <span class="va">antibody_data</span> <span class="op">%&gt;%</span> <span class="fu">mutate</span><span class="op">(</span>population_group<span class="op">=</span><span class="fu">if_else</span><span class="op">(</span><span class="va">individual</span> <span class="op">&lt;=</span> <span class="fl">25</span>, <span class="fl">1</span>, <span class="fl">2</span><span class="op">)</span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">par_tab</span><span class="op">[</span><span class="va">par_tab</span><span class="op">$</span><span class="va">names</span> <span class="op"><a href="https://rdrr.io/r/base/match.html" class="external-link">%in%</a></span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"infection_model_prior_shape1"</span>,<span class="st">"infection_model_prior_shape2"</span><span class="op">)</span>,<span class="st">"stratification"</span><span class="op">]</span> <span class="op">&lt;-</span> <span class="st">"population_group"</span></span></code></pre></div>
 <p>For most simple models, this variable can be ignored or set to 1 for
@@ -524,7 +524,7 @@ titres wane quicker in certain age groups. The general approach is
 similar to <code>population_group</code>:</p>
 <div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co">## Split into two age groups based on whether the individual was born on or before 1990 or after</span></span>
-<span><span class="va">antibody_data</span> <span class="op">&lt;-</span> <span class="va">antibody_data</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span> <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate</a></span><span class="op">(</span>age_group<span class="op">=</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/if_else.html" class="external-link">if_else</a></span><span class="op">(</span><span class="va">birth</span> <span class="op">&lt;=</span> <span class="fl">1990</span>, <span class="fl">1</span>, <span class="fl">2</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="va">antibody_data</span> <span class="op">&lt;-</span> <span class="va">antibody_data</span> <span class="op">%&gt;%</span> <span class="fu">mutate</span><span class="op">(</span>age_group<span class="op">=</span><span class="fu">if_else</span><span class="op">(</span><span class="va">birth</span> <span class="op">&lt;=</span> <span class="fl">1990</span>, <span class="fl">1</span>, <span class="fl">2</span><span class="op">)</span><span class="op">)</span></span>
 <span></span>
 <span><span class="co">## Tell serosolver to stratify the wane_short parameter by age_group</span></span>
 <span><span class="va">par_tab</span><span class="op">[</span><span class="va">par_tab</span><span class="op">$</span><span class="va">names</span> <span class="op">==</span> <span class="st">"wane_short"</span>,<span class="st">"stratification"</span><span class="op">]</span> <span class="op">&lt;-</span> <span class="st">"age_group"</span></span></code></pre></div>

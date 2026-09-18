@@ -62,7 +62,7 @@ dir.create(mcmc_dir, recursive = TRUE, showWarnings = FALSE)
 mcmc_file <- file.path(mcmc_dir, "guide")
 ```
 
-<img src="../figure/logo.png" alt="serosolver logo" align="right" width="250"/>
+<img src="figures/logo.png" alt="serosolver logo" align="right" width="250"/>
 
 ## Overview {.unnumbered}
 

@@ -31,7 +31,6 @@ inst/extdata/cs2_real/*.csv
 inst/extdata/cs2_sim/*.csv
 
 inst/extdata/guide/*
-!inst/extdata/guide/.gitkeep
 inst/extdata/readme/chains/*
 inst/extdata/readme_longitudinal/chains/*
 inst/extdata/readme_multiple_biomarker_groups/chains/*
