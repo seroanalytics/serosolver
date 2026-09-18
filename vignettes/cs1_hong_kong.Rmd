@@ -11,7 +11,7 @@ editor_options:
 bibliography: vignette_references.bib
 vignette: |
   %\VignetteEncoding{UTF-8}
-  %\VignetteIndexEntry{Serosolver Case Study 1: Hong Kong}
+  %\VignetteIndexEntry{Case study 1: longitudinal data}
   %\VignetteEngine{knitr::rmarkdown}
 ---
 

@@ -1,5 +1,5 @@
 ---
-title: "Guide to _serosolver_ terminology"
+title: "Guide to serosolver terminology"
 author: "James Hay"
 date: "2025-06-12"
 output:

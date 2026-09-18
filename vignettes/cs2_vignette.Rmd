@@ -11,7 +11,7 @@ editor_options:
 bibliography: vignette_references.bib
 vignette: |
   %\VignetteEncoding{UTF-8}
-  %\VignetteIndexEntry{Serosolver Case Study 2: Fluscape}
+  %\VignetteIndexEntry{Case study 2: cross-sectional data}
   %\VignetteEngine{knitr::rmarkdown}
 ---
 
