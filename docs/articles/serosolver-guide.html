@@ -6,6 +6,11 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>serosolver guide • serosolver</title>
+<!-- favicons --><link rel="icon" type="image/png" sizes="48x48" href="../favicon-48x48.png">
+<link rel="icon" type="”image/svg+xml”" href="../favicon.svg">
+<link rel="apple-touch-icon" sizes="180x180" href="../apple-touch-icon.png">
+<link rel="icon" sizes="any" href="../favicon.ico">
+<link rel="manifest" href="../site.webmanifest">
 <!-- jquery --><script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js" integrity="sha512-v2CJ7UaYy4JwqLDIrZUI/4hqeoQieOmAZNXBeQyjo21dadnwR+8ZaIJVT8EE2iyI61OV8e6M8PP2/4hpQINQ/g==" crossorigin="anonymous" referrerpolicy="no-referrer"></script><!-- Bootstrap --><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.4.1/css/bootstrap.min.css" integrity="sha256-bZLfwXAP04zRMK2BjiO8iu9pf4FbLqX6zitd+tIvLhE=" crossorigin="anonymous">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.4.1/js/bootstrap.min.js" integrity="sha256-nuL8/2cJ5NDSSwnKD8VqreErSWHtnEP9E7AySL+1ev4=" crossorigin="anonymous"></script><!-- bootstrap-toc --><link rel="stylesheet" href="../bootstrap-toc.css">
 <script src="../bootstrap-toc.js"></script><!-- Font Awesome icons --><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.12.1/css/all.min.css" integrity="sha256-mmgLkCYLUQbXn0B1SRqzHar6dCnv9oZFPEC1g1cwlkk=" crossorigin="anonymous">
@@ -32,7 +37,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">serosolver</a>
-        <span class="version label label-danger" data-toggle="tooltip" data-placement="bottom" title="Unreleased version">1.2.0</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">1.2.0</span>
       </span>
     </div>
 
@@ -511,7 +516,7 @@ under the same force of infection, and thus we need to tell
 places:</p>
 <div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co">## Set individual 1:25 to population_group 1, and individual IDs &gt;25 to population_group 2</span></span>
-<span><span class="va">antibody_data</span> <span class="op">&lt;-</span> <span class="va">antibody_data</span> <span class="op">%&gt;%</span> <span class="fu">mutate</span><span class="op">(</span>population_group<span class="op">=</span><span class="fu">if_else</span><span class="op">(</span><span class="va">individual</span> <span class="op">&lt;=</span> <span class="fl">25</span>, <span class="fl">1</span>, <span class="fl">2</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="va">antibody_data</span> <span class="op">&lt;-</span> <span class="va">antibody_data</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span> <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate</a></span><span class="op">(</span>population_group<span class="op">=</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/if_else.html" class="external-link">if_else</a></span><span class="op">(</span><span class="va">individual</span> <span class="op">&lt;=</span> <span class="fl">25</span>, <span class="fl">1</span>, <span class="fl">2</span><span class="op">)</span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">par_tab</span><span class="op">[</span><span class="va">par_tab</span><span class="op">$</span><span class="va">names</span> <span class="op"><a href="https://rdrr.io/r/base/match.html" class="external-link">%in%</a></span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"infection_model_prior_shape1"</span>,<span class="st">"infection_model_prior_shape2"</span><span class="op">)</span>,<span class="st">"stratification"</span><span class="op">]</span> <span class="op">&lt;-</span> <span class="st">"population_group"</span></span></code></pre></div>
 <p>For most simple models, this variable can be ignored or set to 1 for
@@ -523,7 +528,7 @@ titres wane quicker in certain age groups. The general approach is
 similar to <code>population_group</code>:</p>
 <div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co">## Split into two age groups based on whether the individual was born on or before 1990 or after</span></span>
-<span><span class="va">antibody_data</span> <span class="op">&lt;-</span> <span class="va">antibody_data</span> <span class="op">%&gt;%</span> <span class="fu">mutate</span><span class="op">(</span>age_group<span class="op">=</span><span class="fu">if_else</span><span class="op">(</span><span class="va">birth</span> <span class="op">&lt;=</span> <span class="fl">1990</span>, <span class="fl">1</span>, <span class="fl">2</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="va">antibody_data</span> <span class="op">&lt;-</span> <span class="va">antibody_data</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span> <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate</a></span><span class="op">(</span>age_group<span class="op">=</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/if_else.html" class="external-link">if_else</a></span><span class="op">(</span><span class="va">birth</span> <span class="op">&lt;=</span> <span class="fl">1990</span>, <span class="fl">1</span>, <span class="fl">2</span><span class="op">)</span><span class="op">)</span></span>
 <span></span>
 <span><span class="co">## Tell serosolver to stratify the wane_short parameter by age_group</span></span>
 <span><span class="va">par_tab</span><span class="op">[</span><span class="va">par_tab</span><span class="op">$</span><span class="va">names</span> <span class="op">==</span> <span class="st">"wane_short"</span>,<span class="st">"stratification"</span><span class="op">]</span> <span class="op">&lt;-</span> <span class="st">"age_group"</span></span></code></pre></div>
