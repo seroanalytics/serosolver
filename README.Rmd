@@ -24,7 +24,7 @@ library(tidyverse)
 
 [![Project Status: Active – The project has reached a stable, usable state and is being actively developed.](https://www.repostatus.org/badges/latest/active.svg)](https://www.repostatus.org/#active)
 
-`serosolver` uses a hierarchical model with a custom Markov chain Monte Carlo sampler to simultaneously infer antibody kinetics and infection histories from cross-sectional or longitudinal serological data. `serosolver` is a [time-since-infection serodynamics model](https://osf.io/preprints/osf/kqdsn), meaning that infection times are back-calculated from one or more antibody measurements through an antibody kinetics model. `serosolver` can be used to infer infection timings during a study period using longitudinal measurements against a single antigen, or lifetime infection histories using multi-antigen serology panels. The package and model are described by Hay _et al._ [here](https://doi.org/10.1371/journal.pcbi.1007840).
+`serosolver` uses a hierarchical model with a custom Markov chain Monte Carlo sampler to simultaneously infer antibody kinetics and infection histories from cross-sectional or longitudinal serological data. `serosolver` is a [time-since-infection serodynamics model](https://www.sciencedirect.com/science/article/pii/S1755436524000677), meaning that infection times are back-calculated from one or more antibody measurements through an antibody kinetics model. `serosolver` can be used to infer infection timings during a study period using longitudinal measurements against a single antigen, or lifetime infection histories using multi-antigen serology panels. The package and model are described by Hay _et al._ [here](https://doi.org/10.1371/journal.pcbi.1007840).
 
 <br clear="right">
 

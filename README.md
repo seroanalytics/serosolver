@@ -16,7 +16,7 @@ developed.](https://www.repostatus.org/badges/latest/active.svg)](https://www.re
 Carlo sampler to simultaneously infer antibody kinetics and infection
 histories from cross-sectional or longitudinal serological data.
 `serosolver` is a [time-since-infection serodynamics
-model](https://osf.io/preprints/osf/kqdsn), meaning that infection times
+model](https://www.sciencedirect.com/science/article/pii/S1755436524000677), meaning that infection times
 are back-calculated from one or more antibody measurements through an
 antibody kinetics model. `serosolver` can be used to infer infection
 timings during a study period using longitudinal measurements against a

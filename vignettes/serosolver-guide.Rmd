@@ -1,5 +1,5 @@
 ---
-title: '_serosolver_ guide'
+title: 'serosolver guide'
 subtitle: Getting started
 output: 
   rmarkdown::html_vignette:
@@ -8,7 +8,7 @@ output:
 csl: plos.csl
 bibliography: vignette_references.bib
 vignette: |
-  %\VignetteIndexEntry{_serosolver_ guide} 
+  %\VignetteIndexEntry{serosolver guide}
   %\VignetteEngine{knitr::rmarkdown} 
   %\VignetteEncoding{UTF-8}
 ---
