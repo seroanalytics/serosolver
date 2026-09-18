@@ -17,3 +17,4 @@ the value on the unbounded scale
 \description{
 Inverse bounded logistic transform
 }
+\keyword{internal}

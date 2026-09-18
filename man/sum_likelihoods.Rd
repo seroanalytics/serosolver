@@ -16,3 +16,4 @@ sum_likelihoods(liks, indices, n_indivs)
 \description{
 Given a large vector of likelihood values and a vector, indices, of length n_indivs, sums the likelihoods to give one value per individual, where indices indicates which individual each index of liks corresponds to.
 }
+\keyword{internal}

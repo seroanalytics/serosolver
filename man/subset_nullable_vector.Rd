@@ -19,3 +19,4 @@ the requested subset, or an empty numeric vector when `x` is NULL
 \description{
 Takes a subset of a Nullable NumericVector, but only if it isn't NULL
 }
+\keyword{internal}

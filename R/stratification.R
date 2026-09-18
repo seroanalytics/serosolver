@@ -11,6 +11,7 @@
 #' @param scale_par_upper the upper bound of any used scale parameters
 #' @return the updated `par_tab`, including rows for any added scale parameters
 #' @family stratification
+#' @keywords internal
 add_scale_pars <- function(par_tab, antibody_data, timevarying_demographics=NULL, scale_par_lower=-25,scale_par_upper=25){
   ## Check if timevarying demographics are used. If so, then use these to create demographic table and add scale parameters
   if(!is.null(timevarying_demographics) && "time" %in% colnames(timevarying_demographics)){
@@ -111,6 +112,7 @@ apply_coefficient_values <- function(par_tab, coefficient_values) {
 #' @param par_tab the parameter table, including a column called stratification which is NA if no stratification is requested, or a character value matching an entry in antibody_data
 #' @return a data frame of unique stratification level combinations. Each column is a stratification variable, and each row is a unique combination of levels
 #' @family stratification
+#' @keywords internal
 create_demographic_table <- function(antibody_data, par_tab){
   strsplit1 <- function(x){
     if(!is.na(x)){
@@ -153,6 +155,7 @@ create_demographic_table <- function(antibody_data, par_tab){
 #' @param unique_demographic_combinations table of unique stratification combinations. Columns give stratification variable, rows give each unique combinations
 #' @return a list with two entries: 1) a list of matrices with entries for each stratification level, with number of columns equal to the number of parameters, and number of rows equal to the number of stratification levels. Each entry is the index of the scale parameter to use for that stratification level and parameter; 2) a vector of scale parameters
 #' @family stratification
+#' @keywords internal
 setup_stratification_table <- function(par_tab, unique_demographic_combinations){
   unique_demographic_combinations <- as.data.frame(unique_demographic_combinations)
   use_par_tab <- par_tab[par_tab$par_type %in% c(1,3),]
@@ -226,6 +229,7 @@ setup_stratification_table <- function(par_tab, unique_demographic_combinations)
 #' @param demographic_groups optional. a data frame of demographic groups, with columns for each demographic group and rows for each unique combination of demographic groups. If NULL, then create this from antibody_data or timevarying_demographics
 #' @return a list with three entries: 1) the names of the demographic groups used, 2) a data frame of demographic groups, with each row a unique combination of demographic groups, and 3) a boolean indicating whether timevarying demographics were used
 #' @family stratification
+#' @keywords internal
 get_demographic_groups <- function(par_tab, antibody_data, timevarying_demographics=NULL,demographic_groups=NULL){
   ## Setup data vectors and extract
   if(!is.null(timevarying_demographics) && "time" %in% colnames(timevarying_demographics)){
@@ -259,6 +263,7 @@ get_demographic_groups <- function(par_tab, antibody_data, timevarying_demograph
 #' @param demographics optional fixed or time-varying demographic data
 #' @param verbose if TRUE, prints warnings about overlapping columns
 #' @return the antibody data with demographic variables added
+#' @keywords internal
 align_antibody_demographic_dat <- function(antibody_data, demographics=NULL,verbose=FALSE){
   if(!is.null(demographics)){
     overlapping_colnames <- intersect(colnames(antibody_data),colnames(demographics))
@@ -283,6 +288,7 @@ align_antibody_demographic_dat <- function(antibody_data, demographics=NULL,verb
 #' @param par_tab the parameter table containing requested stratifications
 #' @param use_demographic_groups optional demographic grouping variables
 #' @return a list containing updated data, group tables, and individual group indices
+#' @keywords internal
 add_stratifying_variables <- function(antibody_data, timevarying_demographics=NULL, par_tab, use_demographic_groups=NULL){
     # Any stratification of population attack rates?
   ## Pull out any parameters related to attack rates

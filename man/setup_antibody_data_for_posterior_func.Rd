@@ -45,3 +45,4 @@ Note that this should be `antibody_data` after subsetting to only `repeat_number
 \seealso{
 \code{\link{create_posterior_func}}
 }
+\keyword{internal}

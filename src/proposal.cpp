@@ -23,6 +23,7 @@
 //' @param rand_ns NumericVector, a vector of random numbers for each sampled individual. The idea is to pre-specify whether an individual experiences an add/remove step or a swap step to avoid random number sampling in C++
 //' @return a matrix of 1s and 0s corresponding to the infection histories for all individuals
 //' @family infection_history_proposal
+//' @keywords internal
 // [[Rcpp::export]]
 arma::mat inf_hist_prop_prior_v3(arma::mat infection_history_mat, 
 				 const IntegerVector& sampled_indivs, 
@@ -187,6 +188,7 @@ arma::mat inf_hist_prop_prior_v3(arma::mat infection_history_mat,
 //' @param solve_likelihood logical, if FALSE does not solve the likelihood when calculating the acceptance probability
 //' @return an R list with 6 entries: 1) the vector replacing likelihoods_pre_proposal, corresponding to the new likelihoods per individual; 2) the matrix of 1s and 0s corresponding to the new infection histories for all individuals; 3-6) the updated entries for proposal_iter, accepted_iter, proposal_swap and accepted_swap.
 //' @family infection_history_proposal
+//' @keywords internal
 // [[Rcpp::export]]
 List inf_hist_prop_prior_v2_and_v4(
         

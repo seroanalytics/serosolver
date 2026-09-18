@@ -21,3 +21,4 @@ This helper is based on the `row.match` function from the prodlim package.
 \description{
 Returns the row number of the first matching row in `table` for each row of `x`.
 }
+\keyword{internal}

@@ -11,6 +11,7 @@
 #' @param verbose if TRUE, prints messages about the process
 #' @return list with three entries: 1) the updated antigenic map, 2) the updated possible_exposure_times vector, 3) a set of zero-based indices matching possible_exposure_times to entries in the antigenic map for use by the model
 #' @family antigenic_maps
+#' @keywords internal
 setup_antigenic_map <- function(antigenic_map=NULL, possible_exposure_times=NULL, n_biomarker_groups=1,unique_biomarker_groups=c(1), verbose=TRUE){
   ## Check if an antigenic map is provided. If not, then create a dummy map where all pathogens have the same position on the map
   if (!is.null(antigenic_map)) {
@@ -56,6 +57,7 @@ setup_antigenic_map <- function(antigenic_map=NULL, possible_exposure_times=NULL
 #' @param fit_data data frame containing `x_coord` and `y_coord`
 #' @return the Euclidean distance between the two map entries
 #' @family antigenic_maps
+#' @keywords internal
 euc_distance <- function(i1, i2, fit_data) {
   return(sqrt((fit_data[i1, "x_coord"] - fit_data[i2, "x_coord"])^2 + (fit_data[i1, "y_coord"] - fit_data[i2, "y_coord"])^2))
 }
@@ -67,6 +69,7 @@ euc_distance <- function(i1, i2, fit_data) {
 #' @param anti.map.in can either be a 1D antigenic line to calculate distance from, or a two dimensional matrix with x and y coordinates on an antigenic map
 #' @return a matrix of Euclidean antigenic distances between each pair of entries in `anti.map.in`
 #' @family antigenic_maps
+#' @keywords internal
 melt_antigenic_coords <- function(anti.map.in) { # anti.map.in can be vector or matrix - rows give inf_times, columns give location
   # Calculate antigenic distances
   if (is.null(dim(anti.map.in))) { # check if input map is one or 2 dimensions

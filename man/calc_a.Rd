@@ -17,3 +17,4 @@ the first Beta shape parameter
 \description{
 Calculate the first Beta shape parameter from a mode and certainty value
 }
+\keyword{internal}

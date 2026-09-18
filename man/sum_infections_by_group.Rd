@@ -21,3 +21,4 @@ a matrix containing the number of infections in each group and time period
 \description{
 Count infections by group and time
 }
+\keyword{internal}

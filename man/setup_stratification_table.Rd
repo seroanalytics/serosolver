@@ -24,3 +24,4 @@ Other stratification:
 \code{\link[=get_demographic_groups]{get_demographic_groups()}}
 }
 \concept{stratification}
+\keyword{internal}

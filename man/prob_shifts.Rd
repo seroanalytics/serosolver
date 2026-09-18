@@ -34,3 +34,4 @@ Other priors:
 \code{\link[=infection_history_prior]{infection_history_prior()}}
 }
 \concept{priors}
+\keyword{internal}

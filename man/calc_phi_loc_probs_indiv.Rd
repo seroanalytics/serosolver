@@ -32,3 +32,4 @@ a vector of log probabilities, one for each individual
 \description{
 Internal helper that applies group-specific infection probabilities to each individual's infection history.
 }
+\keyword{internal}

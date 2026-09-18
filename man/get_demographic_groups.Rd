@@ -33,3 +33,4 @@ Other stratification:
 \code{\link[=setup_stratification_table]{setup_stratification_table()}}
 }
 \concept{stratification}
+\keyword{internal}

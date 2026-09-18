@@ -23,3 +23,4 @@ the antibody data with demographic variables added
 \description{
 Internal helper that merges demographic variables into `antibody_data`, using `sample_time` to align time-varying demographics.
 }
+\keyword{internal}

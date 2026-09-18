@@ -31,3 +31,4 @@ y <- runif(100)
 noisy_y <- add_noise(y, pars)
 }
 }
+\keyword{internal}

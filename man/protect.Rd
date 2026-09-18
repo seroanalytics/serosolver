@@ -15,3 +15,4 @@ the protected function
 \description{
 Wrapper function to protect calls to a function. If the function does not compute correctly, returns -10000000.
 }
+\keyword{internal}

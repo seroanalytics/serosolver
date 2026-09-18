@@ -26,3 +26,4 @@ a list containing updated data, group tables, and individual group indices
 \description{
 Internal helper that adds demographic and population-group indices used by the infection-history and antibody-kinetics models.
 }
+\keyword{internal}

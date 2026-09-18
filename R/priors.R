@@ -9,6 +9,7 @@
 #' @param age_mask the age mask, giving the first index of the infection_history matrix that each individual can be exposed to. One entry per individual
 #' @return the log prior contribution for each individual
 #' @family priors
+#' @keywords internal
 infection_history_prior <- function(pars, infection_history, age_mask) {
   N <- ncol(infection_history) - age_mask + 1
   a <- pars["infection_model_prior_shape1"]
@@ -29,6 +30,7 @@ infection_history_prior <- function(pars, infection_history, age_mask) {
 #' @param v second shape parameter of the Beta distribution
 #' @return the beta binomial probability
 #' @family priors
+#' @keywords internal
 density_beta_binom <- function(x, N, u, v) {
   (beta(x + u, N - x + v) / beta(u, v)) * choose(N, x)
 }
@@ -42,6 +44,7 @@ density_beta_binom <- function(x, N, u, v) {
 #' @param v second shape parameter of the Beta distribution
 #' @return the beta-binomial prior term
 #' @family priors
+#' @keywords internal
 dbb_prior <- function(x, N, u, v) {
   (beta(x + u, N - x + v) / beta(u, v))
 }
@@ -53,6 +56,7 @@ dbb_prior <- function(x, N, u, v) {
 #' @param a first shape parameter of the Beta distribution
 #' @param b second shape parameter of the Beta distribution
 #' @return the density value
+#' @keywords internal
 db <- function(x, a, b) {
   x^(a - 1) * (1 - x^(b - 1)) / beta(a, b)
 }
@@ -66,6 +70,7 @@ db <- function(x, a, b) {
 #' @param infection_model_prior_shape2 shape2 parameter for the Beta distribution
 #' @return the total log prior for the infection history
 #' @family priors
+#' @keywords internal
 inf_mat_prior <- function(infection_history, age_mask, infection_model_prior_shape1, infection_model_prior_shape2) {
   n_alive <- sapply(1:ncol(infection_history), function(x) length(age_mask[age_mask <= x]))
   lk <- 0
@@ -86,6 +91,7 @@ inf_mat_prior <- function(infection_history, age_mask, infection_model_prior_sha
 #' @return the model fit object returned by `optim`, or a list with missing parameters if fitting fails
 #' @seealso \code{\link{fit_normal_prior}}
 #' @family priors
+#' @keywords internal
 #' @examples
 #' \dontrun{
 #' ## Posterior draws from a previous serosolver chain
@@ -136,6 +142,7 @@ fit_beta_prior <- function(chain_samples, par_name = "", error_tol = 999999999, 
 #' @param plot_fit if TRUE, plots the fitted distribution against the posterior density
 #' @return the model fit object returned by `optim`, or a list with missing parameters if fitting fails
 #' @family priors
+#' @keywords internal
 #' @seealso \code{\link{fit_normal_prior}}
 #' @examples
 #' \dontrun{
@@ -237,6 +244,7 @@ find_beta_prior_with_mean <- function(desired_annual_mean, buckets) {
 #' @param mode1 desired mode
 #' @param k certainty value
 #' @return the first Beta shape parameter
+#' @keywords internal
 calc_a <- function(mode1, k) {
   mode1 * (k - 2) + 1
 }
@@ -245,6 +253,7 @@ calc_a <- function(mode1, k) {
 #' @param mode1 desired mode
 #' @param k certainty value
 #' @return the second Beta shape parameter
+#' @keywords internal
 calc_b <- function(mode1, k) {
   (1 - mode1) * (k - 2) + 1
 }

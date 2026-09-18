@@ -40,3 +40,4 @@ Other priors:
 \code{\link[=prob_shifts]{prob_shifts()}}
 }
 \concept{priors}
+\keyword{internal}

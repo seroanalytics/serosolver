@@ -25,3 +25,4 @@ a vector of FOIs for each time point
 \description{
 Calculates the seasonal spline for \code{\link{calc_phi_probs_spline}}
 }
+\keyword{internal}

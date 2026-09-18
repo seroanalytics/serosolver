@@ -5,7 +5,7 @@ starting values, fixed values, bounds, and parameter types. When required,
 the function adds default proposal steps, adds missing version-1 `phi`
 rows, or removes `phi` rows that are not used by prior versions 2–4.
 It also checks the infection-history prior parameters and the bounds used
-for random starting values."><!-- mathjax --><script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js" integrity="sha256-nvJJv9wWKEm88qvoQl9ekL2J+k/RWIsaSScxxlsrv8k=" crossorigin="anonymous"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/config/TeX-AMS-MML_HTMLorMML.js" integrity="sha256-84DKXVJXs0/F8OTMzX4UR909+jtl4G7SPypPavF+GfA=" crossorigin="anonymous"></script><!--[if lt IE 9]>
+for random starting values."><meta property="og:image" content="https://seroanalytics.github.io/serosolver/logo.png"><!-- mathjax --><script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js" integrity="sha256-nvJJv9wWKEm88qvoQl9ekL2J+k/RWIsaSScxxlsrv8k=" crossorigin="anonymous"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/config/TeX-AMS-MML_HTMLorMML.js" integrity="sha256-84DKXVJXs0/F8OTMzX4UR909+jtl4G7SPypPavF+GfA=" crossorigin="anonymous"></script><!--[if lt IE 9]>
 <script src="https://oss.maxcdn.com/html5shiv/3.7.3/html5shiv.min.js"></script>
 <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
 <![endif]--></head><body data-spy="scroll" data-target="#toc">
@@ -56,7 +56,7 @@ for random starting values."><!-- mathjax --><script src="https://cdnjs.cloudfla
       <a href="../articles/naming_convention.html">Guide to serosolver terminology</a>
     </li>
     <li>
-      <a href="../articles/serosolver-guide.html">_serosolver_ guide</a>
+      <a href="../articles/serosolver-guide.html">serosolver guide</a>
     </li>
   </ul></li>
       </ul><ul class="nav navbar-nav navbar-right"><li>
@@ -152,10 +152,9 @@ added or version-specific rows are changed.</p></dd>
 
     <div id="ref-examples">
     <h2>Examples</h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">example_par_tab</span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="va">checked_par_tab</span> <span class="op">&lt;-</span> <span class="fu">check_par_tab</span><span class="op">(</span><span class="va">example_par_tab</span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="va">checked_par_tab_mcmc</span> <span class="op">&lt;-</span> <span class="fu">check_par_tab</span><span class="op">(</span><span class="va">example_par_tab</span>, mcmc <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></span>
-</code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">example_par_tab</span><span class="op">)</span></span>
+<span><span class="va">checked_par_tab</span> <span class="op">&lt;-</span> <span class="fu">check_par_tab</span><span class="op">(</span><span class="va">example_par_tab</span><span class="op">)</span></span>
+<span><span class="va">checked_par_tab_mcmc</span> <span class="op">&lt;-</span> <span class="fu">check_par_tab</span><span class="op">(</span><span class="va">example_par_tab</span>, mcmc <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></code></pre></div>
     </div>
   </div>
   <div class="col-md-3 hidden-xs hidden-sm" id="pkgdown-sidebar">

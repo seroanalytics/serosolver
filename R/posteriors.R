@@ -27,6 +27,7 @@
 #' @param exponential_waning Deprecated compatibility argument. The preferred setting is a fixed `exponential_waning` row in `par_tab`, with `values = 1` and `par_type = 0`. See the [advanced features vignette](https://seroanalytics.github.io/serosolver/articles/advanced_features.html).
 #' @param ... other arguments to pass to the posterior solving function
 #' @return a single function pointer that takes only pars and infection_histories as unnamed arguments. This function goes on to return a vector of posterior values for each individual
+#' @keywords internal
 #' @examples
 #' \dontrun{
 #' data(example_par_tab)

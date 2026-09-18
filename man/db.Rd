@@ -19,3 +19,4 @@ the density value
 \description{
 Calculates the Beta-density term used for an infection probability.
 }
+\keyword{internal}

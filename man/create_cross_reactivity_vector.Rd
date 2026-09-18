@@ -19,3 +19,4 @@ a vector of cross reactivity
 \description{
 Multiplies all elements of the provided vector, x such that y = 1 - cr_gradient*x. Also makes sure that no calculated value is less than 0
 }
+\keyword{internal}

@@ -32,3 +32,4 @@ an array of beta-binomial log-prior values
 \description{
 Pre-calculates beta-binomial log-prior values for each population group, possible number of infections, and exposure time.
 }
+\keyword{internal}

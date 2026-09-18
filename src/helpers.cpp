@@ -9,6 +9,7 @@
 //' @param index1 the first element to include
 //' @param index2 the last element to include
 //' @return the requested subset, or an empty numeric vector when `x` is NULL
+//' @keywords internal
 // [[Rcpp::export]]
 NumericVector subset_nullable_vector(const Nullable<NumericVector> &x, int index1, int index2) {
   if(x.isNotNull()){
@@ -113,6 +114,7 @@ NumericMatrix transform_parameters_cpp(NumericVector pars, List scale_table,
 //' @param liks NumericVector of likelihoods
 //' @param indices IntegerVector of indices of same length as liks, where the max value of this should be the same as n_indivs - 1
 //' @param n_indivs int, number of individuals to generate bucketed likelihoods for
+//' @keywords internal
 //[[Rcpp::export]]
 NumericVector sum_likelihoods(NumericVector liks, IntegerVector indices, int n_indivs){
   NumericVector results(n_indivs);
@@ -131,6 +133,7 @@ NumericVector sum_likelihoods(NumericVector liks, IntegerVector indices, int n_i
 //' @param cr_gradient the cross reactivity waning parameter
 //' @param exponential_waning if TRUE, uses exponential waning rather than linear
 //' @return a vector of cross reactivity
+//' @keywords internal
 // [[Rcpp::export]]
 NumericVector create_cross_reactivity_vector(NumericVector x, double cr_gradient, bool exponential_waning = false)  {
   NumericVector x2(x.size());
@@ -150,6 +153,7 @@ NumericVector create_cross_reactivity_vector(NumericVector x, double cr_gradient
 //' @param a the vector to be bucketed
 //' @param buckets the vector of bucket sizes to sum a over
 //' @return the vector of summed a
+//' @keywords internal
 //[[Rcpp::export]]
 NumericVector sum_buckets(NumericVector a, NumericVector buckets){
   int buckets_size = buckets.size();
@@ -173,6 +177,7 @@ NumericVector sum_buckets(NumericVector a, NumericVector buckets){
 //' @param n_groups the number of groups in the output
 //' @param timevarying_groups logical, whether group IDs vary over time
 //' @return a matrix containing the number of infections in each group and time period
+//' @keywords internal
 //[[Rcpp::export]]
 IntegerMatrix sum_infections_by_group(IntegerMatrix inf_hist, NumericVector group_ids_vec, int n_groups, bool timevarying_groups){
   int n_times = inf_hist.ncol();
@@ -205,6 +210,7 @@ IntegerMatrix sum_infections_by_group(IntegerMatrix inf_hist, NumericVector grou
 //' @param start_index_in_data int the first index of to_add and predicted_antibody_levels to combine
 //' @param end_index_in_data int the end index of to_add and predicted_antibody_levels to combine
 //' @return nothing
+//' @keywords internal
 //[[Rcpp::export]]
 void add_measurement_shifts(NumericVector &predicted_antibody_levels,
 			    const NumericVector &to_add,

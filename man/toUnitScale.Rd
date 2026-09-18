@@ -19,3 +19,4 @@ the value on the 0--1 scale
 \description{
 Converts a value from a bounded scale to the 0--1 scale.
 }
+\keyword{internal}

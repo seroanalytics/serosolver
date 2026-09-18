@@ -22,3 +22,4 @@ Other antigenic_maps:
 \code{\link[=setup_antigenic_map]{setup_antigenic_map()}}
 }
 \concept{antigenic_maps}
+\keyword{internal}

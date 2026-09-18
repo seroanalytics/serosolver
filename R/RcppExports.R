@@ -33,6 +33,7 @@
 #' @param boost_before_infection bool to indicate if calculated antibody level for that time should be before the infection has occurred, used to calculate antibody-mediated immunity
 #' @return NumericVector of predicted antibody levels for each entry in biomarker_id_indices
 #' @family antibody_models
+#' @keywords internal
 antibody_model <- function(theta, unique_theta_indices, unique_biomarker_groups, infection_history_mat, infection_history_mat_indices, indiv_theta_groups, possible_exposure_times, possible_exposure_times_indices, exposure_groups, unique_exposure_groups, sample_times, type_data_start, biomarker_groups, sample_data_start, antibody_data_start, nrows_per_sample, biomarker_id_indices, start_level_indices, starting_antibody_levels, births, antigenic_map_long, antigenic_map_short, antigenic_distances, timevarying_groups = FALSE, exponential_waning = FALSE, variant_specific_pars = FALSE, boost_before_infection = FALSE) {
     .Call('_serosolver_antibody_model', PACKAGE = 'serosolver', theta, unique_theta_indices, unique_biomarker_groups, infection_history_mat, infection_history_mat_indices, indiv_theta_groups, possible_exposure_times, possible_exposure_times_indices, exposure_groups, unique_exposure_groups, sample_times, type_data_start, biomarker_groups, sample_data_start, antibody_data_start, nrows_per_sample, biomarker_id_indices, start_level_indices, starting_antibody_levels, births, antigenic_map_long, antigenic_map_short, antigenic_distances, timevarying_groups, exponential_waning, variant_specific_pars, boost_before_infection)
 }
@@ -47,6 +48,7 @@ antibody_model_individual_wrapper <- function(boost_long, boost_short, boost_del
 #' @param index1 the first element to include
 #' @param index2 the last element to include
 #' @return the requested subset, or an empty numeric vector when `x` is NULL
+#' @keywords internal
 subset_nullable_vector <- function(x, index1, index2) {
     .Call('_serosolver_subset_nullable_vector', PACKAGE = 'serosolver', x, index1, index2)
 }
@@ -73,6 +75,7 @@ get_starting_antibody_levels <- function(n_measurements, min_measurement, starti
 #' @param liks NumericVector of likelihoods
 #' @param indices IntegerVector of indices of same length as liks, where the max value of this should be the same as n_indivs - 1
 #' @param n_indivs int, number of individuals to generate bucketed likelihoods for
+#' @keywords internal
 sum_likelihoods <- function(liks, indices, n_indivs) {
     .Call('_serosolver_sum_likelihoods', PACKAGE = 'serosolver', liks, indices, n_indivs)
 }
@@ -84,6 +87,7 @@ sum_likelihoods <- function(liks, indices, n_indivs) {
 #' @param cr_gradient the cross reactivity waning parameter
 #' @param exponential_waning if TRUE, uses exponential waning rather than linear
 #' @return a vector of cross reactivity
+#' @keywords internal
 create_cross_reactivity_vector <- function(x, cr_gradient, exponential_waning = FALSE) {
     .Call('_serosolver_create_cross_reactivity_vector', PACKAGE = 'serosolver', x, cr_gradient, exponential_waning)
 }
@@ -94,6 +98,7 @@ create_cross_reactivity_vector <- function(x, cr_gradient, exponential_waning = 
 #' @param a the vector to be bucketed
 #' @param buckets the vector of bucket sizes to sum a over
 #' @return the vector of summed a
+#' @keywords internal
 sum_buckets <- function(a, buckets) {
     .Call('_serosolver_sum_buckets', PACKAGE = 'serosolver', a, buckets)
 }
@@ -105,6 +110,7 @@ sum_buckets <- function(a, buckets) {
 #' @param n_groups the number of groups in the output
 #' @param timevarying_groups logical, whether group IDs vary over time
 #' @return a matrix containing the number of infections in each group and time period
+#' @keywords internal
 sum_infections_by_group <- function(inf_hist, group_ids_vec, n_groups, timevarying_groups) {
     .Call('_serosolver_sum_infections_by_group', PACKAGE = 'serosolver', inf_hist, group_ids_vec, n_groups, timevarying_groups)
 }
@@ -117,6 +123,7 @@ sum_infections_by_group <- function(inf_hist, group_ids_vec, n_groups, timevaryi
 #' @param start_index_in_data int the first index of to_add and predicted_antibody_levels to combine
 #' @param end_index_in_data int the end index of to_add and predicted_antibody_levels to combine
 #' @return nothing
+#' @keywords internal
 add_measurement_shifts <- function(predicted_antibody_levels, to_add, start_index_in_data, end_index_in_data) {
     invisible(.Call('_serosolver_add_measurement_shifts', PACKAGE = 'serosolver', predicted_antibody_levels, to_add, start_index_in_data, end_index_in_data))
 }
@@ -129,6 +136,7 @@ add_measurement_shifts <- function(predicted_antibody_levels, to_add, start_inde
 #' @param shape2 double, shape2 (beta) parameter for beta distribution prior
 #' @return a single prior probability
 #' @family inf_mat_prior
+#' @keywords internal
 inf_mat_prior_cpp <- function(infection_history, n_alive, shape1, shape2) {
     .Call('_serosolver_inf_mat_prior_cpp', PACKAGE = 'serosolver', infection_history, n_alive, shape1, shape2)
 }
@@ -141,6 +149,7 @@ inf_mat_prior_cpp <- function(infection_history, n_alive, shape1, shape2) {
 #' @param shape2s NumericVector, shape2 (beta) parameters for beta distribution prior, one for each time unit
 #' @return a single prior probability
 #' @family inf_mat_prior
+#' @keywords internal
 inf_mat_prior_cpp_vector <- function(infection_history, n_alive, shape1s, shape2s) {
     .Call('_serosolver_inf_mat_prior_cpp_vector', PACKAGE = 'serosolver', infection_history, n_alive, shape1s, shape2s)
 }
@@ -153,6 +162,7 @@ inf_mat_prior_cpp_vector <- function(infection_history, n_alive, shape1s, shape2
 #' @param shape2 NumericVector, shape2 (beta) parameters for beta distribution prior, one entry for each unique group
 #' @return a single prior probability
 #' @family inf_mat_prior
+#' @keywords internal
 inf_mat_prior_group_cpp <- function(n_infections, n_alive, shape1, shape2) {
     .Call('_serosolver_inf_mat_prior_group_cpp', PACKAGE = 'serosolver', n_infections, n_alive, shape1, shape2)
 }
@@ -165,6 +175,7 @@ inf_mat_prior_group_cpp <- function(n_infections, n_alive, shape1, shape2) {
 #' @param shape2s NumericVector, shape2 (beta) parameters for beta distribution prior, one for each time unit
 #' @return a single prior probability
 #' @family inf_mat_prior
+#' @keywords internal
 inf_mat_prior_group_cpp_vector <- function(n_infections, n_alive, shape1s, shape2s) {
     .Call('_serosolver_inf_mat_prior_group_cpp_vector', PACKAGE = 'serosolver', n_infections, n_alive, shape1s, shape2s)
 }
@@ -177,6 +188,7 @@ inf_mat_prior_group_cpp_vector <- function(n_infections, n_alive, shape1s, shape
 #' @param shape2 double, shape2 (beta) parameter for beta distribution prior
 #' @return a single prior probability
 #' @family inf_mat_prior
+#' @keywords internal
 inf_mat_prior_total_group_cpp <- function(n_infections_group, n_alive_group, shape1, shape2) {
     .Call('_serosolver_inf_mat_prior_total_group_cpp', PACKAGE = 'serosolver', n_infections_group, n_alive_group, shape1, shape2)
 }
@@ -188,6 +200,7 @@ inf_mat_prior_total_group_cpp <- function(n_infections_group, n_alive_group, sha
 #' @param predicted_antibody_levels NumericVector, the vector of predicted log antibody levels
 #' @return a likelihood for each observed antibody level
 #' @family likelihood_functions
+#' @keywords internal
 likelihood_func_fast <- function(theta, obs, predicted_antibody_levels) {
     .Call('_serosolver_likelihood_func_fast', PACKAGE = 'serosolver', theta, obs, predicted_antibody_levels)
 }
@@ -200,6 +213,7 @@ likelihood_func_fast <- function(theta, obs, predicted_antibody_levels) {
 #' @param predicted_antibody_levels NumericVector, the vector of predicted log antibody levels
 #' @return a likelihood for each observed antibody level
 #' @family likelihood_functions
+#' @keywords internal
 likelihood_func_fast_continuous <- function(theta, obs, predicted_antibody_levels) {
     .Call('_serosolver_likelihood_func_fast_continuous', PACKAGE = 'serosolver', theta, obs, predicted_antibody_levels)
 }
@@ -213,6 +227,7 @@ likelihood_func_fast_continuous <- function(theta, obs, predicted_antibody_level
 #' @param predicted_antibody_levels NumericVector, the vector of predicted log antibody levels
 #' @return a likelihood for each observed antibody level
 #' @family likelihood_functions
+#' @keywords internal
 likelihood_func_fast_continuous_fp <- function(theta, obs, predicted_antibody_levels) {
     .Call('_serosolver_likelihood_func_fast_continuous_fp', PACKAGE = 'serosolver', theta, obs, predicted_antibody_levels)
 }
@@ -232,6 +247,7 @@ likelihood_func_fast_continuous_fp <- function(theta, obs, predicted_antibody_le
 #' @param rand_ns NumericVector, a vector of random numbers for each sampled individual. The idea is to pre-specify whether an individual experiences an add/remove step or a swap step to avoid random number sampling in C++
 #' @return a matrix of 1s and 0s corresponding to the infection histories for all individuals
 #' @family infection_history_proposal
+#' @keywords internal
 inf_hist_prop_prior_v3 <- function(infection_history_mat, sampled_indivs, age_mask, sample_mask, proposal_inf_hist_distances, n_infs, shape1, shape2, rand_ns, proposal_inf_hist_indiv_swap_ratio) {
     .Call('_serosolver_inf_hist_prop_prior_v3', PACKAGE = 'serosolver', infection_history_mat, sampled_indivs, age_mask, sample_mask, proposal_inf_hist_distances, n_infs, shape1, shape2, rand_ns, proposal_inf_hist_indiv_swap_ratio)
 }
@@ -305,6 +321,7 @@ inf_hist_prop_prior_v3 <- function(infection_history_mat, sampled_indivs, age_ma
 #' @param solve_likelihood logical, if FALSE does not solve the likelihood when calculating the acceptance probability
 #' @return an R list with 6 entries: 1) the vector replacing likelihoods_pre_proposal, corresponding to the new likelihoods per individual; 2) the matrix of 1s and 0s corresponding to the new infection histories for all individuals; 3-6) the updated entries for proposal_iter, accepted_iter, proposal_swap and accepted_swap.
 #' @family infection_history_proposal
+#' @keywords internal
 inf_hist_prop_prior_v2_and_v4 <- function(theta, unique_theta_indices, unique_biomarker_groups, indiv_group_indices, infection_history_mat, infection_history_mat_indices, likelihoods_pre_proposal, sampled_indivs, n_times_samp_vec, age_mask, sample_mask, n_alive, n_infections, n_infected_group, prior_lookup, proposal_inf_hist_indiv_swap_ratio, swap_distance, propose_from_prior, shape1, shape2, possible_exposure_times, possible_exposure_times_indices, exposure_groups, unique_exposure_groups, sample_times, type_data_start, biomarker_groups, sample_data_start, antibody_data_start, nrows_per_sample, cum_nrows_per_individual_in_data, cum_nrows_per_individual_in_repeat_data, popn_group_id_vec, biomarker_id_indices, start_level_indices, starting_antibody_levels, births, antigenic_map_long, antigenic_map_short, antigenic_distances, antibody_data, antibody_data_repeats, n_measurements_total, repeat_indices, repeat_data_exist, measurement_shifts, proposal_iter, accepted_iter, proposal_swap, accepted_swap, overall_swap_proposals, overall_add_proposals, time_sample_probs, total_alive, data_types, obs_weights, indiv_possible_exposure_times_indices, indiv_poss_exp_times_start, indiv_poss_exp_times_end, exponential_waning = FALSE, timevarying_groups = FALSE, variant_specific_pars = FALSE, temp = 1, solve_likelihood = TRUE) {
     .Call('_serosolver_inf_hist_prop_prior_v2_and_v4', PACKAGE = 'serosolver', theta, unique_theta_indices, unique_biomarker_groups, indiv_group_indices, infection_history_mat, infection_history_mat_indices, likelihoods_pre_proposal, sampled_indivs, n_times_samp_vec, age_mask, sample_mask, n_alive, n_infections, n_infected_group, prior_lookup, proposal_inf_hist_indiv_swap_ratio, swap_distance, propose_from_prior, shape1, shape2, possible_exposure_times, possible_exposure_times_indices, exposure_groups, unique_exposure_groups, sample_times, type_data_start, biomarker_groups, sample_data_start, antibody_data_start, nrows_per_sample, cum_nrows_per_individual_in_data, cum_nrows_per_individual_in_repeat_data, popn_group_id_vec, biomarker_id_indices, start_level_indices, starting_antibody_levels, births, antigenic_map_long, antigenic_map_short, antigenic_distances, antibody_data, antibody_data_repeats, n_measurements_total, repeat_indices, repeat_data_exist, measurement_shifts, proposal_iter, accepted_iter, proposal_swap, accepted_swap, overall_swap_proposals, overall_add_proposals, time_sample_probs, total_alive, data_types, obs_weights, indiv_possible_exposure_times_indices, indiv_poss_exp_times_start, indiv_poss_exp_times_end, exponential_waning, timevarying_groups, variant_specific_pars, temp, solve_likelihood)
 }

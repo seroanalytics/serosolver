@@ -49,3 +49,4 @@ Other infection_history_proposal:
 \code{\link[=inf_hist_prop_prior_v2_and_v4]{inf_hist_prop_prior_v2_and_v4()}}
 }
 \concept{infection_history_proposal}
+\keyword{internal}

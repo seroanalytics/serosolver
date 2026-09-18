@@ -29,3 +29,4 @@ a vector of log-likelihood contributions for each observation
 \description{
 Calculates the likelihood of observing a set of continuous and bounded measurements given a corresponding set of predicted antibody levels
 }
+\keyword{internal}

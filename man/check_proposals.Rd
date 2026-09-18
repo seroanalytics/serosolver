@@ -26,3 +26,4 @@ Other check_inputs:
 \code{\link[=check_par_tab]{check_par_tab()}}
 }
 \concept{check_inputs}
+\keyword{internal}

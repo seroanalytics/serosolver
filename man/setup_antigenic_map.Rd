@@ -36,3 +36,4 @@ Other antigenic_maps:
 \code{\link[=melt_antigenic_coords]{melt_antigenic_coords()}}
 }
 \concept{antigenic_maps}
+\keyword{internal}

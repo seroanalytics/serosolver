@@ -9,3 +9,4 @@ unregister_dopar()
 \description{
 When the serosolver function uses a parallel backend but is not closed correctly, this can confuse `dopar` if the function is called again. This function tidies the parallel backend and corrects the error.
 }
+\keyword{internal}

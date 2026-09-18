@@ -27,3 +27,4 @@ Other mcmc:
 \code{\link[=serosolver]{serosolver()}}
 }
 \concept{mcmc}
+\keyword{internal}

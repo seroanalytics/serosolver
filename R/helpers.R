@@ -119,6 +119,7 @@ get_n_alive_group <- function(antibody_data, times, demographics=NULL, melt_data
 #' @param beta1 second shape parameter of the Beta distribution
 #' @param n_alive optional number alive at each exposure time. If NULL, this is calculated from `antibody_data`.
 #' @return a matrix of beta-binomial log-prior values
+#' @keywords internal
 create_prior_lookup <- function(antibody_data, possible_exposure_times, infection_model_prior_shape1, beta1, n_alive=NULL){
     if(is.null(n_alive)){
         n_alive <- get_n_alive(antibody_data, possible_exposure_times)
@@ -146,6 +147,7 @@ create_prior_lookup <- function(antibody_data, possible_exposure_times, infectio
 #' @param beta1 second shape parameter of the Beta distribution
 #' @param n_alive optional matrix of numbers alive by population group and exposure time
 #' @return an array of beta-binomial log-prior values
+#' @keywords internal
 create_prior_lookup_groups <- function(antibody_data, demographics=NULL, possible_exposure_times, infection_model_prior_shape1, beta1, n_alive=NULL){
     if(is.null(n_alive)){
         n_alive <- get_n_alive_group(antibody_data, demographics, possible_exposure_times)
@@ -318,6 +320,7 @@ get_index_pars <- function(chain, samp_no=NULL,index=NULL,chain_no=NULL) {
 #' @param ... additional arguments passed to `pdf()`
 #' @param verbose if TRUE, prints the output filename
 #' @family safe_plot_saving
+#' @keywords internal
 to.pdf <- function(expr, filename, ..., verbose = TRUE) {
   if (verbose) {
     cat(sprintf("Creating %s\n", filename))
@@ -335,6 +338,7 @@ to.pdf <- function(expr, filename, ..., verbose = TRUE) {
 #' @param ... additional arguments passed to `png()`
 #' @param verbose if TRUE, prints the output filename
 #' @family safe_plot_saving
+#' @keywords internal
 to.png <- function(expr, filename, ..., verbose = TRUE) {
   if (verbose) {
     cat(sprintf("Creating %s\n", filename))
@@ -352,6 +356,7 @@ to.png <- function(expr, filename, ..., verbose = TRUE) {
 #' @param ... additional arguments passed to `svg()`
 #' @param verbose if TRUE, prints the output filename
 #' @family safe_plot_saving
+#' @keywords internal
 to.svg <- function(expr, filename, ..., verbose = TRUE) {
   if (verbose) {
     cat(sprintf("Creating %s\n", filename))
@@ -367,6 +372,7 @@ to.svg <- function(expr, filename, ..., verbose = TRUE) {
 #' Wrapper function to protect calls to a function. If the function does not compute correctly, returns -10000000.
 #' @param f the function to be protected
 #' @return the protected function
+#' @keywords internal
 #' @useDynLib serosolver
 protect <- function(f) {
   function(...) {
@@ -382,6 +388,7 @@ protect <- function(f) {
 #' Wrapper function to protect calls to the posterior function. If posterior does not compute correctly, returns -10000000.
 #' @param f the function to be protected
 #' @return the protected function
+#' @keywords internal
 #' @useDynLib serosolver
 protect_posterior <- function(f) {
   function(...) {
@@ -400,6 +407,7 @@ protect_posterior <- function(f) {
 #' @param min lower bound of the original scale
 #' @param max upper bound of the original scale
 #' @return the value on the 0--1 scale
+#' @keywords internal
 toUnitScale <- function(x, min, max) {
   return((x - min) / (max - min))
 }
@@ -411,6 +419,7 @@ toUnitScale <- function(x, min, max) {
 #' @param min lower bound of the original scale
 #' @param max upper bound of the original scale
 #' @return the value on the original scale
+#' @keywords internal
 fromUnitScale <- function(x, min, max) {
   return(min + (max - min) * x)
 }
@@ -433,6 +442,7 @@ describe_priors <- function() {
 #' @param x value to transform
 #' @param maxX upper bound of the transformed scale
 #' @return the transformed value between 0 and `maxX`
+#' @keywords internal
 logistic_transform_bounded <- function(x, maxX) {
   return(maxX / (1 + exp(-x)))
 }
@@ -441,6 +451,7 @@ logistic_transform_bounded <- function(x, maxX) {
 #' @param p value on the bounded scale
 #' @param maxX upper bound of the bounded scale
 #' @return the value on the unbounded scale
+#' @keywords internal
 logit_transform_bounded <- function(p, maxX) {
   return(log(p / (maxX - p)))
 }
@@ -478,6 +489,7 @@ pad_infection_model_prior_parameters <- function(par_tab, n_times) {
 #' @return an integer vector of matching row numbers
 #'
 #' This helper is based on the `row.match` function from the prodlim package.
+#' @keywords internal
 row.match <- function(x, table, nomatch = NA) {
   if (class(table) == "matrix") {
     table <- as.data.frame(table)
@@ -500,6 +512,7 @@ row.match <- function(x, table, nomatch = NA) {
 #' @param timevarying_demographics if not NULL, then calculates an individual's demographic group over the entire time period of the simulation rather than assuming fixed demographics
 #' @return a list of pre-processed data vectors, indices, masks, demographic groups, and numbers alive used by the posterior function.
 #' @seealso \code{\link{create_posterior_func}}
+#' @keywords internal
 setup_antibody_data_for_posterior_func <- function(
     par_tab,antibody_data, antigenic_map=NULL, possible_exposure_times=NULL,
                                               age_mask = NULL, n_alive = NULL,verbose=FALSE,
@@ -676,6 +689,7 @@ pad_inf_chain <- function(inf_chain, pad_by_group=FALSE, times=NULL,indivs=NULL)
 #'
 #' When the serosolver function uses a parallel backend but is not closed correctly, this can confuse `dopar` if the function is called again. This function tidies the parallel backend and corrects the error.
 #' @return NULL
+#' @keywords internal
 unregister_dopar <- function() {
   env <- foreach:::.foreachGlobals
   rm(list=ls(name=env), pos=env)

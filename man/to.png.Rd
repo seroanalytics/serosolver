@@ -24,3 +24,4 @@ Other safe_plot_saving:
 \code{\link[=to.svg]{to.svg()}}
 }
 \concept{safe_plot_saving}
+\keyword{internal}

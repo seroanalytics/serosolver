@@ -96,3 +96,4 @@ NumericVector of predicted antibody levels for each entry in biomarker_id_indice
 Overall model function, fast implementation
 }
 \concept{antibody_models}
+\keyword{internal}

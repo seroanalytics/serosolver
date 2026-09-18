@@ -17,3 +17,4 @@ the transformed value between 0 and `maxX`
 \description{
 Transform a value to a bounded logistic scale
 }
+\keyword{internal}

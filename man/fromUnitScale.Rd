@@ -19,3 +19,4 @@ the value on the original scale
 \description{
 Converts a value from the 0--1 scale to its original bounded scale.
 }
+\keyword{internal}

@@ -25,3 +25,4 @@ the evaluated spline values
 Generates a spline for \code{\link{generate_phis}} - INACTIVE
 Evaluate a spline for the inactive seasonal FOI model
 }
+\keyword{internal}

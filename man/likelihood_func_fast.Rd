@@ -26,3 +26,4 @@ Other likelihood_functions:
 \code{\link{Fast observation error function continuous}}
 }
 \concept{likelihood_functions}
+\keyword{internal}

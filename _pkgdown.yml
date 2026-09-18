@@ -2,3 +2,86 @@ url: https://seroanalytics.github.io/serosolver/
 
 development:
   mode: unreleased
+
+reference:
+- title: Fit and simulate models
+  contents:
+  - serosolver
+  - simulate_data
+  - simulate_attack_rates
+  - simulate_infection_histories
+  - simulate_antibody_model
+
+- title: Prepare and check inputs
+  contents:
+  - check_data
+  - check_demographics
+  - check_inf_hist
+  - check_par_tab
+  - check_attack_rates
+  - generate_antigenic_map_flexible
+  - load_antibody_data
+  - load_antigenic_map
+  - create_age_mask
+  - create_sample_mask
+
+- title: Model options and priors
+  contents:
+  - create_start_level_data
+  - add_rhos_par_tab
+  - extend_par_tab_biomarker_groups
+  - generate_start_tab
+  - describe_priors
+  - find_beta_prior_mode
+  - find_beta_prior_with_mean
+  - find_beta_prior_with_mean_var
+
+- title: MCMC output and summaries
+  contents:
+  - load_start_tab
+  - load_theta_chains
+  - load_infection_chains
+  - load_mcmc_chains
+  - get_antibody_level_predictions
+  - calculate_infection_history_statistics
+  - get_best_pars
+  - get_best_draw
+  - get_index_pars
+  - pad_inf_chain
+  - get_n_alive
+  - get_n_alive_group
+  - get_total_number_infections
+  - generate_quantiles
+  - identify_run_lengths
+  - summarize_run_lengths
+
+- title: Plotting and diagnostics
+  contents:
+  - plot_2d_density
+  - plot_antibody_data
+  - plot_antibody_dependent_boosting
+  - plot_antibody_model
+  - plot_antibody_predictions
+  - plot_attack_rates
+  - plot_cumulative_infection_histories
+  - plot_estimated_antibody_model
+  - plot_individual_number_infections
+  - plot_infection_history_chains_indiv
+  - plot_infection_history_chains_time
+  - plot_infection_history_posteriors
+  - plot_mcmc_diagnostics
+  - plot_model_fits
+  - plot_posteriors_theta
+  - plot_samples_distances
+  - plot_total_number_infections
+
+- title: Example data
+  contents:
+  - example_antibody_data
+  - example_longitudinal_antibody_data
+  - example_multiple_biomarker_groups_data
+  - example_antigenic_map
+  - example_inf_chain
+  - example_inf_hist
+  - example_par_tab
+  - example_theta_chain

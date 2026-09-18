@@ -10,6 +10,7 @@
 #' @param sample_mask the sample mask vector giving the last possible infection-time index for each individual
 #' @return a single log probability for the infection histories
 #' @family priors
+#' @keywords internal
 calc_phi_probs <- function(phis, infection_history, age_mask, sample_mask) {
   lik <- 0
   for (i in 1:ncol(infection_history)) {
@@ -26,6 +27,7 @@ calc_phi_probs <- function(phis, infection_history, age_mask, sample_mask) {
 #' @inheritParams calc_phi_probs
 #' @return a vector of log probabilities, one for each individual
 #' @family priors
+#' @keywords internal
 calc_phi_probs_indiv <- function(phis, infection_history, age_mask, sample_mask) {
   lik <- numeric(nrow(infection_history))
   for (i in 1:ncol(infection_history)) {
@@ -47,6 +49,7 @@ calc_phi_probs_indiv <- function(phis, infection_history, age_mask, sample_mask)
 #' @param theta vector of theta parameters for spline
 #' @return a vector of log probabilities for each individual
 #' @family priors
+#' @keywords internal
 calc_phi_probs_spline <- function(foi, knots, theta, infection_history, age_mask) {
   phis <- generate_phis(foi, knots, theta, length(foi), 12)
   lik <- numeric(nrow(infection_history))
@@ -64,6 +67,7 @@ calc_phi_probs_spline <- function(foi, knots, theta, infection_history, age_mask
 #' @param buckets number of buckets per year (12 for monthly, 1 for annual)
 #' @param degree degree of the spline
 #' @return a vector of FOIs for each time point
+#' @keywords internal
 generate_phis <- function(foi, knots, theta, n_years, buckets, degree = 2) {
   x <- seq(0, buckets - 1, by = 1) / buckets
   n_knots <- length(knots) + degree + 1
@@ -88,6 +92,7 @@ generate_phis <- function(foi, knots, theta, n_years, buckets, degree = 2) {
 #' @param theta spline coefficients
 #' @param intercept if TRUE, includes an intercept in the spline basis
 #' @return the evaluated spline values
+#' @keywords internal
 gen_spline_y <- function(x, knots, degree, theta, intercept = TRUE) {
   basis <- bs(
     x = x, knots = knots, degree = degree,
@@ -108,6 +113,7 @@ gen_spline_y <- function(x, knots, degree, theta, intercept = TRUE) {
 #' @param sample_mask vector giving the last possible infection-time index for each individual
 #' @param group_indices population-group index for each individual
 #' @return a vector of log probabilities, one for each individual
+#' @keywords internal
 calc_phi_loc_probs_indiv <- function(phis, group_probs, infection_history, age_mask, sample_mask, group_indices) {
   lik <- numeric(nrow(infection_history))
   max_group_p <- max(group_probs)

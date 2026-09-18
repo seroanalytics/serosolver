@@ -36,3 +36,4 @@ Other inf_mat_prior:
 \code{\link[=inf_mat_prior_group_cpp_vector]{inf_mat_prior_group_cpp_vector()}}
 }
 \concept{inf_mat_prior}
+\keyword{internal}

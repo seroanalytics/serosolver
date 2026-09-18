@@ -37,6 +37,7 @@
 //' @param boost_before_infection bool to indicate if calculated antibody level for that time should be before the infection has occurred, used to calculate antibody-mediated immunity
 //' @return NumericVector of predicted antibody levels for each entry in biomarker_id_indices
 //' @family antibody_models
+//' @keywords internal
 // [[Rcpp::export(rng = false)]]
 NumericVector antibody_model(const NumericMatrix theta, 
                              

@@ -211,3 +211,4 @@ Other infection_history_proposal:
 \code{\link[=inf_hist_prop_prior_v3]{inf_hist_prop_prior_v3()}}
 }
 \concept{infection_history_proposal}
+\keyword{internal}

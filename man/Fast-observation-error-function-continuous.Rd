@@ -36,3 +36,4 @@ Other likelihood_functions:
 \code{\link[=likelihood_func_fast]{likelihood_func_fast()}}
 }
 \concept{likelihood_functions}
+\keyword{internal}

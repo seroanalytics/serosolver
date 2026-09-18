@@ -31,3 +31,4 @@ Other inf_mat_prior:
 \code{\link[=inf_mat_prior_total_group_cpp]{inf_mat_prior_total_group_cpp()}}
 }
 \concept{inf_mat_prior}
+\keyword{internal}

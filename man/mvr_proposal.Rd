@@ -40,3 +40,4 @@ Other proposals:
 \code{\link[=univ_proposal]{univ_proposal()}}
 }
 \concept{proposals}
+\keyword{internal}

@@ -40,3 +40,4 @@ Other proposals:
 \code{\link[=mvr_proposal]{mvr_proposal()}}
 }
 \concept{proposals}
+\keyword{internal}

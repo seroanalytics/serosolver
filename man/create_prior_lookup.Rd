@@ -29,3 +29,4 @@ a matrix of beta-binomial log-prior values
 \description{
 Pre-calculates beta-binomial log-prior values for each possible number of infections and exposure time.
 }
+\keyword{internal}

@@ -17,3 +17,4 @@ the second Beta shape parameter
 \description{
 Calculate the second Beta shape parameter from a mode and certainty value
 }
+\keyword{internal}

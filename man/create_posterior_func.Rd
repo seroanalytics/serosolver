@@ -94,3 +94,4 @@ likelihood_func <- create_posterior_func(par_tab, example_antibody_data, example
 liks <- likelihood_func(par_tab$values, example_inf_hist)
 }
 }
+\keyword{internal}

@@ -29,6 +29,7 @@ generate_start_tab <- function(par_tab){
 #' @param pcur the current acceptance rate
 #' @return the scaled step size
 #' @family mcmc
+#' @keywords internal
 #' @useDynLib serosolver
 scaletuning <- function(step, target_acceptance_rate_theta, pcur) {
   if(is.finite(pcur)){
@@ -49,6 +50,7 @@ scaletuning <- function(step, target_acceptance_rate_theta, pcur) {
 #' @param pcur the current acceptance rate
 #' @return the scaled step size
 #' @family mcmc
+#' @keywords internal
 #' @useDynLib serosolver
 scaletuning_alt <- function(step, target_acceptance_rate_theta, pcur) {
   if(is.finite(pcur)){
@@ -73,6 +75,7 @@ scaletuning_alt <- function(step, target_acceptance_rate_theta, pcur) {
 #' @param N_adapt the number of adaptation iterations
 #' @return the updated step-size multiplier
 #' @family mcmc
+#' @keywords internal
 rm_scale <- function(step_scale, mc, target_acceptance_rate_theta, log_prob, N_adapt) {
   dd <- exp(log_prob)
   if (dd < -30) {
@@ -282,6 +285,7 @@ setup_infection_histories <- function(antibody_data, possible_exposure_times, sp
 #' @param col_names if TRUE, saves column names first (only set to true if append = FALSE)
 #' @return nothing
 #' @family mcmc
+#' @keywords internal
 save_infection_history_to_disk <- function(infection_history, file, samp_no, append = TRUE, col_names = FALSE) {
   save_inf_hist <- Matrix::Matrix(infection_history, sparse = TRUE)
   save_inf_hist <- as.data.frame(Matrix::summary(save_inf_hist))
@@ -297,6 +301,7 @@ save_infection_history_to_disk <- function(infection_history, file, samp_no, app
 #' @param j_vec optional vector of infection-time indices to expand the infection history chain for
 #' @return a data table with zero entries added for missing infection events and one column for each infection-time index
 #' @family mcmc
+#' @keywords internal
 expand_summary_inf_chain <- function(inf_chain, j_vec = NULL) {
   if (is.null(j_vec)) j_vec <- 1:max(inf_chain$j)
   full_inf_chain <- data.table::CJ(i = min(inf_chain$i):max(inf_chain$i), j = j_vec, samp_no = sort(unique(inf_chain$samp_no)),chain_no=sort(unique(inf_chain$chain_no)))
