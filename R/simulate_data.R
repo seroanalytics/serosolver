@@ -1,6 +1,6 @@
-# Modified by an AI assistant on 2026-09-17 using GPT-5. Added a namespaced
-# Bernoulli draw for the false-positive observation model; retained the existing
-# simulation behaviour and par_tab-based exponential-waning control.
+# Modified by an AI assistant on 2026-09-18 using GPT-5. Added a namespaced
+# Bernoulli draw for the false-positive observation model and corrected the
+# simulate_data example to use the current attack-rate table interface.
 #'
 #' Simulate full data set
 #'
@@ -35,7 +35,8 @@
 #' ## Times at which individuals can be infected
 #' possible_exposure_times <- example_antigenic_map$inf_times
 #' ## Simulate some random attack rates between 0 and 0.2
-#' attack_rates <- runif(length(possible_exposure_times), 0, 0.2)
+#' attack_rates <- simulate_attack_rates(possible_exposure_times,
+#'                                       mean_par = 0.1)
 #' ## Vector giving the circulation times of measured antigens
 #' sampled_antigens <- seq(min(possible_exposure_times), max(possible_exposure_times), by=2)
 #' all_simulated_data <- simulate_data(par_tab=example_par_tab, group=1, n_indiv=50,    

@@ -30,7 +30,7 @@ License: GPL-3
 LazyData: TRUE
 URL: https://github.com/seroanalytics/serosolver, https://seroanalytics.github.io/serosolver/
 BugReports: https://github.com/seroanalytics/serosolver/issues
-Depends: R (>= 3.5.0)
+Depends: R (>= 4.3.0)
 Imports:
     data.table,
     ggplot2,
@@ -59,7 +59,7 @@ LinkingTo:
     Rcpp,
     RcppArmadillo,
     RcppParallel
-SystemRequirements: C++14
+SystemRequirements: C++17
 VignetteBuilder: knitr
 Encoding: UTF-8
 Config/roxygen2/version: 8.1.0
