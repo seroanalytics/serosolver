@@ -5,7 +5,7 @@
 \alias{example_antibody_data}
 \title{Example antibody data}
 \format{
-A data frame with 6000 rows (each corresponding to an antibody measurement) and 7 variables:
+A data frame with 6000 rows (each corresponding to an antibody measurement) and 8 variables:
 \describe{
     \item{individual}{index starting from 1 for the individual ID. This should be continuous from 1:n.}
     \item{sample_time}{time the serum sample was taken, matching the time resolution used in the overall model.}
@@ -14,8 +14,8 @@ A data frame with 6000 rows (each corresponding to an antibody measurement) and 
     \item{measurement}{the antibody measurement for this biomarker ID at this sampling time.}
     \item{repeat_number}{where there are repeat measurements, gives the repeat number for this serum sample and strain measured.}
     \item{birth}{date of birth matching the time resolution of the model.}
+    \item{population_group}{one-based integer ID identifying the population group for each individual.}
 }
-The optional `population_group` column is not included in this example. When present, it identifies the population group for each individual.
 }
 \usage{
 data(example_antibody_data)

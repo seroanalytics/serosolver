@@ -60,7 +60,8 @@ doc
 Meta
 /doc/
 /Meta/
-..Rcheck/00check.log
+..Rcheck/
+src/symbols.rds
 AGENTS.md
 readme_log.txt
 readme_serosolver_settings.RData

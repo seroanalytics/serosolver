@@ -1,5 +1,5 @@
-# Modified by an AI assistant on 2026-09-16 using GPT-5. Clarified missing and
-# outdated roxygen details for MCMC helper functions without changing their implementations.
+# Modified by an AI assistant on 2026-09-18 using GPT-5. Marked internal
+# infection-history setup examples as non-running documentation.
 
 #' Generate starting parameter table
 #'
@@ -99,10 +99,13 @@ rm_scale <- function(step_scale, mc, target_acceptance_rate_theta, log_prob, N_a
 #' @return an n (number of individuals) by m (number of possible exposure times) matrix containing 1s and 0s, representing infections
 #' @family setup_infection_histories
 #' @examples
+#' \dontrun{
 #' data(example_antibody_data)
 #' data(example_antigenic_map)
 #' times <- example_antigenic_map$inf_times
 #' setup_infection_histories_prior(example_antibody_data, times, 1, 1)
+#' }
+#' @keywords internal
 setup_infection_histories_prior <- function(antibody_data, possible_exposure_times, infection_model_prior_shape1=1,infection_model_prior_shape2=1){
   DOBs <- unique(antibody_data[, c("individual", "birth")])[, 2]
   n_indiv <- length(unique(antibody_data$individual))
@@ -137,9 +140,12 @@ setup_infection_histories_prior <- function(antibody_data, possible_exposure_tim
 #' @return an nxm matrix of infection histories containing 1s and 0s, where n is the number of individuals and m is the number of time periods for potential infection
 #' @family setup_infection_histories
 #' @examples
+#' \dontrun{
 #' data(example_antibody_data)
 #' data(example_antigenic_map)
 #' start_inf <- setup_infection_histories_antibody_level(example_antibody_data, example_antigenic_map$inf_times)
+#' }
+#' @keywords internal
 setup_infection_histories_antibody_level <- function(antibody_data, possible_exposure_times, space = 5, antibody_cutoff = 2, sample_prob = 0.9) {
   start_inf <- NULL
   individuals <- unique(antibody_data$individual)
@@ -205,9 +211,12 @@ setup_infection_histories_antibody_level <- function(antibody_data, possible_exp
 #' @return an nxm matrix of infection histories containing 1s and 0s, where n is the number of individuals and m is the number of time periods for potential infection
 #' @family setup_infection_histories
 #' @examples
+#' \dontrun{
 #' data(example_antibody_data)
 #' data(example_antigenic_map)
 #' start_inf <- setup_infection_histories(example_antibody_data, example_antigenic_map$inf_times)
+#' }
+#' @keywords internal
 setup_infection_histories <- function(antibody_data, possible_exposure_times, space = 5, antibody_cutoff = 2, sample_prob = 0.9) {
   start_inf <- NULL
   individuals <- unique(antibody_data$individual)

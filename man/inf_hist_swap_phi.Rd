@@ -36,6 +36,7 @@ a list: the same infection_history matrix, but with two columns swapped; also th
 Swaps the entire contents of two columns of the infection history matrix, adhering to age and strain limitations. Also swaps the values of phi that correspond to these years
 }
 \examples{
+\dontrun{
 data(example_inf_hist)
 data(example_antibody_data)
 data(example_antigenic_map)
@@ -47,6 +48,7 @@ phis <- runif(length(times))
 n_alive <- get_n_alive(example_antibody_data,times)
 new_inf_hist <- inf_hist_swap_phi(example_inf_hist, phis, age_mask,sample_mask, 1,3, n_alive)
 }
+}
 \seealso{
 \code{\link{inf_hist_swap}}
 
@@ -57,3 +59,4 @@ Other proposals:
 \code{\link[=univ_proposal]{univ_proposal()}}
 }
 \concept{proposals}
+\keyword{internal}

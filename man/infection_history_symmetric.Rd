@@ -39,6 +39,7 @@ a matrix of infection histories matching the input new_inf_hist
 Performs a flipping/swapping infection history update step for a matrix of infection histories. The choice is controlled by `proposal_inf_hist_indiv_swap_ratio`; with the default value of 0.5, it is approximately a 50/50 choice.
 }
 \examples{
+\dontrun{
 data(example_inf_hist)
 data(example_antibody_data)
 data(example_antigenic_map)
@@ -63,6 +64,7 @@ rand_ns <- runif(n_indiv)
 
 new_inf_hist <- infection_history_symmetric(example_inf_hist, indivs,age_mask ,sample_mask, proposal_inf_hist_distances, n_infs, rand_ns, 0.5)
 }
+}
 \seealso{
 Other proposals:
 \code{\link[=inf_hist_swap]{inf_hist_swap()}},
@@ -71,3 +73,4 @@ Other proposals:
 \code{\link[=univ_proposal]{univ_proposal()}}
 }
 \concept{proposals}
+\keyword{internal}

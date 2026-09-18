@@ -16,8 +16,10 @@ a data frame with individual and birth
 Gets the dates of birth for each individual in antibody_data
 }
 \examples{
+\dontrun{
 data(example_antibody_data)
 get_DOBs(antibody_data)
+}
 }
 \seealso{
 Other get_summary:
@@ -25,3 +27,4 @@ Other get_summary:
 \code{\link[=get_n_alive_group]{get_n_alive_group()}}
 }
 \concept{get_summary}
+\keyword{internal}

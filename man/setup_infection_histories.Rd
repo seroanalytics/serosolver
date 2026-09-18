@@ -31,9 +31,11 @@ Given a matrix of antibody data, proposes plausible initial infection histories 
 The idea is to move along time in the context of antigenic drift and look at an individual's antibody level against each biomarker ID Where antibody levels are raised, we suggest an infection. However, to avoid suggesting multiple infections for regions of high antigenic similarity, we place a necessary gap (defined by `space`) between proposed infection times.
 }
 \examples{
+\dontrun{
 data(example_antibody_data)
 data(example_antigenic_map)
 start_inf <- setup_infection_histories(example_antibody_data, example_antigenic_map$inf_times)
+}
 }
 \seealso{
 Other setup_infection_histories:
@@ -41,3 +43,4 @@ Other setup_infection_histories:
 \code{\link[=setup_infection_histories_prior]{setup_infection_histories_prior()}}
 }
 \concept{setup_infection_histories}
+\keyword{internal}

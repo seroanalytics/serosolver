@@ -18,7 +18,10 @@ the parameter table with the additional prior-shape rows
 Pads par_tab with a new row for each infection epoch, such that each epoch has its own shape1 and shape2
 }
 \examples{
+\dontrun{
 n_times <- 40
 data(example_par_tab)
 new_par_tab <- pad_infection_model_prior_parameters(example_par_tab, n_times)
 }
+}
+\keyword{internal}

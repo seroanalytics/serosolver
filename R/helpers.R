@@ -1,5 +1,5 @@
-# Modified by an AI assistant on 2026-09-18 using GPT-5. Exported create_age_mask
-# so its documented example can run for package users.
+# Modified by an AI assistant on 2026-09-18 using GPT-5. Exported the mask
+# helpers and marked internal helper examples as non-running documentation.
 
 #' Get number alive
 #'
@@ -30,8 +30,11 @@ get_n_alive <- function(antibody_data, times) {
 #' @return a data frame with individual and birth
 #' @family get_summary
 #' @examples
+#' \dontrun{
 #' data(example_antibody_data)
 #' get_DOBs(antibody_data)
+#' }
+#' @keywords internal
 get_DOBs <- function(antibody_data){
     DOBs <- unique(antibody_data[,c("individual","birth")])
 }
@@ -450,9 +453,12 @@ logit_transform_bounded <- function(p, maxX) {
 #' @param n_times the number of additional rows to add for each alpha and beta
 #' @return the parameter table with the additional prior-shape rows
 #' @examples
+#' \dontrun{
 #' n_times <- 40
 #' data(example_par_tab)
 #' new_par_tab <- pad_infection_model_prior_parameters(example_par_tab, n_times)
+#' }
+#' @keywords internal
 pad_infection_model_prior_parameters <- function(par_tab, n_times) {
   shape1_row <- par_tab[par_tab$names == "infection_model_prior_shape1", ]
   shape2_row <- par_tab[par_tab$names == "infection_model_prior_shape2", ]

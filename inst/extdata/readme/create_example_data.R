@@ -52,8 +52,10 @@ all_simulated_data <- simulate_data(par_tab=par_tab, group=2, n_indiv=50,
 antibody_data <- all_simulated_data$antibody_data
 true_inf_hist <- all_simulated_data$infection_histories
 plot_antibody_data(antibody_data,possible_exposure_times,1:4,infection_histories = true_inf_hist)
+
 example_par_tab <- par_tab
 example_antibody_data <- antibody_data
+example_antibody_data$population_group <- 1
 example_inf_hist <- true_inf_hist
 example_antigenic_map <- antigenic_map
 

@@ -1,5 +1,5 @@
-# Modified by an AI assistant on 2026-09-16 using GPT-5. Clarified the roxygen
-# documentation for infection-history proposal helpers without changing their implementations.
+# Modified by an AI assistant on 2026-09-18 using GPT-5. Marked internal
+# infection-history proposal examples as non-running documentation.
 
 #' Swap infection history years
 #'
@@ -12,6 +12,7 @@
 #' @return A list containing the infection history matrix with two columns swapped.
 #' @family proposals
 #' @examples
+#' \dontrun{
 #' data(example_inf_hist)
 #' data(example_antibody_data)
 #' data(example_antigenic_map)
@@ -20,6 +21,8 @@
 #' age_mask <- create_age_mask(ages$birth, times)
 #' sample_mask <- create_sample_mask(example_antibody_data, times)
 #' new_inf_hist <- inf_hist_swap(example_inf_hist, age_mask,sample_mask, 1,3)[[1]]
+#' }
+#' @keywords internal
 inf_hist_swap <- function(infection_history, inf_hist_masks, proposal_inf_hist_indiv_swap_ratio, proposal_inf_hist_distance, proposal_ratios=NULL) {
     use_ratios <- NULL
     if(!is.null(proposal_ratios)){
@@ -71,6 +74,7 @@ inf_hist_swap <- function(infection_history, inf_hist_masks, proposal_inf_hist_i
 #' @seealso \code{\link{inf_hist_swap}}
 #' @family proposals
 #' @examples
+#' \dontrun{
 #' data(example_inf_hist)
 #' data(example_antibody_data)
 #' data(example_antigenic_map)
@@ -81,6 +85,8 @@ inf_hist_swap <- function(infection_history, inf_hist_masks, proposal_inf_hist_i
 #' phis <- runif(length(times))
 #' n_alive <- get_n_alive(example_antibody_data,times)
 #' new_inf_hist <- inf_hist_swap_phi(example_inf_hist, phis, age_mask,sample_mask, 1,3, n_alive)
+#' }
+#' @keywords internal
 inf_hist_swap_phi <- function(infection_history, phis, age_mask, sample_mask, proposal_inf_hist_indiv_swap_ratio, proposal_inf_hist_distance, n_alive) {
   ## This first bit of code is the same as inf_hist_swap
   y1 <- sample(1:ncol(infection_history), 1)
@@ -153,6 +159,7 @@ inf_hist_swap_phi <- function(infection_history, phis, age_mask, sample_mask, pr
 #' @return a matrix of infection histories matching the input new_inf_hist
 #' @family proposals
 #' @examples
+#' \dontrun{
 #' data(example_inf_hist)
 #' data(example_antibody_data)
 #' data(example_antigenic_map)
@@ -176,6 +183,8 @@ inf_hist_swap_phi <- function(infection_history, phis, age_mask, sample_mask, pr
 #' rand_ns <- runif(n_indiv)
 #'
 #' new_inf_hist <- infection_history_symmetric(example_inf_hist, indivs,age_mask ,sample_mask, proposal_inf_hist_distances, n_infs, rand_ns, 0.5)
+#' }
+#' @keywords internal
 infection_history_symmetric <- function(new_inf_hist, sampled_indivs, age_mask, sample_mask, proposal_inf_hist_distances, n_infs, rand_ns, proposal_inf_hist_indiv_swap_ratio = 0.5) {
   new_inf <- new_inf_hist
   ks <- rpois(length(sampled_indivs), n_infs)
