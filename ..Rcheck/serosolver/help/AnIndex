@@ -27,9 +27,6 @@ create_prior_lookup_groups	create_prior_lookup_groups
 create_prob_shifts	create_prob_shifts
 create_sample_mask	create_sample_mask
 create_start_level_data	create_start_level_data
-cs2_chains_real	cs2_chains_real
-cs2_chains_real_b	cs2_chains_real_b
-cs2_chains_sim	cs2_chains_sim
 db	db
 dbb_prior	dbb_prior
 density_beta_binom	density_beta_binom

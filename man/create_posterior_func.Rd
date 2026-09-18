@@ -51,7 +51,7 @@ create_posterior_func(
 
 \item{antibody_level_before_infection}{TRUE/FALSE value. If TRUE, solves antibody level predictions, but gives the predicted antibody level at a given time point BEFORE any infection during that time occurs.}
 
-\item{data_type}{integer or vector, with an entry for each unique data type in `antibody_data`. Set to 1 for discrete data (e.g., fold dilution) or 2 for continuous (e.g., ELISA optical density).}
+\item{data_type}{numeric or text value, with an entry for each biomarker group in `antibody_data`: `1` or `"discrete"` for discrete data (e.g., fold dilution), `2` or `"continuous"` for continuous data (e.g., ELISA optical density), or `3` or `"false_positive"` for continuous data with the false-positive observation model. A single value is used for all groups.}
 
 \item{biomarker_groups_weights}{integer or vector, giving a factor to multiply the log-likelihood contribution of this data type towards the overall likelihood.}
 
@@ -67,7 +67,7 @@ create_posterior_func(
 
 \item{verbose}{if TRUE, prints warning messages}
 
-\item{exponential_waning}{if TRUE, assumes exponential rather than linear waning of antibody levels. See the [advanced features vignette](ADVANCED_FEATURES_VIGNETTE_LINK) for this optional workflow.}
+\item{exponential_waning}{Deprecated compatibility argument. The preferred setting is a fixed `exponential_waning` row in `par_tab`, with `values = 1` and `par_type = 0`. See the [advanced features vignette](ADVANCED_FEATURES_VIGNETTE_LINK).}
 
 \item{...}{other arguments to pass to the posterior solving function}
 }

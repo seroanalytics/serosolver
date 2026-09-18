@@ -18,8 +18,6 @@ Also a parameter fp_rate, giving the probability of a (uniformly distributed) fa
 \item{obs}{NumericVector, the vector of observed log antibody levels}
 
 \item{predicted_antibody_levels}{NumericVector, the vector of predicted log antibody levels}
-
-\item{a}{vector of same length as the input data giving the probability of observing each observation given the predictions}
 }
 \value{
 a likelihood for each observed antibody level

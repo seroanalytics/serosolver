@@ -9,14 +9,17 @@
 ^\.DS_Store$
 ^.*\.DS_Store$
 ^\.Rhistory$
+^.*\.Rhistory$
 ^\.Rapp\.history$
+^.*\.Rapp\.history$
+^.*~$
 ^\.Rcheck$
 ^\.\.Rcheck$
 ^src/.*\.(o|so|dll|dylib)$
 ^src/.*\.o\.tmp$
 ^vignettes/.*\.(html|pdf)$
 
-# MCMC cache outputs used when knitting locally
+# MCMC cache outputs used when knitting locally; do not include these in the package
 ^inst/extdata/.*/.*_chain\.csv$
 ^inst/extdata/.*/.*_infection_histories\.csv$
 ^inst/extdata/.*/.*_log\.txt$

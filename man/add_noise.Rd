@@ -15,7 +15,7 @@ add_noise(y, theta, measurement_bias = NULL, indices = NULL, data_type = 1)
 
 \item{indices}{optional integer vector selecting the shift to apply to each value of `y`}
 
-\item{data_type}{integer, currently accepting 1, 2, or 3. Set to 1 for discrete, bounded data; 2 for continuous, bounded data; or 3 for continuous data in which true negatives can produce false-positive measurements.}
+\item{data_type}{numeric or text observation-model type: `1` or `"discrete"` for discrete, bounded data; `2` or `"continuous"` for continuous, bounded data; or `3` or `"false_positive"` for continuous data with the false-positive observation model.}
 }
 \value{
 A vector of noisy, bounded antibody measurements.

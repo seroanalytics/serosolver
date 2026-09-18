@@ -1,5 +1,5 @@
-// Modified by an AI assistant on 2026-09-16 using GPT-5. Updated Rcpp export
-// metadata only; no likelihood implementation code was changed.
+// Modified by an AI assistant on 2026-09-18 using GPT-5. Corrected roxygen
+// parameter documentation for the likelihood wrappers only.
 
 #include "likelihood_funcs.h"
 
@@ -129,7 +129,6 @@ double inf_mat_prior_total_group_cpp(const IntegerVector& n_infections_group, co
 //' @param theta NumericVector, a named parameter vector giving the normal distribution standard deviation and the max observable antibody level
 //' @param obs NumericVector, the vector of observed log antibody levels
 //' @param predicted_antibody_levels NumericVector, the vector of predicted log antibody levels
-//' @param a vector of same length as the input data giving the probability of observing each observation given the predictions
 //' @return a likelihood for each observed antibody level
 //' @family likelihood_functions
 // [[Rcpp::export(rng = false)]]
@@ -164,7 +163,6 @@ NumericVector likelihood_func_fast(const NumericVector &theta, const NumericVect
 //' @param theta NumericVector, a named parameter vector giving the normal distribution standard deviation and the max observable antibody level
 //' @param obs NumericVector, the vector of observed log antibody levels
 //' @param predicted_antibody_levels NumericVector, the vector of predicted log antibody levels
-//' @param a vector of same length as the input data giving the probability of observing each observation given the predictions
 //' @return a likelihood for each observed antibody level
 //' @family likelihood_functions
 // [[Rcpp::export(rng = false)]]
@@ -200,7 +198,6 @@ NumericVector likelihood_func_fast_continuous(const NumericVector &theta, const 
 //' Also a parameter fp_rate, giving the probability of a (uniformly distributed) false positive given true negative.
 //' @param obs NumericVector, the vector of observed log antibody levels
 //' @param predicted_antibody_levels NumericVector, the vector of predicted log antibody levels
-//' @param a vector of same length as the input data giving the probability of observing each observation given the predictions
 //' @return a likelihood for each observed antibody level
 //' @family likelihood_functions
 // [[Rcpp::export(rng = false)]]

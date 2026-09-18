@@ -1,5 +1,5 @@
-# Modified by an AI assistant on 2026-09-11 using GPT-5. Added package-level
-# roxygen imports for functions used from imported dependencies; no functional
+# Modified by an AI assistant on 2026-09-18 using GPT-5. Added targeted roxygen
+# imports for base-package functions reported by R CMD check; no functional
 # code was changed.
 .datatable.aware <- TRUE
 #' @useDynLib serosolver
@@ -15,6 +15,7 @@
 #' @importFrom foreach foreach `%do%`
 #' @importFrom doParallel registerDoParallel
 #' @importFrom tibble as_tibble
+#' @importFrom ggplot2 aes_string
 #' @importFrom ggplot2 `%+replace%` aes coord_cartesian element_blank element_line element_rect
 #'   element_text facet_grid facet_wrap geom_density geom_histogram geom_hline
 #'   geom_line geom_point geom_pointrange geom_rect geom_ribbon geom_violin
@@ -24,4 +25,9 @@
 #'   scale_x_continuous scale_y_continuous stat_density_2d theme_bw theme_classic
 #'   theme_minimal theme xlab xlim ylab ylim margin
 #' @importFrom grid unit
+#' @importFrom graphics legend lines
+#' @importFrom grDevices dev.off pdf png svg
+#' @importFrom stats cov dbeta density dnorm lag lm median optim pnorm predict
+#'   qnorm quantile rbeta rbinom rlnorm rnorm rpois runif sd smooth.spline time
+#' @importFrom utils head read.csv
 NULL

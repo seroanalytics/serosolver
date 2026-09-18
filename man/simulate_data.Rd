@@ -24,11 +24,12 @@ simulate_data(
   demographics = NULL,
   verbose = FALSE,
   starting_levels = NULL,
-  exponential_waning = FALSE
+  exponential_waning = FALSE,
+  coefficient_values = NULL
 )
 }
 \arguments{
-\item{par_tab}{the full parameter table controlling parameter ranges and values}
+\item{par_tab}{the parameter table controlling parameter ranges and values. When stratification is requested, coefficient rows are added automatically; use `coefficient_values` to set selected coefficient values for the simulated truth.}
 
 \item{group}{which group index to give this simulated data}
 
@@ -58,7 +59,7 @@ simulate_data(
 
 \item{measurement_bias}{default NULL, optional vector of measurement shifts used when generating the simulated antibody levels}
 
-\item{data_type}{if not NULL, a vector of observation-model types to use for each `biomarker_group`}
+\item{data_type}{numeric or text observation-model types to use for each `biomarker_group`: `1` or `"discrete"` for discrete, bounded observations; `2` or `"continuous"` for continuous, bounded observations; or `3` or `"false_positive"` for continuous observations with the false-positive model. A single value is used for all biomarker groups.}
 
 \item{demographics}{if not NULL, a data frame giving demographic variables for each individual (1:n_indiv). It must include `birth` and can include `population_group` or variables used for stratification in `par_tab`.}
 
@@ -66,7 +67,9 @@ simulate_data(
 
 \item{starting_levels}{a data frame or function giving the starting biomarker level for each individual, `biomarker_group`, and `biomarker_id` combination. If NULL, starting levels are assumed to be 0.}
 
-\item{exponential_waning}{if TRUE, uses exponential waning function rather than linear waning}
+\item{exponential_waning}{Deprecated compatibility argument. If TRUE, uses exponential waning rather than linear waning. Prefer a fixed `exponential_waning` row in `par_tab`, with `values = 1` and `par_type = 0`.}
+
+\item{coefficient_values}{optional data frame specifying coefficient values used when simulating stratified parameters. It must contain `parameter`, `stratification`, `stratification_level`, `biomarker_group`, and `value` columns. `parameter` is the base parameter name in `par_tab`, and `value` is the coefficient for the specified stratification level. If NULL, generated coefficients retain their existing default values.}
 }
 \value{
 A list containing `antibody_data`, `infection_histories`, `attack_rates`, `phis`, `par_tab`, `population_groups`, `demographic_groups`, and `start_levels`.

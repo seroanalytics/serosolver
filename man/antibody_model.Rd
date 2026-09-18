@@ -37,11 +37,23 @@ antibody_model(
 \arguments{
 \item{theta}{NumericVector, the named vector of model parameters}
 
+\item{unique_theta_indices}{IntegerVector, the indices of the unique model parameters in the parameter matrix}
+
+\item{unique_biomarker_groups}{IntegerVector, the biomarker groups represented in the parameter matrix}
+
 \item{infection_history_mat}{IntegerMatrix, the matrix of 1s and 0s showing presence/absence of infection for each possible time for each individual.}
+
+\item{infection_history_mat_indices}{IntegerVector, the indices linking infection-history entries to the corresponding model inputs}
+
+\item{indiv_theta_groups}{IntegerVector, the parameter-group index for each individual}
 
 \item{possible_exposure_times}{NumericVector, the time periods that the infection history vector corresponds to}
 
 \item{possible_exposure_times_indices}{IntegerVector, which entry in the melted antigenic map that each possible infection time corresponds to}
+
+\item{exposure_groups}{IntegerVector, the exposure-group index associated with each possible infection time}
+
+\item{unique_exposure_groups}{IntegerVector, the exposure groups represented in the model}
 
 \item{sample_times}{NumericVector, the times that each blood sample was taken}
 
@@ -57,11 +69,23 @@ antibody_model(
 
 \item{biomarker_id_indices}{IntegerVector, the indices of all measured biomarkers in the melted antigenic map, with one entry per measured biomarker}
 
+\item{start_level_indices}{IntegerVector, the indices linking each individual, biomarker group, and biomarker ID to its starting antibody level}
+
+\item{starting_antibody_levels}{NumericVector, the starting antibody levels used for the individual, biomarker group, and biomarker ID combinations}
+
+\item{births}{NumericVector, the birth times for each individual}
+
 \item{antigenic_map_long}{arma::mat, the collapsed cross reactivity map for long term boosting, after multiplying by cr_long see \code{\link{create_cross_reactivity_vector}}}
 
 \item{antigenic_map_short}{arma::mat, the collapsed cross reactivity map for short term boosting, after multiplying by cr_short, see \code{\link{create_cross_reactivity_vector}}}
 
 \item{antigenic_distances}{NumericVector, the collapsed cross reactivity map giving euclidean antigenic distances, see \code{\link{create_cross_reactivity_vector}}}
+
+\item{timevarying_groups}{logical, whether demographic groups can vary over time}
+
+\item{exponential_waning}{logical, whether to use the exponential rather than linear waning and cross-reactivity form}
+
+\item{variant_specific_pars}{logical, whether parameter blocks are selected by exposure group}
 
 \item{boost_before_infection}{bool to indicate if calculated antibody level for that time should be before the infection has occurred, used to calculate antibody-mediated immunity}
 }

@@ -1,5 +1,5 @@
-// Modified by an AI assistant on 2026-09-16 using GPT-5. Updated Rcpp export
-// metadata only; no proposal implementation code was changed.
+// Modified by an AI assistant on 2026-09-18 using GPT-5. Corrected roxygen
+// parameter documentation for the infection-history proposal wrappers only.
 
 #include <RcppArmadilloExtensions/sample.h>
 #include "antibody_models_individual.h"
@@ -14,9 +14,10 @@
 //' @param infection_history_mat and RcppArmadillo matrix of infection histories, where rows represent individuals and columns represent potential infection times. The contents should be a set of 1s (presence of infection) and 0s (absence of infection)
 //' @param sampled_indivs IntegerVector, indices of which individuals to resample. Note that this is indexed from 1 (ie. as if passing straight from R)
 //' @param age_mask IntegerVector, for each individual gives the first column in the infection history matrix that an individual could have been exposed to indexed from 1. ie. if alive for the whole period, entry would be 1. If alive for the 11th epoch, entry would be 11.
-//' @param strain_mask IntegerVector, for each individual gives the last column in the infection history matrix that an individual could have been exposed to indexed from 1. ie. if their last serum sample was in the 40th epoch, entry would be 40
+//' @param sample_mask IntegerVector, for each individual gives the last column in the infection history matrix that an individual could have been exposed to indexed from 1. ie. if their last serum sample was in the 40th epoch, entry would be 40
 //' @param proposal_inf_hist_distances IntegerVector, how far can a swap step sample from specified for each individual
 //' @param n_infs IntegerVector, how many infections to add/remove/swap with each proposal step for each individual
+//' @param proposal_inf_hist_indiv_swap_ratio double, gives the proportion of proposals that will be swap steps
 //' @param shape1 double, shape1 (alpha) parameter of the beta binomial
 //' @param shape2 double, shape2 (beta) parameter of the beta binomial
 //' @param rand_ns NumericVector, a vector of random numbers for each sampled individual. The idea is to pre-specify whether an individual experiences an add/remove step or a swap step to avoid random number sampling in C++
@@ -121,10 +122,14 @@ arma::mat inf_hist_prop_prior_v3(arma::mat infection_history_mat,
 //'
 //' Generates a new infection history matrix and corresponding individual likelihoods, using a gibbs sampler from the infection history prior. See \code{\link{inf_hist_prop_prior_v3}}, as inputs are very similar.
 //' @param theta NumericMatrix, the named model parameters used to solve the model
+//' @param unique_theta_indices IntegerVector, the indices of the unique model parameters in the parameter matrix
+//' @param unique_biomarker_groups IntegerVector, the biomarker groups represented in the parameter matrix
 //' @param indiv_group_indices IntegerVector, for each individual, which unique group (for the kinetics parameters) do they belong to?
 //' @param infection_history_mat IntegerMatrix the matrix of 1s and 0s corresponding to individual infection histories
+//' @param infection_history_mat_indices IntegerVector, indices linking infection-history entries to the corresponding model inputs
 //' @param likelihoods_pre_proposal NumericVector, the current likelihoods for each individual before proposing new infection histories
 //' @param sampled_indivs IntegerVector, indices of sampled individuals
+//' @param n_times_samp_vec IntegerVector, number of possible exposure times considered for each sampled individual
 //' @param age_mask IntegerVector, length of the number of individuals, with indices specifying first time period that an individual can be infected (indexed from 1, such that a value of 1 allows an individual to be infected in any time period)
 //' @param sample_mask IntegerVector, length of the number of individuals, with indices specifying last time period that an individual can be infected (ie. last time a sample was taken)
 //' @param n_alive IntegerMatrix, number of columns is the number of time periods that an individual could be infected, giving the number of individual alive in each time period. Number of rows is the number of distinct groups.
@@ -133,32 +138,53 @@ arma::mat inf_hist_prop_prior_v3(arma::mat infection_history_mat,
 //' @param prior_lookup arma::cube, the pre-computed lookup table for the beta prior on infection histories, dimensions are number of infections, time, and group
 //' @param proposal_inf_hist_indiv_swap_ratio double, gives the proportion of proposals that will be swap steps (ie. swap contents of two cells in infection_history rather than adding/removing infections)
 //' @param swap_distance int, in a swap step, how many time steps either side of the chosen time period to swap with
+//' @param propose_from_prior logical, whether to propose infection histories from the prior
 //' @param shape1 double, shape1 (alpha) parameter for beta prior on infection probability
 //' @param shape2 double, shape2 (beta) parameter for beta prior on infection probability
 //' @param possible_exposure_times NumericVector, the times that individuals could be infected
 //' @param possible_exposure_times_indices IntegerVector, indexing vector from 0:(number of exposure times-1)
+//' @param exposure_groups IntegerVector, the exposure-group index associated with each possible infection time
+//' @param unique_exposure_groups IntegerVector, the exposure groups represented in the model
 //' @param sample_times NumericVector, the vector of real times that samples were taken
-//' @param rows_per_indiv_in_samples IntegerVector, How many rows in antibody data correspond to each individual, sample and repeat?
+//' @param type_data_start IntegerVector, the starting index for each individual and biomarker-group block in the antibody data
+//' @param biomarker_groups IntegerVector, the biomarker-group index for each individual and sample block
+//' @param sample_data_start IntegerVector, the starting index for each individual, biomarker-group, and sample block
+//' @param antibody_data_start IntegerVector, the starting index for each individual and biomarker-group block in the antibody data
+//' @param nrows_per_sample IntegerVector, the number of antibody rows associated with each sample
 //' @param cum_nrows_per_individual_in_data IntegerVector, How many rows in the antibody data correspond to each individual?
 //' @param cum_nrows_per_individual_in_repeat_data IntegerVector, For the repeat data (ie. already calculated these antibody levels), how many rows in the antibody data correspond to each individual?
-//' @param nrows_per_blood_sample IntegerVector, Split the sample times and runs for each individual
 //' @param popn_group_id_vec IntegerVector, vector with 1 entry per individual, giving the group ID of that individual
 //' @param biomarker_id_indices IntegerVector, For each antibody measurement, corresponding entry in antigenic map
+//' @param start_level_indices IntegerVector, indices linking each individual, biomarker group, and biomarker ID to its starting antibody level
+//' @param starting_antibody_levels NumericVector, starting antibody levels for the individual, biomarker group, and biomarker ID combinations
+//' @param births NumericVector, birth times for each individual
 //' @param antigenic_map_long arma::mat, the collapsed cross reactivity map for long term boosting, after multiplying by sigma1, see \code{\link{create_cross_reactivity_vector}}
 //' @param antigenic_map_short arma::mat, the collapsed cross reactivity map for short term boosting, after multiplying by sigma2, see \code{\link{create_cross_reactivity_vector}}
 //' @param antigenic_distances NumericVector matching the dimensions of antigenic_map_long and antigenic_map_short, but with the raw antigenic distances between strains
 //' @param antibody_data NumericVector, data for all individuals for the first instance of each calculated antibody level
 //' @param antibody_data_repeats NumericVector, the repeat antibody data for all individuals (ie. do not solve the same antibody level twice)
+//' @param n_measurements_total integer, total number of antibody measurements represented in the flattened data
 //' @param repeat_indices IntegerVector, which index in the main data vector does each entry in repeat_data correspond to ie. which calculated antibody level in predicted_antibody_levels should be used for each observation?
+//' @param repeat_data_exist logical, whether repeat antibody data are present
 //' @param measurement_shifts NumericVector, if length matches the length of \code{data}, adds these as measurement shifts to the antibody levels. If lengths do not match, is not used.
 //' @param proposal_iter IntegerVector, vector with entry for each individual, storing the number of infection history add/remove proposals for each individual.
 //' @param accepted_iter IntegerVector, vector with entry for each individual, storing the number of accepted infection history add/remove proposals for each individual.
 //' @param proposal_swap IntegerVector, vector with entry for each individual, storing the number of proposed infection history swaps
 //' @param accepted_swap IntegerVector, vector with entry for each individual, storing the number of accepted infection history swaps
+//' @param overall_swap_proposals IntegerMatrix, counts of proposed swaps by group and time
+//' @param overall_add_proposals IntegerMatrix, counts of proposed additions or removals by group and time
+//' @param time_sample_probs NumericVector, sampling probabilities for possible exposure times
 //' @param total_alive IntegerVector, giving the total number of potential infection events for each group. This only applies to prior version 4. If set to a vector of values -1, then this is ignored.
+//' @param data_types IntegerVector, observation-model type for each biomarker group
+//' @param obs_weights NumericVector, observation weights used in the likelihood
+//' @param indiv_possible_exposure_times_indices IntegerVector, indices of possible exposure times available to each individual
+//' @param indiv_poss_exp_times_start IntegerVector, starting index for each individual's possible exposure times
+//' @param indiv_poss_exp_times_end IntegerVector, ending index for each individual's possible exposure times
+//' @param exponential_waning logical, whether to use the exponential rather than linear waning and cross-reactivity form
+//' @param timevarying_groups logical, whether demographic groups can vary over time
+//' @param variant_specific_pars logical, whether parameter blocks are selected by exposure group
 //' @param temp double, temperature for parallel tempering MCMC
-//' @param solve_likelihood bool, if FALSE does not solve likelihood when calculating acceptance probability
-//' @param data_type int, defaults to 1 for discretized, bounded data. Set to 2 for continuous, bounded data
+//' @param solve_likelihood logical, if FALSE does not solve the likelihood when calculating the acceptance probability
 //' @return an R list with 6 entries: 1) the vector replacing likelihoods_pre_proposal, corresponding to the new likelihoods per individual; 2) the matrix of 1s and 0s corresponding to the new infection histories for all individuals; 3-6) the updated entries for proposal_iter, accepted_iter, proposal_swap and accepted_swap.
 //' @family infection_history_proposal
 // [[Rcpp::export]]

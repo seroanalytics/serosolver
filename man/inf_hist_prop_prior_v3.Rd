@@ -24,6 +24,8 @@ inf_hist_prop_prior_v3(
 
 \item{age_mask}{IntegerVector, for each individual gives the first column in the infection history matrix that an individual could have been exposed to indexed from 1. ie. if alive for the whole period, entry would be 1. If alive for the 11th epoch, entry would be 11.}
 
+\item{sample_mask}{IntegerVector, for each individual gives the last column in the infection history matrix that an individual could have been exposed to indexed from 1. ie. if their last serum sample was in the 40th epoch, entry would be 40}
+
 \item{proposal_inf_hist_distances}{IntegerVector, how far can a swap step sample from specified for each individual}
 
 \item{n_infs}{IntegerVector, how many infections to add/remove/swap with each proposal step for each individual}
@@ -34,7 +36,7 @@ inf_hist_prop_prior_v3(
 
 \item{rand_ns}{NumericVector, a vector of random numbers for each sampled individual. The idea is to pre-specify whether an individual experiences an add/remove step or a swap step to avoid random number sampling in C++}
 
-\item{strain_mask}{IntegerVector, for each individual gives the last column in the infection history matrix that an individual could have been exposed to indexed from 1. ie. if their last serum sample was in the 40th epoch, entry would be 40}
+\item{proposal_inf_hist_indiv_swap_ratio}{double, gives the proportion of proposals that will be swap steps}
 }
 \value{
 a matrix of 1s and 0s corresponding to the infection histories for all individuals

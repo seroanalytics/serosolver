@@ -1,5 +1,5 @@
-# Modified by an AI assistant on 2026-09-17 using GPT-5. Kept fixed model-option
-# rows global and excluded their missing biomarker-group values from variant map setup.
+# Modified by an AI assistant on 2026-09-18 using GPT-5. Exported create_age_mask
+# so its documented example can run for package users.
 
 #' Get number alive
 #'
@@ -177,6 +177,7 @@ create_prior_lookup_groups <- function(antibody_data, demographics=NULL, possibl
 #' times <- example_antigenic_map$inf_times
 #' DOBs <- unique(example_antibody_data[,c("individual","birth")])
 #' age_mask <- create_age_mask(DOBs$birth, times)
+#' @export
 create_age_mask <- function(DOBs, possible_exposure_times) {
   age_mask <- sapply(DOBs, function(x) {
     if (is.na(x)) {
@@ -199,6 +200,7 @@ create_age_mask <- function(DOBs, possible_exposure_times) {
 #' data(example_antigenic_map)
 #' times <- example_antigenic_map$inf_times
 #' sample_mask <- create_sample_mask(example_antibody_data, times)
+#' @export
 create_sample_mask <- function(antibody_data, possible_exposure_times) {
   ids <- unique(antibody_data$individual)
   sample_mask <- sapply(ids, function(x) {

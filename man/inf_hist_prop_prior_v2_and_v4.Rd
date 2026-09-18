@@ -74,13 +74,21 @@ inf_hist_prop_prior_v2_and_v4(
 \arguments{
 \item{theta}{NumericMatrix, the named model parameters used to solve the model}
 
+\item{unique_theta_indices}{IntegerVector, the indices of the unique model parameters in the parameter matrix}
+
+\item{unique_biomarker_groups}{IntegerVector, the biomarker groups represented in the parameter matrix}
+
 \item{indiv_group_indices}{IntegerVector, for each individual, which unique group (for the kinetics parameters) do they belong to?}
 
 \item{infection_history_mat}{IntegerMatrix the matrix of 1s and 0s corresponding to individual infection histories}
 
+\item{infection_history_mat_indices}{IntegerVector, indices linking infection-history entries to the corresponding model inputs}
+
 \item{likelihoods_pre_proposal}{NumericVector, the current likelihoods for each individual before proposing new infection histories}
 
 \item{sampled_indivs}{IntegerVector, indices of sampled individuals}
+
+\item{n_times_samp_vec}{IntegerVector, number of possible exposure times considered for each sampled individual}
 
 \item{age_mask}{IntegerVector, length of the number of individuals, with indices specifying first time period that an individual can be infected (indexed from 1, such that a value of 1 allows an individual to be infected in any time period)}
 
@@ -98,6 +106,8 @@ inf_hist_prop_prior_v2_and_v4(
 
 \item{swap_distance}{int, in a swap step, how many time steps either side of the chosen time period to swap with}
 
+\item{propose_from_prior}{logical, whether to propose infection histories from the prior}
+
 \item{shape1}{double, shape1 (alpha) parameter for beta prior on infection probability}
 
 \item{shape2}{double, shape2 (beta) parameter for beta prior on infection probability}
@@ -106,7 +116,21 @@ inf_hist_prop_prior_v2_and_v4(
 
 \item{possible_exposure_times_indices}{IntegerVector, indexing vector from 0:(number of exposure times-1)}
 
+\item{exposure_groups}{IntegerVector, the exposure-group index associated with each possible infection time}
+
+\item{unique_exposure_groups}{IntegerVector, the exposure groups represented in the model}
+
 \item{sample_times}{NumericVector, the vector of real times that samples were taken}
+
+\item{type_data_start}{IntegerVector, the starting index for each individual and biomarker-group block in the antibody data}
+
+\item{biomarker_groups}{IntegerVector, the biomarker-group index for each individual and sample block}
+
+\item{sample_data_start}{IntegerVector, the starting index for each individual, biomarker-group, and sample block}
+
+\item{antibody_data_start}{IntegerVector, the starting index for each individual and biomarker-group block in the antibody data}
+
+\item{nrows_per_sample}{IntegerVector, the number of antibody rows associated with each sample}
 
 \item{cum_nrows_per_individual_in_data}{IntegerVector, How many rows in the antibody data correspond to each individual?}
 
@@ -115,6 +139,12 @@ inf_hist_prop_prior_v2_and_v4(
 \item{popn_group_id_vec}{IntegerVector, vector with 1 entry per individual, giving the group ID of that individual}
 
 \item{biomarker_id_indices}{IntegerVector, For each antibody measurement, corresponding entry in antigenic map}
+
+\item{start_level_indices}{IntegerVector, indices linking each individual, biomarker group, and biomarker ID to its starting antibody level}
+
+\item{starting_antibody_levels}{NumericVector, starting antibody levels for the individual, biomarker group, and biomarker ID combinations}
+
+\item{births}{NumericVector, birth times for each individual}
 
 \item{antigenic_map_long}{arma::mat, the collapsed cross reactivity map for long term boosting, after multiplying by sigma1, see \code{\link{create_cross_reactivity_vector}}}
 
@@ -126,7 +156,11 @@ inf_hist_prop_prior_v2_and_v4(
 
 \item{antibody_data_repeats}{NumericVector, the repeat antibody data for all individuals (ie. do not solve the same antibody level twice)}
 
+\item{n_measurements_total}{integer, total number of antibody measurements represented in the flattened data}
+
 \item{repeat_indices}{IntegerVector, which index in the main data vector does each entry in repeat_data correspond to ie. which calculated antibody level in predicted_antibody_levels should be used for each observation?}
+
+\item{repeat_data_exist}{logical, whether repeat antibody data are present}
 
 \item{measurement_shifts}{NumericVector, if length matches the length of \code{data}, adds these as measurement shifts to the antibody levels. If lengths do not match, is not used.}
 
@@ -138,17 +172,33 @@ inf_hist_prop_prior_v2_and_v4(
 
 \item{accepted_swap}{IntegerVector, vector with entry for each individual, storing the number of accepted infection history swaps}
 
+\item{overall_swap_proposals}{IntegerMatrix, counts of proposed swaps by group and time}
+
+\item{overall_add_proposals}{IntegerMatrix, counts of proposed additions or removals by group and time}
+
+\item{time_sample_probs}{NumericVector, sampling probabilities for possible exposure times}
+
 \item{total_alive}{IntegerVector, giving the total number of potential infection events for each group. This only applies to prior version 4. If set to a vector of values -1, then this is ignored.}
+
+\item{data_types}{IntegerVector, observation-model type for each biomarker group}
+
+\item{obs_weights}{NumericVector, observation weights used in the likelihood}
+
+\item{indiv_possible_exposure_times_indices}{IntegerVector, indices of possible exposure times available to each individual}
+
+\item{indiv_poss_exp_times_start}{IntegerVector, starting index for each individual's possible exposure times}
+
+\item{indiv_poss_exp_times_end}{IntegerVector, ending index for each individual's possible exposure times}
+
+\item{exponential_waning}{logical, whether to use the exponential rather than linear waning and cross-reactivity form}
+
+\item{timevarying_groups}{logical, whether demographic groups can vary over time}
+
+\item{variant_specific_pars}{logical, whether parameter blocks are selected by exposure group}
 
 \item{temp}{double, temperature for parallel tempering MCMC}
 
-\item{solve_likelihood}{bool, if FALSE does not solve likelihood when calculating acceptance probability}
-
-\item{rows_per_indiv_in_samples}{IntegerVector, How many rows in antibody data correspond to each individual, sample and repeat?}
-
-\item{nrows_per_blood_sample}{IntegerVector, Split the sample times and runs for each individual}
-
-\item{data_type}{int, defaults to 1 for discretized, bounded data. Set to 2 for continuous, bounded data}
+\item{solve_likelihood}{logical, if FALSE does not solve the likelihood when calculating the acceptance probability}
 }
 \value{
 an R list with 6 entries: 1) the vector replacing likelihoods_pre_proposal, corresponding to the new likelihoods per individual; 2) the matrix of 1s and 0s corresponding to the new infection histories for all individuals; 3-6) the updated entries for proposal_iter, accepted_iter, proposal_swap and accepted_swap.

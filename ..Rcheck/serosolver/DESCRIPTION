@@ -1,5 +1,5 @@
 Package: serosolver
-Title: Inference Framework for Serological Data
+Title: Infection and antibody kinetics inference using serology
 Version: 1.2.0
 Authors@R: 
     c(person(given = "James",
@@ -25,8 +25,7 @@ Authors@R:
              email="s.riley@imperial.ac.uk"))
 Author: James Hay [aut, cre], Adam Kucharski [aut], Kylie Ainslie [aut], Amanda Minter [aut], Steven Riley [aut]
 Maintainer: James Hay <jameshay218@gmail.com>
-Description: Given a table of serological data for a population, infers the
-    presence and timing of infections based on raised titres.
+Description: A Bayesian framework for inferring antibody kinetics, individual infection histories, and infection rates from cross-sectional or longitudinal serological data, including multistrain serology.
 License: GPL-3
 LazyData: TRUE
 URL: https://github.com/seroanalytics/serosolver,
@@ -42,4 +41,4 @@ SystemRequirements: C++14
 VignetteBuilder: knitr
 Encoding: UTF-8
 Config/roxygen2/version: 8.1.0
-Built: R 4.6.1; aarch64-apple-darwin23; 2026-09-17 20:02:05 UTC; unix
+Built: R 4.6.1; aarch64-apple-darwin23; 2026-09-18 13:36:02 UTC; unix

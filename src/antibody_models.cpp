@@ -1,5 +1,5 @@
-// Modified by an AI assistant on 2026-09-16 using GPT-5. Updated Rcpp export
-// metadata only; no model implementation code was changed.
+// Modified by an AI assistant on 2026-09-18 using GPT-5. Completed the roxygen
+// parameter documentation for the exported antibody-model wrapper only.
 
 #include <cmath>
 #include "antibody_models_individual.h"
@@ -9,9 +9,15 @@
 //'
 //' Overall model function, fast implementation
 //' @param theta NumericVector, the named vector of model parameters
+//' @param unique_theta_indices IntegerVector, the indices of the unique model parameters in the parameter matrix
+//' @param unique_biomarker_groups IntegerVector, the biomarker groups represented in the parameter matrix
 //' @param infection_history_mat IntegerMatrix, the matrix of 1s and 0s showing presence/absence of infection for each possible time for each individual. 
+//' @param infection_history_mat_indices IntegerVector, the indices linking infection-history entries to the corresponding model inputs
+//' @param indiv_theta_groups IntegerVector, the parameter-group index for each individual
 //' @param possible_exposure_times NumericVector, the time periods that the infection history vector corresponds to
 //' @param possible_exposure_times_indices IntegerVector, which entry in the melted antigenic map that each possible infection time corresponds to
+//' @param exposure_groups IntegerVector, the exposure-group index associated with each possible infection time
+//' @param unique_exposure_groups IntegerVector, the exposure groups represented in the model
 //' @param sample_times NumericVector, the times that each blood sample was taken
 //' @param type_data_start IntegerVector, one entry for each unique individual. Each entry gives the starting index for each individual of the data frame `unique(antibody_data[,c("individual","biomarker_group")])`.
 //' @param biomarker_groups IntegerVector, result of `unique(antibody_data[,c("individual","biomarker_group")])$biomarker_group`
@@ -19,9 +25,15 @@
 //' @param antibody_data_start IntegerVector, How many cumulative rows in the antibody data correspond to each unique individual and observation type combination? 
 //' @param nrows_per_sample IntegerVector, one entry per sample taken. Dictates how many entries to iterate through cum_nrows_per_individual_in_data for each sampling time considered
 //' @param biomarker_id_indices IntegerVector, the indices of all measured biomarkers in the melted antigenic map, with one entry per measured biomarker
+//' @param start_level_indices IntegerVector, the indices linking each individual, biomarker group, and biomarker ID to its starting antibody level
+//' @param starting_antibody_levels NumericVector, the starting antibody levels used for the individual, biomarker group, and biomarker ID combinations
+//' @param births NumericVector, the birth times for each individual
 //' @param antigenic_map_long arma::mat, the collapsed cross reactivity map for long term boosting, after multiplying by cr_long see \code{\link{create_cross_reactivity_vector}}
 //' @param antigenic_map_short arma::mat, the collapsed cross reactivity map for short term boosting, after multiplying by cr_short, see \code{\link{create_cross_reactivity_vector}}
 //' @param antigenic_distances NumericVector, the collapsed cross reactivity map giving euclidean antigenic distances, see \code{\link{create_cross_reactivity_vector}}
+//' @param timevarying_groups logical, whether demographic groups can vary over time
+//' @param exponential_waning logical, whether to use the exponential rather than linear waning and cross-reactivity form
+//' @param variant_specific_pars logical, whether parameter blocks are selected by exposure group
 //' @param boost_before_infection bool to indicate if calculated antibody level for that time should be before the infection has occurred, used to calculate antibody-mediated immunity
 //' @return NumericVector of predicted antibody levels for each entry in biomarker_id_indices
 //' @family antibody_models

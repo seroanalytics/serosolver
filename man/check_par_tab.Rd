@@ -16,7 +16,8 @@ check_par_tab(
 \item{par_tab}{A data frame containing the model parameter table. It must
 contain `names`, `values`, `fixed`, `lower_bound`, `upper_bound`,
 `lower_start`, `upper_start`, and `par_type`. A missing `par_type` column
-is added with value 1 when possible.}
+is added with value 1 when possible. To use exponential waning, add one
+fixed row named `exponential_waning` with `par_type = 0` and `values = 1`.}
 
 \item{mcmc}{Logical; if `TRUE`, also prepares and checks fields required by
 the MCMC algorithm. Use `FALSE` when checking a table for simulation.}

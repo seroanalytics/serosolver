@@ -47,15 +47,11 @@ create_prob_shifts      Measurement shift creation
 create_sample_mask      Create sample mask
 create_start_level_data
                         Generate starting antibody levels
-cs2_chains_real         MCMC chains case study 2, real
-cs2_chains_real_b       MCMC chains case study 2, real, for sim
-cs2_chains_sim          MCMC chains case study 2, sim
 db                      Beta prior on an infection
 dbb_prior               Beta binomial prior used here (no choose
                         constant)
 density_beta_binom      Beta binomial density
 describe_priors         Describe infection history priors
-estimate_mode           Estimate vector mode
 euc_distance            Calculate Euclidean antigenic distance
 example_antibody_data   Example antibody data
 example_antigenic_map   Example antigenic map

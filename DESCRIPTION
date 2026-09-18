@@ -1,5 +1,5 @@
 Package: serosolver
-Title: Infection history and antibody kinetics inference using serological data
+Title: Infection and antibody kinetics inference using serology
 Version: 1.2.0
 Authors@R: 
     c(person(given = "James",

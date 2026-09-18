@@ -21,7 +21,7 @@ plot_antibody_model(
 
 \item{antigenic_map}{the antigenic map to solve the model with. Can be left to NULL to assume all biomarker IDs have the same antigenic coordinates.}
 
-\item{exponential_waning}{if TRUE, then waning is exponential rather than linear}
+\item{exponential_waning}{Deprecated compatibility argument. The preferred setting is a fixed `exponential_waning` row in `par_tab` when using a parameter table.}
 }
 \value{
 If `antigenic_map` is `NULL`, a ggplot object showing simulated

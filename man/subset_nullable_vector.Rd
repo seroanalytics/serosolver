@@ -6,6 +6,16 @@
 \usage{
 subset_nullable_vector(x, index1, index2)
 }
+\arguments{
+\item{x}{a nullable numeric vector}
+
+\item{index1}{the first element to include}
+
+\item{index2}{the last element to include}
+}
+\value{
+the requested subset, or an empty numeric vector when `x` is NULL
+}
 \description{
 Takes a subset of a Nullable NumericVector, but only if it isn't NULL
 }

@@ -1,9 +1,14 @@
-// Modified by an AI assistant on 2026-09-16 using GPT-5. Updated Rcpp export
-// metadata only; no helper implementation code was changed.
+// Modified by an AI assistant on 2026-09-18 using GPT-5. Completed the roxygen
+// parameter documentation for two low-level helper wrappers only.
 
 #include "helpers.h"
 
 //' Takes a subset of a Nullable NumericVector, but only if it isn't NULL
+//'
+//' @param x a nullable numeric vector
+//' @param index1 the first element to include
+//' @param index2 the last element to include
+//' @return the requested subset, or an empty numeric vector when `x` is NULL
 // [[Rcpp::export]]
 NumericVector subset_nullable_vector(const Nullable<NumericVector> &x, int index1, int index2) {
   if(x.isNotNull()){
@@ -163,6 +168,11 @@ NumericVector sum_buckets(NumericVector a, NumericVector buckets){
 
 //' Count infections by group and time
 //'
+//' @param inf_hist an infection-history matrix with individuals in rows and time periods in columns
+//' @param group_ids_vec the group index for each individual or time-varying individual-period entry
+//' @param n_groups the number of groups in the output
+//' @param timevarying_groups logical, whether group IDs vary over time
+//' @return a matrix containing the number of infections in each group and time period
 //[[Rcpp::export]]
 IntegerMatrix sum_infections_by_group(IntegerMatrix inf_hist, NumericVector group_ids_vec, int n_groups, bool timevarying_groups){
   int n_times = inf_hist.ncol();

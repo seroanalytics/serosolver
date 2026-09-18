@@ -54,7 +54,7 @@ plot_model_fits(
 
 \item{p_ncol}{integer giving the number of columns of subplots to create if using orientation = "longitudinal"}
 
-\item{data_type}{integer, currently accepting 1, 2, or 3. Set to 1 for discrete, bounded data, 2 for continuous, bounded data, or 3 for continuous data with the false-positive observation model. For bounded data, the limits are given by `min_measurement` and `max_measurement` in par_tab.}
+\item{data_type}{numeric or text value: `1` or `"discrete"` for discrete, bounded data; `2` or `"continuous"` for continuous, bounded data; or `3` or `"false_positive"` for continuous data with the false-positive observation model. Supply one value per biomarker group, or one value to use for all groups. For bounded data, the limits are given by `min_measurement` and `max_measurement` in par_tab.}
 
 \item{expand_to_all_times}{TRUE/FALSE value. If TRUE, uses all possible exposure times as sample times when expanding the prediction data. If FALSE, only the sample times represented in antibody_data are used.}
 
@@ -70,7 +70,7 @@ plot_model_fits(
 
 \item{settings}{if not NULL, list of serosolver settings as returned from the main serosolver function, such as `res$settings`}
 
-\item{exponential_waning}{if TRUE, assumes exponential rather than linear waning}
+\item{exponential_waning}{Deprecated compatibility argument. Prefer a fixed `exponential_waning` row in `par_tab`, with `values = 1` and `par_type = 0`.}
 
 \item{verbose}{if TRUE, prints messages when settings are used or predictions are prepared}
 }

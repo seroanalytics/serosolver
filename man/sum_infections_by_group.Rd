@@ -6,6 +6,18 @@
 \usage{
 sum_infections_by_group(inf_hist, group_ids_vec, n_groups, timevarying_groups)
 }
+\arguments{
+\item{inf_hist}{an infection-history matrix with individuals in rows and time periods in columns}
+
+\item{group_ids_vec}{the group index for each individual or time-varying individual-period entry}
+
+\item{n_groups}{the number of groups in the output}
+
+\item{timevarying_groups}{logical, whether group IDs vary over time}
+}
+\value{
+a matrix containing the number of infections in each group and time period
+}
 \description{
 Count infections by group and time
 }

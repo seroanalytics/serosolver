@@ -5,9 +5,7 @@
 #'
 #' @param x the vector to be estimated
 #' @return the estimated mode of the given vector of values
-#' @examples
-#' x <- runif(1000)
-#' y <- estimate_mode(x)
+#' @keywords internal
 estimate_mode <- function(x) {
   d <- density(x)
   d$x[which.max(d$y)]

@@ -75,7 +75,7 @@ serosolver(
 
 \item{start_level}{either \code{"none"} or a data frame giving the starting biomarker level for each individual, \code{biomarker_group}, and \code{biomarker_id} combination. With \code{"none"}, starting levels are assumed to be 0. See the \href{ADVANCED_FEATURES_VIGNETTE_LINK}{advanced features vignette}.}
 
-\item{data_type}{integer identifying the observation model: 1 for discrete, bounded data; 2 for continuous, bounded data; or 3 for continuous data with the false-positive observation model.}
+\item{data_type}{numeric or text value identifying the observation model: \code{1} or \code{"discrete"} for discrete, bounded data; \code{2} or \code{"continuous"} for continuous, bounded data; or \code{3} or \code{"false_positive"} for continuous data with the false-positive observation model. Supply one value per biomarker group, or one value to use for all groups.}
 
 \item{verbose}{if TRUE, prints progress updates during the run}
 
@@ -83,7 +83,7 @@ serosolver(
 
 \item{inf_hist_mcmc_summaries}{if TRUE, calculates MCMC summaries of the infection history posterior draws. Set to FALSE to decrease run time, as this is a slow operation.}
 
-\item{exponential_waning}{if TRUE, assumes exponential waning of antibody levels rather than linear waning. This also changes the cross-reactivity model from a linear decline with antigenic distance to an exponential decline. See the \href{ADVANCED_FEATURES_VIGNETTE_LINK}{advanced features vignette}.}
+\item{exponential_waning}{Deprecated. If TRUE, assumes exponential waning of antibody levels rather than linear waning, and changes the cross-reactivity model from a linear decline with antigenic distance to an exponential decline. Prefer a fixed \code{exponential_waning} row in \code{par_tab}, with \code{values = 1} and \code{par_type = 0}. See the \href{ADVANCED_FEATURES_VIGNETTE_LINK}{advanced features vignette}.}
 
 \item{plot_outputs}{if TRUE, calculates diagnostic summaries and returns model-fit, attack-rate, and antibody-model plots. Defaults to TRUE.}
 

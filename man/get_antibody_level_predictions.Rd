@@ -62,11 +62,11 @@ get_antibody_level_predictions(
 
 \item{for_regression}{if TRUE, returns posterior draws rather than posterior summaries}
 
-\item{data_type}{integer, currently accepting 1, 2, or 3. Set to 1 for discrete, bounded data, 2 for continuous, bounded data, or 3 for continuous data with the false-positive observation model. For bounded data, the limits are given by `min_measurement` and `max_measurement` in par_tab.}
+\item{data_type}{numeric or text value: `1` or `"discrete"` for discrete, bounded data; `2` or `"continuous"` for continuous, bounded data; or `3` or `"false_positive"` for continuous data with the false-positive observation model. Supply one value per biomarker group, or one value to use for all groups. For bounded data, the limits are given by `min_measurement` and `max_measurement` in par_tab.}
 
 \item{start_level}{`"none"` or a starting-level summary or data frame. A starting level is the antibody level assigned before the modelled infection history begins. With `"none"`, starting levels are set to zero. See the [advanced features vignette](ADVANCED_FEATURES_VIGNETTE_LINK).}
 
-\item{exponential_waning}{if TRUE, assumes exponential rather than linear waning}
+\item{exponential_waning}{Deprecated compatibility argument. The preferred setting is a fixed `exponential_waning` row in `par_tab`, with `values = 1` and `par_type = 0`.}
 }
 \value{
 a list with the antibody level predictions (95% credible intervals, median and multivariate posterior mode) and the probabilities of infection for each individual in each epoch

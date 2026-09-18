@@ -7,6 +7,8 @@ export(check_data)
 export(check_demographics)
 export(check_inf_hist)
 export(check_par_tab)
+export(create_age_mask)
+export(create_sample_mask)
 export(create_start_level_data)
 export(describe_priors)
 export(extend_par_tab_biomarker_groups)
@@ -103,6 +105,7 @@ importFrom(foreach,
 importFrom(ggplot2,
   `%+replace%`,
   aes,
+  aes_string,
   coord_cartesian,
   element_blank,
   element_line,
@@ -145,7 +148,40 @@ importFrom(ggplot2,
   ylab,
   ylim
 )
+importFrom(grDevices,
+  dev.off,
+  pdf,
+  png,
+  svg
+)
+importFrom(graphics,
+  legend,
+  lines
+)
 importFrom(grid,unit)
+importFrom(stats,
+  cov,
+  dbeta,
+  density,
+  dnorm,
+  lag,
+  lm,
+  median,
+  optim,
+  pnorm,
+  predict,
+  qnorm,
+  quantile,
+  rbeta,
+  rbinom,
+  rlnorm,
+  rnorm,
+  rpois,
+  runif,
+  sd,
+  smooth.spline,
+  time
+)
 importFrom(tibble,as_tibble)
 importFrom(tidyr,
   complete,
@@ -154,5 +190,9 @@ importFrom(tidyr,
   pivot_longer,
   pivot_wider,
   unnest
+)
+importFrom(utils,
+  head,
+  read.csv
 )
 useDynLib(serosolver)

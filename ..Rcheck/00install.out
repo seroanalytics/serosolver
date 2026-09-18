@@ -7,6 +7,7 @@ specified C++14
 using C++ compiler: ‘Apple clang version 17.0.0 (clang-1700.0.13.5)’
 using SDK: ‘MacOSX15.5.sdk’
 make: Nothing to be done for `all'.
+make: `symbols.rds' is up to date.
 installing to /Users/jhay/Documents/GitHub/serosolver/..Rcheck/00LOCK-serosolver/00new/serosolver/libs
 ** R
 ** data
