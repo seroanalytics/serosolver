@@ -116,6 +116,10 @@ Additional vignettes:
 - [Naming
   conventions](https://seroanalytics.github.io/serosolver/articles/naming_convention.html):
   the current names for datasets, variables, and model inputs
+- [Frequently asked
+  questions](https://seroanalytics.github.io/serosolver/articles/faq.html):
+  common questions about data, model fitting, diagnostics, and
+  troubleshooting
 
 ## Example
 

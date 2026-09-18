@@ -40,11 +40,24 @@ data(example_antibody_data)
 data(example_par_tab)
 data(example_antigenic_map)
 par_tab <- example_par_tab
-source_mcmc_dir <- file.path("..", "inst", "extdata", "guide")
-if (dir.exists(source_mcmc_dir)) {
-  mcmc_dir <- source_mcmc_dir
+vignette_dir <- dirname(knitr::current_input())
+loader_file <- file.path(vignette_dir, "..", "inst", "extdata",
+                          "vignette_chain_loader.R")
+if (!file.exists(loader_file)) {
+  loader_file <- system.file("extdata", "vignette_chain_loader.R",
+                             package = "serosolver")
+}
+source(loader_file)
+guide_bundle <- load_vignette_chain_bundle(vignette_dir, "guide.rds")
+if (!is.null(guide_bundle[["guide"]])) {
+  mcmc_dir <- materialize_vignette_chain_fit(
+    guide_bundle[["guide"]], tempfile("serosolver_guide_chains_"), "guide"
+  )
 } else {
-  mcmc_dir <- system.file("extdata", "guide", package = "serosolver")
+  mcmc_dir <- file.path(vignette_dir, "..", "inst", "extdata", "guide")
+  if (!dir.exists(mcmc_dir)) {
+    mcmc_dir <- system.file("extdata", "guide", package = "serosolver")
+  }
 }
 dir.create(mcmc_dir, recursive = TRUE, showWarnings = FALSE)
 mcmc_file <- file.path(mcmc_dir, "guide")

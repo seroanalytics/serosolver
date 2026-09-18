@@ -34,6 +34,24 @@ vignette_dir <- dirname(knitr::current_input())
 cache_root <- file.path(
   vignette_dir, "..", "inst", "extdata", "advanced_features"
 )
+loader_file <- file.path(vignette_dir, "..", "inst", "extdata",
+                         "vignette_chain_loader.R")
+if (!file.exists(loader_file)) {
+  loader_file <- system.file("extdata", "vignette_chain_loader.R",
+                             package = "serosolver")
+}
+source(loader_file)
+advanced_bundles <- load_vignette_chain_bundle(
+  vignette_dir, "advanced_features.rds"
+)
+advanced_bundle_names <- c(
+  fixed_infection_states = "fixed",
+  starting_levels_one_biomarker = "starting",
+  measurement_bias = "offset",
+  exponential_waning = "exponential",
+  multiple_biomarker_groups = "multiple_biomarker",
+  prior_version_1 = "prior_version_1"
+)
 
 ## Used only while knitting so that long fits can be reused without changing
 ## the workflow shown to the reader.
@@ -41,6 +59,14 @@ fit_or_load <- function(par_tab, antibody_data, cache_folder, file_stem,
                         mcmc_pars, ...) {
   cache_dir <- file.path(cache_root, cache_folder)
   filename <- file.path(cache_dir, file_stem)
+  bundle_name <- unname(advanced_bundle_names[file_stem])
+  if (!is.na(bundle_name) && !is.null(advanced_bundles[[bundle_name]])) {
+    cache_dir <- materialize_vignette_chain_fit(
+      advanced_bundles[[bundle_name]],
+      tempfile(paste0("serosolver_advanced_", file_stem, "_")), file_stem
+    )
+    filename <- file.path(cache_dir, file_stem)
+  }
   dir.create(cache_dir, recursive = TRUE, showWarnings = FALSE)
   chain_files <- list.files(
     cache_dir,

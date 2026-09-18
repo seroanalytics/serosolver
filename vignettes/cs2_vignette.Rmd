@@ -38,6 +38,16 @@ options(digits = 3)
 ## Keep case-study inputs and MCMC caches relative to this vignette.
 vignette_dir <- dirname(knitr::current_input())
 case_study_dir <- file.path(vignette_dir, "..", "inst", "extdata", "case_study_2")
+loader_file <- file.path(vignette_dir, "..", "inst", "extdata",
+                         "vignette_chain_loader.R")
+if (!file.exists(loader_file)) {
+  loader_file <- system.file("extdata", "vignette_chain_loader.R",
+                             package = "serosolver")
+}
+source(loader_file)
+case_study_bundles <- load_vignette_chain_bundle(
+  vignette_dir, "cs2_fluscape.rds"
+)
 ```
 
 # Overview
@@ -347,6 +357,12 @@ res <- serosolver(
 mcmc_dir <- file.path(case_study_dir, "fluscape_mcmc_chains")
 mcmc_file <- file.path(mcmc_dir, "fluscape")
 mcmc_n_chains <- 3
+if (!is.null(case_study_bundles[["main"]])) {
+  mcmc_dir <- materialize_vignette_chain_fit(
+    case_study_bundles[["main"]], tempfile("serosolver_cs2_main_"), "fluscape"
+  )
+  mcmc_file <- file.path(mcmc_dir, "fluscape")
+}
 dir.create(mcmc_dir, recursive = TRUE, showWarnings = FALSE)
 
 mcmc_pars <- c(
@@ -605,6 +621,12 @@ sim_res <- serosolver(
 sim_mcmc_dir <- file.path(case_study_dir, "simulation_mcmc_chains")
 sim_mcmc_file <- file.path(sim_mcmc_dir, "simulated")
 sim_n_chains <- 3
+if (!is.null(case_study_bundles[["simulation"]])) {
+  sim_mcmc_dir <- materialize_vignette_chain_fit(
+    case_study_bundles[["simulation"]], tempfile("serosolver_cs2_sim_"), "simulated"
+  )
+  sim_mcmc_file <- file.path(sim_mcmc_dir, "simulated")
+}
 dir.create(sim_mcmc_dir, recursive = TRUE, showWarnings = FALSE)
 
 sim_mcmc_pars <- c(

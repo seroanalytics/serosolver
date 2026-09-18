@@ -27,6 +27,16 @@ knitr::opts_chunk$set(
 options(digits = 3)
 vignette_dir <- dirname(knitr::current_input())
 cache_dir <- file.path(vignette_dir, "..", "inst", "extdata", "demographics_covariates")
+loader_file <- file.path(vignette_dir, "..", "inst", "extdata",
+                         "vignette_chain_loader.R")
+if (!file.exists(loader_file)) {
+  loader_file <- system.file("extdata", "vignette_chain_loader.R",
+                             package = "serosolver")
+}
+source(loader_file)
+demographic_bundles <- load_vignette_chain_bundle(
+  vignette_dir, "demographics_covariates.rds"
+)
 ```
 
 # Overview
@@ -369,6 +379,12 @@ res <- serosolver(
 ```{r prior-predictive, include=FALSE}
 prior_dir <- file.path(cache_dir, "prior_mcmc_chains")
 prior_file <- file.path(prior_dir, "prior_covariates")
+if (!is.null(demographic_bundles[["prior"]])) {
+  prior_dir <- materialize_vignette_chain_fit(
+    demographic_bundles[["prior"]], tempfile("serosolver_demographic_prior_"),
+    "prior_covariates"
+  )
+}
 prior_mcmc_pars <- c(
   adaptive_iterations = 5000, iterations = 10000, thin = 20,
   thin_inf_hist = 100, save_block = 1000
@@ -416,6 +432,13 @@ if (!prior_cache_available) {
 ```{r fit-model, include=FALSE}
 mcmc_dir <- file.path(cache_dir, "mcmc_chains")
 mcmc_file <- file.path(mcmc_dir, "demographic_fit")
+if (!is.null(demographic_bundles[["main"]])) {
+  mcmc_dir <- materialize_vignette_chain_fit(
+    demographic_bundles[["main"]], tempfile("serosolver_demographic_main_"),
+    "demographic_fit"
+  )
+  mcmc_file <- file.path(mcmc_dir, "demographic_fit")
+}
 mcmc_pars <- c(
   adaptive_iterations = 5000, iterations = 10000, thin = 20,
   thin_inf_hist = 100, save_block = 1000
@@ -711,6 +734,13 @@ variant_res <- serosolver(
 ```{r variant-fit, include=FALSE, message=FALSE, warning=FALSE}
 variant_mcmc_dir <- file.path(cache_dir, "variant_mcmc_chains")
 variant_mcmc_file <- file.path(variant_mcmc_dir, "variant_fit")
+if (!is.null(demographic_bundles[["variant"]])) {
+  variant_mcmc_dir <- materialize_vignette_chain_fit(
+    demographic_bundles[["variant"]], tempfile("serosolver_demographic_variant_"),
+    "variant_fit"
+  )
+  variant_mcmc_file <- file.path(variant_mcmc_dir, "variant_fit")
+}
 variant_mcmc_pars <- c(
   adaptive_iterations = 5000, iterations = 10000, thin = 20,
   thin_inf_hist = 100, save_block = 1000

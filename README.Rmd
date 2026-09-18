@@ -128,7 +128,7 @@ output <- serosolver::serosolver(example_par_tab, example_antibody_data, antigen
 output$plot_fits_cross_sectional
 ```
 
-## AI assistance
+## AI declaration
 
 AI assistance was used during development of this package for documentation
 drafting, repository audits, code review, and selected implementation edits.
