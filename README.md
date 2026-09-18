@@ -6,7 +6,7 @@ data_type example to use character observation-model labels. -->
 
 # serosolver
 
-<img src="logo.png" align="right" width="250" alt="serosolver logo">
+<img src="figure/logo.png" align="right" width="250" alt="serosolver logo">
 
 [![Project Status: Active – The project has reached a stable, usable
 state and is being actively
