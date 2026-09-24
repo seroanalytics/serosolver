@@ -54,7 +54,10 @@
   </a>
   <ul class="dropdown-menu" role="menu">
 <li>
-      <a href="../articles/advanced_features.html">Advanced features</a>
+      <a href="../articles/serosolver-guide.html">serosolver guide</a>
+    </li>
+    <li>
+      <a href="../articles/naming_convention.html">Guide to serosolver terminology</a>
     </li>
     <li>
       <a href="../articles/cs1_hong_kong.html">Case study 1: longitudinal data</a>
@@ -66,13 +69,10 @@
       <a href="../articles/demographics_covariates.html">Demographic variables and covariates</a>
     </li>
     <li>
+      <a href="../articles/advanced_features.html">Advanced features</a>
+    </li>
+    <li>
       <a href="../articles/faq.html">Frequently asked questions</a>
-    </li>
-    <li>
-      <a href="../articles/naming_convention.html">Guide to serosolver terminology</a>
-    </li>
-    <li>
-      <a href="../articles/serosolver-guide.html">serosolver guide</a>
     </li>
   </ul>
 </li>
@@ -179,20 +179,20 @@ population groups.</p>
 <span><span class="va">antibody_data</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/utils/read.table.html" class="external-link">read.csv</a></span><span class="op">(</span><span class="va">hk_data_path</span><span class="op">)</span></span>
 <span></span>
 <span><span class="co">## Create a factor version of the vaccination status and age group, indexed starting from 0 (used later)</span></span>
-<span><span class="va">antibody_data</span> <span class="op">&lt;-</span> <span class="va">antibody_data</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
-<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate</a></span><span class="op">(</span></span>
+<span><span class="va">antibody_data</span> <span class="op">&lt;-</span> <span class="va">antibody_data</span> <span class="op"><a href="https://rdrr.io/pkg/magrittr/man/pipe.html" class="external-link">%&gt;%</a></span></span>
+<span>  <span class="fu"><a href="https://rdrr.io/pkg/dplyr/man/mutate.html" class="external-link">mutate</a></span><span class="op">(</span></span>
 <span>    vaccinated1 <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/integer.html" class="external-link">as.integer</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/factor.html" class="external-link">factor</a></span><span class="op">(</span><span class="va">vaccinated</span>, levels <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"No"</span>, <span class="st">"Yes"</span><span class="op">)</span><span class="op">)</span><span class="op">)</span> <span class="op">-</span> <span class="fl">1</span>,</span>
 <span>    age1 <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/integer.html" class="external-link">as.integer</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/factor.html" class="external-link">factor</a></span><span class="op">(</span><span class="va">age_group</span>, levels <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"&lt;19"</span>, <span class="st">"19-64"</span>, <span class="st">"&gt;64"</span><span class="op">)</span><span class="op">)</span><span class="op">)</span> <span class="op">-</span> <span class="fl">1</span>,</span>
 <span>    population_group <span class="op">=</span> <span class="va">vaccinated1</span> <span class="op">+</span> <span class="fl">1</span></span>
 <span>  <span class="op">)</span></span>
 <span></span>
-<span><span class="va">demographics</span> <span class="op">&lt;-</span> <span class="va">antibody_data</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
-<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select</a></span><span class="op">(</span><span class="va">individual</span>, <span class="va">birth</span>, <span class="va">vaccinated1</span>, <span class="va">age1</span>, <span class="va">population_group</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
-<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/distinct.html" class="external-link">distinct</a></span><span class="op">(</span><span class="op">)</span></span>
+<span><span class="va">demographics</span> <span class="op">&lt;-</span> <span class="va">antibody_data</span> <span class="op"><a href="https://rdrr.io/pkg/magrittr/man/pipe.html" class="external-link">%&gt;%</a></span></span>
+<span>  <span class="fu"><a href="https://rdrr.io/pkg/dplyr/man/select.html" class="external-link">select</a></span><span class="op">(</span><span class="va">individual</span>, <span class="va">birth</span>, <span class="va">vaccinated1</span>, <span class="va">age1</span>, <span class="va">population_group</span><span class="op">)</span> <span class="op"><a href="https://rdrr.io/pkg/magrittr/man/pipe.html" class="external-link">%&gt;%</a></span></span>
+<span>  <span class="fu"><a href="https://rdrr.io/pkg/dplyr/man/distinct.html" class="external-link">distinct</a></span><span class="op">(</span><span class="op">)</span></span>
 <span></span>
-<span><span class="va">factor_key</span> <span class="op">&lt;-</span> <span class="va">antibody_data</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
-<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select</a></span><span class="op">(</span><span class="va">vaccinated</span>, <span class="va">vaccinated1</span>, <span class="va">age_group</span>, <span class="va">age1</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
-<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/distinct.html" class="external-link">distinct</a></span><span class="op">(</span><span class="op">)</span></span>
+<span><span class="va">factor_key</span> <span class="op">&lt;-</span> <span class="va">antibody_data</span> <span class="op"><a href="https://rdrr.io/pkg/magrittr/man/pipe.html" class="external-link">%&gt;%</a></span></span>
+<span>  <span class="fu"><a href="https://rdrr.io/pkg/dplyr/man/select.html" class="external-link">select</a></span><span class="op">(</span><span class="va">vaccinated</span>, <span class="va">vaccinated1</span>, <span class="va">age_group</span>, <span class="va">age1</span><span class="op">)</span> <span class="op"><a href="https://rdrr.io/pkg/magrittr/man/pipe.html" class="external-link">%&gt;%</a></span></span>
+<span>  <span class="fu"><a href="https://rdrr.io/pkg/dplyr/man/distinct.html" class="external-link">distinct</a></span><span class="op">(</span><span class="op">)</span></span>
 <span></span>
 <span><span class="co">## Define the vector of times over which individuals might be infected. We work with quarters here, so we multiply the years by 4 to get the quarter number.</span></span>
 <span><span class="va">possible_exposure_times</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/seq.html" class="external-link">seq</a></span><span class="op">(</span><span class="fl">2009</span> <span class="op">*</span> <span class="fl">4</span> <span class="op">+</span> <span class="fl">1</span>, <span class="fl">2012</span> <span class="op">*</span> <span class="fl">4</span>, by <span class="op">=</span> <span class="fl">1</span><span class="op">)</span></span>
@@ -202,7 +202,7 @@ population groups.</p>
 <span><span class="va">x_labels</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span></span>
 <span>  <span class="st">"Q1-2009"</span>, <span class="st">"Q3-2009"</span>, <span class="st">"Q1-2010"</span>, <span class="st">"Q3-2010"</span>, <span class="st">"Q1-2011"</span>, <span class="st">"Q3-2011"</span></span>
 <span><span class="op">)</span></span>
-<span><span class="va">x_axis</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/scale_continuous.html" class="external-link">scale_x_continuous</a></span><span class="op">(</span>breaks <span class="op">=</span> <span class="va">x_breaks</span>, labels <span class="op">=</span> <span class="va">x_labels</span><span class="op">)</span></span>
+<span><span class="va">x_axis</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/ggplot2/man/scale_continuous.html" class="external-link">scale_x_continuous</a></span><span class="op">(</span>breaks <span class="op">=</span> <span class="va">x_breaks</span>, labels <span class="op">=</span> <span class="va">x_labels</span><span class="op">)</span></span>
 <span></span>
 <span><span class="co">## Validate the data and demographic information.</span></span>
 <span><span class="va">antibody_data</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/check_data.html">check_data</a></span><span class="op">(</span><span class="va">antibody_data</span><span class="op">)</span></span>
@@ -242,7 +242,7 @@ threshold.</p>
 <span>  n_indivs <span class="op">=</span> <span class="fl">16</span>,</span>
 <span>  study_design <span class="op">=</span> <span class="st">"longitudinal"</span></span>
 <span><span class="op">)</span> <span class="op">+</span></span>
-<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/facet_wrap.html" class="external-link">facet_wrap</a></span><span class="op">(</span><span class="op">~</span> <span class="va">individual</span>, ncol <span class="op">=</span> <span class="fl">4</span><span class="op">)</span> <span class="op">+</span></span>
+<span>  <span class="fu"><a href="https://rdrr.io/pkg/ggplot2/man/facet_wrap.html" class="external-link">facet_wrap</a></span><span class="op">(</span><span class="op">~</span> <span class="va">individual</span>, ncol <span class="op">=</span> <span class="fl">4</span><span class="op">)</span> <span class="op">+</span></span>
 <span>  <span class="va">x_axis</span></span>
 <span><span class="co">#&gt; Scale for <span style="color: #00BB00;">x</span> is already present.</span></span>
 <span><span class="co">#&gt; Adding another scale for <span style="color: #00BB00;">x</span>, which will replace the existing scale.</span></span></code></pre></div>
@@ -408,7 +408,7 @@ group = 0, 1, or 2. <code>serosolver</code> will estimate a coefficient
 for each stratification level beyond the baseline, with a link function
 depending on the bounds of the parameter. For example, for an unbounded
 parameter (-Inf to Inf), the transformation is
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msup><mi>x</mi><mo>′</mo></msup><mo>=</mo><mi>x</mi><mo>+</mo><msub><mi>β</mi><mi>V</mi></msub></mrow><annotation encoding="application/x-tex">x'=x + \beta_V</annotation></semantics></math>,
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>x</mi><mi>′</mi><mo>=</mo><mi>x</mi><mo>+</mo><msub><mi>β</mi><mi>V</mi></msub></mrow><annotation encoding="application/x-tex">x'=x + \beta_V</annotation></semantics></math>,
 where
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>x</mi><annotation encoding="application/x-tex">x</annotation></semantics></math>
 is the parameter value in the baseline group and
@@ -416,9 +416,9 @@ is the parameter value in the baseline group and
 is an additive coefficient given stratification level
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>V</mi><annotation encoding="application/x-tex">V</annotation></semantics></math>.
 For positively bounded parameters, the transformation is
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msup><mi>x</mi><mo>′</mo></msup><mo>=</mo><mi>e</mi><mi>x</mi><mi>p</mi><mo stretchy="false" form="prefix">(</mo><mi>l</mi><mi>o</mi><mi>g</mi><mo stretchy="false" form="prefix">(</mo><mi>x</mi><mo stretchy="false" form="postfix">)</mo><mo>+</mo><msub><mi>β</mi><mi>V</mi></msub><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">x' = exp(log(x) + \beta_V)</annotation></semantics></math>,
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>x</mi><mi>′</mi><mo>=</mo><mi>e</mi><mi>x</mi><mi>p</mi><mrow><mo stretchy="true" form="prefix">(</mo><mi>l</mi><mi>o</mi><mi>g</mi><mrow><mo stretchy="true" form="prefix">(</mo><mi>x</mi><mo stretchy="true" form="postfix">)</mo></mrow><mo>+</mo><msub><mi>β</mi><mi>V</mi></msub><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">x' = exp(log(x) + \beta_V)</annotation></semantics></math>,
 and for parameters with an upper and lower bound the transformation is
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msup><mi>x</mi><mo>′</mo></msup><mo>=</mo><mi>l</mi><mi>o</mi><mi>g</mi><mi>i</mi><mi>s</mi><mi>t</mi><mi>i</mi><mi>c</mi><mo stretchy="false" form="prefix">(</mo><mi>l</mi><mi>o</mi><mi>g</mi><mi>i</mi><mi>t</mi><mo stretchy="false" form="prefix">(</mo><mi>x</mi><mo stretchy="false" form="postfix">)</mo><mo>+</mo><msub><mi>β</mi><mi>V</mi></msub><mo stretchy="false" form="postfix">)</mo><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">x' = logistic(logit(x) + \beta_V))</annotation></semantics></math>.
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>x</mi><mi>′</mi><mo>=</mo><mi>l</mi><mi>o</mi><mi>g</mi><mi>i</mi><mi>s</mi><mi>t</mi><mi>i</mi><mi>c</mi><mrow><mo stretchy="true" form="prefix">(</mo><mi>l</mi><mi>o</mi><mi>g</mi><mi>i</mi><mi>t</mi><mrow><mo stretchy="true" form="prefix">(</mo><mi>x</mi><mo stretchy="true" form="postfix">)</mo></mrow><mo>+</mo><msub><mi>β</mi><mi>V</mi></msub><mo stretchy="true" form="postfix">)</mo></mrow><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">x' = logistic(logit(x) + \beta_V))</annotation></semantics></math>.
 We can then interpret any stratification-varying effect by investigating
 the
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>β</mi><annotation encoding="application/x-tex">\beta</annotation></semantics></math>
@@ -801,7 +801,7 @@ or other plotting options without rerunning the model.</p>
 <span>  inf_chain <span class="op">=</span> <span class="va">chains</span><span class="op">$</span><span class="va">inf_chain</span>,</span>
 <span>  indivs <span class="op">=</span> <span class="fl">1</span><span class="op">:</span><span class="fl">9</span>,</span>
 <span>  possible_exposure_times <span class="op">=</span> <span class="va">possible_exposure_times</span></span>
-<span><span class="op">)</span><span class="op">[[</span><span class="fl">2</span><span class="op">]</span><span class="op">]</span> <span class="op">+</span> <span class="va">x_axis</span> <span class="op">+</span> <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/theme.html" class="external-link">theme</a></span><span class="op">(</span>axis.text.x <span class="op">=</span> <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/element.html" class="external-link">element_text</a></span><span class="op">(</span>angle <span class="op">=</span> <span class="fl">45</span>, hjust <span class="op">=</span> <span class="fl">1</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
+<span><span class="op">)</span><span class="op">[[</span><span class="fl">2</span><span class="op">]</span><span class="op">]</span> <span class="op">+</span> <span class="va">x_axis</span> <span class="op">+</span> <span class="fu"><a href="https://rdrr.io/pkg/ggplot2/man/theme.html" class="external-link">theme</a></span><span class="op">(</span>axis.text.x <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/pkg/ggplot2/man/element.html" class="external-link">element_text</a></span><span class="op">(</span>angle <span class="op">=</span> <span class="fl">45</span>, hjust <span class="op">=</span> <span class="fl">1</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
 <p><img src="cs1_hong_kong_files/figure-html/manual-plots3-1.png" class="r-plt" alt="" width="100%"></p>
 <p>The main model estimates are the antibody kinetics, attack rates, and
 infection timings.</p>
@@ -810,7 +810,7 @@ infection timings.</p>
 <span><span class="va">res</span><span class="op">$</span><span class="va">plot_antibody_model</span></span></code></pre></div>
 <p><img src="cs1_hong_kong_files/figure-html/model-estimates1-1.png" class="r-plt" alt="" width="100%"></p>
 <div class="sourceCode" id="cb25"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">res</span><span class="op">$</span><span class="va">plot_attack_rates</span> <span class="op">+</span> <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/coord_cartesian.html" class="external-link">coord_cartesian</a></span><span class="op">(</span>ylim <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0</span>, <span class="fl">0.4</span><span class="op">)</span><span class="op">)</span> <span class="op">+</span> <span class="va">x_axis</span></span>
+<code class="sourceCode R"><span><span class="va">res</span><span class="op">$</span><span class="va">plot_attack_rates</span> <span class="op">+</span> <span class="fu"><a href="https://rdrr.io/pkg/ggplot2/man/coord_cartesian.html" class="external-link">coord_cartesian</a></span><span class="op">(</span>ylim <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0</span>, <span class="fl">0.4</span><span class="op">)</span><span class="op">)</span> <span class="op">+</span> <span class="va">x_axis</span></span>
 <span><span class="co">#&gt; Coordinate system already present.</span></span>
 <span><span class="co">#&gt; <span style="color: #00BBBB;">ℹ</span> Adding new coordinate system, which will replace the existing one.</span></span>
 <span><span class="co">#&gt; Scale for <span style="color: #00BB00;">x</span> is already present.</span></span>
@@ -822,7 +822,7 @@ infection timings.</p>
 <span>  inf_chain <span class="op">=</span> <span class="va">chains</span><span class="op">$</span><span class="va">inf_chain</span>,</span>
 <span>  indivs <span class="op">=</span> <span class="fl">1</span><span class="op">:</span><span class="fl">25</span>,</span>
 <span>  possible_exposure_times <span class="op">=</span> <span class="va">possible_exposure_times</span></span>
-<span><span class="op">)</span><span class="op">[[</span><span class="fl">2</span><span class="op">]</span><span class="op">]</span> <span class="op">+</span> <span class="va">x_axis</span> <span class="op">+</span> <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/theme.html" class="external-link">theme</a></span><span class="op">(</span>axis.text.x <span class="op">=</span> <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/element.html" class="external-link">element_text</a></span><span class="op">(</span>angle <span class="op">=</span> <span class="fl">45</span>, hjust <span class="op">=</span> <span class="fl">1</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
+<span><span class="op">)</span><span class="op">[[</span><span class="fl">2</span><span class="op">]</span><span class="op">]</span> <span class="op">+</span> <span class="va">x_axis</span> <span class="op">+</span> <span class="fu"><a href="https://rdrr.io/pkg/ggplot2/man/theme.html" class="external-link">theme</a></span><span class="op">(</span>axis.text.x <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/pkg/ggplot2/man/element.html" class="external-link">element_text</a></span><span class="op">(</span>angle <span class="op">=</span> <span class="fl">45</span>, hjust <span class="op">=</span> <span class="fl">1</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
 <p><img src="cs1_hong_kong_files/figure-html/model-estimates2-1.png" class="r-plt" alt="" width="100%"></p>
 </div>
 <div class="section level3">
@@ -874,7 +874,7 @@ simulating a new data set.</p>
 <span>  n_indivs <span class="op">=</span> <span class="fl">16</span>,</span>
 <span>  study_design <span class="op">=</span> <span class="st">"longitudinal"</span>,</span>
 <span>  infection_histories <span class="op">=</span> <span class="va">simulated_data</span><span class="op">$</span><span class="va">infection_histories</span></span>
-<span><span class="op">)</span> <span class="op">+</span> <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/facet_wrap.html" class="external-link">facet_wrap</a></span><span class="op">(</span><span class="op">~</span> <span class="va">individual</span>, ncol <span class="op">=</span> <span class="fl">4</span><span class="op">)</span> <span class="op">+</span> <span class="va">x_axis</span></span>
+<span><span class="op">)</span> <span class="op">+</span> <span class="fu"><a href="https://rdrr.io/pkg/ggplot2/man/facet_wrap.html" class="external-link">facet_wrap</a></span><span class="op">(</span><span class="op">~</span> <span class="va">individual</span>, ncol <span class="op">=</span> <span class="fl">4</span><span class="op">)</span> <span class="op">+</span> <span class="va">x_axis</span></span>
 <span><span class="co">#&gt; Scale for <span style="color: #00BB00;">x</span> is already present.</span></span>
 <span><span class="co">#&gt; Adding another scale for <span style="color: #00BB00;">x</span>, which will replace the existing scale.</span></span></code></pre></div>
 <p><img src="cs1_hong_kong_files/figure-html/simulation-setup-1.png" class="r-plt" alt="" width="100%"></p>
@@ -883,13 +883,13 @@ MCMC settings for this vignette.</p>
 <p>The parameter estimates can be compared directly with the values used
 to simulate the data:</p>
 <div class="sourceCode" id="cb28"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">sim_res</span><span class="op">$</span><span class="va">all_diagnostics</span><span class="op">$</span><span class="va">theta_estimates</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
-<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">names</span> <span class="op">!=</span> <span class="st">"total_infections"</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
-<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate-joins.html" class="external-link">left_join</a></span><span class="op">(</span></span>
-<span>    <span class="va">simulated_data</span><span class="op">$</span><span class="va">par_tab</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span> <span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select</a></span><span class="op">(</span><span class="va">names</span>, true <span class="op">=</span> <span class="va">values</span><span class="op">)</span>,</span>
+<code class="sourceCode R"><span><span class="va">sim_res</span><span class="op">$</span><span class="va">all_diagnostics</span><span class="op">$</span><span class="va">theta_estimates</span> <span class="op"><a href="https://rdrr.io/pkg/magrittr/man/pipe.html" class="external-link">%&gt;%</a></span></span>
+<span>  <span class="fu"><a href="https://rdrr.io/pkg/dplyr/man/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">names</span> <span class="op">!=</span> <span class="st">"total_infections"</span><span class="op">)</span> <span class="op"><a href="https://rdrr.io/pkg/magrittr/man/pipe.html" class="external-link">%&gt;%</a></span></span>
+<span>  <span class="fu"><a href="https://rdrr.io/pkg/dplyr/man/mutate-joins.html" class="external-link">left_join</a></span><span class="op">(</span></span>
+<span>    <span class="va">simulated_data</span><span class="op">$</span><span class="va">par_tab</span> <span class="op"><a href="https://rdrr.io/pkg/magrittr/man/pipe.html" class="external-link">%&gt;%</a></span> <span class="fu"><a href="https://rdrr.io/pkg/dplyr/man/select.html" class="external-link">select</a></span><span class="op">(</span><span class="va">names</span>, true <span class="op">=</span> <span class="va">values</span><span class="op">)</span>,</span>
 <span>    by <span class="op">=</span> <span class="st">"names"</span></span>
-<span>  <span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
-<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select</a></span><span class="op">(</span><span class="va">names</span>, <span class="va">true</span>, <span class="va">median</span>, <span class="va">lower95_CrI</span>, <span class="va">upper95_CrI</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
+<span>  <span class="op">)</span> <span class="op"><a href="https://rdrr.io/pkg/magrittr/man/pipe.html" class="external-link">%&gt;%</a></span></span>
+<span>  <span class="fu"><a href="https://rdrr.io/pkg/dplyr/man/select.html" class="external-link">select</a></span><span class="op">(</span><span class="va">names</span>, <span class="va">true</span>, <span class="va">median</span>, <span class="va">lower95_CrI</span>, <span class="va">upper95_CrI</span><span class="op">)</span> <span class="op"><a href="https://rdrr.io/pkg/magrittr/man/pipe.html" class="external-link">%&gt;%</a></span></span>
 <span>  <span class="fu">knitr</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/knitr/man/kable.html" class="external-link">kable</a></span><span class="op">(</span>digits <span class="op">=</span> <span class="fl">3</span><span class="op">)</span></span></code></pre></div>
 <table class="table">
 <colgroup>
@@ -971,7 +971,7 @@ values for both vaccination groups.</p>
 <span>  orientation <span class="op">=</span> <span class="st">"longitudinal"</span>,</span>
 <span>  settings <span class="op">=</span> <span class="va">sim_res</span><span class="op">$</span><span class="va">settings</span>,</span>
 <span>  p_ncol <span class="op">=</span> <span class="fl">5</span></span>
-<span><span class="op">)</span><span class="op">[[</span><span class="fl">1</span><span class="op">]</span><span class="op">]</span> <span class="op">+</span> <span class="va">x_axis</span> <span class="op">+</span> <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/facet_wrap.html" class="external-link">facet_wrap</a></span><span class="op">(</span><span class="op">~</span><span class="va">individual</span>,ncol<span class="op">=</span><span class="fl">3</span><span class="op">)</span></span>
+<span><span class="op">)</span><span class="op">[[</span><span class="fl">1</span><span class="op">]</span><span class="op">]</span> <span class="op">+</span> <span class="va">x_axis</span> <span class="op">+</span> <span class="fu"><a href="https://rdrr.io/pkg/ggplot2/man/facet_wrap.html" class="external-link">facet_wrap</a></span><span class="op">(</span><span class="op">~</span><span class="va">individual</span>,ncol<span class="op">=</span><span class="fl">3</span><span class="op">)</span></span>
 <span><span class="co">#&gt; Scale for <span style="color: #00BB00;">x</span> is already present.</span></span>
 <span><span class="co">#&gt; Adding another scale for <span style="color: #00BB00;">x</span>, which will replace the existing scale.</span></span></code></pre></div>
 <p><img src="cs1_hong_kong_files/figure-html/simulation-model-fits-1.png" class="r-plt" alt="" width="100%"></p>
@@ -984,7 +984,9 @@ a high posterior probability of infection.</p>
 
   <div class="col-md-3 hidden-xs hidden-sm" id="pkgdown-sidebar">
 
-      </div>
+        <nav id="toc" data-toggle="toc"><h2 data-toc-skip>Contents</h2>
+    </nav>
+</div>
 
 </div>
 

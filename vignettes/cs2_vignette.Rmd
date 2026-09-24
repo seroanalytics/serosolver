@@ -1,7 +1,10 @@
 ---
+# Modified by AI assistant on 2026-09-24 using GPT-5. Enabled the pkgdown
+# article table of contents without changing the vignette content.
 title: "Case study 2: cross-sectional data"
 subtitle: Inferring historical A/H3N2 attack rates using cross-sectional serology
 csl: plos.csl
+toc: true
 output:
   rmarkdown::html_vignette:
     toc: true

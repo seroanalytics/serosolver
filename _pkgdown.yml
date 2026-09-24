@@ -1,7 +1,24 @@
+# Modified by AI assistant on 2026-09-24 using GPT-5. Added article TOC
+# configuration and an explicit logical order for the Articles menu.
 url: https://seroanalytics.github.io/serosolver/
 
 development:
   mode: release
+
+toc:
+  depth: 2
+
+articles:
+- title: Guides and case studies
+  navbar: ~
+  contents:
+  - serosolver-guide
+  - naming_convention
+  - cs1_hong_kong
+  - cs2_vignette
+  - demographics_covariates
+  - advanced_features
+  - faq
 
 reference:
 - title: Fit and simulate models

@@ -54,7 +54,10 @@
   </a>
   <ul class="dropdown-menu" role="menu">
 <li>
-      <a href="../articles/advanced_features.html">Advanced features</a>
+      <a href="../articles/serosolver-guide.html">serosolver guide</a>
+    </li>
+    <li>
+      <a href="../articles/naming_convention.html">Guide to serosolver terminology</a>
     </li>
     <li>
       <a href="../articles/cs1_hong_kong.html">Case study 1: longitudinal data</a>
@@ -66,13 +69,10 @@
       <a href="../articles/demographics_covariates.html">Demographic variables and covariates</a>
     </li>
     <li>
+      <a href="../articles/advanced_features.html">Advanced features</a>
+    </li>
+    <li>
       <a href="../articles/faq.html">Frequently asked questions</a>
-    </li>
-    <li>
-      <a href="../articles/naming_convention.html">Guide to serosolver terminology</a>
-    </li>
-    <li>
-      <a href="../articles/serosolver-guide.html">serosolver guide</a>
     </li>
   </ul>
 </li>
@@ -225,7 +225,7 @@ these sections in more detail in this guide.</p>
 <p>Install <code>serosolver</code> using the <code>remotes</code>
 package:</p>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu">remotes</span><span class="fu">::</span><span class="fu"><a href="https://remotes.r-lib.org/reference/install_github.html" class="external-link">install_github</a></span><span class="op">(</span><span class="st">"seroanalytics/serosolver"</span><span class="op">)</span></span></code></pre></div>
+<code class="sourceCode R"><span><span class="fu">remotes</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/remotes/man/install_github.html" class="external-link">install_github</a></span><span class="op">(</span><span class="st">"seroanalytics/serosolver"</span><span class="op">)</span></span></code></pre></div>
 <p>Note, that <code>serosolver</code> uses <code>Rcpp</code> code,
 including <code>RcppArmadillo</code>. You will therefore need a working
 C++ compiler such as <code>clang</code> or <code>gcc</code>. The easiest
@@ -410,7 +410,7 @@ circulating.
 </p>
 </div>
 <div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="../reference/plot_antibody_data.html">plot_antibody_data</a></span><span class="op">(</span><span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">example_antibody_data</span>, <span class="va">biomarker_id</span> <span class="op"><a href="https://rdrr.io/r/base/match.html" class="external-link">%in%</a></span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1968</span>,<span class="fl">2004</span>,<span class="fl">2012</span><span class="op">)</span><span class="op">)</span>,<span class="fl">2010</span><span class="op">:</span><span class="fl">2015</span>,n_indivs<span class="op">=</span><span class="fl">1</span><span class="op">:</span><span class="fl">3</span>,study_design <span class="op">=</span> <span class="st">"longitudinal"</span><span class="op">)</span></span></code></pre></div>
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/plot_antibody_data.html">plot_antibody_data</a></span><span class="op">(</span><span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/dplyr/man/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">example_antibody_data</span>, <span class="va">biomarker_id</span> <span class="op"><a href="https://rdrr.io/r/base/match.html" class="external-link">%in%</a></span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1968</span>,<span class="fl">2004</span>,<span class="fl">2012</span><span class="op">)</span><span class="op">)</span>,<span class="fl">2010</span><span class="op">:</span><span class="fl">2015</span>,n_indivs<span class="op">=</span><span class="fl">1</span><span class="op">:</span><span class="fl">3</span>,study_design <span class="op">=</span> <span class="st">"longitudinal"</span><span class="op">)</span></span></code></pre></div>
 <div class="figure">
 <img src="serosolver-guide_files/figure-html/unnamed-chunk-5-1.png" class="r-plt" alt="Longitudinal serology against multiple antigens from multiple serum samples. Plot columns give individuals, rows give biomarker groups (not biomarker IDs!). Points are coloured by biomarker ID. X-axis gives time of sample collection." width="100%"><p class="caption">
 Longitudinal serology against multiple antigens from multiple serum
@@ -516,7 +516,7 @@ under the same force of infection, and thus we need to tell
 places:</p>
 <div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co">## Set individual 1:25 to population_group 1, and individual IDs &gt;25 to population_group 2</span></span>
-<span><span class="va">antibody_data</span> <span class="op">&lt;-</span> <span class="va">antibody_data</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span> <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate</a></span><span class="op">(</span>population_group<span class="op">=</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/if_else.html" class="external-link">if_else</a></span><span class="op">(</span><span class="va">individual</span> <span class="op">&lt;=</span> <span class="fl">25</span>, <span class="fl">1</span>, <span class="fl">2</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="va">antibody_data</span> <span class="op">&lt;-</span> <span class="va">antibody_data</span> <span class="op"><a href="https://rdrr.io/pkg/magrittr/man/pipe.html" class="external-link">%&gt;%</a></span> <span class="fu"><a href="https://rdrr.io/pkg/dplyr/man/mutate.html" class="external-link">mutate</a></span><span class="op">(</span>population_group<span class="op">=</span><span class="fu"><a href="https://rdrr.io/pkg/dplyr/man/if_else.html" class="external-link">if_else</a></span><span class="op">(</span><span class="va">individual</span> <span class="op">&lt;=</span> <span class="fl">25</span>, <span class="fl">1</span>, <span class="fl">2</span><span class="op">)</span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">par_tab</span><span class="op">[</span><span class="va">par_tab</span><span class="op">$</span><span class="va">names</span> <span class="op"><a href="https://rdrr.io/r/base/match.html" class="external-link">%in%</a></span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"infection_model_prior_shape1"</span>,<span class="st">"infection_model_prior_shape2"</span><span class="op">)</span>,<span class="st">"stratification"</span><span class="op">]</span> <span class="op">&lt;-</span> <span class="st">"population_group"</span></span></code></pre></div>
 <p>For most simple models, this variable can be ignored or set to 1 for
@@ -528,7 +528,7 @@ titres wane quicker in certain age groups. The general approach is
 similar to <code>population_group</code>:</p>
 <div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co">## Split into two age groups based on whether the individual was born on or before 1990 or after</span></span>
-<span><span class="va">antibody_data</span> <span class="op">&lt;-</span> <span class="va">antibody_data</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span> <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate</a></span><span class="op">(</span>age_group<span class="op">=</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/if_else.html" class="external-link">if_else</a></span><span class="op">(</span><span class="va">birth</span> <span class="op">&lt;=</span> <span class="fl">1990</span>, <span class="fl">1</span>, <span class="fl">2</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="va">antibody_data</span> <span class="op">&lt;-</span> <span class="va">antibody_data</span> <span class="op"><a href="https://rdrr.io/pkg/magrittr/man/pipe.html" class="external-link">%&gt;%</a></span> <span class="fu"><a href="https://rdrr.io/pkg/dplyr/man/mutate.html" class="external-link">mutate</a></span><span class="op">(</span>age_group<span class="op">=</span><span class="fu"><a href="https://rdrr.io/pkg/dplyr/man/if_else.html" class="external-link">if_else</a></span><span class="op">(</span><span class="va">birth</span> <span class="op">&lt;=</span> <span class="fl">1990</span>, <span class="fl">1</span>, <span class="fl">2</span><span class="op">)</span><span class="op">)</span></span>
 <span></span>
 <span><span class="co">## Tell serosolver to stratify the wane_short parameter by age_group</span></span>
 <span><span class="va">par_tab</span><span class="op">[</span><span class="va">par_tab</span><span class="op">$</span><span class="va">names</span> <span class="op">==</span> <span class="st">"wane_short"</span>,<span class="st">"stratification"</span><span class="op">]</span> <span class="op">&lt;-</span> <span class="st">"age_group"</span></span></code></pre></div>
@@ -657,19 +657,19 @@ sample was collected in. For example, data collected between 2009 and
 was collected multiplied by 2 (since there are two time periods in each
 year). For example, data collected between 2009 and 2011 would have
 values of
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo stretchy="false" form="prefix">(</mo><mn>2009</mn><mo>×</mo><mn>2</mn><mo stretchy="false" form="postfix">)</mo><mo>+</mo><mn>1</mn><mo>=</mo><mn>4019</mn></mrow><annotation encoding="application/x-tex">(2009 \times 2) + 1 = 4019</annotation></semantics></math>,
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo stretchy="false" form="prefix">(</mo><mn>2009.5</mn><mo>×</mo><mn>2</mn><mo stretchy="false" form="postfix">)</mo><mo>+</mo><mn>1</mn><mo>=</mo><mn>4020</mn></mrow><annotation encoding="application/x-tex">(2009.5 \times 2) + 1 = 4020</annotation></semantics></math>,
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo stretchy="false" form="prefix">(</mo><mn>2010</mn><mo>×</mo><mn>2</mn><mo stretchy="false" form="postfix">)</mo><mo>+</mo><mn>1</mn><mo>=</mo><mn>4021</mn></mrow><annotation encoding="application/x-tex">(2010 \times 2) + 1 = 4021</annotation></semantics></math>,
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo stretchy="false" form="prefix">(</mo><mn>2010.5</mn><mo>×</mo><mn>2</mn><mo stretchy="false" form="postfix">)</mo><mo>+</mo><mn>1</mn><mo>=</mo><mn>4022</mn></mrow><annotation encoding="application/x-tex">(2010.5 \times 2) + 1 = 4022</annotation></semantics></math>,
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo stretchy="false" form="prefix">(</mo><mn>2011</mn><mo>×</mo><mn>2</mn><mo stretchy="false" form="postfix">)</mo><mo>+</mo><mn>1</mn><mo>=</mo><mn>4023</mn></mrow><annotation encoding="application/x-tex">(2011 \times 2) + 1 = 4023</annotation></semantics></math>,
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo stretchy="false" form="prefix">(</mo><mn>2011.5</mn><mo>×</mo><mn>2</mn><mo stretchy="false" form="postfix">)</mo><mo>+</mo><mn>1</mn><mo>=</mo><mn>4024</mn></mrow><annotation encoding="application/x-tex">(2011.5 \times 2) + 1 = 4024</annotation></semantics></math>.</p></li>
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mrow><mo stretchy="true" form="prefix">(</mo><mn>2009</mn><mo>×</mo><mn>2</mn><mo stretchy="true" form="postfix">)</mo></mrow><mo>+</mo><mn>1</mn><mo>=</mo><mn>4019</mn></mrow><annotation encoding="application/x-tex">(2009 \times 2) + 1 = 4019</annotation></semantics></math>,
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mrow><mo stretchy="true" form="prefix">(</mo><mn>2009.5</mn><mo>×</mo><mn>2</mn><mo stretchy="true" form="postfix">)</mo></mrow><mo>+</mo><mn>1</mn><mo>=</mo><mn>4020</mn></mrow><annotation encoding="application/x-tex">(2009.5 \times 2) + 1 = 4020</annotation></semantics></math>,
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mrow><mo stretchy="true" form="prefix">(</mo><mn>2010</mn><mo>×</mo><mn>2</mn><mo stretchy="true" form="postfix">)</mo></mrow><mo>+</mo><mn>1</mn><mo>=</mo><mn>4021</mn></mrow><annotation encoding="application/x-tex">(2010 \times 2) + 1 = 4021</annotation></semantics></math>,
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mrow><mo stretchy="true" form="prefix">(</mo><mn>2010.5</mn><mo>×</mo><mn>2</mn><mo stretchy="true" form="postfix">)</mo></mrow><mo>+</mo><mn>1</mn><mo>=</mo><mn>4022</mn></mrow><annotation encoding="application/x-tex">(2010.5 \times 2) + 1 = 4022</annotation></semantics></math>,
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mrow><mo stretchy="true" form="prefix">(</mo><mn>2011</mn><mo>×</mo><mn>2</mn><mo stretchy="true" form="postfix">)</mo></mrow><mo>+</mo><mn>1</mn><mo>=</mo><mn>4023</mn></mrow><annotation encoding="application/x-tex">(2011 \times 2) + 1 = 4023</annotation></semantics></math>,
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mrow><mo stretchy="true" form="prefix">(</mo><mn>2011.5</mn><mo>×</mo><mn>2</mn><mo stretchy="true" form="postfix">)</mo></mrow><mo>+</mo><mn>1</mn><mo>=</mo><mn>4024</mn></mrow><annotation encoding="application/x-tex">(2011.5 \times 2) + 1 = 4024</annotation></semantics></math>.</p></li>
 <li><p>Similarly, for quarterly or monthly samples, the sample time
 follows the same pattern. For example for a sample collected in July of
 2009, the quarterly sample time would be
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo stretchy="false" form="prefix">(</mo><mn>2009</mn><mo>+</mo><mfrac><mn>3</mn><mn>4</mn></mfrac><mo stretchy="false" form="postfix">)</mo><mo>×</mo><mn>4</mn><mo>+</mo><mn>1</mn><mo>=</mo><mn>8040</mn></mrow><annotation encoding="application/x-tex">(2009 + \frac{3}{4})\times 4 + 1 = 8040</annotation></semantics></math>
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mrow><mo stretchy="true" form="prefix">(</mo><mn>2009</mn><mo>+</mo><mfrac><mn>3</mn><mn>4</mn></mfrac><mo stretchy="true" form="postfix">)</mo></mrow><mo>×</mo><mn>4</mn><mo>+</mo><mn>1</mn><mo>=</mo><mn>8040</mn></mrow><annotation encoding="application/x-tex">(2009 + \frac{3}{4})\times 4 + 1 = 8040</annotation></semantics></math>
 (because July is in the third quarter of the year) and the monthly
 sample time would be
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo stretchy="false" form="prefix">(</mo><mn>2009</mn><mo>+</mo><mfrac><mn>7</mn><mn>12</mn></mfrac><mo stretchy="false" form="postfix">)</mo><mo>×</mo><mn>12</mn><mo>+</mo><mn>1</mn><mo>=</mo><mn>24116</mn></mrow><annotation encoding="application/x-tex">(2009 + \frac{7}{12})\times12 + 1 = 24116</annotation></semantics></math>
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mrow><mo stretchy="true" form="prefix">(</mo><mn>2009</mn><mo>+</mo><mfrac><mn>7</mn><mn>12</mn></mfrac><mo stretchy="true" form="postfix">)</mo></mrow><mo>×</mo><mn>12</mn><mo>+</mo><mn>1</mn><mo>=</mo><mn>24116</mn></mrow><annotation encoding="application/x-tex">(2009 + \frac{7}{12})\times12 + 1 = 24116</annotation></semantics></math>
 (because July is the seventh month).</p></li>
 </ul>
 <p><code>serosolver</code> estimates an infection state for each element
@@ -795,7 +795,7 @@ this parameter is not an exponential (on the natural scale) waning rate
 parameter by default: it describes the proportion of the boost lost per
 time unit since infection,
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>t</mi><annotation encoding="application/x-tex">t</annotation></semantics></math>:</p>
-<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>W</mi><mo stretchy="false" form="prefix">(</mo><mi>t</mi><mo stretchy="false" form="postfix">)</mo><mo>=</mo><mrow><mi mathvariant="normal">max</mi><mo>⁡</mo></mrow><mo stretchy="false" form="prefix">{</mo><mn>0</mn><mo>,</mo><mn>1</mn><mo>−</mo><mi>ω</mi><mi>t</mi><mo stretchy="false" form="postfix">}</mo></mrow><annotation encoding="application/x-tex">
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>W</mi><mrow><mo stretchy="true" form="prefix">(</mo><mi>t</mi><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><mo>max</mo><mo stretchy="false" form="prefix">{</mo><mn>0</mn><mo>,</mo><mn>1</mn><mo>−</mo><mi>ω</mi><mi>t</mi><mo stretchy="false" form="postfix">}</mo></mrow><annotation encoding="application/x-tex">
 W(t)=\max\{0,1-\omega t\}
 </annotation></semantics></math></p>
 <p>Alternatively, users can model waning as exponential decay <em>on the
@@ -803,7 +803,7 @@ log scale</em> (so exponential-on-exponential on the natural scale). Add
 a fixed model-option row named <code>exponential_waning</code> to
 <code>par_tab</code>, with <code>values = 1</code> and
 <code>par_type = 0</code>:</p>
-<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>W</mi><mo stretchy="false" form="prefix">(</mo><mi>t</mi><mo stretchy="false" form="postfix">)</mo><mo>=</mo><msup><mi>e</mi><mrow><mi>−</mi><mi>ω</mi><mi>t</mi></mrow></msup></mrow><annotation encoding="application/x-tex">
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>W</mi><mrow><mo stretchy="true" form="prefix">(</mo><mi>t</mi><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><msup><mi>e</mi><mrow><mi>−</mi><mi>ω</mi><mi>t</mi></mrow></msup></mrow><annotation encoding="application/x-tex">
 W(t) = e^{-\omega t}
 </annotation></semantics></math></p>
 <p>Note that this setting also changes the cross-reactivity model below.
@@ -884,7 +884,7 @@ or <code>antigenic_seniority</code>. Antigenic seniority is modelled
 here as a simple phenomenological effect and thus we caution against
 overinterpretation. It simply suppresses each successive boost as a
 function of the number of prior infections as:</p>
-<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>S</mi><mo stretchy="false" form="prefix">(</mo><mi>k</mi><mo stretchy="false" form="postfix">)</mo><mo>=</mo><mtext mathvariant="normal">max</mtext><mo stretchy="false" form="prefix">{</mo><mn>0</mn><mo>,</mo><mn>1</mn><mo>−</mo><mi>τ</mi><mo stretchy="false" form="prefix">(</mo><mi>k</mi><mo>−</mo><mn>1</mn><mo stretchy="false" form="postfix">)</mo><mo stretchy="false" form="postfix">}</mo></mrow><annotation encoding="application/x-tex">
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>S</mi><mrow><mo stretchy="true" form="prefix">(</mo><mi>k</mi><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><mtext mathvariant="normal">max</mtext><mo stretchy="false" form="prefix">{</mo><mn>0</mn><mo>,</mo><mn>1</mn><mo>−</mo><mi>τ</mi><mrow><mo stretchy="true" form="prefix">(</mo><mi>k</mi><mo>−</mo><mn>1</mn><mo stretchy="true" form="postfix">)</mo></mrow><mo stretchy="false" form="postfix">}</mo></mrow><annotation encoding="application/x-tex">
 S(k) = \text{max}\{0, 1-\tau(k-1)\}
 </annotation></semantics></math></p>
 <p>where
@@ -893,9 +893,9 @@ gives the number of infections prior to the current one. Thus, the first
 infection has
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>S</mi><mn>1</mn></msub><mo>=</mo><mn>1</mn></mrow><annotation encoding="application/x-tex">S_{1}=1</annotation></semantics></math>,
 the second has
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>S</mi><mo stretchy="false" form="prefix">(</mo><mn>2</mn><mo stretchy="false" form="postfix">)</mo><mo>=</mo><mtext mathvariant="normal">max</mtext><mo stretchy="false" form="prefix">{</mo><mn>0</mn><mo>,</mo><mn>1</mn><mo>−</mo><mi>τ</mi><mo stretchy="false" form="postfix">}</mo></mrow><annotation encoding="application/x-tex">S(2)=\text{max}\{0, 1-\tau\}</annotation></semantics></math>,
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>S</mi><mrow><mo stretchy="true" form="prefix">(</mo><mn>2</mn><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><mtext mathvariant="normal">max</mtext><mo stretchy="false" form="prefix">{</mo><mn>0</mn><mo>,</mo><mn>1</mn><mo>−</mo><mi>τ</mi><mo stretchy="false" form="postfix">}</mo></mrow><annotation encoding="application/x-tex">S(2)=\text{max}\{0, 1-\tau\}</annotation></semantics></math>,
 and the third has
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>S</mi><mo stretchy="false" form="prefix">(</mo><mn>3</mn><mo stretchy="false" form="postfix">)</mo><mo>=</mo><mtext mathvariant="normal">max</mtext><mo stretchy="false" form="prefix">{</mo><mn>0</mn><mo>,</mo><mn>1</mn><mo>−</mo><mn>2</mn><mi>τ</mi><mo stretchy="false" form="postfix">}</mo></mrow><annotation encoding="application/x-tex">S(3)=\text{max}\{0, 1-2\tau\}</annotation></semantics></math>,
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>S</mi><mrow><mo stretchy="true" form="prefix">(</mo><mn>3</mn><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><mtext mathvariant="normal">max</mtext><mo stretchy="false" form="prefix">{</mo><mn>0</mn><mo>,</mo><mn>1</mn><mo>−</mo><mn>2</mn><mi>τ</mi><mo stretchy="false" form="postfix">}</mo></mrow><annotation encoding="application/x-tex">S(3)=\text{max}\{0, 1-2\tau\}</annotation></semantics></math>,
 etc. Setting
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>τ</mi><mo>=</mo><mn>0</mn></mrow><annotation encoding="application/x-tex">\tau=0</annotation></semantics></math>
 means that there is no reduction. This model stems from the paper by <a href="https://doi.org/10.1371/journal.pbio.1002082" class="external-link">Kucharski et al</a>
@@ -1024,7 +1024,7 @@ and <code>infection_model_prior_shape2</code>. If these values are
 and
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>β</mi><annotation encoding="application/x-tex">\beta</annotation></semantics></math>,
 the per-time infection probability has a Beta distribution:</p>
-<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>p</mi><mi>t</mi></msub><mo>∼</mo><mrow><mi mathvariant="normal">Beta</mi><mo>⁡</mo></mrow><mo stretchy="false" form="prefix">(</mo><mi>α</mi><mo>,</mo><mi>β</mi><mo stretchy="false" form="postfix">)</mo><mo>,</mo><mspace width="2.0em"></mspace><mi>E</mi><mo stretchy="false" form="prefix">[</mo><msub><mi>p</mi><mi>t</mi></msub><mo stretchy="false" form="postfix">]</mo><mo>=</mo><mfrac><mi>α</mi><mrow><mi>α</mi><mo>+</mo><mi>β</mi></mrow></mfrac><mi>.</mi></mrow><annotation encoding="application/x-tex">
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>p</mi><mi>t</mi></msub><mo>∼</mo><mo>Beta</mo><mrow><mo stretchy="true" form="prefix">(</mo><mi>α</mi><mo>,</mo><mi>β</mi><mo stretchy="true" form="postfix">)</mo></mrow><mo>,</mo><mspace width="2.0em"></mspace><mi>E</mi><mrow><mo stretchy="true" form="prefix">[</mo><msub><mi>p</mi><mi>t</mi></msub><mo stretchy="true" form="postfix">]</mo></mrow><mo>=</mo><mfrac><mi>α</mi><mrow><mi>α</mi><mo>+</mo><mi>β</mi></mrow></mfrac><mi>.</mi></mrow><annotation encoding="application/x-tex">
 p_t \sim \operatorname{Beta}(\alpha, \beta), \qquad
 E[p_t] = \frac{\alpha}{\alpha + \beta}.
 </annotation></semantics></math></p>
@@ -1271,11 +1271,11 @@ Often you will need to increase the number of iterations run by an order
 of magnitude to go from non-converging chains to converging chains.</p>
 <div class="sourceCode" id="cb35"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">res</span><span class="op">$</span><span class="va">all_diagnostics</span><span class="op">$</span><span class="va">p_thetas</span><span class="op">[[</span><span class="fl">1</span><span class="op">]</span><span class="op">]</span> <span class="op">+</span></span>
-<span>        <span class="fu">ggplot2</span><span class="fu">::</span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/theme.html" class="external-link">theme</a></span><span class="op">(</span>axis.text.x <span class="op">=</span> <span class="fu">ggplot2</span><span class="fu">::</span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/element.html" class="external-link">element_text</a></span><span class="op">(</span>angle <span class="op">=</span> <span class="fl">45</span>, hjust <span class="op">=</span> <span class="fl">1</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
+<span>        <span class="fu">ggplot2</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/ggplot2/man/theme.html" class="external-link">theme</a></span><span class="op">(</span>axis.text.x <span class="op">=</span> <span class="fu">ggplot2</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/ggplot2/man/element.html" class="external-link">element_text</a></span><span class="op">(</span>angle <span class="op">=</span> <span class="fl">45</span>, hjust <span class="op">=</span> <span class="fl">1</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
 <p><img src="serosolver-guide_files/figure-html/unnamed-chunk-32-1.png" class="r-plt" alt="" width="100%"></p>
 <div class="sourceCode" id="cb36"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">res</span><span class="op">$</span><span class="va">all_diagnostics</span><span class="op">$</span><span class="va">p_inf_hists</span><span class="op">$</span><span class="va">by_time_trace</span> <span class="op">+</span></span>
-<span>        <span class="fu">ggplot2</span><span class="fu">::</span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/theme.html" class="external-link">theme</a></span><span class="op">(</span>axis.text.x <span class="op">=</span> <span class="fu">ggplot2</span><span class="fu">::</span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/element.html" class="external-link">element_text</a></span><span class="op">(</span>angle <span class="op">=</span> <span class="fl">45</span>, hjust <span class="op">=</span> <span class="fl">1</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span>
+<span>        <span class="fu">ggplot2</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/ggplot2/man/theme.html" class="external-link">theme</a></span><span class="op">(</span>axis.text.x <span class="op">=</span> <span class="fu">ggplot2</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/ggplot2/man/element.html" class="external-link">element_text</a></span><span class="op">(</span>angle <span class="op">=</span> <span class="fl">45</span>, hjust <span class="op">=</span> <span class="fl">1</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="co">#&gt; NULL</span></span></code></pre></div>
 <p>The diagnostics can also be regenerated from the saved files:</p>
 <div class="sourceCode" id="cb37"><pre class="downlit sourceCode r">
@@ -1283,7 +1283,7 @@ of magnitude to go from non-converging chains to converging chains.</p>
 <span>  location <span class="op">=</span> <span class="va">mcmc_dir</span>, par_tab <span class="op">=</span> <span class="va">example_par_tab</span>, burnin <span class="op">=</span> <span class="fl">500</span></span>
 <span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">diagnostics</span><span class="op">$</span><span class="va">p_thetas</span><span class="op">[[</span><span class="fl">1</span><span class="op">]</span><span class="op">]</span> <span class="op">+</span></span>
-<span>        <span class="fu">ggplot2</span><span class="fu">::</span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/theme.html" class="external-link">theme</a></span><span class="op">(</span>axis.text.x <span class="op">=</span> <span class="fu">ggplot2</span><span class="fu">::</span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/element.html" class="external-link">element_text</a></span><span class="op">(</span>angle <span class="op">=</span> <span class="fl">45</span>, hjust <span class="op">=</span> <span class="fl">1</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
+<span>        <span class="fu">ggplot2</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/ggplot2/man/theme.html" class="external-link">theme</a></span><span class="op">(</span>axis.text.x <span class="op">=</span> <span class="fu">ggplot2</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/ggplot2/man/element.html" class="external-link">element_text</a></span><span class="op">(</span>angle <span class="op">=</span> <span class="fl">45</span>, hjust <span class="op">=</span> <span class="fl">1</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level2">
 <h2 id="output-estimates">Output estimates<a class="anchor" aria-label="anchor" href="#output-estimates"></a>
@@ -1442,7 +1442,9 @@ Antigenic and Genetic</span>. 2004;305: 371–376. doi:<a href="https://doi.org/
 
   <div class="col-md-3 hidden-xs hidden-sm" id="pkgdown-sidebar">
 
-      </div>
+        <nav id="toc" data-toggle="toc"><h2 data-toc-skip>Contents</h2>
+    </nav>
+</div>
 
 </div>
 
